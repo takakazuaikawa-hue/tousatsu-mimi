@@ -918,6 +918,126 @@ const PSYCH_QUESTIONS = {
       rico: 'ポジションは<u>「アクション順」の差だけ</u>。でもそれが勝率に直結するの',
     },
   },
+  logic_spr: {
+    id: 'logic_spr',
+    type: 'logic',
+    rule: 'SPR（Stack-to-Pot Ratio）：残りスタック ÷ ポット。低いほどコミット圧',
+    situationFn: (state) => {
+      const stack = state.playerChips;
+      const pot = state.pot || 1;
+      const spr = (stack / pot).toFixed(1);
+      return `📊 状況整理\n` +
+        `・ミミの残りスタック：${stack}\n` +
+        `・現在のポット：${pot}\n\n` +
+        `🧮 計算\n` +
+        `SPR = ${stack} ÷ ${pot} ≒ <b>${spr}</b>\n\n` +
+        `SPR < 3 → 完成役なら降りられない（コミット）\n` +
+        `SPR > 6 → 降りる余地がある（プレイ深い）`;
+    },
+    speech: '【論理問題】SPRが低い時の最適行動は？',
+    zazazoHint: 'スタックが小さい時は引き返せない',
+    choices: [
+      { id: 'commit',  text: '完成役があれば全部突っ込む（コミット）',           correct: true },
+      { id: 'careful', text: 'SPRが低いほど慎重に降りるべき',                   correct: false },
+      { id: 'doesnt', text: 'SPRは戦略に関係ない',                              correct: false },
+    ],
+    onSuccess: {
+      panyu: 15, zazazo: 0,
+      hint: 'SPR < 3 ＝ オールイン圏。中途半端なベットは無意味',
+      rico: 'お見事。<u>SPRはコミット圧の指標</u>。低いほど降りる余地が消える',
+    },
+    onFail: {
+      panyu: -5,
+      mimi: 'スタック少ない時こそ慎重に……？',
+      rico: '逆。<u>SPRが低い＝もう降りられない</u>。完成役があれば押し切る判断',
+    },
+  },
+  logic_bluff_catcher: {
+    id: 'logic_bluff_catcher',
+    type: 'logic',
+    rule: 'ブラフキャッチ：相手のレンジに対し2/3ポットなら必要勝率28.5%',
+    situationFn: () => `📊 状況整理\n` +
+      `・相手はリバーで2/3ポットベット\n` +
+      `・ミミは中位ペア（ブラフキャッチャー：勝てる相手＝ブラフ、負ける相手＝バリュー）\n` +
+      `・必要勝率：2/3ポットコールなら ＝ 28.5%\n\n` +
+      `🧮 ポイント\n` +
+      `相手のレンジに「ブラフが28%以上含まれる」と読めるなら、コールが期待値プラス。`,
+    speech: '【論理問題】中位ペアでリバー2/3ポットコールの判断基準は？',
+    zazazoHint: '相手レンジのブラフ比率を考えて',
+    choices: [
+      { id: 'bluff_ratio', text: '相手レンジのブラフ比率が28%超ならコール',  correct: true },
+      { id: 'always_fold', text: '中位ペアなら常に降りるのが正解',           correct: false },
+      { id: 'always_call', text: '中位ペアなら常にコールするのが正解',        correct: false },
+    ],
+    onSuccess: {
+      panyu: 20, zazazo: 0,
+      hint: 'ブラフキャッチ＝必要勝率 vs 相手のブラフ比率の比較',
+      rico: 'いいねー。<u>中位ペアは「ブラフを捕まえる用」</u>。レンジ分析でコール判断',
+    },
+    onFail: {
+      panyu: -5,
+      mimi: '中位ペアって扱いに困る……',
+      rico: '<u>中位ペア＝ブラフキャッチャー</u>。相手がどれくらい嘘つくかで決める',
+    },
+  },
+  logic_implied_odds: {
+    id: 'logic_implied_odds',
+    type: 'logic',
+    rule: 'インプライドオッズ：完成時に追加で得られるチップも勝率計算に含める',
+    situationFn: () => `📊 状況整理\n` +
+      `・小ペア（66）でフロップ進出 → セット狙い\n` +
+      `・セット完成率：約 12%（11.8%）= 厳しい\n` +
+      `・でも完成したら相手のスタックを取れる可能性\n\n` +
+      `🧮 ポイント\n` +
+      `直接のポットオッズだけでなく、<b>完成後に追加で取れる額</b>も計算に入れる。\n` +
+      `相手のスタックが深いほどインプライドオッズは大きい。`,
+    speech: '【論理問題】小ペアでフロップを見る価値が高い場面は？',
+    zazazoHint: '完成後の利益を計算に入れる',
+    choices: [
+      { id: 'deep_stack', text: '相手のスタックが深い（取れる額が大きい）', correct: true },
+      { id: 'shallow',    text: '相手のスタックが浅い時こそチャンス',     correct: false },
+      { id: 'no_diff',    text: 'スタック深さは関係ない',                  correct: false },
+    ],
+    onSuccess: {
+      panyu: 20, zazazo: 0,
+      hint: 'インプライド＝深スタックほど大きい。セット狙いの価値UP',
+      rico: 'お見事。<u>「直接の確率」だけじゃなく「完成後に取れる額」も考える</u>のがプロ',
+    },
+    onFail: {
+      panyu: -5,
+      mimi: '直接の確率だけ見てた……',
+      rico: '<u>インプライドオッズは深スタックほど大きい</u>。小ペアは深い時こそ価値あり',
+    },
+  },
+  logic_cbet_dry: {
+    id: 'logic_cbet_dry',
+    type: 'logic',
+    rule: 'ドライボードでのCベット：相手がヒットしてない確率が高い',
+    situationFn: () => `📊 状況整理\n` +
+      `・場札：K-7-2 レインボー（ドライボード）\n` +
+      `・プリフロップでミミがレイズ → 相手はコール\n` +
+      `・ドライボード＝連番なし・スートばらばら・ハイカード1枚\n\n` +
+      `🧮 ポイント\n` +
+      `相手のレンジ（コールしてきた手札）は、このボードでフィットしないことが多い。\n` +
+      `→ 小さめのCベット（1/3〜1/2）でも降ろせる可能性が高い。`,
+    speech: '【論理問題】K-7-2のドライボードでミミの最適行動は？',
+    zazazoHint: '相手がヒットしてないボード',
+    choices: [
+      { id: 'small_cbet',  text: '1/3〜1/2ポットの小さなCベットで降ろしに行く', correct: true },
+      { id: 'big_bet',     text: '常にポット級の大ベット',                       correct: false },
+      { id: 'check',       text: '何もせずチェック',                             correct: false },
+    ],
+    onSuccess: {
+      panyu: 15, zazazo: 0,
+      hint: 'ドライボード＝相手のヒット率低い＝小ベットで十分',
+      rico: 'そう。<u>ドライボードは小さく、ウェットボードは大きく</u>。サイズの使い分けが上手いね',
+    },
+    onFail: {
+      panyu: -5,
+      mimi: '常に大きいベットがいいと思ってた……',
+      rico: '<u>ボードによってベットサイズは変える</u>。ドライは小、ウェットは大が基本',
+    },
+  },
   // ===== チュートリアルレッスン（type: 'lesson'） =====
   // リコ先輩による講義形式。8章 × 3問。順番に消化。
   lesson_1_1: { id:'lesson_1_1', type:'lesson', chapter:1, chapterTitle:'第1章：ポーカーって何？',
@@ -2269,7 +2389,10 @@ function buyItem(itemId) {
 
 function pickLogicQuestion() {
   // 出題済みを避けて未出題から選ぶ
-  const allLogicIds = ['logic_pot_odds_basic', 'logic_flush_outs', 'logic_hand_compare', 'logic_position'];
+  const allLogicIds = [
+    'logic_pot_odds_basic', 'logic_flush_outs', 'logic_hand_compare', 'logic_position',
+    'logic_spr', 'logic_bluff_catcher', 'logic_implied_odds', 'logic_cbet_dry',
+  ];
   const seen = state.seenQuestions || new Set();
   // 状況にマッチする候補を計算
   const need = state.currentBetOpponent - state.currentBetPlayer;
@@ -2278,17 +2401,22 @@ function pickLogicQuestion() {
   const suitCounts = {};
   suits.forEach(s => suitCounts[s] = (suitCounts[s] || 0) + 1);
   const maxSuit = Math.max(...Object.values(suitCounts), 0);
+  const sprValue = state.pot > 0 ? state.playerChips / state.pot : 99;
   const candidates = [];
+  // 状況マッチング（具体的な計算ができる場面を優先）
   if (need > 0 && potBefore > 0) candidates.push('logic_pot_odds_basic');
   if (maxSuit >= 2 && state.playerHand[0]?.suit === state.playerHand[1]?.suit) candidates.push('logic_flush_outs');
-  if (state.handPhase === 'flop') candidates.push('logic_hand_compare');
+  if (state.handPhase === 'flop') candidates.push('logic_hand_compare', 'logic_cbet_dry');
+  if (sprValue < 4) candidates.push('logic_spr');
+  if (state.handPhase === 'river' && need > 0) candidates.push('logic_bluff_catcher');
+  if (state.handPhase === 'flop' && state.handNo === 1) candidates.push('logic_implied_odds');
   candidates.push('logic_position');
   // 未出題優先
   const fresh = candidates.find(q => !seen.has(q));
   if (fresh) return fresh;
   // 全部出題済みなら全プールから未出題、なければランダム
   const allFresh = allLogicIds.find(q => !seen.has(q));
-  return allFresh || candidates[0];
+  return allFresh || pick(candidates);
 }
 
 function pickPsychQuestion() {
