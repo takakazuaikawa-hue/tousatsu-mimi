@@ -31,6 +31,7 @@ function defaultSave() {
     backdoorUnlocked: false, // 裏モード（相手の手と心理を覗き見）
     backdoorOn: false,       // 裏モードを今表示中か
     bgmVolume: 35,           // BGM音量（0-100）
+    bgmOn: false,            // BGM初期OFF
     logs: { actions: [], bets: [], reactions: [], psych: [] },
   };
 }
@@ -1454,7 +1455,7 @@ function applyBindings() {
         break;
       }
       case 'lobbyRicoOutfit': el.textContent = pickLobbyRico().label; break;
-      case 'lobbyBgmLabel': el.textContent = state.bgmOn === false ? '♪ —（停止中）' : '♪ Lounge Jazz — Velvet Night'; break;
+      case 'lobbyBgmLabel': el.textContent = !save.bgmOn ? '♪ —（停止中）' : '♪ Lounge Jazz — Velvet Night'; break;
       case 'lobbyBgmVolume':
         el.value = save.bgmVolume != null ? save.bgmVolume : 35;
         el.oninput = (e) => {
@@ -2550,31 +2551,59 @@ function applyBgmVolume() {
   const lobbyA = document.getElementById('lobby-bgm-audio');
   const endA = document.getElementById('ending-bgm-audio');
   if (lobbyA) lobbyA.volume = bgmVolFloat();
-  if (endA)   endA.volume   = Math.min(1, bgmVolFloat() * 1.6); // 主題歌は少し大きめ
+  if (endA)   endA.volume   = Math.min(1, bgmVolFloat() * 1.6);
+}
+
+// グローバル音量バーの状態同期
+function refreshGlobalAudioBar() {
+  const bar = document.getElementById('global-audio-bar');
+  const tog = document.getElementById('global-bgm-toggle');
+  const vol = document.getElementById('global-bgm-volume');
+  if (!bar) return;
+  // 音楽が鳴る可能性のある画面で常時表示（タイトル除外でもよいが常時表示が無難）
+  bar.style.display = 'flex';
+  if (tog) tog.textContent = save.bgmOn ? '🔊' : '🔇';
+  if (vol) vol.value = save.bgmVolume != null ? save.bgmVolume : 35;
+}
+
+function initGlobalAudioBar() {
+  const tog = document.getElementById('global-bgm-toggle');
+  const vol = document.getElementById('global-bgm-volume');
+  if (tog && !tog.__bound) {
+    tog.__bound = true;
+    tog.addEventListener('click', toggleLobbyBgm);
+  }
+  if (vol && !vol.__bound) {
+    vol.__bound = true;
+    vol.addEventListener('input', (e) => {
+      save.bgmVolume = +e.target.value;
+      saveProgress();
+      applyBgmVolume();
+    });
+  }
+  refreshGlobalAudioBar();
 }
 function tryStartLobbyBgm() {
   const a = document.getElementById('lobby-bgm-audio');
   if (!a) return;
-  if (state.bgmOn === false) { a.pause(); return; }
+  if (!save.bgmOn) { a.pause(); return; }
   a.volume = bgmVolFloat();
-  // ブラウザの自動再生制限：ユーザー操作後にしか鳴らない場合あり
   const p = a.play();
   if (p && p.catch) p.catch(() => {/* 自動再生ブロックは無視 */});
 }
 
 function toggleLobbyBgm() {
+  save.bgmOn = !save.bgmOn;
+  saveProgress();
   const a = document.getElementById('lobby-bgm-audio');
-  state.bgmOn = (state.bgmOn === false); // 初期値undefined→true→false→true...
-  if (state.bgmOn) {
-    if (a) { a.volume = 0.35; a.play().catch(()=>{}); }
+  if (save.bgmOn) {
+    if (a) { a.volume = bgmVolFloat(); a.play().catch(()=>{}); }
   } else {
     if (a) a.pause();
+    const endA = document.getElementById('ending-bgm-audio');
+    if (endA) endA.pause();
   }
-  // ボタン表示更新
-  const btn = document.querySelector('[data-action="toggle-bgm"]');
-  if (btn) btn.textContent = state.bgmOn ? '🔊' : '🔇';
-  const label = document.querySelector('[data-bind="lobbyBgmLabel"]');
-  if (label) label.textContent = state.bgmOn ? '♪ Lounge Jazz — Velvet Night' : '♪ —（停止中）';
+  refreshGlobalAudioBar();
 }
 
 //=============================================================
@@ -4443,4 +4472,5 @@ save = loadProgress();
 state = defaultState();
 startPreload().then(() => {
   render();
+  initGlobalAudioBar();
 });
