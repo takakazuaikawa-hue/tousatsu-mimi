@@ -235,15 +235,25 @@
     <div class="battle-bg"></div>
     <div class="battle-vignette"></div>
 
-    <!-- 両サイドの立ち絵 -->
-    <div class="battle-char battle-char-mimi">
-      <img src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
-    </div>
-    <div class="battle-char battle-char-opponent" data-bind="battleOpponentChar"></div>
+    <!-- 右上：ぱにゅぱにゅボタン（モーダル外配置で常時アクセス可能） -->
+    <button class="panyu-floating-btn" data-action="use-panyu-sense" data-bind="panyuSenseBtn" type="button">
+      <span class="panyu-floating-icon">💖</span>
+      <span class="panyu-floating-label">ぱにゅぱにゅ</span>
+    </button>
 
-    <!-- 中央のバトルコンテンツ -->
+    <!-- 中央：拡大したバトルモーダル -->
     <div class="modal psych-modal">
       <h3 class="psych-title">— 心理バトル —</h3>
+
+      <!-- キャラポートレート行（モーダル内・顔から胸まで） -->
+      <div class="battle-portraits">
+        <div class="battle-portrait portrait-mimi">
+          <img src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
+          <div class="portrait-name">ミミ</div>
+        </div>
+        <div class="battle-portrait portrait-opponent" data-bind="battleOpponentChar"></div>
+      </div>
+
       <div class="psych-cards-row">
         <div class="psych-board-info">
           <div class="psych-board-label">場札</div>
@@ -259,9 +269,6 @@
       <div class="psych-speech" data-bind="psychSpeech"></div>
       <div class="psych-hint zazazo-hint" data-bind="zazazoHint"></div>
       <div class="psych-choices" data-bind="psychChoices"></div>
-      <div class="psych-tools">
-        <button class="btn btn-secondary" data-action="use-panyu-sense" data-bind="panyuSenseBtn">ぱにゅぱにゅ（25消費）</button>
-      </div>
     </div>
   </div>
 </template>
