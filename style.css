@@ -1468,38 +1468,38 @@ html, body {
 .chip-stack {
   position: absolute;
   left: 50%;
-  bottom: 4px;
+  bottom: 2px;
   transform: translateX(-50%);
   display: inline-flex;
   flex-direction: row;
   align-items: flex-end;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   z-index: 1;
-  opacity: 0.7;
+  opacity: 0.85;
   pointer-events: none;
-  min-height: 22px;
+  min-height: 28px;
 }
 .chip-stack-col {
   display: inline-flex;
   flex-direction: column-reverse;
   align-items: center;
   position: relative;
-  height: 22px;
 }
 .chip-pic {
   display: inline-block;
-  width: 14px; height: 4px;
-  border-radius: 50% / 60%;
-  margin-top: -2px;
-  background: #fff;
-  border: 1px solid rgba(0,0,0,0.5);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.4);
+  width: 24px; height: 24px;
+  margin-top: -16px; /* 上方向に重ね積み */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
 }
-.chip-pic.chip-white { background: linear-gradient(180deg, #ffffff 0%, #c8c8c8 100%); border-color: #888; }
-.chip-pic.chip-red   { background: linear-gradient(180deg, #ff6680 0%, #b3203a 100%); border-color: #5a0010; box-shadow: 0 1px 0 rgba(0,0,0,0.5), 0 0 4px rgba(200,37,58,0.4); }
-.chip-pic.chip-blue  { background: linear-gradient(180deg, #6aa7ff 0%, #1f4fa8 100%); border-color: #0a2256; box-shadow: 0 1px 0 rgba(0,0,0,0.5), 0 0 4px rgba(50,100,255,0.4); }
-.chip-pic.chip-gold  { background: linear-gradient(180deg, #fff2a8 0%, #c89c20 100%); border-color: #5a3e00; box-shadow: 0 1px 0 rgba(0,0,0,0.5), 0 0 6px rgba(245,215,122,0.6); }
+.chip-pic.chip-white { background-image: url('assets/ui/chip_white.png'); }
+.chip-pic.chip-red   { background-image: url('assets/ui/chip_red.png');   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)) drop-shadow(0 0 3px rgba(200,37,58,0.4)); }
+.chip-pic.chip-blue  { background-image: url('assets/ui/chip_blue.png');  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)) drop-shadow(0 0 3px rgba(50,100,255,0.4)); }
+.chip-pic.chip-gold  { background-image: url('assets/ui/chip_gold.png');  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)) drop-shadow(0 0 5px rgba(245,215,122,0.5)); }
+.chip-pic:first-child { margin-top: 0; }
 .chip-more {
   font-size: 9px;
   color: #fff;
