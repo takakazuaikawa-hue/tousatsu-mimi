@@ -1083,6 +1083,99 @@ html, body {
   cursor: pointer;
 }
 
+/* ========== エンディング前の主題歌プロンプト ========== */
+.ending-prompt-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.4s;
+}
+.ending-prompt-modal {
+  background: linear-gradient(180deg, rgba(50,20,80,0.97) 0%, rgba(20,8,29,0.98) 100%);
+  border: 3px solid var(--c-gold-bright);
+  border-radius: 16px;
+  padding: 32px 40px;
+  box-shadow: 0 0 40px rgba(245,215,122,0.6), 0 12px 40px rgba(0,0,0,0.8);
+  min-width: 480px;
+  text-align: center;
+}
+.ending-prompt-title {
+  font-size: 24px;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.3em;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.ending-prompt-sub {
+  font-size: 15px;
+  color: #fff8dc;
+  margin-bottom: 18px;
+}
+.ending-prompt-song {
+  font-size: 16px;
+  color: #ff7aa4;
+  font-style: italic;
+  letter-spacing: 0.05em;
+  margin-bottom: 22px;
+  text-shadow: 0 0 10px rgba(255,122,164,0.5);
+}
+.ending-prompt-vol-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0,0,0,0.4);
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--c-gold);
+  margin-bottom: 22px;
+}
+.ending-prompt-vol-label { color: var(--c-gold); font-size: 13px; letter-spacing: 0.1em; flex-shrink: 0; }
+.ending-prompt-vol {
+  -webkit-appearance: none;
+  flex: 1;
+  height: 5px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 3px;
+  border: 1px solid var(--c-gold);
+  outline: none;
+}
+.ending-prompt-vol::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--c-gold-bright);
+  border: 1px solid var(--c-bg-dark);
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(245,215,122,0.5);
+}
+.ending-prompt-vol::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--c-gold-bright);
+  border: 1px solid var(--c-bg-dark);
+  cursor: pointer;
+}
+.ending-prompt-vol-num {
+  min-width: 28px;
+  color: var(--c-gold-bright);
+  font-weight: 700;
+  font-size: 14px;
+}
+.ending-prompt-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+}
+.ending-prompt-actions .btn {
+  min-width: 140px;
+  padding: 12px 22px;
+  font-size: 16px;
+}
+
 /* ========== 新しく始めるモーダル ========== */
 .newgame-overlay {
   position: absolute;

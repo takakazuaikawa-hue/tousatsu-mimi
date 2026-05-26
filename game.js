@@ -1353,7 +1353,7 @@ function render() {
     case 'battle':      renderTemplate('tpl-battle'); applyBindings(); break;
     case 'result':      renderTemplate('tpl-result'); applyBindings(); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
-    case 'ending':      renderTemplate('tpl-ending'); startEndingShow(); break;
+    case 'ending':      renderTemplate('tpl-ending'); showEndingMusicPrompt(); break;
   }
   bindActions();
   injectAudioBars();
@@ -2396,18 +2396,68 @@ function onAction(e) {
 //=============================================================
 // エンディング演出
 //=============================================================
-function startEndingShow() {
+function showEndingMusicPrompt() {
+  const stage = document.getElementById('stage');
+  if (!stage) { startEndingShow(false); return; }
+  // 既存の演出ステージは一旦空に
+  const endStage = document.getElementById('ending-stage');
+  if (endStage) endStage.innerHTML = '';
+  const overlay = document.createElement('div');
+  overlay.className = 'ending-prompt-overlay';
+  const curVol = save.bgmVolume != null ? save.bgmVolume : 35;
+  overlay.innerHTML = `
+    <div class="ending-prompt-modal">
+      <div class="ending-prompt-title">— 終幕の前に —</div>
+      <div class="ending-prompt-sub">エンディングテーマを流しますか？</div>
+      <div class="ending-prompt-song">♪ ポーカーフェイスの終わり〜変な件〜</div>
+      <div class="ending-prompt-vol-row">
+        <span class="ending-prompt-vol-label">🔊 音量</span>
+        <input class="ending-prompt-vol" type="range" min="0" max="100" step="1" value="${curVol}">
+        <span class="ending-prompt-vol-num">${curVol}</span>
+      </div>
+      <div class="ending-prompt-actions">
+        <button class="btn btn-primary" id="ending-with-music">▶ 流す</button>
+        <button class="btn btn-secondary" id="ending-without-music">🔇 流さない</button>
+      </div>
+    </div>
+  `;
+  stage.appendChild(overlay);
+  const sl = overlay.querySelector('.ending-prompt-vol');
+  const num = overlay.querySelector('.ending-prompt-vol-num');
+  sl.addEventListener('input', (e) => {
+    save.bgmVolume = +e.target.value;
+    saveProgress();
+    applyBgmVolume();
+    num.textContent = e.target.value;
+    document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = save.bgmVolume);
+  });
+  overlay.querySelector('#ending-with-music').addEventListener('click', () => {
+    overlay.remove();
+    startEndingShow(true);
+  });
+  overlay.querySelector('#ending-without-music').addEventListener('click', () => {
+    overlay.remove();
+    startEndingShow(false);
+  });
+}
+
+function startEndingShow(playMusic) {
   const stage = document.getElementById('ending-stage');
   if (!stage) return;
   stage.innerHTML = '';
-  // ロビーBGMを止めてエンディングテーマを再生
+  // ロビーBGMは常に止める
   const lobbyA = document.getElementById('lobby-bgm-audio');
   if (lobbyA) lobbyA.pause();
+  // 主題歌は引数で制御
   const endA = document.getElementById('ending-bgm-audio');
   if (endA) {
-    endA.currentTime = 0;
-    endA.volume = Math.min(1, bgmVolFloat() * 1.6);
-    endA.play().catch(()=>{});
+    if (playMusic) {
+      endA.currentTime = 0;
+      endA.volume = Math.min(1, bgmVolFloat() * 1.6);
+      endA.play().catch(()=>{});
+    } else {
+      endA.pause();
+    }
   }
   // 星空＋光の粒子背景
   const bg = document.createElement('div');
