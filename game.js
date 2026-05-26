@@ -2118,39 +2118,41 @@ function renderActionArea(el) {
   let slots;
   if (state.handPhase === 'preflop') {
     slots = [
-      { kind: 'fold', label: 'フォールド', sub: '降りる', action: 'player-fold', ghost: true,
+      { kind: 'fold', icon: '✋', label: 'フォールド', sub: '降りる', amount: 0, action: 'player-fold', ghost: true,
         enabled: true, title: '手札を捨ててこのハンドを諦める。場札が出る前でも降りられる。アンテ50チップは戻ってこない。' },
-      { kind: 'callcheck', label: 'コール', sub: need > 0 ? `(${need})` : '勝負', action: 'player-call', primary: true,
+      { kind: 'callcheck', icon: '🤝', label: 'コール', sub: '', amount: need, action: 'player-call', primary: true,
         enabled: true, title: '相手と同額を払ってフロップを見にいく。' },
-      { kind: 'sm',    label: '2.5BBレイズ', sub: `(${bb25})`, action: 'player-raise', dataSize: '2.5',
+      { kind: 'sm', icon: '⬆', label: '2.5BBレイズ', sub: '', amount: bb25, action: 'player-raise', dataSize: '2.5',
         enabled: true, title: '相手より大きくベット。強気の攻め。' },
-      { kind: 'md',    label: '3BBレイズ',   sub: `(${bb3})`,  action: 'player-raise', dataSize: '3',
+      { kind: 'md', icon: '⬆⬆', label: '3BBレイズ', sub: '', amount: bb3, action: 'player-raise', dataSize: '3',
         enabled: true, title: 'より大きいレイズ。' },
-      { kind: 'lg',    label: '—',            sub: 'ポストフロップ用', enabled: false,
+      { kind: 'lg', icon: '—', label: '—', sub: 'ポストフロップ用', amount: 0, enabled: false,
         title: 'フロップ後にポットベットが選べるようになります。' },
-      { kind: 'allin', label: 'オールイン', sub: `(${allInAmt})`, action: 'player-allin',
+      { kind: 'allin', icon: '🔥', label: 'オールイン', sub: '', amount: allInAmt, action: 'player-allin',
         enabled: allInAmt > 0, title: '持ちチップ全部を賭ける。' },
     ];
   } else {
     const showBet = need === 0;
     const showRaise = need > 0 && state.playerChips > need * 2;
     slots = [
-      { kind: 'fold', label: 'フォールド', sub: '降りる', action: 'player-fold', ghost: true,
+      { kind: 'fold', icon: '✋', label: 'フォールド', sub: '降りる', amount: 0, action: 'player-fold', ghost: true,
         enabled: true, title: '手札を捨ててポットを諦める。これまで払ったチップは戻らない。' },
       { kind: 'callcheck',
+        icon: need > 0 ? '🤝' : '👁',
         label: need > 0 ? 'コール' : 'チェック',
-        sub: need > 0 ? `(${need})` : '見送り',
+        sub: need > 0 ? '' : '見送り',
+        amount: need,
         action: 'player-checkcall', primary: true, enabled: true,
         title: need > 0
           ? 'コール＝相手のベットに同額で乗る。役に自信がある時。'
           : 'チェック＝今は賭けない、次の場札を待つ。相手もチェックなら無料で次へ進める。' },
-      { kind: 'sm', label: '1/2ポット', sub: `標準 (${half})`, action: 'player-bet', dataSize: 'pot_1_2',
+      { kind: 'sm', icon: '½', label: '1/2ポット', sub: '標準', amount: half, action: 'player-bet', dataSize: 'pot_1_2',
         enabled: showBet || showRaise, title: 'ポットの半分。標準的なベット。' },
-      { kind: 'md', label: '2/3ポット', sub: `強気 (${twoThird})`, action: 'player-bet', dataSize: 'pot_2_3',
+      { kind: 'md', icon: '⅔', label: '2/3ポット', sub: '強気', amount: twoThird, action: 'player-bet', dataSize: 'pot_2_3',
         enabled: showBet || showRaise, title: 'ポットの2/3。強気の攻め。相手を降ろしに行く時にも。' },
-      { kind: 'lg', label: 'ポット',     sub: `最大圧 (${potBet})`, action: 'player-bet', dataSize: 'pot_1',
+      { kind: 'lg', icon: '🏺', label: 'ポット', sub: '最大圧', amount: potBet, action: 'player-bet', dataSize: 'pot_1',
         enabled: showBet || showRaise, title: 'ポット相当の大ベット。' },
-      { kind: 'allin', label: 'オールイン', sub: `(${allInAmt})`, action: 'player-allin',
+      { kind: 'allin', icon: '🔥', label: 'オールイン', sub: '', amount: allInAmt, action: 'player-allin',
         enabled: allInAmt > 0, title: '持ちチップ全部。逆転の最終手段。' },
     ];
   }
@@ -2161,10 +2163,19 @@ function renderActionArea(el) {
       ${s.enabled ? `data-action="${s.action}"` : 'disabled'}
       ${s.dataSize ? `data-size="${s.dataSize}"` : ''}
       title="${s.title}">
+      <span class="slot-icon">${s.icon || ''}</span>
       <span class="slot-label">${s.label}</span>
-      ${s.sub ? `<small>${s.sub}</small>` : ''}
+      ${s.sub ? `<small class="slot-sub">${s.sub}</small>` : ''}
+      ${s.amount > 0 ? `<span class="slot-cost"><span class="chip-pic chip-${costChipColor(s.amount)}"></span>${s.amount}</span>` : ''}
     </button>
   `).join('')}</div>`;
+}
+
+function costChipColor(amount) {
+  if (amount >= 1000) return 'gold';
+  if (amount >= 500)  return 'blue';
+  if (amount >= 100)  return 'red';
+  return 'white';
 }
 
 //=============================================================
