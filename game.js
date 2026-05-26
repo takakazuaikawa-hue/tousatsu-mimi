@@ -2432,46 +2432,98 @@ fitStage();
 //=============================================================
 // 19b. スマホ向け：全画面ボタンと向き検知
 //=============================================================
+const UA = navigator.userAgent;
+const IS_IOS = /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_IPHONE = /iPhone|iPod/.test(UA);
+const IS_ANDROID = /Android/i.test(UA);
+const IS_STANDALONE = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
 function isMobile() {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(UA)
       || (window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
+}
+function fullscreenSupported() {
+  const el = document.documentElement;
+  return !!(el.requestFullscreen || el.webkitRequestFullscreen);
 }
 function isFullscreen() {
   return !!(document.fullscreenElement || document.webkitFullscreenElement);
 }
-function requestGameFullscreen() {
+async function requestGameFullscreen() {
   const el = document.documentElement;
   const fn = el.requestFullscreen || el.webkitRequestFullscreen;
-  if (fn) {
-    try {
-      const p = fn.call(el);
-      if (p && p.then) p.catch(() => {});
-    } catch (e) { /* user gesture でないと拒否される */ }
+  if (!fn) {
+    // iPhone Safari など Fullscreen API 非対応 → PWAインストール案内
+    showIosFullscreenHelp();
+    return false;
   }
-  // 画面向きをロック（対応端末のみ）
+  try {
+    const p = fn.call(el);
+    if (p && p.then) await p;
+  } catch (e) {
+    console.warn('Fullscreen request failed', e);
+    return false;
+  }
   if (screen.orientation && screen.orientation.lock) {
-    screen.orientation.lock('landscape').catch(() => {});
+    try { await screen.orientation.lock('landscape'); } catch (e) { /* 対応外端末 */ }
   }
+  return true;
 }
+
+function showIosFullscreenHelp() {
+  // 既存があれば再表示しない
+  if (document.querySelector('.ios-help-modal')) return;
+  const modal = document.createElement('div');
+  modal.className = 'ios-help-modal';
+  modal.innerHTML = `
+    <div class="ios-help-inner">
+      <h3>📱 iPhone でフル画面にするには</h3>
+      <p>iPhone Safari は Web ページの全画面表示をサポートしていません。<br>
+      以下の方法で広い画面で遊べます：</p>
+      <ol class="ios-help-steps">
+        <li><b>下にスクロール</b>するとアドレスバーが小さくなります</li>
+        <li>または Safariの <b>共有ボタン</b> → <b>「ホーム画面に追加」</b> でアプリ風に起動できます<br>
+            <small>※ホームから起動するとアドレスバーが完全に消えます</small></li>
+      </ol>
+      <button type="button" class="ios-help-close">わかりました</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.querySelector('.ios-help-close').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
 function updateFullscreenBtn() {
   const btn = document.getElementById('fullscreen-btn');
   if (!btn) return;
   const isLandscape = window.matchMedia('(orientation: landscape)').matches;
-  // スマホ・横向き・未フルスクリーン時のみ表示
-  btn.hidden = !(isMobile() && isLandscape && !isFullscreen());
+  const shouldShow = isMobile() && isLandscape && !isFullscreen() && !IS_STANDALONE;
+  btn.hidden = !shouldShow;
+  // iPhone Safari 用にラベル変更
+  if (shouldShow) {
+    if (IS_IPHONE && !fullscreenSupported()) {
+      btn.textContent = '⛶ 全画面の遊び方';
+    } else {
+      btn.textContent = '⛶ タップして全画面で遊ぶ';
+    }
+  }
 }
+
 const fsBtn = document.getElementById('fullscreen-btn');
 if (fsBtn) {
-  fsBtn.addEventListener('click', () => {
-    requestGameFullscreen();
-    setTimeout(updateFullscreenBtn, 300);
+  fsBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const ok = await requestGameFullscreen();
+    if (ok) {
+      setTimeout(updateFullscreenBtn, 300);
+    }
+    // 失敗時は showIosFullscreenHelp() が requestGameFullscreen 内で呼ばれる
   });
 }
 window.addEventListener('orientationchange', () => setTimeout(updateFullscreenBtn, 200));
 window.addEventListener('resize', updateFullscreenBtn);
 document.addEventListener('fullscreenchange', updateFullscreenBtn);
 document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
-// 初回判定
 setTimeout(updateFullscreenBtn, 200);
 
 //=============================================================

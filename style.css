@@ -114,6 +114,71 @@ html, body {
 }
 #fullscreen-btn:active { transform: scale(0.96); }
 
+/* iOSヘルプモーダル */
+.ios-help-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.ios-help-inner {
+  background: linear-gradient(180deg, var(--c-bg-mid) 0%, var(--c-bg-dark) 100%);
+  border: 2px solid var(--c-gold-bright);
+  border-radius: 14px;
+  padding: 24px 28px;
+  max-width: 480px;
+  color: var(--c-text);
+  box-shadow: 0 0 40px rgba(245,215,122,0.4);
+}
+.ios-help-inner h3 {
+  color: var(--c-gold-bright);
+  font-size: 20px;
+  margin: 0 0 14px;
+  letter-spacing: 0.1em;
+}
+.ios-help-inner p {
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 8px 0 14px;
+}
+.ios-help-steps {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+.ios-help-steps li {
+  font-size: 14px;
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+.ios-help-steps b {
+  color: var(--c-gold-bright);
+  padding: 1px 6px;
+  background: rgba(217,179,90,0.15);
+  border-radius: 4px;
+}
+.ios-help-steps small {
+  color: var(--c-text-dim);
+  font-size: 12px;
+}
+.ios-help-close {
+  display: block;
+  margin: 16px auto 0;
+  padding: 12px 36px;
+  background: linear-gradient(180deg, var(--c-red) 0%, #7a1525 100%);
+  border: 2px solid var(--c-gold-bright);
+  border-radius: 8px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+}
+
 /* 固定アスペクト比ステージ：1280×800を基準にJSでスケーリング */
 #stage {
   position: fixed;
