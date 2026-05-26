@@ -481,10 +481,10 @@ html, body {
   position: relative;
   z-index: 1;
   text-align: center;
-  font-size: 13px;
+  font-size: 16px;
   color: var(--c-gold-bright);
   letter-spacing: 0.1em;
-  padding: 6px 0 14px;
+  padding: 10px 0 16px;
   background: rgba(0,0,0,0.3);
 }
 
@@ -506,15 +506,16 @@ html, body {
   gap: 8px;
 }
 .shop-cat-btn {
-  padding: 14px 12px;
+  padding: 16px 12px;
   background: rgba(0,0,0,0.4);
   border: 2px solid rgba(217,179,90,0.4);
   border-radius: 8px;
   color: var(--c-text);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
   letter-spacing: 0.1em;
+  min-height: 56px;
 }
 .shop-cat-btn:hover { background: rgba(90,42,138,0.4); }
 .shop-cat-btn.active {
@@ -553,12 +554,12 @@ html, body {
   opacity: 0.55;
   filter: grayscale(0.4);
 }
-.shop-item-name { font-size: 16px; font-weight: 700; color: var(--c-gold-bright); }
-.shop-item-desc { font-size: 13px; color: var(--c-text-dim); line-height: 1.5; flex: 1; }
-.shop-item-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
-.shop-item-price { font-size: 16px; font-weight: 700; color: var(--c-gold-bright); }
-.shop-item-owned { color: var(--c-gold-bright); font-size: 12px; letter-spacing: 0.15em; }
-.shop-item .btn { padding: 6px 16px; font-size: 13px; }
+.shop-item-name { font-size: 18px; font-weight: 700; color: var(--c-gold-bright); }
+.shop-item-desc { font-size: 15px; color: var(--c-text-dim); line-height: 1.55; flex: 1; }
+.shop-item-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.shop-item-price { font-size: 20px; font-weight: 700; color: var(--c-gold-bright); }
+.shop-item-owned { color: var(--c-gold-bright); font-size: 14px; letter-spacing: 0.15em; }
+.shop-item .btn { padding: 10px 22px; font-size: 15px; min-height: 44px; }
 .shop-comment {
   display: flex;
   flex-direction: column;
@@ -594,10 +595,10 @@ html, body {
 .rico-shop-bubble {
   background: var(--c-gold-bright);
   color: var(--c-bg-dark);
-  padding: 10px 14px;
+  padding: 14px 16px;
   border-radius: 10px;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.6;
   flex: 1;
   overflow-y: auto;
 }
@@ -617,11 +618,11 @@ html, body {
 }
 .top-hud h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 22px;
   color: var(--c-gold-bright);
   letter-spacing: 0.1em;
 }
-.coin-display { color: var(--c-gold-bright); font-size: 14px; }
+.coin-display { color: var(--c-gold-bright); font-size: 18px; font-weight: 600; }
 
 .stage-list {
   position: relative;
@@ -661,7 +662,7 @@ html, body {
   top: -10px; left: 14px; right: auto;
 }
 .stage-reward {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--c-gold-bright);
   margin-top: 4px;
 }
@@ -734,8 +735,8 @@ html, body {
   right: 16px;
   background: var(--c-purple);
   color: var(--c-gold-bright);
-  font-size: 11px;
-  padding: 3px 12px;
+  font-size: 14px;
+  padding: 4px 14px;
   border-radius: 4px;
   border: 1px solid var(--c-gold-bright);
   letter-spacing: 0.2em;
@@ -750,16 +751,17 @@ html, body {
   margin-top: 18px;
 }
 .tutorial-actions .skip-btn {
-  padding: 8px 18px;
+  padding: 10px 22px;
   background: transparent;
   border: 1px solid rgba(217,179,90,0.5);
   border-radius: 6px;
   color: var(--c-bg-dark);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15px;
   cursor: pointer;
   letter-spacing: 0.15em;
   opacity: 0.7;
+  min-height: 44px;
 }
 .tutorial-actions .skip-btn:hover { opacity: 1; }
 .tutorial-bubble::before {
@@ -799,17 +801,17 @@ html, body {
 .tutorial-bubble .next-btn:hover { filter: brightness(1.15); transform: translateY(-2px); }
 .tutorial-bubble .next-btn:active { transform: translateY(0); }
 .stage-number {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--c-gold-bright);
   letter-spacing: 0.2em;
 }
 .stage-name {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--c-text);
 }
-.stage-theme { font-size: 12px; color: var(--c-gold-bright); }
-.stage-desc { font-size: 12px; color: var(--c-text-dim); line-height: 1.5; flex: 1; }
+.stage-theme { font-size: 15px; color: var(--c-gold-bright); }
+.stage-desc { font-size: 14px; color: var(--c-text-dim); line-height: 1.55; flex: 1; }
 .stage-locked-tag {
   font-size: 12px;
   color: var(--c-red-bright);
@@ -830,9 +832,9 @@ html, body {
   gap: 6px;
   padding: 4px;
 }
-.battle-screen .top-hud { grid-area: hud; border-radius: 6px; font-size: 15px; }
-.battle-screen .top-hud .hand-info { color: var(--c-gold-bright); font-size: 16px; font-weight: 600; }
-.battle-screen .top-hud .opponent-name { color: var(--c-red-bright); font-size: 18px; font-weight: 700; }
+.battle-screen .top-hud { grid-area: hud; border-radius: 6px; font-size: 18px; }
+.battle-screen .top-hud .hand-info { color: var(--c-gold-bright); font-size: 20px; font-weight: 600; }
+.battle-screen .top-hud .opponent-name { color: var(--c-red-bright); font-size: 22px; font-weight: 700; }
 
 .left-panel {
   grid-area: left;
@@ -912,7 +914,7 @@ html, body {
   flex-direction: column;
   gap: 6px;
 }
-.opponent-info .chips { color: var(--c-gold-bright); font-size: 16px; font-weight: 600; }
+.opponent-info .chips { color: var(--c-gold-bright); font-size: 22px; font-weight: 700; }
 /* チップメーター */
 .chip-meter {
   display: flex;
@@ -930,10 +932,11 @@ html, body {
 .chip-meter-label {
   color: var(--c-text-dim);
   letter-spacing: 0.15em;
+  font-size: 16px;
 }
 .chip-meter-value {
   color: var(--c-gold-bright);
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
 }
 .chip-bar {
@@ -989,11 +992,11 @@ html, body {
   margin: 6px 0;
 }
 .pot-display {
-  font-size: 16px;
+  font-size: 18px;
   color: var(--c-gold-bright);
   letter-spacing: 0.05em;
   background: rgba(0,0,0,0.6);
-  padding: 8px 22px;
+  padding: 10px 26px;
   border-radius: 16px;
   border: 2px solid var(--c-gold);
   cursor: help;
@@ -1004,7 +1007,7 @@ html, body {
   gap: 2px;
 }
 .pot-display small {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--c-text-dim);
   margin: 0;
   letter-spacing: 0;
@@ -1025,12 +1028,12 @@ html, body {
   min-width: 90px;
 }
 .bet-side-label {
-  font-size: 12px;
+  font-size: 15px;
   color: var(--c-text-dim);
   letter-spacing: 0.15em;
 }
 .bet-side-amount {
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--c-text);
   margin-top: 2px;
@@ -1088,7 +1091,7 @@ html, body {
   border: 1px solid var(--c-gold);
 }
 .zazazo-display { display: flex; flex-direction: column; gap: 6px; }
-.zazazo-label { font-size: 12px; color: var(--c-gold-bright); letter-spacing: 0.15em; }
+.zazazo-label { font-size: 15px; color: var(--c-gold-bright); letter-spacing: 0.15em; }
 .zazazo-bar {
   height: 14px;
   background: rgba(0,0,0,0.7);
@@ -1103,7 +1106,7 @@ html, body {
   transition: width 0.4s;
 }
 .zazazo-text {
-  font-size: 16px;
+  font-size: 20px;
   text-align: center;
   font-weight: 700;
   color: var(--c-red-bright);
@@ -1115,8 +1118,8 @@ html, body {
   background: rgba(0,0,0,0.4);
   border: 1px solid rgba(217,179,90,0.3);
   border-radius: 6px;
-  padding: 8px;
-  font-size: 12px;
+  padding: 10px;
+  font-size: 14px;
   line-height: 1.6;
   overflow-y: auto;
   color: var(--c-text-dim);
@@ -1455,7 +1458,7 @@ html, body {
   margin-bottom: 10px;
 }
 .psych-board-label, .psych-hand-label {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--c-gold-bright);
   letter-spacing: 0.2em;
   margin-bottom: 6px;
@@ -1478,9 +1481,10 @@ html, body {
 .psych-hand-cards .card .center-suit { font-size: 20px; }
 .psych-pot {
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 15px;
   color: var(--c-gold-bright);
   text-align: right;
+  font-weight: 600;
 }
 .psych-title {
   margin: 0 0 16px;
@@ -1506,16 +1510,16 @@ html, body {
   padding: 8px 14px;
 }
 .logic-rule-label {
-  font-size: 12px;
+  font-size: 15px;
   color: #6ec5ff;
   letter-spacing: 0.2em;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   font-weight: 700;
 }
 .logic-rule-text {
-  font-size: 14px;
+  font-size: 16px;
   color: #fff;
-  line-height: 1.55;
+  line-height: 1.65;
   letter-spacing: 0.02em;
 }
 .psych-situation {
@@ -1624,11 +1628,11 @@ html, body {
 }
 .result-stats {
   display: grid;
-  gap: 6px;
-  font-size: 15px;
+  gap: 8px;
+  font-size: 18px;
   margin-bottom: 20px;
   text-align: left;
-  padding: 16px 20px;
+  padding: 18px 22px;
   background: rgba(255,255,255,0.04);
   border-radius: 8px;
   border: 1px solid rgba(217,179,90,0.3);
@@ -1636,11 +1640,11 @@ html, body {
 .result-reason {
   background: rgba(217,179,90,0.1);
   border-left: 3px solid var(--c-gold);
-  padding: 10px 14px;
-  font-size: 14px;
+  padding: 14px 18px;
+  font-size: 16px;
   text-align: left;
   margin-bottom: 20px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--c-text);
 }
 .result-buttons { display: flex; gap: 12px; justify-content: center; }
@@ -1770,15 +1774,15 @@ html, body {
   flex: 1;
 }
 .cutin-name {
-  font-size: 14px;
+  font-size: 17px;
   color: var(--c-gold-bright);
   letter-spacing: 0.3em;
   font-weight: 700;
 }
 .cutin-line {
-  font-size: 19px;
+  font-size: 22px;
   color: #fff;
-  line-height: 1.5;
+  line-height: 1.55;
   font-weight: 500;
 }
 .rico-cutin.cutin-fail .cutin-text {
@@ -1837,7 +1841,7 @@ html, body {
   margin-top: 10px;
   padding-top: 8px;
   border-top: 1px dashed rgba(255,193,216,0.35);
-  font-size: 14px;
+  font-size: 17px;
   color: var(--c-gold-bright);
   letter-spacing: 0.2em;
   font-style: italic;
@@ -1883,7 +1887,7 @@ html, body {
   box-shadow: 0 0 60px rgba(200,37,58,0.5);
 }
 .hand-result-handno {
-  font-size: 13px;
+  font-size: 16px;
   color: var(--c-gold-bright);
   letter-spacing: 0.3em;
   margin-bottom: 6px;
@@ -1898,7 +1902,7 @@ html, body {
 .hand-result-card.lose .hand-result-title { color: var(--c-red-bright); }
 .hand-result-card.draw .hand-result-title { color: var(--c-text-dim); }
 .hand-result-pot {
-  font-size: 18px;
+  font-size: 22px;
   color: var(--c-gold-bright);
   margin-bottom: 16px;
 }
@@ -1917,7 +1921,7 @@ html, body {
   padding: 12px;
 }
 .result-cards-label {
-  font-size: 12px;
+  font-size: 15px;
   color: var(--c-text-dim);
   letter-spacing: 0.15em;
   margin-bottom: 6px;
@@ -1954,10 +1958,10 @@ html, body {
 }
 .result-community-row .red { color: var(--c-red-bright); }
 .result-reason-row {
-  font-size: 18px;
+  font-size: 20px;
   color: var(--c-text);
   margin: 12px 0;
-  padding: 12px;
+  padding: 14px;
   background: rgba(255,255,255,0.04);
   border-radius: 8px;
 }
@@ -1965,10 +1969,10 @@ html, body {
   display: flex;
   justify-content: space-around;
   margin: 16px 0;
-  font-size: 16px;
+  font-size: 20px;
   color: var(--c-gold-bright);
-  font-weight: 600;
-  padding: 10px;
+  font-weight: 700;
+  padding: 12px;
   background: rgba(0,0,0,0.3);
   border-radius: 8px;
 }
@@ -2098,12 +2102,12 @@ html, body {
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 .episode-no {
-  font-size: 13px;
+  font-size: 16px;
   color: var(--c-gold-bright);
   letter-spacing: 0.4em;
 }
 .episode-title {
-  font-size: 15px;
+  font-size: 19px;
   line-height: 1.75;
   font-weight: 600;
   color: #fff;
@@ -2112,6 +2116,7 @@ html, body {
   letter-spacing: 0.02em;
   text-shadow: 0 2px 6px rgba(0,0,0,0.9);
 }
+.episode-hint { font-size: 13px !important; }
 .episode-scene {
   background: rgba(217,179,90,0.08);
   border-left: 3px solid var(--c-gold);
@@ -2136,8 +2141,10 @@ html, body {
   margin-top: 8px;
 }
 .episode-card-bottom .episode-continue {
-  font-size: 17px;
-  padding: 10px 32px;
+  font-size: 20px;
+  padding: 14px 38px;
+  min-height: 56px;
+  letter-spacing: 0.15em;
 }
 
 /* ========== 圧倒モード演出 ========== */
@@ -2346,27 +2353,34 @@ html, body {
 
 /* ========== スマホ向け文字・タッチターゲット強化 ========== */
 .psych-situation {
-  font-size: 15px;
-  line-height: 1.65;
+  font-size: 17px;
+  line-height: 1.7;
   white-space: pre-line;
 }
 .psych-situation b {
   color: var(--c-gold-bright);
   font-weight: 700;
 }
-.psych-speech { font-size: 16px; }
-.zazazo-hint { font-size: 13px; line-height: 1.5; }
-.choice-btn { font-size: 15px; min-height: 56px; line-height: 1.5; }
-.choice-btn .choice-label { width: 32px; height: 32px; line-height: 32px; font-size: 15px; }
-.psych-rico, .psych-result-banner { font-size: 16px; }
-.btn { min-height: 40px; }
-.action-slot { min-height: 50px; }
-.action-slot .slot-label { font-size: 15px; }
-.action-slot small { font-size: 12px; }
-.mimi-thought-bubble { font-size: 16px; line-height: 1.6; }
-.opponent-speech { font-size: 16px; }
-.rico-bubble { font-size: 15px; line-height: 1.65; }
-.bet-side-amount { font-size: 20px; }
-.pot-amount { font-size: 32px; }
+.psych-speech { font-size: 18px; line-height: 1.55; }
+.zazazo-hint { font-size: 15px; line-height: 1.55; }
+.choice-btn { font-size: 17px; min-height: 64px; line-height: 1.55; }
+.choice-btn .choice-label { width: 36px; height: 36px; line-height: 36px; font-size: 17px; }
+.psych-rico, .psych-result-banner { font-size: 18px; }
+.btn { min-height: 44px; font-size: 16px; }
+.action-slot { min-height: 56px; }
+.action-slot .slot-label { font-size: 17px; }
+.action-slot small { font-size: 13px; }
+.mimi-thought-bubble { font-size: 18px; line-height: 1.6; }
+.opponent-speech { font-size: 18px; }
+.rico-bubble { font-size: 17px; line-height: 1.65; }
+.bet-side-amount { font-size: 24px; }
+.pot-amount { font-size: 38px; }
+.current-hand-display { font-size: 16px; }
+.panyu-label { font-size: 15px; }
+.panyu-mood { font-size: 16px; }
+/* カードのランク・スート文字 */
+.card .rank { font-size: 22px; }
+.card .suit { font-size: 24px; }
+.card .center-suit { font-size: 36px; }
 
 /* 固定キャンバスのため媒体クエリ不要 */
