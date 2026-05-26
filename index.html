@@ -194,16 +194,30 @@
 
       <div class="pot-row">
         <div class="bet-side bet-side-opponent">
-          <div class="bet-side-label" data-bind="opponentBetLabel">相手</div>
-          <div class="bet-side-amount" data-bind="opponentBetAmount">0</div>
+          <div class="bet-chip-zone bet-chip-left" data-bind="opponentBetChips"></div>
+          <div class="bet-side-body">
+            <div class="bet-side-label" data-bind="opponentBetLabel">相手</div>
+            <div class="bet-side-amount" data-bind="opponentBetAmount">0</div>
+          </div>
         </div>
         <div class="pot-display" title="ポット = このハンドで賭けられたチップの合計。勝った方が総取り。">
-          🪙 ポット <small>(合計)</small>
-          <div class="pot-amount" data-bind="pot">0</div>
+          <div class="pot-frame">
+            <img class="pot-img" src="assets/ui/pot.png" alt=""
+                 onerror="this.style.display='none'; this.parentElement.classList.add('pot-img-missing');">
+            <div class="pot-img-fallback">🏺</div>
+            <div class="pot-body">
+              <div class="pot-label">ポット <small>(合計)</small></div>
+              <div class="pot-amount" data-bind="pot">0</div>
+            </div>
+          </div>
+          <div class="pot-coin-stack" data-bind="potCoinStack"></div>
         </div>
         <div class="bet-side bet-side-player">
-          <div class="bet-side-label">ミミ</div>
-          <div class="bet-side-amount" data-bind="playerBetAmount">0</div>
+          <div class="bet-side-body">
+            <div class="bet-side-label">ミミ</div>
+            <div class="bet-side-amount" data-bind="playerBetAmount">0</div>
+          </div>
+          <div class="bet-chip-zone bet-chip-right" data-bind="playerBetChips"></div>
         </div>
       </div>
     </section>

@@ -1412,7 +1412,7 @@ html, body {
   color: var(--c-gold-bright);
   letter-spacing: 0.05em;
   background: rgba(0,0,0,0.6);
-  padding: 10px 26px;
+  padding: 8px 22px 10px;
   border-radius: 16px;
   border: 2px solid var(--c-gold);
   cursor: help;
@@ -1421,27 +1421,99 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  position: relative;
 }
-.pot-display small {
-  font-size: 14px;
-  color: var(--c-text-dim);
-  margin: 0;
-  letter-spacing: 0;
+.pot-frame {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
-.pot-amount {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--c-gold-bright);
+.pot-img {
+  width: 56px; height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 8px rgba(245,215,122,0.4));
+}
+.pot-img-fallback {
+  display: none;
+  font-size: 44px;
   line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.7));
 }
-.bet-side {
+.pot-frame.pot-img-missing .pot-img-fallback { display: block; }
+.pot-body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 6px 14px;
+}
+.pot-label {
+  font-size: 14px;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.1em;
+}
+.pot-label small {
+  font-size: 11px;
+  color: var(--c-text-dim);
+  margin-left: 2px;
+  letter-spacing: 0;
+}
+.pot-amount {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--c-gold-bright);
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(245,215,122,0.6), 0 2px 4px rgba(0,0,0,0.8);
+}
+.pot-coin-stack {
+  margin-top: 4px;
+  min-height: 22px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.pot-coin-stack .chip-stack {
+  position: static;
+  transform: none;
+  opacity: 1;
+  min-height: 0;
+  gap: 4px;
+}
+.pot-coin-stack .chip-pic { width: 20px; height: 20px; margin-top: -14px; }
+.bet-side {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
   background: rgba(0,0,0,0.5);
   border-radius: 10px;
-  min-width: 90px;
+  min-width: 130px;
+}
+.bet-side-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 auto;
+}
+.bet-chip-zone {
+  flex: 0 0 32px;
+  min-height: 48px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
+}
+.bet-chip-zone .chip-stack {
+  position: static;
+  transform: none;
+  opacity: 1;
+  min-height: 0;
+  gap: 2px;
+}
+.bet-chip-zone .chip-pic {
+  width: 22px; height: 22px;
+  margin-top: -16px;
 }
 .bet-side-label {
   font-size: 15px;

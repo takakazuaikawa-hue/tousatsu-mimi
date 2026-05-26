@@ -1385,10 +1385,16 @@ function applyBindings() {
       case 'opponentChips': el.textContent = state.opponentChips; break;
       case 'playerChips': el.textContent = state.playerChips; break;
       case 'pot':
-        el.innerHTML = `<span class="amt-num">${state.pot}</span>${renderChipStack(state.pot, 'pot')}`;
-        el.classList.toggle('big-pot', state.pot >= 1000);
-        el.classList.toggle('huge-pot', state.pot >= 2500);
+        el.textContent = state.pot;
+        const potDisp = el.closest('.pot-display');
+        if (potDisp) {
+          potDisp.classList.toggle('big-pot', state.pot >= 1000);
+          potDisp.classList.toggle('huge-pot', state.pot >= 2500);
+        }
         break;
+      case 'potCoinStack': el.innerHTML = renderChipStack(state.pot, 'pot'); break;
+      case 'opponentBetChips': el.innerHTML = state.currentBetOpponent > 0 ? renderChipStack(state.currentBetOpponent, 'bet') : ''; break;
+      case 'playerBetChips':   el.innerHTML = state.currentBetPlayer   > 0 ? renderChipStack(state.currentBetPlayer,   'bet') : ''; break;
       case 'panyuValue': el.textContent = state.panyu; break;
       case 'panyuMax': el.textContent = state.panyuMax; break;
       case 'panyuFill': el.style.width = `${(state.panyu / state.panyuMax) * 100}%`; break;
@@ -1406,14 +1412,14 @@ function applyBindings() {
       case 'opponentBetLabel': el.textContent = state.opponentName || '相手'; break;
       case 'opponentBetAmount': {
         const v = state.currentBetOpponent;
-        el.innerHTML = v > 0 ? `<span class="amt-num">+${v}</span>${renderChipStack(v, 'bet')}` : '—';
+        el.textContent = v > 0 ? `+${v}` : '—';
         const side = el.closest('.bet-side');
         if (side) side.classList.toggle('empty', v === 0);
         break;
       }
       case 'playerBetAmount': {
         const v = state.currentBetPlayer;
-        el.innerHTML = v > 0 ? `<span class="amt-num">+${v}</span>${renderChipStack(v, 'bet')}` : '—';
+        el.textContent = v > 0 ? `+${v}` : '—';
         const side = el.closest('.bet-side');
         if (side) side.classList.toggle('empty', v === 0);
         break;
