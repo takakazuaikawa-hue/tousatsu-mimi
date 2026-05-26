@@ -2659,21 +2659,12 @@ function showPanyuClicker(totalTaps, onComplete) {
     if (tapped === 10) showCombo(10);
     else if (tapped === 20) showCombo(20);
     else if (tapped === 25) showCombo(25);
-    // ぷにぷに アニメーション再生
-    blob.classList.remove('wobble');
+    // ぷにぷに アニメーション再生（タップ後は弾むアイドルに戻す）
+    blob.classList.remove('wobble', 'wobble-fast');
     void blob.offsetWidth;
-    blob.classList.add(fastTap ? 'wobble-fast' : 'wobble');
-    // タップごとに位置をシフト（progress に応じて移動量を増やす）
-    if (count > 0) {
-      const progress = tapped / totalTaps;
-      const maxDist = 60 + progress * 140; // 序盤60px → 終盤200px
-      const angle = rand() * Math.PI * 2;
-      const dx = Math.cos(angle) * maxDist;
-      const dy = Math.sin(angle) * maxDist;
-      blob.style.translate = `${dx}px ${dy}px`;
-    } else {
-      blob.style.translate = '0 0';
-    }
+    const wobbleCls = fastTap ? 'wobble-fast' : 'wobble';
+    blob.classList.add(wobbleCls);
+    setTimeout(() => blob.classList.remove(wobbleCls), fastTap ? 220 : 320);
     if (count <= 0) {
       completed = true;
       blob.classList.add('panyu-complete');
