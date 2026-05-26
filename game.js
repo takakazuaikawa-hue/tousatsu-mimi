@@ -1699,13 +1699,15 @@ function renderStageList() {
       </div>`;
     }
     // 初期チップ：保存値→デフォルト
-    const isLecture = (sid === 'rico_tutorial');
-    const baseChips = opp.chips || 1000;
+    // リコ講義は対象外。クリア後のリコ（🔥本気モード）は2000ベース
+    const isRicoLecture = (sid === 'rico_tutorial') && !cleared;
+    const baseChips = (sid === 'rico_tutorial') ? 2000 : (opp.chips || 1000);
     const bonus = chipBonusTotal();
     const maxChips = baseChips + bonus;
     const savedChip = (save.chipChoice && save.chipChoice[sid]) || baseChips;
     const curChip = Math.max(baseChips, Math.min(maxChips, savedChip));
-    const showSlider = !isLecture && bonus > 0;
+    const showSlider = !isRicoLecture && bonus > 0;
+    const showChipRow = !isRicoLecture;
     return `<div class="stage-card ${recommend ? 'recommended' : ''} ${cleared ? 'cleared' : ''} ${opp.isBoss ? 'boss-stage' : ''}">
       ${portrait}
       <div class="stage-card-body">
@@ -1718,8 +1720,8 @@ function renderStageList() {
         <div class="stage-name">${opp.name}</div>
         <div class="stage-desc">${opp.desc}</div>
         <div class="stage-reward">初回報酬：${opp.rewardFirst}コイン${cleared ? '<small>（取得済み）</small>' : ''}</div>
-        ${isLecture ? '' : `<div class="stage-chips-row">
-          <span class="stage-chips-label">💰 初期</span>
+        ${!showChipRow ? '' : `<div class="stage-chips-row">
+          <span class="stage-chips-label">💰 初期${sid === 'rico_tutorial' ? '(🔥)' : ''}</span>
           <span class="stage-chips-value" data-chip-display="${sid}">${curChip}</span>
           ${showSlider ? `<input class="stage-chips-slider" type="range" min="${baseChips}" max="${maxChips}" step="100" value="${curChip}" data-chip-slider="${sid}">` : ''}
         </div>`}
@@ -2653,9 +2655,10 @@ function startBattle(opponentId) {
   // カードのスライダーで選んだチップ数を採用（即座にバトル開始）
   if (!save.chipChoice) save.chipChoice = {};
   const isSerious = opponentId === 'rico_tutorial' && window.__ricoSeriousMode === true;
+  const isLecture = opponentId === 'rico_tutorial' && !isSerious;
   const base = isSerious ? 2000 : ((OPPONENTS[opponentId]?.chips) || 1000);
   const stored = save.chipChoice[opponentId];
-  if (opponentId !== 'rico_tutorial' || isSerious) {
+  if (!isLecture) {
     window.__chosenStartChips = stored ? Math.max(base, stored) : base;
   }
   const isFirstTime = !save.firstClearRewardClaimed.includes(opponentId);
