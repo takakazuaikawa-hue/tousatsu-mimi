@@ -2590,62 +2590,111 @@ function usePanyuSense(qid, isFree) {
   });
 }
 
-// ぷにぷに30タップミニゲーム
+// ぱにゅぱにゅ30タップミニゲーム
 function showPanyuClicker(totalTaps, onComplete) {
   let count = totalTaps;
+  let tapped = 0;
+  let lastTapTime = 0;
   const overlay = document.createElement('div');
   overlay.className = 'panyu-clicker-overlay';
   overlay.innerHTML = `
-    <div class="panyu-clicker-label-top">ぷにぷにタップ ${totalTaps} 回！</div>
+    <div class="panyu-clicker-label-top">ぱにゅぱにゅタップ ${totalTaps} 回！</div>
     <div class="panyu-clicker-blob" id="panyu-blob">
       <div class="panyu-clicker-inner">
         <div class="panyu-clicker-count">${count}</div>
         <div class="panyu-clicker-sublabel">タップ！</div>
       </div>
+      <div class="panyu-progress-ring">
+        <svg viewBox="0 0 100 100" width="100%" height="100%">
+          <circle class="panyu-ring-bg" cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="4"/>
+          <circle class="panyu-ring-fill" cx="50" cy="50" r="46" fill="none" stroke="#fff" stroke-width="4"
+                  stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round"
+                  transform="rotate(-90 50 50)" />
+        </svg>
+      </div>
     </div>
+    <div class="panyu-combo" data-bind="panyuCombo"></div>
   `;
   document.body.appendChild(overlay);
   const blob = overlay.querySelector('#panyu-blob');
   const countEl = overlay.querySelector('.panyu-clicker-count');
+  const ringFill = overlay.querySelector('.panyu-ring-fill');
+  const comboEl = overlay.querySelector('.panyu-combo');
   let completed = false;
+
+  const updateColor = () => {
+    const ratio = tapped / totalTaps;
+    // ピンク→赤→ゴールドへ変化
+    const hueShift = ratio * 30;  // 0→30度
+    blob.style.filter = `hue-rotate(-${hueShift}deg) saturate(${1 + ratio * 0.4})`;
+    // プログレスリング更新
+    const offset = 289 * (1 - ratio);
+    ringFill.style.strokeDashoffset = offset;
+  };
+
+  const showCombo = (n) => {
+    comboEl.textContent = `×${n} COMBO!`;
+    comboEl.classList.remove('show');
+    void comboEl.offsetWidth;
+    comboEl.classList.add('show');
+  };
+
   const onTap = (e) => {
     if (completed) return;
     e.preventDefault();
     e.stopPropagation();
+    const now = Date.now();
+    const fastTap = (now - lastTapTime) < 250;
+    lastTapTime = now;
     count--;
+    tapped++;
     countEl.textContent = Math.max(0, count);
-    // パーティクル
-    spawnPanyuParticle(overlay);
+    updateColor();
+    // 振動（モバイル）
+    if (navigator.vibrate) navigator.vibrate(30);
+    // パーティクル（高速タップで増量）
+    const burstN = fastTap ? 3 : 1;
+    for (let i = 0; i < burstN; i++) spawnPanyuParticle(overlay);
+    // 10/20で COMBOボーナス
+    if (tapped === 10) showCombo(10);
+    else if (tapped === 20) showCombo(20);
+    else if (tapped === 25) showCombo(25);
     // ぷにぷに アニメーション再生
     blob.classList.remove('wobble');
     void blob.offsetWidth;
-    blob.classList.add('wobble');
+    blob.classList.add(fastTap ? 'wobble-fast' : 'wobble');
     if (count <= 0) {
       completed = true;
       blob.classList.add('panyu-complete');
+      // 完了 SE 風振動
+      if (navigator.vibrate) navigator.vibrate([60, 30, 80, 30, 120]);
+      // バースト
+      for (let i = 0; i < 16; i++) spawnPanyuParticle(overlay);
       const label = overlay.querySelector('.panyu-clicker-label-top');
-      if (label) label.textContent = '✨ ぱにゅぱにゅ発動！ ✨';
+      if (label) label.innerHTML = '<span class="panyu-burst-text">✨ ぱにゅぱにゅ発動！ ✨</span>';
       setTimeout(() => {
         overlay.remove();
         if (onComplete) onComplete();
-      }, 700);
+      }, 900);
     }
   };
   blob.addEventListener('click', onTap);
   blob.addEventListener('touchstart', onTap, { passive: false });
+  updateColor();
 }
 
 function spawnPanyuParticle(parent) {
   const p = document.createElement('div');
   p.className = 'panyu-particle';
-  p.textContent = pick(['💖', '✨', '♡', '🌸']);
-  // ランダム位置
+  p.textContent = pick(['💖', '✨', '♡', '🌸', '💫', '🐰']);
   const angle = rand() * Math.PI * 2;
-  const dist = 60 + rand() * 40;
+  const dist = 70 + rand() * 80;
   p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
   p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+  // ランダムフォントサイズで個性を
+  p.style.fontSize = (20 + rand() * 16) + 'px';
   parent.appendChild(p);
-  setTimeout(() => p.remove(), 700);
+  setTimeout(() => p.remove(), 800);
 }
 
 function resolvePsych(qid, choice, btn) {
