@@ -29,7 +29,90 @@ html, body {
   background: #000;
   color: var(--c-text);
   overflow: hidden;
+  /* スマホでブラウザのオートズームを無効化、タップ反応を高速化 */
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  /* iOSのスクロールバウンス防止 */
+  overscroll-behavior: none;
 }
+
+/* 縦持ち警告：スマホ縦画面でのみ表示 */
+#portrait-warning {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, var(--c-purple) 0%, var(--c-bg-dark) 100%);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+@media (max-width: 900px) and (orientation: portrait) {
+  #portrait-warning { display: flex; }
+  #stage { display: none; }
+}
+.portrait-warning-inner {
+  text-align: center;
+  color: var(--c-text);
+  max-width: 360px;
+}
+.rotate-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  animation: rotateHint 2s ease-in-out infinite;
+  display: inline-block;
+}
+@keyframes rotateHint {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(90deg); }
+}
+.portrait-message h2 {
+  color: var(--c-gold-bright);
+  font-size: 22px;
+  margin: 0 0 14px;
+  letter-spacing: 0.15em;
+}
+.portrait-message p {
+  color: var(--c-text);
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 8px 0;
+}
+.portrait-tip {
+  font-size: 13px !important;
+  color: var(--c-gold-bright) !important;
+  margin-top: 18px !important;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(217,179,90,0.4);
+}
+
+/* 全画面ボタン：横向きスマホでフルスクリーン未適用時 */
+#fullscreen-btn {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 9998;
+  padding: 12px 22px;
+  background: linear-gradient(180deg, var(--c-red) 0%, #7a1525 100%);
+  border: 2px solid var(--c-gold-bright);
+  border-radius: 10px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6), 0 0 24px rgba(245,215,122,0.3);
+  animation: fsBtnPulse 2.5s ease-in-out infinite;
+}
+@keyframes fsBtnPulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(0,0,0,0.6), 0 0 24px rgba(245,215,122,0.3); }
+  50% { box-shadow: 0 4px 16px rgba(0,0,0,0.6), 0 0 40px rgba(245,215,122,0.6); }
+}
+#fullscreen-btn:active { transform: scale(0.96); }
 
 /* 固定アスペクト比ステージ：1280×800を基準にJSでスケーリング */
 #stage {

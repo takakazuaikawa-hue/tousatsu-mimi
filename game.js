@@ -2426,7 +2426,53 @@ function fitStage() {
   document.documentElement.style.setProperty('--game-scale', scale);
 }
 window.addEventListener('resize', fitStage);
+window.addEventListener('orientationchange', () => setTimeout(fitStage, 100));
 fitStage();
+
+//=============================================================
+// 19b. スマホ向け：全画面ボタンと向き検知
+//=============================================================
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      || (window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
+}
+function isFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+function requestGameFullscreen() {
+  const el = document.documentElement;
+  const fn = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (fn) {
+    try {
+      const p = fn.call(el);
+      if (p && p.then) p.catch(() => {});
+    } catch (e) { /* user gesture でないと拒否される */ }
+  }
+  // 画面向きをロック（対応端末のみ）
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('landscape').catch(() => {});
+  }
+}
+function updateFullscreenBtn() {
+  const btn = document.getElementById('fullscreen-btn');
+  if (!btn) return;
+  const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+  // スマホ・横向き・未フルスクリーン時のみ表示
+  btn.hidden = !(isMobile() && isLandscape && !isFullscreen());
+}
+const fsBtn = document.getElementById('fullscreen-btn');
+if (fsBtn) {
+  fsBtn.addEventListener('click', () => {
+    requestGameFullscreen();
+    setTimeout(updateFullscreenBtn, 300);
+  });
+}
+window.addEventListener('orientationchange', () => setTimeout(updateFullscreenBtn, 200));
+window.addEventListener('resize', updateFullscreenBtn);
+document.addEventListener('fullscreenchange', updateFullscreenBtn);
+document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+// 初回判定
+setTimeout(updateFullscreenBtn, 200);
 
 //=============================================================
 // 20. 起動

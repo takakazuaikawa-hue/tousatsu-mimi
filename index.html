@@ -2,6 +2,11 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#14081d">
 <title>闘札圧倒伝ミミ 〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -9,6 +14,24 @@
 <div id="stage">
   <div id="app"></div>
 </div>
+
+<!-- 縦持ち警告：スマホ縦画面で表示 -->
+<div id="portrait-warning">
+  <div class="portrait-warning-inner">
+    <div class="rotate-icon">📱↻</div>
+    <div class="portrait-message">
+      <h2>横向きでプレイしてください</h2>
+      <p>このゲームは横向き画面に最適化されています。<br>
+      端末を横にすると、自動的にフルスクリーン表示されます。</p>
+      <p class="portrait-tip">💡 画面回転ロックがオンの場合は解除してください</p>
+    </div>
+  </div>
+</div>
+
+<!-- 全画面化ボタン：横向きでフルスクリーン未適用時に表示 -->
+<button id="fullscreen-btn" type="button" hidden>
+  ⛶ タップして全画面で遊ぶ
+</button>
 
 <!-- 画面テンプレート群 -->
 <template id="tpl-title">
