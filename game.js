@@ -1803,6 +1803,7 @@ const SHOP_ITEMS = [
   { id: 'skin_red_gold_card',  cat: 'skin',  name: '赤金カジノカード',         price: 300, desc: 'カード裏デザインを赤金カジノ風に変更' },
   { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 500, desc: 'テーブル背景をVIP風に変更' },
   { id: 'memory_ending',       cat: 'memory', name: 'エンディング映像',        price: 500, desc: 'クリア後限定。あの感動のエンディングを何度でも視聴可能に', requires: 'ending' },
+  { id: 'memory_ending_theme', cat: 'memory', name: '主題歌：ポーカーフェイスの終わり〜変な件〜', price: 400, desc: 'クリア後限定。エンディング主題歌を何度でも視聴可能に', requires: 'ending' },
 ];
 
 const SHOP_COMMENTS = {
@@ -1815,6 +1816,7 @@ const SHOP_COMMENTS = {
   skin_red_gold_card:  '見た目重視のお嬢さんに。テーブルが華やぎますよ',
   table_vip:           'VIPのお客様気分でお楽しみいただける一品。気分転換にぜひ',
   memory_ending:       'これは特別な品ですよ。あの夜の決着を、何度でも振り返れる映像です',
+  memory_ending_theme: 'あの夜を彩った主題歌……何度でも聴き返したくなる一曲ですよ',
 };
 
 function renderShopItems(cat) {
@@ -1829,7 +1831,9 @@ function renderShopItems(cat) {
     if (i.requires === 'ending' && !save.endingUnlocked) lockedReason = '🔒 ヴェルベット撃破で解放';
     const canBuy = !owned && !lockedReason && save.coins >= i.price;
     // 視聴/再生系の購入後ボタン
-    const playableId = (i.id === 'memory_ending') ? 'play-ending' : null;
+    const playableId = (i.id === 'memory_ending') ? 'play-ending'
+                      : (i.id === 'memory_ending_theme') ? 'play-ending-theme'
+                      : null;
     return `<div class="shop-item ${owned ? 'owned' : ''} ${lockedReason ? 'locked' : ''}" data-item="${i.id}">
       <div class="shop-item-name">${i.name}</div>
       <div class="shop-item-desc">${i.desc}</div>
@@ -2268,8 +2272,8 @@ function onAction(e) {
         render();
       }
       break;
-    case 'back-title':    state = defaultState(); render(); break;
-    case 'back-stage':    goStageSelect(); break;
+    case 'back-title':    stopEndingBgm(); state = defaultState(); render(); break;
+    case 'back-stage':    stopEndingBgm(); goStageSelect(); break;
     case 'open-shop':     state.screen = 'shop'; render(); break;
     case 'reset-save':    resetProgress(); break;
     case 'buy-item':      buyItem(data.itemId); break;
@@ -2307,6 +2311,7 @@ function onAction(e) {
     case 'toggle-psych':  save.psychEnabled = !(save.psychEnabled !== false); saveProgress(); applyBindings(); break;
     case 'toggle-logic':  save.logicEnabled = !(save.logicEnabled !== false); saveProgress(); applyBindings(); break;
     case 'play-ending':   state.screen = 'ending'; render(); break;
+    case 'play-ending-theme': toggleEndingThemePreview(); break;
     case 'toggle-backdoor':
       save.backdoorOn = !save.backdoorOn;
       saveProgress();
@@ -2325,6 +2330,15 @@ function startEndingShow() {
   const stage = document.getElementById('ending-stage');
   if (!stage) return;
   stage.innerHTML = '';
+  // ロビーBGMを止めてエンディングテーマを再生
+  const lobbyA = document.getElementById('lobby-bgm-audio');
+  if (lobbyA) lobbyA.pause();
+  const endA = document.getElementById('ending-bgm-audio');
+  if (endA) {
+    endA.currentTime = 0;
+    endA.volume = 0.55;
+    endA.play().catch(()=>{});
+  }
   // 星空＋光の粒子背景
   const bg = document.createElement('div');
   bg.className = 'ending-bg';
@@ -2480,6 +2494,32 @@ function goStageSelect() {
   state.lobbyRicoChangedAt = 'stageSelect';
   render();
   tryStartLobbyBgm();
+}
+
+function stopEndingBgm() {
+  const a = document.getElementById('ending-bgm-audio');
+  if (a) { a.pause(); }
+}
+
+function toggleEndingThemePreview() {
+  const a = document.getElementById('ending-bgm-audio');
+  if (!a) return;
+  if (a.paused) {
+    // ロビーBGMを下げて主題歌を流す
+    const lobbyA = document.getElementById('lobby-bgm-audio');
+    if (lobbyA) lobbyA.pause();
+    a.currentTime = 0;
+    a.volume = 0.55;
+    a.play().catch(()=>{});
+    // 再生中はボタンを「⏹ 停止」に
+    document.querySelectorAll('[data-action="play-ending-theme"]').forEach(b => b.textContent = '⏹ 停止');
+    a.onended = () => {
+      document.querySelectorAll('[data-action="play-ending-theme"]').forEach(b => b.textContent = '▶ 視聴');
+    };
+  } else {
+    a.pause();
+    document.querySelectorAll('[data-action="play-ending-theme"]').forEach(b => b.textContent = '▶ 視聴');
+  }
 }
 
 function tryStartLobbyBgm() {
