@@ -115,7 +115,10 @@
       <button class="lobby-bgm-toggle" data-action="toggle-bgm" title="BGMオン/オフ">🔊</button>
       <span class="lobby-tips">💡 セリナ・グラーノ・ヴェルベット戦の初回クリアで戦術ノート自動解放</span>
     </div>
-    <audio id="lobby-bgm-audio" loop preload="auto" src="assets/bgm/lobby.mp3"></audio>
+    <audio id="lobby-bgm-audio" loop preload="auto">
+      <source src="assets/bgm/lobby.mp3" type="audio/mpeg">
+      <source src="assets/bgm/velvet-night-casino.m4a" type="audio/mp4">
+    </audio>
     <audio id="ending-bgm-audio" preload="auto" src="assets/bgm/ending.mp3"></audio>
   </div>
 </template>
