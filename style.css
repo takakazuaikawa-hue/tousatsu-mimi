@@ -824,13 +824,14 @@ html, body {
    1920x1080想定だが、CSS gridでレスポンシブ */
 .battle-screen {
   grid-template-columns: 240px 1fr 290px;
-  grid-template-rows: 44px 1fr 260px;
+  grid-template-rows: 44px 1fr 280px;
   grid-template-areas:
     "hud hud hud"
     "left center right"
     "footer footer footer";
   gap: 6px;
   padding: 4px;
+  height: 800px;
 }
 .battle-screen .top-hud { grid-area: hud; border-radius: 6px; font-size: 18px; }
 .battle-screen .top-hud .hand-info { color: var(--c-gold-bright); font-size: 20px; font-weight: 600; }
@@ -1147,10 +1148,11 @@ html, body {
   display: grid;
   grid-template-columns: 180px 1fr 300px;
   gap: 10px;
-  padding: 10px 12px 12px;
+  padding: 10px 12px 14px;
   background: rgba(0,0,0,0.55);
   border-radius: 8px;
   border: 1px solid rgba(217,179,90,0.4);
+  overflow: hidden;
 }
 .mimi-area {
   display: flex;
@@ -1179,6 +1181,8 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-height: 0;
+  overflow: hidden;
 }
 .mimi-hand-area .player-row {
   display: flex;
