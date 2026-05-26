@@ -3600,7 +3600,56 @@ function playerAllIn() {
   state.isPlayerTurn = false;
   state.mimiThought = '「オールイン！」';
   render();
-  setTimeout(opponentTurn, 700);
+  showAllInCutIn('player', amount);
+  setTimeout(opponentTurn, 1800);
+}
+
+// オールイン カットイン演出
+function showAllInCutIn(side, amount) {
+  // 既存があれば消す
+  const existing = document.querySelector('.allin-cutin');
+  if (existing) existing.remove();
+  const isPlayer = side === 'player';
+  const name = isPlayer ? 'ミミ' : (state.opponentName || '相手');
+  const imgKey = isPlayer ? 'mimi' : (state.opponentImgKey || 'polka');
+  const accentClass = isPlayer ? 'allin-player' : 'allin-opponent';
+  const overlay = document.createElement('div');
+  overlay.className = `allin-cutin ${accentClass}`;
+  overlay.innerHTML = `
+    <div class="allin-streak"></div>
+    <div class="allin-streak allin-streak-2"></div>
+    <div class="allin-burst"></div>
+    <div class="allin-portrait">
+      <img src="assets/characters/${imgKey}_default.png" alt="${name}" onerror="window.assetFallback(this,'${imgKey}')">
+    </div>
+    <div class="allin-text-wrap">
+      <div class="allin-kanji">全</div>
+      <div class="allin-title">ALL IN</div>
+      <div class="allin-sub">${name}</div>
+      <div class="allin-amount">${amount} チップ</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  // 振動
+  if (navigator.vibrate) navigator.vibrate([60, 30, 100]);
+  // バースト粒子
+  for (let i = 0; i < 18; i++) {
+    setTimeout(() => spawnAllInSpark(overlay), i * 40);
+  }
+  setTimeout(() => overlay.classList.add('out'), 1500);
+  setTimeout(() => overlay.remove(), 2100);
+}
+function spawnAllInSpark(parent) {
+  const s = document.createElement('div');
+  s.className = 'allin-spark';
+  s.textContent = pick(['✨', '💥', '🔥', '⭐']);
+  const angle = rand() * Math.PI * 2;
+  const dist = 200 + rand() * 280;
+  s.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+  s.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+  s.style.fontSize = (22 + rand() * 18) + 'px';
+  parent.appendChild(s);
+  setTimeout(() => s.remove(), 1400);
 }
 
 //=============================================================
@@ -3675,11 +3724,16 @@ function opponentTurn() {
   state.opponentSpeech = opponentSpeech(action);
   log('bets', { actor: 'opponent', type: 'bet', size: action.size, amount, intent: action.intent });
   log('reactions', { intent: action.intent, speech: state.opponentSpeech });
-  // 大ベット時に重さ演出＋相手カットイン
-  const bigBet = (action.size === 'pot_2_3' || action.size === 'pot_1' || action.size === 'allin');
-  if (bigBet) {
-    triggerBetShake(action.size);
-    setTimeout(() => showOpponentCutIn(state.opponentSpeech, action.size), 300);
+  // オールイン特別演出
+  if (action.size === 'allin' || state.opponentChips === 0) {
+    showAllInCutIn('opponent', amount);
+  } else {
+    // 大ベット時に重さ演出＋相手カットイン
+    const bigBet = (action.size === 'pot_2_3' || action.size === 'pot_1');
+    if (bigBet) {
+      triggerBetShake(action.size);
+      setTimeout(() => showOpponentCutIn(state.opponentSpeech, action.size), 300);
+    }
   }
 
   const bigEnough = (action.size === 'pot_2_3' || action.size === 'pot_1' || action.size === 'allin');
