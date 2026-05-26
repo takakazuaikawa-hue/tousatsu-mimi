@@ -37,23 +37,45 @@ function defaultSave() {
   };
 }
 
+const SAVE_VERSION = 2;
 let save = null;
 function loadProgress() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return defaultSave();
     const data = JSON.parse(raw);
-    return { ...defaultSave(), ...data };
+    // 既知のフィールドだけマージ。未知のバージョンは将来用にそのまま受け入れ
+    const merged = { ...defaultSave(), ...data };
+    merged.version = SAVE_VERSION;
+    return merged;
   } catch (e) {
-    console.warn('Save load failed', e);
+    console.warn('Save load failed; using default', e);
     return defaultSave();
   }
 }
 function saveProgress() {
   try {
+    // ログ膨張対策：各カテゴリ最新500件のみ保持
+    if (save && save.logs) {
+      Object.keys(save.logs).forEach(k => {
+        if (Array.isArray(save.logs[k]) && save.logs[k].length > 500) {
+          save.logs[k] = save.logs[k].slice(-500);
+        }
+      });
+    }
     localStorage.setItem(SAVE_KEY, JSON.stringify(save));
   } catch (e) {
-    console.warn('Save failed', e);
+    // クォータ超過なら logs を切り詰めて再試行
+    if (e && e.name === 'QuotaExceededError' && save) {
+      try {
+        save.logs = { actions: [], bets: [], reactions: [], psych: [] };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+      } catch (e2) {
+        console.warn('Save retry failed', e2);
+      }
+    } else {
+      console.warn('Save failed', e);
+    }
   }
 }
 function resetProgress() {
@@ -3868,6 +3890,8 @@ function spawnAllInSpark(parent) {
 // 13. 相手アクション
 //=============================================================
 function opponentTurn() {
+  // 画面遷移後のゾンビ実行ガード
+  if (state.screen !== 'battle' || state.handPhase === 'idle' || state.handPhase === 'showdown') return;
   const need = state.currentBetPlayer - state.currentBetOpponent;
   // 相手の手札強度を計算
   const allCards = [...state.opponentHand, ...state.community];
@@ -3996,6 +4020,7 @@ function opponentPreflopStrength(hand) {
 // 14. ハンド進行（フロップ → ターン＆リバー → ショーダウン）
 //=============================================================
 function advanceAfterCall() {
+  if (state.screen !== 'battle') return;
   // ベットが揃った
   state.currentBetPlayer = 0;
   state.currentBetOpponent = 0;
@@ -4070,6 +4095,14 @@ function advanceAfterCall() {
 // 15. 心理バトル
 //=============================================================
 function triggerPsychBattle(qid) {
+  // 多重起動・画面遷移ガード
+  if (state.psychRoot && state.psychRoot.isConnected) return;
+  if (state.screen !== 'battle' && !state.lectureMode) return;
+  if (!qid || !PSYCH_QUESTIONS[qid]) {
+    console.warn('Psych battle: invalid qid', qid);
+    return;
+  }
+  state.psychResolving = false; // 新ラウンドで再解放
   state.psychPending = true;
   // 出題履歴に追加
   if (!state.seenQuestions) state.seenQuestions = new Set();
@@ -4335,7 +4368,11 @@ function spawnPanyuParticle(parent) {
 }
 
 function resolvePsych(qid, choice, btn) {
-  if (!state.psychRoot) return;
+  // 多重解決ガード＋画面遷移ガード
+  if (state.psychResolving) return;
+  if (!state.psychRoot || !state.psychRoot.isConnected) return;
+  if (state.screen !== 'battle' && !state.lectureMode) return;
+  state.psychResolving = true;
   // 全選択肢＆ぱにゅぱにゅを無効化
   state.psychRoot.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
   const senseBtnLock = state.psychRoot.querySelector('[data-bind="panyuSenseBtn"]');
@@ -4373,7 +4410,7 @@ function resolvePsych(qid, choice, btn) {
     state.panyu = Math.max(0, state.panyu + eff.panyu);
     // 正解の選択肢を強調表示（学習用）
     const correctChoice = q.choices.find(c => c.correct);
-    if (correctChoice && state.psychRoot) {
+    if (correctChoice && state.psychRoot && state.psychRoot.isConnected) {
       state.psychRoot.querySelectorAll('.choice-btn').forEach(b => {
         if (b.dataset.choiceId === correctChoice.id) {
           b.style.borderColor = 'var(--c-gold-bright)';
@@ -4483,6 +4520,7 @@ function showdown() {
 }
 
 function endHand() {
+  if (state.screen !== 'battle') return;
   state.handPhase = 'idle';
   state.opponentSpeech = '';
   // 連勝カウンタ更新
