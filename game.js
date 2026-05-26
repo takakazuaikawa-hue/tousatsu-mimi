@@ -1632,6 +1632,7 @@ function startHand() {
   }
   state.community = [];
   state.psychResolved = false;
+  state.logicResolvedStreet = false;
   state.psychPending = false;
   state.handPhase = 'preflop';
   state.isPlayerTurn = true;
@@ -1814,13 +1815,16 @@ function opponentTurn() {
     return;
   }
 
-  // 論理バトル：心理が出ない時で、特定の条件を満たすときに30%発動（1ハンドに1回まで）
-  const triggerLogic = isPostFlop && !state.logicResolved && !state.psychResolved && rand() < 0.3 && pickLogicQuestion();
+  // 論理バトル：心理バトルが出なかった時、ストリート毎に発動チャンス
+  const triggerLogic = isPostFlop && !state.logicResolvedStreet && !state.psychResolved && rand() < 0.55;
   if (triggerLogic) {
-    state.logicResolved = true;  // 1ハンド1回
-    render();
-    setTimeout(() => triggerPsychBattle(triggerLogic), 900);
-    return;
+    const lqid = pickLogicQuestion();
+    if (lqid) {
+      state.logicResolvedStreet = true;
+      render();
+      setTimeout(() => triggerPsychBattle(lqid), 900);
+      return;
+    }
   }
 
   state.isPlayerTurn = true;
@@ -1875,6 +1879,7 @@ function advanceAfterCall() {
       state.ricoAdvice = '「ターンで場が変わったかもね。相手のベットの変化、見逃さないで」';
       state.isPlayerTurn = false;
       state.psychResolved = false;  // 各ストリートで心理バトル再発生可能に
+      state.logicResolvedStreet = false;
       log('actions', { phase: 'turn', cards: state.community.map(c=>c.label+c.suit) });
       render();
       setTimeout(opponentTurn, 1000);
@@ -1901,6 +1906,7 @@ function advanceAfterCall() {
     state.ricoAdvice = '「リバーまで出揃ったよ。ここから最終判断ね」';
     state.isPlayerTurn = false;
     state.psychResolved = false;
+    state.logicResolvedStreet = false;
     log('actions', { phase: 'river', cards: state.community.map(c=>c.label+c.suit) });
     render();
     setTimeout(opponentTurn, 1000);
