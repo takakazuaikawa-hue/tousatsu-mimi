@@ -2512,18 +2512,29 @@ function stopEndingBgm() {
 
 function toggleEndingThemePreview() {
   const a = document.getElementById('ending-bgm-audio');
-  if (!a) return;
+  if (!a) { alert('audio要素が見つかりません'); return; }
   if (a.paused) {
-    // ロビーBGMを下げて主題歌を流す
     const lobbyA = document.getElementById('lobby-bgm-audio');
     if (lobbyA) lobbyA.pause();
     a.currentTime = 0;
-    a.volume = Math.min(1, bgmVolFloat() * 1.6);
-    a.play().catch(()=>{});
-    // 再生中はボタンを「⏹ 停止」に
-    document.querySelectorAll('[data-action="play-ending-theme"]').forEach(b => b.textContent = '⏹ 停止');
-    a.onended = () => {
-      document.querySelectorAll('[data-action="play-ending-theme"]').forEach(b => b.textContent = '▶ 視聴');
+    const vol = Math.min(1, bgmVolFloat() * 1.6);
+    a.volume = Math.max(0.05, vol); // 万一0でも聞こえるよう最低5%
+    const setBtnLabel = (txt) => document.querySelectorAll('[data-action="play-ending-theme"]').forEach(b => b.textContent = txt);
+    setBtnLabel('… 読込中');
+    const p = a.play();
+    if (p && p.then) {
+      p.then(() => setBtnLabel('⏹ 停止'))
+       .catch((err) => {
+         setBtnLabel('▶ 視聴');
+         alert('再生失敗：' + (err && err.message || err) + '\nファイル: ' + (a.currentSrc || '(未設定)'));
+       });
+    } else {
+      setBtnLabel('⏹ 停止');
+    }
+    a.onended = () => setBtnLabel('▶ 視聴');
+    a.onerror = () => {
+      setBtnLabel('▶ 視聴');
+      alert('音源読込エラー：' + (a.currentSrc || 'パス不明') + '\nコード: ' + (a.error && a.error.code));
     };
   } else {
     a.pause();
