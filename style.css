@@ -785,6 +785,66 @@ html, body {
 .stats-value.rank-SS { color: #ff7aa4; text-shadow: 0 0 6px rgba(255,122,164,0.6); }
 .stats-value.rank-S  { color: #f5d77a; text-shadow: 0 0 6px rgba(245,215,122,0.6); }
 
+/* 設定パネル */
+.lobby-settings-panel {
+  background: linear-gradient(180deg, rgba(40,18,60,0.85) 0%, rgba(20,8,29,0.92) 100%);
+  border: 2px solid var(--c-gold);
+  border-radius: 12px;
+  padding: 8px 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  flex: 0 0 auto;
+}
+.settings-title {
+  font-size: 11px; letter-spacing: 0.15em;
+  color: var(--c-gold-bright);
+  text-align: center;
+  border-bottom: 1px solid rgba(245,215,122,0.25);
+  padding-bottom: 4px; margin-bottom: 6px;
+}
+.settings-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 2px;
+  font-size: 12px;
+}
+.settings-label { color: #d0c2e0; }
+.settings-toggle {
+  position: relative;
+  width: 56px; height: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--c-gold);
+  background: rgba(0,0,0,0.5);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex; align-items: center;
+  transition: background 0.2s;
+}
+.settings-toggle.on  { background: linear-gradient(90deg, rgba(245,215,122,0.5), rgba(245,215,122,0.3)); }
+.settings-toggle.off { background: rgba(60,30,80,0.6); }
+.settings-knob {
+  position: absolute;
+  top: 2px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  transition: left 0.2s ease;
+}
+.settings-toggle.on  .settings-knob { left: 34px; }
+.settings-toggle.off .settings-knob { left: 2px; }
+.settings-status {
+  position: absolute;
+  font-size: 9px; font-weight: 700;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.1em;
+}
+.settings-toggle.on  .settings-status { left: 8px; color: #1a0e2a; }
+.settings-toggle.off .settings-status { right: 8px; left: auto; color: #aaa; }
+.settings-note {
+  font-size: 9px; color: var(--c-gold); opacity: 0.7;
+  margin-top: 4px; text-align: center;
+  letter-spacing: 0.05em;
+}
+
 /* 対戦相手リスト：5枚を横並びぴったり */
 .lobby-stage-list {
   display: grid;

@@ -26,6 +26,8 @@ function defaultSave() {
     panyuSkills: { senseLevel: 1, rangeLevel: 1, breakLevel: 0 },
     panyuSenseFreeUsed: false,
     endingUnlocked: false,
+    psychEnabled: true,   // 心理バトルON/OFF
+    logicEnabled: true,   // 論理バトルON/OFF
     logs: { actions: [], bets: [], reactions: [], psych: [] },
   };
 }
@@ -1419,6 +1421,9 @@ function applyBindings() {
       case 'stageList': el.innerHTML = renderStageList(); break;
       case 'lobbyRicoLine': el.textContent = lobbyRicoLine(); break;
       case 'lobbyStats': el.innerHTML = renderLobbyStats(); break;
+      case 'lobbySettings': el.innerHTML = renderLobbySettings();
+        el.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+        break;
       case 'lobbyRicoImg': {
         const o = pickLobbyRico();
         el.onerror = function() {
@@ -1712,6 +1717,29 @@ function lobbyRicoLine() {
   const outfit = pickLobbyRico();
   if (outfit?.lines?.length) lines.push(pick(outfit.lines));
   return pick(lines);
+}
+
+function renderLobbySettings() {
+  const psy = save.psychEnabled !== false;
+  const log = save.logicEnabled !== false;
+  return `
+    <div class="settings-title">⚙ 設定</div>
+    <div class="settings-row">
+      <span class="settings-label">心理バトル</span>
+      <button class="settings-toggle ${psy ? 'on' : 'off'}" data-action="toggle-psych">
+        <span class="settings-knob"></span>
+        <span class="settings-status">${psy ? 'ON' : 'OFF'}</span>
+      </button>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">論理バトル</span>
+      <button class="settings-toggle ${log ? 'on' : 'off'}" data-action="toggle-logic">
+        <span class="settings-knob"></span>
+        <span class="settings-status">${log ? 'ON' : 'OFF'}</span>
+      </button>
+    </div>
+    <div class="settings-note">※チュートリアル中は常に有効です</div>
+  `;
 }
 
 function renderLobbyStats() {
@@ -2121,6 +2149,8 @@ function onAction(e) {
     case 'use-panyu-sense': usePanyuSense(); break;
     case 'panyu-free':    showPanyuClicker(30, null); break;
     case 'toggle-bgm':    toggleLobbyBgm(); break;
+    case 'toggle-psych':  save.psychEnabled = !(save.psychEnabled !== false); saveProgress(); applyBindings(); break;
+    case 'toggle-logic':  save.logicEnabled = !(save.logicEnabled !== false); saveProgress(); applyBindings(); break;
   }
 }
 
@@ -2357,9 +2387,11 @@ function startBattleInternal(opponentId) {
     state.mimiThought = '「ボス戦だ……気持ちで負けないようにしないと」';
     state.ricoAdvice = '「ヴェルベットは口で揺さぶってくるタイプね。冷静を保てば隙は見えるよ」';
     render();
-    // 開幕心理バトルを即時発動
-    setTimeout(() => triggerPsychBattle('velvet_opening'), 800);
-    return;
+    // 開幕心理バトルを即時発動（OFFなら省略）
+    if (save.psychEnabled !== false) {
+      setTimeout(() => triggerPsychBattle('velvet_opening'), 800);
+      return;
+    }
   }
 
   if (state.tutorialMode) {
@@ -2605,7 +2637,9 @@ function opponentTurn() {
   const triggerBluff = (isPostFlop && bigEnough && isBluffBet && rand() < 0.5);
   // ヴェルベット（ボス戦）：各ストリートで確定発動
   const triggerBoss = state.isBoss && isPostFlop && bigEnough;
-  if (!state.psychResolved && (triggerFirstHand || triggerBluff || triggerBoss)) {
+  // 心理バトル有効判定（チュートリアルは常時ON、その他は設定に従う）
+  const psychAllowed = (state.opponentId === 'rico_tutorial') || (save.psychEnabled !== false);
+  if (psychAllowed && !state.psychResolved && (triggerFirstHand || triggerBluff || triggerBoss)) {
     render();
     const qid = pickPsychQuestion();
     setTimeout(() => triggerPsychBattle(qid), 900);
@@ -2613,7 +2647,8 @@ function opponentTurn() {
   }
 
   // 論理バトル：心理バトルが出なかった時、ストリート毎に発動チャンス
-  const triggerLogic = isPostFlop && !state.logicResolvedStreet && !state.psychResolved && rand() < 0.55;
+  const logicAllowed = (state.opponentId === 'rico_tutorial') || (save.logicEnabled !== false);
+  const triggerLogic = logicAllowed && isPostFlop && !state.logicResolvedStreet && !state.psychResolved && rand() < 0.55;
   if (triggerLogic) {
     const lqid = pickLogicQuestion();
     if (lqid) {
