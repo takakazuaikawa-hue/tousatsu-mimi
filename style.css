@@ -756,7 +756,8 @@ html, body {
   align-items: center;
   margin-top: 18px;
 }
-.tutorial-actions .skip-btn {
+.tutorial-actions .skip-btn,
+.tutorial-actions .restart-btn {
   padding: 10px 22px;
   background: transparent;
   border: 1px solid rgba(217,179,90,0.5);
@@ -769,6 +770,8 @@ html, body {
   opacity: 0.7;
   min-height: 44px;
 }
+.tutorial-actions .restart-btn:hover,
+.tutorial-actions .skip-btn:hover { opacity: 1; }
 .tutorial-actions .skip-btn:hover { opacity: 1; }
 .tutorial-bubble::before {
   content: "📚 リコ先輩からのアドバイス";
@@ -2608,6 +2611,52 @@ html, body {
   margin-top: 30px;
   animation: chapterTextIn 0.6s ease-out 0.8s both;
 }
+.chapter-actions {
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  animation: chapterTextIn 0.6s ease-out 0.8s both;
+}
+.chapter-btn {
+  font-family: inherit;
+  padding: 12px 36px;
+  border-radius: 10px;
+  font-size: 16px;
+  letter-spacing: 0.15em;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 280px;
+  min-height: 50px;
+  transition: transform 0.1s, filter 0.15s;
+}
+.chapter-btn:active { transform: scale(0.96); }
+.chapter-btn.chapter-start {
+  background: linear-gradient(180deg, var(--c-red) 0%, #7a1525 100%);
+  border: 2px solid var(--c-gold-bright);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(200,37,58,0.5);
+  font-size: 18px;
+}
+.chapter-btn.chapter-start:hover { filter: brightness(1.1); }
+.chapter-btn.chapter-skip {
+  background: rgba(0,0,0,0.5);
+  border: 2px solid rgba(217,179,90,0.5);
+  color: var(--c-gold-bright);
+}
+.chapter-btn.chapter-skip:hover { background: rgba(90,42,138,0.4); }
+.chapter-btn.chapter-exit {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: var(--c-text-dim);
+  font-size: 14px;
+  min-width: 200px;
+  min-height: 40px;
+  padding: 8px 24px;
+  opacity: 0.7;
+}
+.chapter-btn.chapter-exit:hover { opacity: 1; }
 @keyframes chapterTextIn {
   0% { transform: translateY(20px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }

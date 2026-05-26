@@ -845,6 +845,155 @@ const PSYCH_QUESTIONS = {
     onFail:    { panyu:0, mimi:'常にだと…思いきや', rico:'<u>オールインは博打じゃなくて戦略</u>。タイミング選んで使うのが正解' },
   },
 
+  // ===== 拡張章：用語集（手札関連） =====
+  lesson_term_1: { id:'lesson_term_1', type:'lesson', chapter:'用語', chapterTitle:'特別講座：用語集（手札関連）',
+    rule:'スート(♠♥♦♣) ／ スーテッド(同スート) ／ オフスート(異スート)',
+    situationFn: () => '<b>スート</b>＝カードのマーク：♠スペード／♥ハート／♦ダイヤ／♣クラブ。\n<b>スーテッド (suited)</b>＝手札2枚が<u>同じスート</u>（例：A♥ K♥）。フラッシュ作りやすい。\n<b>オフスート (off-suit)</b>＝手札2枚が<u>違うスート</u>（例：A♥ K♠）。',
+    speech: '「AKs」と「AKo」、何が違う？',
+    zazazoHint: '末尾のs/oに注目',
+    choices: [
+      { id:'su_a', text:'AKs = AKスーテッド（同スート）、AKo = AKオフスート（異スート）', correct:true },
+      { id:'su_b', text:'AKs = エースキング、AKo = エースキング・オリジナル', correct:false },
+      { id:'su_c', text:'同じ', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'sはsuited、oはoff-suit', rico:'<u>スーテッドは「フラッシュ作りやすい」分、価値上がる</u>。同じAKでも別物だよ' },
+    onFail:    { panyu:0, mimi:'分かりにくい記号…', rico:'<u>s = suited（同スート）、o = off-suit（異スート）</u>。覚えるとプロの会話に入れる' },
+  },
+  lesson_term_2: { id:'lesson_term_2', type:'lesson', chapter:'用語', chapterTitle:'特別講座：用語集（手札関連）',
+    rule:'コネクター＝連続ランク、スーテッドコネクター＝同スート連続',
+    situationFn: () => '<b>コネクター (connector)</b>＝<u>連続するランクの2枚</u>（例：9-10、J-Q）。ストレート作りやすい。\n<b>スーテッドコネクター</b>＝同スート + 連続（例：9♥-10♥）。ストレートも<b>フラッシュも狙える</b>、隠れた人気手。\n<b>ギャップ・コネクター</b>＝1〜2枚離れた（例：8-10、7-10）。やや弱め。',
+    speech: 'スーテッドコネクター 9♥10♥ の魅力は？',
+    zazazoHint: '2つの役を狙える',
+    choices: [
+      { id:'co_a', text:'ストレートとフラッシュ両狙いで、低リスク高リターン', correct:true },
+      { id:'co_b', text:'なんとなくカッコいい', correct:false },
+      { id:'co_c', text:'プロは絶対使わない', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'プロが好む「隠れた強手」', rico:'<u>当たれば爆発、外れたら傷浅い</u>ローリスクハイリターンの定番手' },
+    onFail:    { panyu:0, mimi:'微妙な手かと…', rico:'<u>2方向（ストフラ）両狙い</u>できるからプロが愛用するの' },
+  },
+  lesson_term_3: { id:'lesson_term_3', type:'lesson', chapter:'用語', chapterTitle:'特別講座：用語集（場札・状況関連）',
+    rule:'ナッツ＝その場札で作れる「最強の役」',
+    situationFn: () => '<b>ナッツ (the nuts)</b>＝<u>その場札で作れる絶対最強の役</u>。\n例：場札 K♥ Q♥ J♥ 9♣ 3♥ で <b>A♥ 10♥</b> 持ってる → A高ストレートフラッシュ（ロイヤル）＝ナッツ\n「ナッツ持ち」は確実勝利。たとえ相手がフォーカードでも勝てる。',
+    speech: '場札 9♠ 10♠ J♠ Q♠ 3♣ でナッツになる手札は？',
+    zazazoHint: '残るストフラの最強形',
+    choices: [
+      { id:'nu_a', text:'K♠ + 任意（K-Q-J-10-9 のストレートフラッシュ）', correct:true },
+      { id:'nu_b', text:'A♠ A♣（フォーカード）', correct:false },
+      { id:'nu_c', text:'場札の組み合わせ次第', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'ストフラ > フォーカード > フルハウス…', rico:'<u>ナッツ持ちは絶対勝てる</u>。バリュー最大化のチャンスだから大胆に攻めよう' },
+    onFail:    { panyu:0, mimi:'AAが最強かと…', rico:'<u>場札にストフラ要素があればストフラがナッツ</u>。AAでも負ける場面' },
+  },
+  lesson_term_4: { id:'lesson_term_4', type:'lesson', chapter:'用語', chapterTitle:'特別講座：用語集（プレイ用語）',
+    rule:'チェックレイズ＝チェック→相手ベット→自分が大レイズ、強い罠',
+    situationFn: () => '中級用語：\n<b>チェックレイズ</b>：先にチェックして相手にベットさせ、その後大きくレイズ。<u>強い手で罠を張る</u>戦術。\n<b>スロープレイ</b>：強い手をあえて静かにベット。相手を誘い込む。\n<b>3ベット</b>：プリフロップで「相手のレイズに対するレイズ」。強気な姿勢。\n<b>4ベット</b>：3ベットに対する更なるレイズ。AA / KKレベルが多い。',
+    speech: 'チェックレイズの狙いは？',
+    zazazoHint: '相手を誘ってから刈り取る',
+    choices: [
+      { id:'cr_a', text:'相手にベットさせてから上乗せ、ポットを膨らます罠', correct:true },
+      { id:'cr_b', text:'弱いからチェック', correct:false },
+      { id:'cr_c', text:'相手に勝ちを譲る', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'チェックレイズは強い手の罠戦術', rico:'<u>相手の攻撃を利用して大きく稼ぐ</u>のがチェックレイズ。上級者の必殺技' },
+    onFail:    { panyu:0, mimi:'チェック＝弱い手かと', rico:'<u>強い手でもチェックすることはある</u>＝罠。これがポーカーの奥深さ' },
+  },
+
+  // ===== ハンズオン章：実際に役を見極める =====
+  lesson_hand_1: { id:'lesson_hand_1', type:'lesson', chapter:'実戦', chapterTitle:'実戦講座：役を見つけよう',
+    rule:'手札2枚＋場札5枚＝7枚から最強の5枚を選ぶ',
+    situationFn: () => '🃏 ミミの手札：<b>A♥ K♥</b>\n📋 場札：<b>Q♥ J♥ 10♥ 2♣ 5♦</b>\n\nさて、ミミの最強5枚は？',
+    speech: '7枚から最強5枚を見つけよう',
+    zazazoHint: '同スートのハート5枚に注目',
+    choices: [
+      { id:'h1_a', text:'A♥ K♥ Q♥ J♥ 10♥ ＝ ロイヤルストレートフラッシュ（最強！）', correct:true },
+      { id:'h1_b', text:'A♥ K♥ + 場札のペア＝ワンペア', correct:false },
+      { id:'h1_c', text:'A♥ K♥ Q♥ J♥ ＝ フラッシュ', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'ハート5枚 + 10〜A連続 = ロイヤル', rico:'<u>夢のロイヤル</u>！全種の役で最強。一生に一度の役だよ' },
+    onFail:    { panyu:0, mimi:'ロイヤル見落としてた…', rico:'<u>ハート5枚連続＝ストフラ、しかもAトップでロイヤル</u>。最強の最強' },
+  },
+  lesson_hand_2: { id:'lesson_hand_2', type:'lesson', chapter:'実戦', chapterTitle:'実戦講座：役を見つけよう',
+    rule:'ペアが場札にあれば「3カード」や「フルハウス」を狙える',
+    situationFn: () => '🃏 ミミの手札：<b>K♠ K♦</b>\n📋 場札：<b>K♥ 7♣ 7♠ 9♦ 2♣</b>\n\n最強の役は？',
+    speech: 'ペアが場札にあるよ',
+    zazazoHint: 'K3枚と7ペアを組み合わせる',
+    choices: [
+      { id:'h2_a', text:'K-K-K + 7-7 ＝ フルハウス（Kフル）', correct:true },
+      { id:'h2_b', text:'K-K ＝ ワンペア', correct:false },
+      { id:'h2_c', text:'K-K-K ＝ スリーカード', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'3カード + 2カード = フルハウス', rico:'<u>Kフルハウス</u>！3カード（K三枚）と2カード（7ペア）合わせてフルハウス完成' },
+    onFail:    { panyu:0, mimi:'スリーカードかと…', rico:'<u>3カード + 場札の別ペア = フルハウス</u>に格上げ。見落としやすいから注意' },
+  },
+  lesson_hand_3: { id:'lesson_hand_3', type:'lesson', chapter:'実戦', chapterTitle:'実戦講座：役を見つけよう',
+    rule:'A-2-3-4-5 はストレート（ホイール）として成立',
+    situationFn: () => '🃏 ミミの手札：<b>A♠ 2♥</b>\n📋 場札：<b>3♣ 4♦ 5♠ J♥ Q♣</b>\n\n最強の役は？',
+    speech: 'Aを「1」として使えるパターン',
+    zazazoHint: 'A-2-3-4-5は特殊ストレート',
+    choices: [
+      { id:'h3_a', text:'A-2-3-4-5 ＝ ストレート（ホイール、5ハイ扱い）', correct:true },
+      { id:'h3_b', text:'役なし（A-Q-J-5-4 ハイカード）', correct:false },
+      { id:'h3_c', text:'A-2 ＝ ワンペア（Aペア）', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'A は1としても使える特殊カード', rico:'<u>ホイール（A-2-3-4-5）</u>はストレート扱い。Aを1として使う唯一のパターン' },
+    onFail:    { panyu:0, mimi:'A は1にならないと思いました', rico:'<u>Aは14でも1でも使える</u>。A-2-3-4-5 は完璧なストレート（5ハイ扱い）' },
+  },
+  lesson_hand_4: { id:'lesson_hand_4', type:'lesson', chapter:'実戦', chapterTitle:'実戦講座：役を見つけよう',
+    rule:'場札3枚同スートでも、手札に同スート2枚なければフラッシュにならない',
+    situationFn: () => '🃏 ミミの手札：<b>A♣ K♣</b>\n📋 場札：<b>2♥ 7♥ 9♥ Q♥ 3♣</b>\n\n最強の役は？\n\n<small>※場札のハートは4枚あるが、手札にハートはゼロ。</small>',
+    speech: '一見フラッシュに見えるけど…',
+    zazazoHint: '自分の手札のスートに注目',
+    choices: [
+      { id:'h4_a', text:'A♣ K♣ + 場札 = AKハイカード（フラッシュ不成立）', correct:true },
+      { id:'h4_b', text:'4枚同スートなのでフラッシュ完成', correct:false },
+      { id:'h4_c', text:'3♣ A♣ K♣ ＝ フラッシュ', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'フラッシュは「自分のカード含めた5枚同スート」必要', rico:'<u>場札4枚同スートでも、自分の手札に同スート無いとフラッシュにならない</u>。罠だよ〜' },
+    onFail:    { panyu:0, mimi:'場札4枚で完成かと…', rico:'<u>5枚同スートに「自分の手札を含めた」5枚</u>が必要。場札だけじゃダメ' },
+  },
+
+  // ===== バンクロール・マナー章 =====
+  lesson_bank_1: { id:'lesson_bank_1', type:'lesson', chapter:'マナー', chapterTitle:'特別講座：バンクロール管理',
+    rule:'バンクロール＝ポーカー用の資金。生活費とは厳密に分ける',
+    situationFn: () => '<b>バンクロール</b>＝ポーカーで使う総資金。\nプロは「生活費とは絶対に混ぜない」「1回のセッションで失っていい上限を決める」が鉄則。\n\nポーカーは長期的にプラスでも、短期的にバッドビート（負けの連鎖）はある。<b>負けても困らない額</b>で遊ぶこと。',
+    speech: 'バンクロール管理の鉄則は？',
+    zazazoHint: '生活費との関係',
+    choices: [
+      { id:'b1_a', text:'生活費とは分ける。失っていい額のみで遊ぶ', correct:true },
+      { id:'b1_b', text:'生活費からも投入してOK', correct:false },
+      { id:'b1_c', text:'借金してでも参加', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'生活費分離 = ポーカー長続きの秘訣', rico:'<u>「負けたら困る金」で遊んじゃダメ</u>。判断が歪んで、もっと負ける' },
+    onFail:    { panyu:0, mimi:'全力で行くものかと…', rico:'<u>バンクロールは「遊び金」だけ</u>。生活費混ぜたら破滅コースだよ' },
+  },
+  lesson_bank_2: { id:'lesson_bank_2', type:'lesson', chapter:'マナー', chapterTitle:'特別講座：ポーカーのマナー',
+    rule:'相手の手札を覗かない／カードを露出させない／時間を取りすぎない',
+    situationFn: () => 'ポーカーには紳士的なマナーがある。\n<b>NG行為</b>：\n・相手の手札を覗き見\n・自分のカードを他人に見せる\n・極端に長考（30秒以上は嫌われる）\n・大声・暴言\n・卓上にお金を投げつける\n<b>OK行為</b>：\n・チップを丁寧に置く\n・自分のターンで即決する',
+    speech: 'NG マナーはどれ？',
+    zazazoHint: '相手の手札情報',
+    choices: [
+      { id:'m1_a', text:'相手の手札を覗き見る（不正行為）', correct:true },
+      { id:'m1_b', text:'自分のターンで考える（10秒程度）', correct:false },
+      { id:'m1_c', text:'チップをスタックに整える', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'覗き見は不正、即退場レベル', rico:'<u>覗き見は完全NG</u>。実際のカジノだと即退場・出禁になる行為' },
+    onFail:    { panyu:0, mimi:'考えすぎは…？', rico:'<u>10秒程度の長考はOK、30秒以上は嫌われる</u>。覗き見は絶対ダメ' },
+  },
+  lesson_bank_3: { id:'lesson_bank_3', type:'lesson', chapter:'マナー', chapterTitle:'特別講座：禁止行為とフェアプレイ',
+    rule:'コリュージョン（共謀）／マーキング／チートカードは犯罪',
+    situationFn: () => '<b>絶対禁止行為</b>：\n<b>コリュージョン</b>：複数人で結託して1人を狙い撃ち。<u>大会では即失格・賞金没収</u>\n<b>マーキング</b>：カードに目印を付けて識別\n<b>チートデバイス</b>：隠しカメラ・透視メガネ等\n<b>チップダンピング</b>：意図的に負けてチップを仲間に渡す\n\nどれもカジノでは犯罪扱い。',
+    speech: '友達同士でも禁止な行為は？',
+    zazazoHint: '結託＝チーム戦扱いはダメ',
+    choices: [
+      { id:'fp_a', text:'コリュージョン（2人で結託して相手を狙い撃ち）', correct:true },
+      { id:'fp_b', text:'友達と席が隣同士になること', correct:false },
+      { id:'fp_c', text:'同じドリンクを飲むこと', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'結託は即失格レベル', rico:'<u>ポーカーは「1対全員」のゲーム</u>。チーム戦化したら成立しないからね' },
+    onFail:    { panyu:0, mimi:'友達同士なら問題ないかと', rico:'<u>結託は犯罪扱い</u>。賞金没収＋出禁。フェアプレイが大原則' },
+  },
+
   lesson_5_1: { id:'lesson_5_1', type:'lesson', chapter:5, chapterTitle:'第5章：役の強さ',
     rule:'役の強さ順：ロイヤル＞ストフラ＞4カード＞フルハウス＞フラッシュ＞ストレート＞3カード＞2ペア＞1ペア＞ハイカード',
     situationFn: () => '10種類の役の強さ順（弱→強）：\n1. ハイカード\n2. ワンペア\n3. ツーペア\n4. スリーカード\n5. ストレート\n6. フラッシュ\n7. フルハウス\n8. フォーカード\n9. ストレートフラッシュ\n10. ロイヤルストレートフラッシュ',
@@ -2873,16 +3022,25 @@ function triggerTousatsuDaigyakuten() {
 //=============================================================
 // 講義モード（リコ先輩の8章24問）
 //=============================================================
-const LESSON_ORDER = [
-  'lesson_1_1', 'lesson_1_2', 'lesson_1_3',
-  'lesson_2_1', 'lesson_2_2', 'lesson_2_3',
-  'lesson_3_1', 'lesson_3_2', 'lesson_3_3',
-  'lesson_4_1', 'lesson_4_2', 'lesson_4_3',
-  'lesson_5_1', 'lesson_5_2', 'lesson_5_3',
-  'lesson_6_1', 'lesson_6_2', 'lesson_6_3',
-  'lesson_7_1', 'lesson_7_2', 'lesson_7_3',
-  'lesson_8_1', 'lesson_8_2', 'lesson_8_3',
+// 章ごとにグループ化したレッスン構成
+const LESSON_CHAPTERS = [
+  { key: 1,     title: '第1章：ポーカーって何？',                 ids: ['lesson_1_1', 'lesson_1_2', 'lesson_1_3'] },
+  { key: 2,     title: '第2章：基本用語',                       ids: ['lesson_2_1', 'lesson_2_2', 'lesson_2_3'] },
+  { key: '用語', title: '特別講座：用語集（s/o・コネクター・ナッツ・チェックレイズ）',
+                                                            ids: ['lesson_term_1', 'lesson_term_2', 'lesson_term_3', 'lesson_term_4'] },
+  { key: 3,     title: '第3章：ハンドの流れ',                   ids: ['lesson_3_1', 'lesson_3_2', 'lesson_3_3'] },
+  { key: 4,     title: '第4章：5つのアクション',                 ids: ['lesson_4_1', 'lesson_4_2', 'lesson_4_3'] },
+  { key: 5,     title: '第5章：役の強さ',                       ids: ['lesson_5_1', 'lesson_5_2', 'lesson_5_3'] },
+  { key: '実戦', title: '実戦講座：役を見つけよう（4問ハンズオン）',
+                                                            ids: ['lesson_hand_1', 'lesson_hand_2', 'lesson_hand_3', 'lesson_hand_4'] },
+  { key: 6,     title: '第6章：確率と勝率',                     ids: ['lesson_6_1', 'lesson_6_2', 'lesson_6_3'] },
+  { key: 7,     title: '第7章：定石',                          ids: ['lesson_7_1', 'lesson_7_2', 'lesson_7_3'] },
+  { key: 8,     title: '第8章：心理戦・読み',                   ids: ['lesson_8_1', 'lesson_8_2', 'lesson_8_3'] },
+  { key: 'マナー', title: '特別講座：バンクロール・マナー・禁止行為',
+                                                            ids: ['lesson_bank_1', 'lesson_bank_2', 'lesson_bank_3'] },
 ];
+// フラット順序（互換性）
+const LESSON_ORDER = LESSON_CHAPTERS.flatMap(c => c.ids);
 
 function startLecture(opponentId) {
   state = defaultState();
@@ -2891,40 +3049,47 @@ function startLecture(opponentId) {
   state.opponentName = opp.name;
   state.opponentImgKey = opp.imgKey;
   state.lectureMode = true;
-  state.lectureIdx = 0;
-  state.lectureCorrect = 0;
+  // 中断進捗があれば引き継ぎ
+  const saved = save.lectureProgress || null;
+  state.lectureIdx = saved ? saved.idx : 0;
+  state.lectureCorrect = saved ? saved.correct : 0;
   state.lectureTotal = LESSON_ORDER.length;
-  // 講義用に最小限の画面（バトル画面再利用）
   state.screen = 'battle';
   state.handPhase = 'lecture';
   state.tutorialMode = true;
   state.ricoAdvice = '「ようこそ。じっくり基礎を覚えていこ〜」';
-  state.mimiThought = '「リコ先輩、よろしくお願いします！」';
+  state.mimiThought = saved ? '「続きから……お願いします！」' : '「リコ先輩、よろしくお願いします！」';
   render();
-  // 最初の挨拶
   showLectureIntro(() => {
     triggerLectureQuestion();
-  });
+  }, saved);
 }
 
-function showLectureIntro(onContinue) {
+function showLectureIntro(onContinue, savedProgress) {
   const overlay = document.createElement('div');
   overlay.className = 'tutorial-overlay';
+  const resumeMsg = savedProgress
+    ? `<p style="font-size:15px;line-height:1.7;background:rgba(245,215,122,0.15);padding:10px;border-radius:8px;border:1px solid var(--c-gold);">📌 <b>続きから再開</b>：${savedProgress.idx}問目から、${savedProgress.correct}問正解中</p>`
+    : '';
   overlay.innerHTML = `
     <div class="tutorial-bubble">
-      <div class="tutorial-step">講義開始</div>
+      <div class="tutorial-step">${savedProgress ? '講義再開' : '講義開始'}</div>
       <h2 style="color:var(--c-red);font-size:24px;margin:0 0 14px;letter-spacing:0.15em;">📚 リコ先輩のポーカー講義</h2>
+      ${resumeMsg}
       <p style="font-size:17px;line-height:1.8;">よろしく〜！ ミミに <b>ポーカーの基本</b> をじっくり教えるね。</p>
       <p style="font-size:15px;line-height:1.7;">
-        全 <b>8章 × 3問 = 24問</b>。<br>
-        歴史・用語・流れ・5つのアクション・10種の役・確率・定石・心理戦まで網羅するよ。
+        全 <b>11章 ／ ${LESSON_ORDER.length}問</b>。<br>
+        歴史・用語・流れ・アクション・役・確率・定石・心理戦・<br>
+        <b>用語集（s/o・ナッツ等）／実戦ハンズオン／マナー・禁止行為</b>まで網羅。
       </p>
       <p style="font-size:14px;color:var(--c-red);line-height:1.7;">
-        ※ 各問は<u>論理バトル形式</u>で出題。間違えても OK、解説で覚えればOK
+        ※ 各章の開始時に「<u>始める／スキップ／中断</u>」が選べる<br>
+        ※ 間違えても OK、解説で覚えればOK
       </p>
       <div class="tutorial-actions">
-        <button class="next-btn" type="button">▶ 始める</button>
-        <button class="skip-btn" type="button">スキップ</button>
+        <button class="next-btn" type="button">▶ ${savedProgress ? '続ける' : '始める'}</button>
+        ${savedProgress ? '<button class="restart-btn" type="button">最初からやり直す</button>' : ''}
+        <button class="skip-btn" type="button">全スキップ</button>
       </div>
     </div>
   `;
@@ -2933,6 +3098,18 @@ function showLectureIntro(onContinue) {
     overlay.remove();
     onContinue();
   });
+  const restartBtn = overlay.querySelector('.restart-btn');
+  if (restartBtn) {
+    restartBtn.addEventListener('click', () => {
+      if (!confirm('進捗を捨てて最初から始めますか？')) return;
+      state.lectureIdx = 0;
+      state.lectureCorrect = 0;
+      save.lectureProgress = null;
+      saveProgress();
+      overlay.remove();
+      onContinue();
+    });
+  }
   overlay.querySelector('.skip-btn').addEventListener('click', () => {
     if (!confirm('講義を全スキップしますか？基礎は身につきませんが、すぐにポルカ戦に進めます。')) return;
     overlay.remove();
@@ -2952,26 +3129,66 @@ function triggerLectureQuestion() {
     return triggerLectureQuestion();
   }
   // 章タイトルが変わるタイミングで章バナーを表示
-  const prevChapter = state.lectureIdx > 0 ? PSYCH_QUESTIONS[LESSON_ORDER[state.lectureIdx - 1]]?.chapter : 0;
+  const prevChapter = state.lectureIdx > 0 ? PSYCH_QUESTIONS[LESSON_ORDER[state.lectureIdx - 1]]?.chapter : null;
   if (q.chapter !== prevChapter) {
-    showChapterBanner(q.chapter, q.chapterTitle, () => doLectureModal(qid));
+    showChapterBanner(q.chapter, q.chapterTitle, (action) => {
+      if (action === 'skip') {
+        // この章の問題を全部スキップ
+        const ch = LESSON_CHAPTERS.find(c => c.key === q.chapter);
+        if (ch) {
+          state.lectureIdx += ch.ids.length;
+        }
+        triggerLectureQuestion();
+      } else if (action === 'exit') {
+        exitLectureMidway();
+      } else {
+        doLectureModal(qid);
+      }
+    });
   } else {
     doLectureModal(qid);
   }
 }
 
+function exitLectureMidway() {
+  // 進捗を保存して中断
+  save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect };
+  saveProgress();
+  state = defaultState();
+  state.screen = 'stageSelect';
+  render();
+  toast('講義を中断しました。続きはリコ先輩から再開できます');
+}
+
 function showChapterBanner(num, title, onClose) {
   const banner = document.createElement('div');
   banner.className = 'chapter-banner';
+  const isSpecial = typeof num === 'string';
   banner.innerHTML = `
-    <div class="chapter-num">CHAPTER ${num}</div>
-    <div class="chapter-title">${title.replace(/^第\d+章：/, '')}</div>
-    <div class="chapter-hint">クリックで開始</div>
+    <div class="chapter-num">${isSpecial ? '特別講座' : `CHAPTER ${num}`}</div>
+    <div class="chapter-title">${title.replace(/^第\d+章：|^特別講座：|^実戦講座：/, '')}</div>
+    <div class="chapter-actions">
+      <button class="chapter-btn chapter-start" type="button">▶ この章を始める</button>
+      <button class="chapter-btn chapter-skip" type="button">この章をスキップ ⏭</button>
+      <button class="chapter-btn chapter-exit" type="button">講義を中断する ✕</button>
+    </div>
   `;
   document.body.appendChild(banner);
-  banner.addEventListener('click', () => {
+  banner.querySelector('.chapter-start').addEventListener('click', (e) => {
+    e.stopPropagation();
     banner.classList.add('out');
-    setTimeout(() => { banner.remove(); onClose(); }, 400);
+    setTimeout(() => { banner.remove(); onClose('start'); }, 400);
+  });
+  banner.querySelector('.chapter-skip').addEventListener('click', (e) => {
+    e.stopPropagation();
+    banner.classList.add('out');
+    setTimeout(() => { banner.remove(); onClose('skip'); }, 400);
+  });
+  banner.querySelector('.chapter-exit').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!confirm('講義を中断してステージ選択へ戻りますか？\n（進捗は次回引き継ぎ）')) return;
+    banner.classList.add('out');
+    setTimeout(() => { banner.remove(); onClose('exit'); }, 400);
   });
 }
 
@@ -3002,12 +3219,13 @@ function finishLecture(skipped) {
   document.body.appendChild(overlay);
   overlay.querySelector('.next-btn').addEventListener('click', () => {
     overlay.remove();
-    // 講義クリア記録
+    // 講義クリア記録＋進捗クリア
     if (!save.firstClearRewardClaimed.includes('rico_tutorial')) {
       save.coins += 300;
       save.firstClearRewardClaimed.push('rico_tutorial');
     }
     if (!save.clearedStages.includes('rico_tutorial')) save.clearedStages.push('rico_tutorial');
+    save.lectureProgress = null;  // 完了したので進捗削除
     saveProgress();
     state = defaultState();
     state.screen = 'stageSelect';
