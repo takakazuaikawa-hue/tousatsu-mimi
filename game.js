@@ -2136,13 +2136,7 @@ function resolvePsych(qid, choice, btn) {
     log('psych', { qid, choice: choice.id, success: false });
   }
 
-  // 結果表示：選択ボタンの下にバナーを表示
-  const choicesEl = state.psychRoot.querySelector('[data-bind="psychChoices"]');
-  const banner = document.createElement('div');
-  banner.className = 'psych-result-banner ' + (choice.correct ? 'success' : 'fail');
-  banner.textContent = choice.correct ? '✓ 正解！' : '✗ 不正解……';
-  choicesEl.appendChild(banner);
-
+  // 選んだボタンの枠色で正誤を瞬間フィードバック（結果バナーはカットインに集約）
   state.psychResolved = true;
   state.psychPending = false;
 
@@ -2154,14 +2148,15 @@ function resolvePsych(qid, choice, btn) {
     state.isPlayerTurn = true;
     render();
     // リコ先輩カットイン（クリックで閉じる）
+    const resultPrefix = choice.correct ? '✓ 正解！　' : '✗ 残念……　';
     const onCutInClose = state.tutorialMode
       ? () => showTutorial('after_psych',
           '心理バトル解決！ぱにゅゲージが回復したね。<br>' +
           'あとはAペアの強さを信じて、<b>「コール」</b>か<b>「1/2ポット」</b>でベットしてみよう。<br>' +
           '私はもう手を引くから、安心していいよ。')
       : null;
-    showRicoCutIn(state.ricoAdvice.replace(/^「|」$/g, ''), choice.correct, onCutInClose);
-  }, 1100);
+    showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), choice.correct, onCutInClose);
+  }, 700);
 }
 
 function triggerBluffBreak() {
