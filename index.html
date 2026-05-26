@@ -11,6 +11,15 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div id="preload-overlay">
+  <div class="preload-inner">
+    <div class="preload-logo">闘札圧倒伝ミミ</div>
+    <div class="preload-sub">— 素材を読み込み中 —</div>
+    <div class="preload-bar"><div class="preload-bar-fill" id="preload-fill"></div></div>
+    <div class="preload-count"><span id="preload-loaded">0</span> / <span id="preload-total">0</span></div>
+    <div class="preload-tip" id="preload-tip">🐰 ぱにゅぱにゅ……</div>
+  </div>
+</div>
 <div id="stage">
   <div id="app"></div>
 </div>
@@ -113,6 +122,7 @@
     <div class="lobby-footer">
       <span class="lobby-bgm" data-bind="lobbyBgmLabel">♪ —</span>
       <button class="lobby-bgm-toggle" data-action="toggle-bgm" title="BGMオン/オフ">🔊</button>
+      <input class="lobby-bgm-volume" type="range" min="0" max="100" value="35" data-bind="lobbyBgmVolume" title="音量">
       <span class="lobby-tips">💡 セリナ・グラーノ・ヴェルベット戦の初回クリアで戦術ノート自動解放</span>
     </div>
     <audio id="lobby-bgm-audio" loop preload="auto">

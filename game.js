@@ -30,6 +30,7 @@ function defaultSave() {
     logicEnabled: true,   // 論理バトルON/OFF
     backdoorUnlocked: false, // 裏モード（相手の手と心理を覗き見）
     backdoorOn: false,       // 裏モードを今表示中か
+    bgmVolume: 35,           // BGM音量（0-100）
     logs: { actions: [], bets: [], reactions: [], psych: [] },
   };
 }
@@ -1454,6 +1455,14 @@ function applyBindings() {
       }
       case 'lobbyRicoOutfit': el.textContent = pickLobbyRico().label; break;
       case 'lobbyBgmLabel': el.textContent = state.bgmOn === false ? '♪ —（停止中）' : '♪ Lounge Jazz — Velvet Night'; break;
+      case 'lobbyBgmVolume':
+        el.value = save.bgmVolume != null ? save.bgmVolume : 35;
+        el.oninput = (e) => {
+          save.bgmVolume = +e.target.value;
+          saveProgress();
+          applyBgmVolume();
+        };
+        break;
       case 'backdoorBtn':
         el.style.display = save.backdoorUnlocked ? 'flex' : 'none';
         el.classList.toggle('on', !!save.backdoorOn);
@@ -2336,7 +2345,7 @@ function startEndingShow() {
   const endA = document.getElementById('ending-bgm-audio');
   if (endA) {
     endA.currentTime = 0;
-    endA.volume = 0.55;
+    endA.volume = Math.min(1, bgmVolFloat() * 1.6);
     endA.play().catch(()=>{});
   }
   // 星空＋光の粒子背景
@@ -2509,7 +2518,7 @@ function toggleEndingThemePreview() {
     const lobbyA = document.getElementById('lobby-bgm-audio');
     if (lobbyA) lobbyA.pause();
     a.currentTime = 0;
-    a.volume = 0.55;
+    a.volume = Math.min(1, bgmVolFloat() * 1.6);
     a.play().catch(()=>{});
     // 再生中はボタンを「⏹ 停止」に
     document.querySelectorAll('[data-action="play-ending-theme"]').forEach(b => b.textContent = '⏹ 停止');
@@ -2522,11 +2531,21 @@ function toggleEndingThemePreview() {
   }
 }
 
+function bgmVolFloat() {
+  const v = save && save.bgmVolume != null ? save.bgmVolume : 35;
+  return Math.max(0, Math.min(1, v / 100));
+}
+function applyBgmVolume() {
+  const lobbyA = document.getElementById('lobby-bgm-audio');
+  const endA = document.getElementById('ending-bgm-audio');
+  if (lobbyA) lobbyA.volume = bgmVolFloat();
+  if (endA)   endA.volume   = Math.min(1, bgmVolFloat() * 1.6); // 主題歌は少し大きめ
+}
 function tryStartLobbyBgm() {
   const a = document.getElementById('lobby-bgm-audio');
   if (!a) return;
   if (state.bgmOn === false) { a.pause(); return; }
-  a.volume = 0.35;
+  a.volume = bgmVolFloat();
   // ブラウザの自動再生制限：ユーザー操作後にしか鳴らない場合あり
   const p = a.play();
   if (p && p.catch) p.catch(() => {/* 自動再生ブロックは無視 */});
@@ -4320,8 +4339,97 @@ document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
 setTimeout(updateFullscreenBtn, 200);
 
 //=============================================================
-// 20. 起動
+// 20. 起動：プリロード→render
 //=============================================================
+const PRELOAD_ASSETS = [
+  // キャラ立ち絵（全身）
+  'assets/characters/rico_default.png',
+  'assets/characters/polka_default.png',
+  'assets/characters/selina_default.png',
+  'assets/characters/grano_default.png',
+  'assets/characters/velvet_default.png',
+  'assets/characters/mimi_default.png',
+  // UI
+  'assets/ui/title.png',
+  'assets/ui/pot.png',
+  'assets/ui/chip_white.png',
+  'assets/ui/chip_red.png',
+  'assets/ui/chip_blue.png',
+  'assets/ui/chip_gold.png',
+  // エピソード一枚絵
+  'assets/episodes/rico_tutorial.png',
+  'assets/episodes/polka.png',
+  'assets/episodes/selina.png',
+  'assets/episodes/grano.png',
+  'assets/episodes/velvet.png',
+  'assets/episodes/ending.png',
+];
+const PRELOAD_AUDIO = [
+  'assets/bgm/ending.mp3',
+];
+
+function preloadOne(url) {
+  return new Promise((resolve) => {
+    if (/\.(png|jpe?g|webp|gif)$/i.test(url)) {
+      const img = new Image();
+      img.onload = img.onerror = () => resolve();
+      img.src = url;
+    } else if (/\.(mp3|m4a|ogg|wav)$/i.test(url)) {
+      const a = new Audio();
+      a.preload = 'auto';
+      const done = () => resolve();
+      a.oncanplaythrough = done;
+      a.onloadeddata = done;
+      a.onerror = done;
+      a.src = url;
+      // 一定時間で諦める（ネット遅延対策）
+      setTimeout(done, 6000);
+    } else {
+      resolve();
+    }
+  });
+}
+
+const PRELOAD_TIPS = [
+  '🐰 ぱにゅぱにゅ……',
+  '🃏 場札を読み、顔色を読む',
+  '💰 ナッツは大胆に',
+  '🎭 言葉は嘘つくが、ベットは嘘つかない',
+  '✨ 圧倒モードまで連勝積もれ',
+  '🕯 ヴェルベットの瞳……何か映している',
+];
+
+async function startPreload() {
+  const overlay = document.getElementById('preload-overlay');
+  const fill = document.getElementById('preload-fill');
+  const loadedEl = document.getElementById('preload-loaded');
+  const totalEl = document.getElementById('preload-total');
+  const tipEl = document.getElementById('preload-tip');
+  const all = [...PRELOAD_ASSETS, ...PRELOAD_AUDIO];
+  totalEl.textContent = all.length;
+  let loaded = 0;
+  // tip rotation
+  let tipIdx = 0;
+  const tipInterval = setInterval(() => {
+    tipIdx = (tipIdx + 1) % PRELOAD_TIPS.length;
+    if (tipEl) tipEl.textContent = PRELOAD_TIPS[tipIdx];
+  }, 1500);
+  // 並列で読み込み、各完了で進捗更新
+  await Promise.all(all.map(url => preloadOne(url).then(() => {
+    loaded++;
+    loadedEl.textContent = loaded;
+    fill.style.width = (loaded / all.length * 100) + '%';
+  })));
+  clearInterval(tipInterval);
+  // フェードアウト
+  if (overlay) {
+    overlay.classList.add('out');
+    setTimeout(() => { if (overlay) overlay.remove(); }, 600);
+  }
+}
+
 save = loadProgress();
 state = defaultState();
-render();
+startPreload().then(() => {
+  render();
+});
