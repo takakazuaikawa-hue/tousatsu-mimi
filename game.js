@@ -4365,7 +4365,7 @@ const PRELOAD_ASSETS = [
   'assets/episodes/ending.png',
 ];
 const PRELOAD_AUDIO = [
-  'assets/bgm/ending.mp3',
+  'assets/bgm/ending.m4a',
 ];
 
 function preloadOne(url) {
