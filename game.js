@@ -2021,6 +2021,7 @@ function onAction(e) {
       showEpisodeTitle(data.episode, null);
       break;
     case 'use-panyu-sense': usePanyuSense(); break;
+    case 'panyu-free':    showPanyuClicker(30, null); break;
   }
 }
 
