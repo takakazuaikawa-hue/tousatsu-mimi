@@ -334,7 +334,9 @@ function betSizeToChips(size, pot, allInMax) {
     case 'allin':   amt = allInMax; break;
     default:        amt = Math.floor(pot / 3);
   }
-  return Math.max(50, Math.min(amt, allInMax));
+  // 最低50を確保しつつ、絶対に残スタック(allInMax)を超えない
+  amt = Math.max(50, amt);
+  return Math.max(0, Math.min(amt, allInMax));
 }
 
 // ポルカのセリフ生成
@@ -3450,8 +3452,8 @@ function playerFold() {
 }
 function playerCall() {
   const need = state.currentBetOpponent - state.currentBetPlayer;
-  const pay = Math.min(need, state.playerChips);
-  state.playerChips -= pay;
+  const pay = Math.max(0, Math.min(need, state.playerChips));
+  state.playerChips = Math.max(0, state.playerChips - pay);
   state.currentBetPlayer += pay;
   state.pot += pay;
   log('bets', { actor: 'player', type: 'call', amount: pay });
@@ -3471,8 +3473,8 @@ function playerCheckCall() {
   setTimeout(advanceAfterCall, 700);
 }
 function playerRaise(bb) {
-  const amount = Math.min(50 * bb, state.playerChips);
-  state.playerChips -= amount;
+  const amount = Math.max(0, Math.min(50 * bb, state.playerChips));
+  state.playerChips = Math.max(0, state.playerChips - amount);
   state.currentBetPlayer += amount;
   state.pot += amount;
   log('bets', { actor: 'player', type: 'raise', amount });
@@ -3483,7 +3485,7 @@ function playerRaise(bb) {
 }
 function playerBet(size) {
   const amount = betSizeToChips(size, state.pot, state.playerChips);
-  state.playerChips -= amount;
+  state.playerChips = Math.max(0, state.playerChips - amount);
   state.currentBetPlayer += amount;
   state.pot += amount;
   log('bets', { actor: 'player', type: 'bet', size, amount });
@@ -3550,8 +3552,8 @@ function opponentTurn() {
   }
   // チェック/コール
   if (action.type === 'check_call') {
-    const pay = Math.min(need, state.opponentChips);
-    state.opponentChips -= pay;
+    const pay = Math.max(0, Math.min(need, state.opponentChips));
+    state.opponentChips = Math.max(0, state.opponentChips - pay);
     state.currentBetOpponent += pay;
     state.pot += pay;
     state.opponentSpeech = opponentSpeech(action);
@@ -3570,7 +3572,7 @@ function opponentTurn() {
   }
   // ベット/レイズ
   const amount = betSizeToChips(action.size, state.pot, state.opponentChips);
-  state.opponentChips -= amount;
+  state.opponentChips = Math.max(0, state.opponentChips - amount);
   state.currentBetOpponent += amount;
   state.pot += amount;
   state.opponentSpeech = opponentSpeech(action);
