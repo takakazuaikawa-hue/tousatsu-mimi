@@ -839,6 +839,23 @@ html, body {
 }
 .settings-toggle.on  .settings-status { left: 8px; color: #1a0e2a; }
 .settings-toggle.off .settings-status { right: 8px; left: auto; color: #aaa; }
+.shop-item.locked {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+}
+.shop-item-locked {
+  color: var(--c-gold);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+.shop-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--c-gold);
+  opacity: 0.7;
+  font-size: 14px;
+}
 .settings-note {
   font-size: 9px; color: var(--c-gold); opacity: 0.7;
   margin-top: 4px; text-align: center;

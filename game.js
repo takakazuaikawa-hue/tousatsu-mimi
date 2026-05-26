@@ -1670,6 +1670,7 @@ function renderStageList() {
               ? (cleared ? 'もう一度受講' : 'チュートリアル開始')
               : (cleared ? '再戦' : '対戦開始')
           }</button>
+          ${(sid === 'rico_tutorial' && cleared) ? `<button class="btn btn-secondary" data-action="battle-rico-serious" title="チュートリアル無しで本気のリコ先輩と対戦">🔥</button>` : ''}
           ${cleared && EPISODES[sid] ? `<button class="btn btn-ghost stage-recall" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">📜</button>` : ''}
         </div>
       </div>
@@ -1774,6 +1775,7 @@ const SHOP_ITEMS = [
   { id: 'note_bet_size',       cat: 'note',  name: 'ベットサイズ講座',         price: 300, desc: 'ベットボタンの説明が詳しくなる' },
   { id: 'skin_red_gold_card',  cat: 'skin',  name: '赤金カジノカード',         price: 300, desc: 'カード裏デザインを赤金カジノ風に変更' },
   { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 500, desc: 'テーブル背景をVIP風に変更' },
+  { id: 'memory_ending',       cat: 'memory', name: 'エンディング映像',        price: 500, desc: 'クリア後限定。あの感動のエンディングを何度でも視聴可能に', requires: 'ending' },
 ];
 
 const SHOP_COMMENTS = {
@@ -1785,20 +1787,34 @@ const SHOP_COMMENTS = {
   note_bet_size:       'ベットの作法をおさらいできる、初心者向けの基礎教材です。お得ですよ',
   skin_red_gold_card:  '見た目重視のお嬢さんに。テーブルが華やぎますよ',
   table_vip:           'VIPのお客様気分でお楽しみいただける一品。気分転換にぜひ',
+  memory_ending:       'これは特別な品ですよ。あの夜の決着を、何度でも振り返れる映像です',
 };
 
 function renderShopItems(cat) {
-  return SHOP_ITEMS.filter(i => i.cat === cat).map(i => {
+  const items = SHOP_ITEMS.filter(i => i.cat === cat);
+  if (items.length === 0) {
+    return '<div class="shop-empty">該当する商品はまだありません。</div>';
+  }
+  return items.map(i => {
     const owned = save.ownedItems.includes(i.id);
-    const canBuy = !owned && save.coins >= i.price;
-    return `<div class="shop-item ${owned ? 'owned' : ''}" data-item="${i.id}">
+    // requires: 解放条件
+    let lockedReason = null;
+    if (i.requires === 'ending' && !save.endingUnlocked) lockedReason = '🔒 ヴェルベット撃破で解放';
+    const canBuy = !owned && !lockedReason && save.coins >= i.price;
+    // 視聴/再生系の購入後ボタン
+    const playableId = (i.id === 'memory_ending') ? 'play-ending' : null;
+    return `<div class="shop-item ${owned ? 'owned' : ''} ${lockedReason ? 'locked' : ''}" data-item="${i.id}">
       <div class="shop-item-name">${i.name}</div>
       <div class="shop-item-desc">${i.desc}</div>
       <div class="shop-item-footer">
         <span class="shop-item-price">${i.price}コイン</span>
-        ${owned
-          ? '<span class="shop-item-owned">✓ 購入済み</span>'
-          : `<button class="btn btn-primary" data-action="buy-item" data-item-id="${i.id}" ${canBuy ? '' : 'disabled'}>${canBuy ? '購入' : 'コイン不足'}</button>`
+        ${lockedReason
+          ? `<span class="shop-item-locked">${lockedReason}</span>`
+          : owned
+            ? (playableId
+                ? `<button class="btn btn-primary" data-action="${playableId}">▶ 視聴</button>`
+                : '<span class="shop-item-owned">✓ 購入済み</span>')
+            : `<button class="btn btn-primary" data-action="buy-item" data-item-id="${i.id}" ${canBuy ? '' : 'disabled'}>${canBuy ? '購入' : 'コイン不足'}</button>`
         }
       </div>
     </div>`;
@@ -2132,6 +2148,7 @@ function onAction(e) {
     case 'reset-save':    resetProgress(); break;
     case 'buy-item':      buyItem(data.itemId); break;
     case 'battle-start':  startBattle(data.opponent); break;
+    case 'battle-rico-serious': window.__ricoSeriousMode = true; startBattle('rico_tutorial'); break;
     case 'start-hand':    startHand(); break;
     case 'player-fold':   playerFold(); break;
     case 'player-call':   playerCall(); break;
@@ -2151,6 +2168,7 @@ function onAction(e) {
     case 'toggle-bgm':    toggleLobbyBgm(); break;
     case 'toggle-psych':  save.psychEnabled = !(save.psychEnabled !== false); saveProgress(); applyBindings(); break;
     case 'toggle-logic':  save.logicEnabled = !(save.logicEnabled !== false); saveProgress(); applyBindings(); break;
+    case 'play-ending':   state.screen = 'ending'; render(); break;
   }
 }
 
@@ -2283,8 +2301,11 @@ function startEndingShow() {
         btns.className = 'ending-final-buttons';
         btns.innerHTML = `
           <button class="btn btn-primary" data-action="back-title">タイトルへ</button>
+          <button class="btn btn-secondary" data-action="back-stage">ロビーへ</button>
         `;
         stage.appendChild(btns);
+        // 動的追加なので個別バインド
+        btns.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
         requestAnimationFrame(() => btns.classList.add('show'));
       }, 3200);
     }, 500);
@@ -2358,21 +2379,27 @@ function startBattle(opponentId) {
 
 function startBattleInternal(opponentId) {
   const opp0 = OPPONENTS[opponentId];
-  if (opp0 && opp0.isLecture) {
+  const seriousRico = (opponentId === 'rico_tutorial' && window.__ricoSeriousMode === true);
+  window.__ricoSeriousMode = false; // 一回限り
+  if (opp0 && opp0.isLecture && !seriousRico) {
     return startLecture(opponentId);
   }
   state = defaultState();
   const opp = OPPONENTS[opponentId] || OPPONENTS.polka;
   state.opponentId = opp.id;
-  state.opponentName = opp.name;
-  state.opponentProfile = opp.profile;
+  state.opponentName = seriousRico ? 'リコ先輩（真剣）' : opp.name;
+  // 真剣モードのリコ先輩は全パラメータ最強
+  state.opponentProfile = seriousRico
+    ? { bluffTendency: 0.7, aggression: 0.85, foldDiscipline: 0.7, valueBetTendency: 0.8, drawAggression: 0.85, trapTendency: 0.6 }
+    : opp.profile;
   state.opponentImgKey = opp.imgKey;
-  state.maxHands = opp.maxHands;
-  state.playerChips = opp.chips;
-  state.opponentChips = opp.chips;
-  state.tutorialMode = opp.tutorial;
-  state.fullHand = !!opp.fullHand;
-  state.isBoss = !!opp.isBoss;
+  state.maxHands = seriousRico ? 999 : opp.maxHands;
+  state.playerChips = seriousRico ? 1500 : opp.chips;
+  state.opponentChips = seriousRico ? 1800 : opp.chips; // 強敵にふさわしいチップ
+  state.tutorialMode = seriousRico ? false : opp.tutorial;
+  state.fullHand = seriousRico ? true : !!opp.fullHand;
+  state.isBoss = seriousRico ? true : !!opp.isBoss; // 心理バトル全ストリート発動
+  state.seriousRicoMode = seriousRico;
   state.screen = 'battle';
   state.handPhase = 'idle';
   state.panyuMax = save.panyuGaugeMax || 100;
