@@ -2629,8 +2629,9 @@ function chipBonusTotal() {
 function startBattle(opponentId) {
   const bonus = chipBonusTotal();
   const isFirstTime = !save.firstClearRewardClaimed.includes(opponentId);
-  // ボーナス所持時はチップ量選択モーダル
-  if (bonus > 0 && opponentId !== 'rico_tutorial') {
+  // ボーナス所持時はチップ量選択モーダル（リコ講義は対象外、本気リコは対象）
+  const isLectureRico = (opponentId === 'rico_tutorial') && window.__ricoSeriousMode !== true;
+  if (bonus > 0 && !isLectureRico) {
     showChipPicker(opponentId, () => {
       if (isFirstTime && EPISODES[opponentId]) {
         showEpisodeTitle(opponentId, () => startBattleInternal(opponentId));
@@ -2649,7 +2650,8 @@ function startBattle(opponentId) {
 
 function showChipPicker(opponentId, onConfirm) {
   const opp = OPPONENTS[opponentId];
-  const base = (opp?.chips) || 1000;
+  const isSerious = opponentId === 'rico_tutorial' && window.__ricoSeriousMode === true;
+  const base = isSerious ? 2000 : ((opp?.chips) || 1000);
   const bonus = chipBonusTotal();
   const max = base + bonus;
   const overlay = document.createElement('div');
@@ -2702,12 +2704,12 @@ function startBattleInternal(opponentId) {
   // 初期チップ：選択値があれば優先、無ければデフォルト
   const chosen = window.__chosenStartChips;
   window.__chosenStartChips = null; // 一回限り
-  if (chosen && !seriousRico) {
+  if (chosen) {
     state.playerChips = chosen;
     state.opponentChips = chosen;
   } else {
-    state.playerChips = seriousRico ? 1500 : opp.chips;
-    state.opponentChips = seriousRico ? 1800 : opp.chips;
+    state.playerChips   = seriousRico ? 2000 : opp.chips;
+    state.opponentChips = seriousRico ? 2000 : opp.chips;
   }
   state.tutorialMode = seriousRico ? false : opp.tutorial;
   state.fullHand = seriousRico ? true : !!opp.fullHand;
