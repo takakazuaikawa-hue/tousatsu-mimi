@@ -155,6 +155,10 @@
       <span class="opponent-name" data-bind="opponentName">ポルカ</span>
     </header>
 
+    <!-- 裏モード（クリア後限定・解放済みなら表示） -->
+    <button class="backdoor-toggle" data-action="toggle-backdoor" data-bind="backdoorBtn" title="裏モード：相手の心理ログを盗み見">✦</button>
+    <div class="backdoor-panel" data-bind="backdoorPanel"></div>
+
     <aside class="left-panel">
       <div class="character-frame char-rico">
         <img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">

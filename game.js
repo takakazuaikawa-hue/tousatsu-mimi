@@ -28,6 +28,8 @@ function defaultSave() {
     endingUnlocked: false,
     psychEnabled: true,   // 心理バトルON/OFF
     logicEnabled: true,   // 論理バトルON/OFF
+    backdoorUnlocked: false, // 裏モード（相手の手と心理を覗き見）
+    backdoorOn: false,       // 裏モードを今表示中か
     logs: { actions: [], bets: [], reactions: [], psych: [] },
   };
 }
@@ -1452,6 +1454,14 @@ function applyBindings() {
       }
       case 'lobbyRicoOutfit': el.textContent = pickLobbyRico().label; break;
       case 'lobbyBgmLabel': el.textContent = state.bgmOn === false ? '♪ —（停止中）' : '♪ Lounge Jazz — Velvet Night'; break;
+      case 'backdoorBtn':
+        el.style.display = save.backdoorUnlocked ? 'flex' : 'none';
+        el.classList.toggle('on', !!save.backdoorOn);
+        break;
+      case 'backdoorPanel':
+        el.style.display = (save.backdoorUnlocked && save.backdoorOn) ? 'block' : 'none';
+        el.innerHTML = renderBackdoorPanel();
+        break;
       case 'shopItems': el.innerHTML = renderShopItems('panyu'); break;
       case 'ricoShopComment': /* default initial */ break;
       case 'opponentImg':
@@ -2028,6 +2038,74 @@ function renderChipStack(amount, variant) {
   return `<span class="chip-stack ${variant ? 'chip-stack-' + variant : ''}">${stacks.join('')}</span>`;
 }
 
+// 裏モード：相手の手と心理を可視化
+function renderBackdoorPanel() {
+  if (!state.opponentHand || state.opponentHand.length === 0) {
+    return '<div class="backdoor-empty">（まだハンド開始前）</div>';
+  }
+  const handCards = state.opponentHand.map(c => `<span class="bd-card bd-${c.suit === '♥' || c.suit === '♦' ? 'red' : 'black'}">${c.rank}${c.suit}</span>`).join(' ');
+  let hsLabel = '計算中';
+  let hsPct = 0;
+  try {
+    if (state.community.length >= 3) {
+      const all = [...state.opponentHand, ...state.community];
+      const hs = handStrength01(all);
+      hsPct = Math.round(hs * 100);
+    } else {
+      const hs = opponentPreflopStrength(state.opponentHand);
+      hsPct = Math.round(hs * 100);
+    }
+    if (hsPct >= 75) hsLabel = '🔥 最強圏';
+    else if (hsPct >= 60) hsLabel = '💪 強い';
+    else if (hsPct >= 45) hsLabel = '🤔 普通';
+    else if (hsPct >= 30) hsLabel = '😅 微妙';
+    else hsLabel = '💧 弱い';
+  } catch(e) {}
+  const danger = evaluateBoardDanger(state.community || []);
+  const dangerLabels = [];
+  if (danger.flushAlert)    dangerLabels.push('🌊フラッシュ警戒');
+  if (danger.straightAlert) dangerLabels.push('🪜ストレート警戒');
+  if (danger.pairBoard)     dangerLabels.push('♠ボードペア');
+  const dangerStr = dangerLabels.length ? dangerLabels.join(' / ') : '安全';
+  const profile = state.opponentProfile || {};
+  const prof = [
+    `ブラフ ${Math.round((profile.bluffTendency||0)*100)}%`,
+    `攻撃 ${Math.round((profile.aggression||0)*100)}%`,
+    `規律 ${Math.round((profile.foldDiscipline||0)*100)}%`,
+    `バリュー ${Math.round((profile.valueBetTendency||0)*100)}%`,
+  ].join(' / ');
+  return `
+    <div class="bd-title">✦ 裏モード：心理ログ ✦</div>
+    <div class="bd-row"><span class="bd-label">手札</span><span class="bd-value">${handCards}</span></div>
+    <div class="bd-row"><span class="bd-label">手の強さ</span><span class="bd-value">${hsPct}％ ${hsLabel}</span></div>
+    <div class="bd-bar"><div class="bd-bar-fill" style="width:${hsPct}%"></div></div>
+    <div class="bd-row"><span class="bd-label">ボード</span><span class="bd-value">${dangerStr}</span></div>
+    <div class="bd-row"><span class="bd-label">性格</span><span class="bd-value bd-prof">${prof}</span></div>
+    ${state.lastOpponentIntent ? `<div class="bd-row"><span class="bd-label">直前の意図</span><span class="bd-value">${intentLabel(state.lastOpponentIntent)}</span></div>` : ''}
+  `;
+}
+
+function intentLabel(intent) {
+  return {
+    'bluff':         '🎭 ブラフ',
+    'forced_bluff':  '🎭 強制ブラフ（教材）',
+    'tutorial_bluff':'🎭 練習ブラフ',
+    'value':         '💎 バリュー（強い手で稼ぐ）',
+    'draw':          '🌊 ドロー潰し',
+    'trap':          '🪤 トラップ（チェックレイズ狙い）',
+  }[intent] || intent;
+}
+
+function updateBackdoorPanel() {
+  const btn = document.querySelector('[data-bind="backdoorBtn"]');
+  if (btn) btn.classList.toggle('on', !!save.backdoorOn);
+  const panel = document.querySelector('[data-bind="backdoorPanel"]');
+  if (panel) {
+    panel.style.display = (save.backdoorUnlocked && save.backdoorOn) ? 'block' : 'none';
+    panel.innerHTML = renderBackdoorPanel();
+  }
+}
+
 function renderOpponentBet() {
   if (state.currentBetOpponent <= 0) return '<span class="bet-none">— ベットなし —</span>';
   const potBefore = state.pot - state.currentBetOpponent - state.currentBetPlayer;
@@ -2212,11 +2290,28 @@ function onAction(e) {
       showEpisodeTitle(data.episode, null);
       break;
     case 'use-panyu-sense': usePanyuSense(); break;
-    case 'panyu-free':    showPanyuClicker(30, null); break;
+    case 'panyu-free': {
+      // 連打で裏モード解放（クリア後限定）
+      if (save.endingUnlocked && !save.backdoorUnlocked) {
+        state.__panyuClickCount = (state.__panyuClickCount || 0) + 1;
+        if (state.__panyuClickCount >= 7) {
+          save.backdoorUnlocked = true;
+          saveProgress();
+          alert('🐰✦ 裏モード解放！ ✦🐰\n\nバトル画面右上の ✦ ボタンで\n相手の手と心理を覗き見できます');
+        }
+      }
+      showPanyuClicker(30, null);
+      break;
+    }
     case 'toggle-bgm':    toggleLobbyBgm(); break;
     case 'toggle-psych':  save.psychEnabled = !(save.psychEnabled !== false); saveProgress(); applyBindings(); break;
     case 'toggle-logic':  save.logicEnabled = !(save.logicEnabled !== false); saveProgress(); applyBindings(); break;
     case 'play-ending':   state.screen = 'ending'; render(); break;
+    case 'toggle-backdoor':
+      save.backdoorOn = !save.backdoorOn;
+      saveProgress();
+      updateBackdoorPanel();
+      break;
   }
 }
 
@@ -2657,6 +2752,7 @@ function opponentTurn() {
   } else {
     action = decideOpponentAction(state.opponentProfile, ctx, { forceLargeBet });
   }
+  state.lastOpponentIntent = action.intent || action.type;
 
   // フォールド処理
   if (action.type === 'fold' && need > 0) {
