@@ -1411,10 +1411,9 @@ html, body {
   font-size: 18px;
   color: var(--c-gold-bright);
   letter-spacing: 0.05em;
-  background: rgba(0,0,0,0.6);
-  padding: 8px 22px 10px;
-  border-radius: 16px;
-  border: 2px solid var(--c-gold);
+  background: transparent;
+  padding: 0;
+  border: none;
   cursor: help;
   text-align: center;
   display: flex;
@@ -1422,6 +1421,15 @@ html, body {
   align-items: center;
   gap: 2px;
   position: relative;
+  /* 中央に光のオーラだけ薄く敷く */
+}
+.pot-display::before {
+  content: '';
+  position: absolute;
+  inset: -10px -20px;
+  background: radial-gradient(ellipse 60% 70% at 50% 50%, rgba(245,215,122,0.22) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
 }
 .pot-frame {
   display: flex;
@@ -1431,9 +1439,14 @@ html, body {
   gap: 10px;
 }
 .pot-img {
-  width: 56px; height: 56px;
+  width: 80px; height: 80px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 8px rgba(245,215,122,0.4));
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8)) drop-shadow(0 0 14px rgba(245,215,122,0.5));
+  animation: potIdleFloat 3s ease-in-out infinite;
+}
+@keyframes potIdleFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
 }
 .pot-img-fallback {
   display: none;
@@ -1484,11 +1497,28 @@ html, body {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: rgba(0,0,0,0.5);
-  border-radius: 10px;
+  gap: 10px;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   min-width: 130px;
+  position: relative;
+}
+/* ベット周りに淡いハイライト（プレイヤー金/相手赤） */
+.bet-side::before {
+  content: '';
+  position: absolute;
+  inset: -6px -10px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 60% / 80%;
+}
+.bet-side-opponent::before {
+  background: radial-gradient(ellipse 70% 80% at 50% 50%, rgba(200,37,58,0.22) 0%, transparent 70%);
+}
+.bet-side-player::before {
+  background: radial-gradient(ellipse 70% 80% at 50% 50%, rgba(245,215,122,0.22) 0%, transparent 70%);
 }
 .bet-side-body {
   display: flex;
@@ -1526,12 +1556,16 @@ html, body {
   color: var(--c-text);
   margin-top: 2px;
 }
-.bet-side-opponent { border: 1px solid rgba(200,37,58,0.6); }
 .bet-side-opponent .bet-side-label { color: var(--c-red-bright); }
-.bet-side-opponent .bet-side-amount { color: var(--c-red-bright); }
-.bet-side-player { border: 1px solid rgba(217,179,90,0.6); }
+.bet-side-opponent .bet-side-amount {
+  color: var(--c-red-bright);
+  text-shadow: 0 0 6px rgba(200,37,58,0.7), 0 2px 4px rgba(0,0,0,0.9);
+}
 .bet-side-player .bet-side-label { color: var(--c-gold-bright); }
-.bet-side-player .bet-side-amount { color: var(--c-gold-bright); }
+.bet-side-player .bet-side-amount {
+  color: var(--c-gold-bright);
+  text-shadow: 0 0 6px rgba(245,215,122,0.7), 0 2px 4px rgba(0,0,0,0.9);
+}
 .bet-side.empty .bet-side-amount { opacity: 0.35; font-size: 14px; }
 
 /* ========== チップスタック可視化（数字の背景に控えめ表示） ========== */
