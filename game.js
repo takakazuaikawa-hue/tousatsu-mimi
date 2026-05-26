@@ -3526,6 +3526,8 @@ function endBattle() {
         <button class="btn btn-primary big" data-action="go-ending">✨ エンディングへ ✨</button>
         <button class="btn btn-secondary" data-action="back-stage">ロビーへ</button>
       `;
+      // 動的に追加したボタンを再バインド
+      btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
     }
   }
 }
