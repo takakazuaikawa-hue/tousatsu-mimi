@@ -1422,12 +1422,18 @@ html, body {
   padding: 0;
   background: rgba(0,0,0,0.85);
   display: grid;
-  grid-template-columns: 220px 1fr 220px;
+  grid-template-columns: 180px 1fr 180px;
   align-items: stretch;
   justify-content: stretch;
   height: 100%;
   width: 100%;
 }
+/* 各要素のグリッド位置を明示（auto-placementの順番違いを防ぐ） */
+.battle-modal-overlay .battle-char-mimi { grid-column: 1; grid-row: 1; }
+.battle-modal-overlay .psych-modal { grid-column: 2; grid-row: 1; }
+.battle-modal-overlay .battle-char-opponent { grid-column: 3; grid-row: 1; }
+.battle-modal-overlay .battle-bg,
+.battle-modal-overlay .battle-vignette { grid-column: 1 / -1; grid-row: 1; }
 .battle-bg {
   position: absolute;
   inset: 0;
