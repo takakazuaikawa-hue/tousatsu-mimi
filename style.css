@@ -18,11 +18,6 @@
   --c-card-red: #c8253a;
   --c-card-black: #1a1a1a;
 
-  /* フォントスタック */
-  --f-body:    "Noto Sans JP", "Yu Gothic", "Hiragino Sans", sans-serif;
-  --f-display: "Zen Old Mincho", "Shippori Mincho", "Yu Mincho", "Hiragino Mincho ProN", serif;
-  --f-elegant: "Shippori Mincho", "Zen Old Mincho", "Yu Mincho", serif;
-  --f-deco:    "Cinzel", "Shippori Mincho", serif;
 }
 
 * { box-sizing: border-box; }
@@ -31,7 +26,7 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: var(--f-body);
+  font-family: "Noto Sans JP", "Yu Gothic", "Hiragino Sans", sans-serif;
   background: #000;
   color: var(--c-text);
   overflow: hidden;
@@ -1578,53 +1573,6 @@ html, body {
   text-shadow: 0 0 6px rgba(245,215,122,0.7), 0 2px 4px rgba(0,0,0,0.9);
 }
 .bet-side.empty .bet-side-amount { opacity: 0.35; font-size: 14px; }
-
-/* ========== フォント割り当て：豪華系 ========== */
-/* タイトル・大見出し */
-.lobby-title, .game-title, .title-line1,
-.episode-title, .ending-fin, .ending-title,
-.ending-title-jp,
-.tousatsu-text {
-  font-family: var(--f-display);
-  font-weight: 900;
-}
-/* ラノベ的見出し系 */
-.episode-no, .ending-narration,
-.stage-name, .stage-card .stage-name,
-.opponent-name, .portrait-name,
-.lobby-section-label,
-.psych-modal-title, .psych-question, .psych-result-title,
-.tousatsu-sub, .lecture-chapter-title,
-.shop-cat-btn, .shop-screen h2, .top-hud h2 {
-  font-family: var(--f-elegant);
-  font-weight: 700;
-}
-/* 数字系（カジノ装飾） */
-.pot-amount, .bet-side-amount, .amt-num,
-.chip-meter-value, .coin-display,
-.rank-display .rank-value,
-.score-display, .result-title {
-  font-family: var(--f-deco);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-}
-/* カード上のランク・スート */
-.card .rank, .card .suit, .card .center-suit {
-  font-family: var(--f-deco);
-  font-weight: 700;
-}
-/* 役名バナーの中身 */
-.current-hand-display {
-  font-family: var(--f-elegant);
-  font-weight: 700;
-}
-/* セリフ系（読みやすさ重視） */
-.rico-bubble, .lobby-rico-bubble,
-.opponent-speech, .mimi-speech,
-.episode-card, .ending-bubble-text,
-.tutorial-bubble {
-  font-family: var(--f-elegant);
-}
 
 /* ========== チップスタック可視化（数字の背景に控えめ表示） ========== */
 .pot-display, .bet-side { position: relative; }
