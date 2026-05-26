@@ -490,39 +490,61 @@ html, body {
 }
 
 /* ========== 交換所 ========== */
-.shop-screen { grid-template-rows: 60px 1fr; }
-.shop-main {
+.shop-screen { grid-template-rows: 60px auto 1fr; }
+
+/* タブナビ */
+.shop-tabs {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: 160px 1fr 280px;
-  gap: 16px;
-  padding: 20px;
-  height: 100%;
-  overflow: hidden;
-}
-.shop-sidebar {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  gap: 4px;
+  padding: 8px 20px 0;
+  border-bottom: 2px solid var(--c-gold);
 }
 .shop-cat-btn {
-  padding: 16px 12px;
-  background: rgba(0,0,0,0.4);
+  padding: 10px 22px;
+  background: rgba(20,8,29,0.7);
   border: 2px solid rgba(217,179,90,0.4);
-  border-radius: 8px;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
   color: var(--c-text);
   font-family: inherit;
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-  letter-spacing: 0.1em;
-  min-height: 56px;
+  letter-spacing: 0.08em;
+  margin-bottom: -2px;
+  position: relative;
+  transition: all 0.15s ease;
 }
-.shop-cat-btn:hover { background: rgba(90,42,138,0.4); }
+.shop-cat-btn:hover {
+  background: rgba(90,42,138,0.5);
+  transform: translateY(-2px);
+}
 .shop-cat-btn.active {
   background: linear-gradient(180deg, var(--c-purple-light) 0%, var(--c-purple) 100%);
   border-color: var(--c-gold-bright);
   color: var(--c-gold-bright);
+  box-shadow: 0 -4px 14px rgba(245,215,122,0.3);
+  font-weight: 700;
+}
+.shop-cat-btn.active::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -3px;
+  height: 4px;
+  background: linear-gradient(180deg, var(--c-purple) 0%, var(--c-purple) 50%, transparent 100%);
+}
+
+.shop-main {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+  padding: 16px 20px 20px;
+  height: 100%;
+  overflow: hidden;
 }
 .shop-items {
   display: grid;
