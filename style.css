@@ -1462,9 +1462,17 @@ html, body {
 .bet-side-player .bet-side-amount { color: var(--c-gold-bright); }
 .bet-side.empty .bet-side-amount { opacity: 0.35; font-size: 14px; }
 
-/* ========== チップスタック可視化（数字に重ねて配置：レイアウト非影響） ========== */
+/* ========== チップスタック可視化（数字の背景に控えめ表示） ========== */
 .pot-display, .bet-side { position: relative; }
-.amt-num { display: block; position: relative; z-index: 2; }
+.amt-num {
+  display: block;
+  position: relative;
+  z-index: 2;
+  text-shadow:
+    0 0 6px rgba(0,0,0,0.95),
+    0 0 12px rgba(0,0,0,0.85),
+    0 2px 3px rgba(0,0,0,0.9);
+}
 .chip-stack {
   position: absolute;
   left: 50%;
@@ -1474,11 +1482,11 @@ html, body {
   flex-direction: row;
   align-items: flex-end;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   z-index: 1;
-  opacity: 0.85;
+  opacity: 0.45;
   pointer-events: none;
-  min-height: 28px;
+  min-height: 22px;
 }
 .chip-stack-col {
   display: inline-flex;
@@ -1488,12 +1496,12 @@ html, body {
 }
 .chip-pic {
   display: inline-block;
-  width: 24px; height: 24px;
-  margin-top: -16px; /* 上方向に重ね積み */
+  width: 18px; height: 18px;
+  margin-top: -13px; /* 上方向に重ね積み */
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5));
 }
 .chip-pic.chip-white { background-image: url('assets/ui/chip_white.png'); }
 .chip-pic.chip-red   { background-image: url('assets/ui/chip_red.png');   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)) drop-shadow(0 0 3px rgba(200,37,58,0.4)); }
