@@ -913,7 +913,7 @@ function applyBindings() {
       case 'zazazoFill': el.style.width = `${(state.zazazo / state.zazazoMax) * 100}%`; break;
       case 'zazazoText': el.textContent = zazazoLabel(state.zazazo); break;
       case 'mimiThought': el.textContent = state.mimiThought; break;
-      case 'ricoAdvice': el.textContent = state.ricoAdvice; break;
+      case 'ricoAdvice': el.innerHTML = state.ricoAdvice; break;
       case 'opponentSpeech': el.textContent = state.opponentSpeech; break;
       case 'opponentBet': el.innerHTML = renderOpponentBet(); break;
       case 'currentHandName': el.innerHTML = renderCurrentHandName(); break;
