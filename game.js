@@ -1274,48 +1274,53 @@ function buyItem(itemId) {
 }
 
 function pickLogicQuestion() {
-  // 状況に応じて適切な論理バトルを返す
+  // 出題済みを避けて未出題から選ぶ
+  const allLogicIds = ['logic_pot_odds_basic', 'logic_flush_outs', 'logic_hand_compare', 'logic_position'];
+  const seen = state.seenQuestions || new Set();
+  // 状況にマッチする候補を計算
   const need = state.currentBetOpponent - state.currentBetPlayer;
   const potBefore = state.pot - need;
-  if (need > 0 && potBefore > 0) {
-    // コール判断 → ポットオッズ
-    return 'logic_pot_odds_basic';
-  }
-  // 場札に同スート2枚以上 → フラッシュアウツ
   const suits = state.community.map(c => c.suit);
-  const counts = {};
-  suits.forEach(s => counts[s] = (counts[s] || 0) + 1);
-  const maxSuit = Math.max(...Object.values(counts), 0);
-  if (maxSuit >= 2 && state.playerHand[0]?.suit === state.playerHand[1]?.suit) {
-    return 'logic_flush_outs';
-  }
-  // フロップ後・特殊状況なし → 役比較 or ポジション
-  if (state.handPhase === 'flop') return 'logic_hand_compare';
-  return 'logic_position';
+  const suitCounts = {};
+  suits.forEach(s => suitCounts[s] = (suitCounts[s] || 0) + 1);
+  const maxSuit = Math.max(...Object.values(suitCounts), 0);
+  const candidates = [];
+  if (need > 0 && potBefore > 0) candidates.push('logic_pot_odds_basic');
+  if (maxSuit >= 2 && state.playerHand[0]?.suit === state.playerHand[1]?.suit) candidates.push('logic_flush_outs');
+  if (state.handPhase === 'flop') candidates.push('logic_hand_compare');
+  candidates.push('logic_position');
+  // 未出題優先
+  const fresh = candidates.find(q => !seen.has(q));
+  if (fresh) return fresh;
+  // 全部出題済みなら全プールから未出題、なければランダム
+  const allFresh = allLogicIds.find(q => !seen.has(q));
+  return allFresh || candidates[0];
 }
 
 function pickPsychQuestion() {
-  // 対戦相手に応じて問題プールを切り替える
+  // 対戦相手に応じて問題プールを切り替える＋出題済みは避ける
   const id = state.opponentId;
+  const seen = state.seenQuestions || new Set();
   if (id === 'rico_tutorial') return 'rico_tutorial_flop';
   if (id === 'polka') return 'polka_flop_bluff';
   if (id === 'selina') {
-    // 場札に「同スート2枚以上＝フラッシュ警報」が本当にある時だけ flush_alert を出す
     const suits = state.community.map(c => c.suit);
     const counts = {};
     suits.forEach(s => counts[s] = (counts[s] || 0) + 1);
     const maxSuit = Math.max(...Object.values(counts), 0);
-    if (maxSuit >= 2) return 'selina_flush_alert';
-    // 連番ドロー・ベットサイズ寄り
-    return 'selina_bet_size';
+    const fitCondition = maxSuit >= 2 ? 'selina_flush_alert' : 'selina_bet_size';
+    const other = fitCondition === 'selina_flush_alert' ? 'selina_bet_size' : 'selina_flush_alert';
+    // 状況マッチを優先、ただし2回目以降は別問題に切り替え
+    return seen.has(fitCondition) && !seen.has(other) ? other : fitCondition;
   }
   if (id === 'grano') {
     const potBefore = state.pot - state.currentBetOpponent;
     const ratio = potBefore > 0 ? state.currentBetOpponent / potBefore : 1;
-    return ratio < 0.5 ? 'grano_cheap_call' : 'grano_expensive';
+    const fitCondition = ratio < 0.5 ? 'grano_cheap_call' : 'grano_expensive';
+    const other = fitCondition === 'grano_cheap_call' ? 'grano_expensive' : 'grano_cheap_call';
+    return seen.has(fitCondition) && !seen.has(other) ? other : fitCondition;
   }
   if (id === 'velvet') {
-    // フェーズ毎に異なる問題を出す
     if (state.handPhase === 'flop') return 'velvet_flop';
     if (state.handPhase === 'turn') return 'velvet_turn';
     if (state.handPhase === 'river') return 'velvet_river_evidence';
@@ -1828,10 +1833,11 @@ function opponentTurn() {
   state.opponentSpeech = opponentSpeech(action);
   log('bets', { actor: 'opponent', type: 'bet', size: action.size, amount, intent: action.intent });
   log('reactions', { intent: action.intent, speech: state.opponentSpeech });
-  // 大ベット時に相手カットイン（カードゲーム感UP）
+  // 大ベット時に重さ演出＋相手カットイン
   const bigBet = (action.size === 'pot_2_3' || action.size === 'pot_1' || action.size === 'allin');
   if (bigBet) {
-    setTimeout(() => showOpponentCutIn(state.opponentSpeech), 300);
+    triggerBetShake(action.size);
+    setTimeout(() => showOpponentCutIn(state.opponentSpeech, action.size), 300);
   }
 
   const bigEnough = (action.size === 'pot_2_3' || action.size === 'pot_1' || action.size === 'allin');
@@ -1954,6 +1960,9 @@ function advanceAfterCall() {
 //=============================================================
 function triggerPsychBattle(qid) {
   state.psychPending = true;
+  // 出題履歴に追加
+  if (!state.seenQuestions) state.seenQuestions = new Set();
+  state.seenQuestions.add(qid);
   const q = PSYCH_QUESTIONS[qid];
   // v4 A1: 選択肢シャッフル
   const shuffled = shuffle(q.choices);
@@ -1969,7 +1978,9 @@ function triggerPsychBattle(qid) {
   const isLogic = q.type === 'logic';
   const titleEl = root.querySelector('.psych-title');
   if (titleEl) {
-    titleEl.textContent = isLogic ? '🧮 論理バトル' : '🧠 心理バトル';
+    titleEl.innerHTML = isLogic
+      ? '🧮 論理バトル<small class="battle-subtitle">— ポーカーの数学を覚える —</small>'
+      : '🧠 心理バトル<small class="battle-subtitle">— 相手の本心を読む —</small>';
     titleEl.classList.toggle('logic-mode', isLogic);
   }
   // モーダル全体にもクラス
@@ -1997,7 +2008,23 @@ function triggerPsychBattle(qid) {
   }
   // 改行を<br>に、HTMLタグも反映できるようinnerHTMLに
   root.querySelector('[data-bind="psychSituation"]').innerHTML = q.situationFn(state).replace(/\n/g, '<br>');
-  root.querySelector('[data-bind="psychSpeech"]').textContent = `ポルカ：「${q.speech}」`;
+  // 相手キャラ顔を speech 部分に追加（心理バトルのみ、論理バトルは出さない）
+  const speechEl = root.querySelector('[data-bind="psychSpeech"]');
+  if (!isLogic && state.opponentImgKey && qid !== 'velvet_opening') {
+    speechEl.innerHTML = `
+      <div class="psych-opponent-face">
+        <img src="assets/characters/${state.opponentImgKey}_default.png" alt="${state.opponentName}" onerror="window.assetFallback(this,'${state.opponentImgKey}')">
+      </div>
+      <div class="psych-opponent-line">
+        <div class="psych-opponent-name">${state.opponentName}</div>
+        <div class="psych-opponent-quote">「${q.speech}」</div>
+      </div>
+    `;
+    speechEl.classList.add('with-portrait');
+  } else {
+    speechEl.textContent = `${state.opponentName || '相手'}：「${q.speech}」`;
+    speechEl.classList.remove('with-portrait');
+  }
   root.querySelector('[data-bind="zazazoHint"]').textContent = q.zazazoHint;
 
   const choicesEl = root.querySelector('[data-bind="psychChoices"]');
@@ -2590,13 +2617,18 @@ function dismissCutIn() {
   if (activeCutInDismiss) activeCutInDismiss();
 }
 
-function showOpponentCutIn(text) {
+function showOpponentCutIn(text, betSize) {
   if (activeCutInDismiss) activeCutInDismiss();
   const imgKey = state.opponentImgKey || 'polka';
   const oppName = state.opponentName || '相手';
+  // ベットサイズで強度クラス
+  const intensity = betSize === 'allin' ? 'cutin-allin' :
+                    betSize === 'pot_1' ? 'cutin-pot' :
+                    betSize === 'pot_2_3' ? 'cutin-strong' : '';
   const cut = document.createElement('div');
-  cut.className = 'rico-cutin opponent-cutin';
+  cut.className = `rico-cutin opponent-cutin ${intensity}`;
   cut.innerHTML = `
+    <div class="cutin-flash"></div>
     <div class="cutin-portrait">
       <img src="assets/characters/${imgKey}_default.png" alt="${oppName}" onerror="window.assetFallback(this,'${imgKey}')">
     </div>
@@ -2616,6 +2648,18 @@ function showOpponentCutIn(text) {
   };
   cut.addEventListener('click', dismiss);
   activeCutInDismiss = dismiss;
+}
+
+// ベット時の画面振動演出
+function triggerBetShake(betSize) {
+  const stage = document.getElementById('stage');
+  if (!stage) return;
+  stage.classList.remove('shake-strong', 'shake-pot', 'shake-allin');
+  void stage.offsetWidth;  // re-flow to restart animation
+  const cls = betSize === 'allin' ? 'shake-allin' :
+              betSize === 'pot_1' ? 'shake-pot' : 'shake-strong';
+  stage.classList.add(cls);
+  setTimeout(() => stage.classList.remove(cls), 700);
 }
 
 function showMimiCutIn(text, narration) {

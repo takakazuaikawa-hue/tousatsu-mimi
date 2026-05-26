@@ -856,7 +856,19 @@ html, body {
   border: 1px solid rgba(217,179,90,0.4);
   overflow: hidden;
 }
-.char-rico { flex: 1; min-height: 100px; }
+.char-rico {
+  flex: 1;
+  min-height: 100px;
+  overflow: hidden;
+}
+.char-rico img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover !important;
+  object-position: 50% 8% !important;
+  transform: scale(1.6);
+  transform-origin: 50% 15%;
+}
 .rico-bubble {
   background: var(--c-gold-bright);
   color: var(--c-bg-dark);
@@ -1097,18 +1109,7 @@ html, body {
   display: flex;
   align-items: center;
 }
-.mimi-thought-bubble::before {
-  content: "💭";
-  position: absolute;
-  top: -10px;
-  left: 14px;
-  font-size: 16px;
-  font-style: normal;
-  background: var(--c-purple);
-  padding: 2px 8px;
-  border-radius: 50%;
-  border: 1px solid var(--c-gold);
-}
+/* 思考アイコン廃止：シンプルなバブルだけ表示 */
 .zazazo-display { display: flex; flex-direction: column; gap: 6px; }
 .zazazo-label { font-size: 15px; color: var(--c-gold-bright); letter-spacing: 0.15em; }
 .zazazo-bar {
@@ -1514,6 +1515,19 @@ html, body {
   font-size: 26px;
   color: var(--c-gold-bright);
   letter-spacing: 0.3em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.battle-subtitle {
+  font-size: 14px;
+  color: var(--c-text-dim);
+  letter-spacing: 0.2em;
+  font-weight: 500;
+}
+.psych-title.logic-mode .battle-subtitle {
+  color: #a7d8ff;
 }
 .psych-title.logic-mode {
   color: #6ec5ff;
@@ -1560,6 +1574,49 @@ html, body {
   margin-bottom: 8px;
   font-size: 15px;
   font-style: italic;
+}
+.psych-speech.with-portrait {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 10px 14px;
+}
+.psych-opponent-face {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid var(--c-red);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.4);
+}
+.psych-opponent-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 8%;
+  transform: scale(2.2);
+  transform-origin: 50% 10%;
+}
+.psych-opponent-line {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  font-style: normal;
+}
+.psych-opponent-name {
+  font-size: 14px;
+  color: var(--c-red-bright);
+  letter-spacing: 0.2em;
+  font-weight: 700;
+}
+.psych-opponent-quote {
+  font-size: 17px;
+  font-style: italic;
+  color: #fff;
+  line-height: 1.45;
 }
 .zazazo-hint {
   background: rgba(217,179,90,0.12);
@@ -1810,6 +1867,34 @@ html, body {
 .rico-cutin.cutin-fail .cutin-text {
   border-color: var(--c-red);
 }
+/* ベット時の画面振動演出 */
+@keyframes shakeStrong {
+  0%, 100% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(0, 0); }
+  20% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(-6px, 2px); }
+  40% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(5px, -3px); }
+  60% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(-4px, 2px); }
+  80% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(3px, -1px); }
+}
+@keyframes shakePot {
+  0%, 100% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(0, 0); }
+  15% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(-10px, 4px); }
+  30% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(8px, -5px); }
+  50% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(-7px, 3px); }
+  70% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(5px, -2px); }
+  85% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(-3px, 1px); }
+}
+@keyframes shakeAllin {
+  0%, 100% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(0, 0) rotate(0); }
+  10% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(-12px, 5px) rotate(-0.3deg); }
+  25% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(10px, -7px) rotate(0.3deg); }
+  40% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(-9px, 4px) rotate(-0.2deg); }
+  55% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(8px, -3px) rotate(0.2deg); }
+  75% { transform: translate(-50%, -50%) scale(var(--game-scale, 1)) translate(-5px, 2px) rotate(0); }
+}
+#stage.shake-strong { animation: shakeStrong 0.5s ease-out; }
+#stage.shake-pot { animation: shakePot 0.6s ease-out; }
+#stage.shake-allin { animation: shakeAllin 0.7s ease-out; }
+
 /* 相手カットイン（大ベット時の重要発言） */
 .rico-cutin.opponent-cutin {
   flex-direction: row-reverse;
@@ -1842,6 +1927,52 @@ html, body {
 }
 .rico-cutin.opponent-cutin .cutin-name {
   color: var(--c-red-bright);
+}
+/* カットイン背景フラッシュ */
+.cutin-flash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 80% 50%, rgba(200,37,58,0.4) 0%, transparent 60%);
+  pointer-events: none;
+  animation: cutinFlash 0.6s ease-out;
+  z-index: -1;
+}
+@keyframes cutinFlash {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  100% { opacity: 0; }
+}
+/* 強度別カットイン演出 */
+.rico-cutin.cutin-strong .cutin-portrait { border-color: var(--c-red-bright); }
+.rico-cutin.cutin-pot .cutin-portrait {
+  border-width: 5px;
+  border-color: var(--c-red-bright);
+  box-shadow: 0 0 50px var(--c-red), inset 0 0 30px rgba(255,61,87,0.5);
+}
+.rico-cutin.cutin-pot .cutin-flash {
+  background: radial-gradient(ellipse at 80% 50%, rgba(255,61,87,0.55) 0%, transparent 60%);
+}
+.rico-cutin.cutin-allin .cutin-portrait {
+  border-width: 6px;
+  border-color: var(--c-gold-bright);
+  box-shadow:
+    0 0 60px var(--c-gold-bright),
+    0 0 100px var(--c-red),
+    inset 0 0 40px rgba(245,215,122,0.6);
+  animation: allinPulse 0.8s ease-in-out infinite;
+}
+.rico-cutin.cutin-allin .cutin-flash {
+  background:
+    radial-gradient(ellipse at center, rgba(255,61,87,0.6) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(245,215,122,0.6) 0%, transparent 60%);
+}
+.rico-cutin.cutin-allin .cutin-line {
+  font-size: 26px;
+  font-weight: 700;
+}
+@keyframes allinPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 /* ミミ専用カットイン：ぱにゅぱにゅ発動時 */
@@ -1888,6 +2019,7 @@ html, body {
   animation: fadeIn 0.3s;
 }
 .hand-result-card {
+  position: relative;
   background: linear-gradient(180deg, var(--c-bg-mid) 0%, var(--c-bg-dark) 100%);
   border: 3px solid var(--c-gold);
   border-radius: 16px;
@@ -1903,6 +2035,45 @@ html, body {
 .hand-result-card.win {
   border-color: var(--c-gold-bright);
   box-shadow: 0 0 60px rgba(245,215,122,0.7);
+  background:
+    radial-gradient(ellipse at top, rgba(245,215,122,0.25) 0%, transparent 60%),
+    linear-gradient(180deg, var(--c-bg-mid) 0%, var(--c-bg-dark) 100%);
+}
+.hand-result-card.win::before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(245,215,122,0.3) 0%, transparent 25%),
+    radial-gradient(circle at 80% 70%, rgba(245,215,122,0.3) 0%, transparent 25%),
+    radial-gradient(circle at 50% 10%, rgba(255,193,216,0.25) 0%, transparent 30%);
+  pointer-events: none;
+  animation: winShimmer 2s ease-in-out infinite;
+  border-radius: 16px;
+  z-index: -1;
+}
+@keyframes winShimmer {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.hand-result-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(245,215,122,0.6) 1.5px, transparent 2px),
+    radial-gradient(circle, rgba(255,193,216,0.5) 1.5px, transparent 2px),
+    radial-gradient(circle, rgba(110,197,255,0.5) 1.5px, transparent 2px);
+  background-size: 80px 80px, 120px 120px, 100px 100px;
+  background-position: 0 0, 40px 60px, 20px 30px;
+  pointer-events: none;
+  opacity: 0;
+  animation: confetti 3s ease-out forwards;
+}
+@keyframes confetti {
+  0% { opacity: 0; background-position: 0 -100%, 40px -100%, 20px -100%; }
+  20% { opacity: 1; }
+  100% { opacity: 0.3; background-position: 0 100%, 40px 100%, 20px 100%; }
 }
 .hand-result-card.lose {
   border-color: var(--c-red);
