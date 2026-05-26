@@ -2663,6 +2663,17 @@ function showPanyuClicker(totalTaps, onComplete) {
     blob.classList.remove('wobble');
     void blob.offsetWidth;
     blob.classList.add(fastTap ? 'wobble-fast' : 'wobble');
+    // タップごとに位置をシフト（progress に応じて移動量を増やす）
+    if (count > 0) {
+      const progress = tapped / totalTaps;
+      const maxDist = 60 + progress * 140; // 序盤60px → 終盤200px
+      const angle = rand() * Math.PI * 2;
+      const dx = Math.cos(angle) * maxDist;
+      const dy = Math.sin(angle) * maxDist;
+      blob.style.translate = `${dx}px ${dy}px`;
+    } else {
+      blob.style.translate = '0 0';
+    }
     if (count <= 0) {
       completed = true;
       blob.classList.add('panyu-complete');
