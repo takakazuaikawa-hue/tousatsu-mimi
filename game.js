@@ -1055,15 +1055,15 @@ const SHOP_ITEMS = [
   { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 500, desc: 'テーブル背景をVIP風に変更' },
 ];
 
-const RICO_SHOP_COMMENTS = {
-  panyu_sense_lv2:     '迷いやすいなら、まずこれ。ハズレが減るから正解に集中しやすくなるよ',
-  panyu_range_lv2:     '相手レンジが見えると、次のベットが読みやすくなる。中級者への第一歩だね',
-  panyu_gauge_plus_20: 'センスを連打したいなら上限拡張。長期戦向けかな',
-  note_board_danger:   'フラッシュ・ストレート要注意のサインが出る。セリナ戦の前にあるとめっちゃ楽',
-  note_pot_odds:       '「払う額が安いから見る」「高いから降りる」が分かるようになる。グラーノ戦で必須級',
-  note_bet_size:       'ベットボタンの説明が詳しくなる。基本に立ち返りたい時にどうぞ',
-  skin_red_gold_card:  '見た目がぐっと豪華になる。テンション上げたい時に',
-  table_vip:           'テーブルが渋くなる。気分転換にね',
+const SHOP_COMMENTS = {
+  panyu_sense_lv2:     'ふむ、迷うお嬢さんにこそ、これ。ハズレを1枚お引きしますから、お買い得ですよ',
+  panyu_range_lv2:     'レンジが見える品、と言いましょうか。次の一手の読みが冴える、中級者向けの逸品ですな',
+  panyu_gauge_plus_20: '長くお遊びになるなら、上限拡張は必須。お買い得な投資です',
+  note_board_danger:   '危険信号を教える、いわば早期警戒装置ですな。セリナさん戦の前に揃えると、ずいぶん楽ですよ',
+  note_pot_odds:       'ふふ、私の専門分野ですな。「安いか、高いか」が即座に見える品。私との商談で必要になりますよ',
+  note_bet_size:       'ベットの作法をおさらいできる、初心者向けの基礎教材です。お得ですよ',
+  skin_red_gold_card:  '見た目重視のお嬢さんに。テーブルが華やぎますよ',
+  table_vip:           'VIPのお客様気分でお楽しみいただける一品。気分転換にぜひ',
 };
 
 function renderShopItems(cat) {
@@ -1114,7 +1114,7 @@ function selectShopItem(item) {
   document.querySelectorAll('.shop-item').forEach(i => i.classList.remove('selected'));
   item.classList.add('selected');
   const id = item.dataset.item;
-  const comment = RICO_SHOP_COMMENTS[id];
+  const comment = SHOP_COMMENTS[id];
   if (comment) {
     const el = document.querySelector('[data-bind="ricoShopComment"]');
     if (el) el.textContent = `「${comment}」`;
