@@ -572,18 +572,23 @@ html, body {
 .char-grano-shop,
 .char-rico-shop {
   width: 100%;
-  height: 280px;
+  height: 320px;
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(90,42,138,0.3) 0%, rgba(20,8,29,0.6) 100%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
 }
 .char-grano-shop img,
 .char-rico-shop img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  object-position: 50% 5%;
-  transform: scale(2.2);
-  transform-origin: 50% 8%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
+  display: block;
+  /* 頭が切れないよう transform は使わない */
 }
 .grano-shop-bubble,
 .rico-shop-bubble {
