@@ -2452,22 +2452,33 @@ function isFullscreen() {
 async function requestGameFullscreen() {
   const el = document.documentElement;
   const fn = el.requestFullscreen || el.webkitRequestFullscreen;
+  console.log('[FS] support:', !!fn, 'isFS:', isFullscreen(), 'UA:', UA.slice(0,60));
   if (!fn) {
-    // iPhone Safari など Fullscreen API 非対応 → PWAインストール案内
     showIosFullscreenHelp();
     return false;
   }
   try {
     const p = fn.call(el);
     if (p && p.then) await p;
+    console.log('[FS] after request:', isFullscreen());
   } catch (e) {
-    console.warn('Fullscreen request failed', e);
+    console.warn('[FS] Fullscreen request failed', e);
     return false;
   }
   if (screen.orientation && screen.orientation.lock) {
-    try { await screen.orientation.lock('landscape'); } catch (e) { /* 対応外端末 */ }
+    try {
+      await screen.orientation.lock('landscape');
+      console.log('[FS] orientation locked');
+    } catch (e) {
+      console.warn('[FS] orientation lock failed', e);
+    }
   }
-  return true;
+  return isFullscreen();
+}
+
+function dismissFullscreenBtn() {
+  const btn = document.getElementById('fullscreen-btn');
+  if (btn) btn.hidden = true;
 }
 
 function showIosFullscreenHelp() {
@@ -2494,12 +2505,14 @@ function showIosFullscreenHelp() {
 }
 
 function updateFullscreenBtn() {
+  const group = document.getElementById('fullscreen-btn-group');
   const btn = document.getElementById('fullscreen-btn');
-  if (!btn) return;
+  if (!group || !btn) return;
+  // 一度dismissされたら再表示しない（セッション中）
+  if (sessionStorage.getItem('fs-dismissed') === '1') { group.hidden = true; return; }
   const isLandscape = window.matchMedia('(orientation: landscape)').matches;
   const shouldShow = isMobile() && isLandscape && !isFullscreen() && !IS_STANDALONE;
-  btn.hidden = !shouldShow;
-  // iPhone Safari 用にラベル変更
+  group.hidden = !shouldShow;
   if (shouldShow) {
     if (IS_IPHONE && !fullscreenSupported()) {
       btn.textContent = '⛶ 全画面の遊び方';
@@ -2510,14 +2523,30 @@ function updateFullscreenBtn() {
 }
 
 const fsBtn = document.getElementById('fullscreen-btn');
+const fsGroup = document.getElementById('fullscreen-btn-group');
+const fsDismiss = document.getElementById('fullscreen-dismiss-btn');
 if (fsBtn) {
   fsBtn.addEventListener('click', async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (fsGroup) fsGroup.hidden = true;
     const ok = await requestGameFullscreen();
-    if (ok) {
-      setTimeout(updateFullscreenBtn, 300);
+    if (!ok) {
+      // 失敗時は1秒後に再表示（再試行できるよう）
+      if (fullscreenSupported() && fsGroup) {
+        setTimeout(() => { fsGroup.hidden = false; }, 1000);
+      }
+    } else {
+      setTimeout(updateFullscreenBtn, 500);
     }
-    // 失敗時は showIosFullscreenHelp() が requestGameFullscreen 内で呼ばれる
+  });
+}
+if (fsDismiss) {
+  fsDismiss.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sessionStorage.setItem('fs-dismissed', '1');
+    if (fsGroup) fsGroup.hidden = true;
   });
 }
 window.addEventListener('orientationchange', () => setTimeout(updateFullscreenBtn, 200));

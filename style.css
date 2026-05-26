@@ -90,11 +90,17 @@ html, body {
 }
 
 /* 全画面ボタン：横向きスマホでフルスクリーン未適用時 */
-#fullscreen-btn {
+#fullscreen-btn-group {
   position: fixed;
   bottom: 16px;
   right: 16px;
   z-index: 9998;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+#fullscreen-btn-group[hidden] { display: none; }
+#fullscreen-btn {
   padding: 12px 22px;
   background: linear-gradient(180deg, var(--c-red) 0%, #7a1525 100%);
   border: 2px solid var(--c-gold-bright);
@@ -113,6 +119,18 @@ html, body {
   50% { box-shadow: 0 4px 16px rgba(0,0,0,0.6), 0 0 40px rgba(245,215,122,0.6); }
 }
 #fullscreen-btn:active { transform: scale(0.96); }
+#fullscreen-dismiss-btn {
+  padding: 0;
+  width: 36px;
+  background: rgba(0,0,0,0.6);
+  border: 2px solid var(--c-gold-bright);
+  border-radius: 10px;
+  color: var(--c-gold-bright);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+#fullscreen-dismiss-btn:active { transform: scale(0.94); }
 
 /* iOSヘルプモーダル */
 .ios-help-modal {
