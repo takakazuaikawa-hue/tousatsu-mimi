@@ -2669,8 +2669,8 @@ function opponentTurn() {
   const triggerBluff = (isPostFlop && bigEnough && isBluffBet && rand() < 0.5);
   // ヴェルベット（ボス戦）：各ストリートで確定発動
   const triggerBoss = state.isBoss && isPostFlop && bigEnough;
-  // 心理バトル有効判定（チュートリアルは常時ON、その他は設定に従う）
-  const psychAllowed = (state.opponentId === 'rico_tutorial') || (save.psychEnabled !== false);
+  // 心理バトル有効判定（チュートリアル中は常時ON、その他は設定に従う）
+  const psychAllowed = state.tutorialMode || (save.psychEnabled !== false);
   if (psychAllowed && !state.psychResolved && (triggerFirstHand || triggerBluff || triggerBoss)) {
     render();
     const qid = pickPsychQuestion();
@@ -2679,7 +2679,7 @@ function opponentTurn() {
   }
 
   // 論理バトル：心理バトルが出なかった時、ストリート毎に発動チャンス
-  const logicAllowed = (state.opponentId === 'rico_tutorial') || (save.logicEnabled !== false);
+  const logicAllowed = state.tutorialMode || (save.logicEnabled !== false);
   const triggerLogic = logicAllowed && isPostFlop && !state.logicResolvedStreet && !state.psychResolved && rand() < 0.55;
   if (triggerLogic) {
     const lqid = pickLogicQuestion();
