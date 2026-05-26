@@ -1837,6 +1837,7 @@ function applyBindings() {
       case 'zazazoFill': el.style.width = `${(state.zazazo / state.zazazoMax) * 100}%`; break;
       case 'zazazoText': el.textContent = zazazoLabel(state.zazazo); break;
       case 'mimiThought': el.textContent = state.mimiThought; break;
+      case 'situationAnalysis': el.innerHTML = renderSituationAnalysis(); break;
       case 'ricoAdvice': el.innerHTML = state.ricoAdvice; break;
       case 'opponentSpeech': el.textContent = state.opponentSpeech; break;
       case 'opponentBet': el.innerHTML = renderOpponentBet(); break;
@@ -2569,6 +2570,102 @@ function renderChipStack(amount, variant) {
 }
 
 // 裏モード：相手の手と心理を可視化
+// 状況分析パネル：プレイヤーのターンに役立つ理論的な指針
+function renderSituationAnalysis() {
+  // バトル外/手札なし時は空
+  if (state.screen !== 'battle' || !state.playerHand || state.playerHand.length === 0) return '';
+  if (state.handPhase === 'idle' || state.handPhase === 'showdown') return '';
+
+  const need = Math.max(0, state.currentBetOpponent - state.currentBetPlayer);
+  const pot = state.pot || 0;
+  const potAfter = pot + need;
+  const reqWinRate = potAfter > 0 ? Math.round(need / potAfter * 100) : 0;
+  const myStack = state.playerChips;
+  const oppStack = state.opponentChips;
+  const totalChips = myStack + oppStack;
+  const stackPct = totalChips > 0 ? Math.round(myStack / totalChips * 100) : 50;
+  const spr = pot > 0 ? (myStack / pot).toFixed(1) : '∞';
+
+  // 手の強さ概算
+  let hs = 0;
+  try {
+    const all = [...state.playerHand, ...state.community];
+    hs = state.community.length >= 3 ? handStrength01(all) : opponentPreflopStrength(state.playerHand);
+  } catch(e) {}
+  const hsPct = Math.round(hs * 100);
+
+  // ボード危険度
+  const danger = evaluateBoardDanger(state.community || []);
+  const dangerFlags = [];
+  if (danger.flushAlert)    dangerFlags.push('🌊フラッシュ');
+  if (danger.straightAlert) dangerFlags.push('🪜ストレート');
+  if (danger.pairBoard)     dangerFlags.push('♠ペアボード');
+
+  // 推奨アクション（簡易：手の強さ vs 必要勝率＋SPR考慮）
+  let advice = '';
+  let adviceClass = 'sit-neutral';
+  if (need === 0) {
+    if (hsPct >= 55) { advice = '💪 ベットで圧をかけよう'; adviceClass = 'sit-aggressive'; }
+    else if (hsPct >= 35) { advice = '👁 チェックで様子見が安全'; adviceClass = 'sit-neutral'; }
+    else { advice = '🛡 チェック。降りる選択肢も視野に'; adviceClass = 'sit-defensive'; }
+  } else {
+    const margin = hsPct - reqWinRate;
+    if (margin >= 25) { advice = `✅ コール／レイズ推奨（勝率${hsPct}% > 必要${reqWinRate}%）`; adviceClass = 'sit-aggressive'; }
+    else if (margin >= 5) { advice = `🟡 ぎりぎりコール可（${hsPct}% vs ${reqWinRate}%）`; adviceClass = 'sit-neutral'; }
+    else if (margin >= -10) { advice = `🟠 微妙な判断。ボード次第`; adviceClass = 'sit-neutral'; }
+    else { advice = `❌ フォールド推奨（勝率${hsPct}% < 必要${reqWinRate}%）`; adviceClass = 'sit-defensive'; }
+  }
+
+  // SPRコメント
+  let sprComment = '';
+  if (pot > 0) {
+    if (myStack / pot < 3) sprComment = '（SPR低：完成役なら押し切るべき）';
+    else if (myStack / pot > 8) sprComment = '（SPR高：降りる余地あり）';
+  }
+
+  // 相手の直前意図ヒント（裏モードでは無く、推測ベース）
+  let intentHint = '';
+  if (state.lastOpponentIntent) {
+    const intentMap = {
+      'bluff': '相手はブラフ寄りかも',
+      'forced_bluff': '相手は降ろし狙いの可能性',
+      'value': '相手は強い手で稼ぎに来てる気配',
+      'draw': '相手はドロー潰しで圧かけてる',
+      'trap': '相手はチェックで罠を仕掛けたかも',
+    };
+    intentHint = intentMap[state.lastOpponentIntent] || '';
+  }
+
+  return `
+    <div class="sit-row sit-row-stacks">
+      <span class="sit-label">スタック比</span>
+      <span class="sit-bar"><span class="sit-bar-fill" style="width:${stackPct}%"></span></span>
+      <span class="sit-value">${myStack} / ${oppStack}</span>
+    </div>
+    <div class="sit-grid">
+      <div class="sit-stat">
+        <span class="sit-stat-label">自分の手</span>
+        <span class="sit-stat-val">${hsPct}%</span>
+      </div>
+      <div class="sit-stat">
+        <span class="sit-stat-label">必要勝率</span>
+        <span class="sit-stat-val">${need > 0 ? reqWinRate + '%' : '—'}</span>
+      </div>
+      <div class="sit-stat">
+        <span class="sit-stat-label">SPR</span>
+        <span class="sit-stat-val">${spr}</span>
+      </div>
+      <div class="sit-stat">
+        <span class="sit-stat-label">ポット</span>
+        <span class="sit-stat-val">${pot}</span>
+      </div>
+    </div>
+    ${dangerFlags.length ? `<div class="sit-danger">⚠ ボード警戒：${dangerFlags.join(' / ')}</div>` : ''}
+    ${intentHint ? `<div class="sit-intent">🎭 ${intentHint}</div>` : ''}
+    <div class="sit-advice ${adviceClass}">${advice} <small>${sprComment}</small></div>
+  `;
+}
+
 function renderBackdoorPanel() {
   if (!state.opponentHand || state.opponentHand.length === 0) {
     return '<div class="backdoor-empty">（まだハンド開始前）</div>';

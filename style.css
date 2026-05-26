@@ -1176,6 +1176,104 @@ html, body {
   font-size: 16px;
 }
 
+/* ========== 状況分析パネル ========== */
+.situation-analysis {
+  background: linear-gradient(180deg, rgba(20,8,29,0.85) 0%, rgba(40,18,60,0.85) 100%);
+  border: 1px solid var(--c-gold);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--c-text);
+}
+.situation-analysis:empty { display: none; }
+.sit-row-stacks {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.sit-label {
+  font-size: 10px;
+  color: var(--c-gold);
+  letter-spacing: 0.05em;
+}
+.sit-bar {
+  height: 6px;
+  background: rgba(200,37,58,0.5);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.sit-bar-fill {
+  position: absolute;
+  left: 0; top: 0; height: 100%;
+  background: linear-gradient(90deg, #f5d77a 0%, #c8253a 100%);
+  transition: width 0.3s;
+}
+.sit-value {
+  font-size: 11px;
+  color: var(--c-gold-bright);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.sit-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.sit-stat {
+  background: rgba(0,0,0,0.4);
+  border-radius: 5px;
+  padding: 3px 4px;
+  text-align: center;
+  line-height: 1.2;
+}
+.sit-stat-label {
+  display: block;
+  font-size: 9px;
+  color: var(--c-text-dim);
+  letter-spacing: 0.05em;
+}
+.sit-stat-val {
+  display: block;
+  font-size: 13px;
+  color: var(--c-gold-bright);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.sit-danger {
+  background: rgba(200,37,58,0.25);
+  border-left: 2px solid var(--c-red-bright);
+  padding: 2px 6px;
+  border-radius: 0 4px 4px 0;
+  font-size: 10px;
+  color: #ffcccc;
+  margin-bottom: 3px;
+}
+.sit-intent {
+  background: rgba(120,40,180,0.25);
+  border-left: 2px solid #c87aff;
+  padding: 2px 6px;
+  border-radius: 0 4px 4px 0;
+  font-size: 10px;
+  color: #e0c0ff;
+  margin-bottom: 3px;
+}
+.sit-advice {
+  padding: 4px 6px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+.sit-advice small { display: block; font-weight: 400; font-size: 9px; opacity: 0.8; margin-top: 1px; }
+.sit-advice.sit-aggressive { background: linear-gradient(90deg, rgba(245,215,122,0.3), rgba(200,37,58,0.3)); color: var(--c-gold-bright); border: 1px solid var(--c-gold-bright); }
+.sit-advice.sit-neutral    { background: rgba(120,40,180,0.3); color: #fff; border: 1px solid var(--c-purple-light); }
+.sit-advice.sit-defensive  { background: rgba(70,80,100,0.4); color: #c0d0e0; border: 1px solid #6c7a8a; }
+
 /* ========== 心理バトル：連続正解バナー＋正解明示 ========== */
 .psych-streak-banner {
   position: fixed;
