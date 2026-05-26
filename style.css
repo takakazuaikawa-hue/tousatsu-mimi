@@ -769,22 +769,23 @@ html, body {
 .stats-value.rank-SS { color: #ff7aa4; text-shadow: 0 0 6px rgba(255,122,164,0.6); }
 .stats-value.rank-S  { color: #f5d77a; text-shadow: 0 0 6px rgba(245,215,122,0.6); }
 
-/* 対戦相手リスト：縦並び */
+/* 対戦相手リスト：5枚を横並びぴったり */
 .lobby-stage-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  overflow-y: auto;
-  padding-right: 4px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  overflow: hidden;
+  padding: 0;
   flex: 1;
   min-height: 0;
 }
 .lobby-stage-list .stage-card {
-  display: grid;
-  grid-template-columns: 96px 1fr;
-  gap: 10px;
-  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
   align-items: stretch;
+  min-width: 0;
 }
 .lobby-stage-list .stage-card .stage-card-body {
   display: flex; flex-direction: column;
@@ -801,7 +802,7 @@ html, body {
   padding: 2px 8px;
 }
 .stage-portrait {
-  width: 96px; height: 130px;
+  width: 100%; height: 150px;
   border-radius: 10px;
   overflow: hidden;
   background: linear-gradient(180deg, rgba(60,30,90,0.6) 0%, rgba(20,8,29,0.9) 100%);
@@ -830,17 +831,14 @@ html, body {
   border-color: var(--c-gold-bright);
   box-shadow: 0 0 12px rgba(245,215,122,0.5);
 }
-.lobby-stage-list .stage-card .stage-name { font-size: 18px; }
-.lobby-stage-list .stage-card .stage-theme { font-size: 12px; }
-.lobby-stage-list .stage-card .stage-desc {
-  font-size: 12px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.lobby-stage-list .stage-card .stage-reward { font-size: 12px; }
-.lobby-stage-list .stage-card .stage-actions .btn { font-size: 13px; padding: 6px 10px; }
+.lobby-stage-list .stage-card .stage-number { font-size: 11px; letter-spacing: 0.2em; color: var(--c-gold); }
+.lobby-stage-list .stage-card .stage-name { font-size: 16px; line-height: 1.2; }
+.lobby-stage-list .stage-card .stage-theme { font-size: 11px; opacity: 0.9; }
+.lobby-stage-list .stage-card .stage-desc { display: none; }
+.lobby-stage-list .stage-card .stage-reward { font-size: 11px; }
+.lobby-stage-list .stage-card .stage-actions { margin-top: auto; }
+.lobby-stage-list .stage-card .stage-actions .btn { font-size: 12px; padding: 6px 8px; }
+.lobby-stage-list .stage-card .stage-actions .stage-recall { width: 34px; padding: 4px; font-size: 14px; }
 
 /* ロビーフッター */
 .lobby-footer {
