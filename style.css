@@ -1784,6 +1784,40 @@ html, body {
 .rico-cutin.cutin-fail .cutin-text {
   border-color: var(--c-red);
 }
+/* 相手カットイン（大ベット時の重要発言） */
+.rico-cutin.opponent-cutin {
+  flex-direction: row-reverse;
+  left: auto;
+  right: -100%;
+  animation: cutinSlideInRight 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+}
+.rico-cutin.opponent-cutin.cutin-out {
+  animation: cutinSlideOutRight 0.6s ease-in forwards;
+}
+@keyframes cutinSlideInRight {
+  0% { right: -100%; }
+  100% { right: 40px; }
+}
+@keyframes cutinSlideOutRight {
+  0% { right: 40px; opacity: 1; }
+  100% { right: -100%; opacity: 0; }
+}
+.rico-cutin.opponent-cutin .cutin-portrait {
+  border-color: var(--c-red-bright);
+  box-shadow: 0 0 30px var(--c-red), inset 0 0 20px rgba(255,61,87,0.3);
+}
+.rico-cutin.opponent-cutin .cutin-text {
+  border-color: var(--c-red);
+  border-left: 3px solid var(--c-red);
+  border-right: none;
+  border-radius: 12px 0 0 12px;
+  margin-right: -8px;
+  margin-left: 0;
+}
+.rico-cutin.opponent-cutin .cutin-name {
+  color: var(--c-red-bright);
+}
+
 /* ミミ専用カットイン：ぱにゅぱにゅ発動時 */
 .rico-cutin.mimi-cutin .cutin-portrait {
   border-color: #ffc1d8;
@@ -2309,5 +2343,30 @@ html, body {
 .ending-buttons {
   animation: endingLineIn 0.8s ease-out 5.8s both;
 }
+
+/* ========== スマホ向け文字・タッチターゲット強化 ========== */
+.psych-situation {
+  font-size: 15px;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+.psych-situation b {
+  color: var(--c-gold-bright);
+  font-weight: 700;
+}
+.psych-speech { font-size: 16px; }
+.zazazo-hint { font-size: 13px; line-height: 1.5; }
+.choice-btn { font-size: 15px; min-height: 56px; line-height: 1.5; }
+.choice-btn .choice-label { width: 32px; height: 32px; line-height: 32px; font-size: 15px; }
+.psych-rico, .psych-result-banner { font-size: 16px; }
+.btn { min-height: 40px; }
+.action-slot { min-height: 50px; }
+.action-slot .slot-label { font-size: 15px; }
+.action-slot small { font-size: 12px; }
+.mimi-thought-bubble { font-size: 16px; line-height: 1.6; }
+.opponent-speech { font-size: 16px; }
+.rico-bubble { font-size: 15px; line-height: 1.65; }
+.bet-side-amount { font-size: 20px; }
+.pot-amount { font-size: 32px; }
 
 /* 固定キャンバスのため媒体クエリ不要 */

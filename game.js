@@ -564,93 +564,122 @@ const PSYCH_QUESTIONS = {
   logic_pot_odds_basic: {
     id: 'logic_pot_odds_basic',
     type: 'logic',
-    rule: 'ポットオッズ：払う額 ÷ (ポット+払う額) ＝ 必要勝率',
-    situationFn: (state) => `現在のポット：${state.pot}\n相手のベット：${state.currentBetOpponent}\nミミがコールするには ${state.currentBetOpponent - state.currentBetPlayer} チップ必要。`,
-    speech: '【論理問題】このコールに必要な勝率（％）は？',
-    zazazoHint: '計算式：払う額 ÷ (ポット+払う額) × 100',
+    rule: 'ポットオッズ：払う額 ÷ (ポット+払う額) × 100 ＝ 必要勝率(%)',
+    situationFn: (state) => {
+      const need = state.currentBetOpponent - state.currentBetPlayer;
+      const potAfterCall = state.pot + need;
+      const reqWin = potAfterCall > 0 ? Math.round((need / potAfterCall) * 100) : 0;
+      return `📊 状況整理\n` +
+        `・ポット：${state.pot}チップ\n` +
+        `・ミミがコールに必要：${need}チップ\n` +
+        `・コール後のポット総額：${potAfterCall}チップ\n\n` +
+        `🧮 計算\n` +
+        `${need} ÷ ${potAfterCall} × 100 ≒ <b>${reqWin}%</b>\n\n` +
+        `この勝率以上なら長期的にプラス＝コール推奨`;
+    },
+    speech: '【論理問題】このコールに必要な勝率はどのくらい？',
+    zazazoHint: '上の計算結果から正しい範囲を選んで',
     choices: [
-      { id: 'lo20', text: '約 20〜25%（手応えがあればコール）', correct: true },
-      { id: 'lo50', text: '約 50%（半々の勝負）',                 correct: false },
-      { id: 'lo80', text: '約 80%（ほぼ勝てる時だけ）',           correct: false },
+      { id: 'lo20', text: '20〜30%程度（軽いドローでも見れる）', correct: true },
+      { id: 'lo50', text: '50%以上（半々超じゃないと損）',         correct: false },
+      { id: 'lo80', text: '80%以上（ほぼ勝確じゃないとダメ）',     correct: false },
     ],
     onSuccess: {
       panyu: 15, zazazo: 0,
-      hint: '必要勝率を把握できれば、感覚に流されず判断できる',
-      rico: 'いいねー！<u>20%前後で見れるなら、フラッシュドローでもコール価値あり</u>って覚えとこ',
+      hint: '必要勝率20-30%＝フラッシュドロー(35%)でもコール価値あり',
+      rico: 'いいねー！<u>払う額が小さい時は必要勝率も低い</u>。ドローでもコール検討OK',
     },
     onFail: {
       panyu: -5,
-      mimi: 'えっと、計算苦手で……',
-      rico: '焦らなくていい〜。<u>払う額が小さい時ほど必要勝率も低い</u>って感覚さえあればOK',
+      mimi: 'うう、計算苦手で……',
+      rico: '感覚でOK！<u>払う額/ポット総額 = 必要勝率</u>。20-30%が目安だよ',
     },
   },
   logic_flush_outs: {
     id: 'logic_flush_outs',
     type: 'logic',
-    rule: 'フラッシュドロー：完成までのアウツは9枚。残り1枚で約20%、2枚で約35%',
-    situationFn: (state) => `場札：${renderCardsText(state.community)}\nミミの手札に同スートが2枚ある（フラッシュドロー状態）。リバーまで残り1枚。`,
-    speech: '【論理問題】リバー1枚でフラッシュが完成する確率は？',
-    zazazoHint: 'アウツ9枚 × 2 ≒ 必要勝率（簡易法）',
+    rule: 'アウツ計算：完成までに有効な残りカード数 × 2 ＝ 次の1枚で当たる確率(%)',
+    situationFn: (state) => `📊 状況整理\n` +
+      `・場札：${renderCardsText(state.community)}\n` +
+      `・ミミの手札：${renderCardsText(state.playerHand)}\n` +
+      `・既に同スートが4枚見えている＝フラッシュ完成にはあと1枚必要\n` +
+      `・デッキ内に同スート札は残り <b>9枚</b>（アウツ）\n\n` +
+      `🧮 簡易公式\n` +
+      `アウツ × 2 ＝ <b>9 × 2 = 18%</b>（次1枚での完成率）`,
+    speech: '【論理問題】このフラッシュドロー、リバー1枚での完成率は？',
+    zazazoHint: '上の公式で計算',
     choices: [
-      { id: 'p10', text: '約 10%（諦めムード）',     correct: false },
-      { id: 'p20', text: '約 20%（5回に1回当たる）', correct: true },
-      { id: 'p50', text: '約 50%（半々）',           correct: false },
+      { id: 'p10', text: '約 10%（厳しい）',         correct: false },
+      { id: 'p20', text: '約 20%（5回に1回）',       correct: true },
+      { id: 'p50', text: '約 50%（半分くらい）',     correct: false },
     ],
     onSuccess: {
       panyu: 15, zazazo: 0,
-      hint: 'アウツ × 2 で1枚分の勝率がざっくり分かる',
-      rico: 'そうそう、<u>アウツ9 × 2 = 18% ≒ 20%</u>。簡易計算覚えとくとめっちゃ楽',
+      hint: '20%＝5回に1回。ポットオッズ次第で十分コールOK',
+      rico: 'そうそう、<u>アウツ × 2 = 1枚で当たる確率(%)</u>。覚えとくとめっちゃ楽',
     },
     onFail: {
       panyu: -5,
-      mimi: '半々くらいかと思ってました……',
-      rico: '<u>アウツ数 × 2 ＝ 1枚で当たる確率（%）</u>って公式、これだけは覚えて！',
+      mimi: 'もっと高いと思ってました……',
+      rico: '<u>9枚 × 2 = 18%</u>。意外と低いんだよね。だから安いコールしか割に合わない',
     },
   },
   logic_hand_compare: {
     id: 'logic_hand_compare',
     type: 'logic',
-    rule: '完成役 > ドロー：Aペアはフラッシュドローよりリバーまでで有利',
-    situationFn: (state) => `場札：${renderCardsText(state.community)}\nミミはAペア（既に完成）。相手はフラッシュドロー（まだ未完成）。`,
+    rule: '完成役 vs 未完成ドロー：完成役の方が基本的に勝率が高い',
+    situationFn: (state) => `📊 状況整理\n` +
+      `・場札：${renderCardsText(state.community)}\n` +
+      `・ミミ：Aペア（既に完成、約65-70%の勝率）\n` +
+      `・想定される相手：フラッシュドロー（リバーまで完成率約35%）\n\n` +
+      `🧮 ポイント\n` +
+      `「完成してる役」は確定の強さ。\n` +
+      `「これから完成するかも」は確率次第＝逆に倒される可能性も。`,
     speech: '【論理問題】リバーまで進んだ時、勝率が高いのはどっち？',
-    zazazoHint: '完成役 vs ドロー：ドロー側の完成率を考える',
+    zazazoHint: '完成済み vs ドロー、確率はどっちが上？',
     choices: [
-      { id: 'mimi_win',   text: 'ミミのAペア（フラッシュ未完成なら勝てる）', correct: true },
+      { id: 'mimi_win',   text: 'ミミのAペア（完成役は確定の強さ）',         correct: true },
       { id: 'opp_win',    text: '相手のフラッシュドロー（強そう）',           correct: false },
       { id: 'cant_tell',  text: '分からない（運次第）',                       correct: false },
     ],
     onSuccess: {
       panyu: 15, zazazo: 0,
-      hint: '未完成のドローは見た目より弱い。Aペアの方が勝率高い',
-      rico: 'いいね！<u>完成してる役は、未完成のドローより基本有利</u>。ビビらず勝負しな',
+      hint: '完成役Aペアは約65-70%、フラッシュドローは約35%',
+      rico: 'いいね！<u>完成役は確率上、ドローより有利</u>。ビビらず勝負しな',
     },
     onFail: {
       panyu: -5,
       mimi: 'フラッシュって響きが強そうで……',
-      rico: '<u>「完成してから」 vs 「これから完成するかも」</u>。前者の方が確率上勝つ',
+      rico: '<u>「完成してる」vs「これから完成するかも」</u>。前者の方が確率上勝つ',
     },
   },
   logic_position: {
     id: 'logic_position',
     type: 'logic',
-    rule: 'ポジション：後手（後にアクション）は情報が多く有利',
-    situationFn: () => `ポーカーには「ポジション」がある。\n相手が先にベット → ミミが後にコール/レイズ/フォールド判断。`,
-    speech: '【論理問題】後にアクションする側（ミミ）が有利な理由は？',
-    zazazoHint: '情報の差が勝敗に直結する',
+    rule: 'ポジション：後にアクションする側は情報量が多くて有利',
+    situationFn: () => `📊 状況整理\n` +
+      `・ポーカーでは「ベットの順番」が決まっている\n` +
+      `・先手：何の情報もないまま判断（暗中模索）\n` +
+      `・後手：相手の動き＋ベット額を見てから判断（情報あり）\n\n` +
+      `🧮 ポイント\n` +
+      `情報の差はそのまま勝率の差になる。\n` +
+      `だからプロは「ポジションは勝率5-10%相当」と言う。`,
+    speech: '【論理問題】後手（後にアクション）が有利な理由は？',
+    zazazoHint: '情報量の差がどう活きる？',
     choices: [
-      { id: 'info', text: '相手のベット額や態度を見てから判断できる', correct: true },
+      { id: 'info', text: '相手のベット額・態度を見てから判断できる', correct: true },
       { id: 'card', text: 'カードが多くもらえる',                       correct: false },
-      { id: 'pot',  text: 'ポットが大きくなる',                         correct: false },
+      { id: 'pot',  text: 'ポットが自動で大きくなる',                   correct: false },
     ],
     onSuccess: {
       panyu: 10, zazazo: 0,
-      hint: '相手の手を見てから動けるのがポジション有利',
-      rico: 'そうそう、<u>後手は情報量が多い</u>。ポーカーは情報のゲームだからね',
+      hint: 'ポジション＝情報のアドバンテージ。プロは数値化できるほど重視',
+      rico: 'そうそう、<u>後手は情報量が多い</u>。ポーカーは情報ゲーだから後手有利',
     },
     onFail: {
       panyu: -5,
       mimi: 'カードが増えるのかと思った……',
-      rico: 'ポジションは<u>「アクション順」の差</u>。後にする方が圧倒的に有利',
+      rico: 'ポジションは<u>「アクション順」の差だけ</u>。でもそれが勝率に直結するの',
     },
   },
   velvet_opening: {
@@ -1796,9 +1825,14 @@ function opponentTurn() {
   state.opponentChips -= amount;
   state.currentBetOpponent += amount;
   state.pot += amount;
-  state.opponentSpeech = polkaSpeech(action);
+  state.opponentSpeech = opponentSpeech(action);
   log('bets', { actor: 'opponent', type: 'bet', size: action.size, amount, intent: action.intent });
   log('reactions', { intent: action.intent, speech: state.opponentSpeech });
+  // 大ベット時に相手カットイン（カードゲーム感UP）
+  const bigBet = (action.size === 'pot_2_3' || action.size === 'pot_1' || action.size === 'allin');
+  if (bigBet) {
+    setTimeout(() => showOpponentCutIn(state.opponentSpeech), 300);
+  }
 
   const bigEnough = (action.size === 'pot_2_3' || action.size === 'pot_1' || action.size === 'allin');
   const isBluffBet = (action.intent === 'bluff' || action.intent === 'forced_bluff' || action.intent === 'tutorial_bluff');
@@ -1961,7 +1995,8 @@ function triggerPsychBattle(qid) {
     renderCardsInto(root.querySelector('[data-bind="psychHandCards"]'), state.playerHand, 2);
     root.querySelector('[data-bind="psychPot"]').textContent = state.pot;
   }
-  root.querySelector('[data-bind="psychSituation"]').textContent = q.situationFn(state);
+  // 改行を<br>に、HTMLタグも反映できるようinnerHTMLに
+  root.querySelector('[data-bind="psychSituation"]').innerHTML = q.situationFn(state).replace(/\n/g, '<br>');
   root.querySelector('[data-bind="psychSpeech"]').textContent = `ポルカ：「${q.speech}」`;
   root.querySelector('[data-bind="zazazoHint"]').textContent = q.zazazoHint;
 
@@ -2553,6 +2588,34 @@ function showRicoCutIn(text, isSuccess, onClose) {
 }
 function dismissCutIn() {
   if (activeCutInDismiss) activeCutInDismiss();
+}
+
+function showOpponentCutIn(text) {
+  if (activeCutInDismiss) activeCutInDismiss();
+  const imgKey = state.opponentImgKey || 'polka';
+  const oppName = state.opponentName || '相手';
+  const cut = document.createElement('div');
+  cut.className = 'rico-cutin opponent-cutin';
+  cut.innerHTML = `
+    <div class="cutin-portrait">
+      <img src="assets/characters/${imgKey}_default.png" alt="${oppName}" onerror="window.assetFallback(this,'${imgKey}')">
+    </div>
+    <div class="cutin-text">
+      <div class="cutin-name">${oppName}</div>
+      <div class="cutin-line">「${text}」</div>
+    </div>
+  `;
+  document.body.appendChild(cut);
+  let dismissed = false;
+  const dismiss = () => {
+    if (dismissed) return;
+    dismissed = true;
+    activeCutInDismiss = null;
+    cut.classList.add('cutin-out');
+    setTimeout(() => cut.remove(), 500);
+  };
+  cut.addEventListener('click', dismiss);
+  activeCutInDismiss = dismiss;
 }
 
 function showMimiCutIn(text, narration) {
