@@ -1304,17 +1304,17 @@ html, body {
 .action-area .status-note { color: var(--c-gold-bright); font-size: 16px; font-style: italic; }
 .action-area .status-note.dim { color: var(--c-text-dim); }
 
-/* ========== カード ========== */
+/* ========== カード ==========
+   メインカードは大きく、心理モーダル内の小型カードはセクション側で再指定 */
 .card {
-  width: 64px;
-  height: 92px;
+  width: 78px;
+  height: 110px;
   border-radius: 8px;
   background: var(--c-card-bg);
   display: flex;
   flex-direction: column;
-  padding: 4px 6px;
+  padding: 5px 7px;
   font-weight: 700;
-  font-size: 18px;
   position: relative;
   box-shadow: 0 2px 6px rgba(0,0,0,0.5);
   color: var(--c-card-black);
@@ -1326,13 +1326,14 @@ html, body {
   box-shadow: none;
 }
 .card.red { color: var(--c-card-red); }
-.card .rank { font-size: 18px; line-height: 1; }
-.card .suit { font-size: 22px; align-self: flex-start; }
+.card .rank { font-size: 20px; line-height: 1; }
+.card .suit { font-size: 18px; align-self: flex-start; line-height: 1; }
 .card .center-suit {
-  font-size: 32px;
+  font-size: 38px;
   align-self: center;
   margin-top: auto;
   margin-bottom: auto;
+  line-height: 1;
 }
 .card.card-back {
   background:
@@ -1482,15 +1483,16 @@ html, body {
 }
 .psych-board-cards .card,
 .psych-hand-cards .card {
-  width: 46px;
-  height: 66px;
-  font-size: 13px;
-  padding: 3px 4px;
+  width: 58px;
+  height: 82px;
+  padding: 4px 5px;
 }
-.psych-board-cards .card .suit { font-size: 14px; }
-.psych-board-cards .card .center-suit { font-size: 20px; }
+.psych-board-cards .card .rank,
+.psych-hand-cards .card .rank { font-size: 15px; }
+.psych-board-cards .card .suit,
 .psych-hand-cards .card .suit { font-size: 14px; }
-.psych-hand-cards .card .center-suit { font-size: 20px; }
+.psych-board-cards .card .center-suit,
+.psych-hand-cards .card .center-suit { font-size: 26px; }
 .psych-pot {
   margin-top: 6px;
   font-size: 15px;
@@ -2390,9 +2392,6 @@ html, body {
 .current-hand-display { font-size: 16px; }
 .panyu-label { font-size: 15px; }
 .panyu-mood { font-size: 16px; }
-/* カードのランク・スート文字 */
-.card .rank { font-size: 22px; }
-.card .suit { font-size: 24px; }
-.card .center-suit { font-size: 36px; }
+/* カードのランク・スート文字（メイン定義はカードブロック側） */
 
 /* 固定キャンバスのため媒体クエリ不要 */
