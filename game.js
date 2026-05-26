@@ -1724,22 +1724,23 @@ function renderLobbySettings() {
   const psy = save.psychEnabled !== false;
   const log = save.logicEnabled !== false;
   return `
-    <div class="settings-title">⚙ 設定</div>
-    <div class="settings-row">
-      <span class="settings-label">心理バトル</span>
-      <button class="settings-toggle ${psy ? 'on' : 'off'}" data-action="toggle-psych">
-        <span class="settings-knob"></span>
-        <span class="settings-status">${psy ? 'ON' : 'OFF'}</span>
-      </button>
+    <div class="settings-title">⚙ 設定 <span class="settings-note-inline">※チュートリアル中は常時ON</span></div>
+    <div class="settings-grid">
+      <div class="settings-row">
+        <span class="settings-label">心理</span>
+        <button class="settings-toggle ${psy ? 'on' : 'off'}" data-action="toggle-psych">
+          <span class="settings-knob"></span>
+          <span class="settings-status">${psy ? 'ON' : 'OFF'}</span>
+        </button>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">論理</span>
+        <button class="settings-toggle ${log ? 'on' : 'off'}" data-action="toggle-logic">
+          <span class="settings-knob"></span>
+          <span class="settings-status">${log ? 'ON' : 'OFF'}</span>
+        </button>
+      </div>
     </div>
-    <div class="settings-row">
-      <span class="settings-label">論理バトル</span>
-      <button class="settings-toggle ${log ? 'on' : 'off'}" data-action="toggle-logic">
-        <span class="settings-knob"></span>
-        <span class="settings-status">${log ? 'ON' : 'OFF'}</span>
-      </button>
-    </div>
-    <div class="settings-note">※チュートリアル中は常に有効です</div>
   `;
 }
 
