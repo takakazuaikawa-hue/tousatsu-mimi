@@ -75,14 +75,15 @@ const OPPONENTS = {
     id: 'rico_tutorial',
     name: 'リコ先輩',
     profile: { bluffTendency: 0.2, aggression: 0.3, foldDiscipline: 0.8, valueBetTendency: 0.4, drawAggression: 0.3 },
-    maxHands: 1, // チュートリアルは1ハンドのまま
+    maxHands: 1,
     chips: 800,
     tutorial: true,
     imgKey: 'rico',
-    theme: 'ポーカー＆ぱにゅぱにゅ入門',
-    desc: '頼れる先輩リコの優しい練習試合。操作と心理バトルの基本を教えてくれる',
-    rewardFirst: 200, rewardRematch: 50, rewardSBonus: 0,
+    theme: 'ポーカー基礎講義（全8章・24問）',
+    desc: '歴史・用語・流れ・役・確率・定石・心理戦まで、じっくり学ぶリコ先輩の講義',
+    rewardFirst: 300, rewardRematch: 50, rewardSBonus: 0,
     unlockNoteOnClear: null,
+    isLecture: true,
   },
   polka: {
     id: 'polka',
@@ -682,6 +683,328 @@ const PSYCH_QUESTIONS = {
       rico: 'ポジションは<u>「アクション順」の差だけ</u>。でもそれが勝率に直結するの',
     },
   },
+  // ===== チュートリアルレッスン（type: 'lesson'） =====
+  // リコ先輩による講義形式。8章 × 3問。順番に消化。
+  lesson_1_1: { id:'lesson_1_1', type:'lesson', chapter:1, chapterTitle:'第1章：ポーカーって何？',
+    rule:'テキサスホールデムは世界で最も遊ばれているポーカーの形。WSOPなど大会も巨大。',
+    situationFn: () => '「ポーカー」と一口に言ってもバリエーションは数十種類。\n本ゲームで遊ぶ「テキサスホールデム」は、世界中の大会で最もメジャーな形式。',
+    speech: 'まずは基本知識。ポーカーがどんなゲームか整理しよう',
+    zazazoHint: '配られるカードの種類に注目',
+    choices: [
+      { id:'th_a', text:'手札2枚＋場札5枚を共有して、最強の5枚役を作るゲーム', correct:true },
+      { id:'th_b', text:'各自に5枚配られて、それだけで役を作るゲーム', correct:false },
+      { id:'th_c', text:'1枚ずつ引いて先に役ができた方が勝つゲーム', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'正解！手札2枚は自分だけ、場札5枚は全員共有', rico:'そう、<u>手札2枚＋場札5枚 = 計7枚から最強5枚を選ぶ</u>のがホールデムね' },
+    onFail:    { panyu:0, mimi:'えっと、各自に5枚かと…', rico:'各自5枚は別ルール（ファイブカードドロー）。ホールデムは<u>2枚＋共有5枚</u>だよ' },
+  },
+  lesson_1_2: { id:'lesson_1_2', type:'lesson', chapter:1, chapterTitle:'第1章：ポーカーって何？',
+    rule:'ポーカーは19世紀のアメリカで発達。1970年からWSOP（世界選手権）開催。',
+    situationFn: () => 'ポーカーには長い歴史がある。\n現代のテキサスホールデムは20世紀後半に普及し、\n世界選手権「WSOP」は1970年から毎年開催されている。',
+    speech: '雑学だけど知っとくと深みが出るよ',
+    zazazoHint: '世界選手権の規模感',
+    choices: [
+      { id:'h_a', text:'最大の大会は WSOP メインイベント、優勝賞金は約数億円', correct:true },
+      { id:'h_b', text:'ポーカー大会は最高でも数十万円規模', correct:false },
+      { id:'h_c', text:'ポーカーは賞金大会が一切ない遊び', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'WSOPメインイベント優勝は約10億円規模', rico:'<u>世界中のプロが本気で挑む頭脳スポーツ</u>でもあるんだよね' },
+    onFail:    { panyu:0, mimi:'そんなに大きいの…', rico:'ホールデムは<u>合法的な競技ポーカー</u>で大会が世界中にある。トッププロは億万長者だよ' },
+  },
+  lesson_1_3: { id:'lesson_1_3', type:'lesson', chapter:1, chapterTitle:'第1章：ポーカーって何？',
+    rule:'ポーカーは「運」だけじゃなく「読み・確率・心理」の総合スキルゲーム。',
+    situationFn: () => 'ポーカーは運ゲームに見えるが、長期で見ると確率・読み・心理戦の力で<b>実力者が勝ち越す</b>ゲーム。\n短期は運、長期は実力。',
+    speech: 'ポーカーはなぜ単なる賭博と区別される？',
+    zazazoHint: '短期 vs 長期で考える',
+    choices: [
+      { id:'sk_a', text:'長期で見ると確率と読みの実力差が勝率に表れるから', correct:true },
+      { id:'sk_b', text:'カードの色を当てる超能力ゲームだから', correct:false },
+      { id:'sk_c', text:'運だけで決まり、実力は無関係', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'スキルゲーム＝確率・読み・心理の総合力', rico:'そう、<u>1回は運でも100回・1000回は実力</u>。長く遊ぶと実力派が浮上する' },
+    onFail:    { panyu:0, mimi:'運だけだと思ってました', rico:'ポーカーは<u>「不完全情報下の意思決定」</u>のゲーム。スキル要素が大きい' },
+  },
+
+  lesson_2_1: { id:'lesson_2_1', type:'lesson', chapter:2, chapterTitle:'第2章：基本用語',
+    rule:'手札(ホール)＝自分だけ／場札(ボード)＝全員共有／ポット＝賭け金プール',
+    situationFn: () => '<b>手札（ホールカード）</b>：自分だけが見られるカード2枚。\n<b>場札（ボード／コミュニティカード）</b>：テーブル中央で全員共有するカード5枚。\n<b>ポット</b>：そのハンドで賭けられたチップの合計プール。',
+    speech: '基礎用語の確認だよ',
+    zazazoHint: '誰が使える札か',
+    choices: [
+      { id:'t1_a', text:'場札は両プレイヤーが共有して、役作りに使える', correct:true },
+      { id:'t1_b', text:'場札は自分だけしか使えない', correct:false },
+      { id:'t1_c', text:'場札は最後にディーラーが取る', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'手札2枚 + 場札5枚 = 計7枚から最強5枚', rico:'<u>場札は共有、だから相手も同じ場札で別の役を狙ってる</u>って意識しよ' },
+    onFail:    { panyu:0, mimi:'自分専用だと思ってた…', rico:'場札は<u>全員が使える共通の手</u>。だから「相手が場札で何作れるか」を考えるのが大事' },
+  },
+  lesson_2_2: { id:'lesson_2_2', type:'lesson', chapter:2, chapterTitle:'第2章：基本用語',
+    rule:'アンテ＝全員強制参加金／ブラインド＝SB(小)・BB(大)の2人だけ強制',
+    situationFn: () => '「強制ベット」には2方式ある。\n<b>アンテ式</b>：全員が同じ額を最初にポットに入れる（本ゲームの方式：50ずつ）。\n<b>ブラインド式</b>：実プロホールデムで主流。2人だけが強制ベット（SB / BB）。',
+    speech: '本ゲームはアンテ方式。プロはブラインド方式',
+    zazazoHint: '全員 vs 一部の違い',
+    choices: [
+      { id:'t2_a', text:'アンテは全員、ブラインドは2人だけが強制ベット', correct:true },
+      { id:'t2_b', text:'同じ意味', correct:false },
+      { id:'t2_c', text:'ブラインドは目をつぶる演出のこと', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'本ゲームは簡略化のため両者50ずつアンテ', rico:'<u>強制ベットがあるから降りるだけでは勝てない</u>。攻めの姿勢が必要ってこと' },
+    onFail:    { panyu:0, mimi:'同じだと思ってました', rico:'<u>アンテ＝全員 / ブラインド＝SB+BBだけ</u>。実プロはブラインド方式が主流' },
+  },
+  lesson_2_3: { id:'lesson_2_3', type:'lesson', chapter:2, chapterTitle:'第2章：基本用語',
+    rule:'スーツ（♠♥♦♣）は強さに優劣なし／ランク（数字）はA最強→2最弱',
+    situationFn: () => '4つのスーツ ♠♥♦♣ に強弱はない。\nランク（数字）は A > K > Q > J > 10 > 9 > ... > 2 が基本。\nただし<b>A は「最強」かつ「ストレートでは1扱い」も可能</b>（A-2-3-4-5 = ホイール）。',
+    speech: 'A（エース）の特殊性に注目',
+    zazazoHint: 'Aは2つの顔を持つ',
+    choices: [
+      { id:'t3_a', text:'A は「最強の14」としても「ストレートの1」としても使える', correct:true },
+      { id:'t3_b', text:'A は 1 だけ', correct:false },
+      { id:'t3_c', text:'スーツはハート最強・スペード最弱', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'Aは「ハイ」と「ロー」両方OK、スーツに優劣なし', rico:'<u>A-2-3-4-5 はストレート扱い</u>（ホイールって呼ぶ）。覚えとくと役を見落とさない' },
+    onFail:    { panyu:0, mimi:'スートに強弱あると思ってました', rico:'スーツは見た目の違いだけ。<u>強さはランクで決まる</u>。Aは1にも14にもなれる特殊カード' },
+  },
+
+  lesson_3_1: { id:'lesson_3_1', type:'lesson', chapter:3, chapterTitle:'第3章：ハンドの流れ',
+    rule:'1ハンド＝プリフロップ→フロップ(3枚)→ターン(1枚)→リバー(1枚)→ショーダウン',
+    situationFn: () => 'ホールデムの1ハンドは4つのベットラウンドで構成。\n<b>プリフロップ</b>：手札2枚配布、最初のベット\n<b>フロップ</b>：場札3枚オープン、2回目のベット\n<b>ターン</b>：場札4枚目、3回目のベット\n<b>リバー</b>：場札5枚目、最終ベット\n<b>ショーダウン</b>：残った者で役比較',
+    speech: '進行順を覚えよう',
+    zazazoHint: 'プリフロップ→フロップの順',
+    choices: [
+      { id:'fl_a', text:'プリフロップ → フロップ → ターン → リバー → ショーダウン', correct:true },
+      { id:'fl_b', text:'フロップ → プリフロップ → リバー → ターン', correct:false },
+      { id:'fl_c', text:'ターン → フロップ → リバー → プリフロップ', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'各ストリートでベット→次の場札公開を繰り返す', rico:'<u>場札は3→4→5枚と段階的に増える</u>。情報が増えるたび判断が変わる' },
+    onFail:    { panyu:0, mimi:'順番ごちゃごちゃで…', rico:'<u>プリ→フロ→ター→リバ→ショ</u>って唱えて覚えな。場札 0→3→4→5の順' },
+  },
+  lesson_3_2: { id:'lesson_3_2', type:'lesson', chapter:3, chapterTitle:'第3章：ハンドの流れ',
+    rule:'各ストリートで「全員のベット額が揃う」まで進まない',
+    situationFn: () => '各ストリートでは、ベットされたら相手は<b>「コール（同額払う）」「レイズ（上乗せ）」「フォールド（降りる）」</b>のいずれかを選ぶ。\n全員のベット額が揃って初めて次のストリートへ進む。',
+    speech: 'ストリートが終わる条件は？',
+    zazazoHint: 'ベット額が揃うとは',
+    choices: [
+      { id:'st_a', text:'全プレイヤーがコール（または降りる）して、ベット額が揃った時', correct:true },
+      { id:'st_b', text:'時間切れになった時', correct:false },
+      { id:'st_c', text:'ディーラーが「次！」と叫んだ時', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'ベットが揃う＝次のストリートへ', rico:'<u>誰かが上乗せしたら全員が応じるまで終わらない</u>。これがレイズ合戦の基本' },
+    onFail:    { panyu:0, mimi:'時間切れかと思ったら違うんだ', rico:'<u>ベット額が揃うまで進まない</u>。レイズ→コール→次ストリート、って流れ' },
+  },
+  lesson_3_3: { id:'lesson_3_3', type:'lesson', chapter:3, chapterTitle:'第3章：ハンドの流れ',
+    rule:'ショーダウンに行く前に相手が全員フォールド → 残った者がポット獲得',
+    situationFn: () => 'ハンドの終わり方は2つ。\n<b>1. ショーダウン</b>：リバー後の最終ベットを乗り越えて残った者同士で役比較。\n<b>2. 相手フォールド</b>：途中で相手が全員降りた時点で、残った者がポット獲得（手札公開不要）。',
+    speech: 'ショーダウン前に勝つ方法は？',
+    zazazoHint: '降ろし勝ち',
+    choices: [
+      { id:'sd_a', text:'相手をフォールドさせれば、自分の手札を見せずに勝てる', correct:true },
+      { id:'sd_b', text:'常にショーダウンまで行かないと勝てない', correct:false },
+      { id:'sd_c', text:'相手のチップを物理的に奪う', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'ブラフ（弱い手でも降ろせば勝ち）が成立する理由', rico:'<u>ショーダウン無しの勝ちは「手の中身を見せず勝つ」</u>。これがブラフの本質ね' },
+    onFail:    { panyu:0, mimi:'常にショーダウンかと…', rico:'<u>弱い手でも相手を降ろせば勝ち</u>。だから「強そうに見せる」ブラフが成立する' },
+  },
+
+  lesson_4_1: { id:'lesson_4_1', type:'lesson', chapter:4, chapterTitle:'第4章：5つのアクション',
+    rule:'フォールド/チェック/コール/ベット(レイズ)/オールイン の使い分け',
+    situationFn: () => '基本アクションは5つ。\n<b>フォールド</b>：降りる。これまでのチップは失うが、それ以上は払わない。\n<b>チェック</b>：賭けずに次の場札を待つ（相手が賭けてない時のみ）。\n<b>コール</b>：相手のベット額と同額を払って続行。\n<b>ベット／レイズ</b>：自分から賭ける／相手のベットに上乗せ。\n<b>オールイン</b>：持ちチップ全額。',
+    speech: 'チェックとコールの違いは？',
+    zazazoHint: '相手が賭けてるか否か',
+    choices: [
+      { id:'a1_a', text:'相手が賭けてない時はチェック、賭けてる時にコール', correct:true },
+      { id:'a1_b', text:'チェックとコールは同じ', correct:false },
+      { id:'a1_c', text:'チェックは降りる、コールは続行', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'チェック=賭けず、コール=同額', rico:'<u>チェックは無料パス、コールは「相手に合わせて払う」</u>。間違えないようにね' },
+    onFail:    { panyu:0, mimi:'同じかと…', rico:'<u>誰もベットしてない→チェックOK、誰かがベット中→コールかレイズかフォールド</u>' },
+  },
+  lesson_4_2: { id:'lesson_4_2', type:'lesson', chapter:4, chapterTitle:'第4章：5つのアクション',
+    rule:'ベットサイジングは「ポット比率」で考える：1/3 / 1/2 / 2/3 / ポット',
+    situationFn: () => 'ベット額は<b>ポット比率</b>で決めるのが基本。\n<b>1/3ポット</b>：軽い試し、コール率高い\n<b>1/2ポット</b>：標準サイズ、攻守バランス\n<b>2/3ポット</b>：強気、相手を降ろしに行く\n<b>ポット</b>：最大圧、本気の勝負',
+    speech: '相手を降ろしたい時のサイジングは？',
+    zazazoHint: '小さすぎても大きすぎてもダメ',
+    choices: [
+      { id:'a2_a', text:'2/3ポット以上が「降ろし狙い」の目安', correct:true },
+      { id:'a2_b', text:'1チップだけが最強', correct:false },
+      { id:'a2_c', text:'必ずオールイン', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'2/3+ポット = pressure、1/2 = 標準', rico:'<u>小さすぎると相手が降りない、大きすぎると怪しまれる</u>。2/3が黄金比' },
+    onFail:    { panyu:0, mimi:'極端な額の方が…？', rico:'極端なベットは逆に読まれる。<u>2/3が「適度に痛い」サイズ</u>' },
+  },
+  lesson_4_3: { id:'lesson_4_3', type:'lesson', chapter:4, chapterTitle:'第4章：5つのアクション',
+    rule:'オールインは「勝ったら大きい、負けたら終わり」のリスク手',
+    situationFn: () => 'オールインは持ちチップ全額の最大リスク手。\n<b>勝てば</b>：相手のチップ大きく奪える（または相手をフォールドさせ即勝ち）\n<b>負ければ</b>：チップ0で対戦終了',
+    speech: 'オールインを使うべき場面は？',
+    zazazoHint: '使うべき＝必要な時',
+    choices: [
+      { id:'ai_a', text:'役が圧倒的に強い時 or 逆転を狙う最終手段', correct:true },
+      { id:'ai_b', text:'常に最初に使う', correct:false },
+      { id:'ai_c', text:'チップが余ったら毎ハンド使う', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'バリュー or 一発逆転狙いのみ', rico:'<u>「強くて確信ある時」か「もう失うものない時」</u>。中途半端な時は使わない' },
+    onFail:    { panyu:0, mimi:'常にだと…思いきや', rico:'<u>オールインは博打じゃなくて戦略</u>。タイミング選んで使うのが正解' },
+  },
+
+  lesson_5_1: { id:'lesson_5_1', type:'lesson', chapter:5, chapterTitle:'第5章：役の強さ',
+    rule:'役の強さ順：ロイヤル＞ストフラ＞4カード＞フルハウス＞フラッシュ＞ストレート＞3カード＞2ペア＞1ペア＞ハイカード',
+    situationFn: () => '10種類の役の強さ順（弱→強）：\n1. ハイカード\n2. ワンペア\n3. ツーペア\n4. スリーカード\n5. ストレート\n6. フラッシュ\n7. フルハウス\n8. フォーカード\n9. ストレートフラッシュ\n10. ロイヤルストレートフラッシュ',
+    speech: 'フラッシュ と ストレート、強いのは？',
+    zazazoHint: '同じスート vs 連番',
+    choices: [
+      { id:'r1_a', text:'フラッシュ（5枚同スート）', correct:true },
+      { id:'r1_b', text:'ストレート（5枚連番）', correct:false },
+      { id:'r1_c', text:'同じ', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'フラッシュ > ストレート。揃える確率はフラッシュの方が低い', rico:'<u>確率が低い役ほど強い</u>。フラッシュは約 0.2%、ストレートは約 0.4%' },
+    onFail:    { panyu:0, mimi:'ストレートが強そうに見えました', rico:'<u>フラッシュの方が確率低い＝強い</u>。連番より同スート揃える方が難しいの' },
+  },
+  lesson_5_2: { id:'lesson_5_2', type:'lesson', chapter:5, chapterTitle:'第5章：役の強さ',
+    rule:'同じ役同士はキッカー（次に強いカード）で決着',
+    situationFn: () => '同じ役レベルなら「キッカー（脇のカード）」で勝敗が決まる。\n例：ワンペア(K) vs ワンペア(K)\nミミ：K-K-A-9-7、相手：K-K-Q-J-10\n→ <b>Aキッカーのミミ勝ち</b>',
+    speech: 'ワンペア同士の勝敗は？',
+    zazazoHint: 'ペアが同じなら次に注目',
+    choices: [
+      { id:'r2_a', text:'同ランクのペアならキッカー（残り3枚の最高ランク）で決まる', correct:true },
+      { id:'r2_b', text:'手番が早い方が勝つ', correct:false },
+      { id:'r2_c', text:'同じ役は引き分け', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'Kペア+Aキッカー > Kペア+Qキッカー', rico:'<u>Aキッカー持ちは最強</u>。Kペア + A は単なるKペアより強い' },
+    onFail:    { panyu:0, mimi:'引き分けかと…', rico:'<u>キッカーで決まる</u>。だから手札にAやKを持つと「次の手」も強い' },
+  },
+  lesson_5_3: { id:'lesson_5_3', type:'lesson', chapter:5, chapterTitle:'第5章：役の強さ',
+    rule:'狙うべき役は「フロップで何が出るか」で変わる。固執しない',
+    situationFn: () => '<b>狙うべき役は場札次第</b>。\n・場札に同スート2枚 → フラッシュドロー狙い\n・場札に連番要素 → ストレート狙い\n・場札にペア → フルハウス／フォーカード狙い\n・場札がバラバラ → ハイペア・トップペア狙い\n固執せず、場札を見て柔軟に。',
+    speech: '場札 9♥ 10♥ Q♥ で狙うべき役は？',
+    zazazoHint: '3枚同スートあり、連番要素',
+    choices: [
+      { id:'r3_a', text:'フラッシュ／ストレート両狙い（自分の手札次第）', correct:true },
+      { id:'r3_b', text:'必ずフォーカード', correct:false },
+      { id:'r3_c', text:'必ずロイヤル', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'場札を見て柔軟に役を狙う', rico:'<u>場札の組み合わせを見て、自分が作れる最強の役を考える</u>のが上達のコツ' },
+    onFail:    { panyu:0, mimi:'絶対的な狙う役があるかと', rico:'<u>場札次第で狙う役は変わる</u>。固定観念で動くと負ける' },
+  },
+
+  lesson_6_1: { id:'lesson_6_1', type:'lesson', chapter:6, chapterTitle:'第6章：確率と勝率',
+    rule:'プリフロップのポケットペア最強：AA は全ランダム手に対して約85%勝率',
+    situationFn: () => 'プリフロップ（手札2枚配布直後）の勝率目安：\n<b>AA</b>：約 85%（ランダム相手）\n<b>KK</b>：約 82%\n<b>AKスーテッド</b>：約 67%\n<b>22</b>：約 50-55%\n<b>72o（最弱手）</b>：約 35%',
+    speech: '最強手 AA の勝率は？',
+    zazazoHint: 'AAが負ける確率は？',
+    choices: [
+      { id:'p1_a', text:'約 85%（負ける確率は15%もある）', correct:true },
+      { id:'p1_b', text:'100%確定勝利', correct:false },
+      { id:'p1_c', text:'約 50%', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'AAでも15%負ける＝7回に1回は敗北', rico:'<u>絶対勝てる手はない</u>。AAでも15%は負ける。だから油断は禁物' },
+    onFail:    { panyu:0, mimi:'100%だと思ってました', rico:'<u>ポーカーに100%は存在しない</u>。最強手でも負ける可能性は常にある' },
+  },
+  lesson_6_2: { id:'lesson_6_2', type:'lesson', chapter:6, chapterTitle:'第6章：確率と勝率',
+    rule:'ドロー完成率：アウツ数×2（1枚）／×4（2枚）の簡易公式',
+    situationFn: () => '<b>アウツ</b>＝役完成に必要な残り有効カードの数。\n<b>簡易公式</b>：\n・<b>残り1枚で完成</b>：アウツ × 2 ＝ 完成率(%)\n・<b>残り2枚で完成</b>：アウツ × 4 ＝ 完成率(%)\n\n例：フラッシュドロー（同スート4枚揃ってる）→ アウツ9 → 1枚で約18%、2枚で約36%',
+    speech: 'フラッシュドロー、ターン＆リバー2枚での完成率は？',
+    zazazoHint: 'アウツ9 × 4',
+    choices: [
+      { id:'p2_a', text:'約 35%（5回に2回くらい）', correct:true },
+      { id:'p2_b', text:'約 80%（ほぼ完成）', correct:false },
+      { id:'p2_c', text:'約 10%（ほぼ無理）', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'9×4=36%、5回に2回弱は完成', rico:'<u>9アウツ×4=36%</u>。意外と高いから、ポットオッズ次第でコール価値あり' },
+    onFail:    { panyu:0, mimi:'もっと低いかと', rico:'<u>2枚あれば36%</u>。フラッシュドローは「割と当たる」って感覚で覚えとこ' },
+  },
+  lesson_6_3: { id:'lesson_6_3', type:'lesson', chapter:6, chapterTitle:'第6章：確率と勝率',
+    rule:'ポットオッズ＝払う額 ÷ (ポット+払う額)。これより高い勝率ならコール',
+    situationFn: () => '<b>ポットオッズの計算</b>：\nポット 200、相手のベット 100、自分のコール 100。\nコール後のポット総額 = 300。\n必要勝率 = 100 ÷ 300 ≒ 33%。\n→ 自分の勝率が33%以上なら、長期的にコール価値あり',
+    speech: 'この状況で必要勝率は？',
+    zazazoHint: '100/300 を計算',
+    choices: [
+      { id:'p3_a', text:'約 33%', correct:true },
+      { id:'p3_b', text:'約 50%', correct:false },
+      { id:'p3_c', text:'約 80%', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'33%＝3回に1回勝てればプラス', rico:'<u>必要勝率を計算してから、自分の勝率と比較してコール判断</u>。これがポットオッズ思考' },
+    onFail:    { panyu:0, mimi:'計算苦手で…', rico:'<u>払う額÷(ポット+払う額)</u>。慣れたら一目で分かるよ' },
+  },
+
+  lesson_7_1: { id:'lesson_7_1', type:'lesson', chapter:7, chapterTitle:'第7章：定石（プリフロップ）',
+    rule:'プリフロップは「手の強さ」と「ポジション」で参加判断',
+    situationFn: () => 'プリフロップで参加すべき手の目安（簡易チャート）：\n<b>必ず参加</b>：AA, KK, QQ, JJ, AKs, AKo（10位以内）\n<b>状況により参加</b>：10-10〜2-2、AQ〜A2s、KQs〜KJs\n<b>降りる</b>：72o, 83o（最弱クラス）\nさらに<b>「後手（ポジション良い）」</b>なら参加範囲を広げて良い。',
+    speech: '72o（7と2、別スーツ）の正しい行動は？',
+    zazazoHint: '最弱手の扱い',
+    choices: [
+      { id:'pf_a', text:'プリフロップでフォールド（参加しない）', correct:true },
+      { id:'pf_b', text:'必ずオールイン', correct:false },
+      { id:'pf_c', text:'必ずレイズ', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'弱い手は早く降りる＝損切り', rico:'<u>72oは「世界最弱」と呼ばれる手</u>。プリフロップで降りるのが正解' },
+    onFail:    { panyu:0, mimi:'弱い手でも頑張る…？', rico:'<u>弱い手で頑張るのは負け筋</u>。降りる勇気もポーカーの実力' },
+  },
+  lesson_7_2: { id:'lesson_7_2', type:'lesson', chapter:7, chapterTitle:'第7章：定石（ベットの意味）',
+    rule:'ベットには3つの目的：バリュー・ブラフ・プロテクション',
+    situationFn: () => 'ベットには大きく3つの理由がある。\n<b>バリュー</b>：強い手でチップを引き出す\n<b>ブラフ</b>：弱い手でも強そうに見せて相手を降ろす\n<b>プロテクション</b>：自分のペアを守るため、相手のドローに代金を払わせる',
+    speech: 'フラッシュドロー警報の場で、Aペアでベットする理由は？',
+    zazazoHint: 'プロテクションの考え',
+    choices: [
+      { id:'be_a', text:'相手のフラッシュドローに代金を払わせて、降ろすか勝負する', correct:true },
+      { id:'be_b', text:'必ずブラフ', correct:false },
+      { id:'be_c', text:'必ず降ろし狙い', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'プロテクションベット = 安く見られたくない時', rico:'<u>「ドロー狙いに代金を払わせる」のが完成役の守り方</u>。チェックすると次のカードがタダで見えちゃう' },
+    onFail:    { panyu:0, mimi:'プロテクションって初耳でした', rico:'<u>強い手こそベットして守る</u>。チェックしてドローを完成させたら本末転倒' },
+  },
+  lesson_7_3: { id:'lesson_7_3', type:'lesson', chapter:7, chapterTitle:'第7章：定石（ポジション）',
+    rule:'後手（後にアクション）は情報量が多く、勝率5-10%相当の優位',
+    situationFn: () => '<b>ポジション</b>＝ベット順序。\n後手（後にアクション）＝相手の動きを見てから判断できる。\n情報量の差は<b>勝率にして5-10%相当</b>と言われる、本物の優位。\nプロは「後手なら参加範囲を広げる」「先手なら絞る」が定石。',
+    speech: 'ポジションを活かす正しい行動は？',
+    zazazoHint: '情報の差を価値に',
+    choices: [
+      { id:'po_a', text:'後手なら参加範囲を広げ、先手なら絞る', correct:true },
+      { id:'po_b', text:'位置に関係なく同じプレイ', correct:false },
+      { id:'po_c', text:'先手の方が情報多くて有利', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'後手は情報アドバンテージ', rico:'<u>後手で得たヒントを「コール / レイズ / 降りる」の判断材料に使う</u>のがプロの基本' },
+    onFail:    { panyu:0, mimi:'先手が有利かと思いました', rico:'<u>後手が有利</u>。アクション順の差は本物の戦略要素' },
+  },
+
+  lesson_8_1: { id:'lesson_8_1', type:'lesson', chapter:8, chapterTitle:'第8章：心理戦・読み',
+    rule:'相手の手札を「1つに当てる」のではなく「レンジ（可能性の幅）」で考える',
+    situationFn: () => '<b>レンジ思考</b>＝相手の手札を「これだ！」と1つに絞るのではなく、\n「<b>このベットならこういう手の可能性が高い</b>」と<b>幅</b>で捉える。\n例：プリフロップでレイズしてきた → 上位10位以内の手の可能性高い\nフロップで2/3ポット → 強いペア or ドロー or ブラフ',
+    speech: '相手のベット読みで正しい考え方は？',
+    zazazoHint: '1つに絞らない',
+    choices: [
+      { id:'r1_a', text:'1つに当てるのではなく、可能性の幅（レンジ）で捉える', correct:true },
+      { id:'r1_b', text:'必ず1つに絞り込む', correct:false },
+      { id:'r1_c', text:'相手の手は読めない、運だけ', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'レンジ思考は上達の第一歩', rico:'<u>「相手のレンジ」を考えるとブレない</u>。1つに絞ろうとすると外した時に弱い' },
+    onFail:    { panyu:0, mimi:'1枚に絞らないとダメかと', rico:'<u>レンジ思考</u>＝確率的に考える。これがプロとアマの境界線' },
+  },
+  lesson_8_2: { id:'lesson_8_2', type:'lesson', chapter:8, chapterTitle:'第8章：心理戦・読み',
+    rule:'ブラフ看破のコツ：言葉と行動の不一致、ベットサイズの違和感',
+    situationFn: () => 'ブラフを見抜くサイン：\n1. <b>言葉と行動の不一致</b>（「弱いよ〜」と言いつつ大ベット）\n2. <b>ベットサイズが状況に合わない</b>（場札危険でない時の超大ベット）\n3. <b>過剰な強さアピール</b>（強い時ほど人は静かになる傾向）\n4. <b>連続したアクションの矛盾</b>（フロップ小さく、ターンで急に大きく）',
+    speech: '「弱いカードだから降りなよ」と言いつつポット2/3ベット',
+    zazazoHint: '言葉と行動どちらを信じる',
+    choices: [
+      { id:'r2_a', text:'言葉は無視、ベットサイズで判断（降ろし狙いの可能性高い）', correct:true },
+      { id:'r2_b', text:'言葉通り信じて降りる', correct:false },
+      { id:'r2_c', text:'相手が優しいので感謝してフォールド', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'言葉と行動のギャップ＝ブラフサイン', rico:'<u>「強く言って降ろす」典型ブラフ</u>。言葉は嘘つくけど、ベット額は嘘つきにくい' },
+    onFail:    { panyu:0, mimi:'相手の言葉を信じてしまう…', rico:'<u>ベット額が真実</u>。言葉と矛盾してたら、行動を信じる' },
+  },
+  lesson_8_3: { id:'lesson_8_3', type:'lesson', chapter:8, chapterTitle:'第8章：心理戦・読み',
+    rule:'ティルト（感情爆発状態）に陥らない／相手のティルトを利用する',
+    situationFn: () => '<b>ティルト</b>＝バッドビートや連敗で感情的になり、判断が乱れる状態。\nプロでも陥る。\n<b>自分が陥らない</b>：感情を切り離して機械的に判断する\n<b>相手のティルト</b>：強気になりすぎてる相手から多くチップを引き出すチャンス',
+    speech: '連敗してイライラしてる時の正解は？',
+    zazazoHint: '冷静さ vs 取り返したさ',
+    choices: [
+      { id:'r3_a', text:'感情を切り離して機械的に判断、無理に取り返そうとしない', correct:true },
+      { id:'r3_b', text:'すぐに大ベットして取り返す', correct:false },
+      { id:'r3_c', text:'全ハンドオールイン', correct:false },
+    ],
+    onSuccess: { panyu:0, zazazo:0, hint:'ティルト = 負けの連鎖の入口', rico:'<u>「取り返したい」気持ちが命取り</u>。負けてる時こそタイトに、攻めるな' },
+    onFail:    { panyu:0, mimi:'取り返したくなる気持ち…', rico:'<u>ティルトに乗ったら立て直せない</u>。一旦休んで冷静になるのが正解' },
+  },
+
   velvet_opening: {
     id: 'velvet_opening',
     situationFn: () => `— 開幕心理戦 —\nまだカードは配られていない。ヴェルベットはあなたを見下ろし、低く笑った。`,
@@ -1574,6 +1897,10 @@ function startBattle(opponentId) {
 }
 
 function startBattleInternal(opponentId) {
+  const opp0 = OPPONENTS[opponentId];
+  if (opp0 && opp0.isLecture) {
+    return startLecture(opponentId);
+  }
   state = defaultState();
   const opp = OPPONENTS[opponentId] || OPPONENTS.polka;
   state.opponentId = opp.id;
@@ -2145,11 +2472,20 @@ function resolvePsych(qid, choice, btn) {
       state.psychRoot.remove();
       state.psychRoot = null;
     }
+    // 講義モード：正解数カウント＋次の問題へ
+    if (state.lectureMode) {
+      if (choice.correct) state.lectureCorrect++;
+      state.lectureIdx++;
+      const resultPrefix = choice.correct ? '✓ 正解！　' : '✗ 残念……　';
+      showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), choice.correct, () => {
+        triggerLectureQuestion();
+      });
+      return;
+    }
     state.isPlayerTurn = true;
     render();
-    // リコ先輩カットイン（クリックで閉じる）
     const resultPrefix = choice.correct ? '✓ 正解！　' : '✗ 残念……　';
-    const onCutInClose = state.tutorialMode
+    const onCutInClose = state.tutorialMode && state.opponentId === 'rico_tutorial' && !state.lectureMode
       ? () => showTutorial('after_psych',
           '心理バトル解決！ぱにゅゲージが回復したね。<br>' +
           'あとはAペアの強さを信じて、<b>「コール」</b>か<b>「1/2ポット」</b>でベットしてみよう。<br>' +
@@ -2534,6 +2870,152 @@ function triggerTousatsuDaigyakuten() {
 //=============================================================
 // 17a. チュートリアル終了
 //=============================================================
+//=============================================================
+// 講義モード（リコ先輩の8章24問）
+//=============================================================
+const LESSON_ORDER = [
+  'lesson_1_1', 'lesson_1_2', 'lesson_1_3',
+  'lesson_2_1', 'lesson_2_2', 'lesson_2_3',
+  'lesson_3_1', 'lesson_3_2', 'lesson_3_3',
+  'lesson_4_1', 'lesson_4_2', 'lesson_4_3',
+  'lesson_5_1', 'lesson_5_2', 'lesson_5_3',
+  'lesson_6_1', 'lesson_6_2', 'lesson_6_3',
+  'lesson_7_1', 'lesson_7_2', 'lesson_7_3',
+  'lesson_8_1', 'lesson_8_2', 'lesson_8_3',
+];
+
+function startLecture(opponentId) {
+  state = defaultState();
+  state.opponentId = opponentId;
+  const opp = OPPONENTS[opponentId];
+  state.opponentName = opp.name;
+  state.opponentImgKey = opp.imgKey;
+  state.lectureMode = true;
+  state.lectureIdx = 0;
+  state.lectureCorrect = 0;
+  state.lectureTotal = LESSON_ORDER.length;
+  // 講義用に最小限の画面（バトル画面再利用）
+  state.screen = 'battle';
+  state.handPhase = 'lecture';
+  state.tutorialMode = true;
+  state.ricoAdvice = '「ようこそ。じっくり基礎を覚えていこ〜」';
+  state.mimiThought = '「リコ先輩、よろしくお願いします！」';
+  render();
+  // 最初の挨拶
+  showLectureIntro(() => {
+    triggerLectureQuestion();
+  });
+}
+
+function showLectureIntro(onContinue) {
+  const overlay = document.createElement('div');
+  overlay.className = 'tutorial-overlay';
+  overlay.innerHTML = `
+    <div class="tutorial-bubble">
+      <div class="tutorial-step">講義開始</div>
+      <h2 style="color:var(--c-red);font-size:24px;margin:0 0 14px;letter-spacing:0.15em;">📚 リコ先輩のポーカー講義</h2>
+      <p style="font-size:17px;line-height:1.8;">よろしく〜！ ミミに <b>ポーカーの基本</b> をじっくり教えるね。</p>
+      <p style="font-size:15px;line-height:1.7;">
+        全 <b>8章 × 3問 = 24問</b>。<br>
+        歴史・用語・流れ・5つのアクション・10種の役・確率・定石・心理戦まで網羅するよ。
+      </p>
+      <p style="font-size:14px;color:var(--c-red);line-height:1.7;">
+        ※ 各問は<u>論理バトル形式</u>で出題。間違えても OK、解説で覚えればOK
+      </p>
+      <div class="tutorial-actions">
+        <button class="next-btn" type="button">▶ 始める</button>
+        <button class="skip-btn" type="button">スキップ</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('.next-btn').addEventListener('click', () => {
+    overlay.remove();
+    onContinue();
+  });
+  overlay.querySelector('.skip-btn').addEventListener('click', () => {
+    if (!confirm('講義を全スキップしますか？基礎は身につきませんが、すぐにポルカ戦に進めます。')) return;
+    overlay.remove();
+    finishLecture(true);
+  });
+}
+
+function triggerLectureQuestion() {
+  if (state.lectureIdx >= LESSON_ORDER.length) {
+    finishLecture(false);
+    return;
+  }
+  const qid = LESSON_ORDER[state.lectureIdx];
+  const q = PSYCH_QUESTIONS[qid];
+  if (!q) {
+    state.lectureIdx++;
+    return triggerLectureQuestion();
+  }
+  // 章タイトルが変わるタイミングで章バナーを表示
+  const prevChapter = state.lectureIdx > 0 ? PSYCH_QUESTIONS[LESSON_ORDER[state.lectureIdx - 1]]?.chapter : 0;
+  if (q.chapter !== prevChapter) {
+    showChapterBanner(q.chapter, q.chapterTitle, () => doLectureModal(qid));
+  } else {
+    doLectureModal(qid);
+  }
+}
+
+function showChapterBanner(num, title, onClose) {
+  const banner = document.createElement('div');
+  banner.className = 'chapter-banner';
+  banner.innerHTML = `
+    <div class="chapter-num">CHAPTER ${num}</div>
+    <div class="chapter-title">${title.replace(/^第\d+章：/, '')}</div>
+    <div class="chapter-hint">クリックで開始</div>
+  `;
+  document.body.appendChild(banner);
+  banner.addEventListener('click', () => {
+    banner.classList.add('out');
+    setTimeout(() => { banner.remove(); onClose(); }, 400);
+  });
+}
+
+function doLectureModal(qid) {
+  triggerPsychBattle(qid);
+  // 心理バトル resolve をフックして lecture 進行
+  // 既存 resolvePsych の最後に lecture 進行を埋め込みたいので、ここでは何もしない（resolvePsychが lecture用にも対応する）
+}
+
+function finishLecture(skipped) {
+  const overlay = document.createElement('div');
+  overlay.className = 'tutorial-overlay';
+  const scorePct = Math.round((state.lectureCorrect / state.lectureTotal) * 100);
+  overlay.innerHTML = `
+    <div class="tutorial-bubble">
+      <div class="tutorial-step">講義完了</div>
+      <h2 style="color:var(--c-red);font-size:26px;margin:0 0 14px;letter-spacing:0.15em;">📖 講義お疲れさま！</h2>
+      ${skipped
+        ? '<p style="font-size:17px;">スキップでもOK。実戦で覚えていこ〜</p>'
+        : `<p style="font-size:17px;">${state.lectureTotal}問中 <b>${state.lectureCorrect}問正解</b>（${scorePct}%）！</p>`
+      }
+      <p style="font-size:15px;line-height:1.7;">これで基本はバッチリ。<br>次は<b>Stage 2「ポルカ戦」</b>で実戦練習だよ。</p>
+      <div class="tutorial-actions">
+        <button class="next-btn" type="button">▶ ステージ選択へ</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('.next-btn').addEventListener('click', () => {
+    overlay.remove();
+    // 講義クリア記録
+    if (!save.firstClearRewardClaimed.includes('rico_tutorial')) {
+      save.coins += 300;
+      save.firstClearRewardClaimed.push('rico_tutorial');
+    }
+    if (!save.clearedStages.includes('rico_tutorial')) save.clearedStages.push('rico_tutorial');
+    saveProgress();
+    state = defaultState();
+    state.screen = 'stageSelect';
+    render();
+    toast(`✨ 講義完了！${skipped ? '' : '+300コイン'}`);
+  });
+}
+
 function endTutorial() {
   showTutorial('ending',
     '<b>チュートリアル完了！</b><br>' +

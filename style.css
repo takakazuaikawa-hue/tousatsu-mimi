@@ -2564,6 +2564,55 @@ html, body {
   text-shadow: 0 0 18px var(--c-gold-bright);
 }
 
+/* ========== 講義チャプターバナー ========== */
+.chapter-banner {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(20,8,29,0.92) 0%, rgba(0,0,0,0.96) 100%);
+  cursor: pointer;
+  text-align: center;
+  animation: chapterIn 0.5s ease-out;
+}
+.chapter-banner.out { animation: chapterOut 0.4s ease-in forwards; }
+@keyframes chapterIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes chapterOut { 0% { opacity: 1; } 100% { opacity: 0; } }
+.chapter-num {
+  font-size: 22px;
+  color: var(--c-gold);
+  letter-spacing: 0.5em;
+  margin-bottom: 16px;
+  animation: chapterTextIn 0.6s ease-out 0.1s both;
+}
+.chapter-title {
+  font-size: 56px;
+  font-weight: 900;
+  background: linear-gradient(180deg, var(--c-gold-bright) 0%, var(--c-red) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 32px rgba(245,215,122,0.5);
+  letter-spacing: 0.1em;
+  padding: 0 40px;
+  line-height: 1.4;
+  animation: chapterTextIn 0.7s cubic-bezier(0.34, 1.5, 0.64, 1) 0.3s both;
+}
+.chapter-hint {
+  font-size: 16px;
+  color: var(--c-text-dim);
+  letter-spacing: 0.3em;
+  margin-top: 30px;
+  animation: chapterTextIn 0.6s ease-out 0.8s both;
+}
+@keyframes chapterTextIn {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
 /* ========== 闘札大逆転演出 ========== */
 .tousatsu-effect {
   position: fixed;
