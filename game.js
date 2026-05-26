@@ -32,6 +32,7 @@ function defaultSave() {
     backdoorOn: false,       // 裏モードを今表示中か
     bgmVolume: 35,           // BGM音量（0-100）
     bgmOn: false,            // BGM初期OFF
+    chipChoice: {},          // 対戦相手ごとの初期チップ選択
     logs: { actions: [], bets: [], reactions: [], psych: [] },
   };
 }
@@ -1436,8 +1437,19 @@ function applyBindings() {
       case 'saveCoins': el.textContent = save.coins; break;
       case 'stageList':
         el.innerHTML = renderStageList();
-        // 動的innerHTMLで失われたクリックハンドラを再付与
         el.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+        // チップスライダーをバインド
+        el.querySelectorAll('[data-chip-slider]').forEach(sl => {
+          sl.addEventListener('input', (e) => {
+            const sid = e.target.dataset.chipSlider;
+            const v = +e.target.value;
+            if (!save.chipChoice) save.chipChoice = {};
+            save.chipChoice[sid] = v;
+            const disp = el.querySelector(`[data-chip-display="${sid}"]`);
+            if (disp) disp.textContent = v;
+            saveProgress();
+          });
+        });
         break;
       case 'lobbyRicoLine': el.textContent = lobbyRicoLine(); break;
       case 'lobbyStats': el.innerHTML = renderLobbyStats(); break;
@@ -1682,11 +1694,18 @@ function renderStageList() {
         <div class="stage-card-body">
           <div class="stage-number">Stage ${stageNum}</div>
           <div class="stage-name">??? ${opp.isBoss ? '🔱' : ''}</div>
-          <div class="stage-theme">${opp.theme}</div>
           <div class="stage-locked-tag">🔒 前のステージをクリアで解放</div>
         </div>
       </div>`;
     }
+    // 初期チップ：保存値→デフォルト
+    const isLecture = (sid === 'rico_tutorial');
+    const baseChips = opp.chips || 1000;
+    const bonus = chipBonusTotal();
+    const maxChips = baseChips + bonus;
+    const savedChip = (save.chipChoice && save.chipChoice[sid]) || baseChips;
+    const curChip = Math.max(baseChips, Math.min(maxChips, savedChip));
+    const showSlider = !isLecture && bonus > 0;
     return `<div class="stage-card ${recommend ? 'recommended' : ''} ${cleared ? 'cleared' : ''} ${opp.isBoss ? 'boss-stage' : ''}">
       ${portrait}
       <div class="stage-card-body">
@@ -1697,13 +1716,17 @@ function renderStageList() {
         </div>
         <div class="stage-number">Stage ${stageNum}</div>
         <div class="stage-name">${opp.name}</div>
-        <div class="stage-theme">学習：${opp.theme}</div>
         <div class="stage-desc">${opp.desc}</div>
         <div class="stage-reward">初回報酬：${opp.rewardFirst}コイン${cleared ? '<small>（取得済み）</small>' : ''}</div>
+        ${isLecture ? '' : `<div class="stage-chips-row">
+          <span class="stage-chips-label">💰 初期</span>
+          <span class="stage-chips-value" data-chip-display="${sid}">${curChip}</span>
+          ${showSlider ? `<input class="stage-chips-slider" type="range" min="${baseChips}" max="${maxChips}" step="100" value="${curChip}" data-chip-slider="${sid}">` : ''}
+        </div>`}
         <div class="stage-actions">
           <button class="btn btn-primary" data-action="battle-start" data-opponent="${sid}">${
             sid === 'rico_tutorial'
-              ? (cleared ? 'もう一度受講' : 'チュートリアル開始')
+              ? '受講'
               : (cleared ? '再戦' : '対戦開始')
           }</button>
           ${(sid === 'rico_tutorial' && cleared) ? `<button class="btn btn-secondary" data-action="battle-rico-serious" title="チュートリアル無しで本気のリコ先輩と対戦">🔥</button>` : ''}
@@ -2627,20 +2650,15 @@ function chipBonusTotal() {
 }
 
 function startBattle(opponentId) {
-  const bonus = chipBonusTotal();
-  const isFirstTime = !save.firstClearRewardClaimed.includes(opponentId);
-  // ボーナス所持時はチップ量選択モーダル（リコ講義は対象外、本気リコは対象）
-  const isLectureRico = (opponentId === 'rico_tutorial') && window.__ricoSeriousMode !== true;
-  if (bonus > 0 && !isLectureRico) {
-    showChipPicker(opponentId, () => {
-      if (isFirstTime && EPISODES[opponentId]) {
-        showEpisodeTitle(opponentId, () => startBattleInternal(opponentId));
-      } else {
-        startBattleInternal(opponentId);
-      }
-    });
-    return;
+  // カードのスライダーで選んだチップ数を採用（即座にバトル開始）
+  if (!save.chipChoice) save.chipChoice = {};
+  const isSerious = opponentId === 'rico_tutorial' && window.__ricoSeriousMode === true;
+  const base = isSerious ? 2000 : ((OPPONENTS[opponentId]?.chips) || 1000);
+  const stored = save.chipChoice[opponentId];
+  if (opponentId !== 'rico_tutorial' || isSerious) {
+    window.__chosenStartChips = stored ? Math.max(base, stored) : base;
   }
+  const isFirstTime = !save.firstClearRewardClaimed.includes(opponentId);
   if (isFirstTime && EPISODES[opponentId]) {
     showEpisodeTitle(opponentId, () => startBattleInternal(opponentId));
     return;

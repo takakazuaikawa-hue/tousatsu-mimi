@@ -973,6 +973,54 @@ html, body {
 .lobby-stage-list .stage-card .stage-desc { display: none; }
 .lobby-stage-list .stage-card .stage-reward { font-size: 11px; }
 .lobby-stage-list .stage-card .stage-actions { margin-top: auto; }
+.stage-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 4px 6px;
+  background: rgba(0,0,0,0.35);
+  border-radius: 6px;
+  border-left: 2px solid var(--c-gold-bright);
+  flex-wrap: wrap;
+}
+.stage-chips-label {
+  font-size: 10px;
+  color: var(--c-gold);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+.stage-chips-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-gold-bright);
+  min-width: 40px;
+  text-shadow: 0 0 4px rgba(245,215,122,0.5);
+}
+.stage-chips-slider {
+  -webkit-appearance: none;
+  flex: 1 1 100%;
+  height: 4px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 2px;
+  border: 1px solid var(--c-gold);
+  outline: none;
+}
+.stage-chips-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--c-gold-bright);
+  border: 1px solid var(--c-bg-dark);
+  cursor: pointer;
+}
+.stage-chips-slider::-moz-range-thumb {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--c-gold-bright);
+  border: 1px solid var(--c-bg-dark);
+  cursor: pointer;
+}
 .lobby-stage-list .stage-card .stage-actions .btn { font-size: 12px; padding: 6px 8px; }
 .lobby-stage-list .stage-card .stage-actions .stage-recall { width: 34px; padding: 4px; font-size: 14px; }
 
