@@ -3150,24 +3150,236 @@ function startEndingShow(playMusic) {
         stage.appendChild(fin);
         requestAnimationFrame(() => fin.classList.add('show'));
       }, 2400);
-      // ボタン
-      setTimeout(() => {
-        const btns = document.createElement('div');
-        btns.className = 'ending-final-buttons';
-        btns.innerHTML = `
-          <button class="btn btn-primary" data-action="back-title">タイトルへ</button>
-          <button class="btn btn-secondary" data-action="back-stage">ロビーへ</button>
-        `;
-        stage.appendChild(btns);
-        // 動的追加なので個別バインド
-        btns.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
-        requestAnimationFrame(() => btns.classList.add('show'));
-      }, 3200);
+      // スタッフロール（FINの後）
+      setTimeout(() => startCreditsRoll(stage), 4200);
     }, 500);
   }
 
   // 開始
   setTimeout(nextAct, 400);
+}
+
+// スタッフロール
+const CREDITS = [
+  { type: 'title', text: '— STAFF —' },
+  { type: 'section', text: '原案 / Original Concept' },
+  { role: '原案', name: 'あいかわ' },
+  { role: '企画', name: 'あいかわ' },
+  { role: 'プロデュース', name: 'あいかわ' },
+  { type: 'gap' },
+
+  { type: 'section', text: 'アート / Art' },
+  { role: 'キャラクター原案', name: 'ChatGPT' },
+  { role: 'キャラクターデザイン', name: 'ChatGPT' },
+  { role: 'ミミ立ち絵', name: 'ChatGPT' },
+  { role: 'リコ先輩立ち絵（全11衣装）', name: 'ChatGPT' },
+  { role: 'ポルカ立ち絵', name: 'ChatGPT' },
+  { role: 'セリナ立ち絵', name: 'ChatGPT' },
+  { role: 'グラーノ立ち絵', name: 'ChatGPT' },
+  { role: 'ヴェルベット立ち絵', name: 'ChatGPT' },
+  { role: 'タイトルロゴ', name: 'ChatGPT' },
+  { role: 'エピソード一枚絵', name: 'ChatGPT' },
+  { role: 'UI アセット', name: 'ChatGPT' },
+  { role: 'チップアイコン（4色）', name: 'ChatGPT' },
+  { role: 'ポット画像', name: 'ChatGPT' },
+  { role: 'テーブルフェルト', name: 'ChatGPT' },
+  { role: '羊皮紙バナー', name: 'ChatGPT' },
+  { role: 'アクションボタンフレーム', name: 'ChatGPT' },
+  { role: 'カード裏面', name: 'ChatGPT' },
+  { role: '背景イラスト', name: 'ChatGPT' },
+  { type: 'gap' },
+
+  { type: 'section', text: 'シナリオ / Scenario' },
+  { role: 'メインシナリオ', name: 'ChatGPT' },
+  { role: 'キャラクター設定', name: 'ChatGPT' },
+  { role: '台詞執筆', name: 'ChatGPT' },
+  { role: '心理バトル問題作成', name: 'ChatGPT' },
+  { role: '論理バトル問題作成', name: 'ChatGPT' },
+  { role: '講義テキスト（全35問）', name: 'ChatGPT' },
+  { role: 'エピソードタイトル文', name: 'ChatGPT' },
+  { role: 'エンディング脚本', name: 'ChatGPT' },
+  { role: 'リコ先輩衣装別セリフ', name: 'ChatGPT' },
+  { role: 'プロローグ', name: 'ChatGPT' },
+  { type: 'gap' },
+
+  { type: 'section', text: '音楽 / Music' },
+  { role: 'ロビーBGM 作曲', name: 'Suno' },
+  { role: 'ロビーBGM 編曲', name: 'Suno' },
+  { role: 'エンディング主題歌「ポーカーフェイスの終わり〜変な件〜」作詞', name: 'Suno' },
+  { role: '主題歌 作曲', name: 'Suno' },
+  { role: '主題歌 編曲', name: 'Suno' },
+  { role: '主題歌 歌唱', name: 'Suno' },
+  { role: '主題歌 ミキシング', name: 'Suno' },
+  { type: 'gap' },
+
+  { type: 'section', text: '総監督 / Direction' },
+  { role: '総監督', name: 'ClaudeCode' },
+  { role: '副総監督', name: 'ClaudeCode' },
+  { role: 'チーフディレクター', name: 'ClaudeCode' },
+  { role: 'アシスタントディレクター', name: 'ClaudeCode' },
+  { type: 'gap' },
+
+  { type: 'section', text: 'プログラム / Programming' },
+  { role: 'プログラム設計', name: 'ClaudeCode' },
+  { role: 'メインプログラム', name: 'ClaudeCode' },
+  { role: 'ゲームシステム設計', name: 'ClaudeCode' },
+  { role: 'ポーカーエンジン実装', name: 'ClaudeCode' },
+  { role: '役判定アルゴリズム', name: 'ClaudeCode' },
+  { role: 'AI戦略実装', name: 'ClaudeCode' },
+  { role: 'AI性格パラメータ調整', name: 'ClaudeCode' },
+  { role: '心理バトルシステム', name: 'ClaudeCode' },
+  { role: '論理バトルシステム', name: 'ClaudeCode' },
+  { role: '連続正解システム', name: 'ClaudeCode' },
+  { role: '裏モード設計', name: 'ClaudeCode' },
+  { role: '真剣リコ実装', name: 'ClaudeCode' },
+  { role: '本気モード分岐', name: 'ClaudeCode' },
+  { role: '状況分析パネル', name: 'ClaudeCode' },
+  { role: 'ポットオッズ計算', name: 'ClaudeCode' },
+  { role: 'SPR算出', name: 'ClaudeCode' },
+  { role: 'ボード危険度判定', name: 'ClaudeCode' },
+  { role: 'チップ計算', name: 'ClaudeCode' },
+  { role: 'バランス調整', name: 'ClaudeCode' },
+  { role: 'スコアリングシステム', name: 'ClaudeCode' },
+  { role: 'ランク判定', name: 'ClaudeCode' },
+  { role: 'セーブ／ロードシステム', name: 'ClaudeCode' },
+  { role: 'localStorage 管理', name: 'ClaudeCode' },
+  { role: 'プリロードシステム', name: 'ClaudeCode' },
+  { role: 'ローディング画面', name: 'ClaudeCode' },
+  { role: 'BGM制御', name: 'ClaudeCode' },
+  { role: '音量制御', name: 'ClaudeCode' },
+  { role: 'バグ修正', name: 'ClaudeCode' },
+  { role: 'リファクタリング', name: 'ClaudeCode' },
+  { type: 'gap' },
+
+  { type: 'section', text: 'UI/UX / Design Implementation' },
+  { role: 'UI/UX設計', name: 'ClaudeCode' },
+  { role: 'レイアウト設計', name: 'ClaudeCode' },
+  { role: 'CSS実装', name: 'ClaudeCode' },
+  { role: 'ロビーシステム', name: 'ClaudeCode' },
+  { role: 'ステージ選択', name: 'ClaudeCode' },
+  { role: 'バトル画面構築', name: 'ClaudeCode' },
+  { role: 'ショップシステム', name: 'ClaudeCode' },
+  { role: '交換所カテゴリ管理', name: 'ClaudeCode' },
+  { role: 'モーダルシステム', name: 'ClaudeCode' },
+  { role: 'チップ拡張選択', name: 'ClaudeCode' },
+  { role: 'スキップシステム', name: 'ClaudeCode' },
+  { role: 'スマホ対応', name: 'ClaudeCode' },
+  { role: 'レスポンシブデザイン', name: 'ClaudeCode' },
+  { role: 'ブラウザ互換性', name: 'ClaudeCode' },
+  { type: 'gap' },
+
+  { type: 'section', text: '演出 / Effects & Animation' },
+  { role: 'アニメーション設計', name: 'ClaudeCode' },
+  { role: 'カットイン演出', name: 'ClaudeCode' },
+  { role: '圧倒モード演出', name: 'ClaudeCode' },
+  { role: '闘札大逆転 演出', name: 'ClaudeCode' },
+  { role: 'ブラフブレイク 演出', name: 'ClaudeCode' },
+  { role: 'オールイン カットイン', name: 'ClaudeCode' },
+  { role: 'エンディング演出', name: 'ClaudeCode' },
+  { role: 'タイトルロゴ落下', name: 'ClaudeCode' },
+  { role: 'スタッフロール構成', name: 'ClaudeCode' },
+  { role: 'ぱにゅぱにゅミニゲーム', name: 'ClaudeCode' },
+  { role: 'チップ可視化', name: 'ClaudeCode' },
+  { role: 'エピソードタイトル演出', name: 'ClaudeCode' },
+  { role: 'パーティクル演出', name: 'ClaudeCode' },
+  { role: 'バイブレーション制御', name: 'ClaudeCode' },
+  { type: 'gap' },
+
+  { type: 'section', text: 'コンテンツ / Content' },
+  { role: 'チュートリアルフロー', name: 'ClaudeCode' },
+  { role: '講義モード実装', name: 'ClaudeCode' },
+  { role: 'ランダム衣装システム', name: 'ClaudeCode' },
+  { role: 'キャラセリフ振分け', name: 'ClaudeCode' },
+  { role: 'エピソードカード生成', name: 'ClaudeCode' },
+  { role: '戦術ノート', name: 'ClaudeCode' },
+  { role: 'アチーブメント検出', name: 'ClaudeCode' },
+  { type: 'gap' },
+
+  { type: 'section', text: 'QA / Testing' },
+  { role: 'デバッグ', name: 'ClaudeCode' },
+  { role: 'バランステスト', name: 'ClaudeCode' },
+  { role: 'AI監査', name: 'ClaudeCode' },
+  { role: '整合性チェック', name: 'ClaudeCode' },
+  { role: 'リグレッション対応', name: 'ClaudeCode' },
+  { type: 'gap' },
+
+  { type: 'section', text: 'インフラ / Infrastructure' },
+  { role: 'デプロイ管理', name: 'ClaudeCode' },
+  { role: 'GitHub Pages 設定', name: 'ClaudeCode' },
+  { role: 'GitHub Actions 設定', name: 'ClaudeCode' },
+  { role: 'バージョン管理', name: 'ClaudeCode' },
+  { role: 'コミットメッセージ作成', name: 'ClaudeCode' },
+  { type: 'gap' },
+
+  { type: 'section', text: 'プロジェクトマネジメント / PM' },
+  { role: 'プロジェクト管理', name: 'ClaudeCode' },
+  { role: 'タスク分割', name: 'ClaudeCode' },
+  { role: '要件整理', name: 'ClaudeCode' },
+  { role: 'ユーザー対話', name: 'ClaudeCode' },
+  { role: '監修対応', name: 'ClaudeCode' },
+  { type: 'gap' },
+
+  { type: 'small', text: '※ほぼ全部AIですが、原案の あいかわ さんの企画力なくしてこの作品は存在しません。' },
+  { type: 'small', text: '※「ClaudeCode」が異常に多いのは仕様です。' },
+  { type: 'gap' },
+
+  { type: 'section', text: 'Special Thanks' },
+  { role: 'プレイしてくれたあなた', name: '★' },
+  { role: '原案者・監修', name: 'あいかわ' },
+  { type: 'gap' },
+  { type: 'title', text: '— おわり —' },
+  { type: 'small', text: '闘札圧倒伝ミミ' },
+  { type: 'small', text: '〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜' },
+];
+
+function startCreditsRoll(stage) {
+  const roll = document.createElement('div');
+  roll.className = 'credits-roll';
+  const inner = document.createElement('div');
+  inner.className = 'credits-inner';
+  inner.innerHTML = CREDITS.map(c => {
+    if (c.type === 'title')   return `<div class="cr-title">${c.text}</div>`;
+    if (c.type === 'section') return `<div class="cr-section">— ${c.text} —</div>`;
+    if (c.type === 'gap')     return `<div class="cr-gap"></div>`;
+    if (c.type === 'small')   return `<div class="cr-small">${c.text}</div>`;
+    const tagClass = c.name === 'ClaudeCode' ? 'cr-claude'
+                  : c.name === 'ChatGPT' ? 'cr-gpt'
+                  : c.name === 'Suno' ? 'cr-suno'
+                  : c.name === 'あいかわ' ? 'cr-author'
+                  : '';
+    return `<div class="cr-row"><span class="cr-role">${c.role}</span><span class="cr-name ${tagClass}">${c.name}</span></div>`;
+  }).join('');
+  roll.appendChild(inner);
+  // スキップボタン
+  const skip = document.createElement('button');
+  skip.className = 'credits-skip';
+  skip.textContent = '▶▶ スキップ';
+  skip.onclick = () => { showEndingFinalButtons(stage); roll.remove(); };
+  roll.appendChild(skip);
+  stage.appendChild(roll);
+  // スクロール開始
+  requestAnimationFrame(() => inner.classList.add('rolling'));
+  // 終了後にボタン表示
+  const duration = 60000; // 60秒
+  setTimeout(() => {
+    if (roll.parentNode) {
+      showEndingFinalButtons(stage);
+      roll.remove();
+    }
+  }, duration);
+}
+
+function showEndingFinalButtons(stage) {
+  if (stage.querySelector('.ending-final-buttons')) return;
+  const btns = document.createElement('div');
+  btns.className = 'ending-final-buttons';
+  btns.innerHTML = `
+    <button class="btn btn-primary" data-action="back-title">タイトルへ</button>
+    <button class="btn btn-secondary" data-action="back-stage">ロビーへ</button>
+  `;
+  stage.appendChild(btns);
+  btns.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+  requestAnimationFrame(() => btns.classList.add('show'));
 }
 
 function spawnEndingSparkle(parent) {
