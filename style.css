@@ -1418,21 +1418,9 @@ html, body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-color: transparent;
   border-radius: 18px;
-  box-shadow: inset 0 0 30px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.6);
-}
-/* 画像が無い時のフォールバック（深紅フェルト風グラデ） */
-.pot-row {
-  background-color: #4a0e1a;
-  background-blend-mode: multiply;
-}
-.pot-row::before {
-  content: '';
-  position: absolute; inset: 0;
-  border-radius: 18px;
-  background:
-    radial-gradient(ellipse 80% 90% at 50% 50%, transparent 50%, rgba(0,0,0,0.55) 100%);
-  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 .pot-row > * { position: relative; z-index: 1; }
 .pot-display {
@@ -1841,10 +1829,12 @@ html, body {
   font-size: 15px;
   color: #2a1810;
   font-weight: 700;
-  padding: 14px 56px 14px 56px;
+  padding: 14px 56px;
   background-image: url('assets/ui/banner_parchment.png');
   background-size: 100% 100%;
   background-repeat: no-repeat;
+  background-color: transparent;
+  border: none;
   text-align: center;
   text-shadow: 0 1px 0 rgba(255,255,200,0.6);
   letter-spacing: 0.1em;
@@ -1852,10 +1842,6 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 画像が無いときのフォールバック */
-  border-left: 3px solid var(--c-gold);
-  border-radius: 0 4px 4px 0;
-  background-color: rgba(255,243,200,0.92);
 }
 .current-hand-display b { color: #a52a1a; font-weight: 800; }
 .current-hand-display .hand-strong { color: #c81f3a; font-weight: 900; text-shadow: 0 1px 0 rgba(255,255,200,0.6); }
