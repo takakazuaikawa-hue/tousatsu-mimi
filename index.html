@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>闘札圧倒伝ミミ 〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage">
+  <div id="app"></div>
+</div>
+
+<!-- 画面テンプレート群 -->
+<template id="tpl-title">
+  <div class="screen title-screen">
+
+    <!-- タイトル背景画像：assets/background/title_bg.png を読み込み -->
+    <div class="bg-layer bg-title">
+      <img
+        class="title-bg-img"
+        src="assets/backgrounds/title_bg.png"
+        alt=""
+        onerror="this.style.display='none';"
+      >
+    </div>
+
+    <div class="title-inner">
+
+      <!-- タイトルロゴ画像：assets/ui/title.png を読み込み -->
+      <div class="title-logo-frame">
+        <img
+          class="title-logo-img"
+          src="assets/ui/title.png"
+          alt="闘札圧倒伝ミミ"
+          onerror="this.style.display='none'; this.closest('.title-logo-frame').classList.add('logo-fallback');"
+        >
+
+        <!-- ロゴ画像が読み込めなかった時だけ表示する文字タイトル -->
+        <div class="title-logo-fallback">
+          <h1 class="game-title">
+            <span class="title-line1">闘札圧倒伝ミミ</span>
+          </h1>
+          <p class="subcopy">転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件</p>
+        </div>
+      </div>
+      <div class="title-buttons" data-bind="titleButtons">
+        <button class="btn btn-primary" data-action="start">はじめから</button>
+      </div>
+
+      <p class="version-tag">ver 1.0</p>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-stage-select">
+  <div class="screen stage-select-screen">
+    <div class="bg-layer bg-stage"></div>
+    <header class="top-hud">
+      <button class="btn btn-ghost" data-action="back-title">← タイトルへ</button>
+      <h2>ステージ選択</h2>
+      <div class="hud-right">
+        <span class="coin-display">所持コイン：<span data-bind="saveCoins">0</span></span>
+        <button class="btn btn-secondary" data-action="open-shop">🛍 交換所</button>
+        <button class="btn btn-ghost" data-action="reset-save" title="セーブデータをリセット">⟲</button>
+      </div>
+    </header>
+    <main class="stage-list" data-bind="stageList"></main>
+    <div class="stage-tips">
+      <span>💡 セリナ・グラーノ・ヴェルベット戦の初回クリアで戦術ノート自動解放</span>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-shop">
+  <div class="screen shop-screen">
+    <div class="bg-layer bg-stage"></div>
+    <header class="top-hud">
+      <button class="btn btn-ghost" data-action="back-stage">← ステージ選択へ</button>
+      <h2>🛍 交換所</h2>
+      <span class="coin-display">所持コイン：<span data-bind="saveCoins">0</span></span>
+    </header>
+    <main class="shop-main">
+      <aside class="shop-sidebar">
+        <button class="shop-cat-btn active" data-cat="panyu">ぱにゅ強化</button>
+        <button class="shop-cat-btn" data-cat="note">戦術ノート</button>
+        <button class="shop-cat-btn" data-cat="skin">見た目</button>
+      </aside>
+      <section class="shop-items" data-bind="shopItems"></section>
+      <aside class="shop-comment">
+        <div class="character-frame char-rico-shop">
+          <img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+        </div>
+        <div class="rico-bubble rico-shop-bubble" data-bind="ricoShopComment">「迷いやすいなら、まずぱにゅぱにゅLv2かな。正解は教えないけど、変なところは見つけやすくなるよ」</div>
+      </aside>
+    </main>
+  </div>
+</template>
+
+<template id="tpl-battle">
+  <div class="screen battle-screen">
+    <div class="bg-layer bg-poker"></div>
+
+    <header class="top-hud">
+      <button class="btn btn-ghost" data-action="back-stage">中断</button>
+      <span class="hand-info">Hand <span data-bind="handNo">1</span></span>
+      <span class="opponent-name" data-bind="opponentName">ポルカ</span>
+    </header>
+
+    <aside class="left-panel">
+      <div class="character-frame char-rico">
+        <img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+      </div>
+      <div class="rico-bubble" data-bind="ricoAdvice">「いい？相手の言葉を、まず聞いてみな」</div>
+    </aside>
+
+    <section class="center-table">
+      <div class="opponent-area">
+        <div class="character-frame char-opponent">
+          <img data-bind="opponentImg" alt="相手">
+        </div>
+        <div class="opponent-info">
+          <div class="chip-meter">
+            <div class="chip-meter-row">
+              <span class="chip-meter-label">チップ</span>
+              <span class="chip-meter-value" data-bind="opponentChips">1000</span>
+            </div>
+            <div class="chip-bar"><div class="chip-bar-fill chip-bar-opponent" data-bind="opponentChipBar"></div></div>
+          </div>
+          <div class="opponent-bet" data-bind="opponentBet"></div>
+          <div class="opponent-hand">
+            <div class="card card-back"></div>
+            <div class="card card-back"></div>
+          </div>
+          <div class="opponent-speech" data-bind="opponentSpeech"></div>
+        </div>
+      </div>
+
+      <div class="community-cards" data-bind="communityCards">
+        <div class="card empty"></div>
+        <div class="card empty"></div>
+        <div class="card empty"></div>
+        <div class="card empty"></div>
+        <div class="card empty"></div>
+      </div>
+
+      <div class="pot-row">
+        <div class="bet-side bet-side-opponent">
+          <div class="bet-side-label" data-bind="opponentBetLabel">相手</div>
+          <div class="bet-side-amount" data-bind="opponentBetAmount">0</div>
+        </div>
+        <div class="pot-display" title="ポット = このハンドで賭けられたチップの合計。勝った方が総取り。">
+          🪙 ポット <small>(合計)</small>
+          <div class="pot-amount" data-bind="pot">0</div>
+        </div>
+        <div class="bet-side bet-side-player">
+          <div class="bet-side-label">ミミ</div>
+          <div class="bet-side-amount" data-bind="playerBetAmount">0</div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="right-panel">
+      <div class="zazazo-display">
+        <div class="zazazo-label">ゾゾゾゲージ</div>
+        <div class="zazazo-bar">
+          <div class="zazazo-fill" data-bind="zazazoFill"></div>
+        </div>
+        <div class="zazazo-text" data-bind="zazazoText">無風</div>
+      </div>
+      <div class="psych-log" data-bind="psychLog"></div>
+    </aside>
+
+    <footer class="bottom-bar">
+      <div class="mimi-area">
+        <div class="character-frame char-mimi">
+          <img data-bind="mimiImg" src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
+        </div>
+      </div>
+      <div class="mimi-hand-area">
+        <div class="player-row">
+          <div class="chip-meter">
+            <div class="chip-meter-row">
+              <span class="chip-meter-label">ミミ</span>
+              <span class="chip-meter-value" data-bind="playerChips">1000</span>
+            </div>
+            <div class="chip-bar"><div class="chip-bar-fill chip-bar-player" data-bind="playerChipBar"></div></div>
+          </div>
+          <div class="current-hand-display" data-bind="currentHandName">役：—</div>
+        </div>
+        <div class="hand-thought-row">
+          <div class="player-hand" data-bind="playerHand">
+            <div class="card empty"></div>
+            <div class="card empty"></div>
+          </div>
+          <div class="mimi-thought-bubble" data-bind="mimiThought">「ふぅ……まずは手札を見てから」</div>
+        </div>
+        <div class="panyu-gauge">
+          <div class="panyu-label">ぱにゅゲージ <span class="panyu-mood" data-bind="panyuMood">空っぽ</span></div>
+          <div class="panyu-bar">
+            <div class="panyu-fill" data-bind="panyuFill"></div>
+            <div class="panyu-pip" data-bind="panyuPips"></div>
+          </div>
+        </div>
+      </div>
+      <div class="action-area" data-bind="actionArea"></div>
+    </footer>
+  </div>
+</template>
+
+<template id="tpl-psych-modal">
+  <div class="modal-overlay">
+    <div class="modal psych-modal">
+      <h3 class="psych-title">— 心理バトル —</h3>
+      <div class="psych-board-info">
+        <div class="psych-board-label">場札</div>
+        <div class="psych-board-cards" data-bind="psychBoardCards"></div>
+        <div class="psych-pot" title="ポット = このハンドで賭けられたチップの合計">ポット（賭け金合計）：<span data-bind="psychPot">0</span></div>
+      </div>
+      <div class="psych-hand-info">
+        <div class="psych-hand-label">ミミの手札</div>
+        <div class="psych-hand-cards" data-bind="psychHandCards"></div>
+      </div>
+      <div class="psych-situation" data-bind="psychSituation"></div>
+      <div class="psych-speech" data-bind="psychSpeech"></div>
+      <div class="psych-hint zazazo-hint" data-bind="zazazoHint"></div>
+      <div class="psych-choices" data-bind="psychChoices"></div>
+      <div class="psych-tools">
+        <button class="btn btn-secondary" data-action="use-panyu-sense" data-bind="panyuSenseBtn">ぱにゅぱにゅ（25消費）</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-ending">
+  <div class="screen ending-screen">
+    <div class="bg-layer bg-result"></div>
+    <div class="ending-inner">
+      <h2 class="ending-title">— ENDING —</h2>
+      <div class="ending-scene">
+        <div class="ending-line"><b class="speaker rico">リコ先輩：</b>「やるじゃん、ミミ。ちゃんと場を見て、顔色を見て、最後まで降りなかった」</div>
+        <div class="ending-line"><b class="speaker mimi">ミミ：</b>「私、カードだけ見てたら負けてました。<br>でも……勝負って、場の空気まで含めて読むものなんですね」</div>
+        <div class="ending-line"><b class="speaker velvet">ヴェルベット：</b>「新人にしては、悪くないわ。<br>その妙なスキル……次の卓でも通じるか、楽しみにしているわ」</div>
+      </div>
+      <div class="ending-credit">闘札大逆転ミミ　MVP END</div>
+      <div class="ending-thanks">遊んでくれてありがとう！</div>
+      <div class="ending-buttons">
+        <button class="btn btn-primary" data-action="back-title">タイトルへ</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-result">
+  <div class="screen result-screen">
+    <div class="bg-layer bg-result"></div>
+    <div class="result-inner">
+      <h2 class="result-title" data-bind="resultTitle">勝利</h2>
+      <div class="rank-display">
+        <div class="rank-label">評価ランク</div>
+        <div class="rank-value" data-bind="rankValue">A</div>
+      </div>
+      <div class="result-stats">
+        <div>獲得コイン：<span data-bind="earnedCoins">0</span></div>
+        <div>スコア：<span data-bind="score">0</span></div>
+        <div>心理バトル成功数：<span data-bind="psychSuccess">0</span></div>
+        <div>最大役：<span data-bind="bestHand">-</span></div>
+        <div>ブラフブレイク：<span data-bind="bluffBreak">なし</span></div>
+      </div>
+      <div class="result-reason" data-bind="resultReason"></div>
+      <div class="result-buttons" data-bind="resultButtons">
+        <button class="btn btn-primary" data-action="rematch">再戦</button>
+        <button class="btn btn-secondary" data-action="back-stage">ステージ選択へ</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script src="game.js"></script>
+</body>
+</html>

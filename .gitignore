@@ -1,0 +1,21 @@
+# 開発用バックアップ・ローカルスクリプト
+assets/characters/_original/
+transparent.ps1
+serve.ps1
+
+# Claude Code 設定
+.claude/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# ログ
+*.log
+
+# ローカル一時ファイル
+.tmp/
+*.bak
