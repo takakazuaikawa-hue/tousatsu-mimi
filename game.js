@@ -1338,7 +1338,7 @@ function render() {
     case 'battle':      renderTemplate('tpl-battle'); applyBindings(); break;
     case 'result':      renderTemplate('tpl-result'); applyBindings(); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
-    case 'ending':      renderTemplate('tpl-ending'); break;
+    case 'ending':      renderTemplate('tpl-ending'); startEndingShow(); break;
   }
   bindActions();
 }
@@ -2119,6 +2119,158 @@ function onAction(e) {
 //=============================================================
 // 9. 画面遷移
 //=============================================================
+//=============================================================
+// エンディング演出
+//=============================================================
+function startEndingShow() {
+  const stage = document.getElementById('ending-stage');
+  if (!stage) return;
+  stage.innerHTML = '';
+  // 星空＋光の粒子背景
+  const bg = document.createElement('div');
+  bg.className = 'ending-bg';
+  stage.appendChild(bg);
+  const stars = document.createElement('div');
+  stars.className = 'ending-stars';
+  stage.appendChild(stars);
+  const skip = document.createElement('button');
+  skip.className = 'ending-skip-btn';
+  skip.textContent = 'スキップ ▶▶';
+  skip.onclick = () => { cancelled = true; finale(); };
+  stage.appendChild(skip);
+
+  let cancelled = false;
+
+  const acts = [
+    { type: 'fade-text', text: '——あの夜、VIPルームの最奥で——', cls: 'narration', wait: 2200 },
+    { type: 'speaker', who: 'velvet', img: 'velvet', name: 'ヴェルベット',
+      text: '「新人にしては……悪くないわ。<br>その妙なスキル、覚えておく」', wait: 3200 },
+    { type: 'speaker', who: 'grano', img: 'grano', name: 'グラーノ',
+      text: '「ふむ。お嬢さんの『割に合う判断』、見事でしたな」', wait: 2800 },
+    { type: 'speaker', who: 'selina', img: 'selina', name: 'セリナ',
+      text: '「ボードを読む目、ホンモノだったね。次は本気でやる」', wait: 2800 },
+    { type: 'speaker', who: 'polka', img: 'polka', name: 'ポルカ',
+      text: '「ミミ姉ちゃん、また遊ぼ！　次はアタシが勝つかんね！」', wait: 2800 },
+    { type: 'speaker', who: 'rico', img: 'rico', name: 'リコ先輩',
+      text: '「やるじゃん、ミミ。ちゃんと顔色まで読み切った」', wait: 2800 },
+    { type: 'speaker', who: 'mimi', img: 'mimi', name: 'ミミ',
+      text: '「私……ぱにゅぱにゅだけが取り柄だと思ってた。<br>でも、それも立派なスキルでした」', wait: 3600 },
+    { type: 'fade-text', text: 'こうしてミミは、闘札の世界で名を上げていく——', cls: 'narration', wait: 3000 },
+    { type: 'fade-text', text: 'これは、外れスキルが世界を変える物語の、ほんの始まり。', cls: 'narration small', wait: 3200 },
+  ];
+
+  let idx = 0;
+  function nextAct() {
+    if (cancelled) return;
+    if (idx >= acts.length) { finale(); return; }
+    const a = acts[idx++];
+    runAct(a, () => setTimeout(nextAct, 200));
+  }
+
+  function runAct(a, done) {
+    if (a.type === 'fade-text') {
+      const el = document.createElement('div');
+      el.className = `ending-narration ${a.cls || ''}`;
+      el.innerHTML = a.text;
+      stage.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('show'));
+      setTimeout(() => {
+        el.classList.add('out');
+        setTimeout(() => el.remove(), 600);
+        done();
+      }, a.wait);
+    } else if (a.type === 'speaker') {
+      const wrap = document.createElement('div');
+      wrap.className = `ending-speaker speaker-${a.who}`;
+      wrap.innerHTML = `
+        <div class="ending-portrait">
+          <img src="assets/characters/${a.img}_default.png" alt="${a.name}" onerror="window.assetFallback(this,'${a.img}')">
+        </div>
+        <div class="ending-bubble">
+          <div class="ending-bubble-name">${a.name}</div>
+          <div class="ending-bubble-text">${a.text}</div>
+        </div>
+      `;
+      stage.appendChild(wrap);
+      requestAnimationFrame(() => wrap.classList.add('show'));
+      setTimeout(() => {
+        wrap.classList.add('out');
+        setTimeout(() => wrap.remove(), 600);
+        done();
+      }, a.wait);
+    }
+  }
+
+  function finale() {
+    // 既存要素を片付け
+    stage.querySelectorAll('.ending-speaker, .ending-narration').forEach(e => e.remove());
+    skip.style.display = 'none';
+    // フラッシュ
+    const flash = document.createElement('div');
+    flash.className = 'ending-flash';
+    stage.appendChild(flash);
+    setTimeout(() => flash.remove(), 700);
+
+    // タイトルロゴが上から落下
+    setTimeout(() => {
+      const logo = document.createElement('div');
+      logo.className = 'ending-title-drop';
+      logo.innerHTML = `
+        <img src="assets/ui/title.png" alt="闘札圧倒伝ミミ"
+             onerror="this.style.display='none'; this.parentElement.classList.add('logo-fallback');">
+        <div class="ending-title-fallback">
+          <div class="ending-title-jp">闘札圧倒伝ミミ</div>
+          <div class="ending-title-sub">— 転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件 —</div>
+        </div>
+      `;
+      stage.appendChild(logo);
+      // 着地時にシェイク＋バースト
+      setTimeout(() => {
+        stage.classList.add('shake');
+        if (navigator.vibrate) navigator.vibrate([100, 50, 80]);
+        for (let i = 0; i < 24; i++) spawnEndingSparkle(stage);
+        setTimeout(() => stage.classList.remove('shake'), 600);
+      }, 1100);
+      // FIN 表示
+      setTimeout(() => {
+        const fin = document.createElement('div');
+        fin.className = 'ending-fin';
+        fin.textContent = 'FIN';
+        stage.appendChild(fin);
+        requestAnimationFrame(() => fin.classList.add('show'));
+      }, 2400);
+      // ボタン
+      setTimeout(() => {
+        const btns = document.createElement('div');
+        btns.className = 'ending-final-buttons';
+        btns.innerHTML = `
+          <button class="btn btn-primary" data-action="back-title">タイトルへ</button>
+        `;
+        stage.appendChild(btns);
+        requestAnimationFrame(() => btns.classList.add('show'));
+      }, 3200);
+    }, 500);
+  }
+
+  // 開始
+  setTimeout(nextAct, 400);
+}
+
+function spawnEndingSparkle(parent) {
+  const s = document.createElement('div');
+  s.className = 'ending-sparkle';
+  s.textContent = pick(['✨', '🌟', '💫', '⭐', '🎉', '🎊', '💖']);
+  const angle = rand() * Math.PI * 2;
+  const dist = 150 + rand() * 250;
+  s.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+  s.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+  s.style.left = '50%';
+  s.style.top  = '50%';
+  s.style.fontSize = (24 + rand() * 22) + 'px';
+  parent.appendChild(s);
+  setTimeout(() => s.remove(), 1600);
+}
+
 function goStageSelect() {
   state.screen = 'stageSelect';
   // 入室時にリコの衣装を抽選し直す
