@@ -2120,11 +2120,11 @@ function renderActionArea(el) {
     slots = [
       { kind: 'fold', icon: '✋', label: 'フォールド', sub: '降りる', amount: 0, action: 'player-fold', ghost: true,
         enabled: true, title: '手札を捨ててこのハンドを諦める。場札が出る前でも降りられる。アンテ50チップは戻ってこない。' },
-      { kind: 'callcheck', icon: '🤝', label: 'コール', sub: '', amount: need, action: 'player-call', primary: true,
+      { kind: 'callcheck', icon: '🤝', label: 'コール', sub: need > 0 ? '勝負' : '', amount: need, action: 'player-call', primary: true,
         enabled: true, title: '相手と同額を払ってフロップを見にいく。' },
-      { kind: 'sm', icon: '⬆', label: '2.5BBレイズ', sub: '', amount: bb25, action: 'player-raise', dataSize: '2.5',
+      { kind: 'sm', icon: '⬆', label: 'レイズ', sub: '2.5BB', amount: bb25, action: 'player-raise', dataSize: '2.5',
         enabled: true, title: '相手より大きくベット。強気の攻め。' },
-      { kind: 'md', icon: '⬆⬆', label: '3BBレイズ', sub: '', amount: bb3, action: 'player-raise', dataSize: '3',
+      { kind: 'md', icon: '⬆⬆', label: 'レイズ', sub: '3BB', amount: bb3, action: 'player-raise', dataSize: '3',
         enabled: true, title: 'より大きいレイズ。' },
       { kind: 'lg', icon: '—', label: '—', sub: 'ポストフロップ用', amount: 0, enabled: false,
         title: 'フロップ後にポットベットが選べるようになります。' },
@@ -2146,9 +2146,9 @@ function renderActionArea(el) {
         title: need > 0
           ? 'コール＝相手のベットに同額で乗る。役に自信がある時。'
           : 'チェック＝今は賭けない、次の場札を待つ。相手もチェックなら無料で次へ進める。' },
-      { kind: 'sm', icon: '½', label: '1/2ポット', sub: '標準', amount: half, action: 'player-bet', dataSize: 'pot_1_2',
+      { kind: 'sm', icon: '½', label: 'ハーフ', sub: '1/2 標準', amount: half, action: 'player-bet', dataSize: 'pot_1_2',
         enabled: showBet || showRaise, title: 'ポットの半分。標準的なベット。' },
-      { kind: 'md', icon: '⅔', label: '2/3ポット', sub: '強気', amount: twoThird, action: 'player-bet', dataSize: 'pot_2_3',
+      { kind: 'md', icon: '⅔', label: '2/3 ベット', sub: '強気', amount: twoThird, action: 'player-bet', dataSize: 'pot_2_3',
         enabled: showBet || showRaise, title: 'ポットの2/3。強気の攻め。相手を降ろしに行く時にも。' },
       { kind: 'lg', icon: '🏺', label: 'ポット', sub: '最大圧', amount: potBet, action: 'player-bet', dataSize: 'pot_1',
         enabled: showBet || showRaise, title: 'ポット相当の大ベット。' },

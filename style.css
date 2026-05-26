@@ -1470,11 +1470,6 @@ html, body {
   width: 80px; height: 80px;
   object-fit: contain;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8)) drop-shadow(0 0 14px rgba(245,215,122,0.5));
-  animation: potIdleFloat 3s ease-in-out infinite;
-}
-@keyframes potIdleFloat {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-3px); }
 }
 .pot-img-fallback {
   display: none;
@@ -1946,27 +1941,26 @@ html, body {
   height: 100%;
 }
 .action-slot {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  grid-template-rows: auto auto;
-  column-gap: 6px;
-  row-gap: 0;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 8px 10px;
+  justify-content: center;
+  padding: 6px 4px;
   font-size: 14px;
-  line-height: 1.2;
+  line-height: 1.1;
   min-width: 0;
   position: relative;
-  /* ボタンフレーム画像（あれば使用） */
+  /* ボタンフレーム画像（あれば使用、無くてもフォールバック色で動く） */
   background-image: url('assets/ui/btn_frame.png');
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-color: transparent;
   border: none;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+  gap: 1px;
 }
 .action-slot:disabled {
-  opacity: 0.3;
+  opacity: 0.35;
   cursor: not-allowed;
   filter: grayscale(0.5);
 }
@@ -1974,43 +1968,39 @@ html, body {
   filter: brightness(1.15) drop-shadow(0 0 6px rgba(245,215,122,0.4));
 }
 .action-slot .slot-icon {
-  grid-column: 1; grid-row: 1 / span 2;
-  font-size: 22px;
-  width: 30px; height: 30px;
-  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  line-height: 1;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.7));
 }
 .action-slot .slot-label {
-  grid-column: 2; grid-row: 1;
-  font-size: 14px; font-weight: 700;
-  text-align: left;
+  font-size: 13px; font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 .action-slot .slot-sub {
-  grid-column: 2; grid-row: 2;
-  font-size: 11px; opacity: 0.85;
-  text-align: left;
+  font-size: 10px; opacity: 0.8;
+  white-space: nowrap;
 }
 .action-slot .slot-cost {
-  grid-column: 3; grid-row: 1 / span 2;
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 14px; font-weight: 700;
+  font-size: 13px; font-weight: 700;
   color: #fff8dc;
   white-space: nowrap;
+  font-family: var(--f-deco);
 }
 .action-slot .slot-cost .chip-pic {
-  width: 18px; height: 18px;
+  width: 14px; height: 14px;
   margin-top: 0;
 }
-/* 各ボタン種別の色味（フレーム画像が無い時のフォールバックも兼ねる） */
+/* フォールバック色（画像が無いとき） */
 .action-slot.slot-fold      { background-color: rgba(70,80,100,0.85); }
 .action-slot.slot-callcheck { background-color: rgba(150,30,40,0.85); }
 .action-slot.slot-sm,
 .action-slot.slot-md,
 .action-slot.slot-lg        { background-color: rgba(100,40,140,0.85); }
-.action-slot.slot-allin     { background-color: rgba(180,30,30,0.9); }
-.action-slot.slot-allin     { box-shadow: inset 0 0 10px rgba(255,150,150,0.3); }
+.action-slot.slot-allin     { background-color: rgba(180,30,30,0.9); box-shadow: inset 0 0 10px rgba(255,150,150,0.3); }
 .action-slot.slot-allin .slot-icon { animation: allinPulse 1.2s ease-in-out infinite; }
 @keyframes allinPulse {
   0%, 100% { transform: scale(1); }
