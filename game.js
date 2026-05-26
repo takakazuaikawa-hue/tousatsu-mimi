@@ -1418,7 +1418,11 @@ function applyBindings() {
       case 'actionArea': renderActionArea(el); break;
       case 'coins': el.textContent = state.coinsEarned || 0; break;
       case 'saveCoins': el.textContent = save.coins; break;
-      case 'stageList': el.innerHTML = renderStageList(); break;
+      case 'stageList':
+        el.innerHTML = renderStageList();
+        // 動的innerHTMLで失われたクリックハンドラを再付与
+        el.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+        break;
       case 'lobbyRicoLine': el.textContent = lobbyRicoLine(); break;
       case 'lobbyStats': el.innerHTML = renderLobbyStats(); break;
       case 'lobbySettings': el.innerHTML = renderLobbySettings();
