@@ -559,6 +559,100 @@ const PSYCH_QUESTIONS = {
       rico: 'ドローの完成率と支払額のバランスね。当たる確率より高い支払額だと、長い目で損するよ',
     },
   },
+  // ===== 論理バトル（type: 'logic'） =====
+  // 数学・確率・判断ロジックを学ぶクイズ
+  logic_pot_odds_basic: {
+    id: 'logic_pot_odds_basic',
+    type: 'logic',
+    rule: 'ポットオッズ：払う額 ÷ (ポット+払う額) ＝ 必要勝率',
+    situationFn: (state) => `現在のポット：${state.pot}\n相手のベット：${state.currentBetOpponent}\nミミがコールするには ${state.currentBetOpponent - state.currentBetPlayer} チップ必要。`,
+    speech: '【論理問題】このコールに必要な勝率（％）は？',
+    zazazoHint: '計算式：払う額 ÷ (ポット+払う額) × 100',
+    choices: [
+      { id: 'lo20', text: '約 20〜25%（手応えがあればコール）', correct: true },
+      { id: 'lo50', text: '約 50%（半々の勝負）',                 correct: false },
+      { id: 'lo80', text: '約 80%（ほぼ勝てる時だけ）',           correct: false },
+    ],
+    onSuccess: {
+      panyu: 15, zazazo: 0,
+      hint: '必要勝率を把握できれば、感覚に流されず判断できる',
+      rico: 'いいねー！<u>20%前後で見れるなら、フラッシュドローでもコール価値あり</u>って覚えとこ',
+    },
+    onFail: {
+      panyu: -5,
+      mimi: 'えっと、計算苦手で……',
+      rico: '焦らなくていい〜。<u>払う額が小さい時ほど必要勝率も低い</u>って感覚さえあればOK',
+    },
+  },
+  logic_flush_outs: {
+    id: 'logic_flush_outs',
+    type: 'logic',
+    rule: 'フラッシュドロー：完成までのアウツは9枚。残り1枚で約20%、2枚で約35%',
+    situationFn: (state) => `場札：${renderCardsText(state.community)}\nミミの手札に同スートが2枚ある（フラッシュドロー状態）。リバーまで残り1枚。`,
+    speech: '【論理問題】リバー1枚でフラッシュが完成する確率は？',
+    zazazoHint: 'アウツ9枚 × 2 ≒ 必要勝率（簡易法）',
+    choices: [
+      { id: 'p10', text: '約 10%（諦めムード）',     correct: false },
+      { id: 'p20', text: '約 20%（5回に1回当たる）', correct: true },
+      { id: 'p50', text: '約 50%（半々）',           correct: false },
+    ],
+    onSuccess: {
+      panyu: 15, zazazo: 0,
+      hint: 'アウツ × 2 で1枚分の勝率がざっくり分かる',
+      rico: 'そうそう、<u>アウツ9 × 2 = 18% ≒ 20%</u>。簡易計算覚えとくとめっちゃ楽',
+    },
+    onFail: {
+      panyu: -5,
+      mimi: '半々くらいかと思ってました……',
+      rico: '<u>アウツ数 × 2 ＝ 1枚で当たる確率（%）</u>って公式、これだけは覚えて！',
+    },
+  },
+  logic_hand_compare: {
+    id: 'logic_hand_compare',
+    type: 'logic',
+    rule: '完成役 > ドロー：Aペアはフラッシュドローよりリバーまでで有利',
+    situationFn: (state) => `場札：${renderCardsText(state.community)}\nミミはAペア（既に完成）。相手はフラッシュドロー（まだ未完成）。`,
+    speech: '【論理問題】リバーまで進んだ時、勝率が高いのはどっち？',
+    zazazoHint: '完成役 vs ドロー：ドロー側の完成率を考える',
+    choices: [
+      { id: 'mimi_win',   text: 'ミミのAペア（フラッシュ未完成なら勝てる）', correct: true },
+      { id: 'opp_win',    text: '相手のフラッシュドロー（強そう）',           correct: false },
+      { id: 'cant_tell',  text: '分からない（運次第）',                       correct: false },
+    ],
+    onSuccess: {
+      panyu: 15, zazazo: 0,
+      hint: '未完成のドローは見た目より弱い。Aペアの方が勝率高い',
+      rico: 'いいね！<u>完成してる役は、未完成のドローより基本有利</u>。ビビらず勝負しな',
+    },
+    onFail: {
+      panyu: -5,
+      mimi: 'フラッシュって響きが強そうで……',
+      rico: '<u>「完成してから」 vs 「これから完成するかも」</u>。前者の方が確率上勝つ',
+    },
+  },
+  logic_position: {
+    id: 'logic_position',
+    type: 'logic',
+    rule: 'ポジション：後手（後にアクション）は情報が多く有利',
+    situationFn: () => `ポーカーには「ポジション」がある。\n相手が先にベット → ミミが後にコール/レイズ/フォールド判断。`,
+    speech: '【論理問題】後にアクションする側（ミミ）が有利な理由は？',
+    zazazoHint: '情報の差が勝敗に直結する',
+    choices: [
+      { id: 'info', text: '相手のベット額や態度を見てから判断できる', correct: true },
+      { id: 'card', text: 'カードが多くもらえる',                       correct: false },
+      { id: 'pot',  text: 'ポットが大きくなる',                         correct: false },
+    ],
+    onSuccess: {
+      panyu: 10, zazazo: 0,
+      hint: '相手の手を見てから動けるのがポジション有利',
+      rico: 'そうそう、<u>後手は情報量が多い</u>。ポーカーは情報のゲームだからね',
+    },
+    onFail: {
+      panyu: -5,
+      mimi: 'カードが増えるのかと思った……',
+      rico: 'ポジションは<u>「アクション順」の差</u>。後にする方が圧倒的に有利',
+    },
+  },
   velvet_opening: {
     id: 'velvet_opening',
     situationFn: () => `— 開幕心理戦 —\nまだカードは配られていない。ヴェルベットはあなたを見下ろし、低く笑った。`,
@@ -1150,6 +1244,27 @@ function buyItem(itemId) {
   bindShopItemHover();
 }
 
+function pickLogicQuestion() {
+  // 状況に応じて適切な論理バトルを返す
+  const need = state.currentBetOpponent - state.currentBetPlayer;
+  const potBefore = state.pot - need;
+  if (need > 0 && potBefore > 0) {
+    // コール判断 → ポットオッズ
+    return 'logic_pot_odds_basic';
+  }
+  // 場札に同スート2枚以上 → フラッシュアウツ
+  const suits = state.community.map(c => c.suit);
+  const counts = {};
+  suits.forEach(s => counts[s] = (counts[s] || 0) + 1);
+  const maxSuit = Math.max(...Object.values(counts), 0);
+  if (maxSuit >= 2 && state.playerHand[0]?.suit === state.playerHand[1]?.suit) {
+    return 'logic_flush_outs';
+  }
+  // フロップ後・特殊状況なし → 役比較 or ポジション
+  if (state.handPhase === 'flop') return 'logic_hand_compare';
+  return 'logic_position';
+}
+
 function pickPsychQuestion() {
   // 対戦相手に応じて問題プールを切り替える
   const id = state.opponentId;
@@ -1699,6 +1814,15 @@ function opponentTurn() {
     return;
   }
 
+  // 論理バトル：心理が出ない時で、特定の条件を満たすときに30%発動（1ハンドに1回まで）
+  const triggerLogic = isPostFlop && !state.logicResolved && !state.psychResolved && rand() < 0.3 && pickLogicQuestion();
+  if (triggerLogic) {
+    state.logicResolved = true;  // 1ハンド1回
+    render();
+    setTimeout(() => triggerPsychBattle(triggerLogic), 900);
+    return;
+  }
+
   state.isPlayerTurn = true;
   state.mimiThought = `「ポルカが${amount}ベット……強気だ」`;
   render();
@@ -1801,6 +1925,26 @@ function triggerPsychBattle(qid) {
   app.appendChild(modal);
 
   const root = app.lastElementChild;
+  // モーダルタイプによってヘッダー差し替え（心理 / 論理）
+  const isLogic = q.type === 'logic';
+  const titleEl = root.querySelector('.psych-title');
+  if (titleEl) {
+    titleEl.textContent = isLogic ? '🧮 論理バトル' : '🧠 心理バトル';
+    titleEl.classList.toggle('logic-mode', isLogic);
+  }
+  // モーダル全体にもクラス
+  const modalEl = root.querySelector('.psych-modal');
+  if (modalEl) modalEl.classList.toggle('logic-mode', isLogic);
+  // ルール文を上部に挿入
+  if (isLogic && q.rule) {
+    let ruleBox = root.querySelector('.logic-rule-box');
+    if (!ruleBox) {
+      ruleBox = document.createElement('div');
+      ruleBox.className = 'logic-rule-box';
+      ruleBox.innerHTML = `<div class="logic-rule-label">📘 今回のルール</div><div class="logic-rule-text">${q.rule}</div>`;
+      titleEl.insertAdjacentElement('afterend', ruleBox);
+    }
+  }
   // 開幕心理バトルなど、場札・手札がない問題では当該セクションを隠す
   const hideBoardHand = (qid === 'velvet_opening') || (state.community.length === 0 && state.playerHand.length === 0);
   if (hideBoardHand) {
@@ -2338,18 +2482,33 @@ function endTutorial() {
 //=============================================================
 // 17b. チュートリアル吹き出し
 //=============================================================
+const TUTORIAL_STEPS = ['intro', 'intro2', 'preflop', 'flop_shown', 'after_psych', 'ending'];
 function showTutorial(step, htmlContent, onNext) {
   state.tutorialStep = step;
-  // 既存があれば消す
   document.querySelectorAll('.tutorial-overlay').forEach(e => e.remove());
   const overlay = document.createElement('div');
   overlay.className = 'tutorial-overlay';
   const bubble = document.createElement('div');
   bubble.className = 'tutorial-bubble';
-  bubble.innerHTML = htmlContent +
-    '<button class="next-btn" type="button">次へ ▶</button>';
+  const stepIdx = TUTORIAL_STEPS.indexOf(step);
+  const stepLabel = stepIdx >= 0 ? `Step ${stepIdx + 1} / ${TUTORIAL_STEPS.length}` : '';
+  bubble.innerHTML =
+    (stepLabel ? `<div class="tutorial-step">${stepLabel}</div>` : '') +
+    htmlContent +
+    '<div class="tutorial-actions">' +
+      '<button class="next-btn" type="button">次へ ▶</button>' +
+      '<button class="skip-btn" type="button">スキップ</button>' +
+    '</div>';
   overlay.appendChild(bubble);
   document.body.appendChild(overlay);
+  const skipBtn = bubble.querySelector('.skip-btn');
+  if (skipBtn) {
+    skipBtn.addEventListener('click', () => {
+      if (!confirm('チュートリアル解説をスキップして自分でプレイしますか？\n（ゲーム自体は継続）')) return;
+      overlay.remove();
+      state.tutorialMode = false;  // 以降の自動チュートリアル無効
+    });
+  }
   bubble.querySelector('.next-btn').addEventListener('click', () => {
     overlay.remove();
     if (onNext) onNext();
