@@ -611,10 +611,16 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 4px 14px;
   background: rgba(0,0,0,0.55);
   border-bottom: 1px solid var(--c-gold);
   font-size: 13px;
+  min-height: 38px;
+}
+.top-hud .btn {
+  min-height: 32px;
+  padding: 4px 14px;
+  font-size: 14px;
 }
 .top-hud h2 {
   margin: 0;
@@ -824,7 +830,7 @@ html, body {
    1920x1080想定だが、CSS gridでレスポンシブ */
 .battle-screen {
   grid-template-columns: 240px 1fr 290px;
-  grid-template-rows: 44px 1fr 280px;
+  grid-template-rows: auto 1fr auto;
   grid-template-areas:
     "hud hud hud"
     "left center right"
@@ -1146,13 +1152,14 @@ html, body {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 180px 1fr 300px;
+  grid-template-columns: 170px 1fr 290px;
   gap: 10px;
-  padding: 10px 12px 14px;
+  padding: 8px 12px 10px;
   background: rgba(0,0,0,0.55);
   border-radius: 8px;
   border: 1px solid rgba(217,179,90,0.4);
   overflow: hidden;
+  align-items: stretch;
 }
 .mimi-area {
   display: flex;
@@ -1179,11 +1186,12 @@ html, body {
 }
 .mimi-hand-area {
   display: grid;
-  grid-template-rows: 50px 1fr 22px;
-  gap: 8px;
+  grid-template-rows: auto auto auto;
+  gap: 6px;
   min-height: 0;
   overflow: hidden;
   height: 100%;
+  align-content: start;
 }
 .mimi-hand-area .player-row {
   display: flex;
@@ -1264,8 +1272,9 @@ html, body {
 }
 .action-area {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
+  min-height: 0;
 }
 .action-center {
   display: flex;
