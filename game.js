@@ -1787,7 +1787,7 @@ function renderLobbySettings() {
   const psy = save.psychEnabled !== false;
   const log = save.logicEnabled !== false;
   return `
-    <div class="settings-title">⚙ 設定 <span class="settings-note-inline">※チュートリアル中は常時ON</span></div>
+    <div class="settings-title">⚙ 設定 <span class="settings-note-inline">※講義モードは設定を無視して常時ON</span></div>
     <div class="settings-grid">
       <div class="settings-row">
         <span class="settings-label">心理</span>
@@ -2814,42 +2814,6 @@ function startBattle(opponentId) {
     return;
   }
   startBattleInternal(opponentId);
-}
-
-function showChipPicker(opponentId, onConfirm) {
-  const opp = OPPONENTS[opponentId];
-  const isSerious = opponentId === 'rico_tutorial' && window.__ricoSeriousMode === true;
-  const base = isSerious ? 2000 : ((opp?.chips) || 1000);
-  const bonus = chipBonusTotal();
-  const max = base + bonus;
-  const overlay = document.createElement('div');
-  overlay.className = 'chip-picker-overlay';
-  overlay.innerHTML = `
-    <div class="chip-picker-modal">
-      <div class="chip-picker-title">💰 初期チップを選択</div>
-      <div class="chip-picker-sub">${opp?.name || ''}との対戦開始チップ（自分・相手とも同額）</div>
-      <div class="chip-picker-value"><span id="chip-picker-amount">${base}</span> チップ</div>
-      <input type="range" id="chip-picker-slider" min="${base}" max="${max}" step="100" value="${base}">
-      <div class="chip-picker-range">
-        <span>${base}</span>
-        <span>${max}</span>
-      </div>
-      <div class="chip-picker-actions">
-        <button class="btn btn-ghost" id="chip-picker-cancel">キャンセル</button>
-        <button class="btn btn-primary" id="chip-picker-ok">対戦開始</button>
-      </div>
-    </div>
-  `;
-  document.getElementById('stage').appendChild(overlay);
-  const slider = overlay.querySelector('#chip-picker-slider');
-  const amount = overlay.querySelector('#chip-picker-amount');
-  slider.addEventListener('input', () => amount.textContent = slider.value);
-  overlay.querySelector('#chip-picker-cancel').addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#chip-picker-ok').addEventListener('click', () => {
-    window.__chosenStartChips = +slider.value;
-    overlay.remove();
-    if (onConfirm) onConfirm();
-  });
 }
 
 function startBattleInternal(opponentId) {
