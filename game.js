@@ -1814,6 +1814,10 @@ const SHOP_ITEMS = [
   { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 500, desc: 'テーブル背景をVIP風に変更' },
   { id: 'memory_ending',       cat: 'memory', name: 'エンディング映像',        price: 500, desc: 'クリア後限定。あの感動のエンディングを何度でも視聴可能に', requires: 'ending' },
   { id: 'memory_ending_theme', cat: 'memory', name: '主題歌：ポーカーフェイスの終わり〜変な件〜', price: 400, desc: 'クリア後限定。エンディング主題歌を何度でも視聴可能に', requires: 'ending' },
+  { id: 'chips_plus_500',  cat: 'stack', name: '初期チップ +500',  price: 400,  desc: '対戦開始時のチップ上限を双方+500まで選べる' },
+  { id: 'chips_plus_1500', cat: 'stack', name: '初期チップ +1500', price: 1000, desc: 'さらに+1500（累積+2000）。長期戦に' },
+  { id: 'chips_plus_3000', cat: 'stack', name: '初期チップ +3000', price: 2200, desc: 'さらに+3000（累積+5000）。腰を据えて' },
+  { id: 'chips_plus_5000', cat: 'stack', name: '初期チップ +5000', price: 4500, desc: 'さらに+5000（累積+10000）。徹夜戦' },
 ];
 
 const SHOP_COMMENTS = {
@@ -1827,6 +1831,10 @@ const SHOP_COMMENTS = {
   table_vip:           'VIPのお客様気分でお楽しみいただける一品。気分転換にぜひ',
   memory_ending:       'これは特別な品ですよ。あの夜の決着を、何度でも振り返れる映像です',
   memory_ending_theme: 'あの夜を彩った主題歌……何度でも聴き返したくなる一曲ですよ',
+  chips_plus_500:  'チップが多いほうが、長く楽しめますからな。手始めに +500 はいかが？',
+  chips_plus_1500: 'さらに+1500。腰を据えた読み合いができますよ',
+  chips_plus_3000: '+3000ともなれば、本格的なロングゲーム。プロの卓ですな',
+  chips_plus_5000: '+5000……ふふ、これはもう徹夜の準備が必要ですな',
 };
 
 function renderShopItems(cat) {
@@ -2609,14 +2617,69 @@ function toggleLobbyBgm() {
 //=============================================================
 // 10. バトル開始
 //=============================================================
+function chipBonusTotal() {
+  let b = 0;
+  if (save.ownedItems.includes('chips_plus_500'))  b += 500;
+  if (save.ownedItems.includes('chips_plus_1500')) b += 1500;
+  if (save.ownedItems.includes('chips_plus_3000')) b += 3000;
+  if (save.ownedItems.includes('chips_plus_5000')) b += 5000;
+  return b;
+}
+
 function startBattle(opponentId) {
-  // 初回（未クリア）のみエピソードタイトルを表示
+  const bonus = chipBonusTotal();
   const isFirstTime = !save.firstClearRewardClaimed.includes(opponentId);
+  // ボーナス所持時はチップ量選択モーダル
+  if (bonus > 0 && opponentId !== 'rico_tutorial') {
+    showChipPicker(opponentId, () => {
+      if (isFirstTime && EPISODES[opponentId]) {
+        showEpisodeTitle(opponentId, () => startBattleInternal(opponentId));
+      } else {
+        startBattleInternal(opponentId);
+      }
+    });
+    return;
+  }
   if (isFirstTime && EPISODES[opponentId]) {
     showEpisodeTitle(opponentId, () => startBattleInternal(opponentId));
     return;
   }
   startBattleInternal(opponentId);
+}
+
+function showChipPicker(opponentId, onConfirm) {
+  const opp = OPPONENTS[opponentId];
+  const base = (opp?.chips) || 1000;
+  const bonus = chipBonusTotal();
+  const max = base + bonus;
+  const overlay = document.createElement('div');
+  overlay.className = 'chip-picker-overlay';
+  overlay.innerHTML = `
+    <div class="chip-picker-modal">
+      <div class="chip-picker-title">💰 初期チップを選択</div>
+      <div class="chip-picker-sub">${opp?.name || ''}との対戦開始チップ（自分・相手とも同額）</div>
+      <div class="chip-picker-value"><span id="chip-picker-amount">${base}</span> チップ</div>
+      <input type="range" id="chip-picker-slider" min="${base}" max="${max}" step="100" value="${base}">
+      <div class="chip-picker-range">
+        <span>${base}</span>
+        <span>${max}</span>
+      </div>
+      <div class="chip-picker-actions">
+        <button class="btn btn-ghost" id="chip-picker-cancel">キャンセル</button>
+        <button class="btn btn-primary" id="chip-picker-ok">対戦開始</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+  const slider = overlay.querySelector('#chip-picker-slider');
+  const amount = overlay.querySelector('#chip-picker-amount');
+  slider.addEventListener('input', () => amount.textContent = slider.value);
+  overlay.querySelector('#chip-picker-cancel').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('#chip-picker-ok').addEventListener('click', () => {
+    window.__chosenStartChips = +slider.value;
+    overlay.remove();
+    if (onConfirm) onConfirm();
+  });
 }
 
 function startBattleInternal(opponentId) {
@@ -2636,8 +2699,16 @@ function startBattleInternal(opponentId) {
     : opp.profile;
   state.opponentImgKey = opp.imgKey;
   state.maxHands = seriousRico ? 999 : opp.maxHands;
-  state.playerChips = seriousRico ? 1500 : opp.chips;
-  state.opponentChips = seriousRico ? 1800 : opp.chips; // 強敵にふさわしいチップ
+  // 初期チップ：選択値があれば優先、無ければデフォルト
+  const chosen = window.__chosenStartChips;
+  window.__chosenStartChips = null; // 一回限り
+  if (chosen && !seriousRico) {
+    state.playerChips = chosen;
+    state.opponentChips = chosen;
+  } else {
+    state.playerChips = seriousRico ? 1500 : opp.chips;
+    state.opponentChips = seriousRico ? 1800 : opp.chips;
+  }
   state.tutorialMode = seriousRico ? false : opp.tutorial;
   state.fullHand = seriousRico ? true : !!opp.fullHand;
   state.isBoss = seriousRico ? true : !!opp.isBoss; // 心理バトル全ストリート発動
