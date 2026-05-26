@@ -2819,6 +2819,12 @@ function showdown() {
 function endHand() {
   state.handPhase = 'idle';
   state.opponentSpeech = '';
+  // 連勝カウンタ更新
+  const last = state.handResults[state.handResults.length - 1];
+  if (last) {
+    if (last.winner === 'player') state.consecutiveWins = (state.consecutiveWins || 0) + 1;
+    else if (last.winner === 'opponent') state.consecutiveWins = 0;
+  }
   // 結果バナー表示
   showHandResultBanner();
 }
@@ -2910,7 +2916,10 @@ function continueAfterHand() {
     return endBattle();
   }
   // 圧倒モード判定
-  if (isDominanceMode() && !state.tutorialMode && !state.fullHand) {
+  const domMode = isDominanceMode();
+  if (domMode && !state.tutorialMode) {
+    state.dominanceUsed = true;
+    state.dominanceType = domMode;  // 'complete' or 'comeback'
     return startDominanceMode();
   }
   state.mimiThought = '「次のハンドだ。集中していこう」';
@@ -2918,62 +2927,181 @@ function continueAfterHand() {
 }
 
 // 圧倒モード判定：プレイヤーチップが初期の1.7倍以上 かつ 相手が初期の半分以下
+// 圧倒モード発動判定：
+// - 完勝モード：プレイヤー優勢時に5連勝
+// - 逆転モード：プレイヤー劣勢時に2連勝
 function isDominanceMode() {
+  if (state.dominanceUsed) return false; // 1戦1回まで
   const initial = OPPONENTS[state.opponentId]?.chips || 1000;
-  return state.playerChips >= initial * 1.7 && state.opponentChips <= initial * 0.5;
+  const wins = state.consecutiveWins || 0;
+  const playerAhead = state.playerChips > initial;
+  // 完勝モード：優勢 + 5連勝
+  if (playerAhead && wins >= 5) return 'complete';
+  // 逆転モード：劣勢 + 2連勝
+  if (!playerAhead && wins >= 2) return 'comeback';
+  return false;
 }
 
-// 圧倒モード：相手チップを削り切るまで連続自動勝利演出
+// 圧倒モード：派手アクションシーン＋3分岐選択
 function startDominanceMode() {
   state.dominanceMode = true;
-  showDominanceOverlay(() => {
-    dominanceLoop();
+  showDominanceIntro(() => {
+    showDominanceChoiceModal();
   });
 }
 
-function showDominanceOverlay(onContinue) {
+// 完勝/逆転モードの導入バナー
+function showDominanceIntro(onContinue) {
+  const type = state.dominanceType || 'complete';
   const overlay = document.createElement('div');
-  overlay.className = 'dominance-overlay';
+  overlay.className = 'dominance-overlay dominance-intro';
+  const titleText = type === 'comeback' ? '✦ 逆転の刻 ✦' : '⚡ 圧倒モード ⚡';
+  const subText = type === 'comeback'
+    ? `2連勝で勝負空気が変わった！ ミミの覚醒！`
+    : `${state.consecutiveWins}連勝！ 完全に流れを掴んだ！`;
+  overlay.innerHTML = `
+    <div class="dominance-flash"></div>
+    <div class="dominance-banner">
+      <div class="dominance-text dominance-${type}">${titleText}</div>
+      <div class="dominance-sub">— ${subText} —</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  // 画面振動
+  const stage = document.getElementById('stage');
+  if (stage) {
+    stage.classList.add('shake-allin');
+    setTimeout(() => stage.classList.remove('shake-allin'), 700);
+  }
+  if (navigator.vibrate) navigator.vibrate([100, 60, 150]);
+  setTimeout(() => overlay.classList.add('out'), 2400);
+  setTimeout(() => { overlay.remove(); onContinue(); }, 3000);
+}
+
+// 3つの選択肢モーダル
+function showDominanceChoiceModal() {
+  const type = state.dominanceType || 'complete';
+  const overlay = document.createElement('div');
+  overlay.className = 'dominance-choice-overlay';
+  overlay.innerHTML = `
+    <div class="dominance-choice-modal">
+      <h2 class="dominance-choice-title">${type === 'comeback' ? '🔥 逆転の鍵を選べ' : '⚡ どう仕留める？'}</h2>
+      <p class="dominance-choice-sub">${type === 'comeback' ? '流れを完全に変える一手を' : '完勝の決め手を選ぼう'}</p>
+      <div class="dominance-choice-list">
+        <button class="dominance-choice-btn" data-choice="full">
+          <div class="dchoice-icon">💰</div>
+          <div class="dchoice-name">全取り</div>
+          <div class="dchoice-desc">相手チップを完全に削り切る最大の勝利。バリュー最大化</div>
+        </button>
+        <button class="dominance-choice-btn dchoice-mid" data-choice="break">
+          <div class="dchoice-icon">💔</div>
+          <div class="dchoice-name">心腰を折る</div>
+          <div class="dchoice-desc">相手の精神を粉砕。チップ大削り＋ティルト誘発で再戦時にも有利に</div>
+        </button>
+        <button class="dominance-choice-btn dchoice-mercy" data-choice="mercy">
+          <div class="dchoice-icon">🌸</div>
+          <div class="dchoice-name">見逃す</div>
+          <div class="dchoice-desc">余裕の貫禄。チップは少し取るだけで終わらせる、紳士的勝利</div>
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelectorAll('.dominance-choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const choice = btn.dataset.choice;
+      state.dominanceChoice = choice;
+      overlay.classList.add('out');
+      setTimeout(() => { overlay.remove(); executeDominance(choice); }, 400);
+    });
+  });
+}
+
+// 選んだ分岐に応じて演出を実行
+function executeDominance(choice) {
+  // 演出パラメータ
+  const settings = {
+    full:   { drainRate: 1.0,  hands: 5, mimiLine: '全部、もらった！',       oppLine: 'うう……これが、実力か……',     bursts: 8 },
+    break:  { drainRate: 0.95, hands: 6, mimiLine: 'ここまでよ。降参して！', oppLine: 'もう……立ち上がれない……', bursts: 12 },
+    mercy:  { drainRate: 0.5,  hands: 3, mimiLine: '今回はここまでにしとく', oppLine: 'く……感謝するわ……',         bursts: 4 },
+  };
+  const s = settings[choice] || settings.full;
+  // ミミ宣言カットイン
+  showRicoCutIn(s.mimiLine, true, () => {
+    // 相手の反応
+    showOpponentCutIn(s.oppLine);
+    setTimeout(() => dominanceActionLoop(s, 0), 1800);
+  });
+}
+
+// 派手なアクションループ
+function dominanceActionLoop(s, iteration) {
+  if (state.opponentChips <= 0 || iteration >= s.hands) {
+    setTimeout(() => {
+      // 完了画面
+      showDominanceComplete(state.dominanceChoice);
+    }, 800);
+    return;
+  }
+  state.handNo++;
+  // 削減量計算（選択により最終的に相手チップが何%残るか）
+  const remainingHands = s.hands - iteration;
+  const drainPortion = remainingHands > 0 ? state.opponentChips / remainingHands : state.opponentChips;
+  const drain = Math.min(state.opponentChips, Math.floor(drainPortion * s.drainRate));
+  state.opponentChips -= drain;
+  state.playerChips += drain;
+  state.handResults.push({
+    hand: state.handNo, winner: 'player', reason: 'dominance', pot: drain, by: '圧倒',
+  });
+  // 派手バースト
+  for (let i = 0; i < s.bursts; i++) {
+    setTimeout(() => spawnDominanceBurst(drain, i), i * 40);
+  }
+  // 画面振動
+  const stage = document.getElementById('stage');
+  if (stage) {
+    stage.classList.add('shake-strong');
+    setTimeout(() => stage.classList.remove('shake-strong'), 500);
+  }
+  if (navigator.vibrate) navigator.vibrate(50);
+  render();
+  setTimeout(() => dominanceActionLoop(s, iteration + 1), 800);
+}
+
+function spawnDominanceBurst(amount, index) {
+  const burst = document.createElement('div');
+  burst.className = 'dominance-burst';
+  const angle = (Math.PI * 2 * index) / 8 + rand() * 0.3;
+  const dist = 80 + rand() * 100;
+  burst.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+  burst.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+  burst.innerHTML = `
+    <div class="dominance-burst-text">+${amount}</div>
+    <div class="dominance-burst-sub">${pick(['圧倒！','見たぜ！','読み切り！','完璧！','ぱにゅ！'])}</div>
+  `;
+  document.body.appendChild(burst);
+  setTimeout(() => burst.remove(), 1100);
+}
+
+// 完了演出（選択によって違うメッセージ）
+function showDominanceComplete(choice) {
+  const messages = {
+    full:  { title: '💎 完勝！', sub: '全チップを奪い取った', color: '#ffd55a' },
+    break: { title: '💔 心折！', sub: '相手の戦意を完全に折った', color: '#ff5577' },
+    mercy: { title: '🌸 見逃し', sub: '余裕の貫禄で締めくくった', color: '#ffc1d8' },
+  };
+  const m = messages[choice] || messages.full;
+  const overlay = document.createElement('div');
+  overlay.className = 'dominance-overlay dominance-finish';
   overlay.innerHTML = `
     <div class="dominance-banner">
-      <div class="dominance-text">⚡ 圧倒モード ⚡</div>
-      <div class="dominance-sub">— ミミの読みが完全に通った！残りハンド自動勝利 —</div>
+      <div class="dominance-text" style="color:${m.color}">${m.title}</div>
+      <div class="dominance-sub">${m.sub}</div>
     </div>
   `;
   document.body.appendChild(overlay);
   setTimeout(() => overlay.classList.add('out'), 2200);
-  setTimeout(() => { overlay.remove(); onContinue(); }, 2800);
-}
-
-function dominanceLoop() {
-  // 自動的に相手チップを削っていく演出
-  if (state.opponentChips <= 0) return endBattle();
-  state.handNo++;
-  const drain = Math.min(state.opponentChips, Math.floor(state.opponentChips * 0.4) + 100);
-  state.opponentChips -= drain;
-  state.playerChips += drain;
-  state.handResults.push({
-    hand: state.handNo,
-    winner: 'player',
-    reason: 'dominance',
-    pot: drain,
-    by: '圧倒',
-  });
-  // 高速 連打演出
-  const burst = document.createElement('div');
-  burst.className = 'dominance-burst';
-  burst.innerHTML = `
-    <div class="dominance-burst-text">+${drain}</div>
-    <div class="dominance-burst-sub">圧倒！</div>
-  `;
-  document.body.appendChild(burst);
-  setTimeout(() => burst.remove(), 900);
-  render();
-  if (state.opponentChips > 0) {
-    setTimeout(dominanceLoop, 950);
-  } else {
-    setTimeout(endBattle, 1200);
-  }
+  setTimeout(() => { overlay.remove(); endBattle(); }, 2800);
 }
 
 //=============================================================
