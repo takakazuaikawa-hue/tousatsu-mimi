@@ -197,7 +197,7 @@ html, body {
   cursor: pointer;
 }
 
-/* 固定アスペクト比ステージ：1280×800を基準にJSでスケーリング */
+/* 固定アスペクト比ステージ：1280×800（PC基準） */
 #stage {
   position: fixed;
   top: 50%;
@@ -1212,8 +1212,8 @@ html, body {
   overflow: hidden;
 }
 .hand-thought-row .player-hand .card {
-  width: 70px;
-  height: 100px;
+  width: 78px;
+  height: 110px;
 }
 .panyu-gauge { display: flex; align-items: center; }
 .panyu-bar {
