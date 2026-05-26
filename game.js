@@ -1384,7 +1384,11 @@ function applyBindings() {
       case 'opponentName': el.textContent = state.opponentName; break;
       case 'opponentChips': el.textContent = state.opponentChips; break;
       case 'playerChips': el.textContent = state.playerChips; break;
-      case 'pot': el.textContent = state.pot; break;
+      case 'pot':
+        el.innerHTML = `<span class="amt-num">${state.pot}</span>${renderChipStack(state.pot, 'pot')}`;
+        el.classList.toggle('big-pot', state.pot >= 1000);
+        el.classList.toggle('huge-pot', state.pot >= 2500);
+        break;
       case 'panyuValue': el.textContent = state.panyu; break;
       case 'panyuMax': el.textContent = state.panyuMax; break;
       case 'panyuFill': el.style.width = `${(state.panyu / state.panyuMax) * 100}%`; break;
@@ -1401,15 +1405,17 @@ function applyBindings() {
       case 'currentHandName': el.innerHTML = renderCurrentHandName(); break;
       case 'opponentBetLabel': el.textContent = state.opponentName || '相手'; break;
       case 'opponentBetAmount': {
-        el.textContent = state.currentBetOpponent > 0 ? `+${state.currentBetOpponent}` : '—';
+        const v = state.currentBetOpponent;
+        el.innerHTML = v > 0 ? `<span class="amt-num">+${v}</span>${renderChipStack(v, 'bet')}` : '—';
         const side = el.closest('.bet-side');
-        if (side) side.classList.toggle('empty', state.currentBetOpponent === 0);
+        if (side) side.classList.toggle('empty', v === 0);
         break;
       }
       case 'playerBetAmount': {
-        el.textContent = state.currentBetPlayer > 0 ? `+${state.currentBetPlayer}` : '—';
+        const v = state.currentBetPlayer;
+        el.innerHTML = v > 0 ? `<span class="amt-num">+${v}</span>${renderChipStack(v, 'bet')}` : '—';
         const side = el.closest('.bet-side');
-        if (side) side.classList.toggle('empty', state.currentBetPlayer === 0);
+        if (side) side.classList.toggle('empty', v === 0);
         break;
       }
       case 'communityCards': renderCardsInto(el, state.community, 5); break;
@@ -1983,6 +1989,37 @@ function renderPanyuPips() {
     html += `<span class="pip ${i < lit ? 'lit' : ''}">●</span>`;
   }
   return html;
+}
+
+// チップ額をビジュアル化：白25/赤100/青500/金1000の段組み
+function renderChipStack(amount, variant) {
+  if (!amount || amount <= 0) return '';
+  const tiers = [
+    { name: 'gold',  value: 1000 },
+    { name: 'blue',  value: 500 },
+    { name: 'red',   value: 100 },
+    { name: 'white', value: 25 },
+  ];
+  let rem = amount;
+  const counts = {};
+  for (const t of tiers) {
+    counts[t.name] = Math.floor(rem / t.value);
+    rem = rem - counts[t.name] * t.value;
+  }
+  // 表示上限：各色5枚まで、超過分は「×N」で表現
+  const maxPer = 5;
+  const stacks = [];
+  for (const t of tiers) {
+    const n = counts[t.name];
+    if (n === 0) continue;
+    const vis = Math.min(n, maxPer);
+    const extra = n - vis;
+    const dots = Array.from({ length: vis }, (_, i) =>
+      `<span class="chip-pic chip-${t.name}" style="--i:${i}"></span>`).join('');
+    const more = extra > 0 ? `<span class="chip-more">×${n}</span>` : '';
+    stacks.push(`<span class="chip-stack-col">${dots}${more}</span>`);
+  }
+  return `<span class="chip-stack ${variant ? 'chip-stack-' + variant : ''}">${stacks.join('')}</span>`;
 }
 
 function renderOpponentBet() {

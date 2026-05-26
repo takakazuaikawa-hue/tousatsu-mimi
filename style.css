@@ -1462,6 +1462,66 @@ html, body {
 .bet-side-player .bet-side-amount { color: var(--c-gold-bright); }
 .bet-side.empty .bet-side-amount { opacity: 0.35; font-size: 14px; }
 
+/* ========== チップスタック可視化 ========== */
+.amt-num { display: block; }
+.chip-stack {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 4px;
+  min-height: 22px;
+}
+.chip-stack-col {
+  display: inline-flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  position: relative;
+  height: 22px;
+}
+.chip-pic {
+  display: inline-block;
+  width: 14px; height: 4px;
+  border-radius: 50% / 60%;
+  margin-top: -2px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.5);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+.chip-pic.chip-white { background: linear-gradient(180deg, #ffffff 0%, #c8c8c8 100%); border-color: #888; }
+.chip-pic.chip-red   { background: linear-gradient(180deg, #ff6680 0%, #b3203a 100%); border-color: #5a0010; box-shadow: 0 1px 0 rgba(0,0,0,0.5), 0 0 4px rgba(200,37,58,0.4); }
+.chip-pic.chip-blue  { background: linear-gradient(180deg, #6aa7ff 0%, #1f4fa8 100%); border-color: #0a2256; box-shadow: 0 1px 0 rgba(0,0,0,0.5), 0 0 4px rgba(50,100,255,0.4); }
+.chip-pic.chip-gold  { background: linear-gradient(180deg, #fff2a8 0%, #c89c20 100%); border-color: #5a3e00; box-shadow: 0 1px 0 rgba(0,0,0,0.5), 0 0 6px rgba(245,215,122,0.6); }
+.chip-more {
+  font-size: 9px;
+  color: #fff;
+  background: rgba(0,0,0,0.6);
+  border-radius: 6px;
+  padding: 0 4px;
+  margin-top: 2px;
+  letter-spacing: 0;
+}
+
+/* ポット大きさで強調 */
+.pot-display.big-pot {
+  border-color: var(--c-gold-bright);
+  box-shadow: 0 0 18px rgba(245,215,122,0.5);
+}
+.pot-display.big-pot .pot-amount { color: #fff8dc; text-shadow: 0 0 10px rgba(245,215,122,0.7); }
+.pot-display.huge-pot {
+  border-color: var(--c-red-bright);
+  animation: potHugePulse 1.4s ease-in-out infinite;
+}
+.pot-display.huge-pot .pot-amount {
+  color: #ffe;
+  text-shadow: 0 0 14px rgba(255,80,120,0.9), 0 0 6px rgba(245,215,122,0.7);
+}
+@keyframes potHugePulse {
+  0%, 100% { box-shadow: 0 0 18px rgba(245,215,122,0.5); }
+  50%      { box-shadow: 0 0 28px rgba(200,37,58,0.7), 0 0 40px rgba(245,215,122,0.5); }
+}
+
 .right-panel {
   grid-area: right;
   position: relative;
