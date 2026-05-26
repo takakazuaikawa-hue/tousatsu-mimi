@@ -332,10 +332,10 @@ function opponentSpeech(action) {
 }
 function ricoSpeech(action) {
   if (action.intent === 'tutorial_bluff' || action.intent === 'bluff' || action.intent === 'forced_bluff') {
-    return pick(['いっくよー！ふふ、ガツンといくね♪', 'いっくよー、ミミ。よく見な', 'ふふ、これは練習だからね']);
+    return pick(['いっくよー！ガツンと攻めるからねー', 'はい、ミミ、よーく見な〜', 'ふふ、練習だから容赦するけどさ']);
   }
-  if (action.type === 'fold') return 'いいよ、今回は譲ってあげる〜';
-  if (action.type === 'check_call') return pick(['コールでOK', 'まだ様子見ね', '焦らなくていいよ']);
+  if (action.type === 'fold') return 'はいはい、今回は譲っとくね〜';
+  if (action.type === 'check_call') return pick(['コールでOKっしょ', 'まだ様子見ーね', 'のんびり行こ？']);
   return 'ふふ、気楽にいこ？';
 }
 function selinaSpeech(action) {
@@ -372,6 +372,15 @@ function granoSpeech(action) {
   if (action.type === 'fold') return '今回は商談不成立、ですな。';
   if (action.type === 'check_call') return pick(['見させていただきます', 'なるほど、なるほど', 'いいでしょう、進めましょう']);
   return 'うふふ、考えどころですね';
+}
+function pickRicoOpeningAdvice(opponentId) {
+  switch (opponentId) {
+    case 'polka':  return '「ポルカは弱い手ほど騒ぐタイプ。声と仕草をよく見な〜」';
+    case 'selina': return '「セリナは理屈派。ベットサイズに意味があるから、なぜ今その額なのか考えよ」';
+    case 'grano':  return '「グラーノは商人だからね。安いか高いかでコール判断する癖つけてー」';
+    case 'velvet': return '「ヴェルベットは口で揺さぶってくるタイプね。冷静を保てば隙は見えるよ」';
+    default:       return '「ま、気楽にいこ〜」';
+  }
 }
 function opponentReadyLine() {
   switch (state.opponentId) {
@@ -458,12 +467,12 @@ const PSYCH_QUESTIONS = {
     onSuccess: {
       panyu: 30, zazazo: 1,
       hint: '相手レンジ：弱い手のブラフ／降ろし狙い',
-      rico: 'そう、それが正解！相手の言葉と強さが噛み合わない時は、降ろし狙いを疑うのが基本だよ。',
+      rico: 'はい、それ正解〜！相手の言葉と強さが噛み合わない時は、降ろし狙いを疑うのが基本ね',
     },
     onFail: {
       panyu: 0,
       mimi: 'うう、まだ自信がなくて……',
-      rico: 'いいよいいよ、外しても大丈夫。何度でも挑戦できるから、なんで外したか考えてみな。',
+      rico: 'いいよいいよ、外したっていいの。なんで外したか覚えれば次は読めるからさ',
     },
   },
   selina_flush_alert: {
@@ -479,12 +488,12 @@ const PSYCH_QUESTIONS = {
     onSuccess: {
       panyu: 20, zazazo: 1,
       hint: '相手レンジ：フラッシュドロー / ペア / ブラフ少し',
-      rico: 'いいね、ボードを見れるようになってきた。<u>同スート2枚＝完成じゃなく「狙ってる」サイン</u>。',
+      rico: 'いいねー、ボードを見れるようになってきたじゃん。<u>同スート2枚＝完成じゃなく「狙ってる」サイン</u>ってやつね',
     },
     onFail: {
       panyu: -10,
       mimi: 'ボードに惑わされちゃった……',
-      rico: '同スート2枚＝完成、ではない。<u>3枚以上ないとフラッシュ確定じゃない</u>よ。',
+      rico: 'まだまだー。<u>3枚以上ないとフラッシュ確定じゃない</u>からね、焦らないで',
     },
   },
   selina_bet_size: {
@@ -500,12 +509,12 @@ const PSYCH_QUESTIONS = {
     onSuccess: {
       panyu: 20, zazazo: 1,
       hint: '相手は場札の危険度を見て圧をかけている',
-      rico: 'そう、ベットサイズには「意図」がある。<u>大きい＝ドローに代金を払わせたい時もある</u>。',
+      rico: 'そうそう、ベットサイズには「意図」があるんだよね。<u>大きい＝ドローに代金を払わせたい時もある</u>って覚えとこ',
     },
     onFail: {
       panyu: -10,
       mimi: '大きいベットってだけで怖がりすぎた……',
-      rico: 'ベットサイズ＝役の強さ、じゃないよ。ボードと合わせて読むんだ。',
+      rico: 'ベットサイズ＝役の強さ、じゃないって。ボードと合わせて読むのが基本ね',
     },
   },
   grano_cheap_call: {
@@ -521,12 +530,12 @@ const PSYCH_QUESTIONS = {
     onSuccess: {
       panyu: 20, zazazo: 1,
       hint: '相手レンジ：誘い / 小さいバリュー / 安いブラフ。コール検討OK',
-      rico: 'それがポットオッズの基本。<u>払う額が小さいなら、当たる確率が低くてもコール価値はある</u>。',
+      rico: 'それがポットオッズってやつ〜。<u>払う額が小さいなら、当たる確率が低くてもコール価値あり</u>ってこと',
     },
     onFail: {
       panyu: -10,
       mimi: '見送っちゃった……でもこれが正解の時もあるよね？',
-      rico: '臆病すぎる時もあるよ。<u>払う額/(ポット+払う額) で必要勝率を見積もる</u>のが基本。',
+      rico: '臆病すぎる時もあるよ〜。<u>払う額÷（ポット+払う額）で必要勝率を見積もる</u>って覚えとこ',
     },
   },
   grano_expensive: {
@@ -542,12 +551,12 @@ const PSYCH_QUESTIONS = {
     onSuccess: {
       panyu: 15, zazazo: 1,
       hint: '割に合わない。フォールドも良い判断',
-      rico: 'いいフォールド！<u>降りる勇気もポーカーの実力</u>。割に合わない勝負は避ける。',
+      rico: 'ナイスフォールド！<u>降りる勇気もポーカーの実力</u>だからね。割に合わない勝負は避けときな',
     },
     onFail: {
       panyu: -10,
       mimi: 'うう、勝負した方がよかった……？',
-      rico: 'ドローの完成率と支払額のバランスを見よう。当たる確率より高い支払額は損になる。',
+      rico: 'ドローの完成率と支払額のバランスね。当たる確率より高い支払額だと、長い目で損するよ',
     },
   },
   velvet_opening: {
@@ -563,12 +572,12 @@ const PSYCH_QUESTIONS = {
     onSuccess: {
       panyu: 20, zazazo: 1,
       hint: '相手は最初から圧をかけてくるタイプ。冷静を保てば勝機あり',
-      rico: 'そう。それ、<u>カードじゃなくて心を降ろしに来てる</u>やつ。気持ちで負けたら本当に負けるよ',
+      rico: 'そうそう、それ。<u>カードじゃなくて心を降ろしに来てる</u>やつ。気持ちで負けたら本当に負けるからね',
     },
     onFail: {
       panyu: -10,
       mimi: 'うう……カードを見る前から負けるとか、理不尽すぎません！？',
-      rico: '圧に飲まれちゃダメ。<u>大切なのはボードとレンジ</u>、相手の言葉じゃない',
+      rico: '圧に飲まれちゃダメだって。<u>大切なのはボードとレンジ</u>、相手の口じゃない',
     },
   },
   velvet_flop: {
@@ -584,12 +593,12 @@ const PSYCH_QUESTIONS = {
     onSuccess: {
       panyu: 20, zazazo: 1,
       hint: '相手レンジ：強いペア / ドロー / ブラフ混じり',
-      rico: 'いいね。<u>言葉と行動のズレを読む</u>のがブラフ看破の第一歩',
+      rico: 'いいねー。<u>言葉と行動のズレを読む</u>のがブラフ看破の第一歩だよ',
     },
     onFail: {
       panyu: -10,
       mimi: '安全って言われたから安心しちゃった……',
-      rico: '相手の<u>口先より、ベットサイズと場札を信じる</u>こと',
+      rico: '相手の<u>口先より、ベットサイズと場札を信じな</u>。言葉は嘘つくよ',
     },
   },
   velvet_turn: {
@@ -653,12 +662,12 @@ const PSYCH_QUESTIONS = {
     onSuccess: {
       panyu: 20, zazazo: 1,
       hint: '相手レンジ：弱いペア / ノーペアブラフ / ドロー少し',
-      rico: 'そう。強い言葉ほど、弱さを隠してる時がある。',
+      rico: 'そうそう。強い言葉ほど、弱さを隠してる時があるってやつ',
     },
     onFail: {
       panyu: -10,
       mimi: 'うう……今のはブラフだったかも……！',
-      rico: '外してもOK。なんで外したか覚えれば次は読める。',
+      rico: '外してもOK〜。なんで外したか覚えれば、次は読めるよ',
     },
   },
 };
@@ -705,7 +714,7 @@ function defaultState() {
     logs: { actions: [], bets: [], reactions: [], psych: [] },
     // 思考UI
     mimiThought: '「ふぅ……まずは手札を見てから」',
-    ricoAdvice: '「いい？相手の言葉を、まず聞いてみな」',
+    ricoAdvice: '「いい？相手の言葉を、まず聞いてみな」（リコ先輩）',
     opponentSpeech: '',
     // 現在ハンドの状態
     currentBetPlayer: 0,
@@ -1440,7 +1449,7 @@ function startBattleInternal(opponentId) {
 
   if (opp.isBoss) {
     state.mimiThought = '「ボス戦だ……気持ちで負けないようにしないと」';
-    state.ricoAdvice = '「ヴェルベットは口で揺さぶってくる。冷静を保てば隙が見える」';
+    state.ricoAdvice = '「ヴェルベットは口で揺さぶってくるタイプね。冷静を保てば隙は見えるよ」';
     render();
     // 開幕心理バトルを即時発動
     setTimeout(() => triggerPsychBattle('velvet_opening'), 800);
@@ -1449,7 +1458,7 @@ function startBattleInternal(opponentId) {
 
   if (state.tutorialMode) {
     state.mimiThought = '「リコ先輩との練習試合……お願いします！」';
-    state.ricoAdvice = '「これから1ハンドだけ、基本を教えるよ。気楽にね」';
+    state.ricoAdvice = '「1ハンドだけ、基本教えるね〜。気楽にいこ」';
     render();
     setTimeout(() => showTutorial('intro',
       'ようこそミミ！まずはポーカーの基本から教えるよ。<br><br>' +
@@ -1471,7 +1480,7 @@ function startBattleInternal(opponentId) {
     ), 600);
   } else {
     state.mimiThought = '「さあ、第1ハンドだ。最初は相手をよく見よう」';
-    state.ricoAdvice = '「ポルカは弱い手ほど騒ぐタイプ。声と仕草を見な」';
+    state.ricoAdvice = pickRicoOpeningAdvice(state.opponentId);
     render();
   }
 }
@@ -1513,7 +1522,7 @@ function startHand() {
   state.isPlayerTurn = true;
   state.opponentSpeech = opponentReadyLine();
   state.mimiThought = mimiThoughtPreflop(state.playerHand);
-  state.ricoAdvice = `「Hand ${state.handNo}：参加チップ50ずつ。まずは手札を見てから」`;
+  state.ricoAdvice = `「Hand ${state.handNo}、いっくよー。アンテは50ずつ。まずは手札確認ね」`;
   log('actions', { phase: 'preflop_start', playerHand: state.playerHand.map(c => c.label + c.suit) });
   render();
 
@@ -1720,7 +1729,7 @@ function advanceAfterCall() {
     }
     state.handPhase = 'flop';
     state.mimiThought = `「フロップ：${renderCardsText(state.community)}」`;
-    state.ricoAdvice = '「場が出た。相手の出方をよく見な」';
+    state.ricoAdvice = '「場が出たね〜。相手の出方をよく見な」';
     state.isPlayerTurn = false;  // 相手から
     log('actions', { phase: 'flop', cards: state.community.map(c=>c.label+c.suit) });
     render();
@@ -1728,7 +1737,7 @@ function advanceAfterCall() {
       showTutorial('flop_shown',
         'フロップは<b>A♥ 5♦ 9♣</b>！<br>' +
         'ミミの手札A♠ K♠と合わせると、<b>「Aのペア」</b>が完成。かなり強い手だよ。<br>' +
-        'ここで私（リコ先輩）が大きくベットしてくる。よく考えてみよう。',
+        'ここで私がガツンとベットしてくるから、よく見てね〜',
         () => setTimeout(opponentTurn, 400));
     } else {
       setTimeout(opponentTurn, 1000);
@@ -1739,7 +1748,7 @@ function advanceAfterCall() {
       state.community.push(state.deck.pop());
       state.handPhase = 'turn';
       state.mimiThought = `「ターン公開：${renderCardsText(state.community)}」`;
-      state.ricoAdvice = '「ターンで場が変わったかもしれない。相手のベットを見て」';
+      state.ricoAdvice = '「ターンで場が変わったかもね。相手のベットの変化、見逃さないで」';
       state.isPlayerTurn = false;
       state.psychResolved = false;  // 各ストリートで心理バトル再発生可能に
       log('actions', { phase: 'turn', cards: state.community.map(c=>c.label+c.suit) });
@@ -1754,7 +1763,7 @@ function advanceAfterCall() {
       }
       state.handPhase = 'turnRiver';
       state.mimiThought = `「ターン＆リバー：${renderCardsText(state.community)}」`;
-      state.ricoAdvice = '「これで全部の場札が見えた。最終判断だよ」';
+      state.ricoAdvice = '「全部の場札出たね〜。最終判断、いい？」';
       state.isPlayerTurn = false;
       log('actions', { phase: 'turn_river', cards: state.community.map(c=>c.label+c.suit) });
       render();
@@ -1765,7 +1774,7 @@ function advanceAfterCall() {
     state.community.push(state.deck.pop());
     state.handPhase = 'river';
     state.mimiThought = `「リバー公開：${renderCardsText(state.community)}」`;
-    state.ricoAdvice = '「これで全ての場札が出揃った。最終判断の時間」';
+    state.ricoAdvice = '「リバーまで出揃ったよ。ここから最終判断ね」';
     state.isPlayerTurn = false;
     state.psychResolved = false;
     log('actions', { phase: 'river', cards: state.community.map(c=>c.label+c.suit) });
@@ -2315,7 +2324,7 @@ function endTutorial() {
     '・<b>ぱにゅゲージ</b>：心理バトル成功で増える。ぱにゅぱにゅで相手の動きが読みやすくなる<br>' +
     '・<b>ゾゾゾゲージ</b>：相手の動揺レベル。MAXで「ブラフブレイク」<br>' +
     '・<b>選択肢シャッフル</b>：心理バトルは毎回順番が変わるから、暗記は通じない<br>' +
-    '次は<b>Stage 2「ポルカ」</b>で本番だよ。3ハンド勝負！',
+    '次は<b>Stage 2「ポルカ」</b>で本番だよ。チップが尽きるまで勝負！',
     () => {
       // リザルト画面風に表示（簡易：ステージ選択へ戻す）
       state.screen = 'stageSelect';
