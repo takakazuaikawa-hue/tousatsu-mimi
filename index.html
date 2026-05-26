@@ -30,12 +30,6 @@
   <source src="assets/bgm/ending.mp3" type="audio/mpeg">
 </audio>
 
-<!-- グローバル音量バー（全画面共通・音楽鳴ってる時に表示） -->
-<div id="global-audio-bar">
-  <button id="global-bgm-toggle" title="BGM ON/OFF">🔇</button>
-  <input id="global-bgm-volume" type="range" min="0" max="100" value="35" title="音量">
-</div>
-
 <div id="stage">
   <div id="app"></div>
 </div>
@@ -137,8 +131,6 @@
     </main>
     <div class="lobby-footer">
       <span class="lobby-bgm" data-bind="lobbyBgmLabel">♪ —</span>
-      <button class="lobby-bgm-toggle" data-action="toggle-bgm" title="BGMオン/オフ">🔊</button>
-      <input class="lobby-bgm-volume" type="range" min="0" max="100" value="35" data-bind="lobbyBgmVolume" title="音量">
       <span class="lobby-tips">💡 セリナ・グラーノ・ヴェルベット戦の初回クリアで戦術ノート自動解放</span>
     </div>
   </div>

@@ -1356,6 +1356,7 @@ function render() {
     case 'ending':      renderTemplate('tpl-ending'); startEndingShow(); break;
   }
   bindActions();
+  injectAudioBars();
 }
 
 function renderTemplate(id) {
@@ -2613,34 +2614,57 @@ function applyBgmVolume() {
   if (endA)   endA.volume   = Math.min(1, bgmVolFloat() * 1.6);
 }
 
-// グローバル音量バーの状態同期
-function refreshGlobalAudioBar() {
-  const bar = document.getElementById('global-audio-bar');
-  const tog = document.getElementById('global-bgm-toggle');
-  const vol = document.getElementById('global-bgm-volume');
-  if (!bar) return;
-  // 音楽が鳴る可能性のある画面で常時表示（タイトル除外でもよいが常時表示が無難）
-  bar.style.display = 'flex';
-  if (tog) tog.textContent = save.bgmOn ? '🔊' : '🔇';
-  if (vol) vol.value = save.bgmVolume != null ? save.bgmVolume : 35;
+// 音量バーHTML（戻るボタンの隣に挿入）
+function audioBarHTML() {
+  const on = !!save.bgmOn;
+  const vol = save.bgmVolume != null ? save.bgmVolume : 35;
+  return `
+    <div class="audio-bar">
+      <button class="audio-bar-toggle" data-action="toggle-bgm" title="BGM ON/OFF">${on ? '🔊' : '🔇'}</button>
+      <input class="audio-bar-volume" type="range" min="0" max="100" value="${vol}" title="音量">
+    </div>
+  `;
 }
 
-function initGlobalAudioBar() {
-  const tog = document.getElementById('global-bgm-toggle');
-  const vol = document.getElementById('global-bgm-volume');
-  if (tog && !tog.__bound) {
-    tog.__bound = true;
-    tog.addEventListener('click', toggleLobbyBgm);
-  }
-  if (vol && !vol.__bound) {
-    vol.__bound = true;
-    vol.addEventListener('input', (e) => {
+// 各画面のtop-hudの最初のボタン（タイトル/ロビーへ）の隣に音量セットを挿入
+function injectAudioBars() {
+  const installInto = (container, anchorEl) => {
+    if (container.querySelector('.audio-bar')) return;
+    const wrap = document.createElement('span');
+    wrap.innerHTML = audioBarHTML();
+    const bar = wrap.firstElementChild;
+    if (anchorEl) anchorEl.insertAdjacentElement('afterend', bar);
+    else container.appendChild(bar);
+    bar.querySelector('[data-action="toggle-bgm"]').addEventListener('click', onAction);
+    bar.querySelector('.audio-bar-volume').addEventListener('input', (e) => {
       save.bgmVolume = +e.target.value;
       saveProgress();
       applyBgmVolume();
+      document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = save.bgmVolume);
     });
+  };
+  // top-hud のある画面：戻るボタンの隣
+  document.querySelectorAll('.top-hud').forEach(hud => {
+    const firstBtn = hud.querySelector('.btn');
+    if (firstBtn) installInto(hud, firstBtn);
+  });
+  // タイトル画面：ボタン群の上に
+  const titleBtns = document.querySelector('.title-buttons');
+  if (titleBtns && !titleBtns.previousElementSibling?.classList?.contains('audio-bar-wrap')) {
+    const w = document.createElement('div');
+    w.className = 'audio-bar-wrap audio-bar-title';
+    titleBtns.parentNode.insertBefore(w, titleBtns);
+    installInto(w, null);
   }
-  refreshGlobalAudioBar();
+}
+
+function refreshAudioBars() {
+  document.querySelectorAll('.audio-bar-toggle').forEach(t => t.textContent = save.bgmOn ? '🔊' : '🔇');
+  document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = save.bgmVolume != null ? save.bgmVolume : 35);
+}
+
+function initGlobalAudioBar() {
+  // 後方互換用の空関数。実体は injectAudioBars に統合
 }
 function tryStartLobbyBgm() {
   const a = document.getElementById('lobby-bgm-audio');
@@ -2662,7 +2686,7 @@ function toggleLobbyBgm() {
     const endA = document.getElementById('ending-bgm-audio');
     if (endA) endA.pause();
   }
-  refreshGlobalAudioBar();
+  refreshAudioBars();
 }
 
 //=============================================================

@@ -1056,7 +1056,8 @@ html, body {
   margin-right: auto; margin-left: 8px;
 }
 .lobby-bgm-toggle:hover { background: rgba(245,215,122,0.15); }
-.lobby-bgm-volume {
+/* 旧lobby-bgm-volume（フッターから廃止） */
+.lobby-bgm-volume__legacy {
   -webkit-appearance: none;
   width: 90px;
   height: 6px;
@@ -1218,43 +1219,39 @@ html, body {
 }
 .chip-picker-actions .btn { min-width: 140px; padding: 10px 22px; font-size: 16px; }
 
-/* ========== グローバル音量バー（全画面共通） ========== */
-#global-audio-bar {
-  position: fixed;
-  right: 12px;
-  bottom: 10px;
-  z-index: 9000;
-  display: none;
+/* ========== 音量バー（top-hud の戻るボタン隣に挿入） ========== */
+.audio-bar {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(0,0,0,0.65);
+  gap: 6px;
+  margin-left: 8px;
+  background: rgba(0,0,0,0.4);
   border: 1px solid var(--c-gold);
   border-radius: 999px;
-  padding: 4px 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
+  padding: 2px 8px 2px 4px;
 }
-#global-bgm-toggle {
-  width: 28px; height: 28px;
+.audio-bar-toggle {
+  width: 26px; height: 26px;
   border-radius: 50%;
   border: 1px solid var(--c-gold);
   background: rgba(20,8,29,0.8);
   color: var(--c-gold-bright);
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
+  padding: 0;
   display: inline-flex;
   align-items: center; justify-content: center;
 }
-#global-bgm-toggle:hover { background: rgba(50,20,80,0.95); }
-#global-bgm-volume {
+.audio-bar-toggle:hover { background: rgba(50,20,80,0.95); }
+.audio-bar-volume {
   -webkit-appearance: none;
-  width: 80px; height: 4px;
+  width: 70px; height: 4px;
   background: rgba(0,0,0,0.5);
   border-radius: 2px;
   border: 1px solid var(--c-gold);
   outline: none;
 }
-#global-bgm-volume::-webkit-slider-thumb {
+.audio-bar-volume::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 12px; height: 12px;
   border-radius: 50%;
@@ -1262,13 +1259,14 @@ html, body {
   border: 1px solid var(--c-bg-dark);
   cursor: pointer;
 }
-#global-bgm-volume::-moz-range-thumb {
+.audio-bar-volume::-moz-range-thumb {
   width: 12px; height: 12px;
   border-radius: 50%;
   background: var(--c-gold-bright);
   border: 1px solid var(--c-bg-dark);
   cursor: pointer;
 }
+.audio-bar-title { display: flex; justify-content: center; margin-bottom: 12px; }
 
 /* ========== プリロード（ローディング画面） ========== */
 #preload-overlay {
