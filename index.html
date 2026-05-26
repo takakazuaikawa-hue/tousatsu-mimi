@@ -20,6 +20,16 @@
     <div class="preload-tip" id="preload-tip">🐰 ぱにゅぱにゅ……</div>
   </div>
 </div>
+<!-- グローバルなBGM要素（テンプレ外。画面切替でも保持） -->
+<audio id="lobby-bgm-audio" loop preload="auto">
+  <source src="assets/bgm/lobby.mp3" type="audio/mpeg">
+  <source src="assets/bgm/velvet-night-casino.m4a" type="audio/mp4">
+</audio>
+<audio id="ending-bgm-audio" preload="auto">
+  <source src="assets/bgm/ending.m4a" type="audio/mp4">
+  <source src="assets/bgm/ending.mp3" type="audio/mpeg">
+</audio>
+
 <div id="stage">
   <div id="app"></div>
 </div>
@@ -125,14 +135,6 @@
       <input class="lobby-bgm-volume" type="range" min="0" max="100" value="35" data-bind="lobbyBgmVolume" title="音量">
       <span class="lobby-tips">💡 セリナ・グラーノ・ヴェルベット戦の初回クリアで戦術ノート自動解放</span>
     </div>
-    <audio id="lobby-bgm-audio" loop preload="auto">
-      <source src="assets/bgm/lobby.mp3" type="audio/mpeg">
-      <source src="assets/bgm/velvet-night-casino.m4a" type="audio/mp4">
-    </audio>
-    <audio id="ending-bgm-audio" preload="auto">
-      <source src="assets/bgm/ending.m4a" type="audio/mp4">
-      <source src="assets/bgm/ending.mp3" type="audio/mpeg">
-    </audio>
   </div>
 </template>
 
