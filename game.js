@@ -1500,6 +1500,90 @@ const PSYCH_QUESTIONS = {
       rico: '外してもOK〜。なんで外したか覚えれば、次は読めるよ',
     },
   },
+  polka_overtalk: {
+    id: 'polka_overtalk',
+    situationFn: (state) => `場札：${renderCardsText(state.community)}\nポルカが「絶対勝てる手だわー（棒）」と言いながらベット。`,
+    speech: 'これは……ヤバいやつだよ……うん！',
+    zazazoHint: 'ゾゾゾ反応：声が裏返ってる',
+    choices: [
+      { id: 'over_talk',  text: '強気に言いすぎ＝逆に弱い。コール or レイズ', correct: true },
+      { id: 'honest',     text: '本人がヤバいと言ってるから降りる',         correct: false },
+      { id: 'dont_care',  text: 'セリフは関係ない、自分の手だけで判断',     correct: false },
+    ],
+    onSuccess: {
+      panyu: 20, zazazo: 1,
+      hint: '相手レンジ：オーバーアクトのブラフ寄り',
+      rico: '上手いね。<u>言葉が大きすぎる時こそ疑え</u>って、ポーカーの格言だよ',
+    },
+    onFail: {
+      panyu: -10,
+      mimi: '正直に受け取っちゃった……',
+      rico: 'ポルカは <u>言葉と手が逆な子</u>。慣れたら見抜けるよ',
+    },
+  },
+  selina_check_raise: {
+    id: 'selina_check_raise',
+    situationFn: (state) => `セリナがフロップでチェック→ミミがベット→セリナが大きくレイズしてきた。`,
+    speech: 'チェック……さあ、踊って？',
+    zazazoHint: 'ゾゾゾ反応：表情が変わらない（読みづらい）',
+    choices: [
+      { id: 'trap_raise',     text: 'チェックレイズの罠。強い手を隠してた可能性高い', correct: true },
+      { id: 'just_caught_up', text: 'セリナも今ベットに付き合いたいだけ',           correct: false },
+      { id: 'still_bluff',    text: 'まだブラフを続けてる',                       correct: false },
+    ],
+    onSuccess: {
+      panyu: 25, zazazo: 1,
+      hint: '相手レンジ：ナッツ級〜上位ペア（強い）',
+      rico: 'お見事。<u>チェック→レイズは上級者の必殺技</u>。降りる判断ができたら一人前',
+    },
+    onFail: {
+      panyu: -15,
+      mimi: '勢いで突っ込んじゃう……！',
+      rico: 'チェックレイズはほぼ強い手。<u>レンジ思考</u>で考えて、無理しない判断もアリだよ',
+    },
+  },
+  grano_river_polar: {
+    id: 'grano_river_polar',
+    situationFn: (state) => `リバー：場札${renderCardsText(state.community)}　グラーノがオーバーベット（ポット超）してきた。`,
+    speech: 'お嬢さん、この一手で全てが決まりますよ。',
+    zazazoHint: 'ゾゾゾ反応：葉巻を握る指が固い',
+    choices: [
+      { id: 'polar_range',     text: 'リバーのオーバーベットはナッツかブラフの両極端。判断は手次第',   correct: true },
+      { id: 'always_nuts',     text: 'オーバーベット＝必ずナッツ。降りる一択',                       correct: false },
+      { id: 'always_bluff',    text: 'オーバーベット＝必ずブラフ。コール一択',                       correct: false },
+    ],
+    onSuccess: {
+      panyu: 25, zazazo: 1,
+      hint: '相手レンジ：両極化（ナッツorブラフ）',
+      rico: 'いいねー。<u>リバーオーバーベットは「両極化」</u>っていう上級概念。自分の手の強さで判断するの',
+    },
+    onFail: {
+      panyu: -15,
+      mimi: '極端な額に振り回されちゃった……',
+      rico: 'リバーのオーバーは <u>強いか嘘か</u>のどっちか。ボード次第・手次第で読むのよ',
+    },
+  },
+  velvet_eye_contact: {
+    id: 'velvet_eye_contact',
+    situationFn: (state) => `ヴェルベットが手札を見ずに、ミミの目だけを見つめている。`,
+    speech: 'ふふ……あなたの目、答えを教えてくれるわ。',
+    zazazoHint: 'ゾゾゾ反応：相手が自分の手札に興味なさそう',
+    choices: [
+      { id: 'reverse_psych',  text: '視線で揺さぶる典型。手札と関係ない演技、ボードで冷静に判断', correct: true },
+      { id: 'mind_read',      text: 'ヴェルベットには本当に心が読めている、降りる',           correct: false },
+      { id: 'must_strong',    text: '手札を見ない＝相当強い、降りる',                       correct: false },
+    ],
+    onSuccess: {
+      panyu: 25, zazazo: 1,
+      hint: '相手レンジ：通常通り（揺さぶりだけ）',
+      rico: 'いいねー。<u>目で揺さぶるのはヴェルベットの十八番</u>。動じない強さ、覚えた？',
+    },
+    onFail: {
+      panyu: -15,
+      mimi: '目を逸らせなかった……',
+      rico: '<u>視線は情報じゃなく演技</u>。ボードと手札だけ見ればいいの',
+    },
+  },
 };
 
 function renderCardsText(cards) {
@@ -2211,27 +2295,37 @@ function pickPsychQuestion() {
   // 対戦相手に応じて問題プールを切り替える＋出題済みは避ける
   const id = state.opponentId;
   const seen = state.seenQuestions || new Set();
+  // 出題済みを避けて選ぶ補助
+  const pickFresh = (pool) => {
+    const fresh = pool.filter(q => !seen.has(q));
+    return fresh.length > 0 ? pick(fresh) : pick(pool);
+  };
   if (id === 'rico_tutorial') return 'rico_tutorial_flop';
-  if (id === 'polka') return 'polka_flop_bluff';
+  if (id === 'polka') {
+    return pickFresh(['polka_flop_bluff', 'polka_overtalk']);
+  }
   if (id === 'selina') {
     const suits = state.community.map(c => c.suit);
     const counts = {};
     suits.forEach(s => counts[s] = (counts[s] || 0) + 1);
     const maxSuit = Math.max(...Object.values(counts), 0);
+    // チェック→レイズの状況なら罠問題を出す
+    if (state.lastOpponentIntent === 'trap') return 'selina_check_raise';
     const fitCondition = maxSuit >= 2 ? 'selina_flush_alert' : 'selina_bet_size';
-    const other = fitCondition === 'selina_flush_alert' ? 'selina_bet_size' : 'selina_flush_alert';
-    // 状況マッチを優先、ただし2回目以降は別問題に切り替え
-    return seen.has(fitCondition) && !seen.has(other) ? other : fitCondition;
+    return pickFresh([fitCondition, 'selina_check_raise']);
   }
   if (id === 'grano') {
     const potBefore = state.pot - state.currentBetOpponent;
     const ratio = potBefore > 0 ? state.currentBetOpponent / potBefore : 1;
+    // リバーでオーバーベットなら極化問題
+    if (state.handPhase === 'river' && ratio > 1.0) return 'grano_river_polar';
     const fitCondition = ratio < 0.5 ? 'grano_cheap_call' : 'grano_expensive';
-    const other = fitCondition === 'grano_cheap_call' ? 'grano_expensive' : 'grano_cheap_call';
-    return seen.has(fitCondition) && !seen.has(other) ? other : fitCondition;
+    return pickFresh([fitCondition, 'grano_river_polar']);
   }
   if (id === 'velvet') {
-    if (state.handPhase === 'flop') return 'velvet_flop';
+    if (state.handPhase === 'flop') {
+      return pickFresh(['velvet_flop', 'velvet_eye_contact']);
+    }
     if (state.handPhase === 'turn') return 'velvet_turn';
     if (state.handPhase === 'river') return 'velvet_river_evidence';
     return 'velvet_flop';
@@ -3764,20 +3858,39 @@ function resolvePsych(qid, choice, btn) {
 
   if (choice.correct) {
     const eff = q.onSuccess;
-    state.panyu = Math.min(state.panyuMax, state.panyu + eff.panyu);
+    // 連続正解ボーナス：2回目+50%、3回目以降+100%
+    state.psychStreak = (state.psychStreak || 0) + 1;
+    const streakMult = state.psychStreak >= 3 ? 2.0 : state.psychStreak === 2 ? 1.5 : 1.0;
+    const bonusPanyu = Math.round(eff.panyu * streakMult);
+    state.panyu = Math.min(state.panyuMax, state.panyu + bonusPanyu);
     state.zazazo = Math.min(state.zazazoMax, state.zazazo + eff.zazazo);
     state.psychSuccessCount++;
-    state.mimiThought = `「読めた……！${eff.hint}」`;
+    const streakLabel = state.psychStreak >= 2 ? `（${state.psychStreak}連続！+${Math.round((streakMult-1)*100)}%）` : '';
+    state.mimiThought = `「読めた……！${eff.hint}」${streakLabel}`;
     state.ricoAdvice = `「${eff.rico}」`;
-    log('psych', { qid, choice: choice.id, success: true });
+    log('psych', { qid, choice: choice.id, success: true, streak: state.psychStreak });
     // 証拠突きつけ成功でブラフブレイク確定
     if (eff.bluffBreak) triggerBluffBreak();
     else if (state.zazazo >= state.zazazoMax) triggerBluffBreak();
+    // 連続正解バナー
+    if (state.psychStreak >= 2) showPsychStreakBanner(state.psychStreak);
   } else {
+    state.psychStreak = 0; // 連鎖切れ
     const eff = q.onFail;
     state.panyu = Math.max(0, state.panyu + eff.panyu);
+    // 正解の選択肢を強調表示（学習用）
+    const correctChoice = q.choices.find(c => c.correct);
+    if (correctChoice && state.psychRoot) {
+      state.psychRoot.querySelectorAll('.choice-btn').forEach(b => {
+        if (b.dataset.choiceId === correctChoice.id) {
+          b.style.borderColor = 'var(--c-gold-bright)';
+          b.style.boxShadow = '0 0 16px rgba(245,215,122,0.7)';
+          b.classList.add('correct-reveal');
+        }
+      });
+    }
     state.mimiThought = `「${eff.mimi}」`;
-    state.ricoAdvice = `「${eff.rico}」`;
+    state.ricoAdvice = `「${eff.rico}　正解は「${correctChoice ? correctChoice.text : ''}」だったよ」`;
     log('psych', { qid, choice: choice.id, success: false });
   }
 
@@ -3811,6 +3924,16 @@ function resolvePsych(qid, choice, btn) {
       : null;
     showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), choice.correct, onCutInClose);
   }, 700);
+}
+
+function showPsychStreakBanner(streak) {
+  const banner = document.createElement('div');
+  banner.className = 'psych-streak-banner';
+  const star = streak >= 3 ? '★★★' : '★★';
+  banner.innerHTML = `<span class="streak-star">${star}</span><span class="streak-text">${streak}連続正解！</span>`;
+  document.body.appendChild(banner);
+  setTimeout(() => banner.classList.add('out'), 1500);
+  setTimeout(() => banner.remove(), 2200);
 }
 
 function triggerBluffBreak() {
