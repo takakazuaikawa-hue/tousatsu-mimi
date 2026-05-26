@@ -603,8 +603,267 @@ html, body {
   overflow-y: auto;
 }
 
-/* ========== ステージ選択 ========== */
-.stage-select-screen { grid-template-rows: 60px 1fr auto; }
+/* ========== ロビー（旧ステージ選択） ========== */
+.stage-select-screen,
+.lobby-screen { grid-template-rows: 60px 1fr auto; }
+.lobby-screen { position: relative; overflow: hidden; }
+
+/* 背景：赤絨毯＋金縁＋ラウンジ */
+.bg-lobby {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(245,215,122,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(140,30,50,0.55) 0%, rgba(20,8,29,0) 70%),
+    linear-gradient(180deg, #1a0e2a 0%, #2a1238 40%, #4a1828 100%);
+}
+/* 床の赤絨毯ライン */
+.bg-lobby::after {
+  content: ''; position: absolute; left: 50%; bottom: 0;
+  width: 60%; height: 35%; transform: translateX(-50%);
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(180,40,60,0.55) 30%, rgba(120,20,40,0.85) 100%);
+  clip-path: polygon(15% 0, 85% 0, 100% 100%, 0 100%);
+  z-index: 0;
+}
+/* シャンデリア風の光輪 */
+.lobby-chandelier {
+  position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+  width: 480px; height: 240px; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 50% 70% at 50% 0%, rgba(245,215,122,0.55) 0%, rgba(245,215,122,0.15) 35%, transparent 60%);
+  filter: blur(1px);
+  animation: chandelierFlicker 4s ease-in-out infinite;
+}
+@keyframes chandelierFlicker {
+  0%, 100% { opacity: 0.9; }
+  45%      { opacity: 1.0; }
+  50%      { opacity: 0.75; }
+  55%      { opacity: 1.0; }
+}
+/* 舞い散る埃/光の粒 */
+.lobby-dust {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(circle at 12% 20%, rgba(245,215,122,0.5) 0, transparent 2px),
+    radial-gradient(circle at 78% 35%, rgba(245,215,122,0.4) 0, transparent 2px),
+    radial-gradient(circle at 25% 70%, rgba(255,255,255,0.4) 0, transparent 2px),
+    radial-gradient(circle at 88% 75%, rgba(245,215,122,0.4) 0, transparent 2px),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3) 0, transparent 1.5px),
+    radial-gradient(circle at 60% 15%, rgba(245,215,122,0.4) 0, transparent 1.5px),
+    radial-gradient(circle at 35% 88%, rgba(255,255,255,0.3) 0, transparent 1.5px);
+  animation: dustFloat 12s linear infinite;
+  opacity: 0.7;
+}
+@keyframes dustFloat {
+  0%   { transform: translateY(0)   translateX(0); }
+  50%  { transform: translateY(-20px) translateX(10px); }
+  100% { transform: translateY(0)   translateX(0); }
+}
+
+/* ロビーHUD */
+.lobby-hud { background: linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.55) 100%); }
+.lobby-title {
+  display: flex; align-items: baseline; gap: 14px;
+  text-shadow: 0 0 12px rgba(245,215,122,0.7), 0 2px 4px rgba(0,0,0,0.6);
+}
+.lobby-title .lobby-sub {
+  font-size: 11px; letter-spacing: 0.4em;
+  color: var(--c-gold); opacity: 0.8; font-weight: 500;
+}
+
+/* ロビー本体：左サイド＋右コンテンツ */
+.lobby-main {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 18px;
+  padding: 14px 18px 8px;
+  overflow: hidden;
+  min-height: 0;
+}
+.lobby-side {
+  display: flex; flex-direction: column; gap: 14px;
+  min-height: 0;
+}
+.lobby-content {
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.lobby-section-label {
+  font-size: 13px; letter-spacing: 0.4em;
+  color: var(--c-gold-bright);
+  border-bottom: 1px solid rgba(245,215,122,0.3);
+  padding: 0 0 6px 4px; margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+/* リコパネル */
+.lobby-rico-panel {
+  background: linear-gradient(180deg, rgba(50,20,80,0.85) 0%, rgba(20,8,29,0.9) 100%);
+  border: 2px solid var(--c-gold);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5), inset 0 0 18px rgba(245,215,122,0.08);
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+.lobby-rico-frame {
+  width: 110px; height: 130px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(245,215,122,0.2), rgba(0,0,0,0.4));
+  border: 2px solid var(--c-gold-bright);
+}
+.lobby-rico-frame img {
+  width: 100%; height: 100%; object-fit: cover;
+  object-position: 50% 18%; /* 顔ズーム */
+  transform: scale(1.35);
+}
+.lobby-rico-bubble {
+  position: relative;
+  background: #fff8dc; color: #1a0e2a;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px; line-height: 1.5;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.lobby-rico-bubble::before {
+  content: ''; position: absolute;
+  left: -10px; top: 28px;
+  border-style: solid;
+  border-width: 8px 12px 8px 0;
+  border-color: transparent #fff8dc transparent transparent;
+}
+
+/* プレイヤーステータスパネル */
+.lobby-stats-panel {
+  background: linear-gradient(180deg, rgba(40,18,60,0.85) 0%, rgba(20,8,29,0.92) 100%);
+  border: 2px solid var(--c-gold);
+  border-radius: 14px;
+  padding: 12px 14px 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.stats-title {
+  font-size: 14px; letter-spacing: 0.2em;
+  color: var(--c-gold-bright);
+  text-align: center;
+  border-bottom: 1px solid rgba(245,215,122,0.3);
+  padding-bottom: 6px; margin-bottom: 8px;
+}
+.stats-list { list-style: none; margin: 0; padding: 0; }
+.stats-list li {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 6px 4px;
+  border-bottom: 1px dashed rgba(245,215,122,0.15);
+  font-size: 13px;
+}
+.stats-list li:last-child { border-bottom: none; }
+.stats-label { color: #d0c2e0; }
+.stats-value { color: var(--c-gold-bright); font-weight: 700; font-size: 14px; }
+.stats-value.rank-SS { color: #ff7aa4; text-shadow: 0 0 6px rgba(255,122,164,0.6); }
+.stats-value.rank-S  { color: #f5d77a; text-shadow: 0 0 6px rgba(245,215,122,0.6); }
+
+/* 対戦相手リスト：縦並び */
+.lobby-stage-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+  flex: 1;
+  min-height: 0;
+}
+.lobby-stage-list .stage-card {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 10px;
+  padding: 12px;
+  align-items: stretch;
+}
+.lobby-stage-list .stage-card .stage-card-body {
+  display: flex; flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.lobby-stage-list .stage-card .stage-tags-row {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  min-height: 18px;
+}
+.lobby-stage-list .stage-card .stage-tag {
+  position: static;
+  font-size: 10px;
+  padding: 2px 8px;
+}
+.stage-portrait {
+  width: 96px; height: 130px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(60,30,90,0.6) 0%, rgba(20,8,29,0.9) 100%);
+  border: 2px solid var(--c-gold);
+  position: relative;
+  flex-shrink: 0;
+}
+.stage-portrait img {
+  width: 100%; height: 100%; object-fit: cover;
+  object-position: 50% 15%;
+  transform: scale(1.4);
+}
+.stage-portrait.locked-portrait {
+  display: flex; align-items: center; justify-content: center;
+  border-color: #555;
+}
+.stage-portrait.locked-portrait .silhouette {
+  font-size: 48px; color: rgba(255,255,255,0.3);
+  font-weight: 900;
+}
+.lobby-stage-list .stage-card.boss-stage .stage-portrait {
+  border-color: var(--c-red-bright);
+  box-shadow: inset 0 0 16px rgba(200,37,58,0.5);
+}
+.lobby-stage-list .stage-card.recommended .stage-portrait {
+  border-color: var(--c-gold-bright);
+  box-shadow: 0 0 12px rgba(245,215,122,0.5);
+}
+.lobby-stage-list .stage-card .stage-name { font-size: 18px; }
+.lobby-stage-list .stage-card .stage-theme { font-size: 12px; }
+.lobby-stage-list .stage-card .stage-desc {
+  font-size: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lobby-stage-list .stage-card .stage-reward { font-size: 12px; }
+.lobby-stage-list .stage-card .stage-actions .btn { font-size: 13px; padding: 6px 10px; }
+
+/* ロビーフッター */
+.lobby-footer {
+  position: relative; z-index: 1;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 18px;
+  background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
+  border-top: 1px solid rgba(245,215,122,0.3);
+  font-size: 13px;
+}
+.lobby-bgm {
+  color: var(--c-gold-bright);
+  letter-spacing: 0.15em;
+  font-style: italic;
+  animation: bgmPulse 2.4s ease-in-out infinite;
+}
+@keyframes bgmPulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1.0; }
+}
+.lobby-tips { color: var(--c-gold); }
+
+/* ========== ステージ選択（互換：旧スタイル）========== */
 .top-hud {
   position: relative;
   z-index: 1;

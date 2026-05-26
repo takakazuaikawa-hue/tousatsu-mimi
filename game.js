@@ -1409,6 +1409,8 @@ function applyBindings() {
       case 'coins': el.textContent = state.coinsEarned || 0; break;
       case 'saveCoins': el.textContent = save.coins; break;
       case 'stageList': el.innerHTML = renderStageList(); break;
+      case 'lobbyRicoLine': el.textContent = lobbyRicoLine(); break;
+      case 'lobbyStats': el.innerHTML = renderLobbyStats(); break;
       case 'shopItems': el.innerHTML = renderShopItems('panyu'); break;
       case 'ricoShopComment': /* default initial */ break;
       case 'opponentImg':
@@ -1610,33 +1612,82 @@ function renderStageList() {
     const bestRank = save.bestRanks[sid];
     const recommend = sid === 'rico_tutorial' && save.clearedStages.length === 0;
     const stageNum = i + 1;
+    const portrait = `<div class="stage-portrait">
+      <img src="assets/characters/${opp.imgKey}_default.png" alt="${opp.name}" onerror="window.assetFallback(this,'${opp.imgKey}')">
+    </div>`;
     if (!unlocked) {
       return `<div class="stage-card locked">
-        <div class="stage-number">Stage ${stageNum}</div>
-        <div class="stage-name">${opp.name}</div>
-        <div class="stage-theme">${opp.theme}</div>
-        <div class="stage-locked-tag">🔒 前のステージをクリアで解放</div>
+        <div class="stage-portrait locked-portrait"><div class="silhouette">?</div></div>
+        <div class="stage-card-body">
+          <div class="stage-number">Stage ${stageNum}</div>
+          <div class="stage-name">??? ${opp.isBoss ? '🔱' : ''}</div>
+          <div class="stage-theme">${opp.theme}</div>
+          <div class="stage-locked-tag">🔒 前のステージをクリアで解放</div>
+        </div>
       </div>`;
     }
     return `<div class="stage-card ${recommend ? 'recommended' : ''} ${cleared ? 'cleared' : ''} ${opp.isBoss ? 'boss-stage' : ''}">
-      ${opp.isBoss ? '<div class="stage-tag boss-tag">BOSS</div>' : ''}
-      ${recommend ? '<div class="stage-tag">おすすめ</div>' : ''}
-      ${cleared ? `<div class="stage-tag clear-tag">クリア済 ${bestRank || ''}</div>` : ''}
-      <div class="stage-number">Stage ${stageNum}</div>
-      <div class="stage-name">${opp.name}</div>
-      <div class="stage-theme">学習：${opp.theme}</div>
-      <div class="stage-desc">${opp.desc}</div>
-      <div class="stage-reward">初回報酬：${opp.rewardFirst}コイン${cleared ? '<small>（取得済み）</small>' : ''}</div>
-      <div class="stage-actions">
-        <button class="btn btn-primary" data-action="battle-start" data-opponent="${sid}">${
-          sid === 'rico_tutorial'
-            ? (cleared ? 'もう一度受講' : 'チュートリアル開始')
-            : (cleared ? '再戦' : '対戦開始')
-        }</button>
-        ${cleared && EPISODES[sid] ? `<button class="btn btn-ghost stage-recall" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">📜</button>` : ''}
+      ${portrait}
+      <div class="stage-card-body">
+        <div class="stage-tags-row">
+          ${opp.isBoss ? '<span class="stage-tag boss-tag">BOSS</span>' : ''}
+          ${recommend ? '<span class="stage-tag">おすすめ</span>' : ''}
+          ${cleared ? `<span class="stage-tag clear-tag">クリア済 ${bestRank || ''}</span>` : ''}
+        </div>
+        <div class="stage-number">Stage ${stageNum}</div>
+        <div class="stage-name">${opp.name}</div>
+        <div class="stage-theme">学習：${opp.theme}</div>
+        <div class="stage-desc">${opp.desc}</div>
+        <div class="stage-reward">初回報酬：${opp.rewardFirst}コイン${cleared ? '<small>（取得済み）</small>' : ''}</div>
+        <div class="stage-actions">
+          <button class="btn btn-primary" data-action="battle-start" data-opponent="${sid}">${
+            sid === 'rico_tutorial'
+              ? (cleared ? 'もう一度受講' : 'チュートリアル開始')
+              : (cleared ? '再戦' : '対戦開始')
+          }</button>
+          ${cleared && EPISODES[sid] ? `<button class="btn btn-ghost stage-recall" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">📜</button>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('');
+}
+
+// ロビー：リコ先輩の状況別セリフ
+function lobbyRicoLine() {
+  const cleared = save.clearedStages.length;
+  const lines = [];
+  if (cleared === 0)               lines.push('「ようこそ、ミミ。まずはチュートリアルからね」');
+  else if (!save.clearedStages.includes('polka'))   lines.push('「ポルカちゃんはブラフの入口。落ち着いて行こ」');
+  else if (!save.clearedStages.includes('selina'))  lines.push('「セリナはボードを読む練習にぴったりよ」');
+  else if (!save.clearedStages.includes('grano'))   lines.push('「グラーノ相手はポットオッズの感覚を養う卓ね」');
+  else if (!save.clearedStages.includes('velvet'))  lines.push('「ヴェルベット……VIPルームに入る準備、できた？」');
+  else                                              lines.push('「全卓制覇、お見事。気が向いたら再戦どうぞ」');
+  if (save.coins >= 500) lines.push('「コイン貯まってきたじゃない。交換所、覗いてみる？」');
+  if (save.coins < 100 && cleared > 0) lines.push('「軍資金が心許ないわね。再戦で稼ぐのもアリよ」');
+  return pick(lines);
+}
+
+function renderLobbyStats() {
+  const wins = save.clearedStages.length;
+  const totalStages = STAGE_ORDER.length;
+  const ranks = Object.values(save.bestRanks || {});
+  const rankOrder = ['SS','S','A','B','C'];
+  let topRank = '—';
+  for (const r of rankOrder) { if (ranks.includes(r)) { topRank = r; break; } }
+  const panyuLv = (save.panyuSkills?.senseLevel || 1);
+  const rangeLv = (save.panyuSkills?.rangeLevel || 1);
+  const gaugeMax = save.panyuGaugeMax || 100;
+  return `
+    <div class="stats-title">⚔ プレイヤーステータス</div>
+    <ul class="stats-list">
+      <li><span class="stats-label">攻略</span><span class="stats-value">${wins} / ${totalStages}</span></li>
+      <li><span class="stats-label">所持コイン</span><span class="stats-value">${save.coins}</span></li>
+      <li><span class="stats-label">最高ランク</span><span class="stats-value rank-${topRank}">${topRank}</span></li>
+      <li><span class="stats-label">ぱにゅぱにゅ</span><span class="stats-value">Lv${panyuLv}</span></li>
+      <li><span class="stats-label">レンジ視</span><span class="stats-value">Lv${rangeLv}</span></li>
+      <li><span class="stats-label">ゲージ上限</span><span class="stats-value">${gaugeMax}</span></li>
+    </ul>
+  `;
 }
 
 const SHOP_ITEMS = [
@@ -3244,7 +3295,7 @@ function endBattle() {
     if (btns) {
       btns.innerHTML = `
         <button class="btn btn-primary big" data-action="go-ending">✨ エンディングへ ✨</button>
-        <button class="btn btn-secondary" data-action="back-stage">ステージ選択へ</button>
+        <button class="btn btn-secondary" data-action="back-stage">ロビーへ</button>
       `;
     }
   }
@@ -3436,7 +3487,7 @@ function showChapterBanner(num, title, onClose) {
   });
   banner.querySelector('.chapter-exit').addEventListener('click', (e) => {
     e.stopPropagation();
-    if (!confirm('講義を中断してステージ選択へ戻りますか？\n（進捗は次回引き継ぎ）')) return;
+    if (!confirm('講義を中断してロビーへ戻りますか？\n（進捗は次回引き継ぎ）')) return;
     banner.classList.add('out');
     setTimeout(() => { banner.remove(); onClose('exit'); }, 400);
   });
@@ -3462,7 +3513,7 @@ function finishLecture(skipped) {
       }
       <p style="font-size:15px;line-height:1.7;">これで基本はバッチリ。<br>次は<b>Stage 2「ポルカ戦」</b>で実戦練習だよ。</p>
       <div class="tutorial-actions">
-        <button class="next-btn" type="button">▶ ステージ選択へ</button>
+        <button class="next-btn" type="button">▶ ロビーへ</button>
       </div>
     </div>
   `;

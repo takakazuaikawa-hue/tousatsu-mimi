@@ -77,23 +77,40 @@
 </template>
 
 <template id="tpl-stage-select">
-  <div class="screen stage-select-screen">
-    <div class="bg-layer bg-stage"></div>
-    <header class="top-hud">
+  <div class="screen lobby-screen">
+    <div class="bg-layer bg-lobby"></div>
+    <div class="lobby-chandelier"></div>
+    <div class="lobby-dust"></div>
+    <header class="top-hud lobby-hud">
       <button class="btn btn-ghost" data-action="back-title">← タイトルへ</button>
-      <h2>ステージ選択</h2>
+      <h2 class="lobby-title">✦ ロビー ✦ <span class="lobby-sub">VIP CASINO LOUNGE</span></h2>
       <div class="hud-right">
         <button class="panyu-free-btn" data-action="panyu-free" title="ぱにゅぱにゅで遊ぶ（バトル効果なし）">
           <span class="panyu-free-emoji">🐰</span>
         </button>
-        <span class="coin-display">所持コイン：<span data-bind="saveCoins">0</span></span>
+        <span class="coin-display">💰 <span data-bind="saveCoins">0</span></span>
         <button class="btn btn-secondary" data-action="open-shop">🛍 交換所</button>
         <button class="btn btn-ghost" data-action="reset-save" title="セーブデータをリセット">⟲</button>
       </div>
     </header>
-    <main class="stage-list" data-bind="stageList"></main>
-    <div class="stage-tips">
-      <span>💡 セリナ・グラーノ・ヴェルベット戦の初回クリアで戦術ノート自動解放</span>
+    <main class="lobby-main">
+      <aside class="lobby-side">
+        <div class="lobby-rico-panel">
+          <div class="character-frame lobby-rico-frame">
+            <img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+          </div>
+          <div class="lobby-rico-bubble" data-bind="lobbyRicoLine">「ようこそロビーへ。次の卓、選んじゃって」</div>
+        </div>
+        <div class="lobby-stats-panel" data-bind="lobbyStats"></div>
+      </aside>
+      <section class="lobby-content">
+        <div class="lobby-section-label">対戦相手 — Opponents</div>
+        <div class="lobby-stage-list" data-bind="stageList"></div>
+      </section>
+    </main>
+    <div class="lobby-footer">
+      <span class="lobby-bgm">♪ Lounge Jazz — Velvet Night</span>
+      <span class="lobby-tips">💡 セリナ・グラーノ・ヴェルベット戦の初回クリアで戦術ノート自動解放</span>
     </div>
   </div>
 </template>
@@ -102,7 +119,7 @@
   <div class="screen shop-screen">
     <div class="bg-layer bg-stage"></div>
     <header class="top-hud">
-      <button class="btn btn-ghost" data-action="back-stage">← ステージ選択へ</button>
+      <button class="btn btn-ghost" data-action="back-stage">← ロビーへ</button>
       <h2>🛍 交換所</h2>
       <span class="coin-display">所持コイン：<span data-bind="saveCoins">0</span></span>
     </header>
@@ -314,7 +331,7 @@
       <div class="result-reason" data-bind="resultReason"></div>
       <div class="result-buttons" data-bind="resultButtons">
         <button class="btn btn-primary" data-action="rematch">再戦</button>
-        <button class="btn btn-secondary" data-action="back-stage">ステージ選択へ</button>
+        <button class="btn btn-secondary" data-action="back-stage">ロビーへ</button>
       </div>
     </div>
   </div>
