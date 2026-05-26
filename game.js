@@ -301,9 +301,17 @@ function decideOpponentAction(profile, ctx, opts = {}) {
     const size = r < profile.aggression ? 'pot_2_3' : 'pot_1_2';
     return { type: 'bet', size, intent: 'value' };
   }
-  // ドロー
-  if (ctx.boardDanger && ctx.boardDanger.flushAlert && r < profile.drawAggression) {
-    return { type: 'bet', size: 'pot_1_2', intent: 'draw' };
+  // ドロー潰し（フラッシュ/ストレート両対応）
+  if (ctx.boardDanger && (ctx.boardDanger.flushAlert || ctx.boardDanger.straightAlert)
+      && r < profile.drawAggression) {
+    // 危険度が高いほど大きめにベットしてドローに代金を払わせる
+    const both = ctx.boardDanger.flushAlert && ctx.boardDanger.straightAlert;
+    const size = both ? 'pot_2_3' : 'pot_1_2';
+    return { type: 'bet', size, intent: 'draw' };
+  }
+  // チェックレイズ罠（trapTendency）：強い手でもチェックして相手の攻めを誘う
+  if (hs > 0.65 && ctx.canCheck && profile.trapTendency && r < profile.trapTendency * 0.4) {
+    return { type: 'check_call', intent: 'trap' };
   }
   return { type: 'check_call' };
 }
@@ -2520,7 +2528,7 @@ function opponentTurn() {
   const allCards = [...state.opponentHand, ...state.community];
   const hs = state.community.length >= 3 ? handStrength01(allCards) : opponentPreflopStrength(state.opponentHand);
   const boardDanger = evaluateBoardDanger(state.community);
-  const ctx = { handStrength: hs, toCall: need, boardDanger };
+  const ctx = { handStrength: hs, toCall: need, boardDanger, canCheck: need === 0 };
 
   // v4: 第1ハンドのフロップ後、ポルカは必ず2/3以上ベット → 心理バトル強制発生
   // チュートリアル時もリコ先輩は同様にブラフベットして練習させる
