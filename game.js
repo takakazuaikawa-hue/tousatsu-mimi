@@ -1732,6 +1732,7 @@ function renderStageList() {
               : (cleared ? '再戦' : '対戦開始')
           }</button>
           ${(sid === 'rico_tutorial' && cleared) ? `<button class="btn btn-secondary" data-action="battle-rico-serious" title="チュートリアル無しで本気のリコ先輩と対戦">🔥</button>` : ''}
+          ${(!cleared) ? `<button class="btn btn-ghost stage-skip" data-action="skip-stage" data-opponent="${sid}" title="${skipStageCost(opp)}コインでスキップしてクリア扱い">⏭</button>` : ''}
           ${cleared && EPISODES[sid] ? `<button class="btn btn-ghost stage-recall" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">📜</button>` : ''}
         </div>
       </div>
@@ -2308,13 +2309,38 @@ function onAction(e) {
   switch (action) {
     case 'start':         goStageSelect(); break;
     case 'new-game':
-      if (confirm('現在のセーブデータを消して、新しく始めますか？')) {
-        localStorage.removeItem(SAVE_KEY);
-        save = defaultSave();
-        state = defaultState();
-        render();
-      }
+      showNewGameModal();
       break;
+    case 'new-game-full':
+      localStorage.removeItem(SAVE_KEY);
+      save = defaultSave();
+      state = defaultState();
+      const ovF = document.querySelector('.newgame-overlay'); if (ovF) ovF.remove();
+      render();
+      break;
+    case 'new-game-keep-coins': {
+      const keepCoins = save.coins;
+      const keepOwned = [...(save.ownedItems || [])];
+      const keepGauge = save.panyuGaugeMax;
+      const keepSkills = { ...(save.panyuSkills || {}) };
+      const keepUnlockedNotes = [...(save.unlockedNotes || [])];
+      save = defaultSave();
+      save.coins = keepCoins;
+      save.ownedItems = keepOwned;
+      save.panyuGaugeMax = keepGauge || 100;
+      save.panyuSkills = keepSkills;
+      save.unlockedNotes = keepUnlockedNotes;
+      saveProgress();
+      state = defaultState();
+      const ovK = document.querySelector('.newgame-overlay'); if (ovK) ovK.remove();
+      render();
+      break;
+    }
+    case 'newgame-cancel': {
+      const ov = document.querySelector('.newgame-overlay'); if (ov) ov.remove();
+      break;
+    }
+    case 'skip-stage': skipStageWithCoins(data.opponent); break;
     case 'back-title':    stopEndingBgm(); state = defaultState(); render(); break;
     case 'back-stage':    stopEndingBgm(); goStageSelect(); break;
     case 'open-shop':     state.screen = 'shop'; render(); break;
@@ -2642,6 +2668,53 @@ function toggleLobbyBgm() {
 //=============================================================
 // 10. バトル開始
 //=============================================================
+function showNewGameModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'newgame-overlay';
+  overlay.innerHTML = `
+    <div class="newgame-modal">
+      <div class="newgame-title">新しく始める</div>
+      <div class="newgame-sub">どのように始めますか？</div>
+      <button class="btn btn-primary newgame-opt" data-action="new-game-full">
+        <span class="newgame-opt-name">🆕 完全に最初から</span>
+        <span class="newgame-opt-desc">コインも進捗も全部リセット</span>
+      </button>
+      <button class="btn btn-secondary newgame-opt" data-action="new-game-keep-coins">
+        <span class="newgame-opt-name">💰 コインと所持品を持って最初から</span>
+        <span class="newgame-opt-desc">進捗とランクはリセット、コイン・購入アイテムは保持</span>
+      </button>
+      <button class="btn btn-ghost newgame-opt" data-action="newgame-cancel">キャンセル</button>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+  overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+}
+
+function skipStageCost(opp) {
+  return (opp.rewardFirst || 500) * 3;
+}
+
+function skipStageWithCoins(opponentId) {
+  const opp = OPPONENTS[opponentId];
+  if (!opp) return;
+  if (save.clearedStages.includes(opponentId)) return;
+  const cost = skipStageCost(opp);
+  if (save.coins < cost) { alert(`コイン不足：${cost}コイン必要`); return; }
+  if (!confirm(`${cost}コインを払って ${opp.name} 戦をスキップしますか？\n（クリア扱いだが報酬・ランクは無し。次のステージが解放）`)) return;
+  save.coins -= cost;
+  if (!save.clearedStages.includes(opponentId)) save.clearedStages.push(opponentId);
+  // 初回クリア扱いするが報酬は払わない（firstClearRewardClaimedにフラグ立てる）
+  if (!save.firstClearRewardClaimed.includes(opponentId)) save.firstClearRewardClaimed.push(opponentId);
+  // ノート自動解放
+  if (opp.unlockNoteOnClear && !save.unlockedNotes.includes(opp.unlockNoteOnClear)) {
+    save.unlockedNotes.push(opp.unlockNoteOnClear);
+  }
+  // 飛ばしクリアは C ランク扱い
+  if (!save.bestRanks[opponentId]) save.bestRanks[opponentId] = 'C';
+  saveProgress();
+  applyBindings();
+}
+
 function chipBonusTotal() {
   let b = 0;
   if (save.ownedItems.includes('chips_plus_500'))  b += 500;

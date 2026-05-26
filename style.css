@@ -1082,6 +1082,61 @@ html, body {
   cursor: pointer;
 }
 
+/* ========== 新しく始めるモーダル ========== */
+.newgame-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 250;
+  background: rgba(0,0,0,0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.25s;
+}
+.newgame-modal {
+  background: linear-gradient(180deg, rgba(50,20,80,0.97) 0%, rgba(20,8,29,0.98) 100%);
+  border: 3px solid var(--c-gold-bright);
+  border-radius: 16px;
+  padding: 28px 32px;
+  box-shadow: 0 0 30px rgba(245,215,122,0.5), 0 12px 36px rgba(0,0,0,0.7);
+  min-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.newgame-title {
+  font-size: 22px;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.2em;
+  font-weight: 700;
+  text-align: center;
+}
+.newgame-sub {
+  font-size: 13px;
+  color: var(--c-text-dim);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.newgame-opt {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 18px;
+  text-align: left;
+  gap: 2px;
+  align-items: flex-start;
+}
+.newgame-opt-name { font-size: 16px; font-weight: 700; }
+.newgame-opt-desc { font-size: 12px; opacity: 0.85; }
+
+/* スキップボタン */
+.stage-skip {
+  font-size: 16px;
+  padding: 4px 6px;
+  width: 34px;
+  color: var(--c-gold);
+}
+.stage-skip:hover { color: var(--c-gold-bright); }
+
 /* ========== 初期チップ選択モーダル ========== */
 .chip-picker-overlay {
   position: absolute;
