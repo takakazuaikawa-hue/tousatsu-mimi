@@ -2567,6 +2567,123 @@ html, body {
   text-shadow: 0 0 18px var(--c-gold-bright);
 }
 
+/* ========== ぱにゅぱにゅ：30タップぷにぷにミニゲーム ========== */
+.panyu-clicker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 8vh; /* 中央少し下 */
+  background: radial-gradient(ellipse at 50% 60%, rgba(255,107,157,0.25) 0%, rgba(0,0,0,0.5) 60%);
+  animation: fadeIn 0.3s ease-out;
+}
+.panyu-clicker-label-top {
+  font-size: 22px;
+  color: #fff;
+  letter-spacing: 0.3em;
+  font-weight: 700;
+  text-shadow:
+    0 0 12px rgba(255,107,157,0.8),
+    0 0 24px rgba(255,193,216,0.6),
+    0 4px 0 rgba(0,0,0,0.4);
+  margin-bottom: 28px;
+  animation: labelPulse 1.4s ease-in-out infinite;
+}
+@keyframes labelPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+/* ぷにぷに球体（後で画像フレームに差し替え可能） */
+.panyu-clicker-blob {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.7) 0%, transparent 30%),
+    radial-gradient(circle at 50% 50%, #ffc1d8 0%, #ff7aa4 60%, #c8253a 100%);
+  border-radius: 50%;
+  border: 6px solid #fff;
+  box-shadow:
+    0 0 80px rgba(255,107,157,0.7),
+    0 0 40px rgba(255,193,216,0.5),
+    inset 0 0 40px rgba(255,255,255,0.4),
+    inset -20px -20px 40px rgba(200,37,58,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  animation: idleWobble 1.6s ease-in-out infinite;
+  transition: filter 0.2s;
+}
+.panyu-clicker-blob:hover { filter: brightness(1.1); }
+.panyu-clicker-inner {
+  text-align: center;
+  pointer-events: none;
+}
+@keyframes idleWobble {
+  0%, 100% { transform: scale(1, 1); }
+  25%      { transform: scale(1.04, 0.96); }
+  50%      { transform: scale(1, 1); }
+  75%      { transform: scale(0.96, 1.04); }
+}
+/* タップ時のぷるん */
+.panyu-clicker-blob.wobble {
+  animation: tapWobble 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes tapWobble {
+  0%   { transform: scale(1, 1); }
+  20%  { transform: scale(1.18, 0.85); }
+  40%  { transform: scale(0.86, 1.18); }
+  60%  { transform: scale(1.08, 0.95); }
+  80%  { transform: scale(0.97, 1.04); }
+  100% { transform: scale(1, 1); }
+}
+/* 完了時の弾け */
+.panyu-clicker-blob.panyu-complete {
+  animation: completePop 0.7s cubic-bezier(0.34, 1.5, 0.64, 1) forwards;
+}
+@keyframes completePop {
+  0%   { transform: scale(1); opacity: 1; filter: brightness(1); }
+  30%  { transform: scale(1.4); opacity: 1; filter: brightness(1.8); }
+  100% { transform: scale(2.6); opacity: 0; filter: brightness(2.5); }
+}
+.panyu-clicker-count {
+  font-size: 120px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  text-shadow:
+    0 4px 0 rgba(200,37,58,0.5),
+    0 0 24px rgba(255,193,216,0.9);
+}
+.panyu-clicker-sublabel {
+  font-size: 22px;
+  color: #fff;
+  letter-spacing: 0.4em;
+  margin-top: 12px;
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+/* タップ時に飛び散るパーティクル */
+.panyu-particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 28px;
+  pointer-events: none;
+  animation: panyuParticleFly 0.7s ease-out forwards;
+  text-shadow: 0 0 8px rgba(255,193,216,0.9);
+}
+@keyframes panyuParticleFly {
+  0%   { transform: translate(-50%, -50%) translate(0, 0) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(1.4); opacity: 0; }
+}
+
 /* ========== 講義チャプターバナー ========== */
 .chapter-banner {
   position: fixed;

@@ -2544,38 +2544,108 @@ function usePanyuSense(qid, isFree) {
   if (!state.psychRoot) return;
   const cost = isFree ? 0 : 25;
   if (!isFree && state.panyu < 25) return;
+  // 即時にコスト消費・ボタン無効化（取り消し不可なコミット）
   state.panyu -= cost;
   if (isFree) state.panyuSenseFreeUsed = true;
-
   const senseBtn = state.psychRoot.querySelector('[data-bind="panyuSenseBtn"]');
-  senseBtn.disabled = true;
-  senseBtn.textContent = '✓ ぱにゅぱにゅ使用';
-
-  // ミミカットイン：ぱにゅ……ぱにゅ……（場がなごんだ）
-  showMimiCutIn('ぱにゅ……ぱにゅ……', '・・・・・場がなごんだ');
-
-  // ゾゾゾヒントを強調
-  const hint = state.psychRoot.querySelector('.zazazo-hint');
-  hint.style.background = 'rgba(245,215,122,0.3)';
-  hint.style.fontWeight = '700';
-  hint.textContent += '  ←【強調】相手の動きをよく見て！';
-
-  // Lv2効果：ハズレ選択肢を1つグレーアウト
-  if (save.panyuSkills.senseLevel >= 2 && qid && PSYCH_QUESTIONS[qid]) {
-    const q = PSYCH_QUESTIONS[qid];
-    const choices = [...state.psychRoot.querySelectorAll('.choice-btn:not(.disabled-by-sense)')];
-    const wrong = choices.find(b => {
-      const c = q.choices.find(x => x.id === b.dataset.choiceId);
-      return c && !c.correct;
-    });
-    if (wrong) {
-      wrong.classList.add('disabled-by-sense');
-      wrong.disabled = true;
-      toast('ぱにゅぱにゅLv2：ハズレ1つを除外！');
-      return;
-    }
+  const floatBtn = document.querySelector('.panyu-floating-btn');
+  if (senseBtn) {
+    senseBtn.disabled = true;
+    senseBtn.textContent = '⏳ ぷにぷに中…';
   }
-  toast('ぱにゅぱにゅ発動：相手のゾゾゾ反応を強調！');
+  if (floatBtn) { floatBtn.disabled = true; }
+
+  // ぷにぷにミニゲーム開始
+  showPanyuClicker(30, () => {
+    if (senseBtn) senseBtn.textContent = '✓ ぱにゅぱにゅ使用';
+    if (floatBtn) floatBtn.textContent = '✓ 使用済み';
+    // ミミカットイン
+    showMimiCutIn('ぱにゅ……ぱにゅ……', '・・・・・場がなごんだ');
+    // ゾゾゾヒントを強調
+    if (state.psychRoot) {
+      const hint = state.psychRoot.querySelector('.zazazo-hint');
+      if (hint && !hint.dataset.boosted) {
+        hint.style.background = 'rgba(245,215,122,0.3)';
+        hint.style.fontWeight = '700';
+        hint.textContent += '  ←【強調】相手の動きをよく見て！';
+        hint.dataset.boosted = '1';
+      }
+    }
+    // Lv2効果：ハズレ選択肢を1つグレーアウト
+    if (save.panyuSkills.senseLevel >= 2 && qid && PSYCH_QUESTIONS[qid] && state.psychRoot) {
+      const q = PSYCH_QUESTIONS[qid];
+      const choices = [...state.psychRoot.querySelectorAll('.choice-btn:not(.disabled-by-sense)')];
+      const wrong = choices.find(b => {
+        const c = q.choices.find(x => x.id === b.dataset.choiceId);
+        return c && !c.correct;
+      });
+      if (wrong) {
+        wrong.classList.add('disabled-by-sense');
+        wrong.disabled = true;
+        toast('ぱにゅぱにゅLv2：ハズレ1つを除外！');
+        return;
+      }
+    }
+    toast('ぱにゅぱにゅ発動：相手のゾゾゾ反応を強調！');
+  });
+}
+
+// ぷにぷに30タップミニゲーム
+function showPanyuClicker(totalTaps, onComplete) {
+  let count = totalTaps;
+  const overlay = document.createElement('div');
+  overlay.className = 'panyu-clicker-overlay';
+  overlay.innerHTML = `
+    <div class="panyu-clicker-label-top">ぷにぷにタップ ${totalTaps} 回！</div>
+    <div class="panyu-clicker-blob" id="panyu-blob">
+      <div class="panyu-clicker-inner">
+        <div class="panyu-clicker-count">${count}</div>
+        <div class="panyu-clicker-sublabel">タップ！</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const blob = overlay.querySelector('#panyu-blob');
+  const countEl = overlay.querySelector('.panyu-clicker-count');
+  let completed = false;
+  const onTap = (e) => {
+    if (completed) return;
+    e.preventDefault();
+    e.stopPropagation();
+    count--;
+    countEl.textContent = Math.max(0, count);
+    // パーティクル
+    spawnPanyuParticle(overlay);
+    // ぷにぷに アニメーション再生
+    blob.classList.remove('wobble');
+    void blob.offsetWidth;
+    blob.classList.add('wobble');
+    if (count <= 0) {
+      completed = true;
+      blob.classList.add('panyu-complete');
+      const label = overlay.querySelector('.panyu-clicker-label-top');
+      if (label) label.textContent = '✨ ぱにゅぱにゅ発動！ ✨';
+      setTimeout(() => {
+        overlay.remove();
+        if (onComplete) onComplete();
+      }, 700);
+    }
+  };
+  blob.addEventListener('click', onTap);
+  blob.addEventListener('touchstart', onTap, { passive: false });
+}
+
+function spawnPanyuParticle(parent) {
+  const p = document.createElement('div');
+  p.className = 'panyu-particle';
+  p.textContent = pick(['💖', '✨', '♡', '🌸']);
+  // ランダム位置
+  const angle = rand() * Math.PI * 2;
+  const dist = 60 + rand() * 40;
+  p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+  p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+  parent.appendChild(p);
+  setTimeout(() => p.remove(), 700);
 }
 
 function resolvePsych(qid, choice, btn) {
