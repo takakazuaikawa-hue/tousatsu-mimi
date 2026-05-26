@@ -231,17 +231,29 @@
 </template>
 
 <template id="tpl-psych-modal">
-  <div class="modal-overlay">
+  <div class="modal-overlay battle-modal-overlay">
+    <div class="battle-bg"></div>
+    <div class="battle-vignette"></div>
+
+    <!-- 両サイドの立ち絵 -->
+    <div class="battle-char battle-char-mimi">
+      <img src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
+    </div>
+    <div class="battle-char battle-char-opponent" data-bind="battleOpponentChar"></div>
+
+    <!-- 中央のバトルコンテンツ -->
     <div class="modal psych-modal">
       <h3 class="psych-title">— 心理バトル —</h3>
-      <div class="psych-board-info">
-        <div class="psych-board-label">場札</div>
-        <div class="psych-board-cards" data-bind="psychBoardCards"></div>
-        <div class="psych-pot" title="ポット = このハンドで賭けられたチップの合計">ポット（賭け金合計）：<span data-bind="psychPot">0</span></div>
-      </div>
-      <div class="psych-hand-info">
-        <div class="psych-hand-label">ミミの手札</div>
-        <div class="psych-hand-cards" data-bind="psychHandCards"></div>
+      <div class="psych-cards-row">
+        <div class="psych-board-info">
+          <div class="psych-board-label">場札</div>
+          <div class="psych-board-cards" data-bind="psychBoardCards"></div>
+          <div class="psych-pot" title="ポット = このハンドで賭けられたチップの合計">ポット：<span data-bind="psychPot">0</span></div>
+        </div>
+        <div class="psych-hand-info">
+          <div class="psych-hand-label">ミミの手札</div>
+          <div class="psych-hand-cards" data-bind="psychHandCards"></div>
+        </div>
       </div>
       <div class="psych-situation" data-bind="psychSituation"></div>
       <div class="psych-speech" data-bind="psychSpeech"></div>

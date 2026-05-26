@@ -1974,6 +1974,12 @@ function triggerPsychBattle(qid) {
   app.appendChild(modal);
 
   const root = app.lastElementChild;
+  // 両サイド立ち絵を埋める
+  const oppCharEl = root.querySelector('[data-bind="battleOpponentChar"]');
+  if (oppCharEl) {
+    const imgKey = state.opponentImgKey || 'polka';
+    oppCharEl.innerHTML = `<img src="assets/characters/${imgKey}_default.png" alt="${state.opponentName || '相手'}" onerror="window.assetFallback(this,'${imgKey}')">`;
+  }
   // モーダルタイプによってヘッダー差し替え（心理 / 論理）
   const isLogic = q.type === 'logic';
   const titleEl = root.querySelector('.psych-title');
