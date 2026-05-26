@@ -1334,7 +1334,7 @@ const app = document.getElementById('app');
 function render() {
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); break;
-    case 'stageSelect': renderTemplate('tpl-stage-select'); applyBindings(); break;
+    case 'stageSelect': renderTemplate('tpl-stage-select'); applyBindings(); tryStartLobbyBgm(); break;
     case 'battle':      renderTemplate('tpl-battle'); applyBindings(); break;
     case 'result':      renderTemplate('tpl-result'); applyBindings(); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
@@ -1411,6 +1411,18 @@ function applyBindings() {
       case 'stageList': el.innerHTML = renderStageList(); break;
       case 'lobbyRicoLine': el.textContent = lobbyRicoLine(); break;
       case 'lobbyStats': el.innerHTML = renderLobbyStats(); break;
+      case 'lobbyRicoImg': {
+        const o = pickLobbyRico();
+        el.onerror = function() {
+          // バリエーション画像が無ければ default にフォールバック
+          this.onerror = function() { window.assetFallback(this, 'rico'); };
+          this.src = 'assets/characters/rico_default.png';
+        };
+        el.src = `assets/characters/${o.file}`;
+        break;
+      }
+      case 'lobbyRicoOutfit': el.textContent = pickLobbyRico().label; break;
+      case 'lobbyBgmLabel': el.textContent = state.bgmOn === false ? '♪ —（停止中）' : '♪ Lounge Jazz — Velvet Night'; break;
       case 'shopItems': el.innerHTML = renderShopItems('panyu'); break;
       case 'ricoShopComment': /* default initial */ break;
       case 'opponentImg':
@@ -1652,6 +1664,30 @@ function renderStageList() {
   }).join('');
 }
 
+// ロビー：リコ先輩の衣装バリエーション（assetsに置いた分だけ抽選対象になる）
+const RICO_OUTFITS = [
+  { file: 'rico_default.png',  label: '制服',         lines: ['「次の卓、選んじゃって」', '「今日も頑張ろ」'] },
+  { file: 'rico_pajama.png',   label: 'パジャマ',     lines: ['「ふぁ……まだ眠いんだけど」', '「夜更かしは禁物よ……」', '「布団恋しい……」'] },
+  { file: 'rico_bunny.png',    label: 'バニー',       lines: ['「お仕事モード、入りまーす」', '「お客様、卓へどうぞ」', '「ぴょん、ぴょん」'] },
+  { file: 'rico_casual.png',   label: '私服',         lines: ['「オフの私もよろしくね」', '「これ、新しく買ったの」', '「街、ぶらつかない？」'] },
+  { file: 'rico_dress.png',    label: 'ドレス',       lines: ['「今夜は……特別ね」', '「VIPルーム、覚悟は？」', '「アタシ、決めるときは決めるの」'] },
+  { file: 'rico_kimono.png',   label: '和装',         lines: ['「たまには、しっとりと」', '「お抹茶、いる？」'] },
+  { file: 'rico_swimsuit.png', label: '水着',         lines: ['「夏ね、夏」', '「日焼け止め塗った？」'] },
+  { file: 'rico_gym.png',      label: 'ジム服',       lines: ['「鍛えてる、最近」', '「メンタルも筋肉よ」'] },
+  { file: 'rico_school.png',   label: '制服（学生風）', lines: ['「先輩感、出てる？」', '「放課後、寄ってく？」'] },
+  { file: 'rico_witch.png',    label: '魔女',         lines: ['「ハロウィン気分」', '「呪い、かけちゃおっか？」'] },
+  { file: 'rico_santa.png',    label: 'サンタ',       lines: ['「メリクリ、ミミ」', '「プレゼント、何が欲しい？」'] },
+];
+
+function pickLobbyRico() {
+  // セッションごとに変える（ロビー表示時に1回決める）
+  if (!state.lobbyRicoIndex || state.lobbyRicoChangedAt !== state.screen) {
+    state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
+    state.lobbyRicoChangedAt = state.screen;
+  }
+  return RICO_OUTFITS[state.lobbyRicoIndex];
+}
+
 // ロビー：リコ先輩の状況別セリフ
 function lobbyRicoLine() {
   const cleared = save.clearedStages.length;
@@ -1664,6 +1700,9 @@ function lobbyRicoLine() {
   else                                              lines.push('「全卓制覇、お見事。気が向いたら再戦どうぞ」');
   if (save.coins >= 500) lines.push('「コイン貯まってきたじゃない。交換所、覗いてみる？」');
   if (save.coins < 100 && cleared > 0) lines.push('「軍資金が心許ないわね。再戦で稼ぐのもアリよ」');
+  // 衣装ごとの一言も混ぜる
+  const outfit = pickLobbyRico();
+  if (outfit?.lines?.length) lines.push(pick(outfit.lines));
   return pick(lines);
 }
 
@@ -2073,6 +2112,7 @@ function onAction(e) {
       break;
     case 'use-panyu-sense': usePanyuSense(); break;
     case 'panyu-free':    showPanyuClicker(30, null); break;
+    case 'toggle-bgm':    toggleLobbyBgm(); break;
   }
 }
 
@@ -2081,7 +2121,36 @@ function onAction(e) {
 //=============================================================
 function goStageSelect() {
   state.screen = 'stageSelect';
+  // 入室時にリコの衣装を抽選し直す
+  state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
+  state.lobbyRicoChangedAt = 'stageSelect';
   render();
+  tryStartLobbyBgm();
+}
+
+function tryStartLobbyBgm() {
+  const a = document.getElementById('lobby-bgm-audio');
+  if (!a) return;
+  if (state.bgmOn === false) { a.pause(); return; }
+  a.volume = 0.35;
+  // ブラウザの自動再生制限：ユーザー操作後にしか鳴らない場合あり
+  const p = a.play();
+  if (p && p.catch) p.catch(() => {/* 自動再生ブロックは無視 */});
+}
+
+function toggleLobbyBgm() {
+  const a = document.getElementById('lobby-bgm-audio');
+  state.bgmOn = (state.bgmOn === false); // 初期値undefined→true→false→true...
+  if (state.bgmOn) {
+    if (a) { a.volume = 0.35; a.play().catch(()=>{}); }
+  } else {
+    if (a) a.pause();
+  }
+  // ボタン表示更新
+  const btn = document.querySelector('[data-action="toggle-bgm"]');
+  if (btn) btn.textContent = state.bgmOn ? '🔊' : '🔇';
+  const label = document.querySelector('[data-bind="lobbyBgmLabel"]');
+  if (label) label.textContent = state.bgmOn ? '♪ Lounge Jazz — Velvet Night' : '♪ —（停止中）';
 }
 
 //=============================================================
