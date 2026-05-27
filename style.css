@@ -6803,23 +6803,23 @@ html, body {
   animation: tapWobble 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes tapWobble {
-  0%   { transform: scale(1, 1); }
-  20%  { transform: scale(1.18, 0.85); }
-  40%  { transform: scale(0.86, 1.18); }
-  60%  { transform: scale(1.08, 0.95); }
-  80%  { transform: scale(0.97, 1.04); }
-  100% { transform: scale(1, 1); }
+  0%   { transform: translate(0, 0) scale(1, 1); }
+  20%  { transform: translate(-6px, 3px) scale(1.18, 0.85); }
+  40%  { transform: translate(4px, -2px) scale(0.86, 1.18); }
+  60%  { transform: translate(-2px, 1px) scale(1.08, 0.95); }
+  80%  { transform: translate(1px, 0)    scale(0.97, 1.04); }
+  100% { transform: translate(0, 0)      scale(1, 1); }
 }
 /* 高速タップ時の激しい揺れ */
 .panyu-clicker-blob.wobble-fast {
   animation: tapWobbleFast 0.22s cubic-bezier(0.34, 1.8, 0.64, 1);
 }
 @keyframes tapWobbleFast {
-  0%   { transform: scale(1, 1) rotate(0); }
-  25%  { transform: scale(1.25, 0.78) rotate(-3deg); }
-  50%  { transform: scale(0.78, 1.25) rotate(2deg); }
-  75%  { transform: scale(1.12, 0.92) rotate(-1deg); }
-  100% { transform: scale(1, 1) rotate(0); }
+  0%   { transform: translate(0, 0) scale(1, 1) rotate(0); }
+  25%  { transform: translate(-10px, 4px) scale(1.25, 0.78) rotate(-3deg); }
+  50%  { transform: translate(7px, -3px)  scale(0.78, 1.25) rotate(2deg); }
+  75%  { transform: translate(-3px, 1px)  scale(1.12, 0.92) rotate(-1deg); }
+  100% { transform: translate(0, 0)       scale(1, 1) rotate(0); }
 }
 
 /* プログレスリング */
