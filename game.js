@@ -3213,11 +3213,13 @@ function updateBackdoorPanel() {
 
 function renderOpponentBet() {
   if (state.currentBetOpponent <= 0) return '<span class="bet-none">— ベットなし —</span>';
-  const potBefore = state.pot - state.currentBetOpponent - state.currentBetPlayer;
-  const pct = potBefore > 0 ? Math.round((state.currentBetOpponent / potBefore) * 100) : 0;
+  // 「相手がベットした瞬間のポット額」を基準にする：
+  //   = 現在のポット − 相手の今ベット分（自分の既出分は含めたまま）
+  const potBeforeBet = state.pot - state.currentBetOpponent;
+  const pct = potBeforeBet > 0 ? Math.round((state.currentBetOpponent / potBeforeBet) * 100) : 0;
   let sizeLabel = '';
-  if (potBefore > 0) {
-    const ratio = state.currentBetOpponent / potBefore;
+  if (potBeforeBet > 0) {
+    const ratio = state.currentBetOpponent / potBeforeBet;
     if (ratio >= 1.5) sizeLabel = '【超強気】';
     else if (ratio >= 0.9) sizeLabel = '【ポット】';
     else if (ratio >= 0.55) sizeLabel = '【強気】';
@@ -4575,8 +4577,10 @@ function mimiThoughtPreflop(hand) {
 }
 
 // === ミミの現状アセスメント（解説強化） ===
-// allCards: 自分の手札＋場札（≥5枚）、community: 場札、 opponentBet: 相手が当ストリートで賭けた額、 pot: 現在のポット
-function mimiAssess(allCards, community, opponentBet, pot) {
+// allCards: 自分の手札＋場札（≥5枚）、community: 場札、
+// opponentBet: 相手の当ストリート総ベット（UI表記と一致）、pot: そのベット前のポット、
+// callNeed: ミミがコールに必要な額（差額。省略時は opponentBet と同値）
+function mimiAssess(allCards, community, opponentBet, pot, callNeed) {
   if (!allCards || allCards.length < 5) return '';
   const ev = evaluateHand(allCards);
   const danger = evaluateBoardDanger(community);
@@ -4604,12 +4608,15 @@ function mimiAssess(allCards, community, opponentBet, pot) {
   if (danger.pairBoard && ev.rank < 6) warnings.push('場ペア＝フルハウス警戒');
   const warnStr = warnings.length ? `／⚠ ${warnings.join('・')}` : '';
 
-  // ポットオッズ（ノート所持時のみ）
+  // ポットオッズ（ノート所持時のみ） — コールに必要な額が基準
   let oddsStr = '';
-  if (opponentBet > 0 && save.ownedItems && save.ownedItems.includes('note_pot_odds')) {
-    const need = opponentBet;
-    const totalPot = pot + need; // コール後のポット
-    const reqWinRate = Math.round((need / (totalPot + need)) * 100);
+  const _callNeed = (typeof callNeed === 'number' ? callNeed : opponentBet);
+  if (_callNeed > 0 && save.ownedItems && save.ownedItems.includes('note_pot_odds')) {
+    // 現ポット（相手のベット込み）+ ミミのコール = コール後の総ポット
+    // 必要勝率 = コール額 / コール後の総ポット
+    const fullPotIncludingBet = pot + opponentBet; // = state.pot
+    const totalAfterCall = fullPotIncludingBet + _callNeed;
+    const reqWinRate = Math.round((_callNeed / totalAfterCall) * 100);
     oddsStr = `／ポットオッズ：${reqWinRate}%以上勝てればコール＋EV`;
   }
 
@@ -4913,11 +4920,17 @@ function opponentTurn() {
 
   state.isPlayerTurn = true;
   // 場札があればアセスメント付き、無ければシンプル
+  // 表示用：相手の総コミット額と、ミミがコールに必要な額（差額）
+  const oppTotal = state.currentBetOpponent;
+  const callNeed = Math.max(0, state.currentBetOpponent - state.currentBetPlayer);
   if (state.community.length >= 3) {
-    const assess = mimiAssess([...state.playerHand, ...state.community], state.community, amount, state.pot - amount);
-    state.mimiThought = `「${state.opponentName || '相手'}が${amount}ベット……」\n${assess}`;
+    // 「相手のベット」評価は UI ラベルと同じ基準（oppTotal vs pot-oppTotal）で出す
+    // ポットオッズ表示は別途 callNeed/pot を内部で計算
+    const assess = mimiAssess([...state.playerHand, ...state.community], state.community, oppTotal, state.pot - oppTotal, callNeed);
+    const callPart = callNeed > 0 && callNeed !== oppTotal ? `（コール${callNeed}）` : '';
+    state.mimiThought = `「${state.opponentName || '相手'}が${oppTotal}まで${callPart}……」\n${assess}`;
   } else {
-    state.mimiThought = `「${state.opponentName || '相手'}が${amount}ベット……どう出る？」`;
+    state.mimiThought = `「${state.opponentName || '相手'}が${oppTotal}ベット……どう出る？」`;
   }
   render();
 }
