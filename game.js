@@ -6292,10 +6292,16 @@ function showPanyuClicker(totalTaps, onComplete) {
   };
   // 外部（drag）からも呼べるよう公開
   state.__panyuDoTick = doTick;
+  // 多重イベント対策：80ms内の連続発火は1回にまとめる
+  let lastTapMs = 0;
+  const TAP_DEBOUNCE_MS = 80;
   const onTap = (which) => (e) => {
     if (completed) return;
     e.preventDefault();
     e.stopPropagation();
+    const now = Date.now();
+    if (now - lastTapMs < TAP_DEBOUNCE_MS) return;
+    lastTapMs = now;
     doTick(which);
   };
   blobs.forEach(b => {
@@ -6337,7 +6343,7 @@ function attachDragStretch(blob) {
     movedFar = false;
     pointerId = e.pointerId ?? null;
     blob.classList.remove('release');
-    blob.classList.add('dragging');
+    // ※ dragging クラスは即追加しない：純粋なタップでは物理を止めない
     if (e.pointerId !== undefined && blob.setPointerCapture) {
       try { blob.setPointerCapture(e.pointerId); } catch (err) {}
     }
@@ -6352,12 +6358,14 @@ function attachDragStretch(blob) {
     const pt = e.touches ? e.touches[0] : e;
     let dx = pt.clientX - startX;
     let dy = pt.clientY - startY;
-    // 5px以上動いたら「明確なドラッグ」→ホールド扱いに昇格（armタイマー早期発動）
+    // 5px以上動いたら「明確なドラッグ」→ホールド扱いに昇格＋dragging クラス付与
     if (!movedFar && Math.hypot(dx, dy) > 5) {
       movedFar = true;
+      blob.classList.add('dragging'); // ここで初めて物理を停止して transform を奪う
       stopArm();
       startHoldTick();
     }
+    if (!movedFar) return; // タップ範囲内：transform は触らない（物理に任せる）
     // ベクトルを最大値で減衰（ゴム抵抗）
     const dist = Math.hypot(dx, dy);
     if (dist > maxDrag) {
@@ -6381,9 +6389,10 @@ function attachDragStretch(blob) {
     active = false;
     stopArm();
     stopHoldTick();
+    const wasDragging = blob.classList.contains('dragging');
     blob.classList.remove('dragging');
-    // 物理状態を「引っ張られた位置」から開始させて、自然に戻す
-    if (blob.__phys) {
+    // ドラッグから戻る時のみ、物理状態を現在の transform 値から再開
+    if (wasDragging && blob.__phys) {
       const m = (blob.style.transform || '').match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
       if (m) {
         blob.__phys.tx = parseFloat(m[1]);
@@ -6398,8 +6407,8 @@ function attachDragStretch(blob) {
         blob.__phys.vsx = 0;
         blob.__phys.vsy = 0;
       }
+      blob.style.transform = '';
     }
-    blob.style.transform = '';
     if (pointerId !== null && blob.releasePointerCapture) {
       try { blob.releasePointerCapture(pointerId); } catch (e) {}
     }
