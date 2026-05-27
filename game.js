@@ -870,7 +870,13 @@ const PSYCH_QUESTIONS = {
   },
   selina_bet_size: {
     id: 'selina_bet_size',
-    situationFn: (state) => `場札：${renderCardsText(state.community)}\nセリナは2/3ポット以上をベット。連番やドロー要素のある場面。`,
+    situationFn: (state) => {
+      const need = state.currentBetOpponent - state.currentBetPlayer;
+      const potBefore = state.pot - need;
+      const ratio = potBefore > 0 ? Math.round(need / potBefore * 100) : 0;
+      return `場札：${renderCardsText(state.community)}\n` +
+        `セリナのベット：ポットの約${ratio}%（標準を超える攻撃的サイズ）。`;
+    },
     speech: '安くは見せません。',
     zazazoHint: 'ゾゾゾ反応：いつもより指の動きが速い',
     choices: [
@@ -891,7 +897,13 @@ const PSYCH_QUESTIONS = {
   },
   grano_cheap_call: {
     id: 'grano_cheap_call',
-    situationFn: (state) => `場札：${renderCardsText(state.community)}\nポットは大きいがグラーノのベットは小さい。ミミにはドローまたは中程度の手。`,
+    situationFn: (state) => {
+      const need = state.currentBetOpponent - state.currentBetPlayer;
+      const potBefore = state.pot - need;
+      const ratio = potBefore > 0 ? Math.round(need / potBefore * 100) : 0;
+      return `場札：${renderCardsText(state.community)}\n` +
+        `ポット：${potBefore} に対し、グラーノのベット：${need}（≒${ratio}%）と小さめ。`;
+    },
     speech: 'この一枚を見るだけなら、安いものですよ。',
     zazazoHint: 'ゾゾゾ反応：穏やかに、誘うような声色',
     choices: [
@@ -912,7 +924,13 @@ const PSYCH_QUESTIONS = {
   },
   grano_expensive: {
     id: 'grano_expensive',
-    situationFn: (state) => `場札：${renderCardsText(state.community)}\nポットに対してグラーノのベットが大きい。ミミの手は弱いドロー。`,
+    situationFn: (state) => {
+      const need = state.currentBetOpponent - state.currentBetPlayer;
+      const potBefore = state.pot - need;
+      const ratio = potBefore > 0 ? Math.round(need / potBefore * 100) : 0;
+      return `場札：${renderCardsText(state.community)}\n` +
+        `ポット：${potBefore} に対し、グラーノのベット：${need}（≒${ratio}%）と高め。`;
+    },
     speech: 'さあ、未来の可能性を買いませんか？',
     zazazoHint: 'ゾゾゾ反応：少しせかしてくる',
     choices: [
@@ -2614,25 +2632,48 @@ function pickPsychQuestion() {
   // 対戦相手に応じて問題プールを切り替える＋出題済みは避ける
   const id = state.opponentId;
   const seen = state.seenQuestions || new Set();
-  // 出題済みを避けて選ぶ補助
+  // 履歴（直近の出題順、新しいほど後ろ）
+  if (!state.psychHistory) state.psychHistory = [];
+  // 出題済みを避けて選ぶ：未出題優先、無ければ「最も古く出した問題」を選ぶ
   const pickFresh = (pool) => {
+    if (pool.length === 0) return null;
     const fresh = pool.filter(q => !seen.has(q));
-    return fresh.length > 0 ? pick(fresh) : pick(pool);
+    if (fresh.length > 0) return pick(fresh);
+    // 全部出題済みなら、直近2問は避ける（連続を防止）
+    const recent = state.psychHistory.slice(-2);
+    const notRecent = pool.filter(q => !recent.includes(q));
+    if (notRecent.length > 0) return pick(notRecent);
+    // それでも選べない（プール≦2）なら、最も古い問題を選ぶ
+    let oldest = pool[0];
+    let oldestIdx = state.psychHistory.length;
+    for (const q of pool) {
+      const idx = state.psychHistory.lastIndexOf(q);
+      if (idx < oldestIdx) { oldestIdx = idx; oldest = q; }
+    }
+    return oldest;
+  };
+  // 単一候補でも履歴に応じて代替を返す
+  const pickSingle = (preferred, fallbackPool) => {
+    const recent = state.psychHistory.slice(-1)[0];
+    if (preferred !== recent) return preferred;
+    // 直前と同じになる場合：fallbackPool から代替
+    if (fallbackPool && fallbackPool.length) {
+      const alts = fallbackPool.filter(q => q !== preferred);
+      if (alts.length) return pickFresh(alts);
+    }
+    return preferred;
   };
   if (id === 'rico_tutorial') {
-    // 本気リコ：場面に応じて上級心理戦を出題（厳密マッチ）
+    // 本気リコ：場面に応じて上級心理戦を出題（厳密マッチ＋連続防止）
     if (state.seriousRicoMode) {
+      const seriousPool = ['rico_serious_polarized', 'rico_serious_minmax', 'rico_serious_blocker'];
       const need = state.currentBetOpponent - state.currentBetPlayer;
       const potBefore = state.pot - need;
       const ratio = potBefore > 0 ? need / potBefore : 0;
-      // 1) リバー＆オーバーベット → 極化レンジ
-      if (state.handPhase === 'river' && ratio > 1.0) return 'rico_serious_polarized';
-      // 2) チェックレイズ実際に発生 → ミニマックス
-      if (state.checkRaiseDetected)                   return 'rico_serious_minmax';
-      // 3) プレイヤーが実際にブロッカーカードを持つ → ブロッカー
-      if (detectBlockerScenario(state))               return 'rico_serious_blocker';
-      // どれも該当しない時は極化（場面汎用）
-      return 'rico_serious_polarized';
+      if (state.handPhase === 'river' && ratio > 1.0) return pickSingle('rico_serious_polarized', seriousPool);
+      if (state.checkRaiseDetected)                   return pickSingle('rico_serious_minmax', seriousPool);
+      if (detectBlockerScenario(state))               return pickSingle('rico_serious_blocker', seriousPool);
+      return pickFresh(seriousPool);
     }
     return 'rico_tutorial_flop';
   }
@@ -2645,9 +2686,8 @@ function pickPsychQuestion() {
     const counts = {};
     suits.forEach(s => counts[s] = (counts[s] || 0) + 1);
     const maxSuit = Math.max(...Object.values(counts), 0);
-    // 実際にチェックレイズが発生した時のみ罠問題
-    if (state.checkRaiseDetected) return 'selina_check_raise';
-    // それ以外はボード状況で flush_alert ⇄ bet_size のローテ
+    const selinaPool = ['selina_flush_alert', 'selina_bet_size', 'selina_check_raise'];
+    if (state.checkRaiseDetected) return pickSingle('selina_check_raise', selinaPool);
     const fitCondition = maxSuit >= 2 ? 'selina_flush_alert' : 'selina_bet_size';
     const other = fitCondition === 'selina_flush_alert' ? 'selina_bet_size' : 'selina_flush_alert';
     return pickFresh([fitCondition, other]);
@@ -2655,34 +2695,27 @@ function pickPsychQuestion() {
   if (id === 'grano') {
     const potBefore = state.pot - state.currentBetOpponent;
     const ratio = potBefore > 0 ? state.currentBetOpponent / potBefore : 1;
-    // 極化問題はリバー＆オーバーベット時のみ
-    if (state.handPhase === 'river' && ratio > 1.0) return 'grano_river_polar';
-    // それ以外はベット額に応じてcheap/expensiveを選ぶ（極化問題は混ぜない）
+    const granoPool = ['grano_cheap_call', 'grano_expensive', 'grano_river_polar'];
+    if (state.handPhase === 'river' && ratio > 1.0) return pickSingle('grano_river_polar', granoPool);
     const fitCondition = ratio < 0.5 ? 'grano_cheap_call' : 'grano_expensive';
     const other = fitCondition === 'grano_cheap_call' ? 'grano_expensive' : 'grano_cheap_call';
     return pickFresh([fitCondition, other]);
   }
   if (id === 'velvet') {
-    // 場面と手の状況に合わせて問題を選ぶ（劇場感重視）
-    const danger = evaluateBoardDanger(state.community || []);
+    const velvetPool = ['velvet_flop', 'velvet_turn', 'velvet_river_evidence', 'velvet_eye_contact'];
     let myHs = 0;
     try {
       const all = [...state.playerHand, ...state.community];
       myHs = state.community.length >= 3 ? handStrength01(all) : opponentPreflopStrength(state.playerHand);
     } catch(e) {}
     const myHsPct = Math.round(myHs * 100);
-    // リバー → 証拠突きつけ系（決着の問い）
-    if (state.handPhase === 'river') return 'velvet_river_evidence';
-    // ターン → ボード読み（盤面危険時は確定、それ以外でも turn 専用問題が適切）
-    if (state.handPhase === 'turn') return 'velvet_turn';
-    // 微妙な手の強さ（35〜55%）で大ベット → 視線揺さぶり（フロップで主に発動）
+    if (state.handPhase === 'river') return pickSingle('velvet_river_evidence', velvetPool);
+    if (state.handPhase === 'turn')  return pickSingle('velvet_turn', velvetPool);
+    // フロップで手の強さが微妙 → 視線揺さぶり
     if (state.handPhase === 'flop' && myHsPct >= 35 && myHsPct <= 55) {
-      // 15%でフロップのボード読みに変更（メタ崩し）
-      return rand() < 0.15 ? 'velvet_flop' : 'velvet_eye_contact';
+      return pickSingle('velvet_eye_contact', velvetPool);
     }
-    // フロップ：ボード読み（危険ボードは特に）
-    if (state.handPhase === 'flop') return 'velvet_flop';
-    return 'velvet_eye_contact';
+    return pickSingle('velvet_flop', velvetPool);
   }
   return 'polka_flop_bluff';
 }
@@ -4407,6 +4440,10 @@ function triggerPsychBattle(qid) {
   // 出題履歴に追加
   if (!state.seenQuestions) state.seenQuestions = new Set();
   state.seenQuestions.add(qid);
+  // 直近履歴：最大10件まで
+  if (!state.psychHistory) state.psychHistory = [];
+  state.psychHistory.push(qid);
+  if (state.psychHistory.length > 10) state.psychHistory.shift();
   const q = PSYCH_QUESTIONS[qid];
   // v4 A1: 選択肢シャッフル
   const shuffled = shuffle(q.choices);
