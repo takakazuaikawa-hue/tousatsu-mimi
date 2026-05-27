@@ -2479,12 +2479,24 @@ function pickPsychQuestion() {
     return pickFresh([fitCondition, 'grano_river_polar']);
   }
   if (id === 'velvet') {
-    if (state.handPhase === 'flop') {
-      return pickFresh(['velvet_flop', 'velvet_eye_contact']);
-    }
-    if (state.handPhase === 'turn') return 'velvet_turn';
+    // 場面と手の状況に合わせて問題を選ぶ（劇場感重視）
+    const danger = evaluateBoardDanger(state.community || []);
+    let myHs = 0;
+    try {
+      const all = [...state.playerHand, ...state.community];
+      myHs = state.community.length >= 3 ? handStrength01(all) : opponentPreflopStrength(state.playerHand);
+    } catch(e) {}
+    const myHsPct = Math.round(myHs * 100);
+    // リバーで大きいベット → 証拠突きつけ系
     if (state.handPhase === 'river') return 'velvet_river_evidence';
-    return 'velvet_flop';
+    // ターンで盤面危険 → ボード読み
+    if (state.handPhase === 'turn' && (danger.flushAlert || danger.straightAlert)) return 'velvet_turn';
+    // 微妙な手の強さ（35〜55%）で大ベット → 視線揺さぶり
+    if (myHsPct >= 35 && myHsPct <= 55) return 'velvet_eye_contact';
+    // それ以外はフロップのボード読み
+    if (state.handPhase === 'flop') return 'velvet_flop';
+    if (state.handPhase === 'turn') return 'velvet_turn';
+    return 'velvet_eye_contact';
   }
   return 'polka_flop_bluff';
 }
@@ -3722,13 +3734,9 @@ function startBattleInternal(opponentId) {
 
   if (opp.isBoss) {
     state.mimiThought = '「ボス戦だ……気持ちで負けないようにしないと」';
-    state.ricoAdvice = '「ヴェルベットは口で揺さぶってくるタイプね。冷静を保てば隙は見えるよ」';
+    state.ricoAdvice = '「ヴェルベットは強いし口でも揺さぶってくる。劣勢になったら集中力高めに、ね」';
     render();
-    // 開幕心理バトルを即時発動（OFFなら省略）
-    if (save.psychEnabled !== false) {
-      setTimeout(() => triggerPsychBattle('velvet_opening'), 800);
-      return;
-    }
+    // 開幕心理バトルは廃止（劣勢になった時の本気の読み合いに集中）
   }
 
   if (state.tutorialMode) {
@@ -3794,6 +3802,7 @@ function startHand() {
   state.psychResolved = false;
   state.logicResolvedStreet = false;
   state.psychPending = false;
+  state.bossPsychFiredThisHand = false; // ボス戦の1ハンド1回制限リセット
   state.handPhase = 'preflop';
   state.isPlayerTurn = true;
   state.opponentSpeech = opponentReadyLine();
@@ -4026,16 +4035,31 @@ function opponentTurn() {
   const bigEnough = (action.size === 'pot_2_3' || action.size === 'pot_1' || action.size === 'allin');
   const isBluffBet = (action.intent === 'bluff' || action.intent === 'forced_bluff' || action.intent === 'tutorial_bluff');
   const isPostFlop = (state.handPhase === 'flop' || state.handPhase === 'turn' || state.handPhase === 'river');
-  const triggerFirstHand = (state.handNo === 1 && state.handPhase === 'flop' && bigEnough);
+  const triggerFirstHand = (state.handNo === 1 && state.handPhase === 'flop' && bigEnough && !state.isBoss);
   // フルハンド：どのストリートでもブラフ意図の大ベットで50%発動
   const triggerBluff = (isPostFlop && bigEnough && isBluffBet && rand() < 0.5);
-  // ヴェルベット（ボス戦）：各ストリートで確定発動
-  const triggerBoss = state.isBoss && isPostFlop && bigEnough;
+  // ヴェルベット（ボス戦）：条件付き発動
+  //   ・1ハンドにつき最大1回（state.bossPsychFiredThisHand）
+  //   ・プレイヤーが劣勢（残チップ < 初期の70%）または大ベット時
+  //   ・ストリート2以降に偏る（フロップ即発動は控えめ）
+  let triggerBoss = false;
+  if (state.isBoss && isPostFlop && bigEnough && !state.bossPsychFiredThisHand) {
+    const initChips = (OPPONENTS[state.opponentId]?.chips) || 1500;
+    const chipsRatio = state.playerChips / initChips;
+    const isLosing = chipsRatio < 0.70;
+    const isCriticalBet = action.size === 'pot_1' || action.size === 'allin';
+    // 劣勢 OR 致命ベット時に高確率、それ以外は控えめ
+    const baseChance = isLosing ? 0.85 : (isCriticalBet ? 0.6 : 0.25);
+    // フロップは半分の確率（ターン/リバーで本気の読み合い）
+    const streetMod = state.handPhase === 'flop' ? 0.5 : 1.0;
+    triggerBoss = rand() < baseChance * streetMod;
+  }
   // 心理バトル有効判定（チュートリアル中は常時ON、その他は設定に従う）
   const psychAllowed = state.tutorialMode || (save.psychEnabled !== false);
   if (psychAllowed && !state.psychResolved && (triggerFirstHand || triggerBluff || triggerBoss)) {
     render();
     const qid = pickPsychQuestion();
+    if (triggerBoss) state.bossPsychFiredThisHand = true;
     setTimeout(() => triggerPsychBattle(qid), 900);
     return;
   }
