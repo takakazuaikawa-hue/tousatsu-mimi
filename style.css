@@ -2562,6 +2562,33 @@ html, body {
 }
 .coin-display { color: var(--c-gold-bright); font-size: 18px; font-weight: 600; }
 
+/* 現在のストリート表示 */
+.street-tracker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(245,215,122,0.3);
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+.st-step {
+  padding: 1px 6px;
+  border-radius: 999px;
+  transition: color 0.3s, background 0.3s;
+}
+.st-done    { color: rgba(200,180,200,0.5); }
+.st-current {
+  color: #1a0e2a;
+  background: linear-gradient(180deg, #fbe28a 0%, #d9a93a 100%);
+  font-weight: 700;
+  box-shadow: 0 0 8px rgba(245,215,122,0.5);
+}
+.st-future  { color: rgba(180,160,180,0.35); }
+.st-sep     { color: rgba(180,160,180,0.4); font-size: 10px; }
+
 .stage-list {
   position: relative;
   z-index: 1;

@@ -2070,6 +2070,7 @@ function applyBindings() {
         el.innerHTML = renderBetUnified();
         break;
       }
+      case 'streetTracker': el.innerHTML = renderStreetTracker(); break;
       case 'panyuPips': el.innerHTML = renderPanyuPips(); break;
       case 'panyuMood': el.textContent = panyuMood(state.panyu, state.panyuMax); break;
       case 'opponentChipBar': el.style.width = `${chipBarPct(state.opponentChips)}%`; break;
@@ -3492,6 +3493,21 @@ function renderBetUnified() {
       <div class="bu-remain">${buildVerticalChipColumns(state.playerChips)}</div>
     </div>
   `;
+}
+
+// 現在のストリート進行表示
+function renderStreetTracker() {
+  const order = ['preflop', 'flop', 'turn', 'river', 'showdown'];
+  const labels = { preflop: 'プリフロップ', flop: 'フロップ', turn: 'ターン', river: 'リバー', showdown: 'ショー' };
+  // turnRiver（ライトハンド）はターン扱いで表示
+  let cur = state.handPhase || 'preflop';
+  if (cur === 'turnRiver') cur = 'river'; // 統合表示はリバー相当
+  if (cur === 'idle') cur = 'preflop';
+  const curIdx = order.indexOf(cur);
+  return order.map((s, i) => {
+    const cls = i < curIdx ? 'st-done' : i === curIdx ? 'st-current' : 'st-future';
+    return `<span class="st-step ${cls}">${labels[s]}</span>${i < order.length - 1 ? '<span class="st-sep">▸</span>' : ''}`;
+  }).join('');
 }
 
 function renderOpponentBet() {
