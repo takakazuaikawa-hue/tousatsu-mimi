@@ -4923,36 +4923,121 @@ const GLOSSARY = [
   { cat: 'シチュエーション', term: 'ドライ／ウェット（ボード）', body: 'ドライ＝ドロー少ない場（小ベット効果的）、ウェット＝フラッシュ・ストレート気配（大ベットでドロー潰し）。' },
 ];
 
+// 用語ID（DOM安全な短いキー）：term の最初の数文字＋index
+function glossaryId(term, idx) {
+  return 'gl-entry-' + idx;
+}
+
+// 用語マッチ用エイリアス：「ボタン（BTN）」→ ['ボタン（BTN）', 'ボタン', 'BTN']
+function glossaryAliases(term) {
+  const out = [term];
+  // 括弧内（）の中身を別エイリアスとして抽出
+  const m = term.match(/^([^（(]+)[（(]([^）)]+)[）)]/);
+  if (m) {
+    out.push(m[1].trim());
+    // 括弧内をスラッシュで分割
+    m[2].split(/[／/]/).forEach(s => { if (s.trim()) out.push(s.trim()); });
+  }
+  // 「3ベット」「リレイズ／3ベット」のスラッシュ分割
+  if (term.includes('／')) {
+    term.split('／').forEach(s => { if (s.trim()) out.push(s.trim()); });
+  }
+  return [...new Set(out)];
+}
+
+// 説明文中の他用語を自動リンク化
+function linkifyGlossary(body, selfTerm) {
+  // すべてのエイリアスを長い順にソート（部分一致防止）
+  const allAliases = [];
+  GLOSSARY.forEach((g, idx) => {
+    if (g.term === selfTerm) return; // 自分自身はリンクしない
+    glossaryAliases(g.term).forEach(a => allAliases.push({ alias: a, idx }));
+  });
+  allAliases.sort((a, b) => b.alias.length - a.alias.length);
+  // タグの中身を壊さないよう、エイリアスを順次置換
+  let result = body;
+  for (const { alias, idx } of allAliases) {
+    // 既にリンク化された箇所は再リンクしない（簡易：data-target属性を含むタグ内は触らない）
+    const re = new RegExp('(?<!<[^>]*?)(?:' + alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![^<]*?>)', '');
+    if (re.test(result)) {
+      result = result.replace(re, `<a class="gl-link" data-glossary-target="${glossaryId('', idx)}">${alias}</a>`);
+    }
+  }
+  return result;
+}
+
+// 50音順ソート用：localeCompare ja
+function sortBy50on(arr) {
+  return [...arr].sort((a, b) => a.term.localeCompare(b.term, 'ja'));
+}
+
 function showGlossaryModal() {
   const overlay = document.createElement('div');
   overlay.className = 'glossary-overlay';
+  // ソートモード： 'cat'（カテゴリ順）or 'aiueo'（50音順）
+  let sortMode = 'cat';
+
   const categories = [...new Set(GLOSSARY.map(g => g.cat))];
-  const catSections = categories.map(cat => {
-    const items = GLOSSARY.filter(g => g.cat === cat);
-    return `
-      <section class="gl-section" data-cat="${cat}">
-        <h3 class="gl-section-title">${cat} <span class="gl-section-count">${items.length}項</span></h3>
+  // 各エントリのインデックス（リンクターゲット用）
+  const indexed = GLOSSARY.map((g, idx) => ({ ...g, _idx: idx }));
+
+  const renderBody = (mode) => {
+    if (mode === 'cat') {
+      return categories.map(cat => {
+        const items = indexed.filter(g => g.cat === cat);
+        return `
+          <section class="gl-section" data-cat="${cat}">
+            <h3 class="gl-section-title">${cat} <span class="gl-section-count">${items.length}項</span></h3>
+            ${items.map(g => `
+              <div class="gl-entry" id="${glossaryId('', g._idx)}">
+                <div class="gl-term">${g.term}</div>
+                <div class="gl-body">${linkifyGlossary(g.body, g.term)}</div>
+              </div>
+            `).join('')}
+          </section>
+        `;
+      }).join('');
+    }
+    // 50音順
+    const sorted = sortBy50on(indexed);
+    // 頭文字でグルーピング
+    const groups = {};
+    sorted.forEach(g => {
+      const firstChar = g.term.charAt(0).toUpperCase();
+      if (!groups[firstChar]) groups[firstChar] = [];
+      groups[firstChar].push(g);
+    });
+    return Object.entries(groups).map(([head, items]) => `
+      <section class="gl-section" data-head="${head}">
+        <h3 class="gl-section-title">${head} <span class="gl-section-count">${items.length}項</span></h3>
         ${items.map(g => `
-          <div class="gl-entry">
-            <div class="gl-term">${g.term}</div>
-            <div class="gl-body">${g.body}</div>
+          <div class="gl-entry" id="${glossaryId('', g._idx)}">
+            <div class="gl-term">${g.term} <span class="gl-cat-tag">${g.cat}</span></div>
+            <div class="gl-body">${linkifyGlossary(g.body, g.term)}</div>
           </div>
         `).join('')}
       </section>
-    `;
-  }).join('');
+    `).join('');
+  };
+
   overlay.innerHTML = `
     <div class="glossary-modal">
       <button class="glossary-close" data-action="glossary-close" title="閉じる">×</button>
       <div class="glossary-header">
-        <div class="glossary-title">📖 ポーカー辞典</div>
+        <div class="glossary-top-row">
+          <div class="glossary-title">📖 ポーカー辞典</div>
+          <div class="glossary-sort-toggle">
+            <button class="gl-sort-btn active" data-mode="cat">カテゴリ順</button>
+            <button class="gl-sort-btn" data-mode="aiueo">50音順</button>
+          </div>
+        </div>
         <input type="text" class="glossary-search" placeholder="🔍 用語を検索…" id="glossary-search-input">
-        <div class="glossary-cats">
+        <div class="glossary-cats" id="glossary-cats-row">
           ${categories.map(c => `<button class="gl-cat-pill" data-cat="${c}">${c}</button>`).join('')}
         </div>
       </div>
-      <div class="glossary-body">
-        ${catSections}
+      <div class="glossary-body" id="glossary-body">
+        ${renderBody(sortMode)}
       </div>
     </div>
   `;
@@ -4961,6 +5046,44 @@ function showGlossaryModal() {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
+
+  const bodyEl = overlay.querySelector('#glossary-body');
+  const catsRow = overlay.querySelector('#glossary-cats-row');
+  const sortBtns = overlay.querySelectorAll('.gl-sort-btn');
+
+  // ソートモード切替
+  const applySortMode = (mode) => {
+    sortMode = mode;
+    bodyEl.innerHTML = renderBody(mode);
+    catsRow.style.display = mode === 'cat' ? '' : 'none';
+    rebindBodyLinks();
+    applyFilter(overlay.querySelector('#glossary-search-input').value);
+  };
+  sortBtns.forEach(b => {
+    b.addEventListener('click', () => {
+      sortBtns.forEach(x => x.classList.toggle('active', x === b));
+      applySortMode(b.dataset.mode);
+    });
+  });
+
+  // 内部リンク：他用語をクリックでジャンプ＋ハイライト
+  const rebindBodyLinks = () => {
+    overlay.querySelectorAll('.gl-link').forEach(a => {
+      a.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = a.dataset.glossaryTarget;
+        const target = overlay.querySelector('#' + id);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.remove('gl-flash');
+          void target.offsetWidth; // re-trigger
+          target.classList.add('gl-flash');
+        }
+      });
+    });
+  };
+  rebindBodyLinks();
+
   // 検索フィルタ
   const search = overlay.querySelector('#glossary-search-input');
   const applyFilter = (q) => {

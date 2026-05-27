@@ -2202,6 +2202,73 @@ html, body {
   color: #f4e8c8;
   line-height: 1.55;
 }
+/* ソート切替トグル */
+.glossary-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.glossary-sort-toggle {
+  display: flex;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(245,215,122,0.4);
+  border-radius: 999px;
+  padding: 2px;
+}
+.gl-sort-btn {
+  background: transparent;
+  border: none;
+  padding: 4px 14px;
+  font-size: 12px;
+  color: rgba(245,215,122,0.6);
+  cursor: pointer;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  transition: background 0.2s, color 0.2s;
+}
+.gl-sort-btn.active {
+  background: linear-gradient(180deg, #fbe28a 0%, #d9a93a 100%);
+  color: #1a0e2a;
+}
+
+/* カテゴリタグ（50音モード時のみ表示） */
+.gl-cat-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 400;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(60,28,90,0.7);
+  color: rgba(245,215,122,0.8);
+  margin-left: 6px;
+  letter-spacing: 0.08em;
+}
+
+/* 内部リンク */
+.gl-link {
+  color: #ffd97a;
+  text-decoration: underline dotted rgba(245,215,122,0.5);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.gl-link:hover {
+  color: #fff;
+  background: rgba(245,215,122,0.15);
+  border-radius: 3px;
+}
+
+/* ジャンプ先ハイライト */
+.gl-entry.gl-flash {
+  animation: glFlash 1.4s ease-out;
+}
+@keyframes glFlash {
+  0%   { background: rgba(245,215,122,0.4); box-shadow: 0 0 0 2px rgba(245,215,122,0.8); }
+  100% { background: rgba(20,8,30,0.55);    box-shadow: 0 0 0 0 transparent; }
+}
 
 /* ========== ヴェルベット降伏セリフ（リザルト） ========== */
 .velvet-concession {
