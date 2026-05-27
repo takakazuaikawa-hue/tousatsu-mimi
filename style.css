@@ -6755,12 +6755,14 @@ html, body {
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%);
+  /* 中心を守って 1.15 倍に拡大（縦横比は維持） */
+  transform: translate(-50%, -50%) scale(1.15);
+  transform-origin: center center;
   max-height: 85vh;
   max-width: 80vw;
   height: auto;
   width: auto;
-  z-index: 1; /* 背景の上、blob の下 */
+  z-index: 1;
   pointer-events: none;
   opacity: 0.92;
   filter: drop-shadow(0 8px 24px rgba(0,0,0,0.6));
