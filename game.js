@@ -3254,26 +3254,19 @@ function updateBackdoorPanel() {
   }
 }
 
-// === チップ円盤の横並び表記（ポット/コール/ボタン共通） ===
-// 実カジノ準拠カラー：橙=$1000, 紫=$500, 黒=$100, 緑=$25 が標準
-// 大額（残チップ）用：茶=5000, 橙=1000, 赤=200(近似), 白=50(近似)
+// === チップ円盤の横並び表記（ポット/コール/ボタン/残チップ共通） ===
+// 実カジノ準拠カラー：橙=$1000, 紫=$500, 黒=$100, 緑=$25 で統一
+// 大額（残10000など）はキャップ12枚＋超過表記でカバー
 function buildHorizontalChips(amount, scale = 'small', numClass = 'bu-remain-num', extraChipClass = '') {
   if (!amount || amount <= 0) {
     return `<span class="bu-remain-chips"><span class="${numClass}">0</span></span>`;
   }
-  const tiers = scale === 'large'
-    ? [
-        { cls: 'chip-brown',  val: 5000 },
-        { cls: 'chip-orange', val: 1000 },
-        { cls: 'chip-red',    val: 200 },
-        { cls: 'chip-white',  val: 50 },
-      ]
-    : [
-        { cls: 'chip-orange', val: 1000 },
-        { cls: 'chip-purple', val: 500 },
-        { cls: 'chip-black',  val: 100 },
-        { cls: 'chip-green',  val: 25 },
-      ];
+  const tiers = [
+    { cls: 'chip-orange', val: 1000 },
+    { cls: 'chip-purple', val: 500 },
+    { cls: 'chip-black',  val: 100 },
+    { cls: 'chip-green',  val: 25 },
+  ];
   let rem = amount;
   const flat = [];
   for (const t of tiers) {
@@ -3281,7 +3274,8 @@ function buildHorizontalChips(amount, scale = 'small', numClass = 'bu-remain-num
     for (let i = 0; i < c; i++) flat.push(t.cls);
     rem -= c * t.val;
   }
-  const cap = 8;
+  // 残チップ用は枚数が増えがちなのでキャップを 12 に拡張
+  const cap = scale === 'large' ? 12 : 8;
   const visible = flat.slice(0, cap);
   const over = flat.length - visible.length;
   return `<span class="bu-remain-chips">${
