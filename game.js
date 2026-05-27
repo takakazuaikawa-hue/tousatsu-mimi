@@ -3239,39 +3239,62 @@ function updateBackdoorPanel() {
   }
 }
 
-// === 統合ベットゲージ：相手の賭け／ポット蓄積／自分の賭けを1本のバーで可視化 ===
+// === 統合ベットゲージ：チップスタックで賭け額と力関係を可視化 ===
 function renderBetUnified() {
   const opp = state.currentBetOpponent || 0;
   const pl  = state.currentBetPlayer || 0;
   const pot = state.pot || 0;
-  // 今ストリート以前のポット（過去の蓄積＝アンテ＋前ストリートの累積）
-  const carry = Math.max(0, pot - opp - pl);
-  const total = Math.max(1, opp + pl + carry);
-  const oppPct   = (opp   / total) * 100;
-  const carryPct = (carry / total) * 100;
-  const plPct    = (pl    / total) * 100;
   const oppName = state.opponentName || '相手';
   const playerCallNeed = Math.max(0, opp - pl);
+
+  // 「賭け済みチップ」を縦積みで表現
+  // 1チップ = 25 単位。最大表示15枚、超過は数字に
+  const buildVerticalStack = (amount, side) => {
+    if (!amount || amount <= 0) return '<div class="bu-stack-empty">—</div>';
+    const tiers = [
+      { cls: 'chip-gold',  val: 1000 },
+      { cls: 'chip-blue',  val: 500 },
+      { cls: 'chip-red',   val: 100 },
+      { cls: 'chip-white', val: 25 },
+    ];
+    let rem = amount;
+    const items = []; // {cls, count}
+    for (const t of tiers) {
+      const c = Math.floor(rem / t.val);
+      if (c > 0) items.push({ cls: t.cls, count: c });
+      rem -= c * t.val;
+    }
+    // 重ねて表示する用に flat 配列化（最大15枚まで）
+    const flat = [];
+    items.forEach(it => { for (let i = 0; i < it.count; i++) flat.push(it.cls); });
+    const cap = 15;
+    const visible = flat.slice(0, cap);
+    const over = flat.length - visible.length;
+    // 大きい順（gold→white）に底から積む見た目に
+    return `
+      <div class="bu-vstack" data-side="${side}">
+        ${visible.map((cls, i) => `<span class="bu-chip ${cls}" style="--i:${i}"></span>`).join('')}
+        ${over > 0 ? `<span class="bu-overflow">+${over}枚</span>` : ''}
+      </div>
+    `;
+  };
+
   return `
-    <div class="bu-header">
-      <div class="bu-side bu-side-opp">
-        <span class="bu-side-label">${oppName}</span>
-        <span class="bu-side-amt">${opp > 0 ? '+' + opp : '—'}</span>
-      </div>
-      <div class="bu-pot">
-        <span class="bu-pot-label">ポット</span>
-        <span class="bu-pot-amt">${pot}</span>
-        ${playerCallNeed > 0 ? `<span class="bu-callneed">（コール ${playerCallNeed}）</span>` : ''}
-      </div>
-      <div class="bu-side bu-side-pl">
-        <span class="bu-side-amt">${pl > 0 ? '+' + pl : '—'}</span>
-        <span class="bu-side-label">ミミ</span>
-      </div>
+    <div class="bu-cell bu-cell-opp">
+      <div class="bu-cell-label">${oppName}</div>
+      ${buildVerticalStack(opp, 'opp')}
+      <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}</div>
     </div>
-    <div class="bu-bar">
-      <div class="bu-seg bu-seg-opp"   style="width:${oppPct}%"   title="${oppName}のベット ${opp}"></div>
-      <div class="bu-seg bu-seg-carry" style="width:${carryPct}%" title="蓄積ポット ${carry}"></div>
-      <div class="bu-seg bu-seg-pl"    style="width:${plPct}%"    title="ミミのベット ${pl}"></div>
+    <div class="bu-cell bu-cell-pot">
+      <div class="bu-cell-label bu-pot-title">ポット</div>
+      ${buildVerticalStack(pot, 'pot')}
+      <div class="bu-pot-amt">${pot}</div>
+      ${playerCallNeed > 0 ? `<div class="bu-callneed">▼ コール ${playerCallNeed}</div>` : ''}
+    </div>
+    <div class="bu-cell bu-cell-pl">
+      <div class="bu-cell-label">ミミ</div>
+      ${buildVerticalStack(pl, 'pl')}
+      <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}</div>
     </div>
   `;
 }
