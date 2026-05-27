@@ -4497,13 +4497,15 @@ html, body {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* 性格読み切りバナー */
+/* 性格読み切りバナー（クリックで閉じる） */
 .personality-reveal-banner {
   position: absolute;
   inset: 0;
   z-index: 90;
   display: flex; align-items: center; justify-content: center;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
+  background: rgba(0,0,0,0.5);
   animation: prbIn 0.5s ease-out;
 }
 .personality-reveal-banner.out {
@@ -4547,6 +4549,20 @@ html, body {
   font-size: 11px;
   color: rgba(220,200,180,0.7);
   font-style: italic;
+  margin-bottom: 12px;
+}
+.prb-close-btn {
+  margin: 0 auto;
+  min-width: 200px;
+  font-size: 15px;
+  pointer-events: auto;
+}
+/* バナー本体もクリックを通すように（pointer-events: none を解除） */
+.personality-reveal-banner {
+  background: rgba(0,0,0,0.4); /* 背景を少し暗くしてモーダル感 */
+}
+.personality-reveal-banner .prb-inner {
+  cursor: default;
 }
 .panyu-gauge-circle {
   position: relative;

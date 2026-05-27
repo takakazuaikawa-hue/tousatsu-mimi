@@ -6358,7 +6358,7 @@ function showPsychStreakBanner(streak) {
   setTimeout(() => banner.remove(), 2200);
 }
 
-// ミミミMAX：性格読み切りバナー
+// ミミミMAX：性格読み切りバナー（クリックで閉じる）
 function showPersonalityRevealBanner() {
   const banner = document.createElement('div');
   banner.className = 'personality-reveal-banner';
@@ -6372,11 +6372,21 @@ function showPersonalityRevealBanner() {
       </ul>
       <div class="prb-exploit">⚔ 攻略：${p.exploit}</div>
       <div class="prb-note">この対戦の心理バトルは封印されます</div>
+      <button class="btn btn-primary prb-close-btn">OK（読み切った）</button>
     </div>
   `;
   (document.getElementById('stage') || document.body).appendChild(banner);
-  setTimeout(() => banner.classList.add('out'), 4000);
-  setTimeout(() => banner.remove(), 4800);
+  // クリックで閉じる：背景タップ・OKボタン両方
+  const dismiss = () => {
+    banner.classList.add('out');
+    setTimeout(() => banner.remove(), 500);
+  };
+  banner.querySelector('.prb-close-btn').addEventListener('click', dismiss);
+  banner.addEventListener('click', (e) => {
+    if (e.target === banner) dismiss(); // 背景クリック
+  });
+  // pointer-events を有効化（クリック受付）
+  banner.style.pointerEvents = 'auto';
 }
 
 function triggerBluffBreak() {
