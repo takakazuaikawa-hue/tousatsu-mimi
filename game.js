@@ -6218,30 +6218,26 @@ function showPanyuClicker(totalTaps, onComplete) {
     if (tapped === 10) showCombo(10);
     else if (tapped === 20) showCombo(20);
     else if (tapped === 25) showCombo(25);
-    // タップした側だけ wobble（押された方向にぷにっとつぶれる）
+    // タップした側だけ wobble（毎回ランダムな方向に弾む）
     const blob = which;
-    // 振れ幅は控えめ＝柔らかい印象
-    const ampX = fastTap ? 6 : 4;
-    const ampY = fastTap ? 5 : 3;
+    const ampX = fastTap ? 14 : 9;
+    const ampY = fastTap ? 9  : 6;
     const wx = (Math.random() * 2 - 1) * ampX;
     const wy = (Math.random() * 2 - 1) * ampY;
-    const rot = (Math.random() * 2 - 1) * (fastTap ? 2 : 1.2);
-    // 押された方向に潰れる（垂直なら縦圧縮、水平なら横圧縮）
+    const rot = (Math.random() * 2 - 1) * (fastTap ? 6 : 3);
     const isVertical = Math.abs(wy) > Math.abs(wx);
-    // ぷに感は scale で：押し方向に1.10倍ふくらみ、直交方向に0.92倍へ凹む
-    const sBig = fastTap ? 1.18 : 1.12;
-    const sSmall = fastTap ? 0.86 : 0.90;
+    const sxBase = fastTap ? 1.25 : 1.15;
+    const syBase = fastTap ? 0.78 : 0.88;
     blob.style.setProperty('--wx', `${wx.toFixed(1)}px`);
     blob.style.setProperty('--wy', `${wy.toFixed(1)}px`);
     blob.style.setProperty('--rot', `${rot.toFixed(1)}deg`);
-    // 押し方向は膨らみ、直交方向は凹む（ジェルみたいに）
-    blob.style.setProperty('--sx', isVertical ? sSmall : sBig);
-    blob.style.setProperty('--sy', isVertical ? sBig : sSmall);
+    blob.style.setProperty('--sx', isVertical ? syBase : sxBase);
+    blob.style.setProperty('--sy', isVertical ? sxBase : syBase);
     blob.classList.remove('wobble', 'wobble-fast');
     void blob.offsetWidth;
     const wobbleCls = fastTap ? 'wobble-fast' : 'wobble';
     blob.classList.add(wobbleCls);
-    setTimeout(() => blob.classList.remove(wobbleCls), fastTap ? 200 : 280);
+    setTimeout(() => blob.classList.remove(wobbleCls), fastTap ? 220 : 320);
     if (count <= 0) {
       completed = true;
       blobs.forEach(b => b.classList.add('panyu-complete'));
