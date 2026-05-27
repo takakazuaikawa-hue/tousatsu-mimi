@@ -851,25 +851,30 @@ const PSYCH_QUESTIONS = {
       const need = state.currentBetOpponent - state.currentBetPlayer;
       const potAfterCall = state.pot + need;
       const reqWin = potAfterCall > 0 ? Math.round((need / potAfterCall) * 100) : 0;
+      // 動的に正解レンジを設定
+      if (reqWin <= 25) state.__potOddsBracket = 'lo25';
+      else if (reqWin <= 40) state.__potOddsBracket = 'mid';
+      else state.__potOddsBracket = 'hi';
       return `📊 状況整理\n` +
         `・ポット：${state.pot}チップ\n` +
         `・ミミがコールに必要：${need}チップ\n` +
         `・コール後のポット総額：${potAfterCall}チップ\n\n` +
         `🧮 計算\n` +
         `${need} ÷ ${potAfterCall} × 100 ≒ <b>${reqWin}%</b>\n\n` +
-        `この勝率以上なら長期的にプラス＝コール推奨`;
+        `この勝率以上ならコールが期待値プラス（HU/トーナメント問わず同式）`;
     },
     speech: '【論理問題】このコールに必要な勝率はどのくらい？',
     zazazoHint: '上の計算結果から正しい範囲を選んで',
     choices: [
-      { id: 'lo20', text: '20〜30%程度（軽いドローでも見れる）', correct: true },
-      { id: 'lo50', text: '50%以上（半々超じゃないと損）',         correct: false },
-      { id: 'lo80', text: '80%以上（ほぼ勝確じゃないとダメ）',     correct: false },
+      { id: 'lo25', text: '〜25%（安いコール、軽いドローでも検討OK）', correctIf: 'lo25' },
+      { id: 'mid',  text: '26〜40%（標準ベット、強めの手やドロー必要）', correctIf: 'mid' },
+      { id: 'hi',   text: '41%以上（高勝率の手じゃないと損）',          correctIf: 'hi' },
     ],
+    dynamicCorrect: true,
     onSuccess: {
       panyu: 15, zazazo: 0,
-      hint: '必要勝率20-30%＝フラッシュドロー(35%)でもコール価値あり',
-      rico: 'いいねー！<u>払う額が小さい時は必要勝率も低い</u>。ドローでもコール検討OK',
+      hint: 'ポットオッズ＝払う額/コール後ポット総額。これが必要勝率',
+      rico: 'いいねー！<u>払う額が大きいほど必要勝率も上がる</u>。手の強さと照らし合わせるの',
     },
     onFail: {
       panyu: -5,
@@ -909,15 +914,16 @@ const PSYCH_QUESTIONS = {
   logic_hand_compare: {
     id: 'logic_hand_compare',
     type: 'logic',
-    rule: '完成役 vs 未完成ドロー：完成役の方が基本的に勝率が高い',
+    rule: '完成役 vs 未完成ドロー：フロップ時点で見ると完成役の方が勝率が高い',
     situationFn: (state) => `📊 状況整理\n` +
-      `・場札：${renderCardsText(state.community)}\n` +
-      `・ミミ：Aペア（既に完成、約65-70%の勝率）\n` +
-      `・想定される相手：フラッシュドロー（リバーまで完成率約35%）\n\n` +
+      `・場札：${renderCardsText(state.community)}（フロップ）\n` +
+      `・ミミ：トップペア成立（例：Aを含む1ペア、約65%の勝率）\n` +
+      `・想定される相手：フラッシュドロー9アウツ（ターン+リバーで完成率約35%＝rule of 4）\n\n` +
       `🧮 ポイント\n` +
-      `「完成してる役」は確定の強さ。\n` +
-      `「これから完成するかも」は確率次第＝逆に倒される可能性も。`,
-    speech: '【論理問題】リバーまで進んだ時、勝率が高いのはどっち？',
+      `「完成してる役」は確定の強さ＝65%。\n` +
+      `「9アウツドロー」は2枚引いて完成35%＝負ける可能性も。\n` +
+      `（ヘッズアップ・MTT問わずトッププロも同じ計算）`,
+    speech: '【論理問題】フロップ時点で勝率が高いのはどっち？',
     zazazoHint: '完成済み vs ドロー、確率はどっちが上？',
     choices: [
       { id: 'mimi_win',   text: 'ミミのAペア（完成役は確定の強さ）',         correct: true },
@@ -945,7 +951,9 @@ const PSYCH_QUESTIONS = {
       `・後手：相手の動き＋ベット額を見てから判断（情報あり）\n\n` +
       `🧮 ポイント\n` +
       `情報の差はそのまま勝率の差になる。\n` +
-      `だからプロは「ポジションは勝率5-10%相当」と言う。`,
+      `プロは「ポジションは勝率5-10%相当」と言う。\n` +
+      `※ヘッズアップ（1対1）：プリフロップはSB先手、フロップ以降はSBが後手＝有利。\n` +
+      `※トーナメント（多人数）：BTN（ボタン）が常に最後にアクション＝最強ポジション。`,
     speech: '【論理問題】後手（後にアクション）が有利な理由は？',
     zazazoHint: '情報量の差がどう活きる？',
     choices: [
@@ -1001,19 +1009,27 @@ const PSYCH_QUESTIONS = {
   logic_bluff_catcher: {
     id: 'logic_bluff_catcher',
     type: 'logic',
-    rule: 'ブラフキャッチ：相手のレンジに対し2/3ポットなら必要勝率28.5%',
-    situationFn: () => `📊 状況整理\n` +
-      `・相手はリバーで2/3ポットベット\n` +
-      `・ミミは中位ペア（ブラフキャッチャー：勝てる相手＝ブラフ、負ける相手＝バリュー）\n` +
-      `・必要勝率：2/3ポットコールなら ＝ 28.5%\n\n` +
-      `🧮 ポイント\n` +
-      `相手のレンジに「ブラフが28%以上含まれる」と読めるなら、コールが期待値プラス。`,
-    speech: '【論理問題】中位ペアでリバー2/3ポットコールの判断基準は？',
-    zazazoHint: '相手レンジのブラフ比率を考えて',
+    rule: 'ブラフキャッチ：相手レンジのブラフ比率 vs 必要勝率（ポット/(2×ベット+ポット)）',
+    situationFn: (state) => {
+      const need = Math.max(1, state.currentBetOpponent - state.currentBetPlayer);
+      const potBefore = Math.max(1, state.pot - need);
+      const potAfterCall = state.pot + need;
+      const reqWin = Math.round((need / potAfterCall) * 100);
+      const betPct = Math.round((need / potBefore) * 100);
+      return `📊 状況整理\n` +
+        `・場面：リバー、相手が ${need}チップ（≒ポットの${betPct}%）ベット\n` +
+        `・ミミは中位ペア（ブラフキャッチャー：相手ブラフに勝つ、バリューに負ける）\n` +
+        `・必要勝率（ポットオッズ）＝ <b>${reqWin}%</b>\n\n` +
+        `🧮 ポイント\n` +
+        `相手レンジに含まれる「ブラフの割合」が <b>${reqWin}%以上</b> なら、コールが期待値プラス。\n` +
+        `（ヘッズアップ・MTT問わずブラフキャッチ理論の基本）`;
+    },
+    speech: '【論理問題】中位ペアでリバー大ベットを受けた時の判断基準は？',
+    zazazoHint: 'ポットオッズと相手のブラフ比率を比較',
     choices: [
-      { id: 'bluff_ratio', text: '相手レンジのブラフ比率が28%超ならコール',  correct: true },
-      { id: 'always_fold', text: '中位ペアなら常に降りるのが正解',           correct: false },
-      { id: 'always_call', text: '中位ペアなら常にコールするのが正解',        correct: false },
+      { id: 'bluff_ratio', text: '相手のブラフ比率が必要勝率を超えるならコール', correct: true },
+      { id: 'always_fold', text: '中位ペアなら常に降りるのが正解',                correct: false },
+      { id: 'always_call', text: '中位ペアなら常にコールするのが正解',             correct: false },
     ],
     onSuccess: {
       panyu: 20, zazazo: 0,
@@ -1065,7 +1081,9 @@ const PSYCH_QUESTIONS = {
       `・ドライボード＝連番なし・スートばらばら・ハイカード1枚\n\n` +
       `🧮 ポイント\n` +
       `相手のレンジ（コールしてきた手札）は、このボードでフィットしないことが多い。\n` +
-      `→ 小さめのCベット（1/3〜1/2）でも降ろせる可能性が高い。`,
+      `→ 小さめのCベット（1/3〜1/2）でも降ろせる可能性が高い。\n` +
+      `※ヘッズアップ：レンジが広いのでドライボードは小ベット効果大。\n` +
+      `※多人数戦：1人でもヒットする確率が上がるのでもう少し慎重に。`,
     speech: '【論理問題】K-7-2のドライボードでミミの最適行動は？',
     zazazoHint: '相手がヒットしてないボード',
     choices: [
@@ -4489,11 +4507,19 @@ function resolvePsych(qid, choice, btn) {
       senseBtnLock.textContent = 'ぱにゅぱにゅ（使用不可）';
     }
   }
-  btn.style.borderColor = choice.correct ? 'var(--c-gold-bright)' : 'var(--c-red-bright)';
-
   const q = PSYCH_QUESTIONS[qid];
+  // 動的正解判定：dynamicCorrect 指定時は state.__potOddsBracket 等を見る
+  let isCorrect = !!choice.correct;
+  if (q.dynamicCorrect && choice.correctIf) {
+    if (qid === 'logic_pot_odds_basic') {
+      isCorrect = (choice.correctIf === state.__potOddsBracket);
+    } else if (qid === 'logic_bluff_catcher') {
+      isCorrect = (choice.correctIf === state.__bluffCatchBracket);
+    }
+  }
+  btn.style.borderColor = isCorrect ? 'var(--c-gold-bright)' : 'var(--c-red-bright)';
 
-  if (choice.correct) {
+  if (isCorrect) {
     const eff = q.onSuccess;
     // 連続正解ボーナス：2回目+50%、3回目以降+100%
     state.psychStreak = (state.psychStreak || 0) + 1;
@@ -4515,8 +4541,14 @@ function resolvePsych(qid, choice, btn) {
     state.psychStreak = 0; // 連鎖切れ
     const eff = q.onFail;
     state.panyu = Math.max(0, state.panyu + eff.panyu);
-    // 正解の選択肢を強調表示（学習用）
-    const correctChoice = q.choices.find(c => c.correct);
+    // 正解の選択肢を強調表示（学習用、dynamicCorrect も考慮）
+    const correctChoice = q.choices.find(c => {
+      if (q.dynamicCorrect && c.correctIf) {
+        if (qid === 'logic_pot_odds_basic') return c.correctIf === state.__potOddsBracket;
+        if (qid === 'logic_bluff_catcher')  return c.correctIf === state.__bluffCatchBracket;
+      }
+      return !!c.correct;
+    });
     if (correctChoice && state.psychRoot && state.psychRoot.isConnected) {
       state.psychRoot.querySelectorAll('.choice-btn').forEach(b => {
         if (b.dataset.choiceId === correctChoice.id) {
@@ -4542,24 +4574,24 @@ function resolvePsych(qid, choice, btn) {
     }
     // 講義モード：正解数カウント＋次の問題へ
     if (state.lectureMode) {
-      if (choice.correct) state.lectureCorrect++;
+      if (isCorrect) state.lectureCorrect++;
       state.lectureIdx++;
-      const resultPrefix = choice.correct ? '✓ 正解！　' : '✗ 残念……　';
-      showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), choice.correct, () => {
+      const resultPrefix = isCorrect ? '✓ 正解！　' : '✗ 残念……　';
+      showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, () => {
         triggerLectureQuestion();
       });
       return;
     }
     state.isPlayerTurn = true;
     render();
-    const resultPrefix = choice.correct ? '✓ 正解！　' : '✗ 残念……　';
+    const resultPrefix = isCorrect ? '✓ 正解！　' : '✗ 残念……　';
     const onCutInClose = state.tutorialMode && state.opponentId === 'rico_tutorial' && !state.lectureMode
       ? () => showTutorial('after_psych',
           '心理バトル解決！ぱにゅゲージが回復したね。<br>' +
           'あとはAペアの強さを信じて、<b>「コール」</b>か<b>「1/2ポット」</b>でベットしてみよう。<br>' +
           '私はもう手を引くから、安心していいよ。')
       : null;
-    showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), choice.correct, onCutInClose);
+    showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, onCutInClose);
   }, 700);
 }
 
