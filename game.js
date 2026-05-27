@@ -6201,10 +6201,9 @@ function showPanyuClicker(totalTaps, onComplete) {
     comboEl.classList.add('show');
   };
 
-  const onTap = (which) => (e) => {
+  // タップ／ドラッグ中の連続カウント共通処理
+  const doTick = (blob, opts = {}) => {
     if (completed) return;
-    e.preventDefault();
-    e.stopPropagation();
     const now = Date.now();
     const fastTap = (now - lastTapTime) < 250;
     lastTapTime = now;
@@ -6212,39 +6211,38 @@ function showPanyuClicker(totalTaps, onComplete) {
     tapped++;
     countEls.forEach(el => el.textContent = Math.max(0, count));
     updateColor();
-    if (navigator.vibrate) navigator.vibrate(30);
-    const burstN = fastTap ? 3 : 1;
+    if (navigator.vibrate) navigator.vibrate(opts.fromDrag ? 20 : 35);
+    const burstN = opts.fromDrag ? 2 : (fastTap ? 4 : 2);
     for (let i = 0; i < burstN; i++) spawnPanyuParticle(overlay);
     if (tapped === 10) showCombo(10);
     else if (tapped === 20) showCombo(20);
     else if (tapped === 25) showCombo(25);
-    // タップした側だけ wobble（毎回ランダムな方向に弾む）
-    const blob = which;
-    const ampX = fastTap ? 14 : 9;
-    const ampY = fastTap ? 9  : 6;
-    // 角度はランダム、距離は 60%〜100% に下限を設定（弱い反応を防止）
-    const angle = Math.random() * Math.PI * 2;
-    const minR = 0.6;
-    const r = minR + Math.random() * (1 - minR);
-    const wx = Math.cos(angle) * r * ampX;
-    const wy = Math.sin(angle) * r * ampY;
-    // 回転も最小角度を保証（±0.5 倍方向はランダム、絶対値は 50%〜100%）
-    const rotSign = Math.random() < 0.5 ? -1 : 1;
-    const rotAmp = fastTap ? 6 : 3;
-    const rot = rotSign * (0.5 + Math.random() * 0.5) * rotAmp;
-    const isVertical = Math.abs(wy) > Math.abs(wx);
-    const sxBase = fastTap ? 1.25 : 1.15;
-    const syBase = fastTap ? 0.78 : 0.88;
-    blob.style.setProperty('--wx', `${wx.toFixed(1)}px`);
-    blob.style.setProperty('--wy', `${wy.toFixed(1)}px`);
-    blob.style.setProperty('--rot', `${rot.toFixed(1)}deg`);
-    blob.style.setProperty('--sx', isVertical ? syBase : sxBase);
-    blob.style.setProperty('--sy', isVertical ? sxBase : syBase);
-    blob.classList.remove('wobble', 'wobble-fast');
-    void blob.offsetWidth;
-    const wobbleCls = fastTap ? 'wobble-fast' : 'wobble';
-    blob.classList.add(wobbleCls);
-    setTimeout(() => blob.classList.remove(wobbleCls), fastTap ? 280 : 400);
+    if (!opts.skipWobble) {
+      // 大きく＆柔らかく揺れる
+      const ampX = fastTap ? 22 : 16;
+      const ampY = fastTap ? 16 : 11;
+      const angle = Math.random() * Math.PI * 2;
+      const minR = 0.7;
+      const r = minR + Math.random() * (1 - minR);
+      const wx = Math.cos(angle) * r * ampX;
+      const wy = Math.sin(angle) * r * ampY;
+      const rotSign = Math.random() < 0.5 ? -1 : 1;
+      const rotAmp = fastTap ? 8 : 5;
+      const rot = rotSign * (0.6 + Math.random() * 0.4) * rotAmp;
+      const isVertical = Math.abs(wy) > Math.abs(wx);
+      const sxBase = fastTap ? 1.30 : 1.22;
+      const syBase = fastTap ? 0.78 : 0.84;
+      blob.style.setProperty('--wx', `${wx.toFixed(1)}px`);
+      blob.style.setProperty('--wy', `${wy.toFixed(1)}px`);
+      blob.style.setProperty('--rot', `${rot.toFixed(1)}deg`);
+      blob.style.setProperty('--sx', isVertical ? syBase : sxBase);
+      blob.style.setProperty('--sy', isVertical ? sxBase : syBase);
+      blob.classList.remove('wobble', 'wobble-fast');
+      void blob.offsetWidth;
+      const wobbleCls = fastTap ? 'wobble-fast' : 'wobble';
+      blob.classList.add(wobbleCls);
+      setTimeout(() => blob.classList.remove(wobbleCls), fastTap ? 340 : 500);
+    }
     if (count <= 0) {
       completed = true;
       blobs.forEach(b => b.classList.add('panyu-complete'));
@@ -6258,19 +6256,39 @@ function showPanyuClicker(totalTaps, onComplete) {
       }, 900);
     }
   };
+  // 外部（drag）からも呼べるよう公開
+  state.__panyuDoTick = doTick;
+  const onTap = (which) => (e) => {
+    if (completed) return;
+    e.preventDefault();
+    e.stopPropagation();
+    doTick(which);
+  };
   blobs.forEach(b => {
     b.addEventListener('click', onTap(b));
     b.addEventListener('touchstart', onTap(b), { passive: false });
-    // 引っ張り（ドラッグ）演出：少し伸びて、離すと戻る
     attachDragStretch(b);
   });
   updateColor();
 }
 
-// 引っ張ったらゴム玉のように伸びる演出
+// 引っ張ったらゴム玉のように伸びる演出（＋押しっぱなしで1秒ごとにカウント減）
 function attachDragStretch(blob) {
   let startX = 0, startY = 0, active = false, pointerId = null;
+  let holdTimer = null;
   const maxDrag = 35; // 最大伸び（px）
+  const startHoldTick = () => {
+    stopHoldTick();
+    // 1秒ごとに1カウント減（タップと同等の効果、ただし wobble はスキップ＝ドラッグ状態を維持）
+    holdTimer = setInterval(() => {
+      if (typeof state.__panyuDoTick === 'function') {
+        state.__panyuDoTick(blob, { skipWobble: true, fromDrag: true });
+      }
+    }, 1000);
+  };
+  const stopHoldTick = () => {
+    if (holdTimer) { clearInterval(holdTimer); holdTimer = null; }
+  };
   const onDown = (e) => {
     const pt = e.touches ? e.touches[0] : e;
     startX = pt.clientX;
@@ -6280,6 +6298,7 @@ function attachDragStretch(blob) {
     blob.classList.remove('release');
     blob.classList.add('dragging');
     if (e.pointerId !== undefined) blob.setPointerCapture(e.pointerId);
+    startHoldTick();
   };
   const onMove = (e) => {
     if (!active) return;
@@ -6307,6 +6326,7 @@ function attachDragStretch(blob) {
   const onUp = (e) => {
     if (!active) return;
     active = false;
+    stopHoldTick();
     blob.classList.remove('dragging');
     // インラインの transform を消して、release アニメで戻す
     blob.style.transform = '';
