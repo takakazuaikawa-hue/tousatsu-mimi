@@ -6170,7 +6170,7 @@ function showPanyuClicker(totalTaps, onComplete) {
     </div>
   `;
   overlay.innerHTML = `
-    <div class="panyu-clicker-label-top">ぱにゅぱにゅタップ ${totalTaps} 回！<small>両手で連打OK</small></div>
+    <div class="panyu-clicker-label-top">タップ or ぐりぐり！ <small>両手でOK</small></div>
     <div class="panyu-clicker-pair">
       ${blobTemplate('panyu-blob-l')}
       ${blobTemplate('panyu-blob-r')}
