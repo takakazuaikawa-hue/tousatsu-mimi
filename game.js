@@ -2596,25 +2596,23 @@ function pickPsychQuestion() {
     return fresh.length > 0 ? pick(fresh) : pick(pool);
   };
   if (id === 'rico_tutorial') {
-    // 本気リコ：場面に応じて上級心理戦を出題
+    // 本気リコ：場面に応じて上級心理戦を出題（場面が合わない問題は混ぜない）
     if (state.seriousRicoMode) {
-      const seriousPool = ['rico_serious_polarized', 'rico_serious_blocker', 'rico_serious_minmax'];
-      // リバー＆オーバーベット → 極化レンジ
       const need = state.currentBetOpponent - state.currentBetPlayer;
       const potBefore = state.pot - need;
       const ratio = potBefore > 0 ? need / potBefore : 0;
-      if (state.handPhase === 'river' && ratio > 1.0) return 'rico_serious_polarized';
-      // フラッシュアラート → ブロッカー
       const danger = evaluateBoardDanger(state.community || []);
-      if (danger.flushAlert) return 'rico_serious_blocker';
-      // 相手trap意図 → ミニマックス
-      if (state.lastOpponentIntent === 'trap') return 'rico_serious_minmax';
-      // 未出題優先
-      return pickFresh(seriousPool);
+      // 厳密マッチ
+      if (state.handPhase === 'river' && ratio > 1.0) return 'rico_serious_polarized';
+      if (state.lastOpponentIntent === 'trap')        return 'rico_serious_minmax';
+      if (danger.flushAlert)                          return 'rico_serious_blocker';
+      // どれも該当しない時はブロッカー基礎を出す（場面に依らず学べる）
+      return 'rico_serious_blocker';
     }
     return 'rico_tutorial_flop';
   }
   if (id === 'polka') {
+    // 両問とも場面非依存のブラフ系。自由にローテーション
     return pickFresh(['polka_flop_bluff', 'polka_overtalk']);
   }
   if (id === 'selina') {
@@ -2622,10 +2620,12 @@ function pickPsychQuestion() {
     const counts = {};
     suits.forEach(s => counts[s] = (counts[s] || 0) + 1);
     const maxSuit = Math.max(...Object.values(counts), 0);
-    // チェック→レイズの状況なら罠問題を出す
+    // チェック→レイズの状況なら罠問題を出す（それ以外では出さない）
     if (state.lastOpponentIntent === 'trap') return 'selina_check_raise';
+    // それ以外はボード状況で flush_alert ⇄ bet_size のローテ（罠問題は混ぜない）
     const fitCondition = maxSuit >= 2 ? 'selina_flush_alert' : 'selina_bet_size';
-    return pickFresh([fitCondition, 'selina_check_raise']);
+    const other = fitCondition === 'selina_flush_alert' ? 'selina_bet_size' : 'selina_flush_alert';
+    return pickFresh([fitCondition, other]);
   }
   if (id === 'grano') {
     const potBefore = state.pot - state.currentBetOpponent;
@@ -2638,10 +2638,6 @@ function pickPsychQuestion() {
     return pickFresh([fitCondition, other]);
   }
   if (id === 'velvet') {
-    // 15%でワイルドカード：メタ読みを崩す不意打ち
-    if (rand() < 0.15) {
-      return pick(['velvet_flop', 'velvet_turn', 'velvet_eye_contact', 'velvet_river_evidence']);
-    }
     // 場面と手の状況に合わせて問題を選ぶ（劇場感重視）
     const danger = evaluateBoardDanger(state.community || []);
     let myHs = 0;
@@ -2650,15 +2646,17 @@ function pickPsychQuestion() {
       myHs = state.community.length >= 3 ? handStrength01(all) : opponentPreflopStrength(state.playerHand);
     } catch(e) {}
     const myHsPct = Math.round(myHs * 100);
-    // リバーで大きいベット → 証拠突きつけ系（決着の問い）
+    // リバー → 証拠突きつけ系（決着の問い）
     if (state.handPhase === 'river') return 'velvet_river_evidence';
-    // ターンで盤面危険 → ボード読み
-    if (state.handPhase === 'turn' && (danger.flushAlert || danger.straightAlert)) return 'velvet_turn';
-    // 微妙な手の強さ（35〜55%）で大ベット → 視線揺さぶり
-    if (myHsPct >= 35 && myHsPct <= 55) return 'velvet_eye_contact';
-    // それ以外はフロップのボード読み
-    if (state.handPhase === 'flop') return 'velvet_flop';
+    // ターン → ボード読み（盤面危険時は確定、それ以外でも turn 専用問題が適切）
     if (state.handPhase === 'turn') return 'velvet_turn';
+    // 微妙な手の強さ（35〜55%）で大ベット → 視線揺さぶり（フロップで主に発動）
+    if (state.handPhase === 'flop' && myHsPct >= 35 && myHsPct <= 55) {
+      // 15%でフロップのボード読みに変更（メタ崩し）
+      return rand() < 0.15 ? 'velvet_flop' : 'velvet_eye_contact';
+    }
+    // フロップ：ボード読み（危険ボードは特に）
+    if (state.handPhase === 'flop') return 'velvet_flop';
     return 'velvet_eye_contact';
   }
   return 'polka_flop_bluff';
