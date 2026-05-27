@@ -6212,6 +6212,7 @@ function showPanyuClicker(totalTaps, onComplete) {
       tx: 0, ty: 0,       // 現在の translate
       vtx: 0, vty: 0,     // translate 速度
       rot: 0, vrot: 0,    // 微小な回転
+      sag: 0,             // 重力で沈み込んだ滞在感（遅延減衰）
     };
   });
   const K_SCALE = 0.12;   // ばね定数（戻り強さ）
@@ -6232,10 +6233,12 @@ function showPanyuClicker(totalTaps, onComplete) {
       p.vsy += -K_SCALE * (p.sy - 1) - D_SCALE * p.vsy;
       p.sx += p.vsx;
       p.sy += p.vsy;
+      // 重力 sag：タップで増加し、ゆっくり0へ減衰。ty の平衡を下にずらす効果
       p.vtx += -K_TRANS * p.tx - D_TRANS * p.vtx;
-      p.vty += -K_TRANS * p.ty - D_TRANS * p.vty;
+      p.vty += -K_TRANS * (p.ty - p.sag) - D_TRANS * p.vty;
       p.tx += p.vtx;
       p.ty += p.vty;
+      p.sag *= 0.94; // 約 0.5s で半減 → ゆっくり浮上
       p.vrot += -K_ROT * p.rot - D_ROT * p.vrot;
       p.rot += p.vrot;
       // 脈動（生命感）：scale で胸の鼓動、translate Y で浮き沈み
@@ -6265,13 +6268,12 @@ function showPanyuClicker(totalTaps, onComplete) {
     else if (tapped === 20) showCombo(20);
     else if (tapped === 25) showCombo(25);
     if (!opts.skipWobble) {
-      // 物理に impulse を加える（押された＝下に潰れる）
-      // ランダムなし：常に「上から押された」物理応答（大きめ＝ぷるん感UP）
+      // 物理に impulse を加える（押された＝重力で下に沈む）
       const p = blob.__phys;
-      p.vty += 6.0;             // 下に大きく弾む
-      p.vsy -= 0.11;            // 縦にしっかり潰す
-      p.vsx += 0.10;            // 横に大きく膨らむ
-      // 左右の傾き（前回符号と反対）で振り子感
+      p.vty += 8.5;             // 下にどすんと弾む（強め）
+      p.vsy -= 0.13;            // 縦にしっかり潰す
+      p.vsx += 0.11;            // 横に大きく膨らむ
+      p.sag += 14;              // 平衡を 14px ほど下にずらす → 沈み込んで戻る
       p.vrot += (p.rot > 0 ? -1 : 1) * 0.7;
     }
     if (count <= 0) {
@@ -6308,11 +6310,14 @@ function showPanyuClicker(totalTaps, onComplete) {
 function attachDragStretch(blob) {
   let startX = 0, startY = 0, active = false, pointerId = null;
   let holdTimer = null;
-  const maxDrag = 35; // 最大伸び（px）
+  let holdArmTimer = null;     // 「ホールド開始」の発火タイマー（猶予期間）
+  let movedFar = false;        // 一定以上動いたら「ドラッグ確定」
+  const maxDrag = 35;
+  const HOLD_ARM_MS = 700;     // タップとホールドの境界：これ以上押し続けたらホールド扱い
   const startHoldTick = () => {
     stopHoldTick();
-    // 1秒ごとに1カウント減（タップと同等の効果、ただし wobble はスキップ＝ドラッグ状態を維持）
     holdTimer = setInterval(() => {
+      if (!active) { stopHoldTick(); return; } // 念のため二重チェック
       if (typeof state.__panyuDoTick === 'function') {
         state.__panyuDoTick(blob, { skipWobble: true, fromDrag: true });
       }
@@ -6321,22 +6326,38 @@ function attachDragStretch(blob) {
   const stopHoldTick = () => {
     if (holdTimer) { clearInterval(holdTimer); holdTimer = null; }
   };
+  const stopArm = () => {
+    if (holdArmTimer) { clearTimeout(holdArmTimer); holdArmTimer = null; }
+  };
   const onDown = (e) => {
     const pt = e.touches ? e.touches[0] : e;
     startX = pt.clientX;
     startY = pt.clientY;
     active = true;
+    movedFar = false;
     pointerId = e.pointerId ?? null;
     blob.classList.remove('release');
     blob.classList.add('dragging');
-    if (e.pointerId !== undefined) blob.setPointerCapture(e.pointerId);
-    startHoldTick();
+    if (e.pointerId !== undefined && blob.setPointerCapture) {
+      try { blob.setPointerCapture(e.pointerId); } catch (err) {}
+    }
+    // 即時に hold tick を始めない：HOLD_ARM_MS 押し続けるか、movedFar になってからスタート
+    stopArm();
+    holdArmTimer = setTimeout(() => {
+      if (active) startHoldTick();
+    }, HOLD_ARM_MS);
   };
   const onMove = (e) => {
     if (!active) return;
     const pt = e.touches ? e.touches[0] : e;
     let dx = pt.clientX - startX;
     let dy = pt.clientY - startY;
+    // 5px以上動いたら「明確なドラッグ」→ホールド扱いに昇格（armタイマー早期発動）
+    if (!movedFar && Math.hypot(dx, dy) > 5) {
+      movedFar = true;
+      stopArm();
+      startHoldTick();
+    }
     // ベクトルを最大値で減衰（ゴム抵抗）
     const dist = Math.hypot(dx, dy);
     if (dist > maxDrag) {
@@ -6358,6 +6379,7 @@ function attachDragStretch(blob) {
   const onUp = (e) => {
     if (!active) return;
     active = false;
+    stopArm();
     stopHoldTick();
     blob.classList.remove('dragging');
     // 物理状態を「引っ張られた位置」から開始させて、自然に戻す
@@ -6389,6 +6411,9 @@ function attachDragStretch(blob) {
     blob.addEventListener('pointermove', onMove);
     blob.addEventListener('pointerup', onUp);
     blob.addEventListener('pointercancel', onUp);
+    // 安全網：blob 外で離されてもタイマー停止
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
   } else {
     blob.addEventListener('mousedown', onDown);
     window.addEventListener('mousemove', onMove);
@@ -6396,6 +6421,7 @@ function attachDragStretch(blob) {
     blob.addEventListener('touchstart', onDown, { passive: true });
     blob.addEventListener('touchmove', onMove, { passive: true });
     blob.addEventListener('touchend', onUp);
+    blob.addEventListener('touchcancel', onUp);
   }
 }
 
