@@ -3853,8 +3853,17 @@ function injectAudioBars() {
 }
 
 function refreshAudioBars() {
-  document.querySelectorAll('.audio-bar-toggle').forEach(t => t.textContent = save.bgmOn ? '🔊' : '🔇');
-  document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = save.bgmVolume != null ? save.bgmVolume : 35);
+  const icon = save.bgmOn ? '🔊' : '🔇';
+  const vol = save.bgmVolume != null ? save.bgmVolume : 35;
+  document.querySelectorAll('.audio-bar-toggle').forEach(t => t.textContent = icon);
+  document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = vol);
+  // ロビー下部パネルの音声ボタンも更新
+  document.querySelectorAll('.lb-bgm-toggle').forEach(t => t.textContent = icon);
+  document.querySelectorAll('.lb-vol').forEach(v => v.value = vol);
+  // 曲名ラベルも更新
+  document.querySelectorAll('.lb-song-label').forEach(s => {
+    s.textContent = save.bgmOn ? '♪ Lounge Jazz' : '♪ —（停止中）';
+  });
 }
 
 function initGlobalAudioBar() {
