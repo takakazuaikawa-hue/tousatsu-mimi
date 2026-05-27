@@ -5864,7 +5864,12 @@ function opponentTurn() {
     if (lqid) {
       state.logicResolvedStreet = true;
       render();
-      setTimeout(() => triggerPsychBattle(lqid), 900);
+      // 性格読み切り後は「問題タイトル＋スキップ／挑む」の選択画面を出す
+      if (state.opponentPersonalityRevealed) {
+        setTimeout(() => showLogicSkipPrompt(lqid), 600);
+      } else {
+        setTimeout(() => triggerPsychBattle(lqid), 900);
+      }
       return;
     }
   }
@@ -6375,6 +6380,56 @@ function showPsychStreakBanner(streak) {
   document.body.appendChild(banner);
   setTimeout(() => banner.classList.add('out'), 1500);
   setTimeout(() => banner.remove(), 2200);
+}
+
+// 性格読み切り後の論理バトル：タイトルを見てスキップ／挑むを選べる
+function showLogicSkipPrompt(qid) {
+  const q = PSYCH_QUESTIONS[qid];
+  if (!q) {
+    // 念のためのフォールバック：プロンプトを出さずに普通に進行
+    state.isPlayerTurn = true;
+    state.mimiThought = '「次は……ミミのターン」';
+    render();
+    return;
+  }
+  const overlay = document.createElement('div');
+  overlay.className = 'logic-skip-overlay';
+  const titleText = (q.speech || '').replace(/^【.*?】/, '') || '論理バトル';
+  const ruleText = q.rule || '';
+  overlay.innerHTML = `
+    <div class="ls-modal">
+      <div class="ls-tag">📘 論理バトル</div>
+      <div class="ls-title">${titleText}</div>
+      ${ruleText ? `<div class="ls-rule">テーマ：${ruleText}</div>` : ''}
+      <div class="ls-note">性格を読み切ったので、論理バトルは任意にできます</div>
+      <div class="ls-buttons">
+        <button class="btn btn-ghost ls-btn-skip">スキップ</button>
+        <button class="btn btn-primary ls-btn-play">挑む</button>
+      </div>
+    </div>
+  `;
+  (document.getElementById('stage') || document.body).appendChild(overlay);
+  const dismiss = () => { overlay.remove(); };
+  overlay.querySelector('.ls-btn-skip').addEventListener('click', () => {
+    dismiss();
+    // スキップしてプレイヤーのターンへ
+    state.isPlayerTurn = true;
+    state.mimiThought = '「論理バトルはスキップ。自分で考えよう」';
+    render();
+  });
+  overlay.querySelector('.ls-btn-play').addEventListener('click', () => {
+    dismiss();
+    triggerPsychBattle(qid);
+  });
+  // 背景クリックでスキップ
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      dismiss();
+      state.isPlayerTurn = true;
+      state.mimiThought = '「論理バトルはスキップ。自分で考えよう」';
+      render();
+    }
+  });
 }
 
 // ミミミMAX：性格読み切りバナー（クリックで閉じる）

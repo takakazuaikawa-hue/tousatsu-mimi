@@ -4575,6 +4575,73 @@ html, body {
   font-size: 15px;
   pointer-events: auto;
 }
+
+/* 論理バトル スキップ／挑む プロンプト */
+.logic-skip-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 85;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.ls-modal {
+  background: linear-gradient(180deg, rgba(28,12,46,0.97) 0%, rgba(14,6,26,0.99) 100%);
+  border: 2px solid rgba(138,207,255,0.6);
+  border-radius: 14px;
+  padding: 22px 28px;
+  max-width: 520px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(138,207,255,0.4);
+  cursor: default;
+  animation: lsPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes lsPop {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.ls-tag {
+  display: inline-block;
+  padding: 3px 12px;
+  background: linear-gradient(180deg, #8acfff 0%, #3b8acd 100%);
+  color: #1a0e2a;
+  font-weight: 700;
+  font-size: 12px;
+  border-radius: 999px;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+.ls-title {
+  font-size: 18px;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.ls-rule {
+  font-size: 12px;
+  color: #c0d0e8;
+  background: rgba(0,0,0,0.4);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+.ls-note {
+  font-size: 11px;
+  color: rgba(200,210,230,0.7);
+  margin-bottom: 16px;
+}
+.ls-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.ls-btn-skip, .ls-btn-play {
+  min-width: 130px;
+  min-height: 44px;
+  font-size: 15px;
+}
 /* バナー本体もクリックを通すように（pointer-events: none を解除） */
 .personality-reveal-banner {
   background: rgba(0,0,0,0.4); /* 背景を少し暗くしてモーダル感 */
