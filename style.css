@@ -593,6 +593,8 @@ html, body {
   padding: 10px;
   overflow: hidden;
 }
+.character-frame.char-grano-shop,
+.character-frame.char-rico-shop,
 .char-grano-shop,
 .char-rico-shop {
   width: 100%;
@@ -605,6 +607,8 @@ html, body {
   align-items: flex-start;
   justify-content: center;
 }
+.character-frame.char-grano-shop img,
+.character-frame.char-rico-shop img,
 .char-grano-shop img,
 .char-rico-shop img {
   width: 100%;
@@ -2283,6 +2287,7 @@ html, body {
   gap: 16px;
   width: 100%;
 }
+.character-frame.char-opponent,
 .char-opponent {
   width: 130px;
   height: 170px;
@@ -2811,6 +2816,7 @@ html, body {
   align-self: stretch;
   min-height: 0;
 }
+.character-frame.char-mimi,
 .char-mimi {
   flex: 1;
   min-height: 0;
