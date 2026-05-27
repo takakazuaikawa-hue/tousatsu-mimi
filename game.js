@@ -757,6 +757,72 @@ const PSYCH_QUESTIONS = {
       rico: 'いいよいいよ、外したっていいの。なんで外したか覚えれば次は読めるからさ',
     },
   },
+
+  // ===== 本気リコ先輩：勝負の核を問う上級心理戦 =====
+  rico_serious_polarized: {
+    id: 'rico_serious_polarized',
+    situationFn: (state) => `🔥 本気のリコがリバーでオーバーベット（ポット超）。\n場札：${renderCardsText(state.community)}　ミミの手札：${renderCardsText(state.playerHand)}`,
+    speech: 'ここで降りるか、コールするか。アタシならどう打つか考えてみな？',
+    zazazoHint: '上級者のリバーオーバーベット＝極化レンジ（ナッツorブラフ）',
+    choices: [
+      { id: 'polarized_read',  text: '相手レンジは極化（ナッツorブラフ）。自分のブラフキャッチ価値で判断', correct: true  },
+      { id: 'always_strong',   text: 'オーバーベットは必ずナッツなので降りる',                             correct: false },
+      { id: 'always_bluff',    text: 'オーバーベットは必ずブラフなので即コール',                          correct: false },
+    ],
+    onSuccess: {
+      panyu: 35, zazazo: 2,
+      hint: '極化レンジ＝相手のブラフ比率と自分の手札強度で判断',
+      rico: 'そう、<u>極化レンジ理論</u>。アタシが本気で打つときも、ナッツとブラフを混ぜて打つ。<br>ブラフキャッチャーで読み切るのが王道だよ',
+    },
+    onFail: {
+      panyu: -15,
+      mimi: '大きいベットに飲まれちゃう……',
+      rico: '<u>リバーオーバーベット＝極化</u>。読み一発で判断せず、自分の手のブラフキャッチ価値とレンジ全体で考えるの',
+    },
+  },
+  rico_serious_blocker: {
+    id: 'rico_serious_blocker',
+    situationFn: (state) => `🔥 本気のリコがリバーで大ベット。\nミミの手札にはAクラブが含まれ、場札にもクラブが多い。`,
+    speech: 'ナッツフラッシュの可能性、アタシが持ってるか？　ミミの手札を見て考えてみな',
+    zazazoHint: 'ブロッカー効果＝自分が持っているカードで相手のレンジを潰せる',
+    choices: [
+      { id: 'blocker_call',  text: 'AクラブをミミがブロックしてるからリコはAハイフラッシュを持ちにくい→コール強気', correct: true  },
+      { id: 'fold_scary',    text: '同スート4枚あるからフラッシュ確定で降りる',                                    correct: false },
+      { id: 'raise_pure',    text: '怖いのでとりあえずレイズで撤退を促す',                                       correct: false },
+    ],
+    onSuccess: {
+      panyu: 35, zazazo: 2,
+      hint: 'ブロッカー理論：自分の手がナッツの組み合わせを潰す',
+      rico: '正解。<u>ブロッカー</u>は上級者必須の概念。<br>自分の手で相手のナッツコンボを消せれば、相手のレンジは弱くなる',
+    },
+    onFail: {
+      panyu: -15,
+      mimi: '相手の手だけ気にしちゃってた……',
+      rico: '<u>自分の手も相手レンジを縛る</u>。Aクラブ持ってる時点で、相手のナッツフラッシュ確率は激減するんだよ',
+    },
+  },
+  rico_serious_minmax: {
+    id: 'rico_serious_minmax',
+    situationFn: (state) => `🔥 本気のリコがチェック→ミミがベット→リコが大きくチェックレイズしてきた。`,
+    speech: 'チェックレイズ。アタシが弱い手で罠を仕掛けるかな？　それとも強い手で罠を仕掛けるかな？',
+    zazazoHint: '上級者のチェックレイズは ほぼナッツ寄り or 強烈なセミブラフ',
+    choices: [
+      { id: 'mostly_nuts', text: 'プロのチェックレイズはレンジの上下端。中位ペアでは絶対にやらない',                  correct: true  },
+      { id: 'always_call', text: 'チェックレイズもブラフがあるのでとりあえずコール',                                 correct: false },
+      { id: 'always_fold', text: 'チェックレイズは怖いので無条件で降りる',                                          correct: false },
+    ],
+    onSuccess: {
+      panyu: 35, zazazo: 2,
+      hint: 'プロのチェックレイズ＝レンジ両極端（極ナッツ or 強セミブラフ）',
+      rico: 'そう。<u>プロのチェックレイズは中位レンジを混ぜない</u>。<br>「降りるならフォールド／戦うなら最強で攻める」のミニマックス戦略',
+    },
+    onFail: {
+      panyu: -15,
+      mimi: 'パニックでコールしちゃう……',
+      rico: 'プロの<u>チェックレイズは中位を混ぜない</u>。「強烈に強いか、強烈に弱くて圧で押すか」の二択構造だよ',
+    },
+  },
+
   selina_flush_alert: {
     id: 'selina_flush_alert',
     situationFn: (state) => `場札：${renderCardsText(state.community)}\nセリナは2/3ポット以上をベットしてきた。`,
@@ -2529,7 +2595,25 @@ function pickPsychQuestion() {
     const fresh = pool.filter(q => !seen.has(q));
     return fresh.length > 0 ? pick(fresh) : pick(pool);
   };
-  if (id === 'rico_tutorial') return 'rico_tutorial_flop';
+  if (id === 'rico_tutorial') {
+    // 本気リコ：場面に応じて上級心理戦を出題
+    if (state.seriousRicoMode) {
+      const seriousPool = ['rico_serious_polarized', 'rico_serious_blocker', 'rico_serious_minmax'];
+      // リバー＆オーバーベット → 極化レンジ
+      const need = state.currentBetOpponent - state.currentBetPlayer;
+      const potBefore = state.pot - need;
+      const ratio = potBefore > 0 ? need / potBefore : 0;
+      if (state.handPhase === 'river' && ratio > 1.0) return 'rico_serious_polarized';
+      // フラッシュアラート → ブロッカー
+      const danger = evaluateBoardDanger(state.community || []);
+      if (danger.flushAlert) return 'rico_serious_blocker';
+      // 相手trap意図 → ミニマックス
+      if (state.lastOpponentIntent === 'trap') return 'rico_serious_minmax';
+      // 未出題優先
+      return pickFresh(seriousPool);
+    }
+    return 'rico_tutorial_flop';
+  }
   if (id === 'polka') {
     return pickFresh(['polka_flop_bluff', 'polka_overtalk']);
   }
@@ -3201,7 +3285,7 @@ function startEndingShow(playMusic) {
   let cancelled = false;
 
   const acts = [
-    { type: 'fade-text', text: '——あの夜、グランドクロック・カジノシアターの最奥で——', cls: 'narration', wait: 2400 },
+    { type: 'fade-text', text: '——あの夜、VIPルームの最奥で——', cls: 'narration', wait: 2400 },
 
     // ヴェルベット
     { type: 'speaker', who: 'velvet', img: 'velvet', name: 'ヴェルベット',
