@@ -2630,10 +2630,12 @@ function pickPsychQuestion() {
   if (id === 'grano') {
     const potBefore = state.pot - state.currentBetOpponent;
     const ratio = potBefore > 0 ? state.currentBetOpponent / potBefore : 1;
-    // リバーでオーバーベットなら極化問題
+    // 極化問題はリバー＆オーバーベット時のみ
     if (state.handPhase === 'river' && ratio > 1.0) return 'grano_river_polar';
+    // それ以外はベット額に応じてcheap/expensiveを選ぶ（極化問題は混ぜない）
     const fitCondition = ratio < 0.5 ? 'grano_cheap_call' : 'grano_expensive';
-    return pickFresh([fitCondition, 'grano_river_polar']);
+    const other = fitCondition === 'grano_cheap_call' ? 'grano_expensive' : 'grano_cheap_call';
+    return pickFresh([fitCondition, other]);
   }
   if (id === 'velvet') {
     // 15%でワイルドカード：メタ読みを崩す不意打ち
