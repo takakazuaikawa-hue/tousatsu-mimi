@@ -2076,7 +2076,19 @@ function applyBindings() {
         el.src = `assets/characters/${o.file}`;
         break;
       }
-      case 'lobbyRicoOutfit': el.textContent = pickLobbyRico().label; break;
+      case 'lobbyRicoOutfit': {
+        const cur = pickLobbyRico();
+        if (isRicoViewerUnlocked()) {
+          el.textContent = cur.label;
+          el.classList.remove('locked');
+          el.title = 'リコ先輩を眺める';
+        } else {
+          el.textContent = '🔒 衣装ロック中';
+          el.classList.add('locked');
+          el.title = 'ヴェルベット撃破後に解放';
+        }
+        break;
+      }
       case 'lobbyBgmLabel': el.textContent = !save.bgmOn ? '♪ —（停止中）' : '♪ Lounge Jazz — Velvet Night'; break;
       case 'lobbyBgmVolume':
         el.value = save.bgmVolume != null ? save.bgmVolume : 35;
@@ -2471,12 +2483,21 @@ const RICO_TRIVIA = {
 };
 
 function pickLobbyRico() {
+  // クリア前は常に制服（rico_default）固定。クリア後にランダムローテーション解放
+  const cleared = save.clearedStages && save.clearedStages.includes('velvet');
+  if (!cleared) {
+    state.lobbyRicoIndex = 0;
+    return RICO_OUTFITS[0];
+  }
   // セッションごとに変える（ロビー表示時に1回決める）
-  if (!state.lobbyRicoIndex || state.lobbyRicoChangedAt !== state.screen) {
+  if (state.lobbyRicoIndex == null || state.lobbyRicoChangedAt !== state.screen) {
     state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
     state.lobbyRicoChangedAt = state.screen;
   }
   return RICO_OUTFITS[state.lobbyRicoIndex];
+}
+function isRicoViewerUnlocked() {
+  return save.clearedStages && save.clearedStages.includes('velvet');
 }
 
 // ロビー：リコ先輩の状況別セリフ
@@ -2506,6 +2527,7 @@ function renderLobbyBottomPanel() {
     <div class="lb-row lb-music-row">
       <button class="lb-bgm-toggle" data-action="toggle-bgm" title="BGM ON/OFF">${bgmOn ? '🔊' : '🔇'}</button>
       <input class="lb-vol" type="range" min="0" max="100" value="${vol}" title="音量">
+      <button class="lb-settings-btn" data-action="open-collection" title="コンプリート状況">🏆</button>
       <button class="lb-settings-btn" data-action="open-settings" title="ゲーム設定">⚙</button>
     </div>
     <div class="lb-song-label">${songLabel}</div>
@@ -3359,7 +3381,18 @@ function onAction(e) {
     case 'buy-item':      buyItem(data.itemId); break;
     case 'battle-start':  startBattle(data.opponent); break;
     case 'rico-mode-chooser': showRicoModeChooser(); break;
-    case 'open-rico-viewer': showRicoViewer(); break;
+    case 'open-rico-viewer':
+      if (!isRicoViewerUnlocked()) {
+        alert('🔒 リコ先輩鑑賞モードは、ヴェルベット撃破後（エンディング達成後）に解放されます。');
+        break;
+      }
+      showRicoViewer();
+      break;
+    case 'open-collection': showCollectionModal(); break;
+    case 'collection-close': {
+      const ov = document.querySelector('.collection-overlay'); if (ov) ov.remove();
+      break;
+    }
     case 'rico-viewer-close': {
       const ov = document.querySelector('.rico-viewer-overlay'); if (ov) ov.remove();
       break;
@@ -4117,6 +4150,141 @@ function showRicoViewer() {
     else if (e.key === 'ArrowLeft')  { onAction({ currentTarget: { dataset: { action: 'rico-viewer-prev' } } }); }
   };
   document.addEventListener('keydown', keyHandler);
+}
+
+// === コンプリート（解放状況）モーダル ===
+function showCollectionModal() {
+  const stageOrder = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
+  const stages = stageOrder.map(id => {
+    const opp = OPPONENTS[id];
+    if (!opp) return null;
+    const cleared = save.clearedStages.includes(id);
+    const rank = save.bestRanks && save.bestRanks[id];
+    const wins = (save.rematchWins && save.rematchWins[id]) || 0;
+    return { id, name: opp.name, theme: opp.theme, cleared, rank, wins };
+  }).filter(Boolean);
+  const stageCleared = stages.filter(s => s.cleared).length;
+
+  const allItems = SHOP_ITEMS;
+  const ownedItems = save.ownedItems || [];
+  const itemsByCat = {};
+  allItems.forEach(i => {
+    if (!itemsByCat[i.cat]) itemsByCat[i.cat] = [];
+    itemsByCat[i.cat].push({ ...i, owned: ownedItems.includes(i.id) });
+  });
+  const catLabels = { panyu: 'ぱにゅ強化', note: '知識ノート', skin: 'スキン', memory: 'メモリ', stack: '初期チップ' };
+
+  const notesCount = (save.unlockedNotes || []).length;
+
+  const outfits = RICO_OUTFITS.map(o => ({
+    ...o,
+    unlocked: isRicoViewerUnlocked(),
+  }));
+  const outfitUnlocked = outfits.filter(o => o.unlocked).length;
+
+  // 達成項目
+  const achievements = [
+    { id: 'first_clear', name: '初勝利', desc: 'ポルカ撃破', achieved: save.clearedStages.includes('polka') },
+    { id: 'reader',      name: 'ボード読み', desc: 'セリナ撃破', achieved: save.clearedStages.includes('selina') },
+    { id: 'math',        name: '算数の徒', desc: 'グラーノ撃破', achieved: save.clearedStages.includes('grano') },
+    { id: 'champion',    name: '圧倒の継承者', desc: 'ヴェルベット撃破', achieved: save.clearedStages.includes('velvet') },
+    { id: 'ending',      name: 'エンディング', desc: '物語を見届けた', achieved: !!save.endingUnlocked },
+    { id: 'backdoor',    name: '裏モード解放', desc: '7タップの秘密', achieved: !!save.backdoorUnlocked },
+  ];
+
+  // 完成度（全体％）
+  const totalScore =
+    stages.length + achievements.length + allItems.length + outfits.length;
+  const gotScore =
+    stageCleared + achievements.filter(a => a.achieved).length +
+    ownedItems.length + outfitUnlocked;
+  const progressPct = Math.round((gotScore / totalScore) * 100);
+
+  const stagesHtml = stages.map(s => `
+    <div class="coll-stage ${s.cleared ? 'cleared' : 'locked'}">
+      <div class="coll-stage-icon">${s.cleared ? '✓' : '🔒'}</div>
+      <div class="coll-stage-body">
+        <div class="coll-stage-name">${s.name}</div>
+        <div class="coll-stage-theme">${s.theme || ''}</div>
+        ${s.cleared ? `<div class="coll-stage-meta">${s.rank ? `Best: ${s.rank} ／ ` : ''}再戦勝利: ${s.wins}回</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  const achHtml = achievements.map(a => `
+    <div class="coll-ach ${a.achieved ? 'on' : 'off'}">
+      <div class="coll-ach-icon">${a.achieved ? '🏆' : '🔒'}</div>
+      <div class="coll-ach-name">${a.name}</div>
+      <div class="coll-ach-desc">${a.desc}</div>
+    </div>
+  `).join('');
+
+  const itemsHtml = Object.keys(itemsByCat).map(cat => {
+    const list = itemsByCat[cat];
+    const have = list.filter(i => i.owned).length;
+    return `
+      <div class="coll-itemcat">
+        <div class="coll-itemcat-title">${catLabels[cat] || cat} <span class="coll-itemcat-count">${have}/${list.length}</span></div>
+        <div class="coll-itemcat-list">
+          ${list.map(i => `<span class="coll-item ${i.owned ? 'on' : 'off'}" title="${i.desc}">${i.owned ? '◆' : '◇'} ${i.name}</span>`).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const outfitsHtml = outfits.map(o => `
+    <div class="coll-outfit ${o.unlocked ? 'on' : 'off'}" title="${o.label}">
+      ${o.unlocked
+        ? `<img src="assets/characters/${o.file}" alt="${o.label}" onerror="this.style.display='none'">`
+        : `<div class="coll-outfit-locked">🔒</div>`}
+      <div class="coll-outfit-label">${o.label}</div>
+    </div>
+  `).join('');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'collection-overlay';
+  overlay.innerHTML = `
+    <div class="collection-modal">
+      <button class="collection-close" data-action="collection-close" title="閉じる">×</button>
+      <div class="collection-header">
+        <div class="collection-title">🏆 コンプリート状況</div>
+        <div class="collection-progress">
+          <div class="collection-progress-bar"><div class="collection-progress-fill" style="width:${progressPct}%"></div></div>
+          <div class="collection-progress-text">${progressPct}% （${gotScore} / ${totalScore}）</div>
+        </div>
+        <div class="collection-coins">💰 所持コイン：${save.coins}</div>
+      </div>
+      <div class="collection-body">
+        <section class="coll-section">
+          <h3 class="coll-section-title">対戦相手 <span class="coll-section-count">${stageCleared}/${stages.length}</span></h3>
+          <div class="coll-stages">${stagesHtml}</div>
+        </section>
+        <section class="coll-section">
+          <h3 class="coll-section-title">物語の達成 <span class="coll-section-count">${achievements.filter(a => a.achieved).length}/${achievements.length}</span></h3>
+          <div class="coll-achievements">${achHtml}</div>
+        </section>
+        <section class="coll-section">
+          <h3 class="coll-section-title">交換所アイテム <span class="coll-section-count">${ownedItems.length}/${allItems.length}</span></h3>
+          <div class="coll-items">${itemsHtml}</div>
+        </section>
+        <section class="coll-section">
+          <h3 class="coll-section-title">知識ノート <span class="coll-section-count">${notesCount}件解放</span></h3>
+          <div class="coll-notes-hint">対戦相手撃破やショップ購入で増えます</div>
+        </section>
+        <section class="coll-section">
+          <h3 class="coll-section-title">リコ衣装ギャラリー <span class="coll-section-count">${outfitUnlocked}/${outfits.length}</span></h3>
+          ${isRicoViewerUnlocked()
+            ? `<div class="coll-outfits">${outfitsHtml}</div>`
+            : `<div class="coll-locked-hint">🔒 ヴェルベット撃破で全衣装＆鑑賞モードが解放されます</div>`}
+        </section>
+      </div>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+  overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
 }
 
 function showNewGameModal() {
