@@ -2011,6 +2011,12 @@ function applyBindings() {
       case 'handNo': el.textContent = state.handNo || 1; break;
       case 'maxHands': el.textContent = state.maxHands; break;
       case 'opponentName': el.textContent = state.opponentName; break;
+      case 'opponentNameShort': {
+        // 短縮表記（4文字以内、長ければ省略）
+        const n = state.opponentName || '相手';
+        el.textContent = n.length > 4 ? n.slice(0, 3) + '…' : n;
+        break;
+      }
       case 'opponentChips': el.textContent = state.opponentChips; break;
       case 'playerChips': el.textContent = state.playerChips; break;
       case 'pot':

@@ -3390,7 +3390,7 @@ html, body {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 160px 1fr 330px;
+  grid-template-columns: 160px 1fr 300px;
   gap: 10px;
   padding: 8px 12px 10px;
   background: rgba(0,0,0,0.55);
@@ -3400,42 +3400,25 @@ html, body {
   align-items: stretch;
 }
 
-/* 右カラム：丸形ぱにゅゲージ＋アクションボタン */
-.action-column {
-  display: grid;
-  grid-template-columns: 76px 1fr;
-  gap: 8px;
-  align-items: stretch;
-  min-height: 0;
-}
-.action-column > .action-area { min-height: 0; }
-.panyu-gauge-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  align-self: center;
-  justify-self: center;
-}
+/* 円形ぱにゅゲージ（戦況パネル内に配置） */
 
-/* 右パネル上部：ミミ状態（役＋ぱにゅ pip） */
+/* 右パネル上部：ミミ状態 */
 .mimi-status-panel {
-  background: linear-gradient(180deg, rgba(60,28,90,0.55) 0%, rgba(20,8,30,0.7) 100%);
+  background: linear-gradient(180deg, rgba(60,28,90,0.55) 0%, rgba(20,8,30,0.75) 100%);
   border: 1px solid rgba(245,215,122,0.4);
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 .ms-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
 }
 .ms-label {
-  flex: 0 0 50px;
+  flex: 0 0 38px;
   color: #fbe28a;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -3445,21 +3428,65 @@ html, body {
   flex: 1;
   color: #fff;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
-.ms-pips {
-  flex: 1;
-  display: flex;
-  gap: 3px;
-  font-size: 13px;
+.ms-row-chips {
+  justify-content: space-between;
+  gap: 6px;
 }
-.ms-pips .pip { color: rgba(255,255,255,0.3); }
-.ms-pips .pip.lit { color: #ffc1d8; text-shadow: 0 0 6px #ffc1d8; }
+.ms-row-panyu {
+  align-items: center;
+  gap: 12px;
+}
+
+/* チップ表示 pill：数字＋コインアイコン */
+.chip-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(40,18,60,0.9) 0%, rgba(20,8,30,0.95) 100%);
+  border: 1px solid rgba(245,215,122,0.5);
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.chip-pill-icon { font-size: 14px; line-height: 1; }
+.chip-pill-value {
+  color: #fbe28a;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.chip-pill-name {
+  font-size: 10px;
+  color: rgba(245,215,122,0.7);
+  letter-spacing: 0.1em;
+  margin-left: 2px;
+}
+.chip-pill-player { border-color: rgba(245,215,122,0.6); }
+.chip-pill-vs { border-color: rgba(255,150,170,0.5); }
+.chip-pill-vs .chip-pill-value { color: #ffd0d6; }
+.chip-pill-opponent {
+  border-color: rgba(255,150,170,0.5);
+  align-self: center;
+  margin-left: 8px;
+}
+.chip-pill-opponent .chip-pill-value { color: #ffd0d6; }
+
+/* 相手カードと残チップを横並び */
+.opponent-hand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .panyu-gauge-circle {
   position: relative;
-  width: 70px;
-  height: 70px;
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
 }
 .panyu-ring-frame {
   position: absolute; inset: 0;
@@ -3545,15 +3572,13 @@ html, body {
   object-position: 50% 20%;
 }
 .mimi-hand-area {
-  display: grid;
-  /* 上：カード+セリフ (1fr) ／ 下：チップ&役 (auto) */
-  grid-template-rows: 1fr auto;
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   overflow: hidden;
   height: 100%;
-  align-content: stretch;
 }
+.mimi-hand-area > .hand-thought-row { flex: 1; min-height: 0; }
 .mimi-hand-area .player-row {
   display: flex;
   justify-content: space-between;
