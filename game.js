@@ -6218,8 +6218,22 @@ function showPanyuClicker(totalTaps, onComplete) {
     if (tapped === 10) showCombo(10);
     else if (tapped === 20) showCombo(20);
     else if (tapped === 25) showCombo(25);
-    // タップした側だけ wobble
+    // タップした側だけ wobble（毎回ランダムな方向に弾む）
     const blob = which;
+    const ampX = fastTap ? 14 : 9;   // 横の振れ幅
+    const ampY = fastTap ? 9  : 6;   // 縦の振れ幅
+    const wx = (Math.random() * 2 - 1) * ampX; // -amp ~ +amp
+    const wy = (Math.random() * 2 - 1) * ampY;
+    const rot = (Math.random() * 2 - 1) * (fastTap ? 6 : 3);
+    // 縦方向ベクトルが強い時は scale も縦圧縮になるよう調整
+    const isVertical = Math.abs(wy) > Math.abs(wx);
+    const sxBase = fastTap ? 1.25 : 1.15;
+    const syBase = fastTap ? 0.78 : 0.88;
+    blob.style.setProperty('--wx', `${wx.toFixed(1)}px`);
+    blob.style.setProperty('--wy', `${wy.toFixed(1)}px`);
+    blob.style.setProperty('--rot', `${rot.toFixed(1)}deg`);
+    blob.style.setProperty('--sx', isVertical ? syBase : sxBase);
+    blob.style.setProperty('--sy', isVertical ? sxBase : syBase);
     blob.classList.remove('wobble', 'wobble-fast');
     void blob.offsetWidth;
     const wobbleCls = fastTap ? 'wobble-fast' : 'wobble';
