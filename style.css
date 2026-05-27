@@ -973,6 +973,12 @@ html, body {
 .lobby-stage-list .stage-card .stage-desc { display: none; }
 .lobby-stage-list .stage-card .stage-reward { font-size: 11px; }
 .lobby-stage-list .stage-card .stage-actions { margin-top: auto; }
+.stage-rematch-reward {
+  font-size: 11px;
+  color: var(--c-gold);
+  opacity: 0.85;
+  margin-top: -2px;
+}
 .stage-chips-row {
   display: flex;
   align-items: center;

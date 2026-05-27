@@ -33,6 +33,7 @@ function defaultSave() {
     bgmVolume: 35,           // BGM音量（0-100）
     bgmOn: false,            // BGM初期OFF
     chipChoice: {},          // 対戦相手ごとの初期チップ選択
+    rematchWins: {},         // 対戦相手ごとの再戦勝利回数（diminishing returns 用）
     logs: { actions: [], bets: [], reactions: [], psych: [] },
   };
 }
@@ -2170,6 +2171,7 @@ function renderStageList() {
         <div class="stage-name">${opp.name}</div>
         <div class="stage-desc">${opp.desc}</div>
         <div class="stage-reward">初回報酬：${opp.rewardFirst}コイン${cleared ? '<small>（取得済み）</small>' : ''}</div>
+        ${cleared ? `<div class="stage-rematch-reward">再戦報酬：${rematchPreview(sid)}コイン</div>` : ''}
         ${!showChipRow ? '' : `<div class="stage-chips-row">
           <span class="stage-chips-label">💰 初期${sid === 'rico_tutorial' ? '(🔥)' : ''}</span>
           <span class="stage-chips-value" data-chip-display="${sid}">${curChip}</span>
@@ -3601,6 +3603,20 @@ function skipStageWithCoins(opponentId) {
   applyBindings();
 }
 
+// 次の再戦勝利でもらえる金額のプレビュー（diminishing 反映）
+function rematchPreview(opponentId) {
+  const opp = OPPONENTS[opponentId];
+  if (!opp) return 0;
+  const wins = (save.rematchWins && save.rematchWins[opponentId]) || 0;
+  let mult;
+  if (wins < 4)       mult = 1.00;
+  else if (wins < 8)  mult = 0.75;
+  else if (wins < 12) mult = 0.50;
+  else if (wins < 20) mult = 0.30;
+  else                mult = 0.20;
+  return Math.max(10, Math.round(opp.rewardRematch * mult));
+}
+
 function chipBonusTotal() {
   let b = 0;
   if (save.ownedItems.includes('chips_plus_500'))  b += 500;
@@ -4868,8 +4884,20 @@ function endBattle() {
       rewards.push(`初回クリア報酬：+${opp.rewardFirst}`);
       save.firstClearRewardClaimed.push(state.opponentId);
     } else {
-      earned += opp.rewardRematch;
-      rewards.push(`再戦勝利報酬：+${opp.rewardRematch}`);
+      // 再戦周回防止：同じ相手に勝つほど報酬が減少（0回:100%/4回:75%/8回:50%/12回:30%/20回+:20%）
+      if (!save.rematchWins) save.rematchWins = {};
+      const wins = save.rematchWins[state.opponentId] || 0;
+      save.rematchWins[state.opponentId] = wins + 1;
+      let mult;
+      if (wins < 4)       mult = 1.00;
+      else if (wins < 8)  mult = 0.75;
+      else if (wins < 12) mult = 0.50;
+      else if (wins < 20) mult = 0.30;
+      else                mult = 0.20;
+      const adjusted = Math.max(10, Math.round(opp.rewardRematch * mult));
+      earned += adjusted;
+      const noteStr = mult < 1.0 ? `（${wins+1}勝目: ${Math.round(mult*100)}%）` : '';
+      rewards.push(`再戦勝利報酬：+${adjusted} ${noteStr}`);
     }
     if (rank === 'S' || rank === 'SS') {
       earned += opp.rewardSBonus;
