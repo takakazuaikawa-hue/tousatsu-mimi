@@ -3520,6 +3520,50 @@ html, body {
   font-variant-numeric: tabular-nums;
   margin-left: 6px;
 }
+/* ポット表示（ミニチップ＋大きな数字） */
+.bu-pot-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.bu-pot-display .bu-rchip { width: 12px; height: 12px; margin-left: -4px; }
+.bu-pot-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-gold-bright);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 12px rgba(245,215,122,0.6);
+  margin-left: 8px;
+  line-height: 1;
+}
+/* コール表示（ミニチップ＋桃色数字／無いとき "—"） */
+.bu-callneed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 18px;
+  padding-top: 2px;
+  font-weight: 700;
+}
+.bu-call-key {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--c-text-dim);
+}
+.bu-callneed-active .bu-call-key { color: #ffd0d6; }
+.bu-call-num {
+  font-size: 13px;
+  color: #ffd0d6;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 6px rgba(255,134,179,0.5);
+  margin-left: 4px;
+}
+.bu-call-empty {
+  color: rgba(200,180,200,0.4);
+  font-size: 13px;
+}
 .bu-callneed {
   font-size: 12px;
   font-weight: 700;

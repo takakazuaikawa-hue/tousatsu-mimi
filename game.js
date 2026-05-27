@@ -3323,17 +3323,23 @@ function renderBetUnified() {
   const callClass = playerCallNeed > 0 ? 'bu-callneed bu-callneed-active' : 'bu-callneed bu-callneed-idle';
   const oppShort = oppName.length > 4 ? oppName.slice(0, 3) + '…' : oppName;
 
-  // 「残りチップ」の横並びチップ表記（コンパクト）
-  // 1000 を単位とし、color: gold(5000)/blue(1000)/red(200)/white(50) で多段に
-  // 最大表示8枚、超過分は数で
-  const buildRemainStack = (amount) => {
-    if (!amount || amount <= 0) return `<span class="bu-remain-chips"><span class="bu-remain-num">0</span></span>`;
-    const tiers = [
-      { cls: 'chip-gold',  val: 5000 },
-      { cls: 'chip-blue',  val: 1000 },
-      { cls: 'chip-red',   val: 200 },
-      { cls: 'chip-white', val: 50 },
-    ];
+  // 横並びチップ表記（コンパクト）— 単位を可変
+  // tierスケール: 'large'=5000/1000/200/50（残チップ向け、4桁OK）、'small'=1000/500/100/25（ポット/コール向け、端数まで正確）
+  const buildHorizontalChips = (amount, scale = 'small', numClass = 'bu-remain-num') => {
+    if (!amount || amount <= 0) return `<span class="bu-remain-chips"><span class="${numClass}">0</span></span>`;
+    const tiers = scale === 'large'
+      ? [
+          { cls: 'chip-gold',  val: 5000 },
+          { cls: 'chip-blue',  val: 1000 },
+          { cls: 'chip-red',   val: 200 },
+          { cls: 'chip-white', val: 50 },
+        ]
+      : [
+          { cls: 'chip-gold',  val: 1000 },
+          { cls: 'chip-blue',  val: 500 },
+          { cls: 'chip-red',   val: 100 },
+          { cls: 'chip-white', val: 25 },
+        ];
     let rem = amount;
     const flat = [];
     for (const t of tiers) {
@@ -3346,8 +3352,9 @@ function renderBetUnified() {
     const over = flat.length - visible.length;
     return `<span class="bu-remain-chips">${
       visible.map(cls => `<span class="bu-rchip ${cls}"></span>`).join('')
-    }${over > 0 ? `<span class="bu-remain-more">+${over}</span>` : ''}<span class="bu-remain-num">${amount}</span></span>`;
+    }${over > 0 ? `<span class="bu-remain-more">+${over}</span>` : ''}<span class="${numClass}">${amount}</span></span>`;
   };
+  const buildRemainStack = (a) => buildHorizontalChips(a, 'large', 'bu-remain-num');
 
   return `
     <div class="bu-cell bu-cell-opp">
@@ -3359,8 +3366,13 @@ function renderBetUnified() {
     <div class="bu-cell bu-cell-pot">
       <div class="bu-cell-label bu-pot-title">ポット</div>
       ${buildVerticalStack(pot, 'pot', newPot)}
-      <div class="bu-pot-amt">${pot}</div>
-      <div class="${callClass}">${callText}</div>
+      <div class="bu-pot-display">${buildHorizontalChips(pot, 'small', 'bu-pot-num')}</div>
+      <div class="${callClass}">
+        <span class="bu-call-key">コール</span>
+        ${playerCallNeed > 0
+          ? buildHorizontalChips(playerCallNeed, 'small', 'bu-call-num')
+          : '<span class="bu-call-empty">—</span>'}
+      </div>
     </div>
     <div class="bu-cell bu-cell-pl">
       <div class="bu-cell-label">ミミ</div>
