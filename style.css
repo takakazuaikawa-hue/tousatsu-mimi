@@ -3642,6 +3642,24 @@ html, body {
 }
 /* 思考アイコン廃止：シンプルなバブルだけ表示 */
 .zazazo-display { display: flex; flex-direction: column; gap: 6px; }
+.zazazo-display.revealed {
+  /* 読み切り済みは役目を終えたので薄く＝レイアウト高さは維持 */
+  opacity: 0.45;
+}
+.zazazo-display.revealed .zazazo-bar {
+  /* バーは「—」状の線だけ残す */
+  background: transparent;
+  border: none;
+  border-top: 1px dashed rgba(245,215,122,0.4);
+  border-radius: 0;
+  height: 1px;
+  margin: 8px 0;
+}
+.zazazo-display.revealed .zazazo-text {
+  font-style: italic;
+  color: rgba(220,200,180,0.7);
+  letter-spacing: 0.15em;
+}
 .zazazo-label { font-size: 15px; color: var(--c-gold-bright); letter-spacing: 0.15em; }
 .zazazo-bar {
   height: 14px;

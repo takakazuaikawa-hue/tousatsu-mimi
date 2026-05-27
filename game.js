@@ -2081,8 +2081,18 @@ function applyBindings() {
       case 'panyuMood': el.textContent = panyuMood(state.panyu, state.panyuMax); break;
       case 'opponentChipBar': el.style.width = `${chipBarPct(state.opponentChips)}%`; break;
       case 'playerChipBar': el.style.width = `${chipBarPct(state.playerChips)}%`; break;
-      case 'zazazoFill': el.style.width = `${(state.zazazo / state.zazazoMax) * 100}%`; break;
-      case 'zazazoText': el.textContent = zazazoLabel(state.zazazo); break;
+      case 'zazazoFill': {
+        // 読み切り済みは0%（実質非表示）＋親に revealed クラス付与
+        const pct = state.opponentPersonalityRevealed ? 0 : (state.zazazo / state.zazazoMax) * 100;
+        el.style.width = `${pct}%`;
+        const parent = el.closest('.zazazo-display');
+        if (parent) parent.classList.toggle('revealed', !!state.opponentPersonalityRevealed);
+        break;
+      }
+      case 'zazazoText': {
+        el.textContent = state.opponentPersonalityRevealed ? '— 読み切り完了 —' : zazazoLabel(state.zazazo);
+        break;
+      }
       case 'opponentPersonality': {
         // 枠は常時固定で表示し、中身を切替（レイアウトずれ防止）
         if (!state.opponentId) { el.innerHTML = ''; break; }
