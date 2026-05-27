@@ -6774,8 +6774,7 @@ html, body {
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  /* タップ前のアイドル：軽くふわふわ弾む（大ジャンプはしない） */
-  animation: panyuIdle 1.6s ease-in-out infinite;
+  /* アイドル/タップ揺れはJSの物理シミュレーションで制御（CSS animation 撤去） */
   transition: filter 0.2s;
   will-change: transform;
 }

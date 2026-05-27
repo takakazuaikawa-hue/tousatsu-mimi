@@ -6201,50 +6201,81 @@ function showPanyuClicker(totalTaps, onComplete) {
     comboEl.classList.add('show');
   };
 
+  // === ばね物理によるぷるんぷるん挙動 ===
+  // 各 blob に物理状態を持たせ、requestAnimationFrame で連続的に変形
+  // タップは「状態に impulse を加える」だけで、アニメをリセットしない
+  //   → 連打しても揺れが累積して止まらない、自然なジェル感
+  blobs.forEach(b => {
+    b.__phys = {
+      sx: 1, sy: 1,       // 現在の scale
+      vsx: 0, vsy: 0,     // scale 速度
+      tx: 0, ty: 0,       // 現在の translate
+      vtx: 0, vty: 0,     // translate 速度
+      rot: 0, vrot: 0,    // 微小な回転
+    };
+  });
+  const K_SCALE = 0.12;   // ばね定数（戻り強さ）
+  const D_SCALE = 0.18;   // 減衰（高いほど早く止まる）
+  const K_TRANS = 0.10;
+  const D_TRANS = 0.16;
+  const K_ROT   = 0.10;
+  const D_ROT   = 0.18;
+  let physRunning = true;
+  const physTick = () => {
+    if (!physRunning) return;
+    blobs.forEach(b => {
+      // ドラッグ中は drag ハンドラが transform を直接制御するのでスキップ
+      if (b.classList.contains('dragging') || b.classList.contains('release')) return;
+      const p = b.__phys;
+      // ばね＋減衰：v += -k*(現在-平衡) - d*v
+      p.vsx += -K_SCALE * (p.sx - 1) - D_SCALE * p.vsx;
+      p.vsy += -K_SCALE * (p.sy - 1) - D_SCALE * p.vsy;
+      p.sx += p.vsx;
+      p.sy += p.vsy;
+      p.vtx += -K_TRANS * p.tx - D_TRANS * p.vtx;
+      p.vty += -K_TRANS * p.ty - D_TRANS * p.vty;
+      p.tx += p.vtx;
+      p.ty += p.vty;
+      p.vrot += -K_ROT * p.rot - D_ROT * p.vrot;
+      p.rot += p.vrot;
+      // 微小な呼吸（生命感）
+      const t = performance.now() / 1000;
+      const breath = Math.sin(t * 1.4) * 0.012;
+      const sx = (p.sx + breath).toFixed(4);
+      const sy = (p.sy - breath).toFixed(4);
+      b.style.transform = `translate(${p.tx.toFixed(2)}px, ${p.ty.toFixed(2)}px) rotate(${p.rot.toFixed(2)}deg) scale(${sx}, ${sy})`;
+    });
+    requestAnimationFrame(physTick);
+  };
+  requestAnimationFrame(physTick);
+
   // タップ／ドラッグ中の連続カウント共通処理
   const doTick = (blob, opts = {}) => {
     if (completed) return;
-    const now = Date.now();
-    const fastTap = (now - lastTapTime) < 250;
-    lastTapTime = now;
     count--;
     tapped++;
     countEls.forEach(el => el.textContent = Math.max(0, count));
     updateColor();
     if (navigator.vibrate) navigator.vibrate(opts.fromDrag ? 20 : 35);
-    const burstN = opts.fromDrag ? 2 : (fastTap ? 4 : 2);
+    const burstN = opts.fromDrag ? 2 : 3;
     for (let i = 0; i < burstN; i++) spawnPanyuParticle(overlay);
     if (tapped === 10) showCombo(10);
     else if (tapped === 20) showCombo(20);
     else if (tapped === 25) showCombo(25);
     if (!opts.skipWobble) {
-      // 大きく＆柔らかく揺れる
-      const ampX = fastTap ? 22 : 16;
-      const ampY = fastTap ? 16 : 11;
-      const angle = Math.random() * Math.PI * 2;
-      const minR = 0.7;
-      const r = minR + Math.random() * (1 - minR);
-      const wx = Math.cos(angle) * r * ampX;
-      const wy = Math.sin(angle) * r * ampY;
-      const rotSign = Math.random() < 0.5 ? -1 : 1;
-      const rotAmp = fastTap ? 8 : 5;
-      const rot = rotSign * (0.6 + Math.random() * 0.4) * rotAmp;
-      const isVertical = Math.abs(wy) > Math.abs(wx);
-      const sxBase = fastTap ? 1.30 : 1.22;
-      const syBase = fastTap ? 0.78 : 0.84;
-      blob.style.setProperty('--wx', `${wx.toFixed(1)}px`);
-      blob.style.setProperty('--wy', `${wy.toFixed(1)}px`);
-      blob.style.setProperty('--rot', `${rot.toFixed(1)}deg`);
-      blob.style.setProperty('--sx', isVertical ? syBase : sxBase);
-      blob.style.setProperty('--sy', isVertical ? sxBase : syBase);
-      blob.classList.remove('wobble', 'wobble-fast');
-      void blob.offsetWidth;
-      const wobbleCls = fastTap ? 'wobble-fast' : 'wobble';
-      blob.classList.add(wobbleCls);
-      setTimeout(() => blob.classList.remove(wobbleCls), fastTap ? 340 : 500);
+      // 物理に impulse を加える（押された＝下に潰れる）
+      // ランダムなし：常に「上から押された」物理応答
+      const p = blob.__phys;
+      // 下方向に押し下げ＋縦に圧縮＋横に膨張
+      p.vty += 2.6;             // 下に弾む
+      p.vsy -= 0.05;            // 縦に潰す
+      p.vsx += 0.045;           // 横に膨らむ
+      // ほんの少しだけ左右の傾き（前回符号と反対で振り子感）
+      p.vrot += (p.rot > 0 ? -1 : 1) * 0.35;
     }
     if (count <= 0) {
       completed = true;
+      physRunning = false;
       blobs.forEach(b => b.classList.add('panyu-complete'));
       if (navigator.vibrate) navigator.vibrate([60, 30, 80, 30, 120]);
       for (let i = 0; i < 16; i++) spawnPanyuParticle(overlay);
@@ -6328,10 +6359,24 @@ function attachDragStretch(blob) {
     active = false;
     stopHoldTick();
     blob.classList.remove('dragging');
-    // インラインの transform を消して、release アニメで戻す
+    // 物理状態を「引っ張られた位置」から開始させて、自然に戻す
+    if (blob.__phys) {
+      const m = (blob.style.transform || '').match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
+      if (m) {
+        blob.__phys.tx = parseFloat(m[1]);
+        blob.__phys.ty = parseFloat(m[2]);
+        blob.__phys.vtx = 0;
+        blob.__phys.vty = 0;
+      }
+      const ms = (blob.style.transform || '').match(/scale\(([-\d.]+),\s*([-\d.]+)\)/);
+      if (ms) {
+        blob.__phys.sx = parseFloat(ms[1]);
+        blob.__phys.sy = parseFloat(ms[2]);
+        blob.__phys.vsx = 0;
+        blob.__phys.vsy = 0;
+      }
+    }
     blob.style.transform = '';
-    blob.classList.add('release');
-    setTimeout(() => blob.classList.remove('release'), 460);
     if (pointerId !== null && blob.releasePointerCapture) {
       try { blob.releasePointerCapture(pointerId); } catch (e) {}
     }
