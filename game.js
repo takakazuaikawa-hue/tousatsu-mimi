@@ -1186,16 +1186,16 @@ const PSYCH_QUESTIONS = {
     id: 'logic_cbet_dry',
     type: 'logic',
     rule: 'ドライボードでのCベット：相手がヒットしてない確率が高い',
-    situationFn: () => `📊 状況整理\n` +
-      `・場札：K-7-2 レインボー（ドライボード）\n` +
+    situationFn: (state) => `📊 状況整理\n` +
+      `・場札：${renderCardsText(state.community)}（ドライボード）\n` +
       `・プリフロップでミミがレイズ → 相手はコール\n` +
-      `・ドライボード＝連番なし・スートばらばら・ハイカード1枚\n\n` +
+      `・ドライボード＝連番なし・同スートなし・ペアなし\n\n` +
       `🧮 ポイント\n` +
       `相手のレンジ（コールしてきた手札）は、このボードでフィットしないことが多い。\n` +
       `→ 小さめのCベット（1/3〜1/2）でも降ろせる可能性が高い。\n` +
       `※ヘッズアップ：レンジが広いのでドライボードは小ベット効果大。\n` +
       `※多人数戦：1人でもヒットする確率が上がるのでもう少し慎重に。`,
-    speech: '【論理問題】K-7-2のドライボードでミミの最適行動は？',
+    speech: '【論理問題】ドライボードでミミの最適行動は？',
     zazazoHint: '相手がヒットしてないボード',
     choices: [
       { id: 'small_cbet',  text: '1/3〜1/2ポットの小さなCベットで降ろしに行く', correct: true },
@@ -2791,7 +2791,14 @@ function pickLogicQuestion() {
   // 状況マッチング（具体的な計算ができる場面を優先）
   if (need > 0 && potBefore > 0) candidates.push('logic_pot_odds_basic');
   if (maxSuit >= 2 && state.playerHand[0]?.suit === state.playerHand[1]?.suit) candidates.push('logic_flush_outs');
-  if (state.handPhase === 'flop') candidates.push('logic_hand_compare', 'logic_cbet_dry');
+  if (state.handPhase === 'flop') {
+    candidates.push('logic_hand_compare');
+    // logic_cbet_dry は実際にドライボード（フラッシュ気配なし＆ストレート気配なし＆ペアなし）の時のみ
+    const danger = evaluateBoardDanger(state.community);
+    if (!danger.flushAlert && !danger.straightAlert && !danger.pairBoard) {
+      candidates.push('logic_cbet_dry');
+    }
+  }
   if (sprValue < 4) candidates.push('logic_spr');
   if (state.handPhase === 'river' && need > 0) candidates.push('logic_bluff_catcher');
   if (state.handPhase === 'flop' && state.handNo === 1) candidates.push('logic_implied_odds');
