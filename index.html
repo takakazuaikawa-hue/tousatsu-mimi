@@ -257,6 +257,12 @@
     </aside>
 
     <footer class="bottom-bar">
+      <div class="panyu-gauge panyu-gauge-top">
+        <div class="panyu-bar" title="ぱにゅゲージ">
+          <div class="panyu-fill" data-bind="panyuFill"></div>
+          <div class="panyu-pip" data-bind="panyuPips"></div>
+        </div>
+      </div>
       <div class="mimi-area">
         <div class="character-frame char-mimi">
           <img data-bind="mimiImg" src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
@@ -279,12 +285,6 @@
             <div class="card empty"></div>
           </div>
           <div class="mimi-thought-bubble" data-bind="mimiThought">「ふぅ……まずは手札を見てから」</div>
-        </div>
-        <div class="panyu-gauge">
-          <div class="panyu-bar" title="ぱにゅゲージ">
-            <div class="panyu-fill" data-bind="panyuFill"></div>
-            <div class="panyu-pip" data-bind="panyuPips"></div>
-          </div>
         </div>
       </div>
       <div class="action-area" data-bind="actionArea"></div>
