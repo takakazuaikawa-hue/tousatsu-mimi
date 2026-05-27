@@ -261,7 +261,10 @@ function evalFive(five) {
   let isStraight = false, topStr = 0;
   if (uniq.length === 5) {
     if (uniq[0] - uniq[4] === 4) { isStraight = true; topStr = uniq[0]; }
-    else if (uniq.join() === '14,5,4,3,2') { isStraight = true; topStr = 5; }
+    // A-2-3-4-5（ホイール）：Aを1として扱う5ハイストレート
+    else if (uniq[0] === 14 && uniq[1] === 5 && uniq[2] === 4 && uniq[3] === 3 && uniq[4] === 2) {
+      isStraight = true; topStr = 5;
+    }
   }
   // ロイヤル
   if (isStraight && isFlush && topStr === 14) return mkScore(9, 'ロイヤルストレートフラッシュ', [14]);
@@ -3285,15 +3288,27 @@ function renderActionArea(el) {
   // 6スロット固定グリッド（フォールド／コール・チェック／中ベット／大ベット／ポット／オールイン）
   let slots;
   if (state.handPhase === 'preflop') {
+    const checkable = need === 0;
     slots = [
-      { kind: 'fold', label: 'フォールド', sub: '降りる', action: 'player-fold', ghost: true,
-        enabled: true, title: '手札を捨ててこのハンドを諦める。場札が出る前でも降りられる。アンテ50チップは戻ってこない。' },
-      { kind: 'callcheck', label: 'コール', sub: need > 0 ? `(${need})` : '勝負', action: 'player-call', primary: true,
-        enabled: true, title: '相手と同額を払ってフロップを見にいく。' },
+      { kind: 'fold', label: 'フォールド', sub: checkable ? '不要' : '降りる',
+        action: 'player-fold', ghost: true,
+        // チェック可能時はフォールド不要（押せないように）
+        enabled: !checkable,
+        title: checkable
+          ? '相手と同額（=0）なので、降りる必要はありません。チェックで無料で次へ進めます。'
+          : '手札を捨ててこのハンドを諦める。アンテ50チップは戻ってきません。' },
+      { kind: 'callcheck',
+        label: checkable ? 'チェック' : 'コール',
+        sub: checkable ? '見送り（無料）' : `同額 (${need})`,
+        action: checkable ? 'player-checkcall' : 'player-call', primary: true,
+        enabled: true,
+        title: checkable
+          ? 'チェック＝今は賭けず、ベット0のままフロップ（場札3枚）を見にいく。'
+          : '相手のベットに同額を払ってフロップを見にいく。' },
       { kind: 'sm',    label: '2.5BBレイズ', sub: `(${bb25})`, action: 'player-raise', dataSize: '2.5',
-        enabled: true, title: '相手より大きくベット。強気の攻め。' },
+        enabled: bb25 > need, title: '相手より大きくベット。強気の攻め。' },
       { kind: 'md',    label: '3BBレイズ',   sub: `(${bb3})`,  action: 'player-raise', dataSize: '3',
-        enabled: true, title: 'より大きいレイズ。' },
+        enabled: bb3 > need, title: 'より大きいレイズ。' },
       { kind: 'lg',    label: '—',            sub: 'ポストフロップ用', enabled: false,
         title: 'フロップ後にポットベットが選べるようになります。' },
       { kind: 'allin', label: 'オールイン', sub: `(${allInAmt})`, action: 'player-allin',
@@ -4716,7 +4731,27 @@ function opponentTurn() {
     return;
   }
   // ベット/レイズ
-  const amount = betSizeToChips(action.size, state.pot, state.opponentChips);
+  let amount = betSizeToChips(action.size, state.pot, state.opponentChips);
+  // === 最小レイズ保証 ===
+  // need > 0 のとき（=プレイヤーがすでにベットしている＝相手はレイズする立場）：
+  //   amount は「コール額(need)」＋「最小レイズ幅(>= max(50, need))」以上でなければならない。
+  // amount が need にも満たない場合はチェック/コールに格下げ（不正なベット防止）。
+  if (need > 0) {
+    if (amount < need) {
+      // 単純コールに格下げ
+      const pay = Math.min(need, state.opponentChips);
+      state.opponentChips -= pay;
+      state.currentBetOpponent += pay;
+      state.pot += pay;
+      state.opponentSpeech = opponentSpeech({ type: 'check_call', intent: 'reluctant_call' });
+      log('actions', { actor: 'opponent', type: 'call_fallback', amount: pay });
+      render();
+      setTimeout(advanceAfterCall, 900);
+      return;
+    }
+    const minRaiseTotal = need + Math.max(50, need); // call + min raise step
+    if (amount < minRaiseTotal) amount = Math.min(minRaiseTotal, state.opponentChips);
+  }
   state.opponentChips = Math.max(0, state.opponentChips - amount);
   state.currentBetOpponent += amount;
   state.pot += amount;
@@ -4788,7 +4823,7 @@ function opponentTurn() {
   }
 
   state.isPlayerTurn = true;
-  state.mimiThought = `「ポルカが${amount}ベット……強気だ」`;
+  state.mimiThought = `「${state.opponentName || '相手'}が${amount}ベット……どう出る？」`;
   render();
 }
 
