@@ -2027,6 +2027,15 @@ function applyBindings() {
       case 'panyuValue': el.textContent = state.panyu; break;
       case 'panyuMax': el.textContent = state.panyuMax; break;
       case 'panyuFill': el.style.width = `${(state.panyu / state.panyuMax) * 100}%`; break;
+      case 'panyuRingFill': {
+        // SVG ストロークによる円形プログレス
+        const r = 27;
+        const C = 2 * Math.PI * r; // 169.65
+        const pct = Math.min(1, Math.max(0, state.panyu / state.panyuMax));
+        el.setAttribute('stroke-dasharray', `${C}`);
+        el.setAttribute('stroke-dashoffset', `${C * (1 - pct)}`);
+        break;
+      }
       case 'panyuPips': el.innerHTML = renderPanyuPips(); break;
       case 'panyuMood': el.textContent = panyuMood(state.panyu, state.panyuMax); break;
       case 'opponentChipBar': el.style.width = `${chipBarPct(state.opponentChips)}%`; break;

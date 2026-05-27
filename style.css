@@ -3390,24 +3390,77 @@ html, body {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 160px 1fr 300px;
-  grid-template-rows: 22px 1fr;
-  grid-template-areas:
-    "panyu  panyu     panyu"
-    "mimi   handarea  action";
-  column-gap: 10px;
-  row-gap: 6px;
-  padding: 6px 12px 10px;
+  grid-template-columns: 160px 1fr 330px;
+  gap: 10px;
+  padding: 8px 12px 10px;
   background: rgba(0,0,0,0.55);
   border-radius: 8px;
   border: 1px solid rgba(217,179,90,0.4);
   overflow: hidden;
   align-items: stretch;
 }
-.bottom-bar > .panyu-gauge-top { grid-area: panyu; align-self: stretch; }
-.bottom-bar > .mimi-area      { grid-area: mimi; }
-.bottom-bar > .mimi-hand-area { grid-area: handarea; }
-.bottom-bar > .action-area    { grid-area: action; }
+
+/* 右カラム：丸形ぱにゅゲージ＋アクションボタン */
+.action-column {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 8px;
+  align-items: stretch;
+  min-height: 0;
+}
+.action-column > .action-area { min-height: 0; }
+.panyu-gauge-circle {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  align-self: center;
+  justify-self: center;
+}
+.panyu-ring {
+  width: 100%; height: 100%;
+  transform: rotate(-90deg); /* 上から開始 */
+}
+.panyu-ring-track {
+  fill: none;
+  stroke: rgba(0,0,0,0.55);
+  stroke-width: 7;
+}
+.panyu-ring-fill {
+  fill: none;
+  stroke: url(#panyuGrad);
+  /* グラデ参照は SVG 内で defs を持たないので、フォールバックで単色も指定 */
+  stroke: #ff86b3;
+  stroke-width: 7;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.55s ease-out;
+  filter: drop-shadow(0 0 4px rgba(255,134,179,0.7));
+}
+.panyu-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-shadow: 0 0 4px rgba(0,0,0,0.85);
+}
+.panyu-ring-label {
+  font-size: 10px;
+  color: #ffc1d8;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.panyu-ring-pips {
+  display: flex;
+  gap: 2px;
+  font-size: 11px;
+  line-height: 1;
+}
+.panyu-ring-pips .pip { color: rgba(255,255,255,0.3); }
+.panyu-ring-pips .pip.lit { color: #fff; text-shadow: 0 0 6px #ffc1d8; }
 .mimi-area {
   display: flex;
   flex-direction: column;
