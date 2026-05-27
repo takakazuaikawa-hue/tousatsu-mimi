@@ -3909,14 +3909,8 @@ function renderCardsInto(el, cards, slotCount) {
 }
 
 function renderPsychStats() {
-  // ※ 成功数 X/3 は ミミミゲージで既に表示済みなので、ここでは「連続正解ボーナス」だけ表示
-  const streak = state.psychStreak || 0;
-  if (streak < 2) return ''; // 連続2回以上の時だけ表示（ボーナス発動圏）
-  return `
-    <div class="psych-stats-row">
-      <span class="psych-stats-streak">🔥 ${streak}連続正解（ボーナス中）</span>
-    </div>
-  `;
+  // 成功数はミミミゲージで表示済み。連続ボーナス表示も廃止（実質意味が薄いため）
+  return '';
 }
 
 function renderPsychLog(el) {
@@ -6311,7 +6305,7 @@ function resolvePsych(qid, choice, btn) {
     if (eff.bluffBreak) triggerBluffBreak();
     else if (state.zazazo >= state.zazazoMax) triggerBluffBreak();
     // 連続正解バナー
-    if (state.psychStreak >= 2) showPsychStreakBanner(state.psychStreak);
+    // 連続正解バナーは廃止（ミミミゲージで進捗が見えるので不要）
   } else {
     state.psychStreak = 0; // 連鎖切れ
     const eff = q.onFail;
