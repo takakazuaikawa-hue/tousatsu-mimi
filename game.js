@@ -3323,10 +3323,36 @@ function renderBetUnified() {
   const callClass = playerCallNeed > 0 ? 'bu-callneed bu-callneed-active' : 'bu-callneed bu-callneed-idle';
   const oppShort = oppName.length > 4 ? oppName.slice(0, 3) + '…' : oppName;
 
+  // 「残りチップ」の横並びチップ表記（コンパクト）
+  // 1000 を単位とし、color: gold(5000)/blue(1000)/red(200)/white(50) で多段に
+  // 最大表示8枚、超過分は数で
+  const buildRemainStack = (amount) => {
+    if (!amount || amount <= 0) return `<span class="bu-remain-chips"><span class="bu-remain-num">0</span></span>`;
+    const tiers = [
+      { cls: 'chip-gold',  val: 5000 },
+      { cls: 'chip-blue',  val: 1000 },
+      { cls: 'chip-red',   val: 200 },
+      { cls: 'chip-white', val: 50 },
+    ];
+    let rem = amount;
+    const flat = [];
+    for (const t of tiers) {
+      const c = Math.floor(rem / t.val);
+      for (let i = 0; i < c; i++) flat.push(t.cls);
+      rem -= c * t.val;
+    }
+    const cap = 8;
+    const visible = flat.slice(0, cap);
+    const over = flat.length - visible.length;
+    return `<span class="bu-remain-chips">${
+      visible.map(cls => `<span class="bu-rchip ${cls}"></span>`).join('')
+    }${over > 0 ? `<span class="bu-remain-more">+${over}</span>` : ''}<span class="bu-remain-num">${amount}</span></span>`;
+  };
+
   return `
     <div class="bu-cell bu-cell-opp">
       <div class="bu-cell-label">${oppShort}</div>
-      <div class="bu-remain">残 ${state.opponentChips}</div>
+      <div class="bu-remain">${buildRemainStack(state.opponentChips)}</div>
       ${buildVerticalStack(opp, 'opp', newOpp)}
       <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}</div>
     </div>
@@ -3338,7 +3364,7 @@ function renderBetUnified() {
     </div>
     <div class="bu-cell bu-cell-pl">
       <div class="bu-cell-label">ミミ</div>
-      <div class="bu-remain">残 ${state.playerChips}</div>
+      <div class="bu-remain">${buildRemainStack(state.playerChips)}</div>
       ${buildVerticalStack(pl, 'pl', newPl)}
       <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}</div>
     </div>

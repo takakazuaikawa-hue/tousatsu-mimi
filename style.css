@@ -3482,15 +3482,43 @@ html, body {
   min-height: 150px;
 }
 .bu-remain {
-  font-size: 11px;
-  color: var(--c-gold-bright);
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  padding: 1px 8px;
+  padding: 2px 6px;
   background: rgba(0,0,0,0.4);
   border-radius: 999px;
   border: 1px solid rgba(245,215,122,0.3);
+}
+.bu-remain-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+.bu-rchip {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.5);
+  margin-left: -3px;
+  box-shadow: 0 0 1px rgba(0,0,0,0.7);
+}
+.bu-rchip:first-child { margin-left: 0; }
+.bu-rchip.chip-gold  { background: repeating-conic-gradient(from 0deg, #f5d77a 0deg 30deg, #fff8dc 30deg 60deg); }
+.bu-rchip.chip-blue  { background: repeating-conic-gradient(from 0deg, #3b66d9 0deg 30deg, #c8d6ff 30deg 60deg); }
+.bu-rchip.chip-red   { background: repeating-conic-gradient(from 0deg, #d63a5a 0deg 30deg, #ffd0d6 30deg 60deg); }
+.bu-rchip.chip-white { background: repeating-conic-gradient(from 0deg, #fff 0deg 30deg, #ccc 30deg 60deg); }
+.bu-remain-more {
+  font-size: 9px;
+  color: var(--c-gold-bright);
+  font-weight: 700;
+  margin-left: 3px;
+}
+.bu-remain-num {
+  font-size: 11px;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.02em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-left: 6px;
 }
 .bu-callneed {
   font-size: 12px;
