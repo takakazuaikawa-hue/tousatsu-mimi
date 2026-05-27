@@ -1038,8 +1038,9 @@ html, body {
 }
 .stage-portrait img {
   width: 100%; height: 100%; object-fit: cover;
-  object-position: 50% 15%;
-  transform: scale(1.4);
+  object-position: 50% 0%;
+  transform: scale(1.15);
+  transform-origin: 50% 100%; /* 下基準にスケール：頭が切れないように */
 }
 .stage-portrait.locked-portrait {
   display: flex; align-items: center; justify-content: center;
@@ -3791,7 +3792,7 @@ html, body {
 
 /* ========== ハンド結果バナー（毎ハンド終了後に表示） ========== */
 .hand-result-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.78);
   z-index: 120;

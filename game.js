@@ -4773,7 +4773,8 @@ function showHandResultBanner() {
     </div>
   `;
   tpl.innerHTML = detailHtml;
-  document.body.appendChild(tpl);
+  // #stage 内に配置してスケール追従させる（body 直下だとオーバーフロー）
+  (document.getElementById('stage') || document.body).appendChild(tpl);
   document.getElementById('continue-hand-btn').addEventListener('click', () => {
     tpl.remove();
     continueAfterHand();
