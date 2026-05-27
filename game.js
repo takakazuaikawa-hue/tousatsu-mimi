@@ -1945,7 +1945,7 @@ const app = document.getElementById('app');
 function render() {
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); break;
-    case 'stageSelect': renderTemplate('tpl-stage-select'); applyBindings(); tryStartLobbyBgm(); break;
+    case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); tryStartLobbyBgm(); break;
     case 'battle':      renderTemplate('tpl-battle'); applyBindings(); break;
     case 'result':      renderTemplate('tpl-result'); applyBindings(); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
@@ -3176,7 +3176,7 @@ function onAction(e) {
   // 任意のアクションでカットインを閉じる
   dismissCutIn();
   switch (action) {
-    case 'start':         goStageSelect(); break;
+    case 'start':         goLobby(); break;
     case 'new-game':
       showNewGameModal();
       break;
@@ -3211,7 +3211,7 @@ function onAction(e) {
     }
     case 'skip-stage': skipStageWithCoins(data.opponent); break;
     case 'back-title':    stopEndingBgm(); state = defaultState(); render(); break;
-    case 'back-stage':    stopEndingBgm(); goStageSelect(); break;
+    case 'back-lobby':    stopEndingBgm(); goLobby(); break;
     case 'open-shop':     state.screen = 'shop'; render(); break;
     case 'reset-save':    resetProgress(); break;
     case 'buy-item':      buyItem(data.itemId); break;
@@ -3690,7 +3690,7 @@ function showEndingFinalButtons(stage) {
   btns.className = 'ending-final-buttons';
   btns.innerHTML = `
     <button class="btn btn-primary" data-action="back-title">タイトルへ</button>
-    <button class="btn btn-secondary" data-action="back-stage">ロビーへ</button>
+    <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
   `;
   stage.appendChild(btns);
   btns.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
@@ -3712,11 +3712,11 @@ function spawnEndingSparkle(parent) {
   setTimeout(() => s.remove(), 1600);
 }
 
-function goStageSelect() {
-  state.screen = 'stageSelect';
+function goLobby() {
+  state.screen = 'lobby';
   // 入室時にリコの衣装を抽選し直す
   state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
-  state.lobbyRicoChangedAt = 'stageSelect';
+  state.lobbyRicoChangedAt = 'lobby';
   render();
   tryStartLobbyBgm();
 }
@@ -5323,7 +5323,7 @@ function endBattle() {
     if (btns) {
       btns.innerHTML = `
         <button class="btn btn-primary big" data-action="go-ending">✨ エンディングへ ✨</button>
-        <button class="btn btn-secondary" data-action="back-stage">ロビーへ</button>
+        <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
       `;
       // 動的に追加したボタンを再バインド
       btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
@@ -5486,7 +5486,7 @@ function exitLectureMidway() {
   save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect };
   saveProgress();
   state = defaultState();
-  state.screen = 'stageSelect';
+  state.screen = 'lobby';
   render();
   toast('講義を中断しました。続きはリコ先輩から再開できます');
 }
@@ -5559,7 +5559,7 @@ function finishLecture(skipped) {
     save.lectureProgress = null;  // 完了したので進捗削除
     saveProgress();
     state = defaultState();
-    state.screen = 'stageSelect';
+    state.screen = 'lobby';
     render();
     toast(`✨ 講義完了！${skipped ? '' : '+300コイン'}`);
   });
@@ -5575,7 +5575,7 @@ function endTutorial() {
     '次は<b>Stage 2「ポルカ」</b>で本番だよ。チップが尽きるまで勝負！',
     () => {
       // リザルト画面風に表示（簡易：ステージ選択へ戻す）
-      state.screen = 'stageSelect';
+      state.screen = 'lobby';
       state.coinsEarned = (state.coinsEarned || 0) + 200;
       render();
       toast('チュートリアル報酬：200コイン獲得！');

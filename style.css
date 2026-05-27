@@ -478,16 +478,7 @@ html, body {
 
 .hud-right { display: flex; gap: 10px; align-items: center; }
 .hud-right .btn { padding: 4px 12px; font-size: 13px; }
-.stage-tips {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  font-size: 16px;
-  color: var(--c-gold-bright);
-  letter-spacing: 0.1em;
-  padding: 10px 0 16px;
-  background: rgba(0,0,0,0.3);
-}
+/* （旧 .stage-tips は撤去済み） */
 
 /* ========== 交換所 ========== */
 .shop-screen { grid-template-rows: 60px auto 1fr; }
@@ -630,8 +621,7 @@ html, body {
   overflow-y: auto;
 }
 
-/* ========== ロビー（旧ステージ選択） ========== */
-.stage-select-screen,
+/* ========== ロビー ========== */
 .lobby-screen { grid-template-rows: 60px 1fr; }
 /* position: relative は .screen の position: absolute; inset: 0 を打ち消すため使わない。
    absolute のままで positioning context として機能する。 */

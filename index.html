@@ -95,7 +95,7 @@
   </div>
 </template>
 
-<template id="tpl-stage-select">
+<template id="tpl-lobby">
   <div class="screen lobby-screen">
     <div class="bg-layer bg-lobby"></div>
     <div class="lobby-chandelier"></div>
@@ -135,7 +135,7 @@
   <div class="screen shop-screen">
     <div class="bg-layer bg-stage"></div>
     <header class="top-hud">
-      <button class="btn btn-ghost" data-action="back-stage">← ロビーへ</button>
+      <button class="btn btn-ghost" data-action="back-lobby">← ロビーへ</button>
       <h2>🛍 交換所</h2>
       <span class="coin-display">所持コイン：<span data-bind="saveCoins">0</span></span>
     </header>
@@ -163,7 +163,7 @@
     <div class="bg-layer bg-poker"></div>
 
     <header class="top-hud">
-      <button class="btn btn-ghost" data-action="back-stage">中断</button>
+      <button class="btn btn-ghost" data-action="back-lobby">中断</button>
       <span class="hand-info">Hand <span data-bind="handNo">1</span></span>
       <span class="opponent-name" data-bind="opponentName">ポルカ</span>
     </header>
@@ -355,7 +355,7 @@
       <div class="result-reason" data-bind="resultReason"></div>
       <div class="result-buttons" data-bind="resultButtons">
         <button class="btn btn-primary" data-action="rematch">再戦</button>
-        <button class="btn btn-secondary" data-action="back-stage">ロビーへ</button>
+        <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
       </div>
     </div>
   </div>
