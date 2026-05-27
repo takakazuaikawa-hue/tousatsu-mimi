@@ -3465,19 +3465,46 @@ html, body {
   50%      { transform: scale(1.08); }
 }
 
-/* === 統合ベットゲージ：1カラムにポット情報を集約 === */
+/* === 統合ベットゲージ：3カラム縦チップ＋残りチップ表示 === */
 .bet-unified {
   width: 100%;
-  max-width: 600px;
+  max-width: 760px;
   margin: 0 auto;
-  padding: 10px 16px;
+  padding: 8px 16px 10px;
   background: linear-gradient(180deg, rgba(20,8,30,0.85) 0%, rgba(10,4,20,0.95) 100%);
   border: 1px solid rgba(245,215,122,0.45);
   border-radius: 12px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.5);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1fr;
+  gap: 10px;
+  align-items: end;
+  min-height: 150px;
+}
+.bu-remain {
+  font-size: 11px;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 8px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 999px;
+  border: 1px solid rgba(245,215,122,0.3);
+}
+.bu-callneed {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  min-height: 18px;
+  padding-top: 2px;
+}
+.bu-callneed-active {
+  color: #ffd0d6;
+  text-shadow: 0 0 6px rgba(255,134,179,0.5);
+}
+.bu-callneed-idle {
+  color: rgba(200,180,200,0.4);
 }
 /* プレイヤー対戦行：ミミ ─ VS ─ 相手 */
 .bu-stack-row {

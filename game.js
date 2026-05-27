@@ -3319,67 +3319,28 @@ function renderBetUnified() {
     `;
   };
 
-  // 横並びチップ表記：[ミミ chips 425] ─ 差 ─ [425 chips リコ先]
-  const buildHStack = (amount, side, newAdded) => {
-    if (!amount || amount <= 0) {
-      return '<span class="bu-hstack bu-hstack-empty">—</span>';
-    }
-    const tiers = [
-      { cls: 'chip-gold',  val: 1000 },
-      { cls: 'chip-blue',  val: 500 },
-      { cls: 'chip-red',   val: 100 },
-      { cls: 'chip-white', val: 25 },
-    ];
-    let rem = amount;
-    const flat = [];
-    for (const t of tiers) {
-      const c = Math.floor(rem / t.val);
-      for (let i = 0; i < c; i++) flat.push(t.cls);
-      rem -= c * t.val;
-    }
-    const cap = 8;
-    const visible = flat.slice(0, cap);
-    const over = flat.length - visible.length;
-    // 前回の枚数を再計算して新規分のみアニメ対象に
-    const oldFlatLen = (() => {
-      const prevAmt = Math.max(0, amount - newAdded);
-      let r = prevAmt, n = 0;
-      for (const t of tiers) { const c = Math.floor(r / t.val); n += c; r -= c * t.val; }
-      return n;
-    })();
-    const newCount = Math.max(0, visible.length - oldFlatLen);
-    return `<span class="bu-hstack" data-side="${side}">${
-      visible.map((cls, i) => {
-        const isNew = (i >= visible.length - newCount);
-        return `<span class="bu-hchip ${cls}${isNew ? ' bu-chip-new' : ''}"></span>`;
-      }).join('')
-    }${over > 0 ? `<span class="bu-hover">+${over}</span>` : ''}</span>`;
-  };
-
-  const callText = playerCallNeed > 0 ? `${playerCallNeed}` : '—';
-  const callClass = playerCallNeed > 0 ? 'bu-call bu-call-active' : 'bu-call bu-call-idle';
+  const callText = playerCallNeed > 0 ? `コール ${playerCallNeed}` : 'コール —';
+  const callClass = playerCallNeed > 0 ? 'bu-callneed bu-callneed-active' : 'bu-callneed bu-callneed-idle';
+  const oppShort = oppName.length > 4 ? oppName.slice(0, 3) + '…' : oppName;
 
   return `
-    <div class="bu-stack-row">
-      <div class="bu-side bu-side-pl">
-        ${buildHStack(pl, 'pl', newPl)}
-        <span class="bu-side-amt">${pl}</span>
-        <span class="bu-side-name">ミミ</span>
-      </div>
-      <div class="bu-vs">VS</div>
-      <div class="bu-side bu-side-opp">
-        <span class="bu-side-name">${oppName.length > 3 ? oppName.slice(0,3) + '…' : oppName}</span>
-        <span class="bu-side-amt">${opp}</span>
-        ${buildHStack(opp, 'opp', newOpp)}
-      </div>
+    <div class="bu-cell bu-cell-opp">
+      <div class="bu-cell-label">${oppShort}</div>
+      <div class="bu-remain">残 ${state.opponentChips}</div>
+      ${buildVerticalStack(opp, 'opp', newOpp)}
+      <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}</div>
     </div>
-    <div class="bu-pot-row">
-      <span class="bu-pot-label">ポット</span>
-      <span class="bu-pot-amt">${pot}</span>
+    <div class="bu-cell bu-cell-pot">
+      <div class="bu-cell-label bu-pot-title">ポット</div>
+      ${buildVerticalStack(pot, 'pot', newPot)}
+      <div class="bu-pot-amt">${pot}</div>
+      <div class="${callClass}">${callText}</div>
     </div>
-    <div class="${callClass}">
-      <span class="bu-call-label">コール</span>
-      <span class="bu-call-amt">${callText}</span>
+    <div class="bu-cell bu-cell-pl">
+      <div class="bu-cell-label">ミミ</div>
+      <div class="bu-remain">残 ${state.playerChips}</div>
+      ${buildVerticalStack(pl, 'pl', newPl)}
+      <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}</div>
     </div>
   `;
 }
