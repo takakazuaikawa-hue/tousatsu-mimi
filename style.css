@@ -6755,9 +6755,7 @@ html, body {
   position: absolute;
   left: 50%;
   top: 50%;
-  /* 中心を守って 1.15 倍に拡大（縦横比は維持） */
-  transform: translate(-50%, -50%) scale(1.15);
-  transform-origin: center center;
+  transform: translate(-50%, -50%);
   max-height: 85vh;
   max-width: 80vw;
   height: auto;
