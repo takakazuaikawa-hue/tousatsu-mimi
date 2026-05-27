@@ -4367,7 +4367,7 @@ html, body {
 /* 相手の性格カード（枠は固定サイズ・中身切替） */
 .opp-personality { flex: 1; min-width: 0; max-width: 100%; }
 .opp-personality-card {
-  padding: 8px 12px;
+  padding: 6px 12px;
   background: linear-gradient(180deg, rgba(60,28,90,0.85) 0%, rgba(20,8,30,0.95) 100%);
   border: 1px solid rgba(245,215,122,0.6);
   border-radius: 8px;
@@ -4378,7 +4378,7 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
 }
 .opp-personality-card.opp-p-unrevealed {
   background: linear-gradient(180deg, rgba(40,20,60,0.55) 0%, rgba(20,8,30,0.7) 100%);
@@ -4420,15 +4420,16 @@ html, body {
   font-size: 14px;
   color: #fbe28a;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 1px;
+  line-height: 1.2;
 }
 .opp-p-traits {
   list-style: none;
-  margin: 0 0 6px 0;
+  margin: 0;
   padding: 0;
   font-size: 11px;
   color: #f4e8c8;
-  line-height: 1.5;
+  line-height: 1.35;
 }
 .opp-p-traits li {
   padding-left: 12px;
@@ -4440,16 +4441,17 @@ html, body {
   left: 0;
   color: rgba(245,215,122,0.6);
   font-size: 8px;
-  top: 4px;
+  top: 3px;
 }
 .opp-p-exploit {
   font-size: 11px;
   color: #8aff9a;
   background: rgba(20,60,40,0.4);
   border-left: 3px solid #8aff9a;
-  padding: 4px 8px;
+  padding: 3px 8px;
   border-radius: 0 4px 4px 0;
-  margin-top: 4px;
+  margin-top: 2px;
+  line-height: 1.35;
 }
 .opp-p-exploit b {
   color: #b8ffb8;
