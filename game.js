@@ -2095,7 +2095,17 @@ function applyBindings() {
       }
       case 'opponentPersonality': {
         // 枠は常時固定で表示し、中身を切替（レイアウトずれ防止）
-        if (!state.opponentId) { el.innerHTML = ''; break; }
+        if (!state.opponentId) {
+          if (el.dataset.state !== 'empty') {
+            el.innerHTML = '';
+            el.dataset.state = 'empty';
+          }
+          break;
+        }
+        // 状態キー：opponentId + 読み切り済か。同じなら再描画しない（アニメちらつき防止）
+        const stateKey = `${state.opponentId}:${state.opponentPersonalityRevealed ? 'r' : 'u'}`;
+        if (el.dataset.state === stateKey) break;
+        el.dataset.state = stateKey;
         if (state.opponentPersonalityRevealed) {
           const p = getOpponentPersonality(state.opponentId);
           el.innerHTML = `
@@ -2108,7 +2118,6 @@ function applyBindings() {
             </div>
           `;
         } else {
-          // 読み切り前：見た目・雰囲気だけを薄く表示
           el.innerHTML = `
             <div class="opp-personality-card opp-p-unrevealed">
               <div class="opp-p-title opp-p-title-mute">見た目・雰囲気</div>
