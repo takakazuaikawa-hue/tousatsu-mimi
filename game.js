@@ -5864,12 +5864,7 @@ function opponentTurn() {
     if (lqid) {
       state.logicResolvedStreet = true;
       render();
-      // 性格読み切り後は「問題タイトル＋スキップ／挑む」の選択画面を出す
-      if (state.opponentPersonalityRevealed) {
-        setTimeout(() => showLogicSkipPrompt(lqid), 600);
-      } else {
-        setTimeout(() => triggerPsychBattle(lqid), 900);
-      }
+      setTimeout(() => triggerPsychBattle(lqid), 900);
       return;
     }
   }
@@ -6096,6 +6091,17 @@ function triggerPsychBattle(qid) {
     senseBtn.textContent = 'ぱにゅぱにゅ（ゲージ不足）';
   }
   senseBtn.addEventListener('click', () => usePanyuSense(qid, isFree));
+
+  // 性格読み切り後はスキップボタンを表示
+  const skipBtn = root.querySelector('[data-bind="psychSkipBtn"]');
+  if (skipBtn) {
+    if (state.opponentPersonalityRevealed) {
+      skipBtn.style.display = '';
+      skipBtn.addEventListener('click', () => skipPsychBattle());
+    } else {
+      skipBtn.style.display = 'none';
+    }
+  }
 
   state.psychRoot = root;
   render(); // 背景再描画
@@ -6382,7 +6388,21 @@ function showPsychStreakBanner(streak) {
   setTimeout(() => banner.remove(), 2200);
 }
 
-// 性格読み切り後の論理バトル：タイトルを見てスキップ／挑むを選べる
+// 心理／論理バトルをスキップ（読み切り後のみ呼ばれる）
+function skipPsychBattle() {
+  if (state.psychRoot) {
+    state.psychRoot.remove();
+    state.psychRoot = null;
+  }
+  state.psychPending = false;
+  state.psychResolved = true; // 同ハンド再発動防止
+  state.logicResolvedStreet = true;
+  state.isPlayerTurn = true;
+  state.mimiThought = '「スキップ……自分で判断しよう」';
+  render();
+}
+
+// （旧）性格読み切り後の論理バトル：タイトルを見てスキップ／挑むを選べる - 廃止
 function showLogicSkipPrompt(qid) {
   const q = PSYCH_QUESTIONS[qid];
   if (!q) {

@@ -4576,7 +4576,27 @@ html, body {
   pointer-events: auto;
 }
 
-/* 論理バトル スキップ／挑む プロンプト */
+/* 心理／論理バトル モーダル内のスキップボタン（読み切り後のみ） */
+.psych-skip-btn {
+  margin: 10px auto 0;
+  padding: 6px 18px;
+  font-size: 12px;
+  background: rgba(20,8,30,0.6);
+  color: rgba(220,200,180,0.7);
+  border: 1px dashed rgba(245,215,122,0.4);
+  border-radius: 999px;
+  cursor: pointer;
+  display: block;
+  letter-spacing: 0.05em;
+  transition: background 0.2s, color 0.2s;
+}
+.psych-skip-btn:hover {
+  background: rgba(60,28,90,0.7);
+  color: #fbe28a;
+  border-style: solid;
+}
+
+/* 論理バトル スキップ／挑む プロンプト（旧・未使用） */
 .logic-skip-overlay {
   position: absolute;
   inset: 0;
