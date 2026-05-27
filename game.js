@@ -227,11 +227,13 @@ const HAND_NAMES = [
 function evaluateHand(cards) {
   if (cards.length < 5) return { rank: 0, name: '-', score: 0 };
   let best = null;
+  let bestFive = null;
   const combos = combinations(cards, 5);
   for (const five of combos) {
     const ev = evalFive(five);
-    if (!best || ev.score > best.score) best = ev;
+    if (!best || ev.score > best.score) { best = ev; bestFive = five; }
   }
+  if (best) best.bestFive = bestFive; // 勝ち手を構成する5枚
   return best;
 }
 function combinations(arr, k) {
@@ -3555,6 +3557,68 @@ function renderBetUnified() {
   `;
 }
 
+// === エクイティ（勝率）計算：ストリート単位 ===
+// 残りカードを全列挙して player vs opponent の勝率を出す
+function computeEquity(playerHand, opponentHand, community) {
+  if (!playerHand || !opponentHand || playerHand.length < 2 || opponentHand.length < 2) return null;
+  if (community.length === 5) {
+    const pEv = evaluateHand([...playerHand, ...community]);
+    const oEv = evaluateHand([...opponentHand, ...community]);
+    if (pEv.score > oEv.score) return 100;
+    if (pEv.score < oEv.score) return 0;
+    return 50;
+  }
+  const known = new Set([...playerHand, ...opponentHand, ...community].map(c => c.label + c.suit));
+  const SUITS = ['♠','♥','♦','♣'];
+  const RANKS = [2,3,4,5,6,7,8,9,10,11,12,13,14];
+  const LABELS = {2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A'};
+  const deck = [];
+  for (const r of RANKS) for (const s of SUITS) {
+    const lbl = LABELS[r] + s;
+    if (!known.has(lbl)) deck.push({ rank: r, suit: s, label: LABELS[r] });
+  }
+  let wins = 0, losses = 0, splits = 0;
+  const toCome = 5 - community.length;
+  if (toCome === 2) {
+    for (let i = 0; i < deck.length; i++) {
+      for (let j = i + 1; j < deck.length; j++) {
+        const board = [...community, deck[i], deck[j]];
+        const pEv = evaluateHand([...playerHand, ...board]);
+        const oEv = evaluateHand([...opponentHand, ...board]);
+        if (pEv.score > oEv.score) wins++;
+        else if (pEv.score < oEv.score) losses++;
+        else splits++;
+      }
+    }
+  } else if (toCome === 1) {
+    for (const card of deck) {
+      const board = [...community, card];
+      const pEv = evaluateHand([...playerHand, ...board]);
+      const oEv = evaluateHand([...opponentHand, ...board]);
+      if (pEv.score > oEv.score) wins++;
+      else if (pEv.score < oEv.score) losses++;
+      else splits++;
+    }
+  } else {
+    // プリフロップ：簡易ヒューリスティック
+    const pStr = opponentPreflopStrength(playerHand);
+    const oStr = opponentPreflopStrength(opponentHand);
+    const total = pStr + oStr;
+    return total > 0 ? Math.round(pStr / total * 100) : 50;
+  }
+  const total = wins + losses + splits;
+  return total > 0 ? Math.round((wins + splits / 2) / total * 100) : 50;
+}
+
+function recordEquitySnapshot(streetLabel) {
+  if (!state.equityHistory) state.equityHistory = [];
+  if (!state.playerHand || !state.opponentHand) return;
+  const eq = computeEquity(state.playerHand, state.opponentHand, state.community || []);
+  if (eq !== null) {
+    state.equityHistory.push({ street: streetLabel, pct: eq });
+  }
+}
+
 // セッション戦績（プロが意識する主要指標）
 function renderSessionStats() {
   const results = state.handResults || [];
@@ -4960,6 +5024,7 @@ function startHand() {
     state.scriptedTurnRiver = null;
   }
   state.community = [];
+  state.equityHistory = []; // ハンド毎にリセット
   state.psychResolved = false;
   state.logicResolvedStreet = false;
   state.psychPending = false;
@@ -5390,6 +5455,7 @@ function advanceAfterCall() {
       state.community = [state.deck.pop(), state.deck.pop(), state.deck.pop()];
     }
     state.handPhase = 'flop';
+    recordEquitySnapshot('フロップ');
     state.mimiThought = `「フロップ：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`;
     state.ricoAdvice = '「場が出たね〜。相手の出方をよく見な」';
     state.isPlayerTurn = false;  // 相手から
@@ -5409,6 +5475,7 @@ function advanceAfterCall() {
       // フルハンド：ターンのみ公開
       state.community.push(state.deck.pop());
       state.handPhase = 'turn';
+      recordEquitySnapshot('ターン');
       state.mimiThought = `「ターン公開：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`;
       state.ricoAdvice = '「ターンで場が変わったかもね。相手のベットの変化、見逃さないで」';
       state.isPlayerTurn = false;
@@ -5425,6 +5492,7 @@ function advanceAfterCall() {
         state.community.push(state.deck.pop(), state.deck.pop());
       }
       state.handPhase = 'turnRiver';
+      recordEquitySnapshot('ターン＆リバー');
       state.mimiThought = `「ターン＆リバー：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`;
       state.ricoAdvice = '「全部の場札出たね〜。最終判断、いい？」';
       state.isPlayerTurn = false;
@@ -5436,6 +5504,7 @@ function advanceAfterCall() {
     // フルハンド：リバー公開
     state.community.push(state.deck.pop());
     state.handPhase = 'river';
+    recordEquitySnapshot('リバー');
     state.mimiThought = `「リバー公開：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`;
     state.ricoAdvice = '「リバーまで出揃ったよ。ここから最終判断ね」';
     state.isPlayerTurn = false;
@@ -5909,6 +5978,7 @@ function endHand() {
   showHandResultBanner();
 }
 
+// === ハンド結果モーダル（リッチ版） ===
 function showHandResultBanner() {
   const last = state.handResults[state.handResults.length - 1];
   if (!last) return continueAfterHand();
@@ -5916,99 +5986,183 @@ function showHandResultBanner() {
   const tpl = document.createElement('div');
   tpl.className = 'hand-result-overlay';
 
-  let winnerText, winnerClass, detailHtml;
-  const playerHandStr = state.playerHand.map(c =>
-    `<span class="${(c.suit==='♥'||c.suit==='♦')?'red':''}">${c.label}${c.suit}</span>`
-  ).join(' ');
-  const oppHandStr = state.opponentHand.map(c =>
-    `<span class="${(c.suit==='♥'||c.suit==='♦')?'red':''}">${c.label}${c.suit}</span>`
-  ).join(' ');
-  const communityStr = state.community.map(c =>
-    `<span class="${(c.suit==='♥'||c.suit==='♦')?'red':''}">${c.label}${c.suit}</span>`
-  ).join(' ');
+  // 勝敗テキスト
+  let winnerText, winnerClass;
+  if (last.winner === 'player')       { winnerText = '🏆 勝利！';   winnerClass = 'win'; }
+  else if (last.winner === 'opponent'){ winnerText = '✗ 敗北';      winnerClass = 'lose'; }
+  else                                { winnerText = '＝ 引き分け'; winnerClass = 'draw'; }
 
-  if (last.winner === 'player') {
-    winnerText = '🏆 ミミ の勝利！';
-    winnerClass = 'win';
-  } else if (last.winner === 'opponent') {
-    winnerText = `${state.opponentName} の勝利……`;
-    winnerClass = 'lose';
-  } else {
-    winnerText = '引き分け';
-    winnerClass = 'draw';
+  // ベスト5枚（ショーダウン時）
+  const bestFivePlayer = last.pEv?.bestFive || [];
+  const bestFiveOpp    = last.oEv?.bestFive || [];
+  const bestFiveWinner = last.winner === 'player' ? bestFivePlayer
+    : last.winner === 'opponent' ? bestFiveOpp : bestFivePlayer;
+
+  const cardSpan = (c, highlight) =>
+    `<span class="hr-pcard${highlight ? ' hr-pcard-hi' : ''} ${(c.suit==='♥'||c.suit==='♦')?'red':''}">${c.label}${c.suit}</span>`;
+
+  // カードをハイライト判定で描画（bestFive に含まれているかでハイライト）
+  const renderHandWithHi = (hand, bestFive) => {
+    const set = new Set(bestFive.map(c => c.label + c.suit));
+    return hand.map(c => cardSpan(c, set.has(c.label + c.suit))).join('');
+  };
+  const renderBoardWithHi = (board, bestFive) => {
+    const set = new Set(bestFive.map(c => c.label + c.suit));
+    return board.map(c => cardSpan(c, set.has(c.label + c.suit))).join('');
+  };
+
+  // === 戦況分析：エクイティ推移・特殊判定 ===
+  const eq = state.equityHistory || [];
+  const lastEq = eq[eq.length - 1]?.pct;
+  const flopEq = eq[0]?.pct;
+  const peakEq = eq.length > 0 ? Math.max(...eq.map(e => e.pct)) : null;
+  const minEq  = eq.length > 0 ? Math.min(...eq.map(e => e.pct)) : null;
+
+  let verdict = null; // { label, desc, cls }
+  if (last.reason === 'showdown' && eq.length >= 2) {
+    // バッドビート判定：プレイヤーが70%以上だったのに負けた
+    if (peakEq >= 70 && last.winner === 'opponent') {
+      verdict = { label: '💀 バッドビート', desc: `ピーク${peakEq}%まで有利だったのに、リバーで逆転負け……`, cls: 'verdict-badbeat' };
+    }
+    // サックアウト：プレイヤーが30%以下だったのに勝った
+    else if (minEq <= 30 && last.winner === 'player') {
+      verdict = { label: '✨ サックアウト勝ち', desc: `ピンチ${minEq}%から大逆転！運も実力のうち`, cls: 'verdict-suckout' };
+    }
+    // クーラー：両者ストレート以上
+    else if (last.pEv?.rank >= 4 && last.oEv?.rank >= 4) {
+      verdict = { label: '🔥 クーラー', desc: '両者とも強い役だった。避けようがない大勝負', cls: 'verdict-cooler' };
+    }
+    // ドミネートされて負け：相手の役のほうが上位カテゴリ
+    else if (last.winner === 'opponent' && last.oEv && last.pEv && last.oEv.rank > last.pEv.rank + 1) {
+      verdict = { label: '⚠ 役負け', desc: `${last.oEv.name}には${last.pEv.name}では届かない`, cls: 'verdict-dominated' };
+    }
+    // 圧勝
+    else if (last.winner === 'player' && lastEq >= 90 && peakEq >= 80) {
+      verdict = { label: '🌟 圧勝', desc: '序盤から優位を保って勝ち切った', cls: 'verdict-clean' };
+    }
+  } else if (last.reason === 'opponentFold') {
+    // ブラフ成功判定：プレイヤーの実勝率が低かったのに相手降りた
+    if (lastEq !== undefined && lastEq < 40) {
+      verdict = { label: '🎭 ブラフ成功', desc: `本当の勝率は${lastEq}%だったのに、相手を降ろした`, cls: 'verdict-bluff' };
+    } else if (last.pEv && last.pEv.rank >= 4) {
+      verdict = { label: '💎 強役で相手降伏', desc: `${last.pEv.name}で押し切った`, cls: 'verdict-clean' };
+    }
+  } else if (last.reason === 'fold') {
+    // フォールド：実は勝てたか？
+    if (lastEq !== undefined && lastEq >= 60) {
+      verdict = { label: '😱 リリースミス', desc: `実は${lastEq}%勝てる手だった……降りなくてよかったかも`, cls: 'verdict-misfold' };
+    } else if (lastEq !== undefined && lastEq <= 30) {
+      verdict = { label: '✅ 良い損切り', desc: `勝率${lastEq}%、降りて正解`, cls: 'verdict-clean' };
+    }
   }
 
-  let reasonHtml = '';
-  if (last.reason === 'fold') {
-    reasonHtml = `<div class="result-reason-row">ミミがフォールド → ${state.opponentName}がポット獲得</div>`;
-  } else if (last.reason === 'opponentFold') {
-    reasonHtml = `<div class="result-reason-row">${state.opponentName}がフォールド → ミミがポット獲得</div>`;
-  } else if (last.reason === 'showdown') {
-    reasonHtml = `
-      <div class="result-cards-row">
-        <div class="result-card-block">
-          <div class="result-cards-label">ミミの手札</div>
-          <div class="result-cards-str">${playerHandStr}</div>
-          <div class="result-hand-name">${last.pEv?.name || '-'}</div>
+  // 決定打：エクイティが最も変化したストリート
+  let pivot = null;
+  if (eq.length >= 2) {
+    let maxDelta = 0;
+    for (let i = 1; i < eq.length; i++) {
+      const d = Math.abs(eq[i].pct - eq[i-1].pct);
+      if (d > maxDelta) { maxDelta = d; pivot = { from: eq[i-1], to: eq[i], delta: d }; }
+    }
+  }
+  const pivotHtml = pivot && pivot.delta >= 15
+    ? `<div class="hr-pivot">💡 決定打：<b>${pivot.to.street}</b> で勝率 ${pivot.from.pct}% → <b>${pivot.to.pct}%</b>（${pivot.delta > 0 ? '+' : ''}${pivot.to.pct - pivot.from.pct}）</div>`
+    : '<div class="hr-pivot hr-pivot-empty">—</div>';
+
+  // エクイティタイムライン
+  const equityTimelineHtml = eq.length > 0
+    ? `<div class="hr-equity">
+         <div class="hr-equity-title">📈 勝率推移</div>
+         <div class="hr-equity-row">
+           ${eq.map(e => `<span class="hre-step"><span class="hre-street">${e.street}</span><span class="hre-pct ${e.pct >= 70 ? 'good' : e.pct >= 40 ? 'mid' : 'bad'}">${e.pct}%</span></span>`).join('<span class="hre-arrow">▸</span>')}
+         </div>
+       </div>`
+    : '';
+
+  // ショーダウン詳細
+  let showdownHtml = '';
+  if (last.reason === 'showdown') {
+    showdownHtml = `
+      <div class="hr-showdown">
+        <div class="hr-player-block hr-${last.winner === 'player' ? 'winner' : last.winner === 'opponent' ? 'loser' : ''}">
+          <div class="hr-player-name">ミミ</div>
+          <div class="hr-player-hand">${renderHandWithHi(state.playerHand, bestFivePlayer)}</div>
+          <div class="hr-player-eval ${last.winner === 'player' ? 'winning' : ''}">${last.pEv?.name || '-'}</div>
         </div>
-        <div class="result-vs">VS</div>
-        <div class="result-card-block">
-          <div class="result-cards-label">${state.opponentName}の手札</div>
-          <div class="result-cards-str">${oppHandStr}</div>
-          <div class="result-hand-name">${last.oEv?.name || '-'}</div>
+        <div class="hr-vs">VS</div>
+        <div class="hr-player-block hr-${last.winner === 'opponent' ? 'winner' : last.winner === 'player' ? 'loser' : ''}">
+          <div class="hr-player-name">${state.opponentName}</div>
+          <div class="hr-player-hand">${renderHandWithHi(state.opponentHand, bestFiveOpp)}</div>
+          <div class="hr-player-eval ${last.winner === 'opponent' ? 'winning' : ''}">${last.oEv?.name || '-'}</div>
         </div>
       </div>
-      ${communityStr ? `<div class="result-community-row">場札：${communityStr}</div>` : ''}
+      <div class="hr-board">
+        <div class="hr-board-label">場札</div>
+        <div class="hr-board-cards">${renderBoardWithHi(state.community, bestFiveWinner)}</div>
+      </div>
     `;
+  } else if (last.reason === 'fold') {
+    showdownHtml = `<div class="hr-fold-row">😔 ミミがフォールド → ${state.opponentName}がポット獲得</div>`;
+  } else if (last.reason === 'opponentFold') {
+    showdownHtml = `<div class="hr-fold-row">😤 ${state.opponentName}がフォールド → ミミがポット獲得</div>`;
   }
 
-  // 強役判定：プレイヤーがストレート以上（rank>=4）で勝利時に特別演出
-  const strongHand = (last.winner === 'player' && last.pEv && last.pEv.rank >= 4);
-  const strongClass = strongHand ? ` strong-hand strong-rank-${last.pEv.rank}` : '';
-  const strongBadge = strongHand
-    ? `<div class="hand-result-strong-badge">✨ ${last.pEv.name} ✨</div>`
-    : '';
-  // フォールド時のキャラ反応セリフ
-  let foldReact = '';
+  // キャラセリフ
+  let charLine = '';
   if (last.reason === 'fold') {
-    // ミミが降りた → 相手の余裕／煽り
-    const oppLine = opponentReactToPlayerFold();
-    foldReact = `<div class="hand-result-fold-react fold-opponent-win">
-      <div class="fold-react-label">${state.opponentName}</div>
-      <div class="fold-react-text">「${oppLine}」</div>
-    </div>`;
+    charLine = `<div class="hr-line hr-line-opp">「${opponentReactToPlayerFold()}」 — ${state.opponentName}</div>`;
   } else if (last.reason === 'opponentFold') {
-    // 相手が降りた → ミミの悔しい/余裕セリフ（ハンドの強さで変える）
     let mimiLine;
-    if (last.pEv && last.pEv.rank >= 4) {
-      mimiLine = pick(['「最強手だったのに……まあいいか」', '「読み勝ち。完成役は見せたくなかった」']);
-    } else if (last.pEv && last.pEv.rank >= 2) {
-      mimiLine = pick(['「降りられた……勝ちは勝ち」', '「ふぅ、ヒヤヒヤしたけど取れた」']);
+    if (last.pEv && last.pEv.rank >= 4) mimiLine = pick(['最強手だったのに……まあいいか', '完成役を見せず読み勝ち']);
+    else if (last.pEv && last.pEv.rank >= 2) mimiLine = pick(['降りられた……勝ちは勝ち', 'ふぅ、ヒヤヒヤしたけど取れた']);
+    else mimiLine = pick(['ブラフ通った……心臓に悪い', 'うわ、ブラフ成功……']);
+    charLine = `<div class="hr-line hr-line-mimi">「${mimiLine}」 — ミミ</div>`;
+  } else if (last.reason === 'showdown') {
+    let mimiLine;
+    if (last.winner === 'player') {
+      if (verdict && verdict.cls === 'verdict-suckout') mimiLine = pick(['ラッキー！リバーが神った', 'やったー、降りなくてよかった……']);
+      else if (last.pEv && last.pEv.rank >= 5) mimiLine = pick(['完成役で押し切った！', 'これは譲れない']);
+      else mimiLine = pick(['勝った！', '読み合い、勝てた', 'ふぅ、取れた']);
+    } else if (last.winner === 'opponent') {
+      if (verdict && verdict.cls === 'verdict-badbeat') mimiLine = pick(['そんな、まさか……', '優勢だったのに……うう']);
+      else mimiLine = pick(['負けた……次は取り返す', '読み外した……', 'うーん、悔しい']);
     } else {
-      mimiLine = pick(['「ブラフ通った……心臓に悪い」', '「うわ、ブラフ成功……」']);
+      mimiLine = pick(['引き分けかぁ', 'スプリットね']);
     }
-    foldReact = `<div class="hand-result-fold-react fold-player-win">
-      <div class="fold-react-label">ミミ</div>
-      <div class="fold-react-text">${mimiLine}</div>
-    </div>`;
+    charLine = `<div class="hr-line hr-line-mimi">「${mimiLine}」 — ミミ</div>`;
   }
-  detailHtml = `
-    <div class="hand-result-card ${winnerClass}${strongClass}">
-      <div class="hand-result-handno">Hand ${last.hand} 結果</div>
+
+  // 強役バッジ
+  const strongHand = (last.winner === 'player' && last.pEv && last.pEv.rank >= 4);
+  const strongBadge = strongHand
+    ? `<div class="hr-strong-badge">✨ ${last.pEv.name} ✨</div>`
+    : '';
+
+  // ポット獲得量と残チップ表記
+  const potDelta = last.pot;
+  const playerChipDeltaText = last.winner === 'player' ? `+${potDelta}` : last.winner === 'opponent' ? `-?` : `+${Math.floor(potDelta/2)}`;
+
+  tpl.innerHTML = `
+    <div class="hr-card hr-${winnerClass}">
+      <div class="hr-head">
+        <span class="hr-handno">Hand ${last.hand}</span>
+        ${verdict ? `<span class="hr-verdict ${verdict.cls}">${verdict.label}</span>` : '<span class="hr-verdict hr-verdict-empty">—</span>'}
+      </div>
       ${strongBadge}
-      <div class="hand-result-title">${winnerText}</div>
-      <div class="hand-result-pot">ポット <span class="hand-result-pot-num">${last.pot}</span> を獲得</div>
-      ${reasonHtml}
-      ${foldReact}
-      <div class="hand-result-chips">
-        <span>ミミ：${state.playerChips}</span>
-        <span>${state.opponentName}：${state.opponentChips}</span>
+      <div class="hr-title">${winnerText}</div>
+      <div class="hr-pot">ポット <b>${potDelta}</b> 獲得 ${last.winner === 'player' ? `(<span class="hr-pot-plus">+${potDelta}</span>)` : ''}</div>
+      ${verdict ? `<div class="hr-verdict-desc">${verdict.desc}</div>` : ''}
+      ${showdownHtml}
+      ${equityTimelineHtml}
+      ${pivotHtml}
+      ${charLine}
+      <div class="hr-chips">
+        <span>ミミ <b>${state.playerChips}</b></span>
+        <span>${state.opponentName} <b>${state.opponentChips}</b></span>
       </div>
       <button class="btn btn-primary big" id="continue-hand-btn">${continueButtonLabel()}</button>
     </div>
   `;
-  tpl.innerHTML = detailHtml;
-  // #stage 内に配置してスケール追従させる（body 直下だとオーバーフロー）
   (document.getElementById('stage') || document.body).appendChild(tpl);
   document.getElementById('continue-hand-btn').addEventListener('click', () => {
     tpl.remove();
