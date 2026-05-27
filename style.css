@@ -1039,8 +1039,9 @@ html, body {
 .stage-portrait img {
   width: 100%; height: 100%; object-fit: cover;
   object-position: 50% 0%;
-  transform: scale(1.15);
-  transform-origin: 50% 100%; /* 下基準にスケール：頭が切れないように */
+  /* バストアップ：頭から胸まで＝画像の上部20-25%をズーム表示 */
+  transform: scale(2.0);
+  transform-origin: 50% 0%; /* 上端基準で拡大、頭が必ず入る */
 }
 .stage-portrait.locked-portrait {
   display: flex; align-items: center; justify-content: center;
