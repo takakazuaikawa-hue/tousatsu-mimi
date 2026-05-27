@@ -710,6 +710,24 @@ function polkaSpeech(action) {
 //=============================================================
 // 4. 場札危険度（v4 B2）
 //=============================================================
+// ブロッカー検出：プレイヤーがフラッシュ脅威スートの高位札（A or K）を持っているか
+function detectBlockerScenario(state) {
+  if (!state.community || !state.playerHand) return null;
+  const suitCount = {};
+  state.community.forEach(c => suitCount[c.suit] = (suitCount[c.suit]||0)+1);
+  // 場札に2枚以上同スートがある＝フラッシュ脅威
+  for (const suit of Object.keys(suitCount)) {
+    if (suitCount[suit] < 2) continue;
+    const playerOfSuit = state.playerHand.filter(c => c.suit === suit);
+    const hasA = playerOfSuit.some(c => c.rank === 14);
+    const hasK = playerOfSuit.some(c => c.rank === 13);
+    if (hasA || hasK) {
+      return { suit, rankLabel: hasA ? 'A' : 'K', boardCount: suitCount[suit] };
+    }
+  }
+  return null;
+}
+
 function evaluateBoardDanger(board) {
   if (board.length === 0) return { flushAlert: false, straightAlert: false, pairBoard: false, hasDraw: false };
   const suitCount = {};
@@ -782,13 +800,19 @@ const PSYCH_QUESTIONS = {
   },
   rico_serious_blocker: {
     id: 'rico_serious_blocker',
-    situationFn: (state) => `🔥 本気のリコがリバーで大ベット。\nミミの手札にはAクラブが含まれ、場札にもクラブが多い。`,
-    speech: 'ナッツフラッシュの可能性、アタシが持ってるか？　ミミの手札を見て考えてみな',
-    zazazoHint: 'ブロッカー効果＝自分が持っているカードで相手のレンジを潰せる',
+    situationFn: (state) => {
+      const b = detectBlockerScenario(state);
+      if (!b) return `🔥 本気のリコがリバーで大ベット。場札にフラッシュ要素あり。\nミミの手札：${renderCardsText(state.playerHand)}`;
+      return `🔥 本気のリコがリバーで大ベット。場札に${b.suit}が${b.boardCount}枚（フラッシュ可能）。\n` +
+        `ミミの手札：${renderCardsText(state.playerHand)}\n` +
+        `→ ミミは <b>${b.rankLabel}${b.suit}</b>（ナッツ${b.suit}フラッシュをブロック）を保持`;
+    },
+    speech: 'ナッツフラッシュの可能性、アタシが持ってるか？　自分の手札も使って考えてみな',
+    zazazoHint: 'ブロッカー効果＝自分が持ってるカードで相手の最強コンボを潰せる',
     choices: [
-      { id: 'blocker_call',  text: 'AクラブをミミがブロックしてるからリコはAハイフラッシュを持ちにくい→コール強気', correct: true  },
-      { id: 'fold_scary',    text: '同スート4枚あるからフラッシュ確定で降りる',                                    correct: false },
-      { id: 'raise_pure',    text: '怖いのでとりあえずレイズで撤退を促す',                                       correct: false },
+      { id: 'blocker_call',  text: '自分が高位の同スートを握っているため、相手のナッツフラッシュ可能性が激減→コール強気', correct: true  },
+      { id: 'fold_scary',    text: '同スート4枚あるからフラッシュ確定で降りる',                                          correct: false },
+      { id: 'raise_pure',    text: '怖いのでとりあえずレイズで撤退を促す',                                              correct: false },
     ],
     onSuccess: {
       panyu: 35, zazazo: 2,
@@ -798,7 +822,7 @@ const PSYCH_QUESTIONS = {
     onFail: {
       panyu: -15,
       mimi: '相手の手だけ気にしちゃってた……',
-      rico: '<u>自分の手も相手レンジを縛る</u>。Aクラブ持ってる時点で、相手のナッツフラッシュ確率は激減するんだよ',
+      rico: '<u>自分の手も相手レンジを縛る</u>。高位の同スートを持ってる時点で、相手のナッツフラッシュ確率は激減するんだよ',
     },
   },
   rico_serious_minmax: {
@@ -2596,18 +2620,19 @@ function pickPsychQuestion() {
     return fresh.length > 0 ? pick(fresh) : pick(pool);
   };
   if (id === 'rico_tutorial') {
-    // 本気リコ：場面に応じて上級心理戦を出題（場面が合わない問題は混ぜない）
+    // 本気リコ：場面に応じて上級心理戦を出題（厳密マッチ）
     if (state.seriousRicoMode) {
       const need = state.currentBetOpponent - state.currentBetPlayer;
       const potBefore = state.pot - need;
       const ratio = potBefore > 0 ? need / potBefore : 0;
-      const danger = evaluateBoardDanger(state.community || []);
-      // 厳密マッチ
+      // 1) リバー＆オーバーベット → 極化レンジ
       if (state.handPhase === 'river' && ratio > 1.0) return 'rico_serious_polarized';
-      if (state.lastOpponentIntent === 'trap')        return 'rico_serious_minmax';
-      if (danger.flushAlert)                          return 'rico_serious_blocker';
-      // どれも該当しない時はブロッカー基礎を出す（場面に依らず学べる）
-      return 'rico_serious_blocker';
+      // 2) チェックレイズ実際に発生 → ミニマックス
+      if (state.checkRaiseDetected)                   return 'rico_serious_minmax';
+      // 3) プレイヤーが実際にブロッカーカードを持つ → ブロッカー
+      if (detectBlockerScenario(state))               return 'rico_serious_blocker';
+      // どれも該当しない時は極化（場面汎用）
+      return 'rico_serious_polarized';
     }
     return 'rico_tutorial_flop';
   }
@@ -2620,9 +2645,9 @@ function pickPsychQuestion() {
     const counts = {};
     suits.forEach(s => counts[s] = (counts[s] || 0) + 1);
     const maxSuit = Math.max(...Object.values(counts), 0);
-    // チェック→レイズの状況なら罠問題を出す（それ以外では出さない）
-    if (state.lastOpponentIntent === 'trap') return 'selina_check_raise';
-    // それ以外はボード状況で flush_alert ⇄ bet_size のローテ（罠問題は混ぜない）
+    // 実際にチェックレイズが発生した時のみ罠問題
+    if (state.checkRaiseDetected) return 'selina_check_raise';
+    // それ以外はボード状況で flush_alert ⇄ bet_size のローテ
     const fitCondition = maxSuit >= 2 ? 'selina_flush_alert' : 'selina_bet_size';
     const other = fitCondition === 'selina_flush_alert' ? 'selina_bet_size' : 'selina_flush_alert';
     return pickFresh([fitCondition, other]);
@@ -4188,6 +4213,8 @@ function opponentTurn() {
     state.pot += pay;
     state.opponentSpeech = opponentSpeech(action);
     log('actions', { actor: 'opponent', type: pay > 0 ? 'call' : 'check', amount: pay });
+    // 今ストリートで相手がチェックした事実を記録（次のレイズで check-raise 検出に使う）
+    if (pay === 0) state.opponentCheckedThisStreet = true;
     render();
     if (pay > 0) {
       // 相手がコール → ベットマッチ → 次ストリートへ
@@ -4205,6 +4232,8 @@ function opponentTurn() {
   state.opponentChips = Math.max(0, state.opponentChips - amount);
   state.currentBetOpponent += amount;
   state.pot += amount;
+  // チェックレイズ検出：同ストリートでチェック→今ベット
+  state.checkRaiseDetected = !!state.opponentCheckedThisStreet;
   state.opponentSpeech = opponentSpeech(action);
   log('bets', { actor: 'opponent', type: 'bet', size: action.size, amount, intent: action.intent });
   log('reactions', { intent: action.intent, speech: state.opponentSpeech });
@@ -4292,6 +4321,9 @@ function advanceAfterCall() {
   // ベットが揃った
   state.currentBetPlayer = 0;
   state.currentBetOpponent = 0;
+  // ストリート遷移時にチェックレイズ検出をリセット
+  state.opponentCheckedThisStreet = false;
+  state.checkRaiseDetected = false;
   if (state.handPhase === 'preflop') {
     // フロップ公開（scriptedFlopがあれば固定札）
     if (state.scriptedFlop) {
