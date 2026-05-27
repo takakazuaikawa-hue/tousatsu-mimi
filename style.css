@@ -2202,18 +2202,15 @@ html, body {
   grid-area: left;
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 10px;
+  padding: 0;
   background: rgba(0,0,0,0.35);
   border-radius: 8px;
   border: 1px solid rgba(217,179,90,0.4);
   overflow: hidden;
 }
 .char-rico {
-  flex: 1;
-  min-height: 100px;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
 }
 .char-rico img {
@@ -2224,17 +2221,23 @@ html, body {
   transform: scale(1.6);
   transform-origin: 50% 15%;
 }
-.rico-bubble {
-  background: var(--c-gold-bright);
+/* セリフは下に半透明オーバーレイで重ねる：画像サイズに影響しない */
+.left-panel > .rico-bubble {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  background: rgba(245, 215, 122, 0.92);
   color: var(--c-bg-dark);
-  padding: 14px 18px;
+  padding: 10px 14px;
   border-radius: 10px;
-  font-size: 16px;
-  line-height: 1.65;
-  position: relative;
-  max-height: 220px;
+  font-size: 14px;
+  line-height: 1.55;
+  max-height: 55%;
   overflow-y: auto;
-  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  backdrop-filter: blur(3px);
+  z-index: 2;
 }
 .rico-bubble u {
   text-decoration: none;
