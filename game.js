@@ -3099,19 +3099,22 @@ function analyzeDraws() {
   }
   const currentEv = evaluateHand(all);
   const currentScore = currentEv.score;
+  const currentRank = currentEv.rank;
 
   // 改善するアウツをハンド名別にカウント
-  const outsByHand = {};
+  // 同じ役名（=同カテゴリ）への改善は「より高い〜」、別カテゴリへの改善は通常名
+  const outsByLabel = {};
   for (const card of deck) {
     const next = [...all, card];
     const ev = evaluateHand(next);
     if (ev.score > currentScore) {
-      outsByHand[ev.name] = (outsByHand[ev.name] || 0) + 1;
+      const label = ev.rank === currentRank ? `より高い${ev.name}` : ev.name;
+      outsByLabel[label] = (outsByLabel[label] || 0) + 1;
     }
   }
   const cardsLeft = community.length === 3 ? 2 : 1; // flop=2 to come, turn=1
   // 2-and-4 法則：1枚先=outs*2%、2枚先=outs*4% (大よそ45outs超で頭打ち)
-  const results = Object.entries(outsByHand).map(([name, outs]) => ({
+  const results = Object.entries(outsByLabel).map(([name, outs]) => ({
     name,
     outs,
     pct: cardsLeft === 2 ? Math.min(Math.round(outs * 4), 99) : Math.min(Math.round(outs * 2), 99),
@@ -3709,7 +3712,32 @@ function renderCurrentHandName() {
   }
   const ev = evaluateHand(all);
   const isStrong = ev.rank >= 3;  // スリーカード以上
-  return `現在の役：<b class="${isStrong ? 'hand-strong' : ''}">${ev.name}</b>`;
+  // ストレート系はトップカードを明示（A-5 = ホイール表記）
+  let detail = '';
+  if (ev.rank === 4 || ev.rank === 8) {
+    // straight / straight flush 共通：bestFive から topStr 推定
+    if (ev.bestFive) {
+      const ranks = ev.bestFive.map(c => c.rank).sort((a,b) => b-a);
+      // ホイール判定（A,5,4,3,2）
+      if (ranks[0] === 14 && ranks[1] === 5) detail = '（A-5 ホイール）';
+      else detail = `（${RANK_NAMES[ranks[0]-2]} ハイ）`;
+    }
+  } else if (ev.rank === 5) {
+    // フラッシュ：トップカード
+    if (ev.bestFive) {
+      const top = Math.max(...ev.bestFive.map(c => c.rank));
+      detail = `（${RANK_NAMES[top-2]} ハイ）`;
+    }
+  } else if (ev.rank === 1 || ev.rank === 3) {
+    // ワンペア／スリーカード：ペア役のランク
+    if (ev.bestFive) {
+      const counts = {};
+      ev.bestFive.forEach(c => counts[c.rank] = (counts[c.rank] || 0) + 1);
+      const setRank = Object.keys(counts).find(r => counts[r] >= 2);
+      if (setRank) detail = `（${RANK_NAMES[setRank-2]}）`;
+    }
+  }
+  return `現在の役：<b class="${isStrong ? 'hand-strong' : ''}">${ev.name}${detail}</b>`;
 }
 
 function zazazoLabel(v) {
