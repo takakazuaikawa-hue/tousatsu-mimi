@@ -6717,9 +6717,68 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding-top: 8vh; /* 中央少し下 */
-  background: radial-gradient(ellipse at 50% 60%, rgba(255,107,157,0.25) 0%, rgba(0,0,0,0.5) 60%);
+  padding-top: 8vh;
   animation: fadeIn 0.3s ease-out;
+  transition: background 0.5s ease;
+}
+/* テーマ別背景 */
+.panyu-clicker-overlay.panyu-bg-pink {
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(255,180,210,0.45) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 70%, rgba(255,140,180,0.45) 0%, transparent 60%),
+    linear-gradient(135deg, #2a0a1e 0%, #4a1838 50%, #2a0a1e 100%);
+}
+.panyu-clicker-overlay.panyu-bg-purple {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(150,80,220,0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(80,40,150,0.4) 0%, transparent 60%),
+    linear-gradient(135deg, #1a0830 0%, #2c1252 50%, #0a041a 100%);
+}
+.panyu-clicker-overlay.panyu-bg-gold {
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(245,215,122,0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 70%, rgba(217,169,58,0.4) 0%, transparent 60%),
+    linear-gradient(135deg, #2a1a04 0%, #503210 50%, #1a0e02 100%);
+}
+.panyu-clicker-overlay.panyu-bg-aqua {
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(120,210,255,0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 70%, rgba(60,140,220,0.4) 0%, transparent 60%),
+    linear-gradient(135deg, #04162a 0%, #0a3c5c 50%, #02101a 100%);
+}
+.panyu-clicker-overlay.panyu-bg-dark {
+  background: radial-gradient(ellipse at 50% 60%, rgba(60,30,80,0.5) 0%, rgba(0,0,0,0.85) 70%);
+}
+
+/* 背景ピッカー（左上） */
+.panyu-bg-picker {
+  position: absolute;
+  top: 16px; left: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  z-index: 10;
+}
+.panyu-bg-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.7);
+  border-radius: 999px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.panyu-bg-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+.panyu-bg-btn.active {
+  background: linear-gradient(180deg, #fbe28a 0%, #d9a93a 100%);
+  border-color: #fbe28a;
+  color: #1a0e2a;
+  font-weight: 700;
 }
 .panyu-clicker-label-top {
   font-size: 22px;

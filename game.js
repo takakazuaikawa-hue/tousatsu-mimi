@@ -6145,6 +6145,29 @@ function usePanyuSense(qid, isFree) {
   });
 }
 
+// ぱにゅぱにゅ背景テーマ
+const PANYU_BG_THEMES = [
+  { id: 'pink',   label: '🌸 桜風', desc: 'やわらかピンク' },
+  { id: 'purple', label: '🌙 夜空', desc: '紫の幻想' },
+  { id: 'gold',   label: '✨ 黄金', desc: 'リッチなゴールド' },
+  { id: 'aqua',   label: '🐬 水中', desc: '涼しげな水色' },
+  { id: 'dark',   label: '⚫ 黒幕', desc: 'シンプルブラック' },
+];
+function getCurrentPanyuBg() {
+  return (save && save.panyuBgTheme) || 'pink';
+}
+function setPanyuBg(themeId) {
+  if (!save) return;
+  save.panyuBgTheme = themeId;
+  saveProgress();
+  const overlay = document.querySelector('.panyu-clicker-overlay');
+  if (overlay) applyPanyuBg(overlay);
+}
+function applyPanyuBg(overlay) {
+  PANYU_BG_THEMES.forEach(t => overlay.classList.remove('panyu-bg-' + t.id));
+  overlay.classList.add('panyu-bg-' + getCurrentPanyuBg());
+}
+
 // ぱにゅぱにゅ30タップミニゲーム
 function showPanyuClicker(totalTaps, onComplete) {
   let count = totalTaps;
@@ -6152,6 +6175,7 @@ function showPanyuClicker(totalTaps, onComplete) {
   let lastTapTime = 0;
   const overlay = document.createElement('div');
   overlay.className = 'panyu-clicker-overlay';
+  applyPanyuBg(overlay);
   // 2つの blob を並べて両手タップ可能に
   const blobTemplate = (id) => `
     <div class="panyu-clicker-blob" id="${id}">
@@ -6169,7 +6193,11 @@ function showPanyuClicker(totalTaps, onComplete) {
       </div>
     </div>
   `;
+  const bgPicker = PANYU_BG_THEMES.map(t =>
+    `<button class="panyu-bg-btn${getCurrentPanyuBg() === t.id ? ' active' : ''}" data-bg="${t.id}" title="${t.desc}">${t.label}</button>`
+  ).join('');
   overlay.innerHTML = `
+    <div class="panyu-bg-picker">${bgPicker}</div>
     <div class="panyu-clicker-label-top">タップ or ぐりぐり！ <small>両手でOK</small></div>
     <div class="panyu-clicker-pair">
       ${blobTemplate('panyu-blob-l')}
@@ -6308,6 +6336,15 @@ function showPanyuClicker(totalTaps, onComplete) {
     b.addEventListener('click', onTap(b));
     b.addEventListener('touchstart', onTap(b), { passive: false });
     attachDragStretch(b);
+  });
+  // 背景テーマ切替
+  overlay.querySelectorAll('.panyu-bg-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.bg;
+      setPanyuBg(id);
+      overlay.querySelectorAll('.panyu-bg-btn').forEach(b => b.classList.toggle('active', b.dataset.bg === id));
+    });
   });
   updateColor();
 }
