@@ -4543,6 +4543,59 @@ function mimiThoughtPreflop(hand) {
   return `「うーん、微妙な手札。様子見が無難かな」`;
 }
 
+// === ミミの現状アセスメント（解説強化） ===
+// allCards: 自分の手札＋場札（≥5枚）、community: 場札、 opponentBet: 相手が当ストリートで賭けた額、 pot: 現在のポット
+function mimiAssess(allCards, community, opponentBet, pot) {
+  if (!allCards || allCards.length < 5) return '';
+  const ev = evaluateHand(allCards);
+  const danger = evaluateBoardDanger(community);
+  const street = community.length === 3 ? 'フロップ' : community.length === 4 ? 'ターン' : 'リバー';
+  // 役の強度ラベル
+  let strengthLabel = '';
+  let lean = ''; // 推奨ライン
+  if (ev.rank >= 5)      { strengthLabel = '【極めて強い】'; lean = '価値を取りに行く場面'; }
+  else if (ev.rank >= 3) { strengthLabel = '【強い】';       lean = '攻めるか、相手を釣るか'; }
+  else if (ev.rank >= 2) { strengthLabel = '【まずまず】';   lean = '相手の出方次第'; }
+  else if (ev.rank === 1) {
+    // ペアの強さで分岐：ペアのランクが11以上ならトップペア寄り
+    const topBoard = community.length ? Math.max(...community.map(c => c.rank)) : 0;
+    const hasOverPair = allCards.some(c => c.rank > topBoard) && (allCards.filter(c => c.rank === allCards.sort((a,b)=>b.rank-a.rank)[0].rank).length >= 2);
+    if (hasOverPair)    { strengthLabel = '【強い】'; lean = 'バリュー寄り、ベットして良い'; }
+    else                { strengthLabel = '【ふつう】'; lean = '慎重に、ポット小さく' ; }
+  }
+  else                   { strengthLabel = '【弱い】';       lean = '無理せず、勝負しない方が安い'; }
+
+  // ボード警告
+  const warnings = [];
+  if (danger.flushMade && ev.rank < 5) warnings.push('場にフラッシュ完成あり');
+  else if (danger.flushAlert) warnings.push('フラッシュ気配');
+  if (danger.straightAlert) warnings.push('ストレート気配');
+  if (danger.pairBoard && ev.rank < 6) warnings.push('場ペア＝フルハウス警戒');
+  const warnStr = warnings.length ? `／⚠ ${warnings.join('・')}` : '';
+
+  // ポットオッズ（ノート所持時のみ）
+  let oddsStr = '';
+  if (opponentBet > 0 && save.ownedItems && save.ownedItems.includes('note_pot_odds')) {
+    const need = opponentBet;
+    const totalPot = pot + need; // コール後のポット
+    const reqWinRate = Math.round((need / (totalPot + need)) * 100);
+    oddsStr = `／ポットオッズ：${reqWinRate}%以上勝てればコール＋EV`;
+  }
+
+  // 相手アクションへの一言
+  let actionLine = '';
+  if (opponentBet > 0) {
+    const ratio = opponentBet / Math.max(1, pot);
+    if (ratio >= 0.9)      actionLine = `相手の${opponentBet}は重いベット。`;
+    else if (ratio >= 0.5) actionLine = `相手の${opponentBet}は強気のサイズ。`;
+    else                   actionLine = `相手の${opponentBet}は様子見サイズ。`;
+  } else {
+    actionLine = `相手はチェック。情報は薄い。`;
+  }
+
+  return `${street}：${ev.name} ${strengthLabel}${warnStr}\n${actionLine}${oddsStr}\n→ ${lean}`;
+}
+
 //=============================================================
 // 12. プレイヤーアクション
 //=============================================================
@@ -4725,7 +4778,12 @@ function opponentTurn() {
     } else {
       // 相手がチェック → プレイヤーに手番を渡す
       state.isPlayerTurn = true;
-      state.mimiThought = '「相手はチェックか……こちらのターン」';
+      if (state.community.length >= 3) {
+        const assess = mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot);
+        state.mimiThought = `「相手はチェック……」\n${assess}`;
+      } else {
+        state.mimiThought = '「相手はチェックか……こちらのターン」';
+      }
       setTimeout(render, 900);
     }
     return;
@@ -4823,7 +4881,13 @@ function opponentTurn() {
   }
 
   state.isPlayerTurn = true;
-  state.mimiThought = `「${state.opponentName || '相手'}が${amount}ベット……どう出る？」`;
+  // 場札があればアセスメント付き、無ければシンプル
+  if (state.community.length >= 3) {
+    const assess = mimiAssess([...state.playerHand, ...state.community], state.community, amount, state.pot - amount);
+    state.mimiThought = `「${state.opponentName || '相手'}が${amount}ベット……」\n${assess}`;
+  } else {
+    state.mimiThought = `「${state.opponentName || '相手'}が${amount}ベット……どう出る？」`;
+  }
   render();
 }
 
@@ -4855,7 +4919,7 @@ function advanceAfterCall() {
       state.community = [state.deck.pop(), state.deck.pop(), state.deck.pop()];
     }
     state.handPhase = 'flop';
-    state.mimiThought = `「フロップ：${renderCardsText(state.community)}」`;
+    state.mimiThought = `「フロップ：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`;
     state.ricoAdvice = '「場が出たね〜。相手の出方をよく見な」';
     state.isPlayerTurn = false;  // 相手から
     log('actions', { phase: 'flop', cards: state.community.map(c=>c.label+c.suit) });
@@ -4874,7 +4938,7 @@ function advanceAfterCall() {
       // フルハンド：ターンのみ公開
       state.community.push(state.deck.pop());
       state.handPhase = 'turn';
-      state.mimiThought = `「ターン公開：${renderCardsText(state.community)}」`;
+      state.mimiThought = `「ターン公開：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`;
       state.ricoAdvice = '「ターンで場が変わったかもね。相手のベットの変化、見逃さないで」';
       state.isPlayerTurn = false;
       state.psychResolved = false;  // 各ストリートで心理バトル再発生可能に
@@ -4890,7 +4954,7 @@ function advanceAfterCall() {
         state.community.push(state.deck.pop(), state.deck.pop());
       }
       state.handPhase = 'turnRiver';
-      state.mimiThought = `「ターン＆リバー：${renderCardsText(state.community)}」`;
+      state.mimiThought = `「ターン＆リバー：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`;
       state.ricoAdvice = '「全部の場札出たね〜。最終判断、いい？」';
       state.isPlayerTurn = false;
       log('actions', { phase: 'turn_river', cards: state.community.map(c=>c.label+c.suit) });
@@ -4901,7 +4965,7 @@ function advanceAfterCall() {
     // フルハンド：リバー公開
     state.community.push(state.deck.pop());
     state.handPhase = 'river';
-    state.mimiThought = `「リバー公開：${renderCardsText(state.community)}」`;
+    state.mimiThought = `「リバー公開：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`;
     state.ricoAdvice = '「リバーまで出揃ったよ。ここから最終判断ね」';
     state.isPlayerTurn = false;
     state.psychResolved = false;

@@ -3344,6 +3344,7 @@ html, body {
   -webkit-overflow-scrolling: touch;
   word-break: break-word;
   overflow-wrap: anywhere;
+  white-space: pre-line; /* mimiAssess の改行を反映 */
 }
 /* 思考アイコン廃止：シンプルなバブルだけ表示 */
 .zazazo-display { display: flex; flex-direction: column; gap: 6px; }
