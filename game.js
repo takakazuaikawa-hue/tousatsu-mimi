@@ -2626,19 +2626,34 @@ function renderSituationAnalysis() {
   if (danger.straightAlert) dangerFlags.push('🪜ストレート');
   if (danger.pairBoard)     dangerFlags.push('♠ペアボード');
 
-  // 推奨アクション（簡易：手の強さ vs 必要勝率＋SPR考慮）
+  // 推奨アクション
+  // 1対1の場合、handStrength01は対ランダム相手の絶対値で実戦勝率より低めに出る傾向。
+  // ヘッズアップ補正：実効勝率 = hsPct + 10 程度（相手レンジが広い分）
+  // 加えて、相手意図がbluff寄りなら実効勝率はさらに +5
+  let effectivePct = hsPct + 10; // ヘッズアップ補正
+  if (state.lastOpponentIntent === 'bluff' || state.lastOpponentIntent === 'forced_bluff') effectivePct += 5;
+  if (state.lastOpponentIntent === 'value') effectivePct -= 5;
+  effectivePct = Math.max(0, Math.min(100, effectivePct));
+
   let advice = '';
   let adviceClass = 'sit-neutral';
-  if (need === 0) {
-    if (hsPct >= 55) { advice = '💪 ベットで圧をかけよう'; adviceClass = 'sit-aggressive'; }
-    else if (hsPct >= 35) { advice = '👁 チェックで様子見が安全'; adviceClass = 'sit-neutral'; }
-    else { advice = '🛡 チェック。降りる選択肢も視野に'; adviceClass = 'sit-defensive'; }
+  // プレイヤーのターンでなければアドバイス省略（次は相手次第）
+  if (!state.isPlayerTurn) {
+    advice = '⌛ 相手の手番待ち……';
+    adviceClass = 'sit-neutral';
+  } else if (need === 0) {
+    // チェックorベットの場面（コールではない）
+    if (effectivePct >= 65)       { advice = '💪 ベットで圧をかけよう'; adviceClass = 'sit-aggressive'; }
+    else if (effectivePct >= 45)  { advice = '🟡 1/2ポット程度の小ベット可'; adviceClass = 'sit-neutral'; }
+    else                          { advice = '👁 チェックで様子見'; adviceClass = 'sit-neutral'; }
   } else {
-    const margin = hsPct - reqWinRate;
-    if (margin >= 25) { advice = `✅ コール／レイズ推奨（勝率${hsPct}% > 必要${reqWinRate}%）`; adviceClass = 'sit-aggressive'; }
-    else if (margin >= 5) { advice = `🟡 ぎりぎりコール可（${hsPct}% vs ${reqWinRate}%）`; adviceClass = 'sit-neutral'; }
-    else if (margin >= -10) { advice = `🟠 微妙な判断。ボード次第`; adviceClass = 'sit-neutral'; }
-    else { advice = `❌ フォールド推奨（勝率${hsPct}% < 必要${reqWinRate}%）`; adviceClass = 'sit-defensive'; }
+    // 相手がベットしてきた場面（コールorレイズorフォールド）
+    const margin = effectivePct - reqWinRate;
+    if (margin >= 20)             { advice = `🔥 レイズ推奨（実効勝率${effectivePct}% ≫ 必要${reqWinRate}%）`; adviceClass = 'sit-aggressive'; }
+    else if (margin >= 5)         { advice = `✅ コール推奨（${effectivePct}% > ${reqWinRate}%）`; adviceClass = 'sit-aggressive'; }
+    else if (margin >= -8)        { advice = `🟡 マージナルコール（${effectivePct}% vs ${reqWinRate}%）`; adviceClass = 'sit-neutral'; }
+    else if (margin >= -20)       { advice = `🟠 微妙……ボードと相手次第`; adviceClass = 'sit-neutral'; }
+    else                          { advice = `❌ フォールド推奨（${effectivePct}% < ${reqWinRate}%）`; adviceClass = 'sit-defensive'; }
   }
 
   // SPRコメント
@@ -2668,9 +2683,9 @@ function renderSituationAnalysis() {
       <span class="sit-value">${myStack} / ${oppStack}</span>
     </div>
     <div class="sit-grid">
-      <div class="sit-stat">
-        <span class="sit-stat-label">自分の手</span>
-        <span class="sit-stat-val">${hsPct}%</span>
+      <div class="sit-stat" title="絶対勝率（対ランダム）／実効勝率（ヘッズアップ補正後）">
+        <span class="sit-stat-label">勝率</span>
+        <span class="sit-stat-val">${hsPct}% <small>→${effectivePct}%</small></span>
       </div>
       <div class="sit-stat">
         <span class="sit-stat-label">必要勝率</span>
