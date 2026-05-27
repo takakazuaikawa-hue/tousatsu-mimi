@@ -3078,6 +3078,46 @@ function renderChipStack(amount, variant) {
 
 // 裏モード：相手の手と心理を可視化
 // 状況分析パネル：プレイヤーのターンに役立つ理論的な指針
+// === 狙える役の分析（アウツ＋確率） ===
+// 残りカードのうち、引いたら役が改善するカード（アウツ）をカウントし、
+// 「2-and-4の法則」で完成確率を出す。プロが必ず意識する基本指標。
+function analyzeDraws() {
+  if (!state.playerHand || state.playerHand.length === 0) return null;
+  const community = state.community || [];
+  if (community.length < 3 || community.length >= 5) return null; // flop / turn のみ
+  const all = [...state.playerHand, ...community];
+  const known = new Set(all.map(c => c.label + c.suit));
+  const SUITS = ['♠','♥','♦','♣'];
+  const RANKS = [2,3,4,5,6,7,8,9,10,11,12,13,14];
+  const LABELS = {2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A'};
+  const deck = [];
+  for (const r of RANKS) for (const s of SUITS) {
+    const lbl = LABELS[r] + s;
+    if (!known.has(lbl)) deck.push({ rank: r, suit: s, label: LABELS[r] });
+  }
+  const currentEv = evaluateHand(all);
+  const currentScore = currentEv.score;
+
+  // 改善するアウツをハンド名別にカウント
+  const outsByHand = {};
+  for (const card of deck) {
+    const next = [...all, card];
+    const ev = evaluateHand(next);
+    if (ev.score > currentScore) {
+      outsByHand[ev.name] = (outsByHand[ev.name] || 0) + 1;
+    }
+  }
+  const cardsLeft = community.length === 3 ? 2 : 1; // flop=2 to come, turn=1
+  // 2-and-4 法則：1枚先=outs*2%、2枚先=outs*4% (大よそ45outs超で頭打ち)
+  const results = Object.entries(outsByHand).map(([name, outs]) => ({
+    name,
+    outs,
+    pct: cardsLeft === 2 ? Math.min(Math.round(outs * 4), 99) : Math.min(Math.round(outs * 2), 99),
+  })).sort((a, b) => b.outs - a.outs);
+
+  return { draws: results, current: currentEv.name, cardsLeft };
+}
+
 function renderSituationAnalysis() {
   // バトル外/手札なし時は空
   if (state.screen !== 'battle' || !state.playerHand || state.playerHand.length === 0) return '';
@@ -3183,6 +3223,25 @@ function renderSituationAnalysis() {
       </div>
     </div>
     ${dangerFlags.length ? `<div class="sit-danger">⚠ ボード警戒：${dangerFlags.join(' / ')}</div>` : ''}
+    ${(() => {
+      const a = analyzeDraws();
+      if (!a || !a.draws || a.draws.length === 0) {
+        return '<div class="sit-draws sit-draws-empty">🎯 狙える役：—（現状で固まり）</div>';
+      }
+      const ruleLabel = a.cardsLeft === 2 ? 'リバーまで' : '次の1枚で';
+      return `
+        <div class="sit-draws">
+          <div class="sit-draws-head">🎯 狙える役 <small>（${ruleLabel}）</small></div>
+          ${a.draws.slice(0, 3).map(d => `
+            <div class="sit-draw-row">
+              <span class="sd-name">${d.name}</span>
+              <span class="sd-outs">${d.outs}枚</span>
+              <span class="sd-pct">${d.pct}%</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    })()}
     ${intentHint ? `<div class="sit-intent">🎭 ${intentHint}</div>` : ''}
     <div class="sit-advice ${adviceClass}">${advice} <small>${sprComment}</small></div>
   `;

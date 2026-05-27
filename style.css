@@ -2231,6 +2231,33 @@ html, body {
   color: #e0c0ff;
   margin-bottom: 3px;
 }
+/* 狙える役（アウツ + 確率） */
+.sit-draws {
+  background: rgba(20,80,40,0.25);
+  border-left: 2px solid #6dd96d;
+  padding: 4px 6px;
+  border-radius: 0 4px 4px 0;
+  font-size: 10px;
+  color: #d0ffd0;
+  margin-bottom: 3px;
+}
+.sit-draws-empty { color: rgba(200,200,200,0.5); }
+.sit-draws-head {
+  font-weight: 700;
+  color: #b8ffb8;
+  margin-bottom: 2px;
+}
+.sit-draws-head small { font-weight: 400; opacity: 0.7; }
+.sit-draw-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+  align-items: baseline;
+}
+.sd-name { color: #fff; }
+.sd-outs { color: rgba(255,255,255,0.65); font-size: 9px; }
+.sd-pct  { color: #fbe28a; font-weight: 700; min-width: 32px; text-align: right; }
 .sit-advice {
   padding: 4px 6px;
   border-radius: 5px;
