@@ -6738,10 +6738,20 @@ html, body {
   50% { transform: scale(1.05); }
 }
 /* ぷにぷに球体（後で画像フレームに差し替え可能） */
+.panyu-clicker-pair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  touch-action: manipulation; /* マルチタッチ対応 */
+}
+.panyu-clicker-pair > .panyu-clicker-blob:nth-child(2) {
+  animation-delay: 0.3s; /* 左右で弾みを少しずらして躍動感 */
+}
 .panyu-clicker-blob {
   position: relative;
-  width: 320px;
-  height: 320px;
+  width: 230px;  /* 320 → 230 で2つ並べる */
+  height: 230px;
   background:
     radial-gradient(circle at 35% 30%, rgba(255,255,255,0.7) 0%, transparent 30%),
     radial-gradient(circle at 50% 50%, #ffc1d8 0%, #ff7aa4 60%, #c8253a 100%);

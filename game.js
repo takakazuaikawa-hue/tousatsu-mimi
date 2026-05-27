@@ -6152,9 +6152,9 @@ function showPanyuClicker(totalTaps, onComplete) {
   let lastTapTime = 0;
   const overlay = document.createElement('div');
   overlay.className = 'panyu-clicker-overlay';
-  overlay.innerHTML = `
-    <div class="panyu-clicker-label-top">ぱにゅぱにゅタップ ${totalTaps} 回！</div>
-    <div class="panyu-clicker-blob" id="panyu-blob">
+  // 2つの blob を並べて両手タップ可能に
+  const blobTemplate = (id) => `
+    <div class="panyu-clicker-blob" id="${id}">
       <div class="panyu-clicker-inner">
         <div class="panyu-clicker-count">${count}</div>
         <div class="panyu-clicker-sublabel">タップ！</div>
@@ -6168,12 +6168,19 @@ function showPanyuClicker(totalTaps, onComplete) {
         </svg>
       </div>
     </div>
+  `;
+  overlay.innerHTML = `
+    <div class="panyu-clicker-label-top">ぱにゅぱにゅタップ ${totalTaps} 回！<small>両手で連打OK</small></div>
+    <div class="panyu-clicker-pair">
+      ${blobTemplate('panyu-blob-l')}
+      ${blobTemplate('panyu-blob-r')}
+    </div>
     <div class="panyu-combo" data-bind="panyuCombo"></div>
   `;
   document.body.appendChild(overlay);
-  const blob = overlay.querySelector('#panyu-blob');
-  const countEl = overlay.querySelector('.panyu-clicker-count');
-  const ringFill = overlay.querySelector('.panyu-ring-fill');
+  const blobs = [...overlay.querySelectorAll('.panyu-clicker-blob')];
+  const countEls = [...overlay.querySelectorAll('.panyu-clicker-count')];
+  const ringFills = [...overlay.querySelectorAll('.panyu-ring-fill')];
   const comboEl = overlay.querySelector('.panyu-combo');
   let completed = false;
 
@@ -6181,10 +6188,10 @@ function showPanyuClicker(totalTaps, onComplete) {
     const ratio = tapped / totalTaps;
     // ピンク→赤→ゴールドへ変化
     const hueShift = ratio * 30;  // 0→30度
-    blob.style.filter = `hue-rotate(-${hueShift}deg) saturate(${1 + ratio * 0.4})`;
+    blobs.forEach(b => b.style.filter = `hue-rotate(-${hueShift}deg) saturate(${1 + ratio * 0.4})`);
     // プログレスリング更新
     const offset = 289 * (1 - ratio);
-    ringFill.style.strokeDashoffset = offset;
+    ringFills.forEach(r => r.style.strokeDashoffset = offset);
   };
 
   const showCombo = (n) => {
@@ -6194,7 +6201,7 @@ function showPanyuClicker(totalTaps, onComplete) {
     comboEl.classList.add('show');
   };
 
-  const onTap = (e) => {
+  const onTap = (which) => (e) => {
     if (completed) return;
     e.preventDefault();
     e.stopPropagation();
@@ -6203,18 +6210,16 @@ function showPanyuClicker(totalTaps, onComplete) {
     lastTapTime = now;
     count--;
     tapped++;
-    countEl.textContent = Math.max(0, count);
+    countEls.forEach(el => el.textContent = Math.max(0, count));
     updateColor();
-    // 振動（モバイル）
     if (navigator.vibrate) navigator.vibrate(30);
-    // パーティクル（高速タップで増量）
     const burstN = fastTap ? 3 : 1;
     for (let i = 0; i < burstN; i++) spawnPanyuParticle(overlay);
-    // 10/20で COMBOボーナス
     if (tapped === 10) showCombo(10);
     else if (tapped === 20) showCombo(20);
     else if (tapped === 25) showCombo(25);
-    // ぷにぷに アニメーション再生（タップ後は弾むアイドルに戻す）
+    // タップした側だけ wobble
+    const blob = which;
     blob.classList.remove('wobble', 'wobble-fast');
     void blob.offsetWidth;
     const wobbleCls = fastTap ? 'wobble-fast' : 'wobble';
@@ -6222,10 +6227,8 @@ function showPanyuClicker(totalTaps, onComplete) {
     setTimeout(() => blob.classList.remove(wobbleCls), fastTap ? 220 : 320);
     if (count <= 0) {
       completed = true;
-      blob.classList.add('panyu-complete');
-      // 完了 SE 風振動
+      blobs.forEach(b => b.classList.add('panyu-complete'));
       if (navigator.vibrate) navigator.vibrate([60, 30, 80, 30, 120]);
-      // バースト
       for (let i = 0; i < 16; i++) spawnPanyuParticle(overlay);
       const label = overlay.querySelector('.panyu-clicker-label-top');
       if (label) label.innerHTML = '<span class="panyu-burst-text">✨ ぱにゅぱにゅ発動！ ✨</span>';
@@ -6235,8 +6238,10 @@ function showPanyuClicker(totalTaps, onComplete) {
       }, 900);
     }
   };
-  blob.addEventListener('click', onTap);
-  blob.addEventListener('touchstart', onTap, { passive: false });
+  blobs.forEach(b => {
+    b.addEventListener('click', onTap(b));
+    b.addEventListener('touchstart', onTap(b), { passive: false });
+  });
   updateColor();
 }
 
