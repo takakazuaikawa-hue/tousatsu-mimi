@@ -6828,7 +6828,8 @@ html, body {
 /* 左の玉：右側を平らに押しつぶす（5% 内側にカット＋角を緩く） */
 .panyu-clicker-pair > .panyu-clicker-blob:nth-child(1) {
   clip-path: inset(0 5% 0 0 round 50% 30% 30% 50%);
-  margin-right: -23px; /* 230px の 10% = 互いに 5% ずつ重なり */
+  /* 玉サイズの 10% を重ねる（vmin 基準で可変） */
+  margin-right: calc(28vmin * -0.1);
 }
 /* 右の玉：左側を平らに押しつぶす */
 .panyu-clicker-pair > .panyu-clicker-blob:nth-child(2) {
@@ -6836,8 +6837,13 @@ html, body {
 }
 .panyu-clicker-blob {
   position: relative;
-  width: 230px;  /* 320 → 230 で2つ並べる */
-  height: 230px;
+  /* 230px 固定 → vmin 可変：画面サイズに応じてキャラ画像と一緒にスケール */
+  width: 28vmin;
+  height: 28vmin;
+  min-width: 160px;  /* 小さすぎ防止 */
+  min-height: 160px;
+  max-width: 360px;  /* 大きすぎ防止 */
+  max-height: 360px;
   background:
     radial-gradient(circle at 35% 30%, rgba(255,255,255,0.7) 0%, transparent 30%),
     radial-gradient(circle at 50% 50%, #ffc1d8 0%, #ff7aa4 60%, #c8253a 100%);
