@@ -2295,7 +2295,8 @@ function renderStageList() {
     const bestRank = save.bestRanks[sid];
     const recommend = sid === 'rico_tutorial' && save.clearedStages.length === 0;
     const stageNum = i + 1;
-    const portrait = `<div class="stage-portrait">
+    // 立ち絵もタップ可能（バトル開始）
+    const portrait = `<div class="stage-portrait" data-action="battle-start" data-opponent="${sid}" title="${opp.name} と対戦開始">
       <img src="assets/characters/${opp.imgKey}_default.png" alt="${opp.name}" onerror="window.assetFallback(this,'${opp.imgKey}')">
     </div>`;
     if (!unlocked) {
@@ -2327,7 +2328,7 @@ function renderStageList() {
           ${cleared ? `<span class="stage-tag clear-tag">クリア済 ${bestRank || ''}</span>` : ''}
         </div>
         <div class="stage-number">Stage ${stageNum}</div>
-        <div class="stage-name">${opp.name}</div>
+        <div class="stage-name" data-action="battle-start" data-opponent="${sid}" title="${opp.name} と対戦開始">${opp.name}</div>
         <div class="stage-desc">${opp.desc}</div>
         <div class="stage-reward">初回報酬：${opp.rewardFirst}コイン${cleared ? '<small>（取得済み）</small>' : ''}</div>
         ${cleared ? `<div class="stage-rematch-reward">再戦報酬：${rematchPreview(sid)}コイン</div>` : ''}
@@ -4985,12 +4986,44 @@ function showHandResultBanner() {
     `;
   }
 
+  // 強役判定：プレイヤーがストレート以上（rank>=4）で勝利時に特別演出
+  const strongHand = (last.winner === 'player' && last.pEv && last.pEv.rank >= 4);
+  const strongClass = strongHand ? ` strong-hand strong-rank-${last.pEv.rank}` : '';
+  const strongBadge = strongHand
+    ? `<div class="hand-result-strong-badge">✨ ${last.pEv.name} ✨</div>`
+    : '';
+  // フォールド時のキャラ反応セリフ
+  let foldReact = '';
+  if (last.reason === 'fold') {
+    // ミミが降りた → 相手の余裕／煽り
+    const oppLine = opponentReactToPlayerFold();
+    foldReact = `<div class="hand-result-fold-react fold-opponent-win">
+      <div class="fold-react-label">${state.opponentName}</div>
+      <div class="fold-react-text">「${oppLine}」</div>
+    </div>`;
+  } else if (last.reason === 'opponentFold') {
+    // 相手が降りた → ミミの悔しい/余裕セリフ（ハンドの強さで変える）
+    let mimiLine;
+    if (last.pEv && last.pEv.rank >= 4) {
+      mimiLine = pick(['「最強手だったのに……まあいいか」', '「読み勝ち。完成役は見せたくなかった」']);
+    } else if (last.pEv && last.pEv.rank >= 2) {
+      mimiLine = pick(['「降りられた……勝ちは勝ち」', '「ふぅ、ヒヤヒヤしたけど取れた」']);
+    } else {
+      mimiLine = pick(['「ブラフ通った……心臓に悪い」', '「うわ、ブラフ成功……」']);
+    }
+    foldReact = `<div class="hand-result-fold-react fold-player-win">
+      <div class="fold-react-label">ミミ</div>
+      <div class="fold-react-text">${mimiLine}</div>
+    </div>`;
+  }
   detailHtml = `
-    <div class="hand-result-card ${winnerClass}">
+    <div class="hand-result-card ${winnerClass}${strongClass}">
       <div class="hand-result-handno">Hand ${last.hand} 結果</div>
+      ${strongBadge}
       <div class="hand-result-title">${winnerText}</div>
-      <div class="hand-result-pot">ポット ${last.pot} を獲得</div>
+      <div class="hand-result-pot">ポット <span class="hand-result-pot-num">${last.pot}</span> を獲得</div>
       ${reasonHtml}
+      ${foldReact}
       <div class="hand-result-chips">
         <span>ミミ：${state.playerChips}</span>
         <span>${state.opponentName}：${state.opponentChips}</span>
