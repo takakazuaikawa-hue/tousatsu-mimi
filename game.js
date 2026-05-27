@@ -6283,31 +6283,23 @@ function resolvePsych(qid, choice, btn) {
 
   if (isCorrect) {
     const eff = q.onSuccess;
-    // 連続正解ボーナス：2回目+50%、3回目以降+100%
-    state.psychStreak = (state.psychStreak || 0) + 1;
-    const streakMult = state.psychStreak >= 3 ? 2.0 : state.psychStreak === 2 ? 1.5 : 1.0;
-    const bonusPanyu = Math.round(eff.panyu * streakMult);
-    state.panyu = Math.min(state.panyuMax, state.panyu + bonusPanyu);
+    state.panyu = Math.min(state.panyuMax, state.panyu + eff.panyu);
     // ミミミゲージ：心理バトル勝利1回ごとに +1（最大3）
     state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
     state.psychSuccessCount++;
-    const streakLabel = state.psychStreak >= 2 ? `（${state.psychStreak}連続！+${Math.round((streakMult-1)*100)}%）` : '';
     // ミミミ MAX（3勝）達成 → 相手の性格を読み切り、以後この対戦では心理バトル封印
     if (state.zazazo >= state.zazazoMax && !state.opponentPersonalityRevealed) {
       state.opponentPersonalityRevealed = true;
       // バナー演出
       setTimeout(() => showPersonalityRevealBanner(), 600);
     }
-    state.mimiThought = `「読めた……！${eff.hint}」${streakLabel}`;
+    state.mimiThought = `「読めた……！${eff.hint}」`;
     state.ricoAdvice = `「${eff.rico}」`;
-    log('psych', { qid, choice: choice.id, success: true, streak: state.psychStreak });
+    log('psych', { qid, choice: choice.id, success: true });
     // 証拠突きつけ成功でブラフブレイク確定
     if (eff.bluffBreak) triggerBluffBreak();
     else if (state.zazazo >= state.zazazoMax) triggerBluffBreak();
-    // 連続正解バナー
-    // 連続正解バナーは廃止（ミミミゲージで進捗が見えるので不要）
   } else {
-    state.psychStreak = 0; // 連鎖切れ
     const eff = q.onFail;
     state.panyu = Math.max(0, state.panyu + eff.panyu);
     // 正解の選択肢を強調表示（学習用、dynamicCorrect も考慮）
@@ -6362,16 +6354,6 @@ function resolvePsych(qid, choice, btn) {
       : null;
     showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, onCutInClose);
   }, 700);
-}
-
-function showPsychStreakBanner(streak) {
-  const banner = document.createElement('div');
-  banner.className = 'psych-streak-banner';
-  const star = streak >= 3 ? '★★★' : '★★';
-  banner.innerHTML = `<span class="streak-star">${star}</span><span class="streak-text">${streak}連続正解！</span>`;
-  document.body.appendChild(banner);
-  setTimeout(() => banner.classList.add('out'), 1500);
-  setTimeout(() => banner.remove(), 2200);
 }
 
 // 心理／論理バトルをスキップ（読み切り後のみ呼ばれる）
