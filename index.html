@@ -218,25 +218,17 @@
 
     <aside class="right-panel">
       <div class="mimi-status-panel">
-        <div class="ms-row ms-row-hand">
-          <span class="ms-label">役</span>
-          <span class="ms-hand" data-bind="currentHandName">—</span>
-        </div>
         <div class="ms-row ms-row-chips">
-          <span class="chip-pill chip-pill-player" title="ミミの残りチップ">
+          <span class="chip-pill chip-pill-player" title="ミミの残りチップ／このストリート支払い">
             <span class="chip-pill-icon chip-disc"></span>
-            <span class="chip-pill-value" data-bind="playerChips">1000</span>
+            <span class="chip-pill-value" data-bind="playerChipsDetailed">1000</span>
             <span class="chip-pill-name">ミミ</span>
           </span>
-          <span class="chip-pill chip-pill-vs" title="相手の残りチップ">
+          <span class="chip-pill chip-pill-vs" title="相手の残りチップ／このストリート支払い">
             <span class="chip-pill-icon chip-disc"></span>
-            <span class="chip-pill-value" data-bind="opponentChips">1000</span>
+            <span class="chip-pill-value" data-bind="opponentChipsDetailed">1000</span>
             <span class="chip-pill-name" data-bind="opponentNameShort">相手</span>
           </span>
-        </div>
-        <div class="ms-row ms-row-panyu">
-          <span class="ms-label">ぱにゅ</span>
-          <span class="panyu-mark" data-bind="panyuMark">○</span>
         </div>
       </div>
       <div class="zazazo-display">
@@ -258,9 +250,16 @@
       </div>
       <div class="mimi-hand-area">
         <div class="hand-thought-row">
-          <div class="player-hand" data-bind="playerHand">
-            <div class="card empty"></div>
-            <div class="card empty"></div>
+          <div class="hand-stack">
+            <div class="hand-label hand-label-hand" data-bind="currentHandName">役：—</div>
+            <div class="player-hand" data-bind="playerHand">
+              <div class="card empty"></div>
+              <div class="card empty"></div>
+            </div>
+            <div class="hand-label hand-label-panyu">
+              <span class="hl-key">ぱにゅ</span>
+              <span class="panyu-mark" data-bind="panyuMark">○</span>
+            </div>
           </div>
           <div class="mimi-thought-bubble" data-bind="mimiThought">「ふぅ……まずは手札を見てから」</div>
         </div>

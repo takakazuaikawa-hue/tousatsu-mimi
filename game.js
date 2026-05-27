@@ -2019,6 +2019,21 @@ function applyBindings() {
       }
       case 'opponentChips': el.textContent = state.opponentChips; break;
       case 'playerChips': el.textContent = state.playerChips; break;
+      case 'playerChipsDetailed': {
+        // 「残り 850（-150）」形式
+        const bet = state.currentBetPlayer || 0;
+        el.innerHTML = bet > 0
+          ? `${state.playerChips}<span class="cp-delta">−${bet}</span>`
+          : `${state.playerChips}`;
+        break;
+      }
+      case 'opponentChipsDetailed': {
+        const bet = state.currentBetOpponent || 0;
+        el.innerHTML = bet > 0
+          ? `${state.opponentChips}<span class="cp-delta">−${bet}</span>`
+          : `${state.opponentChips}`;
+        break;
+      }
       case 'pot':
         el.textContent = state.pot;
         const potDisp = el.closest('.pot-display');
@@ -3247,9 +3262,22 @@ function renderBetUnified() {
   const oppName = state.opponentName || '相手';
   const playerCallNeed = Math.max(0, opp - pl);
 
+  // 前回からの増分（新規追加チップ）を追跡してアニメ対象に
+  if (!state.__prevBet) state.__prevBet = { opp: 0, pl: 0, pot: 0 };
+  const prev = state.__prevBet;
+  // ハンドが切り替わって total が減った場合はリセット
+  if (opp < prev.opp || pl < prev.pl || pot < prev.pot) {
+    prev.opp = 0; prev.pl = 0; prev.pot = 0;
+  }
+  const newOpp = Math.max(0, opp - prev.opp);
+  const newPl  = Math.max(0, pl  - prev.pl);
+  const newPot = Math.max(0, pot - prev.pot);
+  state.__prevBet = { opp, pl, pot };
+
   // 「賭け済みチップ」を縦積みで表現
   // 1チップ = 25 単位。最大表示15枚、超過は数字に
-  const buildVerticalStack = (amount, side) => {
+  // newOnTop: 新規追加分（先頭枚）を pop アニメ対象としてマーク
+  const buildVerticalStack = (amount, side, newAdded) => {
     if (!amount || amount <= 0) return '<div class="bu-stack-empty">—</div>';
     const tiers = [
       { cls: 'chip-gold',  val: 1000 },
@@ -3270,10 +3298,22 @@ function renderBetUnified() {
     const cap = 15;
     const visible = flat.slice(0, cap);
     const over = flat.length - visible.length;
-    // 大きい順（gold→white）に底から積む見た目に
+    // 「新規追加チップ枚数」を末尾枚に新着クラスで割り当て（pop アニメ）
+    // newAdded はチップ枚数（amount ではなく目視枚数）相当：簡易換算で「flat.length - 前の flat.length」を使う
+    const oldFlatLen = (() => {
+      // 概算：(amount - newAddedValue) で前回の flat.length を再計算
+      const prevAmt = Math.max(0, amount - newAdded);
+      let rem = prevAmt; let n = 0;
+      for (const t of tiers) { const c = Math.floor(rem / t.val); n += c; rem -= c * t.val; }
+      return n;
+    })();
+    const newCount = Math.max(0, visible.length - oldFlatLen);
     return `
       <div class="bu-vstack" data-side="${side}">
-        ${visible.map((cls, i) => `<span class="bu-chip ${cls}" style="--i:${i}"></span>`).join('')}
+        ${visible.map((cls, i) => {
+          const isNew = (i >= visible.length - newCount);
+          return `<span class="bu-chip ${cls}${isNew ? ' bu-chip-new' : ''}" style="--i:${i}"></span>`;
+        }).join('')}
         ${over > 0 ? `<span class="bu-overflow">+${over}枚</span>` : ''}
       </div>
     `;
@@ -3282,18 +3322,18 @@ function renderBetUnified() {
   return `
     <div class="bu-cell bu-cell-opp">
       <div class="bu-cell-label">${oppName}</div>
-      ${buildVerticalStack(opp, 'opp')}
+      ${buildVerticalStack(opp, 'opp', newOpp)}
       <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}</div>
     </div>
     <div class="bu-cell bu-cell-pot">
       <div class="bu-cell-label bu-pot-title">ポット</div>
-      ${buildVerticalStack(pot, 'pot')}
+      ${buildVerticalStack(pot, 'pot', newPot)}
       <div class="bu-pot-amt">${pot}</div>
       ${playerCallNeed > 0 ? `<div class="bu-callneed">▼ コール ${playerCallNeed}</div>` : ''}
     </div>
     <div class="bu-cell bu-cell-pl">
       <div class="bu-cell-label">ミミ</div>
-      ${buildVerticalStack(pl, 'pl')}
+      ${buildVerticalStack(pl, 'pl', newPl)}
       <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}</div>
     </div>
   `;

@@ -3540,6 +3540,25 @@ html, body {
   position: relative;
 }
 .bu-chip:first-child { margin-top: 0; }
+.bu-chip-new {
+  animation: chipPop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@keyframes chipPop {
+  0%   { transform: translateY(-12px) scale(0.6); opacity: 0; }
+  60%  { transform: translateY(2px) scale(1.1);  opacity: 1; }
+  100% { transform: translateY(0) scale(1);      opacity: 1; }
+}
+/* 追加：相手側は上から、自分側は下から滑り込む（演出差） */
+.bu-cell-opp .bu-chip-new { animation-name: chipPopFromTopOpp; }
+.bu-cell-pl  .bu-chip-new { animation-name: chipPopFromBottomPl; }
+@keyframes chipPopFromTopOpp {
+  0%   { transform: translate(0, -20px) scale(0.5); opacity: 0; }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+@keyframes chipPopFromBottomPl {
+  0%   { transform: translate(0, 14px) scale(0.5); opacity: 0; }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
 .bu-chip.chip-gold {
   background:
     repeating-conic-gradient(from 0deg, #f5d77a 0deg 30deg, #fff8dc 30deg 60deg);
@@ -3621,6 +3640,16 @@ html, body {
   color: rgba(245,215,122,0.7);
   letter-spacing: 0.1em;
   margin-left: 2px;
+}
+.cp-delta {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
+  color: #ff8a9a;
+  background: rgba(80,10,20,0.55);
+  border-radius: 999px;
+  font-weight: 700;
 }
 .chip-pill-player { border-color: rgba(245,215,122,0.6); }
 .chip-pill-vs { border-color: rgba(255,150,170,0.5); }
@@ -3753,6 +3782,35 @@ html, body {
 .current-hand-display b { color: var(--c-gold-bright); }
 .current-hand-display .hand-strong { color: var(--c-red-bright); }
 .player-hand { display: flex; gap: 8px; flex-shrink: 0; }
+/* カード上下に役・ぱにゅを配置するスタック */
+.hand-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.hand-label {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+  background: rgba(20,8,30,0.7);
+  border: 1px solid rgba(245,215,122,0.45);
+  color: #fbe28a;
+  font-weight: 700;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+}
+.hand-label-hand b { color: #fff; }
+.hand-label-panyu .hl-key {
+  font-size: 10px;
+  color: rgba(245,215,122,0.7);
+  letter-spacing: 0.1em;
+}
 .hand-thought-row {
   display: grid;
   grid-template-columns: auto 1fr;
