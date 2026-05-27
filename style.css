@@ -6802,9 +6802,9 @@ html, body {
   75%  { transform: translateY(-3px) scale(0.99, 1.01); }
   100% { transform: translateY(0)    scale(1, 1); }
 }
-/* タップ時のぷるん（弾性springy） */
+/* タップ時のぷるん（弾性、少しやさしく） */
 .panyu-clicker-blob.wobble {
-  animation: tapWobble 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: tapWobble 0.40s cubic-bezier(0.34, 1.35, 0.55, 1);
 }
 @keyframes tapWobble {
   0%   { transform: translate(0, 0) scale(1, 1); }
@@ -6816,7 +6816,22 @@ html, body {
 }
 /* 高速タップ時の激しい揺れ */
 .panyu-clicker-blob.wobble-fast {
-  animation: tapWobbleFast 0.22s cubic-bezier(0.34, 1.8, 0.64, 1);
+  animation: tapWobbleFast 0.28s cubic-bezier(0.34, 1.5, 0.55, 1);
+}
+/* 引っ張り中：CSS変数で柔軟な伸び（インラインstyleで上書き想定） */
+.panyu-clicker-blob.dragging {
+  animation: none !important;
+  transition: transform 0.05s linear;
+}
+/* リリース時のスプリングバック */
+.panyu-clicker-blob.release {
+  animation: panyuRelease 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+@keyframes panyuRelease {
+  0%   { transform: translate(var(--dx, 0), var(--dy, 0)) scale(var(--ds-x, 1), var(--ds-y, 1)); }
+  50%  { transform: translate(0, 0) scale(0.95, 1.06); }
+  75%  { transform: translate(0, 0) scale(1.03, 0.97); }
+  100% { transform: translate(0, 0) scale(1, 1); }
 }
 @keyframes tapWobbleFast {
   0%   { transform: translate(0, 0) scale(1, 1) rotate(0); }

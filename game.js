@@ -6237,7 +6237,7 @@ function showPanyuClicker(totalTaps, onComplete) {
     void blob.offsetWidth;
     const wobbleCls = fastTap ? 'wobble-fast' : 'wobble';
     blob.classList.add(wobbleCls);
-    setTimeout(() => blob.classList.remove(wobbleCls), fastTap ? 220 : 320);
+    setTimeout(() => blob.classList.remove(wobbleCls), fastTap ? 280 : 400);
     if (count <= 0) {
       completed = true;
       blobs.forEach(b => b.classList.add('panyu-complete'));
@@ -6254,8 +6254,76 @@ function showPanyuClicker(totalTaps, onComplete) {
   blobs.forEach(b => {
     b.addEventListener('click', onTap(b));
     b.addEventListener('touchstart', onTap(b), { passive: false });
+    // 引っ張り（ドラッグ）演出：少し伸びて、離すと戻る
+    attachDragStretch(b);
   });
   updateColor();
+}
+
+// 引っ張ったらゴム玉のように伸びる演出
+function attachDragStretch(blob) {
+  let startX = 0, startY = 0, active = false, pointerId = null;
+  const maxDrag = 35; // 最大伸び（px）
+  const onDown = (e) => {
+    const pt = e.touches ? e.touches[0] : e;
+    startX = pt.clientX;
+    startY = pt.clientY;
+    active = true;
+    pointerId = e.pointerId ?? null;
+    blob.classList.remove('release');
+    blob.classList.add('dragging');
+    if (e.pointerId !== undefined) blob.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e) => {
+    if (!active) return;
+    const pt = e.touches ? e.touches[0] : e;
+    let dx = pt.clientX - startX;
+    let dy = pt.clientY - startY;
+    // ベクトルを最大値で減衰（ゴム抵抗）
+    const dist = Math.hypot(dx, dy);
+    if (dist > maxDrag) {
+      const k = maxDrag / dist;
+      dx *= k; dy *= k;
+    }
+    // 引っ張り方向に伸びる scale（0.05倍 per maxDrag）
+    const stretch = Math.min(dist / maxDrag, 1) * 0.12;
+    // 軸に応じて scale 分解
+    const ang = Math.atan2(dy, dx);
+    const sx = 1 + Math.cos(ang) * Math.cos(ang) * stretch - Math.sin(ang) * Math.sin(ang) * stretch * 0.5;
+    const sy = 1 + Math.sin(ang) * Math.sin(ang) * stretch - Math.cos(ang) * Math.cos(ang) * stretch * 0.5;
+    blob.style.setProperty('--dx', `${dx.toFixed(1)}px`);
+    blob.style.setProperty('--dy', `${dy.toFixed(1)}px`);
+    blob.style.setProperty('--ds-x', sx.toFixed(3));
+    blob.style.setProperty('--ds-y', sy.toFixed(3));
+    blob.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${sx.toFixed(3)}, ${sy.toFixed(3)})`;
+  };
+  const onUp = (e) => {
+    if (!active) return;
+    active = false;
+    blob.classList.remove('dragging');
+    // インラインの transform を消して、release アニメで戻す
+    blob.style.transform = '';
+    blob.classList.add('release');
+    setTimeout(() => blob.classList.remove('release'), 460);
+    if (pointerId !== null && blob.releasePointerCapture) {
+      try { blob.releasePointerCapture(pointerId); } catch (e) {}
+    }
+    pointerId = null;
+  };
+  // pointer events で統一（マウス＋タッチを一本化）
+  if (window.PointerEvent) {
+    blob.addEventListener('pointerdown', onDown);
+    blob.addEventListener('pointermove', onMove);
+    blob.addEventListener('pointerup', onUp);
+    blob.addEventListener('pointercancel', onUp);
+  } else {
+    blob.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    blob.addEventListener('touchstart', onDown, { passive: true });
+    blob.addEventListener('touchmove', onMove, { passive: true });
+    blob.addEventListener('touchend', onUp);
+  }
 }
 
 function spawnPanyuParticle(parent) {
