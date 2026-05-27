@@ -6750,6 +6750,27 @@ html, body {
   background: radial-gradient(ellipse at 50% 60%, rgba(60,30,80,0.5) 0%, rgba(0,0,0,0.85) 70%);
 }
 
+/* 背景と丸の間に配置するキャラクター画像 */
+.panyu-bg-char {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-height: 85vh;
+  max-width: 80vw;
+  height: auto;
+  width: auto;
+  z-index: 1; /* 背景の上、blob の下 */
+  pointer-events: none;
+  opacity: 0.92;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.6));
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.panyu-clicker-pair { position: relative; z-index: 2; }
+.panyu-clicker-label-top { position: relative; z-index: 3; }
+.panyu-combo { position: relative; z-index: 3; }
+
 /* 背景ピッカー（左上） */
 .panyu-bg-picker {
   position: absolute;

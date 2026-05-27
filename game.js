@@ -6198,6 +6198,8 @@ function showPanyuClicker(totalTaps, onComplete) {
   ).join('');
   overlay.innerHTML = `
     <div class="panyu-bg-picker">${bgPicker}</div>
+    <img class="panyu-bg-char" src="assets/characters/panyu.png" alt=""
+         onerror="this.style.display='none'">
     <div class="panyu-clicker-label-top">タップ or ぐりぐり！ <small>両手でOK</small></div>
     <div class="panyu-clicker-pair">
       ${blobTemplate('panyu-blob-l')}
