@@ -3202,24 +3202,43 @@ function startEndingShow(playMusic) {
 
   const acts = [
     { type: 'fade-text', text: '——あの夜、グランドクロック・カジノシアターの最奥で——', cls: 'narration', wait: 2400 },
+
+    // ヴェルベット
     { type: 'speaker', who: 'velvet', img: 'velvet', name: 'ヴェルベット',
-      text: '「新人にしては……悪くないわ。その妙なスキル、覚えておく。<br>……このグランドクロック・カジノシアターを支配するのは、貴方なのかもしれませんことね」',
-      wait: 4400 },
+      text: '「新人にしては悪くないわ。その妙なスキル、覚えておく」', wait: 3000 },
+    { type: 'speaker', who: 'velvet', img: 'velvet', name: 'ヴェルベット',
+      text: '「このグランドクロック・カジノシアターを支配するのは、貴方なのかもしれませんことね」', wait: 3600 },
+
+    // グラーノ
     { type: 'speaker', who: 'grano', img: 'grano', name: 'グラーノ',
-      text: '「ふむ。お嬢さんの『割に合う判断』、見事でしたな。<br>マクスウェル商会へ推薦させていただきます。きっとお嬢さんなら、良い経営者になれますよ」',
-      wait: 4400 },
+      text: '「ふむ。お嬢さんの『割に合う判断』、見事でしたな」', wait: 2800 },
+    { type: 'speaker', who: 'grano', img: 'grano', name: 'グラーノ',
+      text: '「マクスウェル商会へ推薦させていただきます。お嬢さんなら、良い経営者になれましょう」', wait: 3400 },
+
+    // セリナ
     { type: 'speaker', who: 'selina', img: 'selina', name: 'セリナ',
-      text: '「ボードを読む目、ホンモノだったね。次は本気でやる。<br>……非凡な推理力。あの事件を、任せられるかも……」',
-      wait: 4200 },
+      text: '「ボードを読む目、確かなものでした。次は本気で相手をします」', wait: 3000 },
+    { type: 'speaker', who: 'selina', img: 'selina', name: 'セリナ',
+      text: '「……非凡な推理力。あの事件、任せられるかもしれません」', wait: 3400 },
+
+    // ポルカ
     { type: 'speaker', who: 'polka', img: 'polka', name: 'ポルカ',
-      text: '「く、悔しいんだから……！　ウチのおじに言いつけておくからね！<br>すごろくアイドルなめんなよーっ！」',
-      wait: 4200 },
+      text: '「く、悔しいんだから。ウチのおじに言いつけておくからね」', wait: 2800 },
+    { type: 'speaker', who: 'polka', img: 'polka', name: 'ポルカ',
+      text: '「すごろくアイドル、なめないでよね」', wait: 2600 },
+
+    // リコ先輩
     { type: 'speaker', who: 'rico', img: 'rico', name: 'リコ先輩',
-      text: '「やるじゃん、ミミ。ちゃんと顔色まで読み切った。<br>もしかしたらラパン・グラン・コンクイスタも夢じゃないかも？……アハハ、冗談だよ」',
-      wait: 4400 },
+      text: '「やるじゃん、ミミ。ちゃんと顔色まで読み切った」', wait: 2800 },
+    { type: 'speaker', who: 'rico', img: 'rico', name: 'リコ先輩',
+      text: '「ラパン・グラン・コンクイスタも夢じゃないかも？……なんてね、冗談」', wait: 3400 },
+
+    // ミミ
     { type: 'speaker', who: 'mimi', img: 'mimi', name: 'ミミ',
-      text: '「私……ぱにゅぱにゅだけが取り柄だと思ってた。でも、それも立派なスキルでした。<br>……それより、私の労務条件を早く確認したい」',
-      wait: 4400 },
+      text: '「ぱにゅぱにゅだけが取り柄だと思ってた。でも、それも立派なスキルでした」', wait: 3400 },
+    { type: 'speaker', who: 'mimi', img: 'mimi', name: 'ミミ',
+      text: '「……それより。私の労務条件、早く確認したいんですけど」', wait: 3400 },
+
     { type: 'fade-text', text: 'こうしてミミは、闘札の世界で名を上げていく——', cls: 'narration', wait: 3000 },
     { type: 'fade-text', text: 'これは、外れスキルが世界を変える物語の、ほんの始まり。', cls: 'narration small', wait: 3200 },
   ];
