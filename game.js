@@ -3379,11 +3379,16 @@ function renderBetUnified() {
   const newOpp = Math.max(0, opp - prev.opp);
   const newPl  = Math.max(0, pl  - prev.pl);
   const newPot = Math.max(0, pot - prev.pot);
-  // ポット計算式（最新ベット分を保持）：前ポット + 追加 = 新ポット
-  if (newPot > 0) {
-    state.__lastPotCalc = { before: pot - newPot, added: newPot, after: pot };
-  }
   state.__prevBet = { opp, pl, pot };
+  // ポット計算式：前ストリートまでの蓄積 + 今ストリート合計 = ポット
+  // （直近の差分ではなく、ストリート単位で見せる方が混乱しない）
+  const carry = Math.max(0, pot - opp - pl);
+  const thisStreet = opp + pl;
+  if (thisStreet > 0) {
+    state.__lastPotCalc = { before: carry, added: thisStreet, after: pot };
+  } else {
+    state.__lastPotCalc = null;
+  }
 
   // 「賭け済みチップ」を縦積みで表現
   // 1チップ = 25 単位。最大表示15枚、超過は数字に
@@ -3443,10 +3448,12 @@ function renderBetUnified() {
       <div class="bu-remain">${buildVerticalChipColumns(state.opponentChips)}</div>
     </div>
     <!-- 2. 相手のベット（このストリート） -->
-    <div class="bu-cell bu-cell-bet bu-cell-opp">
+    <div class="bu-cell bu-cell-bet bu-cell-opp${opp > pl && opp > 0 ? ' bu-lead' : ''}">
       <div class="bu-cell-label">${oppShort} ベット</div>
       ${buildVerticalStack(opp, 'opp', newOpp)}
       <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}</div>
+      ${opp > pl && opp > 0 ? `<div class="bu-status bu-status-lead">▲ リード</div>`
+        : (pl > opp && opp > 0 ? `<div class="bu-status bu-status-behind">差 −${pl - opp}</div>` : '')}
     </div>
     <!-- 3. ポット（物理チップ） -->
     <div class="bu-cell bu-cell-pot">
@@ -3464,10 +3471,12 @@ function renderBetUnified() {
       </div>
     </div>
     <!-- 4. ミミのベット（このストリート） -->
-    <div class="bu-cell bu-cell-bet bu-cell-pl">
+    <div class="bu-cell bu-cell-bet bu-cell-pl${pl > opp && pl > 0 ? ' bu-lead' : ''}">
       <div class="bu-cell-label">ミミ ベット</div>
       ${buildVerticalStack(pl, 'pl', newPl)}
       <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}</div>
+      ${pl > opp && pl > 0 ? `<div class="bu-status bu-status-lead">▲ リード</div>`
+        : (opp > pl ? `<div class="bu-status bu-status-behind">あと −${opp - pl} 必要</div>` : '')}
     </div>
     <!-- 5. ミミの残チップ -->
     <div class="bu-cell bu-cell-remain bu-cell-pl-remain">
