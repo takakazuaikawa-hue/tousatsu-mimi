@@ -2634,6 +2634,7 @@ function showSettingsModal() {
       ${save.ownedItems && save.ownedItems.includes('trophy_unlock')
         ? `<button class="btn btn-secondary settings-modal-trophy" data-action="open-collection">🏆 トロフィーを開く</button>`
         : `<button class="btn btn-ghost settings-modal-trophy locked" disabled title="交換所「知識ノート」枠で購入できます">🔒 トロフィー手帳（交換所で解放）</button>`}
+      <button class="btn btn-secondary settings-modal-trophy" data-action="open-glossary">📖 ポーカー辞典を開く</button>
       <button class="btn btn-primary settings-modal-close">閉じる</button>
     </div>
   `;
@@ -3956,6 +3957,11 @@ function onAction(e) {
       }
       showCollectionModal();
       break;
+    case 'open-glossary': showGlossaryModal(); break;
+    case 'glossary-close': {
+      const ov = document.querySelector('.glossary-overlay'); if (ov) ov.remove();
+      break;
+    }
     case 'collection-close': {
       const ov = document.querySelector('.collection-overlay'); if (ov) ov.remove();
       break;
@@ -4851,6 +4857,131 @@ function showCollectionModal() {
   overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
+  });
+}
+
+// === ポーカー辞典 ===
+const GLOSSARY = [
+  { cat: '役', term: 'ロイヤルストレートフラッシュ', body: '10-J-Q-K-A 同スート。最強の役。出現確率は約65万分の1。' },
+  { cat: '役', term: 'ストレートフラッシュ', body: '同スートの連番5枚。ロイヤル以外。' },
+  { cat: '役', term: 'フォーカード', body: '同ランク4枚。クアッズ（Quads）とも。' },
+  { cat: '役', term: 'フルハウス', body: 'スリーカード＋ペア。同ランクが3枚と2枚。' },
+  { cat: '役', term: 'フラッシュ', body: '同スート5枚。高い方からトップカードで強さが決まる。' },
+  { cat: '役', term: 'ストレート', body: '連番5枚。A は HIGH（10-J-Q-K-A=ブロードウェイ）または LOW（A-2-3-4-5=ホイール）の両端のみ。ラップ不可。' },
+  { cat: '役', term: 'ブロードウェイ', body: '10-J-Q-K-A の Aハイ ストレート。ストレート最強。' },
+  { cat: '役', term: 'ホイール', body: 'A-2-3-4-5 の 5ハイ ストレート。最弱ストレートで、A は LOW扱い。' },
+  { cat: '役', term: 'スリーカード（セット／トリップス）', body: '同ランク3枚。自分の手札ペア＋場で完成＝セット、場のペア＋自分の1枚＝トリップス。' },
+  { cat: '役', term: 'ツーペア', body: 'ペアが2組。高い方のペアで強さが決まる。' },
+  { cat: '役', term: 'ワンペア', body: '同ランク2枚。残り3枚はキッカーで強さ決定。' },
+  { cat: '役', term: 'ハイカード', body: 'なにも揃わなかった時、最も高い1枚で勝負。' },
+
+  { cat: 'ベット', term: 'チェック', body: '誰もベットしていない時、賭けずに次へ回すアクション。0チップ。' },
+  { cat: 'ベット', term: 'コール', body: '相手のベット額に同額を払って勝負に残る。' },
+  { cat: 'ベット', term: 'ベット', body: 'チェック状態から最初に賭ける行為。' },
+  { cat: 'ベット', term: 'レイズ', body: '相手のベットに上乗せ。「to ◯◯」で総額宣言、コール分も含む1アクション。' },
+  { cat: 'ベット', term: 'リレイズ／3ベット', body: 'レイズに対するさらなるレイズ。3-bet / 4-bet と数える。' },
+  { cat: 'ベット', term: 'フォールド', body: '降りる。これまで払ったチップは諦める。' },
+  { cat: 'ベット', term: 'オールイン', body: '残りチップ全部。1ハンド1回（リバー以前で発動）。' },
+  { cat: 'ベット', term: 'Cベット（コンティニュエーション）', body: 'プリフロップでレイズした人がフロップでも続けてベットする手。多くは相手を降ろし狙い。' },
+  { cat: 'ベット', term: 'バレル', body: '連続ベット。2バレル＝ターンも撃つ、3バレル＝リバーも撃つ。' },
+  { cat: 'ベット', term: 'ブロックベット', body: 'リバーで小さく賭けて、相手の大きなベットを封じる守りの一手。' },
+  { cat: 'ベット', term: 'チェックレイズ', body: 'チェックで相手にベットを誘い、自分でレイズして取る罠。' },
+
+  { cat: 'ポジション', term: 'ボタン（BTN）', body: 'ディーラーマーカー。ポストフロップで最後にアクション＝情報が最大、最強ポジション。' },
+  { cat: 'ポジション', term: 'スモールブラインド（SB）', body: 'BTNの左、強制小ベット。ヘッズアップではBTN兼任。' },
+  { cat: 'ポジション', term: 'ビッグブラインド（BB）', body: 'SBの左、強制大ベット。プリフロップでは最後にアクション。' },
+  { cat: 'ポジション', term: 'インポジション（IP）', body: '相手より後にアクションする側。圧倒的有利。' },
+  { cat: 'ポジション', term: 'アウトオブポジション（OOP）', body: '先にアクションする側。情報が無い分不利。' },
+  { cat: 'ポジション', term: 'ヘッズアップ（HU）', body: '1対1のポーカー。本ゲームの形式。' },
+
+  { cat: '確率・期待値', term: 'アウツ', body: '役を完成させる残りのカードの枚数。フラッシュドロー＝9outs、OESD＝8outs等。' },
+  { cat: '確率・期待値', term: '2-and-4 の法則', body: 'アウツ × 2 ＝ 次の1枚で完成する確率%、× 4 ＝ リバーまでの確率%（フロップから）。' },
+  { cat: '確率・期待値', term: 'ポットオッズ', body: '必要コール額 ÷ コール後の総ポット ＝ 必要勝率%。これ以上勝てる手ならコール＋EV。' },
+  { cat: '確率・期待値', term: 'インプライドオッズ', body: '完成した時に追加で取れるであろう額も計算に入れた将来含みのオッズ。深スタックほど大きい。' },
+  { cat: '確率・期待値', term: 'エクイティ', body: '現時点での勝率%。残りカードを全列挙して算出する厳密値。' },
+  { cat: '確率・期待値', term: 'EV（期待値）', body: 'そのアクションを長期で繰り返した時の平均損益。+EV＝得、-EV＝損。' },
+  { cat: '確率・期待値', term: 'SPR（スタック・ツー・ポット比）', body: '残スタック÷ポット。低い（〜3）＝完成役なら押し切り、高い（8+）＝降りる余地あり。' },
+  { cat: '確率・期待値', term: 'MDF（最小防御頻度）', body: '相手のブラフを罰するためにコールすべき最低頻度。「絶対降りすぎない」基準。' },
+
+  { cat: '心理戦', term: 'ブラフ', body: '弱い手で大きく賭けて相手を降ろす行為。成功率と頻度のバランスが命。' },
+  { cat: '心理戦', term: 'セミブラフ', body: 'ドロー中（=ある程度勝てる）の手でのブラフ。降ろせなくても完成のチャンスあり。' },
+  { cat: '心理戦', term: 'バリューベット', body: '強い手で「相手のコールを引き出す」ためのベット。サイズが鍵。' },
+  { cat: '心理戦', term: 'ブラフキャッチ', body: '中位ペア等で相手のブラフをコール。「ブラフを捕まえる用の手」。' },
+  { cat: '心理戦', term: 'レンジ', body: '相手が持ちうる手の集合。具体的な1ハンドではなく確率分布で考える。' },
+  { cat: '心理戦', term: 'ポラライズ（極端化）', body: '「超強い or ブラフ」の2極構成のレンジ。大ベットは多くがポラライズ。' },
+  { cat: '心理戦', term: 'マージ（合体）', body: '中程度の手も含めた幅広いレンジ。小ベットに多い。' },
+  { cat: '心理戦', term: 'トラップ', body: '強い手をあえてチェックして相手の攻めを誘う。スロープレイとも。' },
+
+  { cat: 'シチュエーション', term: 'ナッツ', body: 'その盤面で達成可能な理論最強の役。「ナッツフラッシュ」「ナッツストレート」等。' },
+  { cat: 'シチュエーション', term: 'ブロッカー', body: '相手の強い役を構成するカードを自分が持っていること。例：フラッシュ場でA♠を持ってる＝相手のナッツを封じる。' },
+  { cat: 'シチュエーション', term: 'バッドビート', body: '優位だったのに、低確率で逆転負け。ピーク勝率70%以上→負け。' },
+  { cat: 'シチュエーション', term: 'サックアウト', body: '不利だったのに、低確率で逆転勝ち。バッドビートの裏側。' },
+  { cat: 'シチュエーション', term: 'クーラー', body: '両者強い役で激突。回避不可能な大勝負。' },
+  { cat: 'シチュエーション', term: 'マック', body: '伏せたまま捨てる。相手に手を見せない。' },
+  { cat: 'シチュエーション', term: 'コインフリップ', body: '勝率がほぼ50:50の対決。AKvsペア等。' },
+  { cat: 'シチュエーション', term: 'フィッシュ／シャーク', body: '初心者＝フィッシュ（カモ）、上級者＝シャーク。卓を選ぶ時の指標。' },
+  { cat: 'シチュエーション', term: 'ドライ／ウェット（ボード）', body: 'ドライ＝ドロー少ない場（小ベット効果的）、ウェット＝フラッシュ・ストレート気配（大ベットでドロー潰し）。' },
+];
+
+function showGlossaryModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'glossary-overlay';
+  const categories = [...new Set(GLOSSARY.map(g => g.cat))];
+  const catSections = categories.map(cat => {
+    const items = GLOSSARY.filter(g => g.cat === cat);
+    return `
+      <section class="gl-section" data-cat="${cat}">
+        <h3 class="gl-section-title">${cat} <span class="gl-section-count">${items.length}項</span></h3>
+        ${items.map(g => `
+          <div class="gl-entry">
+            <div class="gl-term">${g.term}</div>
+            <div class="gl-body">${g.body}</div>
+          </div>
+        `).join('')}
+      </section>
+    `;
+  }).join('');
+  overlay.innerHTML = `
+    <div class="glossary-modal">
+      <button class="glossary-close" data-action="glossary-close" title="閉じる">×</button>
+      <div class="glossary-header">
+        <div class="glossary-title">📖 ポーカー辞典</div>
+        <input type="text" class="glossary-search" placeholder="🔍 用語を検索…" id="glossary-search-input">
+        <div class="glossary-cats">
+          ${categories.map(c => `<button class="gl-cat-pill" data-cat="${c}">${c}</button>`).join('')}
+        </div>
+      </div>
+      <div class="glossary-body">
+        ${catSections}
+      </div>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+  overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  // 検索フィルタ
+  const search = overlay.querySelector('#glossary-search-input');
+  const applyFilter = (q) => {
+    const ql = (q || '').toLowerCase();
+    overlay.querySelectorAll('.gl-entry').forEach(entry => {
+      const txt = entry.textContent.toLowerCase();
+      entry.style.display = (!ql || txt.includes(ql)) ? '' : 'none';
+    });
+    overlay.querySelectorAll('.gl-section').forEach(sec => {
+      const anyVisible = [...sec.querySelectorAll('.gl-entry')].some(e => e.style.display !== 'none');
+      sec.style.display = anyVisible ? '' : 'none';
+    });
+  };
+  search.addEventListener('input', (e) => applyFilter(e.target.value));
+  // カテゴリ pill：クリックでスクロール
+  overlay.querySelectorAll('.gl-cat-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.dataset.cat;
+      const target = overlay.querySelector(`.gl-section[data-cat="${cat}"]`);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   });
 }
 
