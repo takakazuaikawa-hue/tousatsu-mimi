@@ -1463,6 +1463,44 @@ html, body {
   100% { transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) scale(0.5); opacity: 0; }
 }
 
+/* ========== 心理バトル統計（右パネル コンパクト表示） ========== */
+.psych-stats {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--c-gold);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.psych-stats-empty {
+  color: var(--c-text-dim);
+  font-style: italic;
+  text-align: center;
+  font-size: 10px;
+}
+.psych-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+.psych-stats-label {
+  color: var(--c-gold);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+.psych-stats-val {
+  color: var(--c-gold-bright);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.psych-stats-streak {
+  font-size: 10px;
+  color: #ff7aa4;
+  font-weight: 700;
+  text-shadow: 0 0 4px rgba(255,122,164,0.6);
+}
+
 /* ========== 状況分析パネル ========== */
 .situation-analysis {
   background: linear-gradient(180deg, rgba(20,8,29,0.85) 0%, rgba(40,18,60,0.85) 100%);

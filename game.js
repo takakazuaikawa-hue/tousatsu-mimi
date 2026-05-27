@@ -1883,6 +1883,7 @@ function applyBindings() {
       case 'communityCards': renderCardsInto(el, state.community, 5); break;
       case 'playerHand': renderCardsInto(el, state.playerHand, 2); break;
       case 'psychLog': renderPsychLog(el); break;
+      case 'psychStats': el.innerHTML = renderPsychStats(); break;
       case 'actionArea': renderActionArea(el); break;
       case 'coins': el.textContent = state.coinsEarned || 0; break;
       case 'saveCoins': el.textContent = save.coins; break;
@@ -2808,6 +2809,25 @@ function renderCardsInto(el, cards, slotCount) {
         </div>`);
     }
   }
+}
+
+function renderPsychStats() {
+  const total = (state.logs?.psych?.length) || 0;
+  const success = (state.logs?.psych || []).filter(p => p.success).length;
+  const streak = state.psychStreak || 0;
+  if (total === 0) {
+    return '<div class="psych-stats-empty">読み合い未発生</div>';
+  }
+  const streakBadge = streak >= 2
+    ? `<span class="psych-stats-streak">🔥 ${streak}連続</span>`
+    : '';
+  return `
+    <div class="psych-stats-row">
+      <span class="psych-stats-label">読み</span>
+      <span class="psych-stats-val">${success} / ${total}</span>
+      ${streakBadge}
+    </div>
+  `;
 }
 
 function renderPsychLog(el) {
