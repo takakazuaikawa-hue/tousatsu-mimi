@@ -628,7 +628,7 @@ html, body {
 
 /* ========== ロビー（旧ステージ選択） ========== */
 .stage-select-screen,
-.lobby-screen { grid-template-rows: 60px 1fr auto; }
+.lobby-screen { grid-template-rows: 60px 1fr; }
 .lobby-screen { position: relative; overflow: hidden; }
 
 /* 背景：赤絨毯＋金縁＋ラウンジ */
