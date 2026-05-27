@@ -705,23 +705,21 @@ html, body {
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: 14px;
-  padding: 10px 16px 6px;
+  padding: 10px 16px 10px;
   overflow: hidden;
   min-height: 0;
-  height: 100%;
 }
 .lobby-side {
   display: grid;
   grid-template-rows: 1fr auto;
   gap: 8px;
   min-height: 0;
-  height: 100%;
   overflow: hidden;
 }
 .lobby-content {
   display: flex; flex-direction: column;
   min-height: 0;
-  height: 100%;
+  overflow: hidden;
 }
 .lobby-section-label {
   font-size: 13px; letter-spacing: 0.4em;
@@ -998,13 +996,12 @@ html, body {
 .lobby-stage-list {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  grid-auto-rows: 1fr;
+  grid-template-rows: 1fr; /* 単一行を確実に全高で広げる */
   gap: 10px;
   overflow: hidden;
   padding: 0;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
-  height: 100%;
 }
 .lobby-stage-list .stage-card {
   display: flex;
@@ -1127,26 +1124,7 @@ html, body {
 .lobby-stage-list .stage-card .stage-actions .btn { font-size: 12px; padding: 6px 8px; }
 .lobby-stage-list .stage-card .stage-actions .stage-recall { width: 34px; padding: 4px; font-size: 14px; }
 
-/* ロビーフッター */
-.lobby-footer {
-  position: relative; z-index: 1;
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 6px 18px;
-  background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
-  border-top: 1px solid rgba(245,215,122,0.3);
-  font-size: 13px;
-}
-.lobby-bgm {
-  color: var(--c-gold-bright);
-  letter-spacing: 0.15em;
-  font-style: italic;
-  animation: bgmPulse 2.4s ease-in-out infinite;
-}
-@keyframes bgmPulse {
-  0%, 100% { opacity: 0.6; }
-  50%      { opacity: 1.0; }
-}
-.lobby-tips { color: var(--c-gold); }
+/* （旧 lobby-footer 系は撤去済み。空ルール削除） */
 .lobby-bgm-toggle {
   background: transparent;
   border: 1px solid var(--c-gold);
