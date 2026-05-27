@@ -3615,6 +3615,24 @@ html, body {
   color: rgba(200,180,200,0.4);
   font-size: 13px;
 }
+/* ポット直前計算式：前ポット + 追加 = 新ポット */
+.bu-pot-calc {
+  margin-top: 2px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+  color: var(--c-text-dim);
+  text-align: center;
+  animation: potCalcIn 0.3s ease-out;
+}
+.bpc-before { color: rgba(245,215,122,0.65); }
+.bpc-added  { color: #8aff9a; font-weight: 700; text-shadow: 0 0 5px rgba(138,255,154,0.5); }
+.bpc-after  { color: var(--c-gold-bright); font-weight: 700; }
+.bpc-op     { color: rgba(255,255,255,0.4); padding: 0 2px; }
+@keyframes potCalcIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 /* アクションボタン内のミニチップ */
 .slot-chips {

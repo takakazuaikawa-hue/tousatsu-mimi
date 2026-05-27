@@ -3276,7 +3276,7 @@ function pushPotChips(amount) {
   if (!state.potChips) state.potChips = [];
   decomposeToChips(amount).forEach(c => state.potChips.push(c));
 }
-function resetPotChips() { state.potChips = []; }
+function resetPotChips() { state.potChips = []; state.__lastPotCalc = null; }
 
 // 縦積みチップ列：単位種ごとに 1 列、最大表示枚数で省略
 function buildVerticalChipColumns(amount, opts = {}) {
@@ -3379,6 +3379,10 @@ function renderBetUnified() {
   const newOpp = Math.max(0, opp - prev.opp);
   const newPl  = Math.max(0, pl  - prev.pl);
   const newPot = Math.max(0, pot - prev.pot);
+  // ポット計算式（最新ベット分を保持）：前ポット + 追加 = 新ポット
+  if (newPot > 0) {
+    state.__lastPotCalc = { before: pot - newPot, added: newPot, after: pot };
+  }
   state.__prevBet = { opp, pl, pot };
 
   // 「賭け済みチップ」を縦積みで表現
@@ -3449,6 +3453,9 @@ function renderBetUnified() {
       <div class="bu-cell-label bu-pot-title">ポット</div>
       <div class="bu-pot-physical">${buildVerticalChipsFromArray(state.potChips || [])}</div>
       <div class="bu-pot-display"><span class="bu-pot-num">${pot}</span></div>
+      ${state.__lastPotCalc && state.__lastPotCalc.added > 0
+        ? `<div class="bu-pot-calc"><span class="bpc-before">${state.__lastPotCalc.before}</span> <span class="bpc-op">+</span> <span class="bpc-added">${state.__lastPotCalc.added}</span> <span class="bpc-op">=</span> <span class="bpc-after">${state.__lastPotCalc.after}</span></div>`
+        : ''}
       <div class="${callClass}">
         <span class="bu-call-key">コール</span>
         ${playerCallNeed > 0
