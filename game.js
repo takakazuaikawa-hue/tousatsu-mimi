@@ -6222,9 +6222,16 @@ function showPanyuClicker(totalTaps, onComplete) {
     const blob = which;
     const ampX = fastTap ? 14 : 9;
     const ampY = fastTap ? 9  : 6;
-    const wx = (Math.random() * 2 - 1) * ampX;
-    const wy = (Math.random() * 2 - 1) * ampY;
-    const rot = (Math.random() * 2 - 1) * (fastTap ? 6 : 3);
+    // 角度はランダム、距離は 60%〜100% に下限を設定（弱い反応を防止）
+    const angle = Math.random() * Math.PI * 2;
+    const minR = 0.6;
+    const r = minR + Math.random() * (1 - minR);
+    const wx = Math.cos(angle) * r * ampX;
+    const wy = Math.sin(angle) * r * ampY;
+    // 回転も最小角度を保証（±0.5 倍方向はランダム、絶対値は 50%〜100%）
+    const rotSign = Math.random() < 0.5 ? -1 : 1;
+    const rotAmp = fastTap ? 6 : 3;
+    const rot = rotSign * (0.5 + Math.random() * 0.5) * rotAmp;
     const isVertical = Math.abs(wy) > Math.abs(wx);
     const sxBase = fastTap ? 1.25 : 1.15;
     const syBase = fastTap ? 0.78 : 0.88;
