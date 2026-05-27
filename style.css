@@ -3144,16 +3144,17 @@ html, body {
   color: #fff;
   font-style: italic;
   min-height: 48px;
-  max-height: 100%;
+  /* max-height は撤去：親が制限する場合のみスクロール */
   position: relative;
   box-shadow:
     0 0 20px rgba(255,193,216,0.25),
     0 0 0 1px rgba(217,179,90,0.4) inset;
   letter-spacing: 0.02em;
-  /* 複数行でも崩れないように：flex は使わず通常の block で */
   display: block;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 /* 思考アイコン廃止：シンプルなバブルだけ表示 */
 .zazazo-display { display: flex; flex-direction: column; gap: 6px; }
@@ -3234,12 +3235,19 @@ html, body {
 }
 .mimi-hand-area {
   display: grid;
-  grid-template-rows: auto auto auto;
+  /* セリフ枠（最終行）に余ったスペースを与える */
+  grid-template-rows: auto auto 1fr;
   gap: 6px;
   min-height: 0;
   overflow: hidden;
   height: 100%;
   align-content: start;
+}
+.mimi-hand-area > .mimi-thought-bubble {
+  /* 最下行のセリフ枠は残りスペースを全部使い、内部スクロール */
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
 }
 .mimi-hand-area .player-row {
   display: flex;
@@ -5534,7 +5542,8 @@ html, body {
 .action-slot { min-height: 56px; }
 .action-slot .slot-label { font-size: 17px; }
 .action-slot small { font-size: 13px; }
-.mimi-thought-bubble { font-size: 18px; line-height: 1.6; }
+.mimi-thought-bubble { font-size: 17px; line-height: 1.55; min-height: 72px; padding: 10px 14px; }
+.mimi-hand-area > .mimi-thought-bubble { min-height: 72px; }
 .opponent-speech { font-size: 18px; }
 .rico-bubble { font-size: 17px; line-height: 1.65; }
 .bet-side-amount { font-size: 24px; }
