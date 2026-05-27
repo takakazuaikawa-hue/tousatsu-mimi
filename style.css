@@ -729,9 +729,10 @@ html, body {
   position: relative;
   z-index: 2;
 }
-.lobby-side > .lobby-shop-btn { grid-row: 2; }
-.lobby-side > .lobby-bottom-panel { grid-row: 3; }
-.lobby-side { grid-template-rows: 1fr auto auto; }
+.lobby-side > .lobby-rico-bubble { grid-row: 2; position: relative; z-index: 2; }
+.lobby-side > .lobby-shop-btn { grid-row: 3; }
+.lobby-side > .lobby-bottom-panel { grid-row: 4; }
+.lobby-side { grid-template-rows: 1fr auto auto auto; }
 /* 大きな交換所ボタン（リコ下、半透明気味で立ち絵が透ける） */
 .lobby-shop-btn {
   display: flex;
@@ -797,30 +798,29 @@ html, body {
   letter-spacing: 0.15em;
   backdrop-filter: blur(2px);
 }
-/* 吹き出し：立ち絵の上部に半透明で表示（ボタンと重ならない） */
+/* 吹き出し：交換所ボタンのすぐ上、同じグリッド列に配置（重なりなし・薄め） */
 .lobby-rico-bubble {
-  position: absolute;
-  left: 8px; right: 8px;
-  top: 8px;
-  background: rgba(255, 248, 220, 0.88);
-  color: #1a0e2a;
-  padding: 10px 14px;
+  margin: 0;
+  padding: 9px 14px;
   border-radius: 12px;
-  font-size: 13px; line-height: 1.45;
+  font-size: 13px;
+  line-height: 1.5;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,215,122,0.5);
+  letter-spacing: 0.02em;
+  color: #fbeec8;
   text-align: center;
-  backdrop-filter: blur(3px);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 6px rgba(0,0,0,0.6);
+  background: linear-gradient(180deg, rgba(30,12,50,0.32) 0%, rgba(14,6,26,0.38) 100%);
+  border: 1px solid rgba(245,215,122,0.35);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35), inset 0 0 16px rgba(245,215,122,0.05);
+  backdrop-filter: blur(2px);
   pointer-events: none;
   z-index: 3;
+  animation: ricoBubbleIn 0.5s ease-out;
 }
-.lobby-rico-bubble::after {
-  content: ''; position: absolute;
-  left: 50%; bottom: -8px;
-  transform: translateX(-50%);
-  border-style: solid;
-  border-width: 10px 8px 0 8px;
-  border-color: rgba(255,248,220,0.88) transparent transparent transparent;
+@keyframes ricoBubbleIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* まとめ下部パネル：音楽＋設定ボタン */

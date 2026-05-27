@@ -2295,10 +2295,9 @@ function renderStageList() {
     const bestRank = save.bestRanks[sid];
     const recommend = sid === 'rico_tutorial' && save.clearedStages.length === 0;
     const stageNum = i + 1;
-    // 立ち絵もタップ可能（バトル開始）。リコのクリア後はモードチューザー
+    // リコクリア後はモードチューザー、それ以外は通常バトル開始
     const isRicoClearChoice = (sid === 'rico_tutorial' && cleared);
-    const portraitAction = isRicoClearChoice ? 'rico-mode-chooser' : 'battle-start';
-    const portrait = `<div class="stage-portrait" data-action="${portraitAction}" data-opponent="${sid}" title="${opp.name} ${isRicoClearChoice ? 'モード選択' : 'と対戦開始'}">
+    const portrait = `<div class="stage-portrait">
       <img src="assets/characters/${opp.imgKey}_default.png" alt="${opp.name}" onerror="window.assetFallback(this,'${opp.imgKey}')">
     </div>`;
     if (!unlocked) {
