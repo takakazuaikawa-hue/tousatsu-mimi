@@ -3452,17 +3452,22 @@ function renderBetUnified() {
       <div class="bu-cell-label">${oppShort} ベット</div>
       ${buildVerticalStack(opp, 'opp', newOpp)}
       <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}</div>
-      ${opp > pl && opp > 0 ? `<div class="bu-status bu-status-lead">▲ リード</div>`
-        : (pl > opp && opp > 0 ? `<div class="bu-status bu-status-behind">差 −${pl - opp}</div>` : '')}
+      <div class="bu-status-slot">${
+        opp > pl && opp > 0 ? `<span class="bu-status bu-status-lead">▲ リード</span>`
+          : (pl > opp && opp > 0 ? `<span class="bu-status bu-status-behind">差 −${pl - opp}</span>`
+          : `<span class="bu-status bu-status-empty">—</span>`)
+      }</div>
     </div>
     <!-- 3. ポット（物理チップ） -->
     <div class="bu-cell bu-cell-pot">
       <div class="bu-cell-label bu-pot-title">ポット</div>
       <div class="bu-pot-physical">${buildVerticalChipsFromArray(state.potChips || [])}</div>
       <div class="bu-pot-display"><span class="bu-pot-num">${pot}</span></div>
-      ${state.__lastPotCalc && state.__lastPotCalc.added > 0
-        ? `<div class="bu-pot-calc"><span class="bpc-before">${state.__lastPotCalc.before}</span> <span class="bpc-op">+</span> <span class="bpc-added">${state.__lastPotCalc.added}</span> <span class="bpc-op">=</span> <span class="bpc-after">${state.__lastPotCalc.after}</span></div>`
-        : ''}
+      <div class="bu-pot-calc">${
+        state.__lastPotCalc && state.__lastPotCalc.added > 0
+          ? `<span class="bpc-before">${state.__lastPotCalc.before}</span> <span class="bpc-op">+</span> <span class="bpc-added">${state.__lastPotCalc.added}</span> <span class="bpc-op">=</span> <span class="bpc-after">${state.__lastPotCalc.after}</span>`
+          : `<span class="bpc-empty">—</span>`
+      }</div>
       <div class="${callClass}">
         <span class="bu-call-key">コール</span>
         ${playerCallNeed > 0
@@ -3475,8 +3480,11 @@ function renderBetUnified() {
       <div class="bu-cell-label">ミミ ベット</div>
       ${buildVerticalStack(pl, 'pl', newPl)}
       <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}</div>
-      ${pl > opp && pl > 0 ? `<div class="bu-status bu-status-lead">▲ リード</div>`
-        : (opp > pl ? `<div class="bu-status bu-status-behind">あと −${opp - pl} 必要</div>` : '')}
+      <div class="bu-status-slot">${
+        pl > opp && pl > 0 ? `<span class="bu-status bu-status-lead">▲ リード</span>`
+          : (opp > pl ? `<span class="bu-status bu-status-behind">あと −${opp - pl} 必要</span>`
+          : `<span class="bu-status bu-status-empty">—</span>`)
+      }</div>
     </div>
     <!-- 5. ミミの残チップ -->
     <div class="bu-cell bu-cell-remain bu-cell-pl-remain">

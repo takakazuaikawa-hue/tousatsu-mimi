@@ -3506,6 +3506,25 @@ html, body {
   background: rgba(120,30,50,0.6);
   border: 1px solid rgba(255,150,170,0.5);
 }
+/* スロット：状態が無いときも領域確保（レイアウトずれ防止） */
+.bu-status-slot {
+  min-height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.bu-status-empty {
+  color: rgba(200,180,200,0.35);
+  font-size: 11px;
+  font-weight: 700;
+}
+/* ポット計算式の空状態：高さ確保 */
+.bu-pot-calc { min-height: 18px; }
+.bpc-empty {
+  color: rgba(200,180,200,0.35);
+  font-size: 13px;
+}
 .bu-remain {
   padding: 4px 6px;
   background: rgba(0,0,0,0.4);
