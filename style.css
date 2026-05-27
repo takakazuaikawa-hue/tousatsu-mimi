@@ -6828,12 +6828,21 @@ html, body {
 /* 左の玉：右側を平らに押しつぶす（5% 内側にカット＋角を緩く） */
 .panyu-clicker-pair > .panyu-clicker-blob:nth-child(1) {
   clip-path: inset(0 5% 0 0 round 50% 30% 30% 50%);
-  /* 玉サイズの 10% を重ねる（vmin 基準で可変） */
   margin-right: calc(28vmin * -0.1);
+  /* 左玉用画像（あれば共通画像を上書き、無ければ共通画像のまま） */
+  background:
+    url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
+    url('assets/ui/panyu_ball.png') center/cover no-repeat,
+    transparent;
 }
 /* 右の玉：左側を平らに押しつぶす */
 .panyu-clicker-pair > .panyu-clicker-blob:nth-child(2) {
   clip-path: inset(0 0 0 5% round 30% 50% 50% 30%);
+  /* 右玉用画像（あれば共通画像を上書き、無ければ共通画像のまま） */
+  background:
+    url('assets/ui/panyu_ball_r.png') center/cover no-repeat,
+    url('assets/ui/panyu_ball.png') center/cover no-repeat,
+    transparent;
 }
 .panyu-clicker-blob {
   position: relative;
@@ -6844,7 +6853,7 @@ html, body {
   min-height: 160px;
   max-width: 360px;
   max-height: 360px;
-  /* 画像をそのまま貼る（あれば優先、無ければ透明） */
+  /* デフォルトは共通画像（あれば）／無ければ透明 */
   background:
     url('assets/ui/panyu_ball.png') center/cover no-repeat,
     transparent;
