@@ -2084,11 +2084,12 @@ function applyBindings() {
       case 'zazazoFill': el.style.width = `${(state.zazazo / state.zazazoMax) * 100}%`; break;
       case 'zazazoText': el.textContent = zazazoLabel(state.zazazo); break;
       case 'opponentPersonality': {
-        if (state.opponentPersonalityRevealed && state.opponentId) {
+        // 枠は常時固定で表示し、中身を切替（レイアウトずれ防止）
+        if (!state.opponentId) { el.innerHTML = ''; break; }
+        if (state.opponentPersonalityRevealed) {
           const p = getOpponentPersonality(state.opponentId);
           el.innerHTML = `
-            <div class="opp-personality-card">
-              <div class="opp-p-label">✓ 性格を読み切った</div>
+            <div class="opp-personality-card opp-p-revealed">
               <div class="opp-p-title">${p.icon} ${p.title}</div>
               <ul class="opp-p-traits">
                 ${p.traits.map(t => `<li>${t}</li>`).join('')}
@@ -2097,7 +2098,14 @@ function applyBindings() {
             </div>
           `;
         } else {
-          el.innerHTML = '';
+          // 読み切り前：見た目・雰囲気だけを薄く表示
+          el.innerHTML = `
+            <div class="opp-personality-card opp-p-unrevealed">
+              <div class="opp-p-title opp-p-title-mute">見た目・雰囲気</div>
+              <div class="opp-p-appearance">${getOpponentAppearance(state.opponentId)}</div>
+              <div class="opp-p-hint">ミミミ MAX で性格を読み切れる</div>
+            </div>
+          `;
         }
         break;
       }
@@ -3527,6 +3535,19 @@ function renderBetUnified() {
   const callText = playerCallNeed > 0 ? `コール ${playerCallNeed}` : 'コール —';
   const callClass = playerCallNeed > 0 ? 'bu-callneed bu-callneed-active' : 'bu-callneed bu-callneed-idle';
   const oppShort = oppName.length > 4 ? oppName.slice(0, 3) + '…' : oppName;
+  // ベットサイズの強さラベル（標準/強気/最大圧 等）
+  const sizeLabelOf = (amount, basePot) => {
+    if (!amount || amount <= 0 || basePot <= 0) return '';
+    const r = amount / basePot;
+    if (r >= 1.5)  return '超強気';
+    if (r >= 0.9)  return '最大圧';
+    if (r >= 0.55) return '強気';
+    if (r >= 0.35) return '標準';
+    return '様子見';
+  };
+  // それぞれのベット時点でのポット基準で計算
+  const oppSizeLabel = sizeLabelOf(opp, pot - opp);
+  const plSizeLabel  = sizeLabelOf(pl,  pot - pl);
 
   const buildRemainStack = (a) => buildHorizontalChips(a, 'large', 'bu-remain-num');
 
@@ -3540,7 +3561,7 @@ function renderBetUnified() {
     <div class="bu-cell bu-cell-bet bu-cell-opp${opp > pl && opp > 0 ? ' bu-lead' : ''}">
       <div class="bu-cell-label">${oppShort} ベット</div>
       ${buildVerticalStack(opp, 'opp', newOpp)}
-      <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}</div>
+      <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}${oppSizeLabel ? ` <span class="bu-size-tag">${oppSizeLabel}</span>` : ''}</div>
       <div class="bu-status-slot">${
         opp > pl && opp > 0 ? `<span class="bu-status bu-status-lead">▲ リード</span>`
           : (pl > opp && opp > 0 ? `<span class="bu-status bu-status-behind">差 −${pl - opp}</span>`
@@ -3568,7 +3589,7 @@ function renderBetUnified() {
     <div class="bu-cell bu-cell-bet bu-cell-pl${pl > opp && pl > 0 ? ' bu-lead' : ''}">
       <div class="bu-cell-label">ミミ ベット</div>
       ${buildVerticalStack(pl, 'pl', newPl)}
-      <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}</div>
+      <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}${plSizeLabel ? ` <span class="bu-size-tag">${plSizeLabel}</span>` : ''}</div>
       <div class="bu-status-slot">${
         pl > opp && pl > 0 ? `<span class="bu-status bu-status-lead">▲ リード</span>`
           : (opp > pl ? `<span class="bu-status bu-status-behind">あと −${opp - pl} 必要</span>`
@@ -3766,6 +3787,19 @@ function renderCurrentHandName() {
 function zazazoLabel(v) {
   // ミミミゲージ：0=無風、1=ミ、2=ミミ、3=ミミミ（読み切り！）
   return ['無風','ミ','ミミ','ミミミ（読み切り！）'][v] || '無風';
+}
+
+// === 相手の見た目／雰囲気（読み切り前に表示する観察情報） ===
+const OPPONENT_APPEARANCE = {
+  rico_tutorial: '🐰 ウサ耳カチューシャ／落ち着いた制服姿／優しい目線',
+  polka:   '✨ 派手な装い／いつもニヤニヤ／挑発的な視線',
+  selina:  '🌙 上品な銀髪／無表情で観察／所作が綺麗',
+  grano:   '💼 商人風スーツ／人当たり良いが目が抜け目ない',
+  velvet:  '🍷 妖艶な紫のドレス／視線で射抜く存在感／余裕の微笑',
+};
+function getOpponentAppearance(id) {
+  if (state.seriousRicoMode) return '🐰 ウサ耳がピンと立ち、目つきが鋭い／普段と別人の真剣さ';
+  return OPPONENT_APPEARANCE[id] || '——';
 }
 
 // === 相手性格データ（ミミミゲージMAXで開示） ===

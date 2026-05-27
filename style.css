@@ -4148,6 +4148,19 @@ html, body {
 }
 .bu-cell-opp .bu-cell-amt { color: #ff8a9a; }
 .bu-cell-pl  .bu-cell-amt { color: #ffd97a; }
+.bu-size-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  margin-left: 2px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.5);
+  color: #fbe28a;
+  border: 1px solid rgba(245,215,122,0.4);
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+}
 .bu-pot-amt {
   font-size: 28px;
   font-weight: 700;
@@ -4351,15 +4364,45 @@ html, body {
   gap: 10px;
 }
 
-/* 相手の性格カード（ミミミ MAX で表示）：カード右の空きスペースに展開 */
-.opp-personality { flex: 1; min-width: 0; }
+/* 相手の性格カード（枠は固定サイズ・中身切替） */
+.opp-personality { flex: 1; min-width: 0; max-width: 100%; }
 .opp-personality-card {
   padding: 8px 12px;
   background: linear-gradient(180deg, rgba(60,28,90,0.85) 0%, rgba(20,8,30,0.95) 100%);
   border: 1px solid rgba(245,215,122,0.6);
   border-radius: 8px;
   box-shadow: 0 0 14px rgba(245,215,122,0.3);
+  min-height: 132px;
+  max-height: 132px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.opp-personality-card.opp-p-unrevealed {
+  background: linear-gradient(180deg, rgba(40,20,60,0.55) 0%, rgba(20,8,30,0.7) 100%);
+  border-color: rgba(245,215,122,0.3);
+  box-shadow: none;
+}
+.opp-personality-card.opp-p-revealed {
   animation: personalityIn 0.6s ease-out;
+}
+.opp-p-title-mute {
+  color: rgba(245,215,122,0.6);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+}
+.opp-p-appearance {
+  font-size: 13px;
+  color: #f4e8c8;
+  line-height: 1.55;
+}
+.opp-p-hint {
+  margin-top: auto;
+  font-size: 10px;
+  color: rgba(200,180,200,0.5);
+  font-style: italic;
 }
 .opp-p-label {
   font-size: 10px;
