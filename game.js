@@ -3254,6 +3254,40 @@ function updateBackdoorPanel() {
   }
 }
 
+// === チップ円盤の横並び表記（ポット/コール/ボタン共通） ===
+// scale: 'small'=1000/500/100/25 端数まで正確、'large'=5000/1000/200/50 大額向け
+function buildHorizontalChips(amount, scale = 'small', numClass = 'bu-remain-num', extraChipClass = '') {
+  if (!amount || amount <= 0) {
+    return `<span class="bu-remain-chips"><span class="${numClass}">0</span></span>`;
+  }
+  const tiers = scale === 'large'
+    ? [
+        { cls: 'chip-gold',  val: 5000 },
+        { cls: 'chip-blue',  val: 1000 },
+        { cls: 'chip-red',   val: 200 },
+        { cls: 'chip-white', val: 50 },
+      ]
+    : [
+        { cls: 'chip-gold',  val: 1000 },
+        { cls: 'chip-blue',  val: 500 },
+        { cls: 'chip-red',   val: 100 },
+        { cls: 'chip-white', val: 25 },
+      ];
+  let rem = amount;
+  const flat = [];
+  for (const t of tiers) {
+    const c = Math.floor(rem / t.val);
+    for (let i = 0; i < c; i++) flat.push(t.cls);
+    rem -= c * t.val;
+  }
+  const cap = 8;
+  const visible = flat.slice(0, cap);
+  const over = flat.length - visible.length;
+  return `<span class="bu-remain-chips">${
+    visible.map(cls => `<span class="bu-rchip ${cls} ${extraChipClass}"></span>`).join('')
+  }${over > 0 ? `<span class="bu-remain-more">+${over}</span>` : ''}<span class="${numClass}">${amount}</span></span>`;
+}
+
 // === 統合ベットゲージ：チップスタックで賭け額と力関係を可視化 ===
 function renderBetUnified() {
   const opp = state.currentBetOpponent || 0;
@@ -3323,37 +3357,6 @@ function renderBetUnified() {
   const callClass = playerCallNeed > 0 ? 'bu-callneed bu-callneed-active' : 'bu-callneed bu-callneed-idle';
   const oppShort = oppName.length > 4 ? oppName.slice(0, 3) + '…' : oppName;
 
-  // 横並びチップ表記（コンパクト）— 単位を可変
-  // tierスケール: 'large'=5000/1000/200/50（残チップ向け、4桁OK）、'small'=1000/500/100/25（ポット/コール向け、端数まで正確）
-  const buildHorizontalChips = (amount, scale = 'small', numClass = 'bu-remain-num') => {
-    if (!amount || amount <= 0) return `<span class="bu-remain-chips"><span class="${numClass}">0</span></span>`;
-    const tiers = scale === 'large'
-      ? [
-          { cls: 'chip-gold',  val: 5000 },
-          { cls: 'chip-blue',  val: 1000 },
-          { cls: 'chip-red',   val: 200 },
-          { cls: 'chip-white', val: 50 },
-        ]
-      : [
-          { cls: 'chip-gold',  val: 1000 },
-          { cls: 'chip-blue',  val: 500 },
-          { cls: 'chip-red',   val: 100 },
-          { cls: 'chip-white', val: 25 },
-        ];
-    let rem = amount;
-    const flat = [];
-    for (const t of tiers) {
-      const c = Math.floor(rem / t.val);
-      for (let i = 0; i < c; i++) flat.push(t.cls);
-      rem -= c * t.val;
-    }
-    const cap = 8;
-    const visible = flat.slice(0, cap);
-    const over = flat.length - visible.length;
-    return `<span class="bu-remain-chips">${
-      visible.map(cls => `<span class="bu-rchip ${cls}"></span>`).join('')
-    }${over > 0 ? `<span class="bu-remain-more">+${over}</span>` : ''}<span class="${numClass}">${amount}</span></span>`;
-  };
   const buildRemainStack = (a) => buildHorizontalChips(a, 'large', 'bu-remain-num');
 
   return `
@@ -3495,64 +3498,72 @@ function renderActionArea(el) {
   if (state.handPhase === 'preflop') {
     const checkable = need === 0;
     slots = [
-      { kind: 'fold', label: 'フォールド', sub: checkable ? '不要' : '降りる',
+      { kind: 'fold', label: 'フォールド', subText: checkable ? '不要' : '降りる',
         action: 'player-fold', ghost: true,
-        // チェック可能時はフォールド不要（押せないように）
         enabled: !checkable,
         title: checkable
           ? '相手と同額（=0）なので、降りる必要はありません。チェックで無料で次へ進めます。'
           : '手札を捨ててこのハンドを諦める。アンテ50チップは戻ってきません。' },
       { kind: 'callcheck',
         label: checkable ? 'チェック' : 'コール',
-        sub: checkable ? '見送り（無料）' : `同額 (${need})`,
+        subText: checkable ? '見送り（無料）' : '同額',
+        chipAmount: checkable ? 0 : need,
         action: checkable ? 'player-checkcall' : 'player-call', primary: true,
         enabled: true,
         title: checkable
           ? 'チェック＝今は賭けず、ベット0のままフロップ（場札3枚）を見にいく。'
           : '相手のベットに同額を払ってフロップを見にいく。' },
-      { kind: 'sm',    label: '2.5BBレイズ', sub: `(${bb25})`, action: 'player-raise', dataSize: '2.5',
+      { kind: 'sm',    label: '2.5BBレイズ', chipAmount: bb25, action: 'player-raise', dataSize: '2.5',
         enabled: bb25 > need, title: '相手より大きくベット。強気の攻め。' },
-      { kind: 'md',    label: '3BBレイズ',   sub: `(${bb3})`,  action: 'player-raise', dataSize: '3',
+      { kind: 'md',    label: '3BBレイズ',   chipAmount: bb3,  action: 'player-raise', dataSize: '3',
         enabled: bb3 > need, title: 'より大きいレイズ。' },
-      { kind: 'lg',    label: '—',            sub: 'ポストフロップ用', enabled: false,
+      { kind: 'lg',    label: '—',            subText: 'ポストフロップ用', enabled: false,
         title: 'フロップ後にポットベットが選べるようになります。' },
-      { kind: 'allin', label: 'オールイン', sub: `(${allInAmt})`, action: 'player-allin',
+      { kind: 'allin', label: 'オールイン', chipAmount: allInAmt, action: 'player-allin',
         enabled: allInAmt > 0, title: '持ちチップ全部を賭ける。' },
     ];
   } else {
     const showBet = need === 0;
     const showRaise = need > 0 && state.playerChips > need * 2;
     slots = [
-      { kind: 'fold', label: 'フォールド', sub: '降りる', action: 'player-fold', ghost: true,
+      { kind: 'fold', label: 'フォールド', subText: '降りる', action: 'player-fold', ghost: true,
         enabled: true, title: '手札を捨ててポットを諦める。これまで払ったチップは戻らない。' },
       { kind: 'callcheck',
         label: need > 0 ? 'コール' : 'チェック',
-        sub: need > 0 ? `(${need})` : '見送り',
+        subText: need > 0 ? null : '見送り',
+        chipAmount: need > 0 ? need : 0,
         action: 'player-checkcall', primary: true, enabled: true,
         title: need > 0
           ? 'コール＝相手のベットに同額で乗る。役に自信がある時。'
           : 'チェック＝今は賭けない、次の場札を待つ。相手もチェックなら無料で次へ進める。' },
-      { kind: 'sm', label: '1/2ポット', sub: `標準 (${half})`, action: 'player-bet', dataSize: 'pot_1_2',
+      { kind: 'sm', label: '1/2ポット', subText: '標準', chipAmount: half, action: 'player-bet', dataSize: 'pot_1_2',
         enabled: showBet || showRaise, title: 'ポットの半分。標準的なベット。' },
-      { kind: 'md', label: '2/3ポット', sub: `強気 (${twoThird})`, action: 'player-bet', dataSize: 'pot_2_3',
+      { kind: 'md', label: '2/3ポット', subText: '強気', chipAmount: twoThird, action: 'player-bet', dataSize: 'pot_2_3',
         enabled: showBet || showRaise, title: 'ポットの2/3。強気の攻め。相手を降ろしに行く時にも。' },
-      { kind: 'lg', label: 'ポット',     sub: `最大圧 (${potBet})`, action: 'player-bet', dataSize: 'pot_1',
+      { kind: 'lg', label: 'ポット',     subText: '最大圧', chipAmount: potBet, action: 'player-bet', dataSize: 'pot_1',
         enabled: showBet || showRaise, title: 'ポット相当の大ベット。' },
-      { kind: 'allin', label: 'オールイン', sub: `(${allInAmt})`, action: 'player-allin',
+      { kind: 'allin', label: 'オールイン', chipAmount: allInAmt, action: 'player-allin',
         enabled: allInAmt > 0, title: '持ちチップ全部。逆転の最終手段。' },
     ];
   }
 
-  el.innerHTML = `<div class="action-grid">${slots.map(s => `
-    <button
-      class="btn action-slot slot-${s.kind} ${s.primary ? 'btn-primary primary-action' : s.ghost ? 'btn-ghost' : 'btn-secondary'}"
-      ${s.enabled ? `data-action="${s.action}"` : 'disabled'}
-      ${s.dataSize ? `data-size="${s.dataSize}"` : ''}
-      title="${s.title}">
-      <span class="slot-label">${s.label}</span>
-      ${s.sub ? `<small>${s.sub}</small>` : ''}
-    </button>
-  `).join('')}</div>`;
+  el.innerHTML = `<div class="action-grid">${slots.map(s => {
+    const chipHtml = (s.chipAmount && s.chipAmount > 0)
+      ? `<span class="slot-chips">${buildHorizontalChips(s.chipAmount, 'small', 'slot-chip-num', 'bu-rchip-tiny')}</span>`
+      : '';
+    const subHtml = s.subText ? `<small class="slot-sub">${s.subText}</small>` : '';
+    return `
+      <button
+        class="btn action-slot slot-${s.kind} ${s.primary ? 'btn-primary primary-action' : s.ghost ? 'btn-ghost' : 'btn-secondary'}"
+        ${s.enabled ? `data-action="${s.action}"` : 'disabled'}
+        ${s.dataSize ? `data-size="${s.dataSize}"` : ''}
+        title="${s.title}">
+        <span class="slot-label">${s.label}</span>
+        ${subHtml}
+        ${chipHtml}
+      </button>
+    `;
+  }).join('')}</div>`;
 }
 
 //=============================================================

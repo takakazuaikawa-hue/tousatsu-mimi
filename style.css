@@ -3564,6 +3564,33 @@ html, body {
   color: rgba(200,180,200,0.4);
   font-size: 13px;
 }
+
+/* アクションボタン内のミニチップ */
+.slot-chips {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 2px;
+}
+.bu-rchip-tiny {
+  width: 9px;
+  height: 9px;
+  margin-left: -3px;
+}
+.bu-rchip-tiny:first-child { margin-left: 0; }
+.slot-chip-num {
+  font-size: 11px;
+  margin-left: 4px;
+  color: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.95;
+}
+.action-slot .slot-sub {
+  font-size: 11px;
+  opacity: 0.85;
+  display: block;
+  margin-top: 2px;
+}
 .bu-callneed {
   font-size: 12px;
   font-weight: 700;
