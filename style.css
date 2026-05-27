@@ -6774,8 +6774,8 @@ html, body {
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  /* タップ前は静止：ふんわり呼吸だけ（ジャンプ無し） */
-  animation: panyuBreath 3s ease-in-out infinite;
+  /* タップ前のアイドル：軽くふわふわ弾む（大ジャンプはしない） */
+  animation: panyuIdle 1.6s ease-in-out infinite;
   transition: filter 0.2s;
   will-change: transform;
 }
@@ -6790,14 +6790,17 @@ html, body {
   50%      { transform: scale(1, 1); }
   75%      { transform: scale(0.96, 1.04); }
 }
-/* 弾むようなアイドル：ジャンプ＋着地ぷるん（撤去・呼吸に差し替え） */
+/* 旧 idleBounce：未使用化（38pxジャンプは大きすぎた） */
 @keyframes idleBounce {
   0%, 100% { transform: scale(1, 1); }
 }
-/* タップ前のふんわり呼吸（ジャンプ無し・ほぼ静止に見える微振動） */
-@keyframes panyuBreath {
-  0%, 100% { transform: scale(1, 1); }
-  50%      { transform: scale(1.02, 0.98); }
+/* 新アイドル：ふわふわ揺れ＋小ジャンプ（中間のやわらか感） */
+@keyframes panyuIdle {
+  0%   { transform: translateY(0)    scale(1, 1); }
+  25%  { transform: translateY(-7px) scale(0.97, 1.04); }
+  50%  { transform: translateY(0)    scale(1.05, 0.95); }
+  75%  { transform: translateY(-3px) scale(0.99, 1.01); }
+  100% { transform: translateY(0)    scale(1, 1); }
 }
 /* タップ時のぷるん（弾性springy） */
 .panyu-clicker-blob.wobble {
