@@ -6750,16 +6750,16 @@ html, body {
   background: radial-gradient(ellipse at 50% 60%, rgba(60,30,80,0.5) 0%, rgba(0,0,0,0.85) 70%);
 }
 
-/* 背景と丸の間に配置するキャラクター画像 */
+/* 背景と丸の間に配置するキャラクター画像（ビューポートに可変フィット） */
 .panyu-bg-char {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  max-height: 85vh;
-  max-width: 80vw;
-  height: auto;
-  width: auto;
+  /* ビューポートに対して固定割合：原寸の大小に関係なく常に同じ表示比率 */
+  height: 92vh;
+  width: 92vw;
+  object-fit: contain; /* 縦横比維持で内側にぴったり収める */
   z-index: 1;
   pointer-events: none;
   opacity: 0.92;
