@@ -2393,27 +2393,65 @@ function lobbyRicoLine() {
   return pick(lines);
 }
 
-// 設定（心理/論理ON/OFF）＋ 音量バー＋曲表示 を1パネルに統合
+// ロビー下部：音楽コントロール＋設定ボタン（設定はモーダル）
 function renderLobbyBottomPanel() {
-  const psy = save.psychEnabled !== false;
-  const log = save.logicEnabled !== false;
   const bgmOn = !!save.bgmOn;
   const vol = save.bgmVolume != null ? save.bgmVolume : 35;
-  const songLabel = bgmOn ? '♪ Lounge Jazz — Velvet Night' : '♪ —（停止中）';
+  const songLabel = bgmOn ? '♪ Lounge Jazz' : '♪ —（停止中）';
   return `
     <div class="lb-row lb-music-row">
       <button class="lb-bgm-toggle" data-action="toggle-bgm" title="BGM ON/OFF">${bgmOn ? '🔊' : '🔇'}</button>
       <input class="lb-vol" type="range" min="0" max="100" value="${vol}" title="音量">
-      <span class="lb-song">${songLabel}</span>
+      <button class="lb-settings-btn" data-action="open-settings" title="ゲーム設定">⚙</button>
     </div>
-    <div class="lb-row lb-settings-row">
-      <span class="lb-settings-label">心理</span>
-      <button class="lb-toggle ${psy ? 'on' : 'off'}" data-action="toggle-psych">${psy ? 'ON' : 'OFF'}</button>
-      <span class="lb-settings-label">論理</span>
-      <button class="lb-toggle ${log ? 'on' : 'off'}" data-action="toggle-logic">${log ? 'ON' : 'OFF'}</button>
-      <span class="lb-note">講義は強制ON</span>
+    <div class="lb-song-label">${songLabel}</div>
+  `;
+}
+
+// 設定モーダル（タップしやすい大きいスイッチ）
+function showSettingsModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'settings-overlay';
+  const psy = save.psychEnabled !== false;
+  const log = save.logicEnabled !== false;
+  overlay.innerHTML = `
+    <div class="settings-modal">
+      <div class="settings-modal-title">⚙ ゲーム設定</div>
+      <div class="settings-modal-row">
+        <span class="settings-modal-label">心理バトル</span>
+        <button class="settings-modal-toggle ${psy ? 'on' : 'off'}" data-toggle="psych">
+          <span class="stm-knob"></span>
+          <span class="stm-status">${psy ? 'ON' : 'OFF'}</span>
+        </button>
+      </div>
+      <div class="settings-modal-row">
+        <span class="settings-modal-label">論理バトル</span>
+        <button class="settings-modal-toggle ${log ? 'on' : 'off'}" data-toggle="logic">
+          <span class="stm-knob"></span>
+          <span class="stm-status">${log ? 'ON' : 'OFF'}</span>
+        </button>
+      </div>
+      <div class="settings-modal-note">※チュートリアル（講義）モード中は<br>これらの設定を無視して常時ONになります</div>
+      <button class="btn btn-primary settings-modal-close">閉じる</button>
     </div>
   `;
+  document.getElementById('stage').appendChild(overlay);
+  overlay.querySelectorAll('[data-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const kind = btn.dataset.toggle;
+      if (kind === 'psych') save.psychEnabled = !(save.psychEnabled !== false);
+      else if (kind === 'logic') save.logicEnabled = !(save.logicEnabled !== false);
+      saveProgress();
+      const isOn = (kind === 'psych') ? (save.psychEnabled !== false) : (save.logicEnabled !== false);
+      btn.classList.toggle('on', isOn);
+      btn.classList.toggle('off', !isOn);
+      btn.querySelector('.stm-status').textContent = isOn ? 'ON' : 'OFF';
+    });
+  });
+  overlay.querySelector('.settings-modal-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
 }
 
 function renderLobbySettings() {
@@ -3248,6 +3286,7 @@ function onAction(e) {
     case 'toggle-bgm':    toggleLobbyBgm(); break;
     case 'toggle-psych':  save.psychEnabled = !(save.psychEnabled !== false); saveProgress(); applyBindings(); break;
     case 'toggle-logic':  save.logicEnabled = !(save.logicEnabled !== false); saveProgress(); applyBindings(); break;
+    case 'open-settings': showSettingsModal(); break;
     case 'play-ending':   state.screen = 'ending'; render(); break;
     case 'play-ending-theme': toggleEndingThemePreview(); break;
     case 'toggle-backdoor':

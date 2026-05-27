@@ -108,7 +108,6 @@
           <span class="panyu-free-emoji">🐰</span>
         </button>
         <span class="coin-display">💰 <span data-bind="saveCoins">0</span></span>
-        <button class="btn btn-secondary" data-action="open-shop">🛍 交換所</button>
         <button class="btn btn-ghost" data-action="reset-save" title="セーブデータをリセット">⟲</button>
       </div>
     </header>
@@ -120,7 +119,12 @@
           <div class="lobby-rico-outfit" data-bind="lobbyRicoOutfit"></div>
           <div class="lobby-rico-bubble" data-bind="lobbyRicoLine">「ようこそロビーへ。次の卓、選んじゃって」</div>
         </div>
-        <!-- 設定＋音量＋曲表示を1パネルにまとめる -->
+        <!-- 大きな交換所ボタン -->
+        <button class="lobby-shop-btn" data-action="open-shop">
+          <span class="lobby-shop-icon">🛍</span>
+          <span class="lobby-shop-label">交換所</span>
+        </button>
+        <!-- 音楽コントロール＋設定ボタン -->
         <div class="lobby-bottom-panel" data-bind="lobbyBottomPanel"></div>
       </aside>
       <section class="lobby-content">
