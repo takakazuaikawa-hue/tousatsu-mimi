@@ -3909,20 +3909,12 @@ function renderCardsInto(el, cards, slotCount) {
 }
 
 function renderPsychStats() {
-  const total = (state.logs?.psych?.length) || 0;
-  const success = (state.logs?.psych || []).filter(p => p.success).length;
+  // ※ 成功数 X/3 は ミミミゲージで既に表示済みなので、ここでは「連続正解ボーナス」だけ表示
   const streak = state.psychStreak || 0;
-  if (total === 0) {
-    return '<div class="psych-stats-empty">読み合い未発生</div>';
-  }
-  const streakBadge = streak >= 2
-    ? `<span class="psych-stats-streak">🔥 ${streak}連続</span>`
-    : '';
+  if (streak < 2) return ''; // 連続2回以上の時だけ表示（ボーナス発動圏）
   return `
     <div class="psych-stats-row">
-      <span class="psych-stats-label">読み</span>
-      <span class="psych-stats-val">${success} / ${total}</span>
-      ${streakBadge}
+      <span class="psych-stats-streak">🔥 ${streak}連続正解（ボーナス中）</span>
     </div>
   `;
 }
