@@ -797,30 +797,30 @@ html, body {
   letter-spacing: 0.15em;
   backdrop-filter: blur(2px);
 }
-/* 半透明吹き出し：立ち絵の下に被せる位置 */
+/* 吹き出し：立ち絵の上部に半透明で表示（ボタンと重ならない） */
 .lobby-rico-bubble {
   position: absolute;
-  left: 50%;
-  bottom: 12px;
-  transform: translateX(-50%);
-  background: rgba(255, 248, 220, 0.82);
+  left: 8px; right: 8px;
+  top: 8px;
+  background: rgba(255, 248, 220, 0.88);
   color: #1a0e2a;
   padding: 10px 14px;
   border-radius: 12px;
   font-size: 13px; line-height: 1.45;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,215,122,0.5);
-  max-width: 92%;
   text-align: center;
   backdrop-filter: blur(3px);
+  pointer-events: none;
+  z-index: 3;
 }
-.lobby-rico-bubble::before {
+.lobby-rico-bubble::after {
   content: ''; position: absolute;
-  left: 50%; top: -8px;
+  left: 50%; bottom: -8px;
   transform: translateX(-50%);
   border-style: solid;
-  border-width: 0 8px 10px 8px;
-  border-color: transparent transparent rgba(255,248,220,0.82) transparent;
+  border-width: 10px 8px 0 8px;
+  border-color: rgba(255,248,220,0.88) transparent transparent transparent;
 }
 
 /* まとめ下部パネル：音楽＋設定ボタン */
@@ -1945,6 +1945,55 @@ html, body {
   50%  { background-color: rgba(245,215,122,0.5); }
   100% { background-color: transparent; }
 }
+
+/* ========== リコ先輩モード選択モーダル ========== */
+.rico-mode-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 280;
+  background: rgba(0,0,0,0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.25s;
+}
+.rico-mode-modal {
+  background: linear-gradient(180deg, rgba(50,20,80,0.97) 0%, rgba(20,8,29,0.98) 100%);
+  border: 3px solid var(--c-gold-bright);
+  border-radius: 16px;
+  padding: 28px 36px;
+  min-width: 460px;
+  max-width: 92%;
+  box-shadow: 0 0 40px rgba(245,215,122,0.6), 0 12px 36px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rico-mode-title {
+  font-size: 26px;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.2em;
+  font-weight: 900;
+  text-align: center;
+}
+.rico-mode-sub {
+  font-size: 16px;
+  color: #fff8dc;
+  text-align: center;
+  font-style: italic;
+  margin-bottom: 6px;
+}
+.rico-mode-opt {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 20px;
+  text-align: left;
+  gap: 4px;
+  align-items: flex-start;
+  min-height: 60px;
+}
+.rico-mode-opt-name { font-size: 18px; font-weight: 700; letter-spacing: 0.05em; }
+.rico-mode-opt-desc { font-size: 12px; opacity: 0.85; }
 
 /* ========== 新しく始めるモーダル ========== */
 .newgame-overlay {

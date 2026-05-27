@@ -2295,8 +2295,10 @@ function renderStageList() {
     const bestRank = save.bestRanks[sid];
     const recommend = sid === 'rico_tutorial' && save.clearedStages.length === 0;
     const stageNum = i + 1;
-    // 立ち絵もタップ可能（バトル開始）
-    const portrait = `<div class="stage-portrait" data-action="battle-start" data-opponent="${sid}" title="${opp.name} と対戦開始">
+    // 立ち絵もタップ可能（バトル開始）。リコのクリア後はモードチューザー
+    const isRicoClearChoice = (sid === 'rico_tutorial' && cleared);
+    const portraitAction = isRicoClearChoice ? 'rico-mode-chooser' : 'battle-start';
+    const portrait = `<div class="stage-portrait" data-action="${portraitAction}" data-opponent="${sid}" title="${opp.name} ${isRicoClearChoice ? 'モード選択' : 'と対戦開始'}">
       <img src="assets/characters/${opp.imgKey}_default.png" alt="${opp.name}" onerror="window.assetFallback(this,'${opp.imgKey}')">
     </div>`;
     if (!unlocked) {
@@ -2328,7 +2330,7 @@ function renderStageList() {
           ${cleared ? `<span class="stage-tag clear-tag">クリア済 ${bestRank || ''}</span>` : ''}
         </div>
         <div class="stage-number">Stage ${stageNum}</div>
-        <div class="stage-name" data-action="battle-start" data-opponent="${sid}" title="${opp.name} と対戦開始">${opp.name}</div>
+        <div class="stage-name" data-action="${isRicoClearChoice ? 'rico-mode-chooser' : 'battle-start'}" data-opponent="${sid}" title="${opp.name} ${isRicoClearChoice ? 'モード選択' : 'と対戦開始'}">${opp.name}</div>
         <div class="stage-desc">${opp.desc}</div>
         <div class="stage-reward">初回報酬：${opp.rewardFirst}コイン${cleared ? '<small>（取得済み）</small>' : ''}</div>
         ${cleared ? `<div class="stage-rematch-reward">再戦報酬：${rematchPreview(sid)}コイン</div>` : ''}
@@ -2338,14 +2340,13 @@ function renderStageList() {
           ${showSlider ? `<input class="stage-chips-slider" type="range" min="${baseChips}" max="${maxChips}" step="100" value="${curChip}" data-chip-slider="${sid}">` : ''}
         </div>`}
         <div class="stage-actions">
-          <button class="btn btn-primary" data-action="battle-start" data-opponent="${sid}">${
+          <button class="btn btn-primary" data-action="${isRicoClearChoice ? 'rico-mode-chooser' : 'battle-start'}" data-opponent="${sid}">${
             sid === 'rico_tutorial'
-              ? '受講'
+              ? (cleared ? '対戦／受講' : '受講')
               : (cleared ? '再戦' : '対戦開始')
           }</button>
-          ${(sid === 'rico_tutorial' && cleared) ? `<button class="btn btn-secondary" data-action="battle-rico-serious" title="チュートリアル無しで本気のリコ先輩と対戦">🔥</button>` : ''}
-          ${(!cleared) ? `<button class="btn btn-ghost stage-skip" data-action="skip-stage" data-opponent="${sid}" title="${skipStageCost(opp)}コインでスキップしてクリア扱い">⏭</button>` : ''}
-          ${cleared && EPISODES[sid] ? `<button class="btn btn-ghost stage-recall" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">📜</button>` : ''}
+          ${(!cleared) ? `<button class="btn btn-ghost stage-skip" data-action="skip-stage" data-opponent="${sid}" title="${skipStageCost(opp)}コインでスキップしてクリア扱い">⏭ スキップ</button>` : ''}
+          ${cleared && EPISODES[sid] ? `<button class="btn btn-ghost stage-recall" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">📜 回想</button>` : ''}
         </div>
       </div>
     </div>`;
@@ -3255,6 +3256,22 @@ function onAction(e) {
     case 'reset-save':    resetProgress(); break;
     case 'buy-item':      buyItem(data.itemId); break;
     case 'battle-start':  startBattle(data.opponent); break;
+    case 'rico-mode-chooser': showRicoModeChooser(); break;
+    case 'rico-mode-tutorial': {
+      const ov = document.querySelector('.rico-mode-overlay'); if (ov) ov.remove();
+      startBattle('rico_tutorial');
+      break;
+    }
+    case 'rico-mode-serious': {
+      const ov = document.querySelector('.rico-mode-overlay'); if (ov) ov.remove();
+      window.__ricoSeriousMode = true;
+      startBattle('rico_tutorial');
+      break;
+    }
+    case 'rico-mode-cancel': {
+      const ov = document.querySelector('.rico-mode-overlay'); if (ov) ov.remove();
+      break;
+    }
     case 'battle-rico-serious': window.__ricoSeriousMode = true; startBattle('rico_tutorial'); break;
     case 'start-hand':    startHand(); break;
     case 'player-fold':   playerFold(); break;
@@ -3263,7 +3280,13 @@ function onAction(e) {
     case 'player-raise':  playerRaise(+data.size); break;
     case 'player-bet':    playerBet(data.size); break;
     case 'player-allin':  playerAllIn(); break;
-    case 'rematch':       startBattle(state.opponentId); break;
+    case 'rematch':
+      // 本気リコモードを引き継ぐ（直前のバトルが本気だったら再戦も本気）
+      if (state.opponentId === 'rico_tutorial' && state.seriousRicoMode) {
+        window.__ricoSeriousMode = true;
+      }
+      startBattle(state.opponentId);
+      break;
     case 'go-ending':
       showEpisodeTitle('ending', () => { state.screen = 'ending'; render(); });
       break;
@@ -3896,6 +3919,31 @@ function toggleLobbyBgm() {
 //=============================================================
 // 10. バトル開始
 //=============================================================
+function showRicoModeChooser() {
+  const overlay = document.createElement('div');
+  overlay.className = 'rico-mode-overlay';
+  overlay.innerHTML = `
+    <div class="rico-mode-modal">
+      <div class="rico-mode-title">🐰 リコ先輩</div>
+      <div class="rico-mode-sub">「どっちで遊ぶ？」</div>
+      <button class="btn btn-secondary rico-mode-opt" data-action="rico-mode-tutorial">
+        <span class="rico-mode-opt-name">📚 もう一度受講する</span>
+        <span class="rico-mode-opt-desc">基礎からじっくり、講義モードで復習</span>
+      </button>
+      <button class="btn btn-primary rico-mode-opt" data-action="rico-mode-serious">
+        <span class="rico-mode-opt-name">🔥 本気のリコ先輩と対戦</span>
+        <span class="rico-mode-opt-desc">チュートリアル無し、最強プロファイルで本気の読み合い</span>
+      </button>
+      <button class="btn btn-ghost rico-mode-opt" data-action="rico-mode-cancel">キャンセル</button>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+  overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
 function showNewGameModal() {
   const overlay = document.createElement('div');
   overlay.className = 'newgame-overlay';
