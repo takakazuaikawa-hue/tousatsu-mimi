@@ -1936,7 +1936,7 @@ function defaultState() {
     panyu: 0,
     panyuMax: 100,
     zazazo: 0,
-    zazazoMax: 5,
+    zazazoMax: 3, // ミミミゲージ：3連勝で相手の性格を読み切る
     panyuSenseFreeUsed: false,
     handPhase: 'idle',  // idle | preflop | flop | turnRiver | showdown
     handResults: [],
@@ -2079,6 +2079,14 @@ function applyBindings() {
       case 'playerChipBar': el.style.width = `${chipBarPct(state.playerChips)}%`; break;
       case 'zazazoFill': el.style.width = `${(state.zazazo / state.zazazoMax) * 100}%`; break;
       case 'zazazoText': el.textContent = zazazoLabel(state.zazazo); break;
+      case 'opponentPersonality': {
+        if (state.opponentPersonalityRevealed && state.opponentId) {
+          el.innerHTML = `<div class="opp-personality-card"><div class="opp-p-label">✓ 性格を読み切った</div><div class="opp-p-text">${getOpponentPersonality(state.opponentId)}</div></div>`;
+        } else {
+          el.innerHTML = '';
+        }
+        break;
+      }
       case 'mimiThought': el.textContent = state.mimiThought; break;
       case 'situationAnalysis': el.innerHTML = renderSituationAnalysis(); break;
       case 'ricoAdvice': el.innerHTML = state.ricoAdvice; break;
@@ -3742,7 +3750,21 @@ function renderCurrentHandName() {
 }
 
 function zazazoLabel(v) {
-  return ['無風','ぴくっ','ぞわっ','ゾゾゾ','ゾゾゾゾ','ブラフブレイク！'][v] || '無風';
+  // ミミミゲージ：0=無風、1=ミ、2=ミミ、3=ミミミ（読み切り！）
+  return ['無風','ミ','ミミ','ミミミ（読み切り！）'][v] || '無風';
+}
+
+// === 相手性格データ（ミミミゲージMAXで開示） ===
+const OPPONENT_PERSONALITY = {
+  rico_tutorial: '🎓 先生気質：ミミの練習相手。優しめに大きく打ってヒントをくれる',
+  polka:   '🔥 自信家ブラファー：弱い手こそ大きく見せる／コール頻度低／降ろし狙い多',
+  selina:  '🧊 冷静な観察者：場札を読みきってからベット／ドロー警戒派／レンジ意識',
+  grano:   '💰 商人気質：割が合う時しか動かない／罠（チェックレイズ）多／ポットオッズ厳守',
+  velvet:  '👁 圧支配のディーラー：強い時こそ強く、優勢時こそ追い込む／極化レンジ多用',
+};
+function getOpponentPersonality(id) {
+  if (state.seriousRicoMode) return '🐰 本気のリコ先輩：レンジ分析と圧倒のコンビ／読み切りタイプ';
+  return OPPONENT_PERSONALITY[id] || '？？？';
 }
 
 function renderCardsInto(el, cards, slotCount) {
@@ -5701,7 +5723,8 @@ function opponentTurn() {
     triggerBoss = rand() < baseChance * streetMod;
   }
   // 心理バトル有効判定（チュートリアル中は常時ON、その他は設定に従う）
-  const psychAllowed = state.tutorialMode || (save.psychEnabled !== false);
+  // ミミミ MAX で相手性格を読み切った後はこの対戦では発動しない
+  const psychAllowed = (state.tutorialMode || (save.psychEnabled !== false)) && !state.opponentPersonalityRevealed;
   if (psychAllowed && !state.psychResolved && (triggerFirstHand || triggerBluff || triggerBoss)) {
     render();
     const qid = pickPsychQuestion();
@@ -6145,9 +6168,16 @@ function resolvePsych(qid, choice, btn) {
     const streakMult = state.psychStreak >= 3 ? 2.0 : state.psychStreak === 2 ? 1.5 : 1.0;
     const bonusPanyu = Math.round(eff.panyu * streakMult);
     state.panyu = Math.min(state.panyuMax, state.panyu + bonusPanyu);
-    state.zazazo = Math.min(state.zazazoMax, state.zazazo + eff.zazazo);
+    // ミミミゲージ：心理バトル勝利1回ごとに +1（最大3）
+    state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
     state.psychSuccessCount++;
     const streakLabel = state.psychStreak >= 2 ? `（${state.psychStreak}連続！+${Math.round((streakMult-1)*100)}%）` : '';
+    // ミミミ MAX（3勝）達成 → 相手の性格を読み切り、以後この対戦では心理バトル封印
+    if (state.zazazo >= state.zazazoMax && !state.opponentPersonalityRevealed) {
+      state.opponentPersonalityRevealed = true;
+      // バナー演出
+      setTimeout(() => showPersonalityRevealBanner(), 600);
+    }
     state.mimiThought = `「読めた……！${eff.hint}」${streakLabel}`;
     state.ricoAdvice = `「${eff.rico}」`;
     log('psych', { qid, choice: choice.id, success: true, streak: state.psychStreak });
@@ -6222,6 +6252,23 @@ function showPsychStreakBanner(streak) {
   document.body.appendChild(banner);
   setTimeout(() => banner.classList.add('out'), 1500);
   setTimeout(() => banner.remove(), 2200);
+}
+
+// ミミミMAX：性格読み切りバナー
+function showPersonalityRevealBanner() {
+  const banner = document.createElement('div');
+  banner.className = 'personality-reveal-banner';
+  const text = state.opponentId ? getOpponentPersonality(state.opponentId) : '？';
+  banner.innerHTML = `
+    <div class="prb-inner">
+      <div class="prb-title">🎯 ミミミ MAX！相手の性格を読み切った</div>
+      <div class="prb-body">${text}</div>
+      <div class="prb-note">この対戦の心理バトルは封印されます</div>
+    </div>
+  `;
+  (document.getElementById('stage') || document.body).appendChild(banner);
+  setTimeout(() => banner.classList.add('out'), 2800);
+  setTimeout(() => banner.remove(), 3600);
 }
 
 function triggerBluffBreak() {
