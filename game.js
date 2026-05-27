@@ -3254,6 +3254,84 @@ function updateBackdoorPanel() {
   }
 }
 
+// === 物理チップ追跡：ベットされたチップをそのまま記録（再分解しない） ===
+function decomposeToChips(amount) {
+  const tiers = [
+    { cls: 'chip-orange', val: 1000 },
+    { cls: 'chip-purple', val: 500 },
+    { cls: 'chip-black',  val: 100 },
+    { cls: 'chip-green',  val: 25 },
+  ];
+  let rem = amount;
+  const chips = [];
+  for (const t of tiers) {
+    const c = Math.floor(rem / t.val);
+    for (let i = 0; i < c; i++) chips.push(t.cls);
+    rem -= c * t.val;
+  }
+  return chips;
+}
+function pushPotChips(amount) {
+  if (!amount || amount <= 0) return;
+  if (!state.potChips) state.potChips = [];
+  decomposeToChips(amount).forEach(c => state.potChips.push(c));
+}
+function resetPotChips() { state.potChips = []; }
+
+// 縦積みチップ列：単位種ごとに 1 列、最大表示枚数で省略
+function buildVerticalChipColumns(amount, opts = {}) {
+  const maxPerCol = opts.maxPerCol || 6;
+  const numClass  = opts.numClass  || 'bu-vc-num';
+  const chipClass = opts.chipClass || 'bu-vc-chip';
+  if (!amount || amount <= 0) {
+    return `<div class="bu-vcols"><span class="${numClass}">0</span></div>`;
+  }
+  const tiers = [
+    { cls: 'chip-orange', val: 1000 },
+    { cls: 'chip-purple', val: 500 },
+    { cls: 'chip-black',  val: 100 },
+    { cls: 'chip-green',  val: 25 },
+  ];
+  let rem = amount;
+  const cols = [];
+  for (const t of tiers) {
+    const c = Math.floor(rem / t.val);
+    if (c > 0) cols.push({ cls: t.cls, count: c });
+    rem -= c * t.val;
+  }
+  const colsHtml = cols.map(co => {
+    const visible = Math.min(co.count, maxPerCol);
+    const extra = co.count - visible;
+    const chipsHtml = Array.from({ length: visible }, () =>
+      `<span class="${chipClass} ${co.cls}"></span>`
+    ).join('');
+    return `<span class="bu-vc-col">${chipsHtml}${extra > 0 ? `<span class="bu-vc-more">×${co.count}</span>` : ''}</span>`;
+  }).join('');
+  return `<div class="bu-vcols">${colsHtml}<span class="${numClass}">${amount}</span></div>`;
+}
+
+// 与えられたチップ配列をそのまま縦積み列で表示（再分解しない）
+function buildVerticalChipsFromArray(chipsArr, opts = {}) {
+  const maxPerCol = opts.maxPerCol || 8;
+  const chipClass = opts.chipClass || 'bu-vc-chip';
+  if (!chipsArr || chipsArr.length === 0) {
+    return `<div class="bu-vcols"></div>`;
+  }
+  // 色ごとにカウント
+  const counts = {};
+  chipsArr.forEach(c => counts[c] = (counts[c] || 0) + 1);
+  const orderedCls = ['chip-orange', 'chip-purple', 'chip-black', 'chip-green'];
+  const cols = orderedCls.filter(c => counts[c]).map(c => ({ cls: c, count: counts[c] }));
+  return `<div class="bu-vcols">${cols.map(co => {
+    const visible = Math.min(co.count, maxPerCol);
+    const extra = co.count - visible;
+    const chipsHtml = Array.from({ length: visible }, () =>
+      `<span class="${chipClass} ${co.cls}"></span>`
+    ).join('');
+    return `<span class="bu-vc-col">${chipsHtml}${extra > 0 ? `<span class="bu-vc-more">×${co.count}</span>` : ''}</span>`;
+  }).join('')}</div>`;
+}
+
 // === チップ円盤の横並び表記（ポット/コール/ボタン/残チップ共通） ===
 // 実カジノ準拠カラー：橙=$1000, 紫=$500, 黒=$100, 緑=$25 で統一
 // 大額（残10000など）はキャップ12枚＋超過表記でカバー
@@ -3357,14 +3435,14 @@ function renderBetUnified() {
   return `
     <div class="bu-cell bu-cell-opp">
       <div class="bu-cell-label">${oppShort}</div>
-      <div class="bu-remain">${buildRemainStack(state.opponentChips)}</div>
+      <div class="bu-remain">${buildVerticalChipColumns(state.opponentChips)}</div>
       ${buildVerticalStack(opp, 'opp', newOpp)}
       <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}</div>
     </div>
     <div class="bu-cell bu-cell-pot">
       <div class="bu-cell-label bu-pot-title">ポット</div>
-      ${buildVerticalStack(pot, 'pot', newPot)}
-      <div class="bu-pot-display">${buildHorizontalChips(pot, 'small', 'bu-pot-num')}</div>
+      <div class="bu-pot-physical">${buildVerticalChipsFromArray(state.potChips || [])}</div>
+      <div class="bu-pot-display"><span class="bu-pot-num">${pot}</span></div>
       <div class="${callClass}">
         <span class="bu-call-key">コール</span>
         ${playerCallNeed > 0
@@ -3374,7 +3452,7 @@ function renderBetUnified() {
     </div>
     <div class="bu-cell bu-cell-pl">
       <div class="bu-cell-label">ミミ</div>
-      <div class="bu-remain">${buildRemainStack(state.playerChips)}</div>
+      <div class="bu-remain">${buildVerticalChipColumns(state.playerChips)}</div>
       ${buildVerticalStack(pl, 'pl', newPl)}
       <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}</div>
     </div>
@@ -4706,6 +4784,8 @@ function startHand() {
   state.playerChips -= ante;
   state.opponentChips -= ante;
   state.pot = ante * 2;
+  resetPotChips();
+  pushPotChips(ante * 2);
   state.currentBetPlayer = 0;
   state.currentBetOpponent = 0;
 
@@ -4820,7 +4900,7 @@ function playerFold() {
   log('actions', { actor: 'player', type: 'fold' });
   state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'fold', pot: state.pot, by: '降伏' });
   state.opponentChips += state.pot;
-  state.pot = 0;
+  state.pot = 0; resetPotChips();
   render();
   setTimeout(endHand, 1000);
 }
@@ -4829,7 +4909,7 @@ function playerCall() {
   const pay = Math.max(0, Math.min(need, state.playerChips));
   state.playerChips = Math.max(0, state.playerChips - pay);
   state.currentBetPlayer += pay;
-  state.pot += pay;
+  state.pot += pay; pushPotChips(pay);
   log('bets', { actor: 'player', type: 'call', amount: pay });
   state.isPlayerTurn = false;
   state.mimiThought = '「コールした。次の場札を見よう」';
@@ -4850,7 +4930,7 @@ function playerRaise(bb) {
   const amount = Math.max(0, Math.min(50 * bb, state.playerChips));
   state.playerChips = Math.max(0, state.playerChips - amount);
   state.currentBetPlayer += amount;
-  state.pot += amount;
+  state.pot += amount; pushPotChips(amount);
   log('bets', { actor: 'player', type: 'raise', amount });
   state.isPlayerTurn = false;
   state.mimiThought = `「${bb}BBレイズ！」`;
@@ -4861,7 +4941,7 @@ function playerBet(size) {
   const amount = betSizeToChips(size, state.pot, state.playerChips);
   state.playerChips = Math.max(0, state.playerChips - amount);
   state.currentBetPlayer += amount;
-  state.pot += amount;
+  state.pot += amount; pushPotChips(amount);
   log('bets', { actor: 'player', type: 'bet', size, amount });
   state.isPlayerTurn = false;
   state.mimiThought = `「${amount}ベット」`;
@@ -4872,7 +4952,7 @@ function playerAllIn() {
   const amount = state.playerChips;
   state.playerChips = 0;
   state.currentBetPlayer += amount;
-  state.pot += amount;
+  state.pot += amount; pushPotChips(amount);
   log('bets', { actor: 'player', type: 'allin', amount });
   state.isPlayerTurn = false;
   state.mimiThought = '「オールイン！」';
@@ -4972,7 +5052,7 @@ function opponentTurn() {
     log('actions', { actor: 'opponent', type: 'fold' });
     state.handResults.push({ hand: state.handNo, winner: 'player', reason: 'opponentFold', pot: state.pot, by: '相手降伏' });
     state.playerChips += state.pot;
-    state.pot = 0;
+    state.pot = 0; resetPotChips();
     render();
     setTimeout(endHand, 1000);
     return;
@@ -4982,7 +5062,7 @@ function opponentTurn() {
     const pay = Math.max(0, Math.min(need, state.opponentChips));
     state.opponentChips = Math.max(0, state.opponentChips - pay);
     state.currentBetOpponent += pay;
-    state.pot += pay;
+    state.pot += pay; pushPotChips(pay);
     state.opponentSpeech = opponentSpeech(action);
     log('actions', { actor: 'opponent', type: pay > 0 ? 'call' : 'check', amount: pay });
     // 今ストリートで相手がチェックした事実を記録（次のレイズで check-raise 検出に使う）
@@ -5016,7 +5096,7 @@ function opponentTurn() {
       const pay = Math.min(need, state.opponentChips);
       state.opponentChips -= pay;
       state.currentBetOpponent += pay;
-      state.pot += pay;
+      state.pot += pay; pushPotChips(pay);
       state.opponentSpeech = opponentSpeech({ type: 'check_call', intent: 'reluctant_call' });
       log('actions', { actor: 'opponent', type: 'call_fallback', amount: pay });
       render();
@@ -5028,7 +5108,7 @@ function opponentTurn() {
   }
   state.opponentChips = Math.max(0, state.opponentChips - amount);
   state.currentBetOpponent += amount;
-  state.pot += amount;
+  state.pot += amount; pushPotChips(amount);
   // チェックレイズ検出：同ストリートでチェック→今ベット
   state.checkRaiseDetected = !!state.opponentCheckedThisStreet;
   state.opponentSpeech = opponentSpeech(action);
@@ -5641,7 +5721,7 @@ function showdown() {
     state.mimiThought = '「引き分けだ……」';
     state.handResults.push({ hand: state.handNo, winner: 'split', reason: 'showdown', pot: state.pot, pEv, oEv });
   }
-  state.pot = 0;
+  state.pot = 0; resetPotChips();
   render();
   setTimeout(endHand, 2200);
 }
