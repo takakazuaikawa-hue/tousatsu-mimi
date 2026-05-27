@@ -593,6 +593,11 @@ function opponentReadyLine() {
       '……運命の卓へ、ようこそ。',
       '今夜が、あなたの最終試験よ。',
       '震えなさい、新人。それが正しい反応よ。',
+      'VIPルームへようこそ。出口は……見つかるかしら？',
+      '今までの相手とは違うことを、思い知りなさい。',
+      'さあ、私の卓で踊ってみてちょうだい。',
+      '新人のくせに、ここまで来たのね。浅はかだわ。',
+      'カードはただの紙切れ。私が見ているのは……あなたよ。',
     ]);
     default: return '……';
   }
@@ -629,12 +634,28 @@ function opponentReactToPlayerFold() {
       'まあ、無理強いはいたしません。',
       '次回のお取引、お待ちしておりますよ。',
     ]);
-    case 'velvet': return pick([
-      'ふふ……賢明ね、新人。',
-      'カードを見る前に折れた……それも答えよ。',
-      'いい判断。あなたの限界が分かったわ。',
-      '逃げる勇気、悪くないわ。',
-    ]);
+    case 'velvet': {
+      // ハンド進行で煽りが変化
+      const handNo = state.handNo || 1;
+      if (handNo <= 2) return pick([
+        'ふふ……賢明ね、新人。',
+        'カードを見る前に折れた……それも答えよ。',
+        '初めての敗北、味わってちょうだい。',
+      ]);
+      if (handNo <= 5) return pick([
+        'また降りるの？それでは何も奪えないわよ。',
+        'いい判断。でもいつまでそれが通用するかしら。',
+        '逃げる勇気、悪くないわ。但し勝てないけれど。',
+        'ふぅん……まだ私の手の内を読めないようね。',
+      ]);
+      return pick([
+        '何度目かしら、その逃げ方。',
+        'もう降りても、結末は同じよ。',
+        '……つまらない。本気で来てくれない？',
+        'あなた、本当にここまで来た新人なの？',
+        '降りる以外の選択肢、思い出してみて？',
+      ]);
+    }
     default: return '……';
   }
 }
@@ -2479,6 +2500,10 @@ function pickPsychQuestion() {
     return pickFresh([fitCondition, 'grano_river_polar']);
   }
   if (id === 'velvet') {
+    // 15%でワイルドカード：メタ読みを崩す不意打ち
+    if (rand() < 0.15) {
+      return pick(['velvet_flop', 'velvet_turn', 'velvet_eye_contact', 'velvet_river_evidence']);
+    }
     // 場面と手の状況に合わせて問題を選ぶ（劇場感重視）
     const danger = evaluateBoardDanger(state.community || []);
     let myHs = 0;
@@ -2487,7 +2512,7 @@ function pickPsychQuestion() {
       myHs = state.community.length >= 3 ? handStrength01(all) : opponentPreflopStrength(state.playerHand);
     } catch(e) {}
     const myHsPct = Math.round(myHs * 100);
-    // リバーで大きいベット → 証拠突きつけ系
+    // リバーで大きいベット → 証拠突きつけ系（決着の問い）
     if (state.handPhase === 'river') return 'velvet_river_evidence';
     // ターンで盤面危険 → ボード読み
     if (state.handPhase === 'turn' && (danger.flushAlert || danger.straightAlert)) return 'velvet_turn';
@@ -3964,7 +3989,9 @@ function opponentTurn() {
   // ボス戦は各ストリートで強制大ベット（心理バトルを必ず発動させるため）
   const forceLargeBet =
     (state.handNo === 1 && state.handPhase === 'flop' && !state.psychResolved && state.currentBetPlayer === 0) ||
-    (state.isBoss && (state.handPhase === 'flop' || state.handPhase === 'turn' || state.handPhase === 'river') && !state.psychResolved && state.currentBetPlayer === 0);
+    (state.isBoss && (state.handPhase === 'flop' || state.handPhase === 'turn' || state.handPhase === 'river') && !state.psychResolved && state.currentBetPlayer === 0) ||
+    // ボス戦のプリフロップ：15%確率で威圧的レイズ（開幕の重圧）
+    (state.isBoss && state.handPhase === 'preflop' && state.currentBetPlayer === 0 && rand() < 0.15);
   let action;
   if (state.tutorialMode) {
     if (state.handPhase === 'flop' && !state.psychResolved) {
@@ -4040,18 +4067,23 @@ function opponentTurn() {
   const triggerBluff = (isPostFlop && bigEnough && isBluffBet && rand() < 0.5);
   // ヴェルベット（ボス戦）：条件付き発動
   //   ・1ハンドにつき最大1回（state.bossPsychFiredThisHand）
-  //   ・プレイヤーが劣勢（残チップ < 初期の70%）または大ベット時
-  //   ・ストリート2以降に偏る（フロップ即発動は控えめ）
+  //   ・ボスは「優勢時こそ追い込む」心理的支配タイプ
+  //   ・劣勢時にもピンチでの読み合いを発動
+  //   ・致命的なベットは確定発動
+  //   ・ストリートが進むほど高確率（情報が増えた本気の読み合い）
   let triggerBoss = false;
   if (state.isBoss && isPostFlop && bigEnough && !state.bossPsychFiredThisHand) {
     const initChips = (OPPONENTS[state.opponentId]?.chips) || 1500;
     const chipsRatio = state.playerChips / initChips;
-    const isLosing = chipsRatio < 0.70;
     const isCriticalBet = action.size === 'pot_1' || action.size === 'allin';
-    // 劣勢 OR 致命ベット時に高確率、それ以外は控えめ
-    const baseChance = isLosing ? 0.85 : (isCriticalBet ? 0.6 : 0.25);
-    // フロップは半分の確率（ターン/リバーで本気の読み合い）
-    const streetMod = state.handPhase === 'flop' ? 0.5 : 1.0;
+    // 致命級ベットは0.85確定、劣勢時 0.5、優勢時こそ0.6（心理支配）、それ以外0.25
+    let baseChance;
+    if (isCriticalBet)            baseChance = 0.85;
+    else if (chipsRatio < 0.65)   baseChance = 0.5;
+    else if (chipsRatio > 1.15)   baseChance = 0.6;  // ヴェルベットは追い込む
+    else                          baseChance = 0.25;
+    // ストリート進行で確率増（フロップ0.6倍/ターン1.0/リバー1.2）
+    const streetMod = state.handPhase === 'flop' ? 0.6 : state.handPhase === 'turn' ? 1.0 : 1.2;
     triggerBoss = rand() < baseChance * streetMod;
   }
   // 心理バトル有効判定（チュートリアル中は常時ON、その他は設定に従う）
@@ -5023,10 +5055,24 @@ function endBattle() {
       (state.rewards && state.rewards.length ? state.rewards.join('<br>') : 'なし');
   }
 
-  // ヴェルベット勝利 → エンディングへ進むボタン追加 + 闘札大逆転演出
+  // ヴェルベット勝利 → エンディングへ進むボタン追加 + 闘札大逆転演出 + 降伏セリフ
   if (won && state.opponentId === 'velvet') {
     save.endingUnlocked = true;
     saveProgress();
+    // ヴェルベットの降伏台詞をリザルトに表示
+    const concession = pick([
+      'ふぅ……侮っていたわね。見どころがあるじゃない',
+      '新人が……まさか、私を追い詰めるなんて',
+      'いいわ、あなたの勝ち。その目、覚えておく',
+      '面白い夜だったわ。私の負けを認めてあげる',
+      '……ふふ、敗北の味、久しぶり。悪くないわね',
+    ]);
+    setTimeout(() => {
+      const reasonEl = document.querySelector('[data-bind="resultReason"]');
+      if (reasonEl) {
+        reasonEl.innerHTML = `<div class="velvet-concession">💋 ヴェルベット：「${concession}」</div>` + reasonEl.innerHTML;
+      }
+    }, 300);
     triggerTousatsuDaigyakuten();
     const btns = document.querySelector('[data-bind="resultButtons"]');
     if (btns) {
