@@ -6238,12 +6238,14 @@ function showPanyuClicker(totalTaps, onComplete) {
       p.ty += p.vty;
       p.vrot += -K_ROT * p.rot - D_ROT * p.vrot;
       p.rot += p.vrot;
-      // 微小な呼吸（生命感）
+      // 脈動（生命感）：scale で胸の鼓動、translate Y で浮き沈み
       const t = performance.now() / 1000;
-      const breath = Math.sin(t * 1.4) * 0.012;
+      const breath = Math.sin(t * 1.8) * 0.035;   // 縦横呼吸
+      const floatY = Math.sin(t * 0.9) * 2.2;     // ふわふわ浮き沈み
       const sx = (p.sx + breath).toFixed(4);
       const sy = (p.sy - breath).toFixed(4);
-      b.style.transform = `translate(${p.tx.toFixed(2)}px, ${p.ty.toFixed(2)}px) rotate(${p.rot.toFixed(2)}deg) scale(${sx}, ${sy})`;
+      const ty = (p.ty + floatY).toFixed(2);
+      b.style.transform = `translate(${p.tx.toFixed(2)}px, ${ty}px) rotate(${p.rot.toFixed(2)}deg) scale(${sx}, ${sy})`;
     });
     requestAnimationFrame(physTick);
   };
@@ -6264,14 +6266,13 @@ function showPanyuClicker(totalTaps, onComplete) {
     else if (tapped === 25) showCombo(25);
     if (!opts.skipWobble) {
       // 物理に impulse を加える（押された＝下に潰れる）
-      // ランダムなし：常に「上から押された」物理応答
+      // ランダムなし：常に「上から押された」物理応答（大きめ＝ぷるん感UP）
       const p = blob.__phys;
-      // 下方向に押し下げ＋縦に圧縮＋横に膨張
-      p.vty += 2.6;             // 下に弾む
-      p.vsy -= 0.05;            // 縦に潰す
-      p.vsx += 0.045;           // 横に膨らむ
-      // ほんの少しだけ左右の傾き（前回符号と反対で振り子感）
-      p.vrot += (p.rot > 0 ? -1 : 1) * 0.35;
+      p.vty += 6.0;             // 下に大きく弾む
+      p.vsy -= 0.11;            // 縦にしっかり潰す
+      p.vsx += 0.10;            // 横に大きく膨らむ
+      // 左右の傾き（前回符号と反対）で振り子感
+      p.vrot += (p.rot > 0 ? -1 : 1) * 0.7;
     }
     if (count <= 0) {
       completed = true;
