@@ -6840,13 +6840,14 @@ html, body {
   /* 230px 固定 → vmin 可変：画面サイズに応じてキャラ画像と一緒にスケール */
   width: 28vmin;
   height: 28vmin;
-  min-width: 160px;  /* 小さすぎ防止 */
+  min-width: 160px;
   min-height: 160px;
-  max-width: 360px;  /* 大きすぎ防止 */
+  max-width: 360px;
   max-height: 360px;
+  /* 画像をそのまま貼る（あれば優先、無ければ透明） */
   background:
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.7) 0%, transparent 30%),
-    radial-gradient(circle at 50% 50%, #ffc1d8 0%, #ff7aa4 60%, #c8253a 100%);
+    url('assets/ui/panyu_ball.png') center/cover no-repeat,
+    transparent;
   border-radius: 50%;
   border: 6px solid #fff;
   box-shadow:
@@ -6864,7 +6865,22 @@ html, body {
   transition: filter 0.2s;
   will-change: transform;
 }
-.panyu-clicker-blob:hover { filter: brightness(1.1); }
+.panyu-clicker-blob:hover { filter: brightness(1.08); }
+/* ホバー/タッチ時にピンクのうっすらオーバーレイ（球の上に乗る） */
+.panyu-clicker-blob::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(255,140,180,0.0) 0%, rgba(255,140,180,0.0) 100%);
+  pointer-events: none;
+  transition: background 0.2s ease;
+}
+.panyu-clicker-blob:hover::after,
+.panyu-clicker-blob:active::after,
+.panyu-clicker-blob.dragging::after {
+  background: radial-gradient(circle at 50% 50%, rgba(255,160,200,0.35) 0%, rgba(255,120,170,0.22) 60%, rgba(200,40,90,0.18) 100%);
+}
 .panyu-clicker-inner {
   text-align: center;
   pointer-events: none;
