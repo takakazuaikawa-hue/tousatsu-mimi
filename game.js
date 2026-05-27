@@ -3244,6 +3244,7 @@ function renderSituationAnalysis() {
     })()}
     ${intentHint ? `<div class="sit-intent">🎭 ${intentHint}</div>` : ''}
     <div class="sit-advice ${adviceClass}">${advice} <small>${sprComment}</small></div>
+    ${renderSessionStats()}
   `;
 }
 
@@ -3552,6 +3553,51 @@ function renderBetUnified() {
       <div class="bu-remain">${buildVerticalChipColumns(state.playerChips)}</div>
     </div>
   `;
+}
+
+// セッション戦績（プロが意識する主要指標）
+function renderSessionStats() {
+  const results = state.handResults || [];
+  const bets = (state.logs && state.logs.bets) || [];
+  const total = results.length;
+  if (total === 0) {
+    return `<details class="sess-stats"><summary>📊 戦績 <small>(まだ集計なし)</small></summary><div class="sess-empty">— ハンド終了後に集計開始 —</div></details>`;
+  }
+  const wins   = results.filter(r => r.winner === 'player').length;
+  const losses = results.filter(r => r.winner === 'opponent').length;
+  const splits = results.filter(r => r.winner === 'split').length;
+  const showdowns = results.filter(r => r.reason === 'showdown').length;
+  const wtsdPct = total > 0 ? Math.round(showdowns / total * 100) : 0;
+  // W$SD：ショーダウンに行った中で勝率
+  const sdWins = results.filter(r => r.reason === 'showdown' && r.winner === 'player').length;
+  const wsdPct = showdowns > 0 ? Math.round(sdWins / showdowns * 100) : 0;
+  // AF（アグレッションファクタ）：(bet + raise) / call
+  // 自分のbets
+  const myBets   = bets.filter(b => b.actor === 'player' && (b.type === 'bet' || b.type === 'raise' || b.type === 'allin')).length;
+  const myCalls  = bets.filter(b => b.actor === 'player' && b.type === 'call').length;
+  const oppBets  = bets.filter(b => b.actor === 'opponent' && (b.type === 'bet' || b.type === 'raise' || b.type === 'allin')).length;
+  const oppCalls = bets.filter(b => b.actor === 'opponent' && b.type === 'call').length;
+  const myAF  = myCalls === 0 ? (myBets > 0 ? '∞' : '0') : (myBets / myCalls).toFixed(1);
+  const oppAF = oppCalls === 0 ? (oppBets > 0 ? '∞' : '0') : (oppBets / oppCalls).toFixed(1);
+  // AF 表現
+  const afLabel = (af) => {
+    if (af === '∞') return '超攻撃';
+    const v = parseFloat(af);
+    if (v >= 2.5) return '攻撃的';
+    if (v >= 1.0) return 'バランス';
+    return '受け身';
+  };
+
+  return `<details class="sess-stats"><summary>📊 戦績 <small>(${total}ハンド)</small></summary>
+    <div class="ss-grid">
+      <div class="ss-row"><span class="ss-k">勝/負/分</span><span class="ss-v">${wins} / ${losses} / ${splits}</span></div>
+      <div class="ss-row"><span class="ss-k">SD 到達率</span><span class="ss-v">${wtsdPct}%</span></div>
+      <div class="ss-row"><span class="ss-k">SD 勝率</span><span class="ss-v">${wsdPct}%</span></div>
+      <div class="ss-row"><span class="ss-k">自分 AF</span><span class="ss-v">${myAF} <small>${afLabel(myAF)}</small></span></div>
+      <div class="ss-row"><span class="ss-k">相手 AF</span><span class="ss-v">${oppAF} <small>${afLabel(oppAF)}</small></span></div>
+    </div>
+    <div class="ss-note">AF = (ベット+レイズ) ÷ コール。高いほど攻撃的</div>
+  </details>`;
 }
 
 // 現在のストリート進行表示

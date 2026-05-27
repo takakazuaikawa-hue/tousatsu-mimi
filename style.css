@@ -2258,6 +2258,63 @@ html, body {
 .sd-name { color: #fff; }
 .sd-outs { color: rgba(255,255,255,0.65); font-size: 9px; }
 .sd-pct  { color: #fbe28a; font-weight: 700; min-width: 32px; text-align: right; }
+
+/* セッション戦績（折りたたみ） */
+.sess-stats {
+  margin-top: 6px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(245,215,122,0.25);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+.sess-stats summary {
+  cursor: pointer;
+  color: #fbe28a;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+.sess-stats summary::before {
+  content: '▶';
+  font-size: 9px;
+  margin-right: 4px;
+  transition: transform 0.2s;
+  color: rgba(245,215,122,0.7);
+}
+.sess-stats[open] summary::before { transform: rotate(90deg); display: inline-block; }
+.sess-stats summary small { color: rgba(200,200,200,0.6); font-weight: 400; }
+.sess-stats summary::-webkit-details-marker { display: none; }
+.ss-grid {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ss-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 1px 0;
+}
+.ss-k { color: rgba(220,210,180,0.7); }
+.ss-v {
+  color: #fff;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ss-v small { color: rgba(245,215,122,0.7); font-weight: 400; margin-left: 4px; }
+.ss-note {
+  margin-top: 4px;
+  font-size: 9px;
+  color: rgba(180,180,180,0.5);
+  font-style: italic;
+}
+.sess-empty { color: rgba(200,200,200,0.5); font-size: 10px; padding-top: 4px; }
 .sit-advice {
   padding: 4px 6px;
   border-radius: 5px;
