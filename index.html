@@ -263,6 +263,13 @@
         </div>
       </div>
       <div class="mimi-hand-area">
+        <div class="hand-thought-row">
+          <div class="player-hand" data-bind="playerHand">
+            <div class="card empty"></div>
+            <div class="card empty"></div>
+          </div>
+          <div class="mimi-thought-bubble" data-bind="mimiThought">「ふぅ……まずは手札を見てから」</div>
+        </div>
         <div class="player-row">
           <div class="chip-meter">
             <div class="chip-meter-row">
@@ -273,23 +280,16 @@
           </div>
           <div class="current-hand-display" data-bind="currentHandName">役：—</div>
         </div>
-        <div class="hand-thought-row">
-          <div class="player-hand" data-bind="playerHand">
-            <div class="card empty"></div>
-            <div class="card empty"></div>
-          </div>
-          <div class="mimi-thought-bubble" data-bind="mimiThought">「ふぅ……まずは手札を見てから」</div>
-        </div>
       </div>
       <div class="action-column">
-        <div class="panyu-gauge-circle" title="ぱにゅゲージ">
-          <svg class="panyu-ring" viewBox="0 0 64 64" aria-hidden="true">
-            <circle class="panyu-ring-track" cx="32" cy="32" r="27"></circle>
-            <circle class="panyu-ring-fill" cx="32" cy="32" r="27" data-bind="panyuRingFill"></circle>
-          </svg>
-          <div class="panyu-ring-center">
-            <div class="panyu-ring-label">ぱにゅ</div>
-            <div class="panyu-ring-pips" data-bind="panyuPips"></div>
+        <div class="panyu-gauge-wrap" title="ぱにゅゲージ">
+          <div class="panyu-gauge-circle">
+            <div class="panyu-ring-frame"></div>
+            <div class="panyu-ball" data-bind="panyuBall"></div>
+          </div>
+          <div class="panyu-ring-caption">
+            <span class="panyu-ring-label">ぱにゅ</span>
+            <span class="panyu-ring-pips" data-bind="panyuPips"></span>
           </div>
         </div>
         <div class="action-area" data-bind="actionArea"></div>

@@ -2027,13 +2027,16 @@ function applyBindings() {
       case 'panyuValue': el.textContent = state.panyu; break;
       case 'panyuMax': el.textContent = state.panyuMax; break;
       case 'panyuFill': el.style.width = `${(state.panyu / state.panyuMax) * 100}%`; break;
-      case 'panyuRingFill': {
-        // SVG ストロークによる円形プログレス
-        const r = 27;
-        const C = 2 * Math.PI * r; // 169.65
+      case 'panyuBall': {
+        // ぱにゅ値に応じて中央の球が大きくなる（直径 6px → 54px）
         const pct = Math.min(1, Math.max(0, state.panyu / state.panyuMax));
-        el.setAttribute('stroke-dasharray', `${C}`);
-        el.setAttribute('stroke-dashoffset', `${C * (1 - pct)}`);
+        const minD = 6, maxD = 54;
+        const d = Math.round(minD + (maxD - minD) * pct);
+        el.style.width = `${d}px`;
+        el.style.height = `${d}px`;
+        // 満タンに近づくにつれて光量・色が変化
+        el.classList.toggle('panyu-ball-full', pct >= 1);
+        el.classList.toggle('panyu-ball-high', pct >= 0.7 && pct < 1);
         break;
       }
       case 'panyuPips': el.innerHTML = renderPanyuPips(); break;
