@@ -2527,7 +2527,6 @@ function renderLobbyBottomPanel() {
     <div class="lb-row lb-music-row">
       <button class="lb-bgm-toggle" data-action="toggle-bgm" title="BGM ON/OFF">${bgmOn ? '🔊' : '🔇'}</button>
       <input class="lb-vol" type="range" min="0" max="100" value="${vol}" title="音量">
-      <button class="lb-settings-btn" data-action="open-collection" title="コンプリート状況">🏆</button>
       <button class="lb-settings-btn" data-action="open-settings" title="ゲーム設定">⚙</button>
     </div>
     <div class="lb-song-label">${songLabel}</div>
@@ -2558,10 +2557,18 @@ function showSettingsModal() {
         </button>
       </div>
       <div class="settings-modal-note">※チュートリアル（講義）モード中は<br>これらの設定を無視して常時ONになります</div>
+      <div class="settings-modal-divider"></div>
+      ${save.ownedItems && save.ownedItems.includes('trophy_unlock')
+        ? `<button class="btn btn-secondary settings-modal-trophy" data-action="open-collection">🏆 トロフィーを開く</button>`
+        : `<button class="btn btn-ghost settings-modal-trophy locked" disabled title="交換所「知識ノート」枠で購入できます">🔒 トロフィー手帳（交換所で解放）</button>`}
       <button class="btn btn-primary settings-modal-close">閉じる</button>
     </div>
   `;
   document.getElementById('stage').appendChild(overlay);
+  overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', (e) => {
+    overlay.remove(); // 設定を閉じてからトロフィー画面へ
+    onAction(e);
+  }));
   overlay.querySelectorAll('[data-toggle]').forEach(btn => {
     btn.addEventListener('click', () => {
       const kind = btn.dataset.toggle;
@@ -2634,6 +2641,7 @@ const SHOP_ITEMS = [
   { id: 'note_board_danger',   cat: 'note',  name: 'ボード危険度メモ',         price: 250, desc: '場札がフラッシュ/ストレート注意の時、ミミ思考に表示される' },
   { id: 'note_pot_odds',       cat: 'note',  name: 'ポットオッズ入門',         price: 350, desc: 'コール判断時に「割に合う/合わない」目安を表示' },
   { id: 'note_bet_size',       cat: 'note',  name: 'ベットサイズ講座',         price: 300, desc: 'ベットボタンの説明が詳しくなる' },
+  { id: 'trophy_unlock',       cat: 'note',  name: '🏆 トロフィー手帳',         price: 200, desc: '達成状況・収集物・解放実績を一覧できる手帳。設定メニューから開けるようになる' },
   { id: 'skin_red_gold_card',  cat: 'skin',  name: '赤金カジノカード',         price: 300, desc: 'カード裏デザインを赤金カジノ風に変更' },
   { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 500, desc: 'テーブル背景をVIP風に変更' },
   { id: 'memory_ending',       cat: 'memory', name: 'エンディング映像',        price: 500, desc: 'クリア後限定。あの感動のエンディングを何度でも視聴可能に', requires: 'ending' },
@@ -2651,6 +2659,7 @@ const SHOP_COMMENTS = {
   note_board_danger:   '危険信号を教える、いわば早期警戒装置ですな。セリナさん戦の前に揃えると、ずいぶん楽ですよ',
   note_pot_odds:       'ふふ、私の専門分野ですな。「安いか、高いか」が即座に見える品。私との商談で必要になりますよ',
   note_bet_size:       'ベットの作法をおさらいできる、初心者向けの基礎教材です。お得ですよ',
+  trophy_unlock:       'お嬢さんの足跡を綴る一冊、いかがです？　達成項目から集めた品まで、一覧できる手帳ですよ',
   skin_red_gold_card:  '見た目重視のお嬢さんに。テーブルが華やぎますよ',
   table_vip:           'VIPのお客様気分でお楽しみいただける一品。気分転換にぜひ',
   memory_ending:       'これは特別な品ですよ。あの夜の決着を、何度でも振り返れる映像です',
@@ -3388,7 +3397,13 @@ function onAction(e) {
       }
       showRicoViewer();
       break;
-    case 'open-collection': showCollectionModal(); break;
+    case 'open-collection':
+      if (!save.ownedItems || !save.ownedItems.includes('trophy_unlock')) {
+        alert('🔒 トロフィー手帳は交換所「知識ノート」枠で購入すると解放されます。');
+        break;
+      }
+      showCollectionModal();
+      break;
     case 'collection-close': {
       const ov = document.querySelector('.collection-overlay'); if (ov) ov.remove();
       break;
@@ -4247,7 +4262,7 @@ function showCollectionModal() {
     <div class="collection-modal">
       <button class="collection-close" data-action="collection-close" title="閉じる">×</button>
       <div class="collection-header">
-        <div class="collection-title">🏆 コンプリート状況</div>
+        <div class="collection-title">🏆 トロフィー手帳</div>
         <div class="collection-progress">
           <div class="collection-progress-bar"><div class="collection-progress-fill" style="width:${progressPct}%"></div></div>
           <div class="collection-progress-text">${progressPct}% （${gotScore} / ${totalScore}）</div>
