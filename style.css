@@ -4344,18 +4344,16 @@ html, body {
 }
 .chip-pill-opponent .chip-pill-value { color: #ffd0d6; }
 
-/* 相手カードと残チップを横並び */
+/* 相手カードと性格を横並び（残チップは下部ベットパネルへ） */
 .opponent-hand-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
-/* 相手の性格カード（ミミミ MAX で表示） */
-.opp-personality { flex: 1 0 100%; }
+/* 相手の性格カード（ミミミ MAX で表示）：カード右の空きスペースに展開 */
+.opp-personality { flex: 1; min-width: 0; }
 .opp-personality-card {
-  margin-top: 6px;
   padding: 8px 12px;
   background: linear-gradient(180deg, rgba(60,28,90,0.85) 0%, rgba(20,8,30,0.95) 100%);
   border: 1px solid rgba(245,215,122,0.6);
