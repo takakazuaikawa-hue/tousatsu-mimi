@@ -118,7 +118,8 @@ const OPPONENTS = {
   polka: {
     id: 'polka',
     name: 'ポルカ',
-    profile: { bluffTendency: 0.75, aggression: 0.8, foldDiscipline: 0.3, valueBetTendency: 0.4, drawAggression: 0.6 },
+    // 自信家ブラファー：ブラフ多発・降りない・大きめベット
+    profile: { bluffTendency: 0.85, aggression: 0.9, foldDiscipline: 0.18, valueBetTendency: 0.55, drawAggression: 0.5 },
     maxHands: 999,
     chips: 1000,
     tutorial: false,
@@ -132,7 +133,8 @@ const OPPONENTS = {
   selina: {
     id: 'selina',
     name: 'セリナ',
-    profile: { bluffTendency: 0.45, aggression: 0.55, foldDiscipline: 0.65, valueBetTendency: 0.65, drawAggression: 0.75 },
+    // 冷静な観察者：ブラフ少・ドロー警戒で大ベット・ドライ場では消極的
+    profile: { bluffTendency: 0.35, aggression: 0.55, foldDiscipline: 0.72, valueBetTendency: 0.7, drawAggression: 0.9 },
     maxHands: 999,
     chips: 1200,
     tutorial: false,
@@ -146,7 +148,8 @@ const OPPONENTS = {
   grano: {
     id: 'grano',
     name: 'グラーノ',
-    profile: { bluffTendency: 0.5, aggression: 0.6, foldDiscipline: 0.55, valueBetTendency: 0.75, drawAggression: 0.45, trapTendency: 0.7 },
+    // 商人気質：割が合わなければ降りる・ブラフ少・強い手で罠
+    profile: { bluffTendency: 0.25, aggression: 0.5, foldDiscipline: 0.82, valueBetTendency: 0.85, drawAggression: 0.4, trapTendency: 0.85 },
     maxHands: 999,
     chips: 1300,
     tutorial: false,
@@ -160,7 +163,8 @@ const OPPONENTS = {
   velvet: {
     id: 'velvet',
     name: 'ヴェルベット',
-    profile: { bluffTendency: 0.65, aggression: 0.75, foldDiscipline: 0.6, valueBetTendency: 0.7, drawAggression: 0.65, pressureTalkTendency: 0.8 },
+    // 圧支配のディーラー：大ベットで圧かけ・優勢時もさらに追い込む
+    profile: { bluffTendency: 0.6, aggression: 0.92, foldDiscipline: 0.55, valueBetTendency: 0.85, drawAggression: 0.75, pressureTalkTendency: 0.95 },
     maxHands: 999, // 実質無限。チップが尽きるまで継続
     chips: 1500,
     tutorial: false,
@@ -2081,7 +2085,17 @@ function applyBindings() {
       case 'zazazoText': el.textContent = zazazoLabel(state.zazazo); break;
       case 'opponentPersonality': {
         if (state.opponentPersonalityRevealed && state.opponentId) {
-          el.innerHTML = `<div class="opp-personality-card"><div class="opp-p-label">✓ 性格を読み切った</div><div class="opp-p-text">${getOpponentPersonality(state.opponentId)}</div></div>`;
+          const p = getOpponentPersonality(state.opponentId);
+          el.innerHTML = `
+            <div class="opp-personality-card">
+              <div class="opp-p-label">✓ 性格を読み切った</div>
+              <div class="opp-p-title">${p.icon} ${p.title}</div>
+              <ul class="opp-p-traits">
+                ${p.traits.map(t => `<li>${t}</li>`).join('')}
+              </ul>
+              <div class="opp-p-exploit"><b>攻略：</b> ${p.exploit}</div>
+            </div>
+          `;
         } else {
           el.innerHTML = '';
         }
@@ -3755,16 +3769,72 @@ function zazazoLabel(v) {
 }
 
 // === 相手性格データ（ミミミゲージMAXで開示） ===
+// 各キャラの「実際のAI挙動」を反映した行動傾向と、それに対する攻略法
 const OPPONENT_PERSONALITY = {
-  rico_tutorial: '🎓 先生気質：ミミの練習相手。優しめに大きく打ってヒントをくれる',
-  polka:   '🔥 自信家ブラファー：弱い手こそ大きく見せる／コール頻度低／降ろし狙い多',
-  selina:  '🧊 冷静な観察者：場札を読みきってからベット／ドロー警戒派／レンジ意識',
-  grano:   '💰 商人気質：割が合う時しか動かない／罠（チェックレイズ）多／ポットオッズ厳守',
-  velvet:  '👁 圧支配のディーラー：強い時こそ強く、優勢時こそ追い込む／極化レンジ多用',
+  rico_tutorial: {
+    icon: '🎓',
+    title: '先生気質',
+    traits: [
+      'ブラフ多めで練習相手をしてくれる',
+      'ミミのコールを待ってヒントを出す',
+    ],
+    exploit: 'チュートリアル中。素直にコールして学ぼう',
+  },
+  polka: {
+    icon: '🔥',
+    title: '自信家ブラファー',
+    traits: [
+      'ブラフ多発（弱い手でも大きく賭ける）',
+      '降りない（コール頻度が異常に高い）',
+      'ベットサイズが常に大きめ',
+    ],
+    exploit: '中程度の手でブラフキャッチを狙え。ブラフは絶対通らない、強い手は最大バリュー',
+  },
+  selina: {
+    icon: '🧊',
+    title: '冷静な観察者',
+    traits: [
+      'ブラフ少（手が無い時はチェック）',
+      'ドロー警戒で大ベット（フラッシュ/ストレート気配で圧かけ）',
+      'ドライボードでは消極的',
+    ],
+    exploit: 'ドライボードならブラフが通る。ウェットボードの大ベットには真の強手、降りるべし',
+  },
+  grano: {
+    icon: '💰',
+    title: '商人気質',
+    traits: [
+      '損したくない（割が合わなければ即フォールド）',
+      'ブラフほぼ無し（賭ける時は手がある）',
+      '強い手で罠を仕掛ける（チェック→大レイズ）',
+    ],
+    exploit: '小ベットで降ろせる場面が多い。チェック後の大ベットは罠、降りるべし',
+  },
+  velvet: {
+    icon: '👁',
+    title: '圧支配のディーラー',
+    traits: [
+      '常に大ベット（標準で2/3ポット以上）',
+      '優勢時こそ追い込んでくる',
+      'コール頻度は普通、リレイズには真の強手',
+    ],
+    exploit: '大ベットに動じないこと。中程度でブラフキャッチ、リレイズで揺さぶれば情報が出る',
+  },
 };
 function getOpponentPersonality(id) {
-  if (state.seriousRicoMode) return '🐰 本気のリコ先輩：レンジ分析と圧倒のコンビ／読み切りタイプ';
-  return OPPONENT_PERSONALITY[id] || '？？？';
+  if (state.seriousRicoMode) {
+    return {
+      icon: '🐰',
+      title: '本気のリコ先輩',
+      traits: [
+        '全パラメータが最強水準',
+        'レンジ分析と圧倒の二段構え',
+        'ブラフもバリューも完璧なバランス',
+      ],
+      exploit: '小細工は通用しない。確率に基づく堅実なプレイが唯一の対抗手段',
+    };
+  }
+  return OPPONENT_PERSONALITY[id] || { icon: '?', title: '???', traits: ['不明'], exploit: '不明' };
 }
 
 function renderCardsInto(el, cards, slotCount) {
@@ -6258,17 +6328,21 @@ function showPsychStreakBanner(streak) {
 function showPersonalityRevealBanner() {
   const banner = document.createElement('div');
   banner.className = 'personality-reveal-banner';
-  const text = state.opponentId ? getOpponentPersonality(state.opponentId) : '？';
+  const p = state.opponentId ? getOpponentPersonality(state.opponentId) : { icon: '?', title: '?', traits: [], exploit: '' };
   banner.innerHTML = `
     <div class="prb-inner">
       <div class="prb-title">🎯 ミミミ MAX！相手の性格を読み切った</div>
-      <div class="prb-body">${text}</div>
+      <div class="prb-name">${p.icon} ${p.title}</div>
+      <ul class="prb-traits">
+        ${p.traits.map(t => `<li>${t}</li>`).join('')}
+      </ul>
+      <div class="prb-exploit">⚔ 攻略：${p.exploit}</div>
       <div class="prb-note">この対戦の心理バトルは封印されます</div>
     </div>
   `;
   (document.getElementById('stage') || document.body).appendChild(banner);
-  setTimeout(() => banner.classList.add('out'), 2800);
-  setTimeout(() => banner.remove(), 3600);
+  setTimeout(() => banner.classList.add('out'), 4000);
+  setTimeout(() => banner.remove(), 4800);
 }
 
 function triggerBluffBreak() {
