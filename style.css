@@ -2208,10 +2208,12 @@ html, body {
   border: 1px solid rgba(217,179,90,0.4);
   overflow: hidden;
 }
-.char-rico {
+.character-frame.char-rico {
   position: absolute;
   inset: 0;
   overflow: hidden;
+  background: transparent;
+  border-radius: 0;
 }
 .char-rico img {
   width: 100%;
