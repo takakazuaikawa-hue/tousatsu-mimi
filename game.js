@@ -312,39 +312,63 @@ const POLKA_PROFILE = {
   drawAggression: 0.6,
 };
 
-// v4 B1 のアルゴリズムを簡略実装
+// v4 B1 のアルゴリズム強化版：プロファイル差が体感できるよう細分化
 function decideOpponentAction(profile, ctx, opts = {}) {
   const r = rand();
   const hs = ctx.handStrength;
 
+  // === サイズ決定ヘルパー：aggression を3段階に分解 ===
+  // 高アグレッション(>=0.7)：pot_1 / pot_2_3 / pot_1_2 を 4:4:2 配分
+  // 中アグレッション(>=0.5)：pot_2_3 / pot_1_2 / pot_1_3 を 4:5:1 配分
+  // 低アグレッション(<0.5)：pot_1_2 / pot_1_3 を 6:4 配分
+  const pickSize = (extraAggro = 0) => {
+    const a = Math.min(1, profile.aggression + extraAggro);
+    const rr = rand();
+    if (a >= 0.7) {
+      if (rr < 0.4) return 'pot_1';
+      if (rr < 0.8) return 'pot_2_3';
+      return 'pot_1_2';
+    }
+    if (a >= 0.5) {
+      if (rr < 0.4) return 'pot_2_3';
+      if (rr < 0.9) return 'pot_1_2';
+      return 'pot_1_3';
+    }
+    if (rr < 0.6) return 'pot_1_2';
+    return 'pot_1_3';
+  };
+
   if (opts.forceLargeBet) {
-    return { type: 'bet', size: 'pot_2_3', intent: 'forced_bluff' };
+    return { type: 'bet', size: pickSize(0.15), intent: 'forced_bluff' };
   }
-  // フォールド判定
+  // フォールド判定（強さが0.18未満かつコール額あり）
+  // foldDiscipline が高いほど降りやすい（規律ある）／低いほどコールしがち
   if (hs < 0.18 && r > profile.foldDiscipline && ctx.toCall > 0) {
     return { type: 'fold' };
   }
+  // チェックレイズ罠（trapTendency）：強い手でもチェックして相手の攻めを誘う
+  // ※ ブラフ判定より前に判定（強い手の trap が bluff に誤分類されないように）
+  if (hs > 0.65 && ctx.canCheck && profile.trapTendency && r < profile.trapTendency * 0.5) {
+    return { type: 'check_call', intent: 'trap' };
+  }
   // ブラフ
   if (hs < 0.35 && r < profile.bluffTendency) {
-    const size = r < profile.aggression ? 'pot_2_3' : 'pot_1_2';
-    return { type: 'bet', size, intent: 'bluff' };
+    // ポルカ系（aggression高 & bluffTendency高）はブラフでも遠慮なくデカく打つ
+    const aggroBoost = profile.bluffTendency > 0.65 ? 0.1 : 0;
+    return { type: 'bet', size: pickSize(aggroBoost), intent: 'bluff' };
   }
   // バリュー
   if (hs > 0.55 && r < profile.valueBetTendency + 0.2) {
-    const size = r < profile.aggression ? 'pot_2_3' : 'pot_1_2';
-    return { type: 'bet', size, intent: 'value' };
+    // 圧支配タイプ（pressureTalkTendency）はバリューも大きく
+    const pressureBoost = profile.pressureTalkTendency ? 0.1 : 0;
+    return { type: 'bet', size: pickSize(pressureBoost), intent: 'value' };
   }
   // ドロー潰し（フラッシュ/ストレート両対応）
   if (ctx.boardDanger && (ctx.boardDanger.flushAlert || ctx.boardDanger.straightAlert)
       && r < profile.drawAggression) {
-    // 危険度が高いほど大きめにベットしてドローに代金を払わせる
+    // 両ドロー兼ねは大ベット、片方なら標準
     const both = ctx.boardDanger.flushAlert && ctx.boardDanger.straightAlert;
-    const size = both ? 'pot_2_3' : 'pot_1_2';
-    return { type: 'bet', size, intent: 'draw' };
-  }
-  // チェックレイズ罠（trapTendency）：強い手でもチェックして相手の攻めを誘う
-  if (hs > 0.65 && ctx.canCheck && profile.trapTendency && r < profile.trapTendency * 0.4) {
-    return { type: 'check_call', intent: 'trap' };
+    return { type: 'bet', size: pickSize(both ? 0.15 : 0), intent: 'draw' };
   }
   return { type: 'check_call' };
 }
