@@ -3851,32 +3851,37 @@ html, body {
 /* 実カジノ準拠の色（small スケール：橙=$1000, 紫=$500, 黒=$100, 緑=$25） */
 .bu-chip.chip-orange,
 .bu-rchip.chip-orange,
-.bu-hchip.chip-orange {
+.bu-hchip.chip-orange,
+.bu-vc-chip.chip-orange {
   background:
     repeating-conic-gradient(from 0deg, #e07b00 0deg 30deg, #ffd9a8 30deg 60deg);
 }
 .bu-chip.chip-purple,
 .bu-rchip.chip-purple,
-.bu-hchip.chip-purple {
+.bu-hchip.chip-purple,
+.bu-vc-chip.chip-purple {
   background:
     repeating-conic-gradient(from 0deg, #6a3a8a 0deg 30deg, #d8b8e8 30deg 60deg);
 }
 .bu-chip.chip-black,
 .bu-rchip.chip-black,
-.bu-hchip.chip-black {
+.bu-hchip.chip-black,
+.bu-vc-chip.chip-black {
   background:
     repeating-conic-gradient(from 0deg, #1a1a1a 0deg 30deg, #888 30deg 60deg);
 }
 .bu-chip.chip-green,
 .bu-rchip.chip-green,
-.bu-hchip.chip-green {
+.bu-hchip.chip-green,
+.bu-vc-chip.chip-green {
   background:
     repeating-conic-gradient(from 0deg, #2e7d3a 0deg 30deg, #c5e8c8 30deg 60deg);
 }
 /* large スケール用追加色：茶=5000 */
 .bu-chip.chip-brown,
 .bu-rchip.chip-brown,
-.bu-hchip.chip-brown {
+.bu-hchip.chip-brown,
+.bu-vc-chip.chip-brown {
   background:
     repeating-conic-gradient(from 0deg, #6b4423 0deg 30deg, #d4a574 30deg 60deg);
 }
