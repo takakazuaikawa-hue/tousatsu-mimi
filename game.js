@@ -3255,23 +3255,24 @@ function updateBackdoorPanel() {
 }
 
 // === チップ円盤の横並び表記（ポット/コール/ボタン共通） ===
-// scale: 'small'=1000/500/100/25 端数まで正確、'large'=5000/1000/200/50 大額向け
+// 実カジノ準拠カラー：橙=$1000, 紫=$500, 黒=$100, 緑=$25 が標準
+// 大額（残チップ）用：茶=5000, 橙=1000, 赤=200(近似), 白=50(近似)
 function buildHorizontalChips(amount, scale = 'small', numClass = 'bu-remain-num', extraChipClass = '') {
   if (!amount || amount <= 0) {
     return `<span class="bu-remain-chips"><span class="${numClass}">0</span></span>`;
   }
   const tiers = scale === 'large'
     ? [
-        { cls: 'chip-gold',  val: 5000 },
-        { cls: 'chip-blue',  val: 1000 },
-        { cls: 'chip-red',   val: 200 },
-        { cls: 'chip-white', val: 50 },
+        { cls: 'chip-brown',  val: 5000 },
+        { cls: 'chip-orange', val: 1000 },
+        { cls: 'chip-red',    val: 200 },
+        { cls: 'chip-white',  val: 50 },
       ]
     : [
-        { cls: 'chip-gold',  val: 1000 },
-        { cls: 'chip-blue',  val: 500 },
-        { cls: 'chip-red',   val: 100 },
-        { cls: 'chip-white', val: 25 },
+        { cls: 'chip-orange', val: 1000 },
+        { cls: 'chip-purple', val: 500 },
+        { cls: 'chip-black',  val: 100 },
+        { cls: 'chip-green',  val: 25 },
       ];
   let rem = amount;
   const flat = [];
@@ -3314,10 +3315,10 @@ function renderBetUnified() {
   const buildVerticalStack = (amount, side, newAdded) => {
     if (!amount || amount <= 0) return '<div class="bu-stack-empty">—</div>';
     const tiers = [
-      { cls: 'chip-gold',  val: 1000 },
-      { cls: 'chip-blue',  val: 500 },
-      { cls: 'chip-red',   val: 100 },
-      { cls: 'chip-white', val: 25 },
+      { cls: 'chip-orange', val: 1000 },
+      { cls: 'chip-purple', val: 500 },
+      { cls: 'chip-black',  val: 100 },
+      { cls: 'chip-green',  val: 25 },
     ];
     let rem = amount;
     const items = []; // {cls, count}
