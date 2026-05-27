@@ -6018,7 +6018,19 @@ function showHandResultBanner() {
   const peakEq = eq.length > 0 ? Math.max(...eq.map(e => e.pct)) : null;
   const minEq  = eq.length > 0 ? Math.min(...eq.map(e => e.pct)) : null;
 
+  // === 判定（バッジ＆コメント） ===
+  // フォールド時はリアル則に従い、相手の手も「%勝てた」解析もデフォルト非表示。
+  // 「見せて？」ボタンを押した時だけ展開する。
   let verdict = null; // { label, desc, cls }
+  // フォールド時の「実は勝てた／降りて正解」解析（クリックして開示）
+  let foldReveal = null;
+  if (last.reason === 'fold' || last.reason === 'opponentFold') {
+    foldReveal = {
+      eq: lastEq,
+      pEvName: last.pEv?.name || '?',
+      oEvName: last.oEv?.name || '?',
+    };
+  }
   if (last.reason === 'showdown' && eq.length >= 2) {
     // バッドビート判定：プレイヤーが70%以上だったのに負けた
     if (peakEq >= 70 && last.winner === 'opponent') {
@@ -6040,21 +6052,12 @@ function showHandResultBanner() {
     else if (last.winner === 'player' && lastEq >= 90 && peakEq >= 80) {
       verdict = { label: '🌟 圧勝', desc: '序盤から優位を保って勝ち切った', cls: 'verdict-clean' };
     }
-  } else if (last.reason === 'opponentFold') {
-    // ブラフ成功判定：プレイヤーの実勝率が低かったのに相手降りた
-    if (lastEq !== undefined && lastEq < 40) {
-      verdict = { label: '🎭 ブラフ成功', desc: `本当の勝率は${lastEq}%だったのに、相手を降ろした`, cls: 'verdict-bluff' };
-    } else if (last.pEv && last.pEv.rank >= 4) {
-      verdict = { label: '💎 強役で相手降伏', desc: `${last.pEv.name}で押し切った`, cls: 'verdict-clean' };
-    }
-  } else if (last.reason === 'fold') {
-    // フォールド：実は勝てたか？
-    if (lastEq !== undefined && lastEq >= 60) {
-      verdict = { label: '😱 リリースミス', desc: `実は${lastEq}%勝てる手だった……降りなくてよかったかも`, cls: 'verdict-misfold' };
-    } else if (lastEq !== undefined && lastEq <= 30) {
-      verdict = { label: '✅ 良い損切り', desc: `勝率${lastEq}%、降りて正解`, cls: 'verdict-clean' };
-    }
+  } else if (last.reason === 'opponentFold' && last.pEv && last.pEv.rank >= 4) {
+    // 強役で相手降伏（バッジのみ。「ブラフ成功」判定はリアル則で隠す）
+    verdict = { label: '💎 強役で相手降伏', desc: `${last.pEv.name}で押し切った`, cls: 'verdict-clean' };
   }
+  // ※「実は%勝てた／降りて正解」は AI 解析として「見せて？」内に格納
+  //   → フォールド時のドラマ性を保ちつつ、見たい人には情報提供
 
   // 決定打：エクイティが最も変化したストリート
   let pivot = null;
@@ -6101,10 +6104,50 @@ function showHandResultBanner() {
         <div class="hr-board-cards">${renderBoardWithHi(state.community, bestFiveWinner)}</div>
       </div>
     `;
-  } else if (last.reason === 'fold') {
-    showdownHtml = `<div class="hr-fold-row">😔 ミミがフォールド → ${state.opponentName}がポット獲得</div>`;
-  } else if (last.reason === 'opponentFold') {
-    showdownHtml = `<div class="hr-fold-row">😤 ${state.opponentName}がフォールド → ミミがポット獲得</div>`;
+  } else if (last.reason === 'fold' || last.reason === 'opponentFold') {
+    const whoFolded = last.reason === 'fold' ? 'ミミ' : state.opponentName;
+    const whoWon   = last.reason === 'fold' ? state.opponentName : 'ミミ';
+    showdownHtml = `
+      <div class="hr-fold-row">
+        <div class="hr-fold-msg">😶‍🌫️ ${whoFolded}がフォールド → ${whoWon}がポット獲得</div>
+        <div class="hr-fold-muck">
+          <span class="hr-muck-card">🂠</span><span class="hr-muck-card">🂠</span>
+          <span class="hr-muck-label">伏せて捨てられた手札（mucked）</span>
+        </div>
+        <button class="btn btn-ghost hr-reveal-btn" id="hr-reveal-btn">👁 見せて？（AI 解析）</button>
+        <div class="hr-reveal-panel" id="hr-reveal-panel" style="display:none;">
+          <div class="hr-reveal-cards">
+            <div class="hr-reveal-block">
+              <div class="hr-reveal-label">ミミ</div>
+              <div class="hr-reveal-hand">${state.playerHand.map(c => cardSpan(c, false)).join('')}</div>
+              <div class="hr-reveal-eval">${last.pEv?.name || '-'}</div>
+            </div>
+            <div class="hr-reveal-vs">VS</div>
+            <div class="hr-reveal-block">
+              <div class="hr-reveal-label">${state.opponentName}</div>
+              <div class="hr-reveal-hand">${state.opponentHand.map(c => cardSpan(c, false)).join('')}</div>
+              <div class="hr-reveal-eval">${last.oEv?.name || '-'}</div>
+            </div>
+          </div>
+          ${state.community.length > 0 ? `<div class="hr-reveal-board">場札 ${state.community.map(c => cardSpan(c, false)).join('')}</div>` : ''}
+          ${foldReveal && foldReveal.eq !== undefined ? `
+            <div class="hr-reveal-analysis">
+              <div class="hr-ra-tag">📊 AI解析</div>
+              ${last.reason === 'fold'
+                ? (foldReveal.eq >= 60
+                  ? `<div class="hr-ra-text">⚠ 実は <b>${foldReveal.eq}%</b> 勝てる手でした……降りなくてよかったかも</div>`
+                  : foldReveal.eq <= 30
+                    ? `<div class="hr-ra-text">✅ 勝率 ${foldReveal.eq}%、降りて正解でした</div>`
+                    : `<div class="hr-ra-text">🟡 勝率 ${foldReveal.eq}%、どちらでも妥当</div>`)
+                : (foldReveal.eq < 40
+                  ? `<div class="hr-ra-text">🎭 本当の勝率は <b>${foldReveal.eq}%</b> だったのに、相手を降ろせた</div>`
+                  : `<div class="hr-ra-text">💪 勝率 ${foldReveal.eq}% で相手を降ろした</div>`)}
+              <div class="hr-ra-note">※ リアルポーカーではマック（伏せ捨て）された手は見えません</div>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
   }
 
   // キャラセリフ
@@ -6168,6 +6211,28 @@ function showHandResultBanner() {
     tpl.remove();
     continueAfterHand();
   });
+  // 「見せて？」ボタン
+  const revealBtn = document.getElementById('hr-reveal-btn');
+  if (revealBtn) {
+    revealBtn.addEventListener('click', () => {
+      const panel = document.getElementById('hr-reveal-panel');
+      if (panel) {
+        panel.style.display = 'block';
+        // ボタン自体は disable して隠す
+        revealBtn.disabled = true;
+        revealBtn.textContent = '👁 開示済み';
+        revealBtn.style.opacity = '0.5';
+      }
+    });
+  }
+  // ショーダウンのカードめくりアニメ
+  if (last.reason === 'showdown') {
+    setTimeout(() => {
+      tpl.querySelectorAll('.hr-pcard').forEach((card, i) => {
+        card.style.animation = `hrCardFlip 0.5s ${0.2 + i * 0.12}s ease-out backwards`;
+      });
+    }, 50);
+  }
 }
 
 function continueButtonLabel() {

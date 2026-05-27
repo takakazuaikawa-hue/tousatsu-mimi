@@ -5459,7 +5459,92 @@ html, body {
   font-size: 16px;
   color: var(--c-text);
   font-style: italic;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
 }
+.hr-fold-msg { font-size: 16px; }
+.hr-fold-muck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.5;
+}
+.hr-muck-card {
+  display: inline-block;
+  width: 38px; height: 52px;
+  background: linear-gradient(135deg, #4a2068 0%, #2a1040 100%);
+  border: 1px solid rgba(245,215,122,0.4);
+  border-radius: 5px;
+  font-size: 24px;
+  text-align: center;
+  line-height: 52px;
+  color: rgba(245,215,122,0.6);
+}
+.hr-muck-label { font-size: 11px; color: var(--c-text-dim); }
+.hr-reveal-btn {
+  margin-top: 4px;
+  min-width: 200px;
+}
+.hr-reveal-panel {
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px;
+  background: rgba(20,8,30,0.6);
+  border: 1px solid rgba(245,215,122,0.3);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: revealIn 0.4s ease-out;
+}
+@keyframes revealIn {
+  from { opacity: 0; transform: scaleY(0.85); transform-origin: top; }
+  to   { opacity: 1; transform: scaleY(1); }
+}
+.hr-reveal-cards {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.hr-reveal-block { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.hr-reveal-label { font-size: 11px; color: var(--c-text-dim); letter-spacing: 0.1em; }
+.hr-reveal-hand { display: flex; gap: 4px; }
+.hr-reveal-eval { font-size: 13px; color: #fbe28a; font-weight: 700; }
+.hr-reveal-vs { font-size: 14px; color: var(--c-text-dim); }
+.hr-reveal-board { font-size: 12px; color: var(--c-text-dim); display: flex; align-items: center; gap: 6px; justify-content: center; }
+.hr-reveal-analysis {
+  background: rgba(40,30,80,0.5);
+  border-left: 3px solid #c87aff;
+  padding: 6px 10px;
+  border-radius: 0 6px 6px 0;
+  font-size: 12px;
+  text-align: left;
+}
+.hr-ra-tag {
+  display: inline-block;
+  background: linear-gradient(180deg, #c87aff 0%, #8a3acd 100%);
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+.hr-ra-text { color: #f0e8ff; font-size: 13px; }
+.hr-ra-text b { color: #fbe28a; }
+.hr-ra-note { color: rgba(200,180,200,0.5); font-size: 10px; margin-top: 4px; font-style: italic; }
+
+/* ショーダウン時のカードめくりアニメ */
+@keyframes hrCardFlip {
+  0%   { transform: rotateY(180deg) scale(0.8); opacity: 0; }
+  60%  { transform: rotateY(0deg)   scale(1.1); opacity: 1; }
+  100% { transform: rotateY(0deg)   scale(1);   opacity: 1; }
+}
+.hr-pcard { backface-visibility: hidden; }
 
 /* エクイティタイムライン */
 .hr-equity {
