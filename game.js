@@ -2367,6 +2367,98 @@ const RICO_OUTFITS = [
   { file: 'rico_santa.png',    label: 'サンタ',       lines: ['「メリクリ、ミミ」', '「プレゼント、何が欲しい？」'] },
 ];
 
+// 衣装ごとのトリビア（私生活／豆知識／こぼれ話）
+const RICO_TRIVIA = {
+  'rico_default.png': {
+    title: '制服のリコ先輩',
+    cards: [
+      { tag: '私生活', text: '制服はカジノ支給品。ボタンに小さく♠マークが入ってる、らしい。「気づいた客は……まあ、見る目あるね」' },
+      { tag: 'ポーカー豆知識', text: 'AAでも勝率は約85%。残り15%、確かに来るんだよこれが。' },
+      { tag: 'こぼれ話', text: '休憩室のロッカー、上から3段目がリコ専用。お菓子の隠し場所でもある。' },
+    ],
+  },
+  'rico_pajama.png': {
+    title: 'パジャマのリコ先輩',
+    cards: [
+      { tag: '私生活', text: '寝相は静か。ただし枕は3つ抱えて寝る派。「囲まれてないと落ち着かないのよ」' },
+      { tag: 'ポーカー豆知識', text: '睡眠不足で打つと、ブラフ頻度が無意識に20%上がるという研究がある。やめときな。' },
+      { tag: 'こぼれ話', text: '朝はホットミルクに蜂蜜。「甘いのって、勝った日のご褒美感あるじゃない？」' },
+    ],
+  },
+  'rico_bunny.png': {
+    title: 'バニーのリコ先輩',
+    cards: [
+      { tag: '私生活', text: 'バニーの耳は実は3種類使い分け。スパンコール／ベルベット／本気の日のサテン。' },
+      { tag: 'ポーカー豆知識', text: 'ディーラーは7秒以内のシャッフルで指がつる説、ガチ。手首ストレッチは必須。' },
+      { tag: 'こぼれ話', text: 'チップの音だけで額を当てられる。「100枚、120枚……ハイ、合ってるでしょ？」' },
+    ],
+  },
+  'rico_casual.png': {
+    title: '私服のリコ先輩',
+    cards: [
+      { tag: '私生活', text: '休日は古本屋巡り。ポーカー本より、心理学とミステリーを買う。' },
+      { tag: 'ポーカー豆知識', text: 'プレイヤーの85%は、自分が平均より上手いと思っている。ダニング＝クルーガー効果。' },
+      { tag: 'こぼれ話', text: 'カフェでは必ず窓側。「客の入りを観察するのが癖になっちゃって」' },
+    ],
+  },
+  'rico_dress.png': {
+    title: 'ドレスのリコ先輩',
+    cards: [
+      { tag: '私生活', text: 'このドレスは初給料で買った勝負服。クリーニングは年に2回だけ、ここぞの時。' },
+      { tag: 'ポーカー豆知識', text: 'VIPルームのレートは表の10倍。だけど読み合いの精度は同じ。怖がる方が負け。' },
+      { tag: 'こぼれ話', text: 'ヒールは7cm。「これ以上だと、退場時の歩き方が雑になる」のだそう。' },
+    ],
+  },
+  'rico_kimono.png': {
+    title: '和装のリコ先輩',
+    cards: [
+      { tag: '私生活', text: '帯は自分で結ぶ派。「人に締めてもらうと、間合いがズレるのよ」' },
+      { tag: 'ポーカー豆知識', text: '日本にポーカーが伝わったのは明治初期。最初は花札と混ざってカオスだったらしい。' },
+      { tag: 'こぼれ話', text: '抹茶を点てるとき、茶筅の音で集中スイッチが入る。卓に着く前のルーティン。' },
+    ],
+  },
+  'rico_swimsuit.png': {
+    title: '水着のリコ先輩',
+    cards: [
+      { tag: '私生活', text: '泳ぎは平泳ぎ専門。「クロールは派手すぎてバレるじゃない」何が？' },
+      { tag: 'ポーカー豆知識', text: '夏場のカジノは空調で乾燥する。手汗チェックでブラフを読まれる季節、ともいう。' },
+      { tag: 'こぼれ話', text: 'ビーチでも砂にチップ模様を描いて練習する。職業病。' },
+    ],
+  },
+  'rico_gym.png': {
+    title: 'ジム服のリコ先輩',
+    cards: [
+      { tag: '私生活', text: '週3でジム通い。スクワットとデッドリフト派。「下半身が安定すると、表情も安定する」' },
+      { tag: 'ポーカー豆知識', text: '長時間プレイは判断力を下げる。プロは2時間ごとに必ず席を立つ。' },
+      { tag: 'こぼれ話', text: 'プロテインはバニラ味一択。「チョコは飽きる」' },
+    ],
+  },
+  'rico_school.png': {
+    title: '学生風のリコ先輩',
+    cards: [
+      { tag: '私生活', text: '昔は数学だけ得意だった。「確率の問題、解いてる時が一番楽しかったのよ」' },
+      { tag: 'ポーカー豆知識', text: 'ポットオッズの暗算は、慣れれば3秒。掛け算九九と同じ。' },
+      { tag: 'こぼれ話', text: '放課後の屋上で初めてカードを覚えた。教えてくれたのは……「内緒」' },
+    ],
+  },
+  'rico_witch.png': {
+    title: '魔女のリコ先輩',
+    cards: [
+      { tag: '私生活', text: 'ハロウィンは年に一度のお楽しみ。「コスプレ警察、私はしないわよ」' },
+      { tag: 'ポーカー豆知識', text: '「呪いをかけた」と宣言してから打つと、相手が3%多くフォールドするという都市伝説。' },
+      { tag: 'こぼれ話', text: '本物の黒猫飼ってる。名前は「フロップ」。' },
+    ],
+  },
+  'rico_santa.png': {
+    title: 'サンタのリコ先輩',
+    cards: [
+      { tag: '私生活', text: 'クリスマスは仕事納め後、一人でケーキ。「これがいいの、贅沢でしょ？」' },
+      { tag: 'ポーカー豆知識', text: '年末のカジノは寄付付きトーナメントが多い。負けても気分はあったかい。' },
+      { tag: 'こぼれ話', text: 'プレゼント包装が異常に上手い。チップ並べるのと同じ手つきだとか。' },
+    ],
+  },
+};
+
 function pickLobbyRico() {
   // セッションごとに変える（ロビー表示時に1回決める）
   if (!state.lobbyRicoIndex || state.lobbyRicoChangedAt !== state.screen) {
@@ -3256,6 +3348,36 @@ function onAction(e) {
     case 'buy-item':      buyItem(data.itemId); break;
     case 'battle-start':  startBattle(data.opponent); break;
     case 'rico-mode-chooser': showRicoModeChooser(); break;
+    case 'open-rico-viewer': showRicoViewer(); break;
+    case 'rico-viewer-close': {
+      const ov = document.querySelector('.rico-viewer-overlay'); if (ov) ov.remove();
+      break;
+    }
+    case 'rico-viewer-next': {
+      const outfits = RICO_OUTFITS;
+      state.lobbyRicoIndex = ((state.lobbyRicoIndex || 0) + 1) % outfits.length;
+      const ov = document.querySelector('.rico-viewer-overlay'); if (ov) ov.remove();
+      showRicoViewer();
+      // ロビーUIにも反映
+      const img = document.querySelector('[data-bind="lobbyRicoImg"]');
+      const lbl = document.querySelector('[data-bind="lobbyRicoOutfit"]');
+      const cur = outfits[state.lobbyRicoIndex];
+      if (img) img.src = 'assets/characters/' + cur.file;
+      if (lbl) lbl.textContent = cur.label;
+      break;
+    }
+    case 'rico-viewer-prev': {
+      const outfits = RICO_OUTFITS;
+      state.lobbyRicoIndex = ((state.lobbyRicoIndex || 0) - 1 + outfits.length) % outfits.length;
+      const ov = document.querySelector('.rico-viewer-overlay'); if (ov) ov.remove();
+      showRicoViewer();
+      const img = document.querySelector('[data-bind="lobbyRicoImg"]');
+      const lbl = document.querySelector('[data-bind="lobbyRicoOutfit"]');
+      const cur = outfits[state.lobbyRicoIndex];
+      if (img) img.src = 'assets/characters/' + cur.file;
+      if (lbl) lbl.textContent = cur.label;
+      break;
+    }
     case 'rico-mode-tutorial': {
       const ov = document.querySelector('.rico-mode-overlay'); if (ov) ov.remove();
       startBattle('rico_tutorial');
@@ -3941,6 +4063,49 @@ function showRicoModeChooser() {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
+}
+
+function showRicoViewer() {
+  const cur = pickLobbyRico();
+  const trivia = RICO_TRIVIA[cur.file] || {
+    title: cur.label + 'のリコ先輩',
+    cards: [{ tag: 'ひとこと', text: '（このエピソードはまだ準備中）' }],
+  };
+  const cardsHtml = trivia.cards.map(c => `
+    <div class="rico-viewer-card">
+      <div class="rico-viewer-card-tag">${c.tag}</div>
+      <div class="rico-viewer-card-text">${c.text}</div>
+    </div>
+  `).join('');
+  const overlay = document.createElement('div');
+  overlay.className = 'rico-viewer-overlay';
+  overlay.innerHTML = `
+    <div class="rico-viewer-stage">
+      <img class="rico-viewer-img" src="assets/characters/${cur.file}" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+      <div class="rico-viewer-outfit-label">${cur.label}</div>
+      <button class="rico-viewer-nav rico-viewer-nav-prev" data-action="rico-viewer-prev" title="前の衣装">‹</button>
+      <button class="rico-viewer-nav rico-viewer-nav-next" data-action="rico-viewer-next" title="次の衣装">›</button>
+    </div>
+    <aside class="rico-viewer-panel">
+      <button class="rico-viewer-close" data-action="rico-viewer-close" title="閉じる">×</button>
+      <div class="rico-viewer-title">${trivia.title}</div>
+      <div class="rico-viewer-cards">${cardsHtml}</div>
+      <div class="rico-viewer-hint">←→ で衣装を切替・ESC または背景で閉じる</div>
+    </aside>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+  overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  // キーボード操作
+  const keyHandler = (e) => {
+    if (!document.body.contains(overlay)) { document.removeEventListener('keydown', keyHandler); return; }
+    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', keyHandler); }
+    else if (e.key === 'ArrowRight') { onAction({ currentTarget: { dataset: { action: 'rico-viewer-next' } } }); }
+    else if (e.key === 'ArrowLeft')  { onAction({ currentTarget: { dataset: { action: 'rico-viewer-prev' } } }); }
+  };
+  document.addEventListener('keydown', keyHandler);
 }
 
 function showNewGameModal() {

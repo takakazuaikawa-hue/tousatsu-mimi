@@ -793,10 +793,185 @@ html, body {
   background: rgba(20,8,29,0.7);
   border: 1px solid var(--c-gold-bright);
   color: var(--c-gold-bright);
-  font-size: 10px; padding: 2px 8px;
+  font-size: 10px; padding: 3px 10px;
   border-radius: 999px;
   letter-spacing: 0.15em;
   backdrop-filter: blur(2px);
+  cursor: pointer;
+  pointer-events: auto;
+  font-family: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  z-index: 4;
+}
+.lobby-rico-outfit::after {
+  content: ' 👁';
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.lobby-rico-outfit:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 12px rgba(245,215,122,0.6);
+}
+
+/* === リコ先輩 鑑賞モード（フルスクリーンビューア） === */
+.rico-viewer-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  background:
+    radial-gradient(ellipse at 30% 60%, rgba(70,30,100,0.55) 0%, rgba(20,8,40,0.95) 55%, rgba(4,2,10,1) 100%);
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 38%);
+  gap: 0;
+  animation: ricoViewerIn 0.35s ease-out;
+}
+@keyframes ricoViewerIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.rico-viewer-stage {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  padding: 20px;
+}
+.rico-viewer-img {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 12px 28px rgba(0,0,0,0.75)) drop-shadow(0 0 40px rgba(245,215,122,0.3));
+  animation: ricoViewerImgIn 0.5s ease-out;
+}
+@keyframes ricoViewerImgIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.rico-viewer-outfit-label {
+  position: absolute;
+  top: 16px; left: 16px;
+  padding: 6px 14px;
+  background: linear-gradient(180deg, #fbe28a 0%, #d9a93a 100%);
+  color: #1a0e2a;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+.rico-viewer-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: rgba(20,8,29,0.75);
+  border: 1px solid rgba(245,215,122,0.6);
+  color: #fbe28a;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: transform 0.15s, background 0.15s;
+}
+.rico-viewer-nav:hover {
+  transform: translateY(-50%) scale(1.1);
+  background: rgba(60,28,90,0.85);
+}
+.rico-viewer-nav-prev { left: 12px; }
+.rico-viewer-nav-next { right: 12px; }
+.rico-viewer-panel {
+  position: relative;
+  background: linear-gradient(180deg, rgba(28,12,46,0.92) 0%, rgba(14,6,26,0.96) 100%);
+  border-left: 1px solid rgba(245,215,122,0.4);
+  padding: 50px 22px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rico-viewer-close {
+  position: absolute;
+  top: 12px; right: 14px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(80,30,30,0.7);
+  border: 1px solid rgba(255,180,180,0.6);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.rico-viewer-close:hover { background: rgba(140,40,40,0.85); transform: scale(1.08); }
+.rico-viewer-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fbe28a;
+  text-align: center;
+  letter-spacing: 0.05em;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(245,215,122,0.3);
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+.rico-viewer-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rico-viewer-card {
+  background: linear-gradient(180deg, rgba(48,20,76,0.85) 0%, rgba(28,10,48,0.9) 100%);
+  border: 1px solid rgba(245,215,122,0.35);
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4), inset 0 0 16px rgba(245,215,122,0.06);
+}
+.rico-viewer-card-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #1a0e2a;
+  background: linear-gradient(180deg, #fbe28a 0%, #d9a93a 100%);
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+.rico-viewer-card-text {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #f4e8c8;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+.rico-viewer-hint {
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: 11px;
+  color: rgba(245,215,122,0.55);
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+/* スマホ縦長レイアウト：右パネルを下に */
+@media (max-aspect-ratio: 1/1) {
+  .rico-viewer-overlay {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  .rico-viewer-panel {
+    border-left: none;
+    border-top: 1px solid rgba(245,215,122,0.4);
+    max-height: 45%;
+    padding: 16px 16px 16px;
+  }
+  .rico-viewer-title { font-size: 17px; }
 }
 /* 吹き出し：交換所ボタンのすぐ上、同じグリッド列に配置（重なりなし・薄め） */
 .lobby-rico-bubble {

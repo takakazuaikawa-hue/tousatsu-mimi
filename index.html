@@ -116,7 +116,7 @@
         <!-- リコ立ち絵：枠なしで背景に立つ -->
         <div class="lobby-rico-standing">
           <img data-bind="lobbyRicoImg" src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
-          <div class="lobby-rico-outfit" data-bind="lobbyRicoOutfit"></div>
+          <button class="lobby-rico-outfit" data-bind="lobbyRicoOutfit" data-action="open-rico-viewer" title="リコ先輩を眺める"></button>
         </div>
         <!-- セリフは独立配置（ボタン前面に） -->
         <div class="lobby-rico-bubble" data-bind="lobbyRicoLine">「ようこそロビーへ。次の卓、選んじゃって」</div>
