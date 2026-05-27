@@ -631,12 +631,13 @@ html, body {
 .lobby-screen { grid-template-rows: 60px 1fr; }
 .lobby-screen { position: relative; overflow: hidden; }
 
-/* 背景：赤絨毯＋金縁＋ラウンジ */
+/* 背景：lobby.png（あれば）+ フォールバックグラデ＋上下光オーバーレイ */
 .bg-lobby {
   position: absolute; inset: 0; z-index: 0;
   background:
     radial-gradient(ellipse 60% 40% at 50% 0%, rgba(245,215,122,0.18) 0%, transparent 70%),
-    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(140,30,50,0.55) 0%, rgba(20,8,29,0) 70%),
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(140,30,50,0.35) 0%, rgba(20,8,29,0) 70%),
+    url('assets/backgrounds/lobby.png') center / cover no-repeat,
     linear-gradient(180deg, #1a0e2a 0%, #2a1238 40%, #4a1828 100%);
 }
 /* 床の赤絨毯ライン */
