@@ -6742,10 +6742,18 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 40px;
-  touch-action: manipulation; /* マルチタッチ対応 */
+  /* gap は使わず、margin で重ねる（gap は負の値非対応） */
+  touch-action: manipulation;
 }
-/* ※ 左右 animation-delay は撤去：タップ後のアイドル復帰時に 0.3s フリーズしてた */
+/* 左の玉：右側を平らに押しつぶす（5% 内側にカット＋角を緩く） */
+.panyu-clicker-pair > .panyu-clicker-blob:nth-child(1) {
+  clip-path: inset(0 5% 0 0 round 50% 30% 30% 50%);
+  margin-right: -23px; /* 230px の 10% = 互いに 5% ずつ重なり */
+}
+/* 右の玉：左側を平らに押しつぶす */
+.panyu-clicker-pair > .panyu-clicker-blob:nth-child(2) {
+  clip-path: inset(0 0 0 5% round 30% 50% 50% 30%);
+}
 .panyu-clicker-blob {
   position: relative;
   width: 230px;  /* 320 → 230 で2つ並べる */
