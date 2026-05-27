@@ -114,15 +114,14 @@
     </header>
     <main class="lobby-main">
       <aside class="lobby-side">
-        <div class="lobby-rico-panel">
-          <div class="character-frame lobby-rico-frame">
-            <img data-bind="lobbyRicoImg" src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
-            <div class="lobby-rico-outfit" data-bind="lobbyRicoOutfit"></div>
-          </div>
+        <!-- リコ立ち絵：枠なしで背景に立つ -->
+        <div class="lobby-rico-standing">
+          <img data-bind="lobbyRicoImg" src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+          <div class="lobby-rico-outfit" data-bind="lobbyRicoOutfit"></div>
           <div class="lobby-rico-bubble" data-bind="lobbyRicoLine">「ようこそロビーへ。次の卓、選んじゃって」</div>
         </div>
-        <div class="lobby-stats-panel" data-bind="lobbyStats"></div>
-        <div class="lobby-settings-panel" data-bind="lobbySettings"></div>
+        <!-- 設定＋音量＋曲表示を1パネルにまとめる -->
+        <div class="lobby-bottom-panel" data-bind="lobbyBottomPanel"></div>
       </aside>
       <section class="lobby-content">
         <div class="lobby-section-label">対戦相手 — Opponents</div>
@@ -130,7 +129,6 @@
       </section>
     </main>
     <div class="lobby-footer">
-      <span class="lobby-bgm" data-bind="lobbyBgmLabel">♪ —</span>
       <span class="lobby-tips">💡 セリナ・グラーノ・ヴェルベット戦の初回クリアで戦術ノート自動解放</span>
     </div>
   </div>

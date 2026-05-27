@@ -1947,6 +1947,17 @@ function applyBindings() {
       case 'lobbySettings': el.innerHTML = renderLobbySettings();
         el.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
         break;
+      case 'lobbyBottomPanel':
+        el.innerHTML = renderLobbyBottomPanel();
+        el.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+        const lbVol = el.querySelector('.lb-vol');
+        if (lbVol) lbVol.addEventListener('input', (e) => {
+          save.bgmVolume = +e.target.value;
+          saveProgress();
+          applyBgmVolume();
+          document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = save.bgmVolume);
+        });
+        break;
       case 'lobbyRicoImg': {
         const o = pickLobbyRico();
         el.onerror = function() {
@@ -2272,6 +2283,29 @@ function lobbyRicoLine() {
   const outfit = pickLobbyRico();
   if (outfit?.lines?.length) lines.push(pick(outfit.lines));
   return pick(lines);
+}
+
+// 設定（心理/論理ON/OFF）＋ 音量バー＋曲表示 を1パネルに統合
+function renderLobbyBottomPanel() {
+  const psy = save.psychEnabled !== false;
+  const log = save.logicEnabled !== false;
+  const bgmOn = !!save.bgmOn;
+  const vol = save.bgmVolume != null ? save.bgmVolume : 35;
+  const songLabel = bgmOn ? '♪ Lounge Jazz — Velvet Night' : '♪ —（停止中）';
+  return `
+    <div class="lb-row lb-music-row">
+      <button class="lb-bgm-toggle" data-action="toggle-bgm" title="BGM ON/OFF">${bgmOn ? '🔊' : '🔇'}</button>
+      <input class="lb-vol" type="range" min="0" max="100" value="${vol}" title="音量">
+      <span class="lb-song">${songLabel}</span>
+    </div>
+    <div class="lb-row lb-settings-row">
+      <span class="lb-settings-label">心理</span>
+      <button class="lb-toggle ${psy ? 'on' : 'off'}" data-action="toggle-psych">${psy ? 'ON' : 'OFF'}</button>
+      <span class="lb-settings-label">論理</span>
+      <button class="lb-toggle ${log ? 'on' : 'off'}" data-action="toggle-logic">${log ? 'ON' : 'OFF'}</button>
+      <span class="lb-note">講義は強制ON</span>
+    </div>
+  `;
 }
 
 function renderLobbySettings() {

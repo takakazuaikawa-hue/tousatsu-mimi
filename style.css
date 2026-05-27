@@ -707,7 +707,7 @@ html, body {
 }
 .lobby-side {
   display: grid;
-  grid-template-rows: minmax(380px, 1fr) auto auto;
+  grid-template-rows: 1fr auto;
   gap: 8px;
   min-height: 0;
   height: 100%;
@@ -725,63 +725,146 @@ html, body {
   text-transform: uppercase;
 }
 
-/* リコパネル：大きく（ただし他要素を圧迫しない） */
-.lobby-rico-panel {
-  background: linear-gradient(180deg, rgba(50,20,80,0.85) 0%, rgba(20,8,29,0.9) 100%);
-  border: 2px solid var(--c-gold);
-  border-radius: 14px;
-  padding: 10px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.5), inset 0 0 18px rgba(245,215,122,0.08);
-  display: grid;
-  grid-template-rows: 1fr auto;
-  gap: 8px;
-  min-height: 0;
-  overflow: hidden;
-}
-.lobby-rico-frame {
+/* リコ立ち絵：枠なし、背景に立つ */
+.lobby-rico-standing {
   position: relative;
-  width: 100%;
   min-height: 0;
-  border-radius: 10px;
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(245,215,122,0.15), rgba(0,0,0,0.5));
-  border: 2px solid var(--c-gold-bright);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
-.lobby-rico-frame img {
-  position: absolute;
-  inset: 0;
-  width: 100%; height: 100%; object-fit: cover;
-  object-position: 50% 20%;
+.lobby-rico-standing img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.7)) drop-shadow(0 0 24px rgba(245,215,122,0.25));
 }
 .lobby-rico-outfit {
   position: absolute;
   top: 6px; left: 6px;
-  background: rgba(20,8,29,0.85);
+  background: rgba(20,8,29,0.7);
   border: 1px solid var(--c-gold-bright);
   color: var(--c-gold-bright);
   font-size: 10px; padding: 2px 8px;
   border-radius: 999px;
   letter-spacing: 0.15em;
+  backdrop-filter: blur(2px);
 }
+/* 半透明吹き出し：立ち絵の下に被せる位置 */
 .lobby-rico-bubble {
-  position: relative;
-  background: #fff8dc; color: #1a0e2a;
-  padding: 7px 10px;
-  border-radius: 10px;
-  font-size: 12px; line-height: 1.4;
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  background: rgba(255, 248, 220, 0.82);
+  color: #1a0e2a;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px; line-height: 1.45;
   font-weight: 600;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-  flex: 0 0 auto;
-  max-height: 60px;
-  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,215,122,0.5);
+  max-width: 92%;
+  text-align: center;
+  backdrop-filter: blur(3px);
 }
 .lobby-rico-bubble::before {
   content: ''; position: absolute;
-  left: 24px; top: -10px;
+  left: 50%; top: -8px;
+  transform: translateX(-50%);
   border-style: solid;
-  border-width: 0 8px 12px 8px;
-  border-color: transparent transparent #fff8dc transparent;
+  border-width: 0 8px 10px 8px;
+  border-color: transparent transparent rgba(255,248,220,0.82) transparent;
 }
+
+/* まとめ下部パネル：音楽＋設定 */
+.lobby-bottom-panel {
+  background: linear-gradient(180deg, rgba(20,8,29,0.85) 0%, rgba(40,18,60,0.85) 100%);
+  border: 1px solid var(--c-gold);
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lb-music-row { border-bottom: 1px dashed rgba(245,215,122,0.2); padding-bottom: 4px; }
+.lb-bgm-toggle {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--c-gold);
+  background: rgba(20,8,29,0.8);
+  color: var(--c-gold-bright);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.lb-bgm-toggle:hover { background: rgba(50,20,80,0.95); }
+.lb-vol {
+  -webkit-appearance: none;
+  flex: 1 1 auto;
+  height: 4px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 2px;
+  border: 1px solid var(--c-gold);
+  outline: none;
+  min-width: 60px;
+}
+.lb-vol::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--c-gold-bright);
+  border: 1px solid var(--c-bg-dark);
+  cursor: pointer;
+}
+.lb-vol::-moz-range-thumb {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--c-gold-bright);
+  border: 1px solid var(--c-bg-dark);
+  cursor: pointer;
+}
+.lb-song {
+  font-size: 10px;
+  color: var(--c-gold);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.lb-settings-label {
+  color: #d0c2e0;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+.lb-toggle {
+  border: 1px solid var(--c-gold);
+  border-radius: 999px;
+  padding: 1px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  background: rgba(0,0,0,0.4);
+  color: #aaa;
+}
+.lb-toggle.on  { background: linear-gradient(90deg, rgba(245,215,122,0.5), rgba(245,215,122,0.3)); color: var(--c-bg-dark); border-color: var(--c-gold-bright); }
+.lb-toggle.off { background: rgba(60,30,80,0.6); color: #888; }
+.lb-note { font-size: 9px; color: var(--c-gold); opacity: 0.7; margin-left: auto; }
 
 /* プレイヤーステータスパネル：コンパクト */
 .lobby-stats-panel {
