@@ -3439,6 +3439,117 @@ html, body {
   align-items: center;
   gap: 12px;
 }
+/* ぱにゅ「○」一文字表現 */
+.panyu-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,193,216,0.4);
+  line-height: 1;
+  font-weight: 700;
+  transition: font-size 0.4s ease-out, color 0.3s, text-shadow 0.3s;
+  min-width: 32px;
+}
+.panyu-mark.panyu-mark-empty { color: rgba(255,255,255,0.2); }
+.panyu-mark.panyu-mark-high {
+  color: #ffc1d8;
+  text-shadow: 0 0 8px rgba(255,134,179,0.7);
+}
+.panyu-mark.panyu-mark-full {
+  color: #ff5d99;
+  text-shadow: 0 0 12px rgba(255,93,153,0.9);
+  animation: panyuMarkPulse 1.1s ease-in-out infinite;
+}
+@keyframes panyuMarkPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+
+/* === 統合ベットゲージ === */
+.bet-unified {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 8px 14px 10px;
+  background: linear-gradient(180deg, rgba(20,8,30,0.85) 0%, rgba(10,4,20,0.95) 100%);
+  border: 1px solid rgba(245,215,122,0.45);
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
+.bu-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.bu-side {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.bu-side-opp { justify-content: flex-start; }
+.bu-side-pl  { justify-content: flex-end; }
+.bu-side-label {
+  font-size: 11px;
+  color: var(--c-text-dim);
+  letter-spacing: 0.15em;
+}
+.bu-side-amt {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bu-side-opp .bu-side-amt { color: #ff8a9a; }
+.bu-side-pl  .bu-side-amt { color: #ffd97a; }
+.bu-pot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  padding: 0 14px;
+}
+.bu-pot-label {
+  font-size: 10px;
+  color: var(--c-text-dim);
+  letter-spacing: 0.2em;
+}
+.bu-pot-amt {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--c-gold-bright);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 12px rgba(245,215,122,0.5);
+}
+.bu-callneed {
+  font-size: 11px;
+  color: #ffd0d6;
+  margin-top: 2px;
+}
+.bu-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(245,215,122,0.3);
+}
+.bu-seg {
+  height: 100%;
+  transition: width 0.5s ease-out;
+}
+.bu-seg-opp {
+  background: linear-gradient(90deg, #b8253a 0%, #ff5d7a 100%);
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.4);
+}
+.bu-seg-carry {
+  background: linear-gradient(90deg, #6a4910 0%, #d9a93a 50%, #6a4910 100%);
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.4);
+}
+.bu-seg-pl {
+  background: linear-gradient(90deg, #d9a93a 0%, #fbe28a 100%);
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.4);
+}
 
 /* チップ表示 pill：数字＋コインアイコン */
 .chip-pill {
@@ -3454,6 +3565,29 @@ html, body {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
 .chip-pill-icon { font-size: 14px; line-height: 1; }
+/* ポーカーチップ風の円ディスク */
+.chip-disc {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 4px, #fff 4px 4.5px, transparent 4.5px),
+    repeating-conic-gradient(
+      #d63a5a 0deg 30deg,
+      #fff 30deg 60deg
+    );
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4), inset 0 0 3px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+.chip-pill-vs .chip-disc, .chip-pill-opponent .chip-disc {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 4px, #fff 4px 4.5px, transparent 4.5px),
+    repeating-conic-gradient(
+      #2a4ed0 0deg 30deg,
+      #fff 30deg 60deg
+    );
+}
 .chip-pill-value {
   color: #fbe28a;
   font-size: 16px;

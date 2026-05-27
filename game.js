@@ -2034,15 +2034,25 @@ function applyBindings() {
       case 'panyuMax': el.textContent = state.panyuMax; break;
       case 'panyuFill': el.style.width = `${(state.panyu / state.panyuMax) * 100}%`; break;
       case 'panyuBall': {
-        // ぱにゅ値に応じて中央の球が大きくなる（直径 6px → 54px）
+        // 旧：円形ゲージ。新マーク版に置換済みのため何もしない（古い要素が残った場合のフォールバック）
         const pct = Math.min(1, Math.max(0, state.panyu / state.panyuMax));
-        const minD = 6, maxD = 54;
-        const d = Math.round(minD + (maxD - minD) * pct);
-        el.style.width = `${d}px`;
-        el.style.height = `${d}px`;
-        // 満タンに近づくにつれて光量・色が変化
-        el.classList.toggle('panyu-ball-full', pct >= 1);
-        el.classList.toggle('panyu-ball-high', pct >= 0.7 && pct < 1);
+        const d = Math.round(6 + 48 * pct);
+        el.style.width = `${d}px`; el.style.height = `${d}px`;
+        break;
+      }
+      case 'panyuMark': {
+        // 「○」一文字でぱにゅ表現。font-size と色で量を示す
+        const pct = Math.min(1, Math.max(0, state.panyu / state.panyuMax));
+        const minS = 12, maxS = 32;
+        el.style.fontSize = `${Math.round(minS + (maxS - minS) * pct)}px`;
+        el.classList.toggle('panyu-mark-full', pct >= 1);
+        el.classList.toggle('panyu-mark-high', pct >= 0.7 && pct < 1);
+        el.classList.toggle('panyu-mark-empty', pct === 0);
+        el.textContent = pct >= 1 ? '●' : '○';
+        break;
+      }
+      case 'betUnified': {
+        el.innerHTML = renderBetUnified();
         break;
       }
       case 'panyuPips': el.innerHTML = renderPanyuPips(); break;
@@ -3227,6 +3237,43 @@ function updateBackdoorPanel() {
     panel.style.display = (save.backdoorUnlocked && save.backdoorOn) ? 'block' : 'none';
     panel.innerHTML = renderBackdoorPanel();
   }
+}
+
+// === 統合ベットゲージ：相手の賭け／ポット蓄積／自分の賭けを1本のバーで可視化 ===
+function renderBetUnified() {
+  const opp = state.currentBetOpponent || 0;
+  const pl  = state.currentBetPlayer || 0;
+  const pot = state.pot || 0;
+  // 今ストリート以前のポット（過去の蓄積＝アンテ＋前ストリートの累積）
+  const carry = Math.max(0, pot - opp - pl);
+  const total = Math.max(1, opp + pl + carry);
+  const oppPct   = (opp   / total) * 100;
+  const carryPct = (carry / total) * 100;
+  const plPct    = (pl    / total) * 100;
+  const oppName = state.opponentName || '相手';
+  const playerCallNeed = Math.max(0, opp - pl);
+  return `
+    <div class="bu-header">
+      <div class="bu-side bu-side-opp">
+        <span class="bu-side-label">${oppName}</span>
+        <span class="bu-side-amt">${opp > 0 ? '+' + opp : '—'}</span>
+      </div>
+      <div class="bu-pot">
+        <span class="bu-pot-label">ポット</span>
+        <span class="bu-pot-amt">${pot}</span>
+        ${playerCallNeed > 0 ? `<span class="bu-callneed">（コール ${playerCallNeed}）</span>` : ''}
+      </div>
+      <div class="bu-side bu-side-pl">
+        <span class="bu-side-amt">${pl > 0 ? '+' + pl : '—'}</span>
+        <span class="bu-side-label">ミミ</span>
+      </div>
+    </div>
+    <div class="bu-bar">
+      <div class="bu-seg bu-seg-opp"   style="width:${oppPct}%"   title="${oppName}のベット ${opp}"></div>
+      <div class="bu-seg bu-seg-carry" style="width:${carryPct}%" title="蓄積ポット ${carry}"></div>
+      <div class="bu-seg bu-seg-pl"    style="width:${plPct}%"    title="ミミのベット ${pl}"></div>
+    </div>
+  `;
 }
 
 function renderOpponentBet() {

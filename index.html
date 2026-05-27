@@ -197,7 +197,7 @@
               <div class="card card-back"></div>
             </div>
             <div class="chip-pill chip-pill-opponent" title="相手の残りチップ">
-              <span class="chip-pill-icon">🪙</span>
+              <span class="chip-pill-icon chip-disc"></span>
               <span class="chip-pill-value" data-bind="opponentChips">1000</span>
             </div>
           </div>
@@ -213,34 +213,7 @@
         <div class="card empty"></div>
       </div>
 
-      <div class="pot-row">
-        <div class="bet-side bet-side-opponent">
-          <div class="bet-chip-zone bet-chip-left" data-bind="opponentBetChips"></div>
-          <div class="bet-side-body">
-            <div class="bet-side-label" data-bind="opponentBetLabel">相手</div>
-            <div class="bet-side-amount" data-bind="opponentBetAmount">0</div>
-          </div>
-        </div>
-        <div class="pot-display" title="ポット = このハンドで賭けられたチップの合計。勝った方が総取り。">
-          <div class="pot-frame">
-            <img class="pot-img" src="assets/ui/pot.png" alt=""
-                 onerror="this.style.display='none'; this.parentElement.classList.add('pot-img-missing');">
-            <div class="pot-img-fallback">🏺</div>
-            <div class="pot-body">
-              <div class="pot-label">ポット <small>(合計)</small></div>
-              <div class="pot-amount" data-bind="pot">0</div>
-            </div>
-          </div>
-          <div class="pot-coin-stack" data-bind="potCoinStack"></div>
-        </div>
-        <div class="bet-side bet-side-player">
-          <div class="bet-side-body">
-            <div class="bet-side-label">ミミ</div>
-            <div class="bet-side-amount" data-bind="playerBetAmount">0</div>
-          </div>
-          <div class="bet-chip-zone bet-chip-right" data-bind="playerBetChips"></div>
-        </div>
-      </div>
+      <div class="bet-unified" data-bind="betUnified"></div>
     </section>
 
     <aside class="right-panel">
@@ -251,22 +224,19 @@
         </div>
         <div class="ms-row ms-row-chips">
           <span class="chip-pill chip-pill-player" title="ミミの残りチップ">
-            <span class="chip-pill-icon">🪙</span>
+            <span class="chip-pill-icon chip-disc"></span>
             <span class="chip-pill-value" data-bind="playerChips">1000</span>
             <span class="chip-pill-name">ミミ</span>
           </span>
           <span class="chip-pill chip-pill-vs" title="相手の残りチップ">
-            <span class="chip-pill-icon">🪙</span>
+            <span class="chip-pill-icon chip-disc"></span>
             <span class="chip-pill-value" data-bind="opponentChips">1000</span>
             <span class="chip-pill-name" data-bind="opponentNameShort">相手</span>
           </span>
         </div>
         <div class="ms-row ms-row-panyu">
           <span class="ms-label">ぱにゅ</span>
-          <div class="panyu-gauge-circle ms-panyu-circle">
-            <div class="panyu-ring-frame"></div>
-            <div class="panyu-ball" data-bind="panyuBall"></div>
-          </div>
+          <span class="panyu-mark" data-bind="panyuMark">○</span>
         </div>
       </div>
       <div class="zazazo-display">
