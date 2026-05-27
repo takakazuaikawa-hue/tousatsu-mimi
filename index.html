@@ -245,6 +245,16 @@
     </section>
 
     <aside class="right-panel">
+      <div class="mimi-status-panel">
+        <div class="ms-row">
+          <span class="ms-label">役</span>
+          <span class="ms-hand" data-bind="currentHandName">—</span>
+        </div>
+        <div class="ms-row">
+          <span class="ms-label">ぱにゅ</span>
+          <span class="ms-pips" data-bind="panyuPips"></span>
+        </div>
+      </div>
       <div class="zazazo-display">
         <div class="zazazo-label">ゾゾゾゲージ</div>
         <div class="zazazo-bar">
@@ -278,7 +288,6 @@
             </div>
             <div class="chip-bar"><div class="chip-bar-fill chip-bar-player" data-bind="playerChipBar"></div></div>
           </div>
-          <div class="current-hand-display" data-bind="currentHandName">役：—</div>
         </div>
       </div>
       <div class="action-column">
@@ -286,10 +295,6 @@
           <div class="panyu-gauge-circle">
             <div class="panyu-ring-frame"></div>
             <div class="panyu-ball" data-bind="panyuBall"></div>
-          </div>
-          <div class="panyu-ring-caption">
-            <span class="panyu-ring-label">ぱにゅ</span>
-            <span class="panyu-ring-pips" data-bind="panyuPips"></span>
           </div>
         </div>
         <div class="action-area" data-bind="actionArea"></div>

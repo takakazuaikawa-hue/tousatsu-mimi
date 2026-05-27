@@ -3414,10 +3414,48 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
   align-self: center;
   justify-self: center;
 }
+
+/* 右パネル上部：ミミ状態（役＋ぱにゅ pip） */
+.mimi-status-panel {
+  background: linear-gradient(180deg, rgba(60,28,90,0.55) 0%, rgba(20,8,30,0.7) 100%);
+  border: 1px solid rgba(245,215,122,0.4);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ms-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.ms-label {
+  flex: 0 0 50px;
+  color: #fbe28a;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+}
+.ms-hand {
+  flex: 1;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+.ms-pips {
+  flex: 1;
+  display: flex;
+  gap: 3px;
+  font-size: 13px;
+}
+.ms-pips .pip { color: rgba(255,255,255,0.3); }
+.ms-pips .pip.lit { color: #ffc1d8; text-shadow: 0 0 6px #ffc1d8; }
 .panyu-gauge-circle {
   position: relative;
   width: 70px;
