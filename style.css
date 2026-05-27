@@ -3465,22 +3465,24 @@ html, body {
   50%      { transform: scale(1.08); }
 }
 
-/* === 統合ベットゲージ：3カラム縦チップ＋残りチップ表示 === */
+/* === 統合ベットゲージ：5カラム [opp残|opp賭|ポット|ミミ賭|ミミ残] === */
 .bet-unified {
   width: 100%;
-  max-width: 760px;
+  max-width: 880px;
   margin: 0 auto;
-  padding: 8px 16px 10px;
+  padding: 8px 12px 10px;
   background: linear-gradient(180deg, rgba(20,8,30,0.85) 0%, rgba(10,4,20,0.95) 100%);
   border: 1px solid rgba(245,215,122,0.45);
   border-radius: 12px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.5);
   display: grid;
-  grid-template-columns: 1fr 1.6fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr 1.4fr 1fr 1fr;
+  gap: 8px;
   align-items: end;
   min-height: 150px;
 }
+.bu-cell-remain { background: rgba(245,215,122,0.04); border-radius: 6px; padding: 4px 0; }
+.bu-cell-bet    { background: rgba(255,134,179,0.04); border-radius: 6px; padding: 4px 0; }
 .bu-remain {
   padding: 4px 6px;
   background: rgba(0,0,0,0.4);

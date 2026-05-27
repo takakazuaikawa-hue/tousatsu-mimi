@@ -3433,12 +3433,18 @@ function renderBetUnified() {
   const buildRemainStack = (a) => buildHorizontalChips(a, 'large', 'bu-remain-num');
 
   return `
-    <div class="bu-cell bu-cell-opp">
-      <div class="bu-cell-label">${oppShort}</div>
+    <!-- 1. 相手の残チップ -->
+    <div class="bu-cell bu-cell-remain bu-cell-opp-remain">
+      <div class="bu-cell-label">${oppShort} 残</div>
       <div class="bu-remain">${buildVerticalChipColumns(state.opponentChips)}</div>
+    </div>
+    <!-- 2. 相手のベット（このストリート） -->
+    <div class="bu-cell bu-cell-bet bu-cell-opp">
+      <div class="bu-cell-label">${oppShort} ベット</div>
       ${buildVerticalStack(opp, 'opp', newOpp)}
       <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}</div>
     </div>
+    <!-- 3. ポット（物理チップ） -->
     <div class="bu-cell bu-cell-pot">
       <div class="bu-cell-label bu-pot-title">ポット</div>
       <div class="bu-pot-physical">${buildVerticalChipsFromArray(state.potChips || [])}</div>
@@ -3450,11 +3456,16 @@ function renderBetUnified() {
           : '<span class="bu-call-empty">—</span>'}
       </div>
     </div>
-    <div class="bu-cell bu-cell-pl">
-      <div class="bu-cell-label">ミミ</div>
-      <div class="bu-remain">${buildVerticalChipColumns(state.playerChips)}</div>
+    <!-- 4. ミミのベット（このストリート） -->
+    <div class="bu-cell bu-cell-bet bu-cell-pl">
+      <div class="bu-cell-label">ミミ ベット</div>
       ${buildVerticalStack(pl, 'pl', newPl)}
       <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}</div>
+    </div>
+    <!-- 5. ミミの残チップ -->
+    <div class="bu-cell bu-cell-remain bu-cell-pl-remain">
+      <div class="bu-cell-label">ミミ 残</div>
+      <div class="bu-remain">${buildVerticalChipColumns(state.playerChips)}</div>
     </div>
   `;
 }
@@ -5015,6 +5026,19 @@ function spawnAllInSpark(parent) {
 function opponentTurn() {
   // 画面遷移後のゾンビ実行ガード
   if (state.screen !== 'battle' || state.handPhase === 'idle' || state.handPhase === 'showdown') return;
+  // 既にオールイン済み（チップ0）なら追加アクション不可：自動チェック扱いで次に進める
+  // ※「オールインを2回以上行ってくる」バグの修正
+  if (state.opponentChips <= 0) {
+    const oppNeedNow = state.currentBetPlayer - state.currentBetOpponent;
+    if (oppNeedNow > 0) {
+      // 既に全額入っているのでこれ以上は払えない（自動コール扱い）→ そのまま次ストリートへ
+      setTimeout(advanceAfterCall, 600);
+    } else {
+      // ベットが揃っている → 次ストリートへ
+      setTimeout(advanceAfterCall, 600);
+    }
+    return;
+  }
   const need = state.currentBetPlayer - state.currentBetOpponent;
   // 相手の手札強度を計算
   const allCards = [...state.opponentHand, ...state.community];
@@ -5114,8 +5138,8 @@ function opponentTurn() {
   state.opponentSpeech = opponentSpeech(action);
   log('bets', { actor: 'opponent', type: 'bet', size: action.size, amount, intent: action.intent });
   log('reactions', { intent: action.intent, speech: state.opponentSpeech });
-  // オールイン特別演出
-  if (action.size === 'allin' || state.opponentChips === 0) {
+  // オールイン特別演出：実際にチップが動き、かつ残スタックが0になった瞬間のみ
+  if (amount > 0 && (action.size === 'allin' || state.opponentChips === 0)) {
     showAllInCutIn('opponent', amount);
   } else {
     // 大ベット時に重さ演出＋相手カットイン
