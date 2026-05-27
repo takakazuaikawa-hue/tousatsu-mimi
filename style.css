@@ -633,7 +633,9 @@ html, body {
 /* ========== ロビー（旧ステージ選択） ========== */
 .stage-select-screen,
 .lobby-screen { grid-template-rows: 60px 1fr; }
-.lobby-screen { position: relative; overflow: hidden; }
+/* position: relative は .screen の position: absolute; inset: 0 を打ち消すため使わない。
+   absolute のままで positioning context として機能する。 */
+.lobby-screen { overflow: hidden; }
 
 /* 背景：lobby.png（あれば）+ フォールバックグラデ＋上下光オーバーレイ */
 .bg-lobby {
