@@ -6745,9 +6745,7 @@ html, body {
   gap: 40px;
   touch-action: manipulation; /* マルチタッチ対応 */
 }
-.panyu-clicker-pair > .panyu-clicker-blob:nth-child(2) {
-  animation-delay: 0.3s; /* 左右で弾みを少しずらして躍動感 */
-}
+/* ※ 左右 animation-delay は撤去：タップ後のアイドル復帰時に 0.3s フリーズしてた */
 .panyu-clicker-blob {
   position: relative;
   width: 230px;  /* 320 → 230 で2つ並べる */
