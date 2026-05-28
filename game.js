@@ -4089,6 +4089,11 @@ function onAction(e) {
       showCollectionModal();
       break;
     case 'open-glossary': showGlossaryModal(); break;
+    case 'open-history': showHandHistoryModal(); break;
+    case 'history-close': {
+      const ov = document.querySelector('.hand-history-overlay'); if (ov) ov.remove();
+      break;
+    }
     case 'glossary-close': {
       const ov = document.querySelector('.glossary-overlay'); if (ov) ov.remove();
       break;
@@ -6589,6 +6594,57 @@ function resolvePsych(qid, choice, btn) {
   }, 700);
 }
 
+// === ハンドヒストリー モーダル ===
+function showHandHistoryModal() {
+  const hist = state.handHistory || [];
+  const overlay = document.createElement('div');
+  overlay.className = 'hand-history-overlay';
+  const listHtml = hist.length === 0
+    ? `<div class="hh-empty">— まだハンドが終わってません —</div>`
+    : hist.slice().reverse().map((h, ridx) => {
+        const idx = hist.length - 1 - ridx;
+        const last = h.last;
+        const winnerIcon = last.winner === 'player' ? '🏆' : last.winner === 'opponent' ? '✗' : '＝';
+        const winnerCls  = last.winner === 'player' ? 'hh-win' : last.winner === 'opponent' ? 'hh-lose' : 'hh-draw';
+        const reasonText = last.reason === 'showdown' ? `ショーダウン（${last.pEv?.name || '?'} vs ${last.oEv?.name || '?'}）`
+                         : last.reason === 'fold' ? 'ミミが降伏'
+                         : last.reason === 'opponentFold' ? `${h.opponentName}が降伏`
+                         : last.reason;
+        return `
+          <div class="hh-row ${winnerCls}" data-history-idx="${idx}">
+            <div class="hh-row-head">
+              <span class="hh-icon">${winnerIcon}</span>
+              <span class="hh-handno">Hand ${last.hand}</span>
+              <span class="hh-pot">ポット ${last.pot}</span>
+            </div>
+            <div class="hh-row-detail">${reasonText}</div>
+            <button class="btn btn-ghost hh-view-btn">詳細を見る</button>
+          </div>
+        `;
+      }).join('');
+  overlay.innerHTML = `
+    <div class="hand-history-modal">
+      <button class="hh-close" data-action="history-close" title="閉じる">×</button>
+      <div class="hh-title">📜 ハンドヒストリー <small>（直近 ${hist.length} 件）</small></div>
+      <div class="hh-list">${listHtml}</div>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+  overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  overlay.querySelectorAll('.hh-view-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const row = btn.closest('.hh-row');
+      const idx = parseInt(row?.dataset.historyIdx, 10);
+      const snap = state.handHistory[idx];
+      if (snap) showHandResultBanner(snap);
+    });
+  });
+}
+
 // 心理／論理バトルをスキップ（読み切り後のみ呼ばれる）
 function skipPsychBattle() {
   if (state.psychRoot) {
@@ -6752,12 +6808,23 @@ function endHand() {
 }
 
 // === ハンド結果モーダル（リッチ版） ===
-function showHandResultBanner() {
-  const last = state.handResults[state.handResults.length - 1];
-  if (!last) return continueAfterHand();
+function showHandResultBanner(snapshot) {
+  // snapshot 指定時はそれを再表示、未指定時はライブの直近結果
+  const isReplay = !!snapshot;
+  const last = snapshot ? snapshot.last : state.handResults[state.handResults.length - 1];
+  if (!last) return isReplay ? null : continueAfterHand();
+  // データソース（live vs snapshot）
+  const playerHand    = snapshot ? snapshot.playerHand    : state.playerHand;
+  const opponentHand  = snapshot ? snapshot.opponentHand  : state.opponentHand;
+  const community     = snapshot ? snapshot.community     : state.community;
+  const opponentName  = snapshot ? snapshot.opponentName  : state.opponentName;
+  const opponentId    = snapshot ? snapshot.opponentId    : state.opponentId;
+  const playerChips   = snapshot ? snapshot.playerChips   : state.playerChips;
+  const opponentChips = snapshot ? snapshot.opponentChips : state.opponentChips;
+  const equityHistory = snapshot ? snapshot.equityHistory : (state.equityHistory || []);
 
   const tpl = document.createElement('div');
-  tpl.className = 'hand-result-overlay';
+  tpl.className = 'hand-result-overlay' + (isReplay ? ' is-replay' : '');
 
   // 勝敗テキスト
   let winnerText, winnerClass;
@@ -6785,7 +6852,7 @@ function showHandResultBanner() {
   };
 
   // === 戦況分析：エクイティ推移・特殊判定 ===
-  const eq = state.equityHistory || [];
+  const eq = equityHistory || [];
   const lastEq = eq[eq.length - 1]?.pct;
   const flopEq = eq[0]?.pct;
   const peakEq = eq.length > 0 ? Math.max(...eq.map(e => e.pct)) : null;
@@ -6862,24 +6929,24 @@ function showHandResultBanner() {
       <div class="hr-showdown">
         <div class="hr-player-block hr-${last.winner === 'player' ? 'winner' : last.winner === 'opponent' ? 'loser' : ''}">
           <div class="hr-player-name">ミミ</div>
-          <div class="hr-player-hand">${renderHandWithHi(state.playerHand, bestFivePlayer)}</div>
+          <div class="hr-player-hand">${renderHandWithHi(playerHand, bestFivePlayer)}</div>
           <div class="hr-player-eval ${last.winner === 'player' ? 'winning' : ''}">${last.pEv?.name || '-'}</div>
         </div>
         <div class="hr-vs">VS</div>
         <div class="hr-player-block hr-${last.winner === 'opponent' ? 'winner' : last.winner === 'player' ? 'loser' : ''}">
-          <div class="hr-player-name">${state.opponentName}</div>
-          <div class="hr-player-hand">${renderHandWithHi(state.opponentHand, bestFiveOpp)}</div>
+          <div class="hr-player-name">${opponentName}</div>
+          <div class="hr-player-hand">${renderHandWithHi(opponentHand, bestFiveOpp)}</div>
           <div class="hr-player-eval ${last.winner === 'opponent' ? 'winning' : ''}">${last.oEv?.name || '-'}</div>
         </div>
       </div>
       <div class="hr-board">
         <div class="hr-board-label">場札</div>
-        <div class="hr-board-cards">${renderBoardWithHi(state.community, bestFiveWinner)}</div>
+        <div class="hr-board-cards">${renderBoardWithHi(community, bestFiveWinner)}</div>
       </div>
     `;
   } else if (last.reason === 'fold' || last.reason === 'opponentFold') {
-    const whoFolded = last.reason === 'fold' ? 'ミミ' : state.opponentName;
-    const whoWon   = last.reason === 'fold' ? state.opponentName : 'ミミ';
+    const whoFolded = last.reason === 'fold' ? 'ミミ' : opponentName;
+    const whoWon   = last.reason === 'fold' ? opponentName : 'ミミ';
     showdownHtml = `
       <div class="hr-fold-row">
         <div class="hr-fold-msg">😶‍🌫️ ${whoFolded}がフォールド → ${whoWon}がポット獲得</div>
@@ -6892,17 +6959,17 @@ function showHandResultBanner() {
           <div class="hr-reveal-cards">
             <div class="hr-reveal-block">
               <div class="hr-reveal-label">ミミ</div>
-              <div class="hr-reveal-hand">${state.playerHand.map(c => cardSpan(c, false)).join('')}</div>
+              <div class="hr-reveal-hand">${playerHand.map(c => cardSpan(c, false)).join('')}</div>
               <div class="hr-reveal-eval">${last.pEv?.name || '-'}</div>
             </div>
             <div class="hr-reveal-vs">VS</div>
             <div class="hr-reveal-block">
-              <div class="hr-reveal-label">${state.opponentName}</div>
-              <div class="hr-reveal-hand">${state.opponentHand.map(c => cardSpan(c, false)).join('')}</div>
+              <div class="hr-reveal-label">${opponentName}</div>
+              <div class="hr-reveal-hand">${opponentHand.map(c => cardSpan(c, false)).join('')}</div>
               <div class="hr-reveal-eval">${last.oEv?.name || '-'}</div>
             </div>
           </div>
-          ${state.community.length > 0 ? `<div class="hr-reveal-board">場札 ${state.community.map(c => cardSpan(c, false)).join('')}</div>` : ''}
+          ${community.length > 0 ? `<div class="hr-reveal-board">場札 ${community.map(c => cardSpan(c, false)).join('')}</div>` : ''}
           ${foldReveal && foldReveal.eq !== undefined ? `
             <div class="hr-reveal-analysis">
               <div class="hr-ra-tag">📊 AI解析</div>
@@ -6926,7 +6993,8 @@ function showHandResultBanner() {
   // キャラセリフ
   let charLine = '';
   if (last.reason === 'fold') {
-    charLine = `<div class="hr-line hr-line-opp">「${opponentReactToPlayerFold()}」 — ${state.opponentName}</div>`;
+    const oppLine = snapshot ? (snapshot.opponentFoldLine || '見せたくないけど…まあいいよ') : opponentReactToPlayerFold();
+    charLine = `<div class="hr-line hr-line-opp">「${oppLine}」 — ${opponentName}</div>`;
   } else if (last.reason === 'opponentFold') {
     let mimiLine;
     if (last.pEv && last.pEv.rank >= 4) mimiLine = pick(['最強手だったのに……まあいいか', '完成役を見せず読み勝ち']);
@@ -6973,16 +7041,33 @@ function showHandResultBanner() {
       ${pivotHtml}
       ${charLine}
       <div class="hr-chips">
-        <span>ミミ <b>${state.playerChips}</b></span>
-        <span>${state.opponentName} <b>${state.opponentChips}</b></span>
+        <span>ミミ <b>${playerChips}</b></span>
+        <span>${opponentName} <b>${opponentChips}</b></span>
       </div>
-      <button class="btn btn-primary big" id="continue-hand-btn">${continueButtonLabel()}</button>
+      ${isReplay
+        ? `<button class="btn btn-primary big" id="continue-hand-btn">閉じる</button>`
+        : `<button class="btn btn-primary big" id="continue-hand-btn">${continueButtonLabel()}</button>`}
     </div>
   `;
   (document.getElementById('stage') || document.body).appendChild(tpl);
+  // 履歴保存（リプレイ時はスキップ）
+  if (!isReplay) {
+    if (!state.handHistory) state.handHistory = [];
+    state.handHistory.push({
+      last: JSON.parse(JSON.stringify(last)),
+      playerHand: playerHand.map(c => ({...c})),
+      opponentHand: opponentHand.map(c => ({...c})),
+      community: community.map(c => ({...c})),
+      opponentName, opponentId,
+      playerChips, opponentChips,
+      equityHistory: (equityHistory || []).map(e => ({...e})),
+      ts: Date.now(),
+    });
+    if (state.handHistory.length > 20) state.handHistory.shift();
+  }
   document.getElementById('continue-hand-btn').addEventListener('click', () => {
     tpl.remove();
-    continueAfterHand();
+    if (!isReplay) continueAfterHand();
   });
   // 「見せて？」ボタン
   const revealBtn = document.getElementById('hr-reveal-btn');

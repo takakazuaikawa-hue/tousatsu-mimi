@@ -4576,6 +4576,104 @@ html, body {
   pointer-events: auto;
 }
 
+/* === ハンドヒストリー === */
+.hud-history-btn {
+  min-height: 30px;
+  padding: 3px 10px;
+  font-size: 14px;
+  margin-right: 8px;
+}
+.hand-history-overlay {
+  position: absolute; inset: 0;
+  z-index: 85;
+  background: rgba(4,2,10,0.85);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.hand-history-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 100%;
+  background: linear-gradient(180deg, rgba(28,12,46,0.97) 0%, rgba(14,6,26,0.99) 100%);
+  border: 1px solid rgba(245,215,122,0.5);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.7);
+  position: relative;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.hh-close {
+  position: absolute; top: 12px; right: 14px;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(80,30,30,0.75);
+  border: 1px solid rgba(255,180,180,0.6);
+  color: #fff; font-size: 20px; font-weight: 700;
+  cursor: pointer; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.hh-title {
+  padding: 18px 22px 12px;
+  font-size: 18px;
+  color: #fbe28a;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid rgba(245,215,122,0.3);
+}
+.hh-title small { font-size: 12px; color: rgba(220,210,180,0.7); font-weight: 400; margin-left: 8px; }
+.hh-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+.hh-empty {
+  padding: 30px 12px;
+  text-align: center;
+  color: rgba(200,200,200,0.5);
+  font-style: italic;
+}
+.hh-row {
+  background: rgba(20,8,30,0.55);
+  border: 1px solid rgba(245,215,122,0.25);
+  border-left-width: 4px;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.hh-row.hh-win  { border-left-color: #fbe28a; }
+.hh-row.hh-lose { border-left-color: #ff5d7a; }
+.hh-row.hh-draw { border-left-color: #c87aff; }
+.hh-row-head {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+.hh-icon { font-size: 18px; }
+.hh-handno { font-size: 14px; font-weight: 700; color: #fbe28a; letter-spacing: 0.05em; }
+.hh-pot { font-size: 12px; color: #ffd97a; }
+.hh-row-detail { font-size: 12px; color: #f4e8c8; }
+.hh-view-btn {
+  min-height: 32px;
+  padding: 4px 14px;
+  font-size: 12px;
+}
+
+/* リプレイ時のラベル装飾 */
+.hand-result-overlay.is-replay .hr-card::before {
+  content: '📜 リプレイ表示';
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  font-size: 11px;
+  color: rgba(245,215,122,0.7);
+  letter-spacing: 0.1em;
+}
+
 /* 心理／論理バトル モーダル内のスキップボタン（読み切り後のみ） */
 .psych-skip-btn {
   margin: 10px auto 0;
