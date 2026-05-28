@@ -10,6 +10,171 @@
 //=============================================================
 const SAVE_KEY = 'tousatsu_mimi_save_v1';
 
+// === アチーブメント／称号 ===
+// 達成条件は handResult や session 単位で評価
+const ACHIEVEMENTS = [
+  // 初心者
+  { id: 'first_win', icon: '🌱', name: '初勝利', desc: '初めてハンドに勝利', cat: '初心者' },
+  { id: 'first_clear', icon: '🎓', name: '卒業生', desc: '初めてキャラを撃破', cat: '初心者' },
+  // 役系
+  { id: 'win_two_pair', icon: '✌', name: 'ツーペア勝利', desc: 'ツーペアで勝利', cat: '役' },
+  { id: 'win_set',     icon: '🃏', name: 'スリーカード勝利', desc: 'スリーカードで勝利', cat: '役' },
+  { id: 'win_straight',icon: '🪜', name: 'ストレート勝利', desc: 'ストレートで勝利', cat: '役' },
+  { id: 'win_flush',   icon: '🌊', name: 'フラッシュ勝利', desc: 'フラッシュで勝利', cat: '役' },
+  { id: 'win_fh',      icon: '🏛', name: 'フルハウス勝利', desc: 'フルハウスで勝利', cat: '役' },
+  { id: 'win_quads',   icon: '💎', name: 'フォーカード勝利', desc: 'フォーカードで勝利', cat: '役' },
+  { id: 'win_sf',      icon: '⚡', name: 'ストフラ勝利', desc: 'ストレートフラッシュで勝利', cat: '役' },
+  { id: 'win_royal',   icon: '👑', name: '神の手', desc: 'ロイヤルストレートフラッシュで勝利', cat: '役' },
+  { id: 'win_wheel',   icon: '🛞', name: 'ホイール使い', desc: 'A-5ホイールで勝利', cat: '役' },
+  // ドラマ
+  { id: 'suckout',     icon: '✨', name: '神引き', desc: '勝率30%以下から逆転勝利（サックアウト）', cat: 'ドラマ' },
+  { id: 'badbeat',     icon: '💀', name: '不運の犠牲者', desc: '勝率70%以上から逆転負け（バッドビート）', cat: 'ドラマ' },
+  { id: 'cooler',      icon: '🔥', name: '激突！', desc: 'クーラー（両者ストレート以上）に勝利', cat: 'ドラマ' },
+  { id: 'cooler_lose', icon: '🥶', name: '回避不能', desc: 'クーラーで敗北', cat: 'ドラマ' },
+  { id: 'bluff_win',   icon: '🎭', name: 'ブラファー', desc: '勝率40%未満で相手をフォールドさせた', cat: 'ドラマ' },
+  { id: 'rivered',     icon: '🌊', name: 'リバーマジック', desc: 'リバーで勝率が +30 以上上昇して勝利', cat: 'ドラマ' },
+  // プレイスタイル
+  { id: 'allin_win',   icon: '🚀', name: 'オールイン制覇', desc: 'オールインで勝利', cat: 'プレイ' },
+  { id: 'good_fold',   icon: '🛡', name: '損切りの達人', desc: '勝率30%以下で正しくフォールド（10回）', cat: 'プレイ' },
+  { id: 'fold_hero',   icon: '🦸', name: 'ヒーローコール', desc: 'マージナルコールで勝利（5回）', cat: 'プレイ' },
+  // 連続記録
+  { id: 'win_3streak', icon: '🔥', name: '3連勝', desc: '同一対戦で3連勝', cat: '記録' },
+  { id: 'win_5streak', icon: '🔥🔥', name: '5連勝', desc: '同一対戦で5連勝', cat: '記録' },
+  // 通算
+  { id: 'hands_10',   icon: '🎯', name: '10ハンドプレイ', desc: '通算10ハンド', cat: '通算' },
+  { id: 'hands_50',   icon: '🎯🎯', name: '50ハンドプレイ', desc: '通算50ハンド', cat: '通算' },
+  { id: 'hands_100',  icon: '💯', name: '100ハンドプレイ', desc: '通算100ハンド', cat: '通算' },
+  { id: 'wins_10',    icon: '🏆', name: '10勝', desc: '通算10勝', cat: '通算' },
+  { id: 'wins_50',    icon: '🏆🏆', name: '50勝', desc: '通算50勝', cat: '通算' },
+  // 心理・性格
+  { id: 'read_first', icon: '👁', name: '初の読み切り', desc: 'ミミミMAXで相手の性格を読み切った', cat: '心理' },
+  { id: 'read_all',   icon: '🧠', name: '心理マスター', desc: '全キャラの性格を読み切った', cat: '心理' },
+  // 圧倒
+  { id: 'dominate',   icon: '⚡', name: '圧倒勝利', desc: '相手チップを0にして勝利', cat: '圧倒' },
+];
+
+// セーブに achievements を確実に存在させる
+function ensureAchievements() {
+  if (!save.achievements) save.achievements = {};
+  if (!save.achievementStats) save.achievementStats = {
+    totalHands: 0, totalWins: 0, goodFoldCount: 0, heroCallCount: 0, currentStreak: 0,
+  };
+}
+
+// アチーブメント解除
+function unlockAchievement(id) {
+  ensureAchievements();
+  if (save.achievements[id]) return false; // 既に解除済み
+  const ach = ACHIEVEMENTS.find(a => a.id === id);
+  if (!ach) return false;
+  save.achievements[id] = Date.now();
+  saveProgress();
+  showAchievementToast(ach);
+  return true;
+}
+
+function showAchievementToast(ach) {
+  const t = document.createElement('div');
+  t.className = 'achievement-toast';
+  t.innerHTML = `
+    <div class="at-icon">${ach.icon}</div>
+    <div class="at-body">
+      <div class="at-label">🏆 称号獲得</div>
+      <div class="at-name">${ach.name}</div>
+      <div class="at-desc">${ach.desc}</div>
+    </div>
+  `;
+  (document.getElementById('stage') || document.body).appendChild(t);
+  setTimeout(() => t.classList.add('show'), 30);
+  setTimeout(() => t.classList.add('out'), 3500);
+  setTimeout(() => t.remove(), 4200);
+}
+
+// ハンド終了時の達成判定
+function checkHandAchievements(last, ctx) {
+  ensureAchievements();
+  save.achievementStats.totalHands = (save.achievementStats.totalHands || 0) + 1;
+  if (last.winner === 'player') {
+    save.achievementStats.totalWins = (save.achievementStats.totalWins || 0) + 1;
+    save.achievementStats.currentStreak = (save.achievementStats.currentStreak || 0) + 1;
+    unlockAchievement('first_win');
+    // 役別
+    if (last.pEv) {
+      const r = last.pEv.rank;
+      if (r === 2) unlockAchievement('win_two_pair');
+      else if (r === 3) unlockAchievement('win_set');
+      else if (r === 4) {
+        unlockAchievement('win_straight');
+        // ホイール判定
+        if (last.pEv.bestFive) {
+          const ranks = last.pEv.bestFive.map(c => c.rank).sort((a,b) => b-a);
+          if (ranks[0] === 14 && ranks[1] === 5) unlockAchievement('win_wheel');
+        }
+      }
+      else if (r === 5) unlockAchievement('win_flush');
+      else if (r === 6) unlockAchievement('win_fh');
+      else if (r === 7) unlockAchievement('win_quads');
+      else if (r === 8) unlockAchievement('win_sf');
+      else if (r === 9) unlockAchievement('win_royal');
+    }
+  } else if (last.winner === 'opponent') {
+    save.achievementStats.currentStreak = 0;
+  }
+
+  // ドラマ系（エクイティ履歴から）
+  const eq = ctx?.equityHistory || [];
+  if (eq.length >= 2) {
+    const peak = Math.max(...eq.map(e => e.pct));
+    const trough = Math.min(...eq.map(e => e.pct));
+    const lastEq = eq[eq.length - 1].pct;
+    if (last.reason === 'showdown') {
+      if (last.winner === 'player' && trough <= 30) unlockAchievement('suckout');
+      if (last.winner === 'opponent' && peak >= 70) unlockAchievement('badbeat');
+      if (last.pEv?.rank >= 4 && last.oEv?.rank >= 4) {
+        if (last.winner === 'player') unlockAchievement('cooler');
+        else if (last.winner === 'opponent') unlockAchievement('cooler_lose');
+      }
+      // リバーマジック：最後のストリート手前→最後で +30 以上＆勝利
+      if (last.winner === 'player' && eq.length >= 2) {
+        const prev = eq[eq.length - 2].pct;
+        if (lastEq - prev >= 30) unlockAchievement('rivered');
+      }
+    }
+    if (last.reason === 'opponentFold' && lastEq !== undefined && lastEq < 40) {
+      unlockAchievement('bluff_win');
+    }
+    if (last.reason === 'fold' && lastEq !== undefined && lastEq <= 30) {
+      save.achievementStats.goodFoldCount = (save.achievementStats.goodFoldCount || 0) + 1;
+      if (save.achievementStats.goodFoldCount >= 10) unlockAchievement('good_fold');
+    }
+    // ヒーローコール：マージナル（30〜50%）で勝った
+    if (last.reason === 'showdown' && last.winner === 'player' && lastEq >= 30 && lastEq <= 50) {
+      save.achievementStats.heroCallCount = (save.achievementStats.heroCallCount || 0) + 1;
+      if (save.achievementStats.heroCallCount >= 5) unlockAchievement('fold_hero');
+    }
+  }
+
+  // オールイン勝利
+  if (last.winner === 'player' && (ctx?.playerAllInThisHand)) {
+    unlockAchievement('allin_win');
+  }
+
+  // 連続記録
+  const cs = save.achievementStats.currentStreak || 0;
+  if (cs >= 3) unlockAchievement('win_3streak');
+  if (cs >= 5) unlockAchievement('win_5streak');
+
+  // 通算
+  const th = save.achievementStats.totalHands;
+  if (th >= 10) unlockAchievement('hands_10');
+  if (th >= 50) unlockAchievement('hands_50');
+  if (th >= 100) unlockAchievement('hands_100');
+  const tw = save.achievementStats.totalWins;
+  if (tw >= 10) unlockAchievement('wins_10');
+  if (tw >= 50) unlockAchievement('wins_50');
+  saveProgress();
+}
+
 function defaultSave() {
   return {
     version: 1,
@@ -4986,6 +5151,29 @@ function showCollectionModal() {
             ? `<div class="coll-outfits">${outfitsHtml}</div>`
             : `<div class="coll-locked-hint">🔒 ヴェルベット撃破で全衣装＆鑑賞モードが解放されます</div>`}
         </section>
+        ${(() => {
+          ensureAchievements();
+          const unlocked = ACHIEVEMENTS.filter(a => save.achievements[a.id]);
+          const locked   = ACHIEVEMENTS.filter(a => !save.achievements[a.id]);
+          const total = ACHIEVEMENTS.length;
+          const got = unlocked.length;
+          const cardOf = (a, isUnlocked) => `
+            <div class="ach-card ${isUnlocked ? 'on' : 'off'}" title="${a.desc}">
+              <div class="ach-icon">${isUnlocked ? a.icon : '🔒'}</div>
+              <div class="ach-name">${isUnlocked ? a.name : '？？？'}</div>
+              <div class="ach-desc">${isUnlocked ? a.desc : a.cat}</div>
+            </div>
+          `;
+          return `
+            <section class="coll-section">
+              <h3 class="coll-section-title">称号 <span class="coll-section-count">${got}/${total}</span></h3>
+              <div class="ach-grid">
+                ${unlocked.map(a => cardOf(a, true)).join('')}
+                ${locked.map(a => cardOf(a, false)).join('')}
+              </div>
+            </section>
+          `;
+        })()}
       </div>
     </div>
   `;
@@ -6528,7 +6716,13 @@ function resolvePsych(qid, choice, btn) {
     // ミミミ MAX（3勝）達成 → 相手の性格を読み切り、以後この対戦では心理バトル封印
     if (state.zazazo >= state.zazazoMax && !state.opponentPersonalityRevealed) {
       state.opponentPersonalityRevealed = true;
-      // バナー演出
+      unlockAchievement('read_first');
+      // 全キャラ読み切り達成チェック
+      if (!save.readSetByOpp) save.readSetByOpp = {};
+      save.readSetByOpp[state.opponentId] = true;
+      const allOpps = ['polka','selina','grano','velvet'];
+      if (allOpps.every(o => save.readSetByOpp[o])) unlockAchievement('read_all');
+      saveProgress();
       setTimeout(() => showPersonalityRevealBanner(), 600);
     }
     state.mimiThought = `「読めた……！${eff.hint}」`;
@@ -7050,8 +7244,11 @@ function showHandResultBanner(snapshot) {
     </div>
   `;
   (document.getElementById('stage') || document.body).appendChild(tpl);
-  // 履歴保存（リプレイ時はスキップ）
+  // 履歴保存＋アチーブメント判定（リプレイ時はスキップ）
   if (!isReplay) {
+    // playerAllInThisHand 判定：ベットログから推定
+    const playerAllInThisHand = (state.logs?.bets || []).some(b => b.actor === 'player' && b.type === 'allin');
+    checkHandAchievements(last, { equityHistory: equityHistory, playerAllInThisHand });
     if (!state.handHistory) state.handHistory = [];
     state.handHistory.push({
       last: JSON.parse(JSON.stringify(last)),
@@ -7388,7 +7585,10 @@ function endBattle() {
     // クリア記録
     if (!save.clearedStages.includes(state.opponentId)) {
       save.clearedStages.push(state.opponentId);
+      unlockAchievement('first_clear');
     }
+    // 圧倒（相手チップ0で勝利）
+    if (state.opponentChips <= 0) unlockAchievement('dominate');
     // ベストランク・スコア更新
     const rankOrder = ['C','B','A','S','SS'];
     const prevIdx = rankOrder.indexOf(save.bestRanks[state.opponentId] || 'C');
