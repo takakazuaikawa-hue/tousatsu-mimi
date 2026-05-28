@@ -6052,6 +6052,40 @@ html, body {
   30% { opacity: 1; }
   100% { opacity: 0; }
 }
+/* タップヒント（数秒で消える小文字） */
+.cutin-hint {
+  margin-top: 4px;
+  font-size: 10px;
+  color: rgba(220,210,180,0.5);
+  font-style: italic;
+  letter-spacing: 0.1em;
+  animation: cutinHintBlink 1.5s ease-in-out infinite;
+}
+@keyframes cutinHintBlink {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 0.9; }
+}
+
+/* キラキラ（強ベット時の演出） */
+.cutin-sparkle {
+  position: absolute;
+  left: var(--x, 50%);
+  top: var(--y, 50%);
+  width: 8px; height: 8px;
+  pointer-events: none;
+  background: radial-gradient(circle, #fff 0%, rgba(255,215,122,0.8) 40%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0;
+  animation: cutinSparkle 1.6s ease-out infinite;
+  animation-delay: var(--d, 0s);
+}
+@keyframes cutinSparkle {
+  0%   { opacity: 0; transform: scale(0); }
+  20%  { opacity: 1; transform: scale(1.5); }
+  40%  { opacity: 0.9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.4) translate(calc(var(--x, 0px) * 0.1), -20px); }
+}
+
 /* 強度別カットイン演出 */
 .rico-cutin.cutin-strong .cutin-portrait { border-color: var(--c-red-bright); }
 .rico-cutin.cutin-pot .cutin-portrait {

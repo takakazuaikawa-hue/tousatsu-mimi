@@ -8094,20 +8094,26 @@ function showOpponentCutIn(text, betSize) {
   if (activeCutInDismiss) activeCutInDismiss();
   const imgKey = state.opponentImgKey || 'polka';
   const oppName = state.opponentName || '相手';
-  // ベットサイズで強度クラス
   const intensity = betSize === 'allin' ? 'cutin-allin' :
                     betSize === 'pot_1' ? 'cutin-pot' :
                     betSize === 'pot_2_3' ? 'cutin-strong' : '';
   const cut = document.createElement('div');
   cut.className = `rico-cutin opponent-cutin ${intensity}`;
+  // 強度別パーティクル数（allin=多、pot=中、strong=少）
+  const sparkles = (betSize === 'allin') ? 8 : (betSize === 'pot_1') ? 5 : 0;
+  const sparkleHtml = Array.from({ length: sparkles }, (_, i) =>
+    `<span class="cutin-sparkle" style="--d:${i * 0.08}s; --x:${(Math.random() * 80 + 10).toFixed(0)}%; --y:${(Math.random() * 80 + 10).toFixed(0)}%"></span>`
+  ).join('');
   cut.innerHTML = `
     <div class="cutin-flash"></div>
     <div class="cutin-portrait">
       <img src="assets/characters/${imgKey}_default.png" alt="${oppName}" onerror="window.assetFallback(this,'${imgKey}')">
+      ${sparkleHtml}
     </div>
     <div class="cutin-text">
       <div class="cutin-name">${oppName}</div>
       <div class="cutin-line">「${text}」</div>
+      <div class="cutin-hint">タップで閉じる</div>
     </div>
   `;
   document.body.appendChild(cut);
@@ -8116,9 +8122,13 @@ function showOpponentCutIn(text, betSize) {
     if (dismissed) return;
     dismissed = true;
     activeCutInDismiss = null;
+    if (autoDismissTimer) clearTimeout(autoDismissTimer);
     cut.classList.add('cutin-out');
     setTimeout(() => cut.remove(), 500);
   };
+  // 自動消滅：通常 3.5s、オールイン等は 4.5s
+  const autoMs = (betSize === 'allin' || betSize === 'pot_1') ? 4500 : 3500;
+  const autoDismissTimer = setTimeout(dismiss, autoMs);
   cut.addEventListener('click', dismiss);
   activeCutInDismiss = dismiss;
 }
@@ -8147,6 +8157,7 @@ function showMimiCutIn(text, narration) {
       <div class="cutin-name">ミミ</div>
       <div class="cutin-line">「${text}」</div>
       ${narration ? `<div class="cutin-narration">${narration}</div>` : ''}
+      <div class="cutin-hint">タップで閉じる</div>
     </div>
   `;
   document.body.appendChild(cut);
@@ -8155,9 +8166,11 @@ function showMimiCutIn(text, narration) {
     if (dismissed) return;
     dismissed = true;
     activeCutInDismiss = null;
+    if (autoDismissTimer) clearTimeout(autoDismissTimer);
     cut.classList.add('cutin-out');
     setTimeout(() => cut.remove(), 500);
   };
+  const autoDismissTimer = setTimeout(dismiss, 3800);
   cut.addEventListener('click', dismiss);
   activeCutInDismiss = dismiss;
 }
