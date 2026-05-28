@@ -3420,51 +3420,54 @@ function renderSituationAnalysis() {
   }
 
   return `
-    <div class="sit-row sit-row-stacks">
-      <span class="sit-label">スタック比</span>
-      <span class="sit-bar"><span class="sit-bar-fill" style="width:${stackPct}%"></span></span>
-      <span class="sit-value">${myStack} / ${oppStack}</span>
-    </div>
-    <div class="sit-grid">
-      <div class="sit-stat" title="絶対勝率（対ランダム）／実効勝率（ヘッズアップ補正後）">
-        <span class="sit-stat-label">勝率</span>
-        <span class="sit-stat-val">${hsPct}% <small>→${effectivePct}%</small></span>
+    <div class="sit-advice ${adviceClass}">${advice} <small>${sprComment}</small></div>
+    <details class="sit-stats-fold" open>
+      <summary>📊 詳細データ</summary>
+      <div class="sit-row sit-row-stacks">
+        <span class="sit-label">スタック比</span>
+        <span class="sit-bar"><span class="sit-bar-fill" style="width:${stackPct}%"></span></span>
+        <span class="sit-value">${myStack} / ${oppStack}</span>
       </div>
-      <div class="sit-stat">
-        <span class="sit-stat-label">必要勝率</span>
-        <span class="sit-stat-val">${need > 0 ? reqWinRate + '%' : '—'}</span>
+      <div class="sit-grid">
+        <div class="sit-stat" title="絶対勝率（対ランダム）／実効勝率（ヘッズアップ補正後）">
+          <span class="sit-stat-label">勝率</span>
+          <span class="sit-stat-val">${hsPct}% <small>→${effectivePct}%</small></span>
+        </div>
+        <div class="sit-stat">
+          <span class="sit-stat-label">必要勝率</span>
+          <span class="sit-stat-val">${need > 0 ? reqWinRate + '%' : '—'}</span>
+        </div>
+        <div class="sit-stat">
+          <span class="sit-stat-label">SPR</span>
+          <span class="sit-stat-val">${spr}</span>
+        </div>
+        <div class="sit-stat">
+          <span class="sit-stat-label">ポット</span>
+          <span class="sit-stat-val">${pot}</span>
+        </div>
       </div>
-      <div class="sit-stat">
-        <span class="sit-stat-label">SPR</span>
-        <span class="sit-stat-val">${spr}</span>
-      </div>
-      <div class="sit-stat">
-        <span class="sit-stat-label">ポット</span>
-        <span class="sit-stat-val">${pot}</span>
-      </div>
-    </div>
+    </details>
     ${dangerFlags.length ? `<div class="sit-danger">⚠ ボード警戒：${dangerFlags.join(' / ')}</div>` : ''}
+    ${intentHint ? `<div class="sit-intent">🎭 ${intentHint}</div>` : ''}
     ${(() => {
       const a = analyzeDraws();
-      if (!a || !a.draws || a.draws.length === 0) {
-        return '<div class="sit-draws sit-draws-empty">🎯 狙える役：—（現状で固まり）</div>';
-      }
+      if (!a || !a.draws || a.draws.length === 0) return '';
       const ruleLabel = a.cardsLeft === 2 ? 'リバーまで' : '次の1枚で';
       return `
-        <div class="sit-draws">
-          <div class="sit-draws-head">🎯 狙える役 <small>（${ruleLabel}）</small></div>
-          ${a.draws.slice(0, 3).map(d => `
-            <div class="sit-draw-row">
-              <span class="sd-name">${d.name}</span>
-              <span class="sd-outs">${d.outs}枚</span>
-              <span class="sd-pct">${d.pct}%</span>
-            </div>
-          `).join('')}
-        </div>
+        <details class="sit-draws-fold" open>
+          <summary>🎯 狙える役 <small>（${ruleLabel}）</small></summary>
+          <div class="sit-draws">
+            ${a.draws.slice(0, 3).map(d => `
+              <div class="sit-draw-row">
+                <span class="sd-name">${d.name}</span>
+                <span class="sd-outs">${d.outs}枚</span>
+                <span class="sd-pct">${d.pct}%</span>
+              </div>
+            `).join('')}
+          </div>
+        </details>
       `;
     })()}
-    ${intentHint ? `<div class="sit-intent">🎭 ${intentHint}</div>` : ''}
-    <div class="sit-advice ${adviceClass}">${advice} <small>${sprComment}</small></div>
     ${renderSessionStats()}
   `;
 }

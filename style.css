@@ -2505,6 +2505,39 @@ html, body {
 .sd-pct  { color: #fbe28a; font-weight: 700; min-width: 32px; text-align: right; }
 
 /* セッション戦績（折りたたみ） */
+/* sit-stats-fold / sit-draws-fold：戦況パネルの折りたたみ部 */
+.sit-stats-fold, .sit-draws-fold {
+  margin-top: 4px;
+  padding: 4px 0;
+  border-top: 1px dashed rgba(245,215,122,0.2);
+  font-size: 11px;
+}
+.sit-stats-fold summary, .sit-draws-fold summary {
+  cursor: pointer;
+  color: rgba(245,215,122,0.85);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  list-style: none;
+  padding: 2px 0;
+  user-select: none;
+}
+.sit-stats-fold summary::before, .sit-draws-fold summary::before {
+  content: '▶';
+  font-size: 9px;
+  margin-right: 4px;
+  transition: transform 0.2s;
+  color: rgba(245,215,122,0.7);
+  display: inline-block;
+}
+.sit-stats-fold[open] summary::before, .sit-draws-fold[open] summary::before { transform: rotate(90deg); }
+.sit-stats-fold summary::-webkit-details-marker,
+.sit-draws-fold summary::-webkit-details-marker { display: none; }
+.sit-stats-fold summary small, .sit-draws-fold summary small {
+  color: rgba(200,200,200,0.6);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
 .sess-stats {
   margin-top: 6px;
   background: rgba(0,0,0,0.4);
