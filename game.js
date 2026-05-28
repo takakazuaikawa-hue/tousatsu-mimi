@@ -2640,10 +2640,11 @@ function renderStageList() {
         <div class="stage-actions">
           <button class="btn btn-primary" data-action="${isRicoClearChoice ? 'rico-mode-chooser' : 'battle-start'}" data-opponent="${sid}">${
             sid === 'rico_tutorial'
-              ? (cleared ? '対戦／受講' : '受講')
+              ? (cleared ? '対戦／受講' : '📚 受講する')
               : (cleared ? '再戦' : '対戦開始')
           }</button>
-          ${(!cleared) ? `<button class="btn btn-ghost stage-skip" data-action="skip-stage" data-opponent="${sid}" title="${skipStageCost(opp)}コインでスキップしてクリア扱い">⏭ スキップ</button>` : ''}
+          ${(sid === 'rico_tutorial' && !cleared) ? `<button class="btn btn-secondary" data-action="rico-skip-tutorial" title="講義をスキップしていきなりリコ先輩と対戦（チュートリアル経験者向け）">🎲 いきなり対戦</button>` : ''}
+          ${(sid !== 'rico_tutorial' && !cleared) ? `<button class="btn btn-ghost stage-skip" data-action="skip-stage" data-opponent="${sid}" title="${skipStageCost(opp)}コインでスキップしてクリア扱い">⏭ スキップ</button>` : ''}
           ${cleared && EPISODES[sid] ? `<button class="btn btn-ghost stage-recall" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">📜 回想</button>` : ''}
         </div>
       </div>
@@ -4312,6 +4313,12 @@ function onAction(e) {
       break;
     }
     case 'battle-rico-serious': window.__ricoSeriousMode = true; startBattle('rico_tutorial'); break;
+    case 'rico-skip-tutorial': {
+      // 講義を飛ばしていきなりリコ先輩と通常対戦（チュートリアル経験者向け）
+      window.__ricoSkipLecture = true;
+      startBattle('rico_tutorial');
+      break;
+    }
     case 'start-hand':    startHand(); break;
     case 'player-fold':   playerFold(); break;
     case 'player-call':   playerCall(); break;
@@ -5537,7 +5544,11 @@ function startBattle(opponentId) {
   // カードのスライダーで選んだチップ数を採用（即座にバトル開始）
   if (!save.chipChoice) save.chipChoice = {};
   const isSerious = opponentId === 'rico_tutorial' && window.__ricoSeriousMode === true;
-  const isLecture = opponentId === 'rico_tutorial' && !isSerious;
+  const isSkipLecture = opponentId === 'rico_tutorial' && window.__ricoSkipLecture === true;
+  // 講義モード：チュートリアル相手＆本気モードでも「いきなり対戦」モードでもないとき
+  const isLecture = opponentId === 'rico_tutorial' && !isSerious && !isSkipLecture;
+  // フラグは消費したらクリア
+  if (isSkipLecture) window.__ricoSkipLecture = false;
   const base = isSerious ? 2000 : ((OPPONENTS[opponentId]?.chips) || 1000);
   const stored = save.chipChoice[opponentId];
   if (!isLecture) {
@@ -7782,6 +7793,37 @@ function showLectureIntro(onContinue, savedProgress) {
   });
 }
 
+// 章ごとのハンズオン演習：章のキー → 演習データ
+// 「2章ごとに体験を挟む」ことで知識→実戦→知識のサンドイッチに
+const HANDS_ON_AFTER = {
+  2: {
+    title: '実戦演習①：チェックかベットか',
+    situation: 'プリフロップ後、場札 <b>K♦ 8♣ 3♥</b>。<br>あなたの手札 <b>A♠ K♠</b>（トップペア・キッカーA）。<br>相手はチェック。あなたの番。',
+    choices: [
+      { text: '🎯 ベットして主導権を取る', correct: true, hint: 'Kペアでキッカー最強。ベットでバリュー回収＋ドロー潰し' },
+      { text: '🛡 こちらもチェックして次の場札を見る', correct: false, hint: 'もったいない！強い手はベットして稼ぐのが基本' },
+      { text: '❌ フォールド', correct: false, hint: 'なんで！？ Kペアは強い手です' },
+    ],
+  },
+  4: {
+    title: '実戦演習②：相手の大ベットへの対応',
+    situation: '場札 <b>Q♣ 9♣ 5♦ 2♠</b>。<br>あなたの手札 <b>9♥ 9♦</b>（セット）。<br>相手がポット級の大ベットを撃ってきた。',
+    choices: [
+      { text: '🚀 レイズ返し（バリュー最大化）', correct: true, hint: 'セット完成は超強い。相手の大ベットを利用してさらに乗せる' },
+      { text: '✅ コールしてリバーを見る', correct: false, hint: '悪くないが、フラッシュやストレートが完成する前に決着つけるべき' },
+      { text: '⚠ フォールド', correct: false, hint: 'セットを捨てるのはもったいない！' },
+    ],
+  },
+  6: {
+    title: '実戦演習③：ブラフの読み合い',
+    situation: 'リバー：場札 <b>J♦ 7♣ 4♥ 2♠ 8♣</b>。<br>あなたの手札 <b>10♠ 10♦</b>（オーバーペア）。<br>相手がいきなり ＜オールイン＞。<br>相手は普段ブラフが多い性格。',
+    choices: [
+      { text: '🦸 ヒーローコール（ブラフ捕獲狙い）', correct: true, hint: 'ブラフ多めな相手＋自分のオーバーペア。+EVなコール' },
+      { text: '🛡 安全にフォールド', correct: false, hint: '間違いではないが、ブラフ多発派にはコールが+EV' },
+    ],
+  },
+};
+
 function triggerLectureQuestion() {
   if (state.lectureIdx >= LESSON_ORDER.length) {
     finishLecture(false);
@@ -7796,6 +7838,14 @@ function triggerLectureQuestion() {
   // 章タイトルが変わるタイミングで章バナーを表示
   const prevChapter = state.lectureIdx > 0 ? PSYCH_QUESTIONS[LESSON_ORDER[state.lectureIdx - 1]]?.chapter : null;
   if (q.chapter !== prevChapter) {
+    // 前の章が終わった瞬間にハンズオン演習を挿入（同じ演習は1回だけ）
+    if (typeof prevChapter === 'number' && HANDS_ON_AFTER[prevChapter]) {
+      if (!state.lectureHandsOnDone) state.lectureHandsOnDone = {};
+      if (!state.lectureHandsOnDone[prevChapter]) {
+        state.lectureHandsOnDone[prevChapter] = true;
+        return showHandsOnExercise(HANDS_ON_AFTER[prevChapter], () => triggerLectureQuestion());
+      }
+    }
     showChapterBanner(q.chapter, q.chapterTitle, (action) => {
       if (action === 'skip') {
         // この章の問題を全部スキップ
@@ -7813,6 +7863,55 @@ function triggerLectureQuestion() {
   } else {
     doLectureModal(qid);
   }
+}
+
+// ハンズオン演習モーダル（章の区切り）
+function showHandsOnExercise(ex, onClose) {
+  const overlay = document.createElement('div');
+  overlay.className = 'hands-on-overlay';
+  overlay.innerHTML = `
+    <div class="ho-modal">
+      <div class="ho-tag">✋ ハンズオン演習</div>
+      <h2 class="ho-title">${ex.title}</h2>
+      <div class="ho-situation">${ex.situation}</div>
+      <div class="ho-prompt">あなたならどうする？</div>
+      <div class="ho-choices"></div>
+      <div class="ho-feedback" style="display:none;"></div>
+      <div class="ho-actions" style="display:none;">
+        <button class="btn btn-primary ho-next">▶ 講義に戻る</button>
+      </div>
+    </div>
+  `;
+  (document.getElementById('stage') || document.body).appendChild(overlay);
+  const choicesEl = overlay.querySelector('.ho-choices');
+  const feedbackEl = overlay.querySelector('.ho-feedback');
+  const actionsEl = overlay.querySelector('.ho-actions');
+  ex.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'ho-choice-btn';
+    btn.innerHTML = c.text;
+    btn.addEventListener('click', () => {
+      // 全ボタン無効化＋正解／不正解で色付け
+      choicesEl.querySelectorAll('.ho-choice-btn').forEach((b, j) => {
+        b.disabled = true;
+        const ch = ex.choices[j];
+        if (ch.correct) b.classList.add('correct');
+        if (j === i && !ch.correct) b.classList.add('wrong');
+      });
+      // フィードバック
+      feedbackEl.innerHTML = `
+        <div class="ho-result ${c.correct ? 'good' : 'bad'}">${c.correct ? '⭕ 正解！' : '❌ もう一度考えよう'}</div>
+        <div class="ho-hint">${c.hint}</div>
+      `;
+      feedbackEl.style.display = '';
+      actionsEl.style.display = '';
+    });
+    choicesEl.appendChild(btn);
+  });
+  overlay.querySelector('.ho-next').addEventListener('click', () => {
+    overlay.remove();
+    onClose();
+  });
 }
 
 function exitLectureMidway() {

@@ -4576,6 +4576,109 @@ html, body {
   pointer-events: auto;
 }
 
+/* === ハンズオン演習（章間挿入） === */
+.hands-on-overlay {
+  position: absolute; inset: 0;
+  z-index: 88;
+  background: rgba(4,2,10,0.88);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.ho-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 100%;
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(28,12,46,0.97) 0%, rgba(14,6,26,0.99) 100%);
+  border: 2px solid #6dd96d;
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.7), 0 0 32px rgba(109,217,109,0.3);
+  padding: 22px 26px;
+  text-align: center;
+}
+.ho-tag {
+  display: inline-block;
+  padding: 4px 14px;
+  background: linear-gradient(180deg, #8aff9a 0%, #2e7d3a 100%);
+  color: #0a1a10;
+  font-weight: 700;
+  font-size: 12px;
+  border-radius: 999px;
+  letter-spacing: 0.15em;
+  margin-bottom: 12px;
+}
+.ho-title {
+  font-size: 20px;
+  color: #b8ffb8;
+  margin: 0 0 14px;
+  letter-spacing: 0.05em;
+}
+.ho-situation {
+  font-size: 14px;
+  color: #f4e8c8;
+  line-height: 1.65;
+  padding: 12px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+.ho-situation b { color: #fbe28a; font-size: 16px; }
+.ho-prompt {
+  font-size: 14px;
+  color: #fbe28a;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.ho-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ho-choice-btn {
+  padding: 12px 14px;
+  font-size: 14px;
+  background: rgba(40,20,60,0.7);
+  color: #fff;
+  border: 1px solid rgba(245,215,122,0.4);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+.ho-choice-btn:hover:not(:disabled) { background: rgba(80,40,120,0.8); border-color: #fbe28a; }
+.ho-choice-btn:disabled { cursor: default; }
+.ho-choice-btn.correct {
+  background: linear-gradient(180deg, rgba(20,80,40,0.7) 0%, rgba(10,40,20,0.85) 100%);
+  border-color: #8aff9a;
+  color: #b8ffb8;
+}
+.ho-choice-btn.wrong {
+  background: linear-gradient(180deg, rgba(80,20,40,0.7) 0%, rgba(40,10,20,0.85) 100%);
+  border-color: #ff5d7a;
+  color: #ffd0d6;
+  opacity: 0.7;
+}
+.ho-feedback {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-align: left;
+}
+.ho-result {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.ho-result.good { color: #8aff9a; }
+.ho-result.bad  { color: #ff8a9a; }
+.ho-hint {
+  font-size: 13px;
+  color: #f4e8c8;
+  line-height: 1.55;
+}
+.ho-actions { margin-top: 14px; text-align: center; }
+
 /* === アチーブメント／称号 === */
 .achievement-toast {
   position: absolute;
