@@ -219,39 +219,101 @@ html, body {
 
 /* ========== 共通：ボタン ========== */
 .btn {
+  position: relative;
+  overflow: hidden;
   border: 2px solid var(--c-gold);
-  border-radius: 8px;
-  padding: 10px 22px;
+  border-radius: 10px;
+  padding: 11px 22px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   background: linear-gradient(180deg, var(--c-purple) 0%, var(--c-bg-mid) 100%);
   color: var(--c-text);
-  transition: transform 0.08s, box-shadow 0.15s, filter 0.15s;
+  /* スマホタッチ対応：44px 以上のタップエリア */
+  min-height: 44px;
+  min-width: 44px;
+  /* タップ反応強化：素早く反応、戻りはふんわり */
+  transition: transform 0.08s cubic-bezier(0.5, 0, 0.5, 1),
+              box-shadow 0.15s ease,
+              filter 0.15s ease,
+              background 0.15s ease;
   font-family: inherit;
   letter-spacing: 0.05em;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+  /* 内側に薄いハイライトで「持ち上がってる」感 */
+  box-shadow:
+    0 2px 0 rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.18);
 }
 .btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(217,179,90,0.35);
+  box-shadow:
+    0 6px 16px rgba(217,179,90,0.45),
+    0 2px 0 rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.22);
   filter: brightness(1.12);
 }
-.btn:active:not(:disabled) { transform: translateY(0); }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn:active:not(:disabled) {
+  transform: translateY(2px) scale(0.98);
+  box-shadow:
+    0 0 0 rgba(0,0,0,0.45),
+    inset 0 1px 6px rgba(0,0,0,0.4),
+    inset 0 0 0 1px rgba(245,215,122,0.4);
+  filter: brightness(0.94);
+}
+.btn:focus-visible {
+  outline: 3px solid rgba(245,215,122,0.6);
+  outline-offset: 2px;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.3);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+/* タップ時のリップル波紋（疑似要素） */
+.btn:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 60%);
+  opacity: 0;
+  transform: scale(0.4);
+  pointer-events: none;
+  transition: opacity 0.4s, transform 0.4s;
+}
+.btn:not(:disabled):active::after {
+  opacity: 0.6;
+  transform: scale(1);
+  transition: opacity 0.05s, transform 0.05s;
+}
 
 .btn-primary {
-  background: linear-gradient(180deg, var(--c-red) 0%, #7a1525 100%);
+  background: linear-gradient(180deg, #c8253a 0%, #7a1525 100%);
   border-color: var(--c-gold-bright);
   color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #e02e44 0%, #8c1828 100%);
 }
 .btn-secondary {
   background: linear-gradient(180deg, var(--c-purple-light) 0%, var(--c-purple) 100%);
 }
 .btn-ghost {
-  background: rgba(0,0,0,0.35);
-  border-color: var(--c-text-dim);
+  background: rgba(0,0,0,0.4);
+  border-color: rgba(245,215,122,0.45);
+  color: var(--c-text);
   font-size: 14px;
   padding: 6px 14px;
+  min-height: 40px;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(40,20,60,0.65);
+  border-color: var(--c-gold-bright);
 }
 
 /* ========== 共通：画面 ========== */
@@ -5179,16 +5241,36 @@ html, body {
   font-size: 14px;
   line-height: 1.2;
   min-width: 0;
+  min-height: 56px; /* スマホタップ快適 */
 }
 .action-slot:disabled {
-  opacity: 0.3;
+  opacity: 0.32;
   cursor: not-allowed;
+  filter: grayscale(0.4);
 }
-.action-slot .slot-label { font-size: 14px; font-weight: 600; }
+.action-slot .slot-label { font-size: 15px; font-weight: 700; letter-spacing: 0.03em; }
 .action-slot small { font-size: 11px; opacity: 0.85; margin-top: 2px; display: block; }
-/* 旧small構造は slot-sub に置換済み */
-.action-area .btn.big { padding: 14px 36px; font-size: 19px; min-width: 200px; letter-spacing: 0.2em; }
-.action-area .btn.primary-action { box-shadow: 0 0 0 2px var(--c-gold-bright) inset; }
+.action-area .btn.big {
+  padding: 16px 36px;
+  font-size: 20px;
+  min-width: 200px;
+  min-height: 56px;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+}
+/* プライマリアクション（コール／チェック）：金縁＋ほのかな発光 */
+.action-area .btn.primary-action {
+  box-shadow:
+    0 0 0 2px var(--c-gold-bright) inset,
+    0 0 16px rgba(245,215,122,0.4),
+    0 2px 0 rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+  animation: actionPrimaryPulse 2s ease-in-out infinite;
+}
+@keyframes actionPrimaryPulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--c-gold-bright) inset, 0 0 14px rgba(245,215,122,0.35), 0 2px 0 rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.22); }
+  50%      { box-shadow: 0 0 0 2px var(--c-gold-bright) inset, 0 0 24px rgba(245,215,122,0.65), 0 2px 0 rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.22); }
+}
 .action-area .status-note { color: var(--c-gold-bright); font-size: 16px; font-style: italic; }
 .action-area .status-note.dim { color: var(--c-text-dim); }
 

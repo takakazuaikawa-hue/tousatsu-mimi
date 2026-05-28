@@ -4196,6 +4196,10 @@ function bindActions() {
 function onAction(e) {
   const action = e.currentTarget.dataset.action;
   const data = { ...e.currentTarget.dataset };
+  // スマホ：軽い触覚フィードバック（連打用に短く）
+  if (navigator.vibrate) {
+    try { navigator.vibrate(12); } catch(_) {}
+  }
   // 任意のアクションでカットインを閉じる
   dismissCutIn();
   switch (action) {
