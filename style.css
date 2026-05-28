@@ -626,6 +626,39 @@ html, body {
   box-shadow: 0 0 24px rgba(245,215,122,0.5);
   transform: translateY(-2px);
 }
+/* 購入済みアイテムの見た目を明確に */
+.shop-item.owned {
+  background: linear-gradient(180deg, rgba(40,60,30,0.6) 0%, rgba(15,25,15,0.85) 100%);
+  border-color: rgba(138,255,154,0.6);
+}
+.shop-item.owned::before {
+  content: '✓ 所持中';
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: linear-gradient(180deg, #8aff9a 0%, #2e7d3a 100%);
+  color: #0a1a10;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.1em;
+}
+.shop-item { position: relative; }
+/* ロック中アイテム：未開放表示 */
+.shop-item.locked::before {
+  content: '🔒 ロック中';
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: rgba(60,60,70,0.85);
+  color: rgba(220,220,220,0.8);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.1em;
+}
 .shop-item.owned {
   opacity: 0.55;
   filter: grayscale(0.4);
@@ -1530,11 +1563,29 @@ html, body {
 }
 .lobby-stage-list .stage-card.boss-stage .stage-portrait {
   border-color: var(--c-red-bright);
-  box-shadow: inset 0 0 16px rgba(200,37,58,0.5);
+  box-shadow: inset 0 0 16px rgba(200,37,58,0.5), 0 0 16px rgba(200,37,58,0.4);
+}
+.lobby-stage-list .stage-card.recommended {
+  /* おすすめステージ全体を金色オーラで強調 */
+  position: relative;
+}
+.lobby-stage-list .stage-card.recommended::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245,215,122,0.6), rgba(245,215,122,0));
+  z-index: -1;
+  animation: stageRecommendPulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes stageRecommendPulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.9; }
 }
 .lobby-stage-list .stage-card.recommended .stage-portrait {
   border-color: var(--c-gold-bright);
-  box-shadow: 0 0 12px rgba(245,215,122,0.5);
+  box-shadow: 0 0 18px rgba(245,215,122,0.6);
 }
 .lobby-stage-list .stage-card .stage-number { font-size: 11px; letter-spacing: 0.2em; color: var(--c-gold); }
 .lobby-stage-list .stage-card .stage-name {
