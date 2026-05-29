@@ -187,6 +187,16 @@ function defaultSave() {
     unlockedNotes: ['bluff_basic'],
     equippedCardSkin: 'default',
     equippedTableSkin: 'default',
+    equippedRicoOutfit: 'default',
+    equippedChipSkin: 'default',
+    equippedMimiSkin: 'default',
+    equippedCutin: 'default',
+    equippedBgmLobby: 'default',
+    equippedBgmBattle: 'default',
+    equippedSePack: 'default',
+    extraInitialChips: 0,        // chips_plus_* 累積
+    panyuComboMultiplier: 1,     // panyu_combo_x2 で 2
+    panyuChronoBonus: 1.0,       // panyu_chrono で 1.5
     panyuGaugeMax: 100,
     panyuSkills: { senseLevel: 1, rangeLevel: 1, breakLevel: 0 },
     panyuSenseFreeUsed: false,
@@ -2159,18 +2169,96 @@ function renderTemplate(id) {
   app.appendChild(tpl.content.cloneNode(true));
 }
 
+/* ===== ゲーム紹介モーダル（タイトルから） ===== */
+function showAboutModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'memory-viewer-overlay';
+  overlay.innerHTML = `
+    <div class="memory-viewer">
+      <button class="memory-viewer-close" title="閉じる">×</button>
+      <div class="memory-viewer-title">📖 闘札圧倒伝ミミ について</div>
+      <div class="memory-viewer-body">
+        <p style="font-size:16px; text-align:center; color:var(--c-gold-bright); margin-bottom:16px;">
+          夜霧のカジノ、伝説の闘札。<br>直感の少女が、絶対王者に挑む。
+        </p>
+        <h4>🎴 ジャンル</h4>
+        <p>本格テキサスホールデムを土台にした、心理戦ポーカー・ノベルゲーム。</p>
+        <h4>💭 戦闘システム</h4>
+        <p>札の強さだけでは勝てない。相手のセリフから「本心」を読む心理バトル、ポットオッズ・アウツを計算する論理バトル、直感を発動する「ぱにゅぱにゅ」の三本柱で勝負。</p>
+        <h4>📓 初心者にも安心</h4>
+        <p>リコ先輩による全8章24問の講義モード搭載。ポーカー未経験でも、用語集・ハンズオン演習で段階的に強くなれる。</p>
+        <h4>🛍 やり込み要素</h4>
+        <p>56種の交換所アイテム（衣装10着・カード裏・テーブル・寸劇・ボイス集）、28種のトロフィー、過去20ハンドの振り返り、裏モード解放。</p>
+        <h4>📱 動作環境</h4>
+        <p>ブラウザだけで遊べる。インストール不要、無料。PC・スマホ横向き両対応。</p>
+        <h4>⏱ プレイ時間</h4>
+        <p>1勝あたり約3分。全クリアまで30〜60分。やり込めば数時間。</p>
+        <h4>🎯 こんな人におすすめ</h4>
+        <ul>
+          <li>ポーカーを始めてみたいけど、ルールがよく分からない</li>
+          <li>キャラクターと駆け引きする心理戦が好き</li>
+          <li>短時間で1本クリアできる骨太なゲームを探している</li>
+          <li>可愛いキャラと毒のあるストーリーが好き</li>
+        </ul>
+        <p style="text-align:center; margin-top:20px; opacity:0.7; font-size:13px;">
+          — リコ先輩より「ふぅん、いいわよ。やってみなさい」
+        </p>
+      </div>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+  overlay.querySelector('.memory-viewer-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
+/* ===== ゲームシェア ===== */
+function shareGame() {
+  const url = 'https://takakazuaikawa-hue.github.io/tousatsu-mimi/';
+  const title = '闘札圧倒伝ミミ';
+  const text = '夜霧のカジノで本格心理戦ポーカー。ブラウザで無料で遊べる！';
+  // Web Share API 優先（スマホ）
+  if (navigator.share) {
+    navigator.share({ title, text, url }).catch(() => {});
+    return;
+  }
+  // フォールバック：URLコピー＋Twitter共有窓
+  const shareText = `${text}\n${url}`;
+  // クリップボードにコピー
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(shareText).then(() => {
+      toast('📋 URLをコピーしました');
+    }).catch(() => {});
+  }
+  // Twitter共有ウィンドウ
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=闘札圧倒伝ミミ`;
+  window.open(twitterUrl, '_blank', 'width=600,height=400');
+}
+
 function applyTitleButtons() {
   const el = document.querySelector('[data-bind="titleButtons"]');
   if (!el) return;
   const hasSave = save.clearedStages.length > 0 || save.coins > 0;
   if (hasSave) {
+    const cleared = save.clearedStages.filter(s => s !== 'rico_tutorial').length;
+    const totalStages = 4; // polka, selina, grano, velvet
+    const ending = !!save.endingUnlocked;
     el.innerHTML = `
-      <button class="btn btn-primary" data-action="start">続きから</button>
+      <button class="btn btn-primary" data-action="start">
+        <span class="title-btn-main">続きから</span>
+        <span class="title-btn-sub">${ending ? '✦ クリア後の世界へ ✦' : `Stage ${cleared + 1} / ${totalStages}`}</span>
+      </button>
       <button class="btn btn-ghost" data-action="new-game">新しく始める</button>
-      <div class="title-save-info">セーブ：クリア ${save.clearedStages.length}件 / ${save.coins}コイン所持</div>
+      <div class="title-save-info">
+        🏆 クリア ${cleared}/${totalStages} ｜ 💰 ${save.coins}コイン ｜ 🎁 ${(save.ownedItems||[]).length}個所持${ending ? ' ｜ ✨ ENDING' : ''}
+      </div>
     `;
   } else {
-    el.innerHTML = `<button class="btn btn-primary" data-action="start">はじめから</button>`;
+    el.innerHTML = `
+      <button class="btn btn-primary" data-action="start">
+        <span class="title-btn-main">はじめから</span>
+        <span class="title-btn-sub">FREE · ブラウザで遊べる</span>
+      </button>
+    `;
   }
 }
 
@@ -2321,6 +2409,12 @@ function applyBindings() {
       case 'actionArea': renderActionArea(el); break;
       case 'coins': el.textContent = state.coinsEarned || 0; break;
       case 'saveCoins': el.textContent = save.coins; break;
+      case 'lobbyShopNewBadge': {
+        const n = newItemCount();
+        if (n > 0) { el.textContent = n; el.style.display = ''; }
+        else       { el.style.display = 'none'; }
+        break;
+      }
       case 'stageList':
         el.innerHTML = renderStageList();
         el.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
@@ -2771,11 +2865,20 @@ const RICO_TRIVIA = {
 };
 
 function pickLobbyRico() {
-  // クリア前は常に制服（rico_default）固定。クリア後にランダムローテーション解放
+  // クリア前は常に制服（rico_default）固定。クリア後はユーザー装備優先＞ランダム
   const cleared = save.clearedStages && save.clearedStages.includes('velvet');
   if (!cleared) {
     state.lobbyRicoIndex = 0;
     return RICO_OUTFITS[0];
+  }
+  // 装備が 'default' 以外なら、装備IDで固定（クリア後の自由着替え）
+  const equipped = save && save.equippedRicoOutfit;
+  if (equipped && equipped !== 'default') {
+    const found = RICO_OUTFITS.find(o => outfitIdFor(o.file) === equipped);
+    if (found) {
+      state.lobbyRicoIndex = RICO_OUTFITS.indexOf(found);
+      return found;
+    }
   }
   // セッションごとに変える（ロビー表示時に1回決める）
   if (state.lobbyRicoIndex == null || state.lobbyRicoChangedAt !== state.screen) {
@@ -2783,6 +2886,10 @@ function pickLobbyRico() {
     state.lobbyRicoChangedAt = state.screen;
   }
   return RICO_OUTFITS[state.lobbyRicoIndex];
+}
+// ファイル名 → 装備ID 変換（rico_kimono.png → 'kimono'）
+function outfitIdFor(file) {
+  return file.replace(/^rico_/, '').replace(/\.png$/, '');
 }
 function isRicoViewerUnlocked() {
   return save.clearedStages && save.clearedStages.includes('velvet');
@@ -2846,10 +2953,9 @@ function showSettingsModal() {
       </div>
       <div class="settings-modal-note">※チュートリアル（講義）モード中は<br>これらの設定を無視して常時ONになります</div>
       <div class="settings-modal-divider"></div>
-      ${save.ownedItems && save.ownedItems.includes('trophy_unlock')
-        ? `<button class="btn btn-secondary settings-modal-trophy" data-action="open-collection">🏆 トロフィーを開く</button>`
-        : `<button class="btn btn-ghost settings-modal-trophy locked" disabled title="交換所「知識ノート」枠で購入できます">🔒 トロフィー手帳（交換所で解放）</button>`}
+      <button class="btn btn-secondary settings-modal-trophy" data-action="open-collection">🏆 トロフィー手帳を開く</button>
       <button class="btn btn-secondary settings-modal-trophy" data-action="open-glossary">📖 ポーカー辞典を開く</button>
+      <button class="btn btn-secondary settings-modal-trophy" data-action="equip-change">👗 装備変更</button>
       <button class="btn btn-primary settings-modal-close">閉じる</button>
     </div>
   `;
@@ -2930,7 +3036,6 @@ const SHOP_ITEMS = [
   { id: 'note_board_danger',   cat: 'note',  name: 'ボード危険度メモ',         price: 250, desc: '場札がフラッシュ/ストレート注意の時、ミミ思考に表示される' },
   { id: 'note_pot_odds',       cat: 'note',  name: 'ポットオッズ入門',         price: 350, desc: 'コール判断時に「割に合う/合わない」目安を表示' },
   { id: 'note_bet_size',       cat: 'note',  name: 'ベットサイズ講座',         price: 300, desc: 'ベットボタンの説明が詳しくなる' },
-  { id: 'trophy_unlock',       cat: 'note',  name: '🏆 トロフィー手帳',         price: 200, desc: '達成状況・収集物・解放実績を一覧できる手帳。設定メニューから開けるようになる' },
   { id: 'skin_red_gold_card',  cat: 'skin',  name: '赤金カジノカード',         price: 300, desc: 'カード裏デザインを赤金カジノ風に変更' },
   { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 500, desc: 'テーブル背景をVIP風に変更' },
   { id: 'memory_ending',       cat: 'memory', name: 'エンディング映像',        price: 500, desc: 'クリア後限定。あの感動のエンディングを何度でも視聴可能に', requires: 'ending' },
@@ -2939,6 +3044,69 @@ const SHOP_ITEMS = [
   { id: 'chips_plus_1500', cat: 'stack', name: '初期チップ +1500', price: 1000, desc: 'さらに+1500（累積+2000）。長期戦に' },
   { id: 'chips_plus_3000', cat: 'stack', name: '初期チップ +3000', price: 2200, desc: 'さらに+3000（累積+5000）。腰を据えて' },
   { id: 'chips_plus_5000', cat: 'stack', name: '初期チップ +5000', price: 4500, desc: 'さらに+5000（累積+10000）。徹夜戦' },
+
+  /* ===== 追加：ぱにゅ強化（中盤以降の差別化） ===== */
+  { id: 'panyu_combo_x2',      cat: 'panyu', name: 'ぱにゅコンボ倍率',        price: 700,  desc: 'ぷにぷにミニゲームのCOMBOボーナス獲得コインが2倍に' },
+  { id: 'panyu_sense_lv3',     cat: 'panyu', name: 'ぱにゅぱにゅLv3',         price: 1200, desc: '心理バトルのハズレ選択肢を2つグレーアウト（要Lv2）' },
+  { id: 'panyu_range_lv3',     cat: 'panyu', name: 'ぱにゅレンジLv3',         price: 1400, desc: '相手のレンジ表示に「ブラフ確率」付き（要Lv2）' },
+  { id: 'panyu_chrono',        cat: 'panyu', name: 'ぱにゅクロノ',             price: 1600, desc: '1バトルにつき1回、ぱにゅぱにゅをコイン消費せず追加発動できる' },
+  { id: 'panyu_gauge_plus_50', cat: 'panyu', name: 'ぱにゅゲージ上限+50',      price: 2200, desc: 'ぱにゅゲージの最大値が120→170に（要上限+20）' },
+
+  /* ===== 追加：戦術ノート ===== */
+  { id: 'note_position',       cat: 'note',  name: 'ポジション講座',           price: 350,  desc: 'BTN/BB等のポジション解説をミミ思考に表示' },
+  { id: 'note_outs',           cat: 'note',  name: 'アウツ計算術',             price: 400,  desc: 'ドロー時に「あと何枚で完成」をリアルタイム表示' },
+  { id: 'note_tell',           cat: 'note',  name: '相手の癖メモ',             price: 500,  desc: '対戦相手の傾向（攻撃的/受け身/ブラフ多）が事前に分かる' },
+  { id: 'note_bankroll',       cat: 'note',  name: 'バンクロール管理',         price: 450,  desc: 'コイン獲得効率が+10%。ハンドリザルトにも収支表示' },
+  { id: 'note_equity',         cat: 'note',  name: 'エクイティ早見表',         price: 600,  desc: '結果モーダルのエクイティ推移グラフが詳細化' },
+
+  /* ===== 追加：見た目（着替え・カード/テーブル/チップ・差分） ===== */
+  /* リコ先輩の衣装（既存 RICO_OUTFITS のファイル名と一致するIDで管理） */
+  { id: 'outfit_rico_pajama',   cat: 'skin',  name: '👗 リコ・パジャマ',     price: 600,  desc: 'リコ先輩の衣装：寝起き感のあるパジャマ姿。装備変更から着替え可能' },
+  { id: 'outfit_rico_dress',    cat: 'skin',  name: '👗 リコ・ドレス',       price: 800,  desc: 'リコ先輩の衣装：VIPルーム仕様のドレス姿' },
+  { id: 'outfit_rico_kimono',   cat: 'skin',  name: '👘 リコ・和装',         price: 1000, desc: 'リコ先輩の衣装：粋な和装。しっとりとした風情' },
+  { id: 'outfit_rico_casual',   cat: 'skin',  name: '🛍 リコ・私服',         price: 700,  desc: 'リコ先輩の衣装：オフの日の私服姿' },
+  { id: 'outfit_rico_school',   cat: 'skin',  name: '🎒 リコ・学生風',       price: 900,  desc: 'リコ先輩の衣装：先輩感のある学生風制服' },
+  { id: 'outfit_rico_bunny',    cat: 'skin',  name: '🐰 リコ・バニー',       price: 1500, desc: 'リコ先輩の衣装：カジノクイーン仕様のバニーガール' },
+  { id: 'outfit_rico_gym',      cat: 'skin',  name: '💪 リコ・ジム服',       price: 700,  desc: 'リコ先輩の衣装：鍛えてる最近のジム服' },
+  { id: 'outfit_rico_swimsuit', cat: 'skin',  name: '🏖 リコ・水着',         price: 1500, desc: 'リコ先輩の衣装：夏限定の水着姿。クリア後解放', requires: 'ending' },
+  { id: 'outfit_rico_witch',    cat: 'skin',  name: '🧙 リコ・魔女',         price: 1200, desc: 'リコ先輩の衣装：ハロウィン気分の魔女姿' },
+  { id: 'outfit_rico_santa',    cat: 'skin',  name: '🎅 リコ・サンタ',       price: 1200, desc: 'リコ先輩の衣装：メリクリ仕様のサンタ姿' },
+  /* カード裏 */
+  { id: 'skin_blue_silver_card', cat: 'skin',  name: '🂠 蒼銀カード',          price: 400,  desc: 'カード裏：氷のように冷たい蒼銀デザイン' },
+  { id: 'skin_obsidian_card',    cat: 'skin',  name: '🂠 漆黒カード',          price: 500,  desc: 'カード裏：闇に紋様が浮かぶ漆黒デザイン' },
+  { id: 'skin_floral_card',      cat: 'skin',  name: '🂠 花鳥カード',          price: 450,  desc: 'カード裏：和の花鳥が舞う雅な意匠' },
+  { id: 'skin_galaxy_card',      cat: 'skin',  name: '🂠 銀河カード',          price: 700,  desc: 'カード裏：星雲がうごめく宇宙意匠（要クリア）', requires: 'ending' },
+  /* テーブル */
+  { id: 'table_emerald',         cat: 'skin',  name: '🟢 エメラルド卓',        price: 600,  desc: 'テーブル：深いエメラルドグリーンの正統派' },
+  { id: 'table_neon',            cat: 'skin',  name: '💜 ネオン卓',            price: 800,  desc: 'テーブル：ネオン光が走る近未来仕様' },
+  { id: 'table_speakeasy',       cat: 'skin',  name: '🥃 スピークイージー卓',  price: 900,  desc: 'テーブル：20年代風の隠れバー。木目と真鍮' },
+  /* チップ */
+  { id: 'chip_skin_ivory',       cat: 'skin',  name: '🪙 アイボリーチップ',    price: 500,  desc: 'チップ意匠：象牙風の高級感' },
+  { id: 'chip_skin_jade',        cat: 'skin',  name: '🪙 翡翠チップ',          price: 700,  desc: 'チップ意匠：翡翠細工のような艶やかさ' },
+  { id: 'chip_skin_dragon',      cat: 'skin',  name: '🪙 龍紋チップ',          price: 1100, desc: 'チップ意匠：龍が巻き付いた重厚デザイン' },
+  /* ミミ（ぱにゅ）の見た目 */
+  { id: 'mimi_skin_pink',        cat: 'skin',  name: '🐰 ミミ・桃色',          price: 400,  desc: 'ぱにゅぱにゅミニゲームのミミが桃色に' },
+  { id: 'mimi_skin_panda',       cat: 'skin',  name: '🐼 ミミ・パンダ柄',      price: 600,  desc: 'ぱにゅぱにゅミニゲームのミミがパンダ柄に' },
+  { id: 'mimi_skin_gold',        cat: 'skin',  name: '🌟 ミミ・黄金',          price: 1500, desc: 'ぱにゅぱにゅミニゲームのミミが黄金色に。クリア後限定', requires: 'ending' },
+  /* カットイン演出 */
+  { id: 'cutin_classic',         cat: 'skin',  name: '✨ カットイン・古典派',  price: 700,  desc: '心理バトル発動時のカットインが集中線＆モノクロ調に' },
+  { id: 'cutin_neon',            cat: 'skin',  name: '✨ カットイン・ネオン',  price: 700,  desc: '心理バトル発動時のカットインが派手なネオン光線に' },
+
+  /* ===== 追加：チップ拡張 ===== */
+  { id: 'chips_plus_10000',      cat: 'stack', name: '初期チップ +10000',      price: 8000, desc: 'さらに+10000（累積+20000）。VIPルーム仕様' },
+
+  /* ===== 追加：メモリ（お楽しみ） ===== */
+  { id: 'bgm_lobby_jazz',        cat: 'memory', name: '🎷 BGM「夜のジャズ」',   price: 350,  desc: 'ロビーBGMをしっとりジャズに切替可能' },
+  { id: 'bgm_battle_tense',      cat: 'memory', name: '🎻 BGM「緊迫の弦楽」',  price: 350,  desc: 'バトルBGMを緊張感ある弦楽四重奏に' },
+  { id: 'bgm_battle_techno',     cat: 'memory', name: '🎧 BGM「電脳テクノ」',  price: 500,  desc: 'バトルBGMをサイバーテクノに' },
+  { id: 'se_pack_casino',        cat: 'memory', name: '🔔 SEパック「カジノ」', price: 400,  desc: 'チップ音・カード音をリアル寄りに変更' },
+  { id: 'gallery_rico',          cat: 'memory', name: '🖼 リコ先輩設定資料',    price: 600,  desc: 'リコ先輩のキャラ設定画・没デザインを閲覧可能' },
+  { id: 'gallery_opponents',     cat: 'memory', name: '🖼 対戦相手図鑑',        price: 800,  desc: '対戦したキャラの設定資料・口癖集を閲覧可能（撃破した者のみ）' },
+  { id: 'gallery_mimi',          cat: 'memory', name: '🖼 ミミ百態',            price: 500,  desc: 'ぱにゅぱにゅミニゲームの全表情・全モーションを鑑賞可能' },
+  { id: 'omake_drama_1',         cat: 'memory', name: '🎭 おまけ寸劇「初出勤」', price: 600,  desc: 'リコ先輩がカジノに初出勤した日の小話を視聴' },
+  { id: 'omake_drama_2',         cat: 'memory', name: '🎭 おまけ寸劇「対決前夜」', price: 700, desc: 'ヴェルベット戦前夜のリコと主人公の小話。クリア後', requires: 'ending' },
+  { id: 'omake_voice_pack',      cat: 'memory', name: '🎙 リコ先輩ボイス集',    price: 900,  desc: '勝利・敗北・煽り等のセリフ集を自由再生' },
+  { id: 'omake_credit',          cat: 'memory', name: '📜 スタッフロール再生',  price: 200,  desc: 'スタッフクレジットをいつでも再生可能。クリア後', requires: 'ending' },
 ];
 
 const SHOP_COMMENTS = {
@@ -2948,7 +3116,6 @@ const SHOP_COMMENTS = {
   note_board_danger:   '危険信号を教える、いわば早期警戒装置ですな。セリナさん戦の前に揃えると、ずいぶん楽ですよ',
   note_pot_odds:       'ふふ、私の専門分野ですな。「安いか、高いか」が即座に見える品。私との商談で必要になりますよ',
   note_bet_size:       'ベットの作法をおさらいできる、初心者向けの基礎教材です。お得ですよ',
-  trophy_unlock:       'お嬢さんの足跡を綴る一冊、いかがです？　達成項目から集めた品まで、一覧できる手帳ですよ',
   skin_red_gold_card:  '見た目重視のお嬢さんに。テーブルが華やぎますよ',
   table_vip:           'VIPのお客様気分でお楽しみいただける一品。気分転換にぜひ',
   memory_ending:       'これは特別な品ですよ。あの夜の決着を、何度でも振り返れる映像です',
@@ -2957,16 +3124,259 @@ const SHOP_COMMENTS = {
   chips_plus_1500: 'さらに+1500。腰を据えた読み合いができますよ',
   chips_plus_3000: '+3000ともなれば、本格的なロングゲーム。プロの卓ですな',
   chips_plus_5000: '+5000……ふふ、これはもう徹夜の準備が必要ですな',
+
+  /* 追加：ぱにゅ強化 */
+  panyu_combo_x2:      'コンボを繋ぐ快感、倍にしませんか？　ぷにぷにが止まらなくなりますよ',
+  panyu_sense_lv3:     'Lv3、これはもう「ほぼ答え」が見える領域です。中級を超えたい方に',
+  panyu_range_lv3:     'ブラフの匂いまで嗅ぎ分ける逸品。ヴェルベット様には……必要かもしれませんな',
+  panyu_chrono:        'もう一度だけ「ぱにゅっ」と。1バトルに1度、無料で発動できる特権ですよ',
+  panyu_gauge_plus_50: '上限170、もはや別格。長丁場の決戦で物を言いますよ',
+
+  /* 追加：戦術ノート */
+  note_position:       'ポジション、これは知っているだけで勝率が変わる魔法のような知識です',
+  note_outs:           'あと何枚で完成するか――数えるのは存外、難しいもの。任せてしまいましょう',
+  note_tell:           '相手の癖を先に知る。これほど卑怯で、これほど合法な武器はありませんな',
+  note_bankroll:       '稼ぐ者は管理する。コイン効率と収支管理、両方ついてお買い得',
+  note_equity:         'グラフを読める者だけが、運と実力を切り分けられるのですよ',
+
+  /* 追加：見た目（衣装） */
+  outfit_rico_pajama:   '寝起きのリコさん。生活感のある一着、いかがです？',
+  outfit_rico_dress:    'VIPルーム仕様のドレス。決める夜に必須ですな',
+  outfit_rico_kimono:   '和装のリコさん。粋を解する方にこそ薦めたい一着ですよ',
+  outfit_rico_casual:   'オフのリコさん。普段着でくつろぐ姿、貴重ですな',
+  outfit_rico_school:   '学生風の制服姿。先輩感、いかがです？',
+  outfit_rico_bunny:    'バニーガール。カジノの花、ここに極まれり',
+  outfit_rico_gym:      'ジム服のリコさん。鍛えた姿、見惚れますよ',
+  outfit_rico_swimsuit: '水着姿……いえ、私は何も申しません。ご自身でご確認を',
+  outfit_rico_witch:    '魔女のリコさん。ハロウィン気分で一杯',
+  outfit_rico_santa:    'サンタのリコさん。聖夜のサプライズ、いかがです？',
+  /* カード裏 */
+  skin_blue_silver_card: '蒼と銀。冷静を装いたい夜にどうぞ',
+  skin_obsidian_card:    '漆黒の品格。プロの卓に紛れ込みたい時に',
+  skin_floral_card:      '花鳥風月、和の意匠。雅な勝負を演出します',
+  skin_galaxy_card:      '銀河を手札に。クリアされた方への特別な品ですよ',
+  /* テーブル */
+  table_emerald:         '正統派のエメラルド。これぞ「カジノ」という風格を',
+  table_neon:            'ネオン光る卓。気分を一新したい夜に',
+  table_speakeasy:       '禁酒法時代の隠れバー風。木目と真鍮、いかがです？',
+  /* チップ */
+  chip_skin_ivory:       '象牙の色合い、手触りは想像でお楽しみを',
+  chip_skin_jade:        '翡翠の艶。卓上で映えますよ',
+  chip_skin_dragon:      '龍紋の重み。財を引き寄せる縁起物、と言われております',
+  /* ミミの見た目 */
+  mimi_skin_pink:        'ミミちゃんも、たまには違う色を。桃色、可愛らしいでしょう？',
+  mimi_skin_panda:       'パンダ柄のミミちゃん。意外性で笑いを誘いますな',
+  mimi_skin_gold:        '黄金のミミちゃん。クリアされた方だけの特別仕様です',
+  /* カットイン */
+  cutin_classic:         '古典派の集中線。漫画の世界に飛び込んだ気分で',
+  cutin_neon:            'ネオン光線のカットイン。派手好きな方にこそ',
+
+  /* チップ拡張 */
+  chips_plus_10000:      '+10000、もはやVIPルーム仕様。一晩中遊べる量ですな',
+
+  /* メモリ（お楽しみ） */
+  bgm_lobby_jazz:        '夜のジャズ。ロビーがしっとり大人の時間に変わります',
+  bgm_battle_tense:      '緊迫の弦楽四重奏。手に汗握る読み合いの伴奏に',
+  bgm_battle_techno:     '電脳テクノ。脳が冴える、と申しましょうか',
+  se_pack_casino:        '本物のカジノの音。チップの転がる音まで再現されております',
+  gallery_rico:          'リコさんの設定画……ファンには堪らぬ品ですよ。私からの内緒です',
+  gallery_opponents:     '撃破された相手の図鑑。勝者の特権、というやつですな',
+  gallery_mimi:          'ミミちゃんの全モーション集。何時間でも眺めていられますよ',
+  omake_drama_1:         'リコさんがこの店に来た最初の日……短いお話、お楽しみあれ',
+  omake_drama_2:         '決戦前夜の小話。これはクリアされた方にだけ、お聞かせできる品です',
+  omake_voice_pack:      'リコさんのセリフ集。お好きな時に、お好きなだけ',
+  omake_credit:          'スタッフロール、いつでも再生可能に。あの夜の余韻をもう一度',
 };
 
+/* ===== 購入品の効果適用 ===== */
+// 各 itemId に対して save にフラグを書き込む。購入時と起動時（既購入の再適用）両方で呼ぶ
+function applyItemEffect(itemId) {
+  // ぱにゅ強化
+  if (itemId === 'panyu_gauge_plus_20') save.panyuGaugeMax = Math.max(save.panyuGaugeMax || 100, 120);
+  if (itemId === 'panyu_gauge_plus_50') save.panyuGaugeMax = Math.max(save.panyuGaugeMax || 100, 170);
+  if (itemId === 'panyu_sense_lv2') save.panyuSkills.senseLevel = Math.max(save.panyuSkills.senseLevel || 1, 2);
+  if (itemId === 'panyu_sense_lv3') save.panyuSkills.senseLevel = Math.max(save.panyuSkills.senseLevel || 1, 3);
+  if (itemId === 'panyu_range_lv2') save.panyuSkills.rangeLevel = Math.max(save.panyuSkills.rangeLevel || 1, 2);
+  if (itemId === 'panyu_range_lv3') save.panyuSkills.rangeLevel = Math.max(save.panyuSkills.rangeLevel || 1, 3);
+  if (itemId === 'panyu_combo_x2') save.panyuComboMultiplier = 2;
+  if (itemId === 'panyu_chrono') save.panyuChronoBonus = 1.5;
+  // ノート
+  if (itemId.startsWith('note_')) {
+    const noteId = itemId.replace('note_', '');
+    if (!save.unlockedNotes.includes(noteId)) save.unlockedNotes.push(noteId);
+  }
+  // 衣装（リコ）
+  if (itemId.startsWith('outfit_rico_')) {
+    save.equippedRicoOutfit = itemId.replace('outfit_rico_', '');
+  }
+  // カード裏
+  if (itemId === 'skin_red_gold_card')    save.equippedCardSkin = 'red_gold';
+  if (itemId === 'skin_blue_silver_card') save.equippedCardSkin = 'blue_silver';
+  if (itemId === 'skin_obsidian_card')    save.equippedCardSkin = 'obsidian';
+  if (itemId === 'skin_floral_card')      save.equippedCardSkin = 'floral';
+  if (itemId === 'skin_galaxy_card')      save.equippedCardSkin = 'galaxy';
+  // テーブル
+  if (itemId === 'table_vip')        save.equippedTableSkin = 'vip';
+  if (itemId === 'table_emerald')    save.equippedTableSkin = 'emerald';
+  if (itemId === 'table_neon')       save.equippedTableSkin = 'neon';
+  if (itemId === 'table_speakeasy')  save.equippedTableSkin = 'speakeasy';
+  // チップ
+  if (itemId === 'chip_skin_ivory')  save.equippedChipSkin = 'ivory';
+  if (itemId === 'chip_skin_jade')   save.equippedChipSkin = 'jade';
+  if (itemId === 'chip_skin_dragon') save.equippedChipSkin = 'dragon';
+  // ミミ
+  if (itemId === 'mimi_skin_pink')  save.equippedMimiSkin = 'pink';
+  if (itemId === 'mimi_skin_panda') save.equippedMimiSkin = 'panda';
+  if (itemId === 'mimi_skin_gold')  save.equippedMimiSkin = 'gold';
+  // カットイン
+  if (itemId === 'cutin_classic') save.equippedCutin = 'classic';
+  if (itemId === 'cutin_neon')    save.equippedCutin = 'neon';
+  // BGM/SE（購入即装備）
+  if (itemId === 'bgm_lobby_jazz')    save.equippedBgmLobby = 'jazz';
+  if (itemId === 'bgm_battle_tense')  save.equippedBgmBattle = 'tense';
+  if (itemId === 'bgm_battle_techno') save.equippedBgmBattle = 'techno';
+  if (itemId === 'se_pack_casino')    save.equippedSePack = 'casino';
+  // 初期チップ加算
+  const chipBonus = { chips_plus_500: 500, chips_plus_1500: 1500, chips_plus_3000: 3000, chips_plus_5000: 5000, chips_plus_10000: 10000 };
+  if (chipBonus[itemId]) {
+    save.extraInitialChips = (save.extraInitialChips || 0) + chipBonus[itemId];
+  }
+  // トロフィー手帳
+}
+
+// 装備中スキンを body の data 属性に反映（CSS 側で見た目を切替）
+function applyEquippedStyles() {
+  if (!save || typeof document === 'undefined') return;
+  const b = document.body;
+  if (!b) return;
+  b.dataset.cardSkin   = save.equippedCardSkin   || 'default';
+  b.dataset.tableSkin  = save.equippedTableSkin  || 'default';
+  b.dataset.chipSkin   = save.equippedChipSkin   || 'default';
+  b.dataset.mimiSkin   = save.equippedMimiSkin   || 'default';
+  b.dataset.cutinSkin  = save.equippedCutin      || 'default';
+  b.dataset.ricoOutfit = save.equippedRicoOutfit || 'default';
+}
+
+// 起動時：保有アイテムの効果をすべて再適用（セーブ復元用）
+function reapplyAllOwnedEffects() {
+  if (!save || !Array.isArray(save.ownedItems)) return;
+  save.ownedItems.forEach(id => applyItemEffect(id));
+  applyEquippedStyles();
+}
+
+/* ===== ショップ商品：段階開放マップ =====
+   各商品の入荷条件。デフォルトは 'always'（最初から）。
+   'polka' / 'selina' / 'grano' / 'velvet' = 各ステージ撃破で入荷。 */
+const SHOP_UNLOCK = {
+  // ── 最初から（基本商品のみ） ──
+  panyu_sense_lv2:       'always',
+  panyu_gauge_plus_20:   'always',
+  note_pot_odds:         'always',
+  note_bet_size:         'always',
+  chips_plus_500:        'always',
+  outfit_rico_pajama:    'always',
+  outfit_rico_casual:    'always',
+  skin_blue_silver_card: 'always',
+
+  // ── ポルカ撃破で入荷 ──
+  panyu_combo_x2:        'polka',
+  note_board_danger:     'polka',
+  note_position:         'polka',
+  chips_plus_1500:       'polka',
+  outfit_rico_dress:     'polka',
+  table_emerald:         'polka',
+  chip_skin_ivory:       'polka',
+  mimi_skin_pink:        'polka',
+  bgm_lobby_jazz:        'polka',
+
+  // ── セリナ撃破で入荷 ──
+  panyu_range_lv2:       'selina',
+  note_outs:             'selina',
+  note_tell:             'selina',
+  chips_plus_3000:       'selina',
+  outfit_rico_school:    'selina',
+  outfit_rico_gym:       'selina',
+  table_neon:            'selina',
+  chip_skin_jade:        'selina',
+  mimi_skin_panda:       'selina',
+  skin_obsidian_card:    'selina',
+  skin_floral_card:      'selina',
+  skin_red_gold_card:    'selina',
+  bgm_battle_tense:      'selina',
+  se_pack_casino:        'selina',
+  omake_drama_1:         'selina',
+
+  // ── グラーノ撃破で入荷 ──
+  panyu_chrono:          'grano',
+  panyu_sense_lv3:       'grano',
+  panyu_range_lv3:       'grano',
+  note_bankroll:         'grano',
+  note_equity:           'grano',
+  chips_plus_5000:       'grano',
+  outfit_rico_kimono:    'grano',
+  outfit_rico_witch:     'grano',
+  outfit_rico_santa:     'grano',
+  outfit_rico_bunny:     'grano',
+  table_vip:             'grano',
+  table_speakeasy:       'grano',
+  chip_skin_dragon:      'grano',
+  cutin_classic:         'grano',
+  cutin_neon:            'grano',
+  bgm_battle_techno:     'grano',
+  gallery_rico:          'grano',
+  gallery_mimi:          'grano',
+  omake_voice_pack:      'grano',
+
+  // ── ヴェルベット撃破で入荷（既存 requires:'ending' と重複してOK） ──
+  panyu_gauge_plus_50:   'velvet',
+  chips_plus_10000:      'velvet',
+  outfit_rico_swimsuit:  'velvet',
+  mimi_skin_gold:        'velvet',
+  skin_galaxy_card:      'velvet',
+  memory_ending:         'velvet',
+  memory_ending_theme:   'velvet',
+  gallery_opponents:     'velvet',
+  omake_drama_2:         'velvet',
+  omake_credit:          'velvet',
+};
+
+// その商品がプレイヤーに見えるか
+function isShopItemUnlocked(itemId) {
+  const stage = SHOP_UNLOCK[itemId] || 'always';
+  if (stage === 'always') return true;
+  return save.clearedStages && save.clearedStages.includes(stage);
+}
+// 「新着」判定：解放済みかつ未閲覧
+function isShopItemNew(itemId) {
+  if (!isShopItemUnlocked(itemId)) return false;
+  if (!save.shopSeenItems) save.shopSeenItems = [];
+  return !save.shopSeenItems.includes(itemId);
+}
+// 新着件数（カテゴリ別）
+function newItemCount(cat) {
+  return SHOP_ITEMS.filter(i => (cat ? i.cat === cat : true) && isShopItemNew(i.id)).length;
+}
+// ショップ閲覧時に全表示分を「見た」と記録
+function markShopItemsSeen() {
+  if (!save.shopSeenItems) save.shopSeenItems = [];
+  SHOP_ITEMS.forEach(i => {
+    if (isShopItemUnlocked(i.id) && !save.shopSeenItems.includes(i.id)) {
+      save.shopSeenItems.push(i.id);
+    }
+  });
+  saveProgress();
+}
+
 function renderShopItems(cat) {
-  const items = SHOP_ITEMS.filter(i => i.cat === cat);
+  // 段階開放：未解放商品はそもそも表示しない
+  const items = SHOP_ITEMS.filter(i => i.cat === cat && isShopItemUnlocked(i.id));
   if (items.length === 0) {
-    return '<div class="shop-empty">該当する商品はまだありません。</div>';
+    return '<div class="shop-empty">このカテゴリの商品はまだ入荷していません。<br><small>対戦相手を撃破すると新商品が入荷します。</small></div>';
   }
   return items.map(i => {
     const owned = save.ownedItems.includes(i.id);
-    // requires: 解放条件
+    const isNew = isShopItemNew(i.id);
+    // requires: 解放条件（ending限定）— 既存ロジック維持
     let lockedReason = null;
     if (i.requires === 'ending' && !save.endingUnlocked) lockedReason = '🔒 ヴェルベット撃破で解放';
     const canBuy = !owned && !lockedReason && save.coins >= i.price;
@@ -2974,7 +3384,8 @@ function renderShopItems(cat) {
     const playableId = (i.id === 'memory_ending') ? 'play-ending'
                       : (i.id === 'memory_ending_theme') ? 'play-ending-theme'
                       : null;
-    return `<div class="shop-item ${owned ? 'owned' : ''} ${lockedReason ? 'locked' : ''}" data-item="${i.id}">
+    return `<div class="shop-item ${owned ? 'owned' : ''} ${lockedReason ? 'locked' : ''} ${isNew ? 'is-new' : ''}" data-item="${i.id}">
+      ${isNew ? '<span class="shop-item-newtag">🆕 新着</span>' : ''}
       <div class="shop-item-name">${i.name}</div>
       <div class="shop-item-desc">${i.desc}</div>
       <div class="shop-item-footer">
@@ -3037,15 +3448,8 @@ function buyItem(itemId) {
   save.coins -= item.price;
   save.ownedItems.push(itemId);
   // 効果適用
-  if (itemId === 'panyu_gauge_plus_20') save.panyuGaugeMax = 120;
-  if (itemId === 'panyu_sense_lv2') save.panyuSkills.senseLevel = 2;
-  if (itemId === 'panyu_range_lv2') save.panyuSkills.rangeLevel = 2;
-  if (itemId.startsWith('note_')) {
-    const noteId = itemId.replace('note_', '');
-    if (!save.unlockedNotes.includes(noteId)) save.unlockedNotes.push(noteId);
-  }
-  if (itemId === 'skin_red_gold_card') save.equippedCardSkin = 'red_gold';
-  if (itemId === 'table_vip') save.equippedTableSkin = 'vip';
+  applyItemEffect(itemId);
+  applyEquippedStyles();
   saveProgress();
   toast(`✓ ${item.name} を購入！`);
   // 再レンダリング
@@ -3055,7 +3459,7 @@ function buyItem(itemId) {
   const coinsEl = document.querySelector('[data-bind="saveCoins"]');
   if (coinsEl) coinsEl.textContent = save.coins;
   bindActions();
-  bindShopItemHover();
+  bindShopItems();
 }
 
 function pickLogicQuestion() {
@@ -4242,7 +4646,17 @@ function onAction(e) {
     case 'skip-stage': skipStageWithCoins(data.opponent); break;
     case 'back-title':    stopEndingBgm(); state = defaultState(); render(); break;
     case 'back-lobby':    stopEndingBgm(); goLobby(); break;
-    case 'open-shop':     state.screen = 'shop'; render(); break;
+    case 'open-shop': {
+      const newCount = newItemCount();
+      state.screen = 'shop';
+      render();
+      if (newCount > 0) {
+        toast(`🎴 新商品 ${newCount} 件入荷！`);
+      }
+      // ショップ表示時点で既読マーク（少し遅延：ユーザーが NEW を視認できるように）
+      setTimeout(() => markShopItemsSeen(), 100);
+      break;
+    }
     case 'reset-save':    resetProgress(); break;
     case 'buy-item':      buyItem(data.itemId); break;
     case 'battle-start':  startBattle(data.opponent); break;
@@ -4255,13 +4669,17 @@ function onAction(e) {
       showRicoViewer();
       break;
     case 'open-collection':
-      if (!save.ownedItems || !save.ownedItems.includes('trophy_unlock')) {
-        alert('🔒 トロフィー手帳は交換所「知識ノート」枠で購入すると解放されます。');
-        break;
-      }
       showCollectionModal();
       break;
     case 'open-glossary': showGlossaryModal(); break;
+    case 'show-about':    showAboutModal(); break;
+    case 'share-game':    shareGame(); break;
+    case 'view-memory': {
+      const id = e.currentTarget?.dataset?.memoryId || e.target?.closest('[data-memory-id]')?.dataset?.memoryId;
+      if (id) showMemoryViewer(id);
+      break;
+    }
+    case 'equip-change': showEquipModal(); break;
     case 'open-history': showHandHistoryModal(); break;
     case 'history-close': {
       const ov = document.querySelector('.hand-history-overlay'); if (ov) ov.remove();
@@ -4357,7 +4775,17 @@ function onAction(e) {
           alert('🐰✦ 裏モード解放！ ✦🐰\n\nバトル画面右上の ✦ ボタンで\n相手の手と心理を覗き見できます');
         }
       }
-      showPanyuClicker(30, null);
+      // ぷにぷに完走でコイン報酬（panyu_combo_x2 購入時は2倍）
+      showPanyuClicker(30, () => {
+        const base = 30;
+        const mul = save.panyuComboMultiplier || 1;
+        const reward = base * mul;
+        save.coins += reward;
+        saveProgress();
+        const coinsEl = document.querySelector('[data-bind="saveCoins"]');
+        if (coinsEl) coinsEl.textContent = save.coins;
+        toast(mul > 1 ? `+${reward}コイン（コンボ倍率 ×${mul}）` : `+${reward}コイン`);
+      });
       break;
     }
     case 'toggle-bgm':    toggleLobbyBgm(); break;
@@ -5041,6 +5469,293 @@ function showRicoViewer() {
 }
 
 // === コンプリート（解放状況）モーダル ===
+/* ===== メモリ・ギャラリー内蔵コンテンツ ===== */
+const MEMORY_CONTENT = {
+  gallery_rico: {
+    title: '🖼 リコ先輩 設定資料',
+    body: `
+      <h4>キャラクター原案</h4>
+      <p>「先輩」「軽口」「面倒見」を三原則として設計。<br>
+      初期案では銀髪・タキシード姿の冷徹キャラだったが、「主人公を引っ張る年上の女」性を強調するため、現在の華やかな衣装と艶のある黒髪に変更された。</p>
+      <h4>ボツ衣装</h4>
+      <ul>
+        <li>ピンクのスーツ（候補A）— 「カジノに似合わない」却下</li>
+        <li>白のロングコート（候補B）— 「ヒロイン感が強すぎる」却下</li>
+        <li>軍服風（候補C）— 「ヴェルベットと被る」却下</li>
+      </ul>
+      <h4>口調メモ</h4>
+      <p>語尾は「〜じゃない？」「〜よ」が基本。決め台詞は「ふぅん、いいわよ。やってみなさい」。<br>
+      ヴェルベット戦中盤のみ敬語が混じり、「決着、つけましょう」となる。</p>
+    `,
+  },
+  gallery_opponents: {
+    title: '🖼 対戦相手図鑑',
+    body: () => {
+      const list = [
+        { id: 'polka',  name: 'ポルカ',     trait: '感情型・ブラフ多め',   line: '「えへへ、わたしの番〜！」' },
+        { id: 'selina', name: 'セリナ',     trait: '盤面読み・受け身',     line: '「ぼ……ボードを見て」' },
+        { id: 'grano',  name: 'グラーノ',   trait: '算術型・冷静',         line: '「数字は嘘をつかない」' },
+        { id: 'velvet', name: 'ヴェルベット', trait: '罠師・支配的',        line: '「あなたの読み、見せて頂戴」' },
+      ];
+      const html = list.map(o => {
+        const cleared = save.clearedStages.includes(o.id);
+        return cleared
+          ? `<div class="memory-opp"><div class="memory-opp-name">${o.name}</div><div class="memory-opp-trait">${o.trait}</div><div class="memory-opp-line">${o.line}</div></div>`
+          : `<div class="memory-opp locked"><div class="memory-opp-name">🔒 ？？？</div><div class="memory-opp-trait">撃破で解放</div></div>`;
+      }).join('');
+      return html;
+    },
+  },
+  gallery_mimi: {
+    title: '🖼 ミミ百態',
+    body: `
+      <p>ぱにゅぱにゅミニゲームのマスコット「ミミ」。原案では「もちもちの正体不明生物」とだけ書かれていた。</p>
+      <h4>表情リスト</h4>
+      <ul>
+        <li>通常 — 静かに揺れている</li>
+        <li>連打中 — 全身がふるえ、頬が紅潮</li>
+        <li>コンボ達成 — 目を閉じて笑顔</li>
+        <li>完走時 — 全身金色オーラ、☆を放つ</li>
+        <li>放置時 — まどろみ、寝息を立てる</li>
+      </ul>
+      <h4>裏設定</h4>
+      <p>ミミは元々リコ先輩が幼少期に拾った「夢の精霊」という設定だが、本編では一切触れられない。</p>
+    `,
+  },
+  omake_drama_1: {
+    title: '🎭 寸劇「リコ、初出勤」',
+    body: `
+      <p class="memory-stage-note">— 店長室 —</p>
+      <p><b>店長</b>「君がリコくんかね。経歴は申し分ない、が……」</p>
+      <p><b>リコ</b>「あら、何か問題でも？」</p>
+      <p><b>店長</b>「カジノは“勝つ”だけではダメだ。お客様に夢を見せる仕事だ」</p>
+      <p><b>リコ</b>「……（くすり）夢、ね。なら、私の十八番じゃない」</p>
+      <p class="memory-stage-note">— 翌日、フロア —</p>
+      <p><b>客A</b>「ねえお姉さん、これで本当に勝てるの？」</p>
+      <p><b>リコ</b>「勝てるかどうかは、あなた次第。でも一つだけ約束する。</p>
+      <p style="padding-left:1em">——今夜は、忘れられない夜になるわよ」</p>
+      <p class="memory-stage-note">— その日、店の売上は過去最高を記録した。 —</p>
+    `,
+  },
+  omake_drama_2: {
+    title: '🎭 寸劇「決戦前夜」',
+    body: `
+      <p class="memory-stage-note">— ロビー、深夜2時 —</p>
+      <p><b>主人公</b>「……リコ先輩、まだ起きてたんですか」</p>
+      <p><b>リコ</b>「あら、お弟子さんも眠れない口？」</p>
+      <p><b>主人公</b>「明日、ヴェルベットと当たるって思うと……」</p>
+      <p><b>リコ</b>「ふぅん。怖い？」</p>
+      <p><b>主人公</b>「……はい」</p>
+      <p><b>リコ</b>「いいわね、その怖さ。大事にしときなさい。<br>怖くないやつは、ポーカーやっちゃダメ」</p>
+      <p><b>主人公</b>「先輩は、怖くないんですか」</p>
+      <p><b>リコ</b>「……怖いに決まってるじゃない。だから、隣で見てるわ。<br>あなたが勝つところ、しっかりとね」</p>
+      <p class="memory-stage-note">— 二人の影が、長く伸びていた。 —</p>
+    `,
+  },
+  omake_voice_pack: {
+    title: '🎙 リコ先輩 ボイス集',
+    body: `
+      <p>※ボイスファイル未配置のためテキストで表示しています。</p>
+      <div class="memory-voice-list">
+        <div class="memory-voice">▶ 勝利「ふぅん、やるじゃない」</div>
+        <div class="memory-voice">▶ 敗北「あら、まだまだね」</div>
+        <div class="memory-voice">▶ ブラフ成功「やだ、笑っちゃう」</div>
+        <div class="memory-voice">▶ オールイン「……いいわよ、全部」</div>
+        <div class="memory-voice">▶ チェック「様子見、ね」</div>
+        <div class="memory-voice">▶ レイズ「もう一声、上乗せ」</div>
+        <div class="memory-voice">▶ フォールド「降りる勇気も実力」</div>
+        <div class="memory-voice">▶ 朝の挨拶「おはよ。今日は調子どう？」</div>
+        <div class="memory-voice">▶ 夜の挨拶「お疲れ。一杯付き合いなさい」</div>
+        <div class="memory-voice">▶ 励まし「あなたなら、できるわよ」</div>
+      </div>
+    `,
+  },
+  omake_credit: {
+    title: '📜 スタッフロール',
+    body: `
+      <div class="memory-credit">
+        <h4>闘札圧倒伝ミミ</h4>
+        <p>Game Design — 主人公チーム</p>
+        <p>Scenario — リコの記憶より</p>
+        <p>Character — グラーノ商会</p>
+        <p>Music — 沈黙のジャズマン</p>
+        <p>Special Thanks — ヴェルベット様、ポルカ、セリナ</p>
+        <p>And You.</p>
+        <br>
+        <p>— ふぅん、いい夜だったわね。<br>もう一勝負、いっとく？</p>
+      </div>
+    `,
+  },
+};
+
+/* ===== 装備切替モーダル ===== */
+// 各カテゴリ：装備候補（id → label）。default は常時選択可能
+const EQUIP_CATEGORIES = [
+  {
+    key: 'equippedRicoOutfit', label: 'リコ衣装',
+    choices: [
+      { id: 'default',  label: '制服（標準）', itemId: null },
+      { id: 'pajama',   label: 'パジャマ',     itemId: 'outfit_rico_pajama' },
+      { id: 'dress',    label: 'ドレス',       itemId: 'outfit_rico_dress' },
+      { id: 'kimono',   label: '和装',         itemId: 'outfit_rico_kimono' },
+      { id: 'casual',   label: '私服',         itemId: 'outfit_rico_casual' },
+      { id: 'school',   label: '学生風',       itemId: 'outfit_rico_school' },
+      { id: 'bunny',    label: 'バニー',       itemId: 'outfit_rico_bunny' },
+      { id: 'gym',      label: 'ジム服',       itemId: 'outfit_rico_gym' },
+      { id: 'swimsuit', label: '水着',         itemId: 'outfit_rico_swimsuit' },
+      { id: 'witch',    label: '魔女',         itemId: 'outfit_rico_witch' },
+      { id: 'santa',    label: 'サンタ',       itemId: 'outfit_rico_santa' },
+    ],
+  },
+  {
+    key: 'equippedCardSkin', label: 'カード裏',
+    choices: [
+      { id: 'default',     label: '標準',     itemId: null },
+      { id: 'red_gold',    label: '赤金',     itemId: 'skin_red_gold_card' },
+      { id: 'blue_silver', label: '蒼銀',     itemId: 'skin_blue_silver_card' },
+      { id: 'obsidian',    label: '漆黒',     itemId: 'skin_obsidian_card' },
+      { id: 'floral',      label: '花鳥',     itemId: 'skin_floral_card' },
+      { id: 'galaxy',      label: '銀河',     itemId: 'skin_galaxy_card' },
+    ],
+  },
+  {
+    key: 'equippedTableSkin', label: 'テーブル',
+    choices: [
+      { id: 'default',   label: '標準',           itemId: null },
+      { id: 'vip',       label: 'VIP',            itemId: 'table_vip' },
+      { id: 'emerald',   label: 'エメラルド',     itemId: 'table_emerald' },
+      { id: 'neon',      label: 'ネオン',         itemId: 'table_neon' },
+      { id: 'speakeasy', label: 'スピークイージー', itemId: 'table_speakeasy' },
+    ],
+  },
+  {
+    key: 'equippedChipSkin', label: 'チップ',
+    choices: [
+      { id: 'default', label: '標準',   itemId: null },
+      { id: 'ivory',   label: 'アイボリー', itemId: 'chip_skin_ivory' },
+      { id: 'jade',    label: '翡翠',   itemId: 'chip_skin_jade' },
+      { id: 'dragon',  label: '龍紋',   itemId: 'chip_skin_dragon' },
+    ],
+  },
+  {
+    key: 'equippedMimiSkin', label: 'ミミ',
+    choices: [
+      { id: 'default', label: '標準',   itemId: null },
+      { id: 'pink',    label: '桃色',   itemId: 'mimi_skin_pink' },
+      { id: 'panda',   label: 'パンダ', itemId: 'mimi_skin_panda' },
+      { id: 'gold',    label: '黄金',   itemId: 'mimi_skin_gold' },
+    ],
+  },
+  {
+    key: 'equippedCutin', label: 'カットイン',
+    choices: [
+      { id: 'default', label: '標準',   itemId: null },
+      { id: 'classic', label: '古典派', itemId: 'cutin_classic' },
+      { id: 'neon',    label: 'ネオン', itemId: 'cutin_neon' },
+    ],
+  },
+  {
+    key: 'equippedBgmLobby', label: 'ロビーBGM',
+    choices: [
+      { id: 'default', label: '標準',   itemId: null },
+      { id: 'jazz',    label: 'ジャズ', itemId: 'bgm_lobby_jazz' },
+    ],
+  },
+  {
+    key: 'equippedBgmBattle', label: 'バトルBGM',
+    choices: [
+      { id: 'default', label: '標準',     itemId: null },
+      { id: 'tense',   label: '緊迫弦楽', itemId: 'bgm_battle_tense' },
+      { id: 'techno',  label: 'テクノ',   itemId: 'bgm_battle_techno' },
+    ],
+  },
+  {
+    key: 'equippedSePack', label: 'SE',
+    choices: [
+      { id: 'default', label: '標準',     itemId: null },
+      { id: 'casino',  label: 'カジノ',   itemId: 'se_pack_casino' },
+    ],
+  },
+];
+
+function showEquipModal() {
+  const owned = save.ownedItems || [];
+  const rows = EQUIP_CATEGORIES.map(cat => {
+    const current = save[cat.key] || 'default';
+    const chips = cat.choices.map(c => {
+      const isOwned = (c.itemId === null) || owned.includes(c.itemId);
+      const isActive = current === c.id;
+      return `<button class="equip-chip ${isActive ? 'active' : ''} ${!isOwned ? 'locked' : ''}"
+        data-cat-key="${cat.key}" data-choice-id="${c.id}" ${!isOwned ? 'disabled' : ''}
+        title="${isOwned ? '' : '未購入'}">${isOwned ? '' : '🔒 '}${c.label}</button>`;
+    }).join('');
+    return `
+      <div class="equip-row">
+        <div class="equip-row-label">${cat.label}</div>
+        <div class="equip-row-choices">${chips}</div>
+      </div>
+    `;
+  }).join('');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'equip-overlay';
+  overlay.innerHTML = `
+    <div class="equip-modal">
+      <button class="equip-modal-close" title="閉じる">×</button>
+      <div class="equip-modal-title">👗 装備変更</div>
+      <div class="equip-modal-body">
+        ${rows}
+      </div>
+      <div class="equip-modal-footer">※ 🔒 表示の項目は交換所で購入すると選択可能になります</div>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+  overlay.querySelector('.equip-modal-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelectorAll('.equip-chip:not(.locked)').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.catKey;
+      const choiceId = btn.dataset.choiceId;
+      save[key] = choiceId;
+      saveProgress();
+      applyEquippedStyles();
+      // 同列の active を更新
+      const row = btn.closest('.equip-row');
+      row.querySelectorAll('.equip-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      // リコ衣装変更時はロビー立ち絵を即時更新（インデックスをリセットして pickLobbyRico を再評価）
+      if (key === 'equippedRicoOutfit') {
+        state.lobbyRicoIndex = null;
+        state.lobbyRicoChangedAt = null;
+        const img = document.querySelector('[data-bind="lobbyRicoImg"]');
+        if (img) {
+          const o = pickLobbyRico();
+          img.src = `assets/characters/${o.file}`;
+        }
+      }
+      toast(`装備変更：${btn.textContent.trim()}`);
+    });
+  });
+}
+
+function showMemoryViewer(memoryId) {
+  const m = MEMORY_CONTENT[memoryId];
+  if (!m) return;
+  const body = (typeof m.body === 'function') ? m.body() : m.body;
+  const overlay = document.createElement('div');
+  overlay.className = 'memory-viewer-overlay';
+  overlay.innerHTML = `
+    <div class="memory-viewer">
+      <button class="memory-viewer-close" title="閉じる">×</button>
+      <div class="memory-viewer-title">${m.title}</div>
+      <div class="memory-viewer-body">${body}</div>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+  overlay.querySelector('.memory-viewer-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
 function showCollectionModal() {
   const stageOrder = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
   const stages = stageOrder.map(id => {
@@ -5165,6 +5880,29 @@ function showCollectionModal() {
             ? `<div class="coll-outfits">${outfitsHtml}</div>`
             : `<div class="coll-locked-hint">🔒 ヴェルベット撃破で全衣装＆鑑賞モードが解放されます</div>`}
         </section>
+        ${(() => {
+          const memoryIds = ['gallery_rico','gallery_opponents','gallery_mimi','omake_drama_1','omake_drama_2','omake_voice_pack','omake_credit','memory_ending','memory_ending_theme'];
+          const ownedMemories = memoryIds.filter(id => ownedItems.includes(id));
+          if (ownedMemories.length === 0) return '';
+          const cards = ownedMemories.map(id => {
+            const meta = SHOP_ITEMS.find(i => i.id === id);
+            if (!meta) return '';
+            const action = (id === 'memory_ending') ? 'play-ending'
+                         : (id === 'memory_ending_theme') ? 'play-ending-theme'
+                         : 'view-memory';
+            return `<button class="memory-card" data-action="${action}" data-memory-id="${id}">
+              <div class="memory-card-title">${meta.name}</div>
+              <div class="memory-card-desc">${meta.desc}</div>
+              <div class="memory-card-play">▶ 再生</div>
+            </button>`;
+          }).join('');
+          return `
+            <section class="coll-section">
+              <h3 class="coll-section-title">メモリ閲覧 <span class="coll-section-count">${ownedMemories.length}件</span></h3>
+              <div class="memory-grid">${cards}</div>
+            </section>
+          `;
+        })()}
         ${(() => {
           ensureAchievements();
           const unlocked = ACHIEVEMENTS.filter(a => save.achievements[a.id]);
@@ -5540,10 +6278,12 @@ function rematchPreview(opponentId) {
 
 function chipBonusTotal() {
   let b = 0;
-  if (save.ownedItems.includes('chips_plus_500'))  b += 500;
-  if (save.ownedItems.includes('chips_plus_1500')) b += 1500;
-  if (save.ownedItems.includes('chips_plus_3000')) b += 3000;
-  if (save.ownedItems.includes('chips_plus_5000')) b += 5000;
+  if (!save || !save.ownedItems) return 0;
+  if (save.ownedItems.includes('chips_plus_500'))   b += 500;
+  if (save.ownedItems.includes('chips_plus_1500'))  b += 1500;
+  if (save.ownedItems.includes('chips_plus_3000'))  b += 3000;
+  if (save.ownedItems.includes('chips_plus_5000'))  b += 5000;
+  if (save.ownedItems.includes('chips_plus_10000')) b += 10000;
   return b;
 }
 
@@ -5590,6 +6330,7 @@ function startBattleInternal(opponentId) {
   const chosen = window.__chosenStartChips;
   window.__chosenStartChips = null; // 一回限り
   if (chosen) {
+    // スライダで選んだ値（chips_plus_* 上限拡張を反映済）をそのまま採用
     state.playerChips = chosen;
     state.opponentChips = chosen;
   } else {
@@ -5604,6 +6345,7 @@ function startBattleInternal(opponentId) {
   state.handPhase = 'idle';
   state.panyuMax = save.panyuGaugeMax || 100;
   state.panyuSenseFreeUsed = save.panyuSenseFreeUsed;
+  state.panyuChronoUsedThisBattle = false;  // panyu_chrono：1バトル1回の無料発動枠
 
   // v4 B4: ボス戦は開幕で ぱにゅゲージを最低25まで補填
   if (opp.isBoss) {
@@ -6280,9 +7022,13 @@ function triggerPsychBattle(qid) {
 
   // ぱにゅぱにゅボタン
   const senseBtn = root.querySelector('[data-bind="panyuSenseBtn"]');
-  // v4 B4: 初回はゲーム全体で1回無料
-  const isFree = !state.panyuSenseFreeUsed;
-  senseBtn.textContent = isFree ? 'ぱにゅぱにゅ（初回無料）' : `ぱにゅぱにゅ（${25}消費）`;
+  // v4 B4: 初回はゲーム全体で1回無料 ／ panyu_chrono購入時は1バトル1回追加無料
+  const gameWideFree = !state.panyuSenseFreeUsed;
+  const chronoOwned = save.ownedItems && save.ownedItems.includes('panyu_chrono');
+  const chronoFree = chronoOwned && !state.panyuChronoUsedThisBattle;
+  const isFree = gameWideFree || chronoFree;
+  const freeLabel = gameWideFree ? 'ぱにゅぱにゅ（初回無料）' : 'ぱにゅぱにゅ（クロノ無料）';
+  senseBtn.textContent = isFree ? freeLabel : `ぱにゅぱにゅ（${25}消費）`;
   if (!isFree && state.panyu < 25) {
     senseBtn.disabled = true;
     senseBtn.textContent = 'ぱにゅぱにゅ（ゲージ不足）';
@@ -6312,7 +7058,14 @@ function usePanyuSense(qid, isFree) {
   if (!isFree && state.panyu < 25) return;
   // 即時にコスト消費・ボタン無効化（取り消し不可なコミット）
   state.panyu -= cost;
-  if (isFree) state.panyuSenseFreeUsed = true;
+  if (isFree) {
+    // 初回ゲーム全体無料 > クロノ無料 の順で消費
+    if (!state.panyuSenseFreeUsed) {
+      state.panyuSenseFreeUsed = true;
+    } else {
+      state.panyuChronoUsedThisBattle = true;
+    }
+  }
   const senseBtn = state.psychRoot.querySelector('[data-bind="panyuSenseBtn"]');
   const floatBtn = document.querySelector('.panyu-floating-btn');
   if (senseBtn) {
@@ -6337,18 +7090,26 @@ function usePanyuSense(qid, isFree) {
         hint.dataset.boosted = '1';
       }
     }
-    // Lv2効果：ハズレ選択肢を1つグレーアウト
-    if (save.panyuSkills.senseLevel >= 2 && qid && PSYCH_QUESTIONS[qid] && state.psychRoot) {
+    // Lv2/Lv3効果：ハズレ選択肢を1〜2個グレーアウト
+    const senseLv = save.panyuSkills.senseLevel || 1;
+    if (senseLv >= 2 && qid && PSYCH_QUESTIONS[qid] && state.psychRoot) {
       const q = PSYCH_QUESTIONS[qid];
-      const choices = [...state.psychRoot.querySelectorAll('.choice-btn:not(.disabled-by-sense)')];
-      const wrong = choices.find(b => {
-        const c = q.choices.find(x => x.id === b.dataset.choiceId);
-        return c && !c.correct;
-      });
-      if (wrong) {
-        wrong.classList.add('disabled-by-sense');
-        wrong.disabled = true;
-        toast('ぱにゅぱにゅLv2：ハズレ1つを除外！');
+      const removeCount = senseLv >= 3 ? 2 : 1;
+      let removed = 0;
+      for (let i = 0; i < removeCount; i++) {
+        const choices = [...state.psychRoot.querySelectorAll('.choice-btn:not(.disabled-by-sense)')];
+        const wrong = choices.find(b => {
+          const c = q.choices.find(x => x.id === b.dataset.choiceId);
+          return c && !c.correct;
+        });
+        if (wrong) {
+          wrong.classList.add('disabled-by-sense');
+          wrong.disabled = true;
+          removed++;
+        } else break;
+      }
+      if (removed > 0) {
+        toast(senseLv >= 3 ? `ぱにゅぱにゅLv3：ハズレ${removed}つを除外！` : 'ぱにゅぱにゅLv2：ハズレ1つを除外！');
         return;
       }
     }
@@ -7619,6 +8380,14 @@ function endBattle() {
     earned = 50;
     rewards.push(`参加賞：+50`);
   }
+  // note_bankroll：コイン獲得効率+10%
+  if (save.unlockedNotes && save.unlockedNotes.includes('bankroll') && earned > 0) {
+    const bonus = Math.floor(earned * 0.1);
+    if (bonus > 0) {
+      earned += bonus;
+      rewards.push(`バンクロール管理ボーナス：+${bonus} (+10%)`);
+    }
+  }
   save.coins += earned;
   state.coinsEarned = earned;
   state.rewards = rewards;
@@ -8378,12 +9147,47 @@ function preloadOne(url) {
 }
 
 const PRELOAD_TIPS = [
-  '🐰 ぱにゅぱにゅ……',
-  '🃏 場札を読み、顔色を読む',
-  '💰 ナッツは大胆に',
-  '🎭 言葉は嘘つくが、ベットは嘘つかない',
-  '✨ 圧倒モードまで連勝積もれ',
-  '🕯 ヴェルベットの瞳……何か映している',
+  // ── 基本ルール ──
+  '🃏 ホールデムは「2枚の手札＋場の5枚」から最強の5枚を作るゲーム',
+  '🎴 ロイヤルフラッシュは同じスートのA-K-Q-J-10。出る確率は約65万分の1',
+  '🏆 強さ順：ハイカード→ペア→ツーペア→スリーカード→ストレート→フラッシュ→フルハウス→フォーカード→ストレートフラッシュ→ロイヤル',
+  '♠ ストレートとフラッシュ、強いのはフラッシュ。覚えづらいけど大事',
+  '🎲 同じ役同士はキッカー（一番強い余り札）で勝敗が決まる',
+
+  // ── ポジション ──
+  '📍 「ボタン」は最後に動ける位置。情報が集まる王様の席',
+  '⚠ 一番不利な席は「アーリーポジション」。最初に動かされる',
+  '👑 ポジションが良ければ、弱い手でも勝てる。悪ければ、強い手でも降りる勇気',
+
+  // ── 数学 ──
+  '🧮 アウツ × 2 ≒ 次の1枚で完成する確率(%)。フラッシュドロー9枚なら約18%',
+  '🧮 アウツ × 4 ≒ ターン＋リバー2枚で完成する確率(%)。9枚なら約36%',
+  '💰 「ポットオッズ」＝コール額 ÷ (ポット＋コール額)。完成確率がこれを上回れば「乗る」',
+  '📈 オープンエンドストレートドローはアウツ8枚 → 約32%（リバーまで）',
+
+  // ── 心理戦 ──
+  '💭 強い時ほど静かに、弱い時ほど派手に振る舞う。逆も真なり',
+  '👁 相手のチップ握る手、視線、呼吸——札より雄弁',
+  '🎭 「言葉は嘘をつくが、ベットは嘘をつかない」',
+  '🤐 自分の手の話をする相手ほど、要警戒',
+
+  // ── ベッティング ──
+  '💵 「コンティニュエーションベット（CB）」＝プリフロップで主導権を取った人が、フロップで続けてベット',
+  '🎯 ベットサイズは「ポットの 1/2 〜 2/3」が標準的',
+  '🚫 オールインは「最後の説得」。降りる選択肢を相手から奪う',
+  '⚖ チェックは「弱さ」ではなく「罠」かもしれない',
+
+  // ── 心構え ──
+  '🧘 良いハンドでも負けることはある。ポーカーは長期戦',
+  '🎯 「役の強さ」より「相手の手のレンジ」を考えるのが上級者',
+  '💎 強い手を引いた時こそ、相手から最大限引き出すベットを',
+  '🛡 「折るべき場面で折れる強さ」が、勝者の条件',
+
+  // ── 世界観セリフ ──
+  '🐰 ミミ：「えへへ、ぱにゅっとした感じで……勝てた、かも」',
+  '👩 リコ先輩：「ふぅん、いいわよ。やってみなさい」',
+  '💰 グラーノ：「数字は嘘をつかない。お嬢さん、勝算をお持ちですかな？」',
+  '🕯 ヴェルベット：「あなたの読み、見せて頂戴」',
 ];
 
 async function startPreload() {
@@ -8395,12 +9199,14 @@ async function startPreload() {
   const all = [...PRELOAD_ASSETS, ...PRELOAD_AUDIO];
   totalEl.textContent = all.length;
   let loaded = 0;
-  // tip rotation
+  // tip rotation：ポーカー豆知識をランダム順で表示（読み応え重視で2.8秒間隔）
+  const tipOrder = [...Array(PRELOAD_TIPS.length).keys()].sort(() => Math.random() - 0.5);
   let tipIdx = 0;
+  if (tipEl) tipEl.textContent = PRELOAD_TIPS[tipOrder[0]];
   const tipInterval = setInterval(() => {
-    tipIdx = (tipIdx + 1) % PRELOAD_TIPS.length;
-    if (tipEl) tipEl.textContent = PRELOAD_TIPS[tipIdx];
-  }, 1500);
+    tipIdx = (tipIdx + 1) % tipOrder.length;
+    if (tipEl) tipEl.textContent = PRELOAD_TIPS[tipOrder[tipIdx]];
+  }, 2800);
   // 並列で読み込み、各完了で進捗更新
   await Promise.all(all.map(url => preloadOne(url).then(() => {
     loaded++;
@@ -8417,6 +9223,34 @@ async function startPreload() {
 
 save = loadProgress();
 state = defaultState();
+reapplyAllOwnedEffects();
+
+// ショップUIアトラスの存在検知＋スタイルJS注入（CSSキャッシュ回避のため動的注入）
+(function detectShopAtlas() {
+  const img = new Image();
+  img.onload = () => {
+    console.log('[atlas] loaded', img.naturalWidth, 'x', img.naturalHeight);
+    if (img.naturalWidth >= 256 && img.naturalHeight >= 128) {
+      document.body.classList.add('has-shop-atlas');
+      console.log('[atlas] body.has-shop-atlas added ✓');
+      // JSで直接styleタグを注入：CSSキャッシュ問題を完全回避
+      const url = img.src;
+      const style = document.createElement('style');
+      style.id = 'atlas-injected';
+      // 旧アトラスのタブアイコン挿入は撤去。新アトラス（装飾枠）は別途定義。
+      style.textContent = `/* shop_atlas.png 検知済 — 装飾枠は新仕様で別途読込 */`;
+      document.head.appendChild(style);
+      console.log('[atlas] style injected ✓');
+    } else {
+      console.warn('[atlas] image too small, skipping');
+    }
+  };
+  img.onerror = (e) => {
+    console.warn('[atlas] load failed:', img.src, e);
+  };
+  img.src = 'assets/ui/shop_atlas.png';
+})();
+
 startPreload().then(() => {
   render();
   initGlobalAudioBar();
