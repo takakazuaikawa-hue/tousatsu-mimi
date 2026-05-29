@@ -8,9 +8,28 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#14081d">
 <title>闘札圧倒伝ミミ 〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20260530b">
 </head>
 <body>
+<div id="preload-overlay">
+  <div class="preload-inner">
+    <div class="preload-logo">闘札圧倒伝ミミ</div>
+    <div class="preload-sub">— Loading · ポーカー豆知識をどうぞ —</div>
+    <div class="preload-bar"><div class="preload-bar-fill" id="preload-fill"></div></div>
+    <div class="preload-count"><span id="preload-loaded">0</span> / <span id="preload-total">0</span></div>
+    <div class="preload-tip" id="preload-tip">🃏 ポーカー豆知識 …</div>
+  </div>
+</div>
+<!-- グローバルなBGM要素（テンプレ外。画面切替でも保持） -->
+<audio id="lobby-bgm-audio" loop preload="auto">
+  <source src="assets/bgm/lobby.mp3" type="audio/mpeg">
+  <source src="assets/bgm/velvet-night-casino.m4a" type="audio/mp4">
+</audio>
+<audio id="ending-bgm-audio" preload="auto">
+  <source src="assets/bgm/ending.m4a" type="audio/mp4">
+  <source src="assets/bgm/ending.mp3" type="audio/mpeg">
+</audio>
+
 <div id="stage">
   <div id="app"></div>
 </div>
@@ -38,7 +57,7 @@
 <template id="tpl-title">
   <div class="screen title-screen">
 
-    <!-- タイトル背景画像：assets/background/title_bg.png を読み込み -->
+    <!-- タイトル背景画像：assets/backgrounds/title_bg.png を読み込み -->
     <div class="bg-layer bg-title">
       <img
         class="title-bg-img"
@@ -50,7 +69,7 @@
 
     <div class="title-inner">
 
-      <!-- タイトルロゴ画像：assets/ui/title.png を読み込み -->
+      <!-- タイトルロゴ画像：assets/ui/title.png（サブタイトル込み） -->
       <div class="title-logo-frame">
         <img
           class="title-logo-img"
@@ -58,57 +77,87 @@
           alt="闘札圧倒伝ミミ"
           onerror="this.style.display='none'; this.closest('.title-logo-frame').classList.add('logo-fallback');"
         >
-
-        <!-- ロゴ画像が読み込めなかった時だけ表示する文字タイトル -->
         <div class="title-logo-fallback">
-          <h1 class="game-title">
-            <span class="title-line1">闘札圧倒伝ミミ</span>
-          </h1>
-          <p class="subcopy">転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件</p>
+          <h1 class="game-title"><span class="title-line1">闘札圧倒伝ミミ</span></h1>
         </div>
       </div>
+
+      <!-- メインCTA -->
       <div class="title-buttons" data-bind="titleButtons">
-        <button class="btn btn-primary" data-action="start">はじめから</button>
+        <button class="btn btn-primary" data-action="start">
+          <span class="title-btn-main">はじめから</span>
+          <span class="title-btn-sub">FREE · ブラウザで遊べる</span>
+        </button>
       </div>
 
-      <p class="version-tag">ver 1.0</p>
+      <!-- フッター：シェアとバージョンのみ（背景に埋もれないようパネル化） -->
+      <div class="title-footer">
+        <button class="title-link" data-action="share-game">シェア</button>
+        <span class="title-footer-divider">·</span>
+        <span class="title-version">v1.0</span>
+      </div>
     </div>
   </div>
 </template>
 
-<template id="tpl-stage-select">
-  <div class="screen stage-select-screen">
-    <div class="bg-layer bg-stage"></div>
-    <header class="top-hud">
+<template id="tpl-lobby">
+  <div class="screen lobby-screen">
+    <div class="bg-layer bg-lobby"></div>
+    <div class="lobby-chandelier"></div>
+    <div class="lobby-dust"></div>
+    <header class="top-hud lobby-hud">
       <button class="btn btn-ghost" data-action="back-title">← タイトルへ</button>
-      <h2>ステージ選択</h2>
+      <h2 class="lobby-title">✦ ロビー ✦ <span class="lobby-sub">VIP CASINO LOUNGE</span></h2>
       <div class="hud-right">
-        <span class="coin-display">所持コイン：<span data-bind="saveCoins">0</span></span>
-        <button class="btn btn-secondary" data-action="open-shop">🛍 交換所</button>
+        <button class="panyu-free-btn" data-action="panyu-free" title="ぱにゅぱにゅで遊ぶ（バトル効果なし）">
+          <span class="panyu-free-emoji">🐰</span>
+        </button>
+        <span class="coin-display">💰 <span data-bind="saveCoins">0</span></span>
         <button class="btn btn-ghost" data-action="reset-save" title="セーブデータをリセット">⟲</button>
       </div>
     </header>
-    <main class="stage-list" data-bind="stageList"></main>
-    <div class="stage-tips">
-      <span>💡 セリナ・グラーノ・ヴェルベット戦の初回クリアで戦術ノート自動解放</span>
-    </div>
+    <main class="lobby-main">
+      <aside class="lobby-side">
+        <!-- リコ立ち絵：枠なしで背景に立つ -->
+        <div class="lobby-rico-standing">
+          <img data-bind="lobbyRicoImg" src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+          <button class="lobby-rico-outfit" data-bind="lobbyRicoOutfit" data-action="open-rico-viewer" title="リコ先輩を眺める"></button>
+        </div>
+        <!-- セリフは独立配置（ボタン前面に） -->
+        <div class="lobby-rico-bubble" data-bind="lobbyRicoLine">「ようこそロビーへ。次の卓、選んじゃって」</div>
+        <!-- 大きな交換所ボタン -->
+        <button class="lobby-shop-btn" data-action="open-shop" data-bind="lobbyShopBtn">
+          <span class="lobby-shop-icon">🛍</span>
+          <span class="lobby-shop-label">交換所</span>
+          <span class="lobby-shop-newbadge" data-bind="lobbyShopNewBadge" style="display:none"></span>
+        </button>
+        <!-- 音楽コントロール＋設定ボタン -->
+        <div class="lobby-bottom-panel" data-bind="lobbyBottomPanel"></div>
+      </aside>
+      <section class="lobby-content">
+        <div class="lobby-section-label">対戦相手 — Opponents</div>
+        <div class="lobby-stage-list" data-bind="stageList"></div>
+      </section>
+    </main>
   </div>
 </template>
 
 <template id="tpl-shop">
   <div class="screen shop-screen">
-    <div class="bg-layer bg-stage"></div>
+    <div class="bg-layer bg-shop"></div>
     <header class="top-hud">
-      <button class="btn btn-ghost" data-action="back-stage">← ステージ選択へ</button>
+      <button class="btn btn-ghost" data-action="back-lobby">← ロビーへ</button>
       <h2>🛍 交換所</h2>
       <span class="coin-display">所持コイン：<span data-bind="saveCoins">0</span></span>
     </header>
+    <nav class="shop-tabs">
+      <button class="shop-cat-btn active" data-cat="panyu">🐰 ぱにゅ強化</button>
+      <button class="shop-cat-btn" data-cat="note">📓 戦術ノート</button>
+      <button class="shop-cat-btn" data-cat="skin">🎨 見た目</button>
+      <button class="shop-cat-btn" data-cat="stack">💰 チップ拡張</button>
+      <button class="shop-cat-btn" data-cat="memory">💫 メモリ</button>
+    </nav>
     <main class="shop-main">
-      <aside class="shop-sidebar">
-        <button class="shop-cat-btn active" data-cat="panyu">ぱにゅ強化</button>
-        <button class="shop-cat-btn" data-cat="note">戦術ノート</button>
-        <button class="shop-cat-btn" data-cat="skin">見た目</button>
-      </aside>
       <section class="shop-items" data-bind="shopItems"></section>
       <aside class="shop-comment">
         <div class="character-frame char-grano-shop">
@@ -125,10 +174,15 @@
     <div class="bg-layer bg-poker"></div>
 
     <header class="top-hud">
-      <button class="btn btn-ghost" data-action="back-stage">中断</button>
+      <button class="btn btn-ghost" data-action="back-lobby">中断</button>
       <span class="hand-info">Hand <span data-bind="handNo">1</span></span>
+      <div class="street-tracker" data-bind="streetTracker"></div>
       <span class="opponent-name" data-bind="opponentName">ポルカ</span>
     </header>
+
+    <!-- 裏モード（クリア後限定・解放済みなら表示） -->
+    <button class="backdoor-toggle" data-action="toggle-backdoor" data-bind="backdoorBtn" title="裏モード：相手の心理ログを盗み見">✦</button>
+    <div class="backdoor-panel" data-bind="backdoorPanel"></div>
 
     <aside class="left-panel">
       <div class="character-frame char-rico">
@@ -143,55 +197,45 @@
           <img data-bind="opponentImg" alt="相手">
         </div>
         <div class="opponent-info">
-          <div class="chip-meter">
-            <div class="chip-meter-row">
-              <span class="chip-meter-label">チップ</span>
-              <span class="chip-meter-value" data-bind="opponentChips">1000</span>
-            </div>
-            <div class="chip-bar"><div class="chip-bar-fill chip-bar-opponent" data-bind="opponentChipBar"></div></div>
-          </div>
-          <div class="opponent-bet" data-bind="opponentBet"></div>
-          <div class="opponent-hand">
-            <div class="card card-back"></div>
-            <div class="card card-back"></div>
-          </div>
+          <!-- セリフを上に：立ち絵から吹き出しが伸びる構図 -->
           <div class="opponent-speech" data-bind="opponentSpeech"></div>
+          <!-- 手札（左）｜性格カード（右）：区切り線で役割明確化 -->
+          <div class="opponent-hand-row">
+            <div class="opponent-hand">
+              <div class="card card-back"></div>
+              <div class="card card-back"></div>
+            </div>
+            <div class="opp-divider"></div>
+            <div class="opp-personality" data-bind="opponentPersonality"></div>
+          </div>
         </div>
       </div>
 
-      <div class="community-cards" data-bind="communityCards">
-        <div class="card empty"></div>
-        <div class="card empty"></div>
-        <div class="card empty"></div>
-        <div class="card empty"></div>
-        <div class="card empty"></div>
+      <!-- 場札行：左右に残チップ、中央にコミュニティカード -->
+      <div class="community-row">
+        <div class="table-stack-slot" data-bind="oppStackSide"></div>
+        <div class="community-cards" data-bind="communityCards">
+          <div class="card empty"></div>
+          <div class="card empty"></div>
+          <div class="card empty"></div>
+          <div class="card empty"></div>
+          <div class="card empty"></div>
+        </div>
+        <div class="table-stack-slot" data-bind="playerStackSide"></div>
       </div>
 
-      <div class="pot-row">
-        <div class="bet-side bet-side-opponent">
-          <div class="bet-side-label" data-bind="opponentBetLabel">相手</div>
-          <div class="bet-side-amount" data-bind="opponentBetAmount">0</div>
-        </div>
-        <div class="pot-display" title="ポット = このハンドで賭けられたチップの合計。勝った方が総取り。">
-          🪙 ポット <small>(合計)</small>
-          <div class="pot-amount" data-bind="pot">0</div>
-        </div>
-        <div class="bet-side bet-side-player">
-          <div class="bet-side-label">ミミ</div>
-          <div class="bet-side-amount" data-bind="playerBetAmount">0</div>
-        </div>
-      </div>
+      <div class="bet-unified" data-bind="betUnified"></div>
     </section>
 
     <aside class="right-panel">
-      <div class="zazazo-display">
-        <div class="zazazo-label">ゾゾゾゲージ</div>
-        <div class="zazazo-bar">
-          <div class="zazazo-fill" data-bind="zazazoFill"></div>
-        </div>
+      <!-- ミミミゲージ / 心理統計は内部ロジックで保持しつつ画面表示は撤去 -->
+      <div class="zazazo-display" style="display:none">
+        <div class="zazazo-label">ミミミゲージ</div>
+        <div class="zazazo-bar"><div class="zazazo-fill" data-bind="zazazoFill"></div></div>
         <div class="zazazo-text" data-bind="zazazoText">無風</div>
       </div>
-      <div class="psych-log" data-bind="psychLog"></div>
+      <div class="psych-stats" data-bind="psychStats" style="display:none"></div>
+      <div class="situation-analysis" data-bind="situationAnalysis"></div>
     </aside>
 
     <footer class="bottom-bar">
@@ -201,28 +245,16 @@
         </div>
       </div>
       <div class="mimi-hand-area">
-        <div class="player-row">
-          <div class="chip-meter">
-            <div class="chip-meter-row">
-              <span class="chip-meter-label">ミミ</span>
-              <span class="chip-meter-value" data-bind="playerChips">1000</span>
-            </div>
-            <div class="chip-bar"><div class="chip-bar-fill chip-bar-player" data-bind="playerChipBar"></div></div>
-          </div>
-          <div class="current-hand-display" data-bind="currentHandName">役：—</div>
-        </div>
         <div class="hand-thought-row">
-          <div class="player-hand" data-bind="playerHand">
-            <div class="card empty"></div>
-            <div class="card empty"></div>
+          <div class="hand-stack">
+            <div class="hand-label hand-label-hand" data-bind="currentHandName">—</div>
+            <div class="player-hand" data-bind="playerHand">
+              <div class="card empty"></div>
+              <div class="card empty"></div>
+            </div>
+            <div class="hand-kicker" data-bind="currentHandKicker"></div>
           </div>
           <div class="mimi-thought-bubble" data-bind="mimiThought">「ふぅ……まずは手札を見てから」</div>
-        </div>
-        <div class="panyu-gauge">
-          <div class="panyu-bar" title="ぱにゅゲージ">
-            <div class="panyu-fill" data-bind="panyuFill"></div>
-            <div class="panyu-pip" data-bind="panyuPips"></div>
-          </div>
         </div>
       </div>
       <div class="action-area" data-bind="actionArea"></div>
@@ -269,26 +301,14 @@
       <div class="psych-speech" data-bind="psychSpeech"></div>
       <div class="psych-hint zazazo-hint" data-bind="zazazoHint"></div>
       <div class="psych-choices" data-bind="psychChoices"></div>
+      <button class="psych-skip-btn" data-bind="psychSkipBtn" data-action="psych-skip" style="display:none;">スキップ（性格読み切り済み）</button>
     </div>
   </div>
 </template>
 
 <template id="tpl-ending">
   <div class="screen ending-screen">
-    <div class="bg-layer bg-result"></div>
-    <div class="ending-inner">
-      <h2 class="ending-title">— ENDING —</h2>
-      <div class="ending-scene">
-        <div class="ending-line"><b class="speaker rico">リコ先輩：</b>「やるじゃん、ミミ。ちゃんと場を見て、顔色を見て、最後まで降りなかった」</div>
-        <div class="ending-line"><b class="speaker mimi">ミミ：</b>「私、カードだけ見てたら負けてました。<br>でも……勝負って、場の空気まで含めて読むものなんですね」</div>
-        <div class="ending-line"><b class="speaker velvet">ヴェルベット：</b>「新人にしては、悪くないわ。<br>その妙なスキル……次の卓でも通じるか、楽しみにしているわ」</div>
-      </div>
-      <div class="ending-credit">闘札大逆転ミミ　MVP END</div>
-      <div class="ending-thanks">遊んでくれてありがとう！</div>
-      <div class="ending-buttons">
-        <button class="btn btn-primary" data-action="back-title">タイトルへ</button>
-      </div>
-    </div>
+    <div class="ending-stage" id="ending-stage"></div>
   </div>
 </template>
 
@@ -311,12 +331,12 @@
       <div class="result-reason" data-bind="resultReason"></div>
       <div class="result-buttons" data-bind="resultButtons">
         <button class="btn btn-primary" data-action="rematch">再戦</button>
-        <button class="btn btn-secondary" data-action="back-stage">ステージ選択へ</button>
+        <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
       </div>
     </div>
   </div>
 </template>
 
-<script src="game.js"></script>
+<script src="game.js?v=20260530i"></script>
 </body>
 </html>

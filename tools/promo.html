@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>闘札圧倒伝ミミ — 紹介画像ジェネレータ</title>
+<style>
+  /* ===== ジェネレータUI ===== */
+  :root {
+    --gold: #f5d77a;
+    --gold-dim: #b8923f;
+    --red:  #8a1828;
+    --purple-dark:  #1a0820;
+    --purple-mid:   #2a1238;
+    --purple-light: #4a1d68;
+    --paper: #fbeec8;
+    --shadow: 0 8px 20px rgba(0,0,0,0.6);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: #14081a;
+    font-family: "Yu Gothic UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    color: var(--paper);
+    min-height: 100vh;
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--gold-dim);
+    border-radius: 10px;
+    align-items: center;
+  }
+  .toolbar h1 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+  .toolbar select, .toolbar button {
+    padding: 10px 18px;
+    border: 1px solid var(--gold);
+    background: linear-gradient(180deg, var(--purple-mid), var(--purple-dark));
+    color: var(--paper);
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .toolbar button:hover { background: var(--purple-light); }
+  .toolbar button.primary {
+    background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dim) 100%);
+    color: var(--purple-dark);
+    font-weight: 700;
+  }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .note { font-size: 12px; opacity: 0.7; }
+
+  /* キャンバス領域 */
+  #posters { display: flex; flex-direction: column; gap: 32px; align-items: center; }
+
+  /* ===== ポスター共通スタイル ===== */
+  .poster {
+    position: relative;
+    overflow: hidden;
+    color: var(--paper);
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", "Meiryo", serif;
+    box-shadow: var(--shadow);
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245,215,122,0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 90% 50% at 50% 100%, rgba(140,30,50,0.45) 0%, rgba(20,8,29,0) 70%),
+      linear-gradient(180deg, #1a0e2a 0%, #2a1238 40%, #4a1828 100%);
+  }
+  .poster::before {
+    /* シャンデリア風の上部光 */
+    content: '';
+    position: absolute;
+    top: -100px; left: 50%;
+    width: 600px; height: 400px;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at 50% 0%, rgba(245,215,122,0.35), transparent 60%);
+    pointer-events: none;
+  }
+  .poster::after {
+    /* 周囲ヴィネット */
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%);
+    pointer-events: none;
+  }
+
+  /* ===== ポスター A：縦長メインビジュアル（1200×1800） ===== */
+  .poster.portrait {
+    width: 1200px;
+    min-height: 1800px;
+    padding: 60px 70px;
+  }
+  .portrait .logo {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .portrait .logo .jp {
+    font-size: 84px;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-shadow:
+      0 0 12px rgba(245,215,122,0.7),
+      0 4px 0 rgba(0,0,0,0.6),
+      0 8px 24px rgba(0,0,0,0.8);
+    margin-bottom: 6px;
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  }
+  .portrait .logo .en {
+    font-size: 18px;
+    letter-spacing: 0.4em;
+    color: var(--paper);
+    opacity: 0.7;
+    font-family: "Georgia", serif;
+  }
+  .portrait .catchphrase {
+    text-align: center;
+    margin: 30px auto 36px;
+    padding: 18px 28px;
+    background: rgba(0,0,0,0.4);
+    border-top: 1px solid var(--gold);
+    border-bottom: 1px solid var(--gold);
+    font-size: 26px;
+    line-height: 1.7;
+    letter-spacing: 0.08em;
+    max-width: 1000px;
+  }
+  .portrait .catchphrase .accent {
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .section {
+    margin: 36px 0;
+    position: relative;
+    z-index: 2;
+  }
+  .section-title {
+    font-size: 28px;
+    color: var(--gold);
+    border-left: 6px solid var(--gold);
+    padding-left: 16px;
+    margin-bottom: 18px;
+    letter-spacing: 0.15em;
+  }
+  .section-title .en {
+    font-size: 14px;
+    margin-left: 12px;
+    color: var(--paper);
+    opacity: 0.5;
+    letter-spacing: 0.3em;
+    font-family: "Georgia", serif;
+  }
+  .body-text {
+    font-size: 17px;
+    line-height: 1.85;
+    letter-spacing: 0.04em;
+  }
+  .body-text p { margin: 0 0 10px; }
+  .body-text .em { color: var(--gold); font-weight: 700; }
+  .body-text .quote {
+    display: block;
+    margin: 14px 0 0 24px;
+    padding-left: 18px;
+    border-left: 3px solid var(--gold);
+    font-style: italic;
+    color: var(--paper);
+    opacity: 0.92;
+  }
+
+  /* キャラクタープロフィール */
+  .char-card {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 24px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(245,215,122,0.4);
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 16px;
+  }
+  .char-card .portrait-box {
+    width: 220px; height: 280px;
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--purple-mid) 0%, var(--purple-dark) 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 110px;
+    color: var(--gold);
+    overflow: hidden;
+    position: relative;
+  }
+  .char-card .portrait-box img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+  .char-card .info { padding-top: 4px; }
+  .char-card .name {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .char-card .title {
+    font-size: 15px;
+    color: var(--paper);
+    opacity: 0.75;
+    margin-bottom: 12px;
+    letter-spacing: 0.15em;
+  }
+  .char-card .params {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  .char-card .params .param {
+    padding: 4px 10px;
+    background: rgba(245,215,122,0.15);
+    border: 1px solid var(--gold-dim);
+    border-radius: 14px;
+    color: var(--paper);
+  }
+  .char-card .desc {
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 10px;
+  }
+  .char-card .voice {
+    font-size: 14px;
+    color: var(--gold);
+    font-style: italic;
+    border-left: 2px solid var(--gold);
+    padding-left: 10px;
+    margin-top: 8px;
+  }
+
+  /* 対戦相手グリッド */
+  .opponents-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .opponent-card {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(245,215,122,0.35);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .opponent-card .opp-head {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 10px;
+  }
+  .opponent-card .opp-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, var(--gold), var(--gold-dim));
+    color: var(--purple-dark);
+    font-size: 28px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900;
+  }
+  .opponent-card .opp-name {
+    font-size: 22px; font-weight: 700; color: var(--gold);
+  }
+  .opponent-card .opp-title {
+    font-size: 12px; opacity: 0.7; letter-spacing: 0.15em;
+  }
+  .opponent-card .opp-desc {
+    font-size: 14px; line-height: 1.6; margin-top: 4px;
+  }
+  .opponent-card .opp-quote {
+    font-style: italic;
+    color: var(--gold);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+
+  /* 特徴グリッド */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .feature-card {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--gold-dim);
+    border-radius: 10px;
+    padding: 18px 16px;
+    text-align: center;
+  }
+  .feature-card .feat-icon {
+    font-size: 40px;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .feature-card .feat-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 6px;
+    letter-spacing: 0.08em;
+  }
+  .feature-card .feat-desc {
+    font-size: 12px;
+    line-height: 1.5;
+    opacity: 0.85;
+  }
+
+  /* フッター */
+  .poster .footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--gold-dim);
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: 0.2em;
+    color: var(--paper);
+    opacity: 0.7;
+  }
+  .poster .footer .url {
+    color: var(--gold);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-top: 6px;
+    display: block;
+    word-break: break-all;
+  }
+
+  /* ===== ポスター B：SNS横長サムネ（1200×630） ===== */
+  .poster.thumb {
+    width: 1200px; height: 630px;
+    padding: 40px 60px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    align-items: center;
+    gap: 30px;
+  }
+  .thumb .thumb-left { z-index: 2; }
+  .thumb .thumb-logo {
+    font-size: 72px;
+    color: var(--gold);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-shadow: 0 4px 0 rgba(0,0,0,0.6), 0 8px 20px rgba(0,0,0,0.7);
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .thumb .thumb-sub {
+    font-size: 22px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: var(--paper);
+  }
+  .thumb .thumb-feats {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .thumb .thumb-feat {
+    padding: 8px 14px;
+    background: rgba(245,215,122,0.15);
+    border: 1px solid var(--gold);
+    border-radius: 20px;
+    font-size: 14px;
+    color: var(--gold);
+  }
+  .thumb .thumb-right {
+    text-align: center;
+    z-index: 2;
+  }
+  .thumb .thumb-char {
+    width: 320px; height: 460px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, var(--purple-mid) 0%, var(--purple-dark) 100%);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 160px; color: var(--gold);
+    overflow: hidden;
+  }
+  .thumb .thumb-char img {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: top center;
+  }
+
+  /* ===== ポスター C：正方形キャラ紹介（1080×1080） ===== */
+  .poster.square {
+    width: 1080px; height: 1080px;
+    padding: 56px 64px;
+  }
+  .square .sq-title {
+    text-align: center;
+    font-size: 48px;
+    color: var(--gold);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .square .sq-sub {
+    text-align: center;
+    font-size: 16px;
+    letter-spacing: 0.3em;
+    opacity: 0.6;
+    margin-bottom: 28px;
+  }
+  .square .sq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .square .opponent-card { padding: 18px; }
+
+  /* 印刷／キャプチャ用：影とトリミング無効 */
+  @media print {
+    body { background: white; padding: 0; }
+    .toolbar { display: none; }
+    .poster { box-shadow: none; page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <h1>🎴 闘札圧倒伝ミミ — 紹介画像ジェネレータ</h1>
+    <span class="spacer"></span>
+    <label>表示：
+      <select id="posterSelect">
+        <option value="all">すべて</option>
+        <option value="portrait">A. メインビジュアル（縦長 1200×1800）</option>
+        <option value="thumb">B. SNSサムネ（横長 1200×630）</option>
+        <option value="square">C. キャラ紹介（正方形 1080×1080）</option>
+      </select>
+    </label>
+    <button id="downloadBtn" class="primary">📸 表示中のポスターをPNG保存</button>
+    <span class="note">※ html2canvas を CDN から取得。画像が表示されない場合はブラウザの右クリック→保存も可</span>
+  </div>
+
+  <div id="posters">
+    <!-- ============ A. 縦長メインビジュアル ============ -->
+    <article class="poster portrait" data-poster="portrait">
+
+      <!-- ロゴ -->
+      <div class="logo">
+        <div class="jp">闘札圧倒伝<br><span style="font-size:120px;">ミ ミ</span></div>
+        <div class="en">TOSATSU - ATTOUDEN - MIMI</div>
+      </div>
+
+      <!-- キャッチコピー -->
+      <div class="catchphrase">
+        夜霧立ち込めるカジノ・ラビリンス——<br>
+        ここは札の音が <span class="accent">人生を変える</span> 場所。<br>
+        ぱにゅぱにゅとした賭けの素人が、<br>
+        <span class="accent">「圧倒」</span>の称号に手を伸ばす、心理戦ポーカーADV。
+      </div>
+
+      <!-- 世界観 -->
+      <section class="section">
+        <div class="section-title">世界観 <span class="en">- WORLD -</span></div>
+        <div class="body-text">
+          <p>
+            国際カジノ都市 <span class="em">「ラビリンス」</span>。表向きは煌びやかなVIPラウンジが連なる夜の歓楽街だが、その地下深くでは「<span class="em">闘札（とうさつ）</span>」と呼ばれる伝説の真剣勝負が日夜繰り広げられている。
+          </p>
+          <p>
+            闘札のルールは至ってシンプル——テキサスホールデムによる一対一の対決。だが、その勝敗を分けるのは札の強さだけではない。相手の<span class="em">「心」</span>を読み、揺らぎを誘い、確信に変える者だけが、最深部の称号「<span class="em">圧倒</span>」を手にできる。
+          </p>
+          <p>
+            千の卓を制し、敗者の人生を奪い続けた絶対王者——通称 <span class="em">「ヴェルベット」</span>。彼女に挑むため、夜霧をかきわけ、迷宮の扉を叩く一人の少女がいた。
+          </p>
+        </div>
+      </section>
+
+      <!-- 主人公 -->
+      <section class="section">
+        <div class="section-title">主人公 <span class="en">- PROTAGONIST -</span></div>
+        <div class="char-card">
+          <div class="portrait-box">
+            <!-- assets が存在する場合は表示、なければ絵文字フォールバック -->
+            <img src="../assets/characters/panyu.png" alt="ミミ"
+                 onerror="this.style.display='none';this.parentNode.insertAdjacentText('beforeend','🐰');">
+          </div>
+          <div class="info">
+            <div class="name">ミミ</div>
+            <div class="title">— 賭けの素人、闘札の見習い —</div>
+            <div class="params">
+              <span class="param">推定年齢：17</span>
+              <span class="param">武器：直感「ぱにゅぱにゅ」</span>
+              <span class="param">弱点：算術</span>
+              <span class="param">好物：あんパン</span>
+            </div>
+            <div class="desc">
+              ラビリンスの片隅、寂れた裏路地で兎のマスコット「ミミ」を肩に乗せて歩いていたところを、リコ先輩にスカウトされた少女。本名は語られず、いつしか肩のマスコットと同じ名で呼ばれるようになる。
+            </div>
+            <div class="desc">
+              ポーカーの知識はゼロに等しいが、相手の<span class="em" style="color:var(--gold)">「心の揺らぎ」</span>を肌で感じ取る天性の直感を持つ。その能力は本人も自覚しておらず、決めるべき場面でただ「ぱにゅっ」と頬を膨らませると——なぜか相手の本心が見えてしまう。
+            </div>
+            <div class="voice">「えっ、これ、嘘ついてますよね……？　なんとなく、ぱにゅっとした感じで」</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 師匠 -->
+      <section class="section">
+        <div class="section-title">指南役 <span class="en">- MENTOR -</span></div>
+        <div class="char-card">
+          <div class="portrait-box">
+            <img src="../assets/characters/rico_default.png" alt="リコ先輩"
+                 onerror="this.style.display='none';this.parentNode.insertAdjacentText('beforeend','👩');">
+          </div>
+          <div class="info">
+            <div class="name">リコ先輩</div>
+            <div class="title">— ラビリンスの伝説、教える者 —</div>
+            <div class="params">
+              <span class="param">年齢：不詳</span>
+              <span class="param">役職：専属ディーラー</span>
+              <span class="param">通り名：「沈黙の女王」</span>
+            </div>
+            <div class="desc">
+              ラビリンスの専属ディーラーにして、かつて闘札の世界で名を馳せた元・プロプレイヤー。引退の理由を語ったことはない。普段はカウンターで艶やかに微笑む大人の女だが、本気を出した時の彼女のプレイは、すべてのパラメータが極限まで振り切れた<span class="em" style="color:var(--gold)">怪物</span>そのもの。
+            </div>
+            <div class="desc">
+              ミミに闘札の手ほどきをするのは、彼女自身の<span class="em" style="color:var(--gold)">過去</span>と無関係ではない。なぜ素人の少女を選んだのか——その答えは、物語の最深部で明かされる。
+            </div>
+            <div class="voice">「ふぅん、いいわよ。やってみなさい。怖いでしょう？　……怖くないやつは、ポーカーやっちゃダメ」</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 対戦相手 -->
+      <section class="section">
+        <div class="section-title">対戦相手 <span class="en">- OPPONENTS -</span></div>
+        <div class="opponents-grid">
+          <div class="opponent-card">
+            <div class="opp-head">
+              <div class="opp-icon">🎀</div>
+              <div>
+                <div class="opp-name">ポルカ</div>
+                <div class="opp-title">第一の関門・感情型</div>
+              </div>
+            </div>
+            <div class="opp-desc">
+              新人ディーラー。喜怒哀楽がそのまま札に乗る、わかりやすいタイプ。ブラフは多いが、本人がブラフだと気付かれているのに気付かない。
+            </div>
+            <div class="opp-quote">「えへへ、わたしの番〜！　……あれ、なんで負けたの？」</div>
+          </div>
+          <div class="opponent-card">
+            <div class="opp-head">
+              <div class="opp-icon">📘</div>
+              <div>
+                <div class="opp-name">セリナ</div>
+                <div class="opp-title">第二の関門・盤面読み</div>
+              </div>
+            </div>
+            <div class="opp-desc">
+              内気だがボード（場札）の危険度を瞬時に見抜く理論派。受け身に見えて、フラッシュ・ストレートの気配を感じた瞬間に豹変する。
+            </div>
+            <div class="opp-quote">「ぼ……ボードを見て。それ、危ないよ」</div>
+          </div>
+          <div class="opponent-card">
+            <div class="opp-head">
+              <div class="opp-icon">💰</div>
+              <div>
+                <div class="opp-name">グラーノ</div>
+                <div class="opp-title">第三の関門・算術主義</div>
+              </div>
+            </div>
+            <div class="opp-desc">
+              ラビリンス交換所を取り仕切る老紳士。すべてをポットオッズで割り切る冷徹な数学者。だがその合理性こそが、ミミの「直感」に綻びを生む。
+            </div>
+            <div class="opp-quote">「数字は嘘をつかない。お嬢さん、勝算をお持ちですかな？」</div>
+          </div>
+          <div class="opponent-card">
+            <div class="opp-head">
+              <div class="opp-icon">♛</div>
+              <div>
+                <div class="opp-name">ヴェルベット</div>
+                <div class="opp-title">最深部・闘札の支配者</div>
+              </div>
+            </div>
+            <div class="opp-desc">
+              ラビリンス最深部に君臨する絶対王者。罠師、心理操作、支配的プレイ——あらゆる戦術を極めた者。リコ先輩との因縁の正体は、彼女との対峙でついに明らかになる。
+            </div>
+            <div class="opp-quote">「あなたの読み、見せて頂戴。——ええ、それで構わないわよ」</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 特徴 -->
+      <section class="section">
+        <div class="section-title">ゲームの特徴 <span class="en">- FEATURES -</span></div>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feat-icon">💭</div>
+            <div class="feat-name">心理バトル</div>
+            <div class="feat-desc">相手の言動から本心を読む選択式ミニゲーム。正解で相手のメンタルを削る</div>
+          </div>
+          <div class="feature-card">
+            <div class="feat-icon">📐</div>
+            <div class="feat-name">論理バトル</div>
+            <div class="feat-desc">ポットオッズ・アウツ計算など、ポーカー数学を実戦で学べる</div>
+          </div>
+          <div class="feature-card">
+            <div class="feat-icon">🐰</div>
+            <div class="feat-name">ぱにゅぱにゅ</div>
+            <div class="feat-desc">ぷにぷに連打で相手のミスを誘発。ミミの直感が冴え渡る</div>
+          </div>
+          <div class="feature-card">
+            <div class="feat-icon">🎴</div>
+            <div class="feat-name">本格HUテキサス</div>
+            <div class="feat-desc">プリフロップ〜リバーまで完全実装。ブラインド・ベットも本格仕様</div>
+          </div>
+          <div class="feature-card">
+            <div class="feat-icon">📓</div>
+            <div class="feat-name">講義モード</div>
+            <div class="feat-desc">リコ先輩の8章24問の集中講義で、初心者から上級者へ</div>
+          </div>
+          <div class="feature-card">
+            <div class="feat-icon">🛍</div>
+            <div class="feat-name">交換所</div>
+            <div class="feat-desc">56種類の購入品。衣装・カード裏・テーブル・寸劇など多彩</div>
+          </div>
+          <div class="feature-card">
+            <div class="feat-icon">🏆</div>
+            <div class="feat-name">トロフィー</div>
+            <div class="feat-desc">28種の称号と達成記録。コンプ要素満載</div>
+          </div>
+          <div class="feature-card">
+            <div class="feat-icon">📜</div>
+            <div class="feat-name">ハンド振り返り</div>
+            <div class="feat-desc">過去20ハンドを再生して、自分の読みを検証できる</div>
+          </div>
+          <div class="feature-card">
+            <div class="feat-icon">✦</div>
+            <div class="feat-name">裏モード</div>
+            <div class="feat-desc">クリア後解放。相手の手札と心理ログを覗き見できる</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- フッター -->
+      <div class="footer">
+        ブラウザだけで遊べる、本格心理戦ポーカーADV
+        <span class="url">https://takakazuaikawa-hue.github.io/tousatsu-mimi/</span>
+      </div>
+    </article>
+
+    <!-- ============ B. SNSサムネ ============ -->
+    <article class="poster thumb" data-poster="thumb">
+      <div class="thumb-left">
+        <div class="thumb-logo">闘札圧倒伝<br>ミ ミ</div>
+        <div class="thumb-sub">
+          夜霧のカジノ、伝説の闘札。<br>
+          直感の少女が、絶対王者に挑む。
+        </div>
+        <div class="thumb-feats">
+          <span class="thumb-feat">💭 心理バトル</span>
+          <span class="thumb-feat">📐 論理バトル</span>
+          <span class="thumb-feat">🐰 ぱにゅぱにゅ</span>
+          <span class="thumb-feat">🎴 本格HU</span>
+          <span class="thumb-feat">📓 講義モード</span>
+        </div>
+      </div>
+      <div class="thumb-right">
+        <div class="thumb-char">
+          <img src="../assets/characters/rico_default.png" alt="リコ先輩"
+               onerror="this.style.display='none';this.parentNode.insertAdjacentText('beforeend','♛');">
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ C. キャラ紹介・正方形 ============ -->
+    <article class="poster square" data-poster="square">
+      <div class="sq-title">闘札圧倒伝ミミ</div>
+      <div class="sq-sub">CHARACTERS</div>
+      <div class="sq-grid">
+        <div class="opponent-card">
+          <div class="opp-head">
+            <div class="opp-icon">🐰</div>
+            <div>
+              <div class="opp-name">ミミ</div>
+              <div class="opp-title">主人公・賭けの素人</div>
+            </div>
+          </div>
+          <div class="opp-desc">直感だけで挑む見習い。「ぱにゅぱにゅ」で相手の本心を読む天性の才能</div>
+          <div class="opp-quote">「ぱにゅっとした感じで、嘘、見えました」</div>
+        </div>
+        <div class="opponent-card">
+          <div class="opp-head">
+            <div class="opp-icon">👩</div>
+            <div>
+              <div class="opp-name">リコ先輩</div>
+              <div class="opp-title">指南役・沈黙の女王</div>
+            </div>
+          </div>
+          <div class="opp-desc">伝説の元プロ。本気のリコは全パラメータ最強の怪物</div>
+          <div class="opp-quote">「ふぅん、いいわよ。やってみなさい」</div>
+        </div>
+        <div class="opponent-card">
+          <div class="opp-head"><div class="opp-icon">🎀</div><div>
+            <div class="opp-name">ポルカ</div><div class="opp-title">第一の関門</div></div></div>
+          <div class="opp-desc">感情型の新人ディーラー。ブラフが顔に出る</div>
+          <div class="opp-quote">「えへへ、わたしの番〜！」</div>
+        </div>
+        <div class="opponent-card">
+          <div class="opp-head"><div class="opp-icon">📘</div><div>
+            <div class="opp-name">セリナ</div><div class="opp-title">第二の関門</div></div></div>
+          <div class="opp-desc">盤面読みの理論派。受け身に見えて鋭い</div>
+          <div class="opp-quote">「ぼ……ボードを見て」</div>
+        </div>
+        <div class="opponent-card">
+          <div class="opp-head"><div class="opp-icon">💰</div><div>
+            <div class="opp-name">グラーノ</div><div class="opp-title">第三の関門</div></div></div>
+          <div class="opp-desc">交換所の老紳士。算術主義の冷徹な数学者</div>
+          <div class="opp-quote">「数字は嘘をつかない」</div>
+        </div>
+        <div class="opponent-card">
+          <div class="opp-head"><div class="opp-icon">♛</div><div>
+            <div class="opp-name">ヴェルベット</div><div class="opp-title">最深部・闘札の支配者</div></div></div>
+          <div class="opp-desc">絶対王者。罠師にして心理戦の極致</div>
+          <div class="opp-quote">「あなたの読み、見せて頂戴」</div>
+        </div>
+      </div>
+      <div class="footer" style="margin-top: 30px;">
+        <span class="url">https://takakazuaikawa-hue.github.io/tousatsu-mimi/</span>
+      </div>
+    </article>
+  </div>
+
+  <!-- PNG保存用 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    const selectEl = document.getElementById('posterSelect');
+    const posters = [...document.querySelectorAll('.poster')];
+    const showOnly = (key) => {
+      posters.forEach(p => {
+        p.style.display = (key === 'all' || p.dataset.poster === key) ? '' : 'none';
+      });
+    };
+    selectEl.addEventListener('change', () => showOnly(selectEl.value));
+
+    document.getElementById('downloadBtn').addEventListener('click', async () => {
+      const visible = posters.filter(p => p.style.display !== 'none');
+      if (visible.length === 0) { alert('表示中のポスターがありません'); return; }
+      const btn = document.getElementById('downloadBtn');
+      btn.disabled = true; btn.textContent = '📸 生成中...';
+      try {
+        for (const poster of visible) {
+          const canvas = await html2canvas(poster, {
+            backgroundColor: null,
+            scale: 1.2,                // ややハイレゾ化
+            useCORS: true,
+            logging: false,
+          });
+          const dataUrl = canvas.toDataURL('image/png');
+          const a = document.createElement('a');
+          a.href = dataUrl;
+          a.download = `tousatsu-mimi-${poster.dataset.poster}-${Date.now()}.png`;
+          a.click();
+          await new Promise(r => setTimeout(r, 300));
+        }
+        btn.textContent = '✓ 保存完了';
+        setTimeout(() => { btn.textContent = '📸 表示中のポスターをPNG保存'; btn.disabled = false; }, 1500);
+      } catch (e) {
+        alert('保存に失敗しました：' + e.message + '\n\n代替手段：ブラウザの開発者ツールでポスター要素を選択→スクリーンショット');
+        btn.textContent = '📸 表示中のポスターをPNG保存';
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
