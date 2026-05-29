@@ -475,11 +475,37 @@ function mkScore(rank, name, tiebreak) {
 
 // 手札強度（0..1）：ハンド評価値を正規化（簡易）
 function handStrength01(cards) {
+  // AI判断用：単純な役ランク 0-9 を 0-1 にマップ（AI閾値に合わせて調整済み）
   const ev = evaluateHand(cards);
-  // 0..9 を 0..1 にざっくり
   const base = ev.rank / 9;
-  // tiebreak小数加算
   return Math.min(1, base + (ev.score % 1e10) / 1e12);
+}
+
+// プレイヤー表示用：実戦的な対戦勝率に近い値を返す（手札+場札の総合評価）
+// AIの判断系（handStrength01）とは分離。表示「勝率○%」で違和感を出さないため。
+function realisticEquity01(cards) {
+  const ev = evaluateHand(cards);
+  // 役ランクごとの「対戦勝率」現実的レンジ（ヘッズアップ・ショーダウン相当）
+  const bands = [
+    [0.20, 0.50],  // 0 ハイカード：トップカード次第で 20-50%
+    [0.55, 0.82],  // 1 ワンペア：弱ペア55% → エースペア82%
+    [0.80, 0.92],  // 2 ツーペア
+    [0.88, 0.96],  // 3 スリーカード
+    [0.92, 0.97],  // 4 ストレート
+    [0.94, 0.98],  // 5 フラッシュ
+    [0.97, 0.99],  // 6 フルハウス
+    [0.985, 0.995], // 7 フォーカード
+    [0.998, 0.9995],// 8 ストレートフラッシュ
+    [1.00, 1.00],   // 9 ロイヤル
+  ];
+  const band = bands[Math.min(ev.rank, 9)];
+  // band 内の位置：bestFive のトップカードランクで補間（2→0、A→1）
+  let pos = 0.5;
+  if (ev.bestFive) {
+    const top = Math.max(...ev.bestFive.map(c => c.rank));
+    pos = (top - 2) / 12;
+  }
+  return band[0] + pos * (band[1] - band[0]);
 }
 
 //=============================================================
@@ -2382,11 +2408,19 @@ function applyBindings() {
         break;
       }
       case 'mimiThought': el.textContent = state.mimiThought; break;
-      case 'situationAnalysis': el.innerHTML = renderSituationAnalysis(); break;
+      case 'oppStackSide': el.innerHTML = renderStackOnTable('opponent'); break;
+      case 'playerStackSide': el.innerHTML = renderStackOnTable('player'); break;
+      case 'situationAnalysis': {
+        el.innerHTML = renderSituationAnalysis();
+        // 戦況内に追加した data-action ボタンに onAction をバインド
+        el.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+        break;
+      }
       case 'ricoAdvice': el.innerHTML = state.ricoAdvice; break;
       case 'opponentSpeech': el.textContent = state.opponentSpeech; break;
       case 'opponentBet': el.innerHTML = renderOpponentBet(); break;
       case 'currentHandName': el.innerHTML = renderCurrentHandName(); break;
+      case 'currentHandKicker': el.innerHTML = renderCurrentHandKicker(); break;
       case 'opponentBetLabel': el.textContent = state.opponentName || '相手'; break;
       case 'opponentBetAmount': {
         const v = state.currentBetOpponent;
@@ -3762,7 +3796,8 @@ function renderSituationAnalysis() {
   let hs = 0;
   try {
     const all = [...state.playerHand, ...state.community];
-    hs = state.community.length >= 3 ? handStrength01(all) : opponentPreflopStrength(state.playerHand);
+    // プレイヤー表示用：実戦的な勝率推定（realisticEquity01）を使用
+    hs = state.community.length >= 3 ? realisticEquity01(all) : opponentPreflopStrength(state.playerHand);
   } catch(e) {}
   const hsPct = Math.round(hs * 100);
 
@@ -3777,22 +3812,41 @@ function renderSituationAnalysis() {
   // 1対1の場合、handStrength01は対ランダム相手の絶対値で実戦勝率より低めに出る傾向。
   // ヘッズアップ補正：実効勝率 = hsPct + 10 程度（相手レンジが広い分）
   // 加えて、相手意図がbluff寄りなら実効勝率はさらに +5
-  let effectivePct = hsPct + 10; // ヘッズアップ補正
+  // ヘッズアップ補正：プリフロップのみ。ポストフロップは realisticEquity01 が既に実戦値
+  const isPreflopPhase = (state.community || []).length === 0;
+  let huBonus = 0;
+  if (isPreflopPhase) {
+    if (hsPct >= 60)      huBonus = 5;
+    else if (hsPct >= 40) huBonus = 8;
+    else if (hsPct >= 25) huBonus = 6;
+    else                  huBonus = 3;
+  }
+  let effectivePct = hsPct + huBonus;
   if (state.lastOpponentIntent === 'bluff' || state.lastOpponentIntent === 'forced_bluff') effectivePct += 5;
   if (state.lastOpponentIntent === 'value') effectivePct -= 5;
   effectivePct = Math.max(0, Math.min(100, effectivePct));
 
   let advice = '';
   let adviceClass = 'sit-neutral';
+  // プリフロップかどうかでアドバイス文を切り替え（ボタン表記と整合）
+  const isPreflop = (state.community || []).length === 0;
   // プレイヤーのターンでなければアドバイス省略（次は相手次第）
   if (!state.isPlayerTurn) {
     advice = '⌛ 相手の手番待ち……';
     adviceClass = 'sit-neutral';
   } else if (need === 0) {
     // チェックorベットの場面（コールではない）
-    if (effectivePct >= 65)       { advice = '💪 ベットで圧をかけよう'; adviceClass = 'sit-aggressive'; }
-    else if (effectivePct >= 45)  { advice = '🟡 1/2ポット程度の小ベット可'; adviceClass = 'sit-neutral'; }
-    else                          { advice = '👁 チェックで様子見'; adviceClass = 'sit-neutral'; }
+    if (isPreflop) {
+      // プリフロップ：レイズ／チェック
+      if (effectivePct >= 65)       { advice = '💪 中レイズで圧をかけよう'; adviceClass = 'sit-aggressive'; }
+      else if (effectivePct >= 45)  { advice = '🟡 小レイズ可';            adviceClass = 'sit-neutral'; }
+      else                          { advice = '👁 チェックで様子見';        adviceClass = 'sit-neutral'; }
+    } else {
+      // ポストフロップ：ベットサイズで具体的に
+      if (effectivePct >= 65)       { advice = '💪 2/3ポット〜で圧をかけよう'; adviceClass = 'sit-aggressive'; }
+      else if (effectivePct >= 45)  { advice = '🟡 1/2ポット程度の小ベット可'; adviceClass = 'sit-neutral'; }
+      else                          { advice = '👁 チェックで様子見';            adviceClass = 'sit-neutral'; }
+    }
   } else {
     // 相手がベットしてきた場面（コールorレイズorフォールド）
     const margin = effectivePct - reqWinRate;
@@ -3823,27 +3877,52 @@ function renderSituationAnalysis() {
     intentHint = intentMap[state.lastOpponentIntent] || '';
   }
 
+  // === 戦況：手番優先度順の再設計 ===
+  // ① 推奨アクション（核心）：大きく
+  // ② ポットオッズ要約：必要勝率と自分勝率を並置
+  // ③ ボード警戒（あれば）
+  // ④ ドロー要約（あれば、1〜2行）
+  // ⑤ 〈詳細〉折りたたみ：スタック比/SPR/ポット
+  // ⑥ 〈戦績〉折りたたみ：勝/負/分/SD/AF + ハンド履歴ボタン
+
+  const drawInfo = (() => {
+    const a = analyzeDraws();
+    if (!a || !a.draws || a.draws.length === 0) return '';
+    const top = a.draws[0];
+    const ruleLabel = a.cardsLeft === 2 ? 'リバーまで' : '次1枚で';
+    return `<div class="sit-draw-line">🎯 ${top.name} <b>${top.outs}枚</b> → <b>${top.pct}%</b> <small>${ruleLabel}</small></div>`;
+  })();
+
+  // ポットオッズ要約：コール判断の場面のみ
+  const oddsLine = need > 0
+    ? `<div class="sit-odds">勝率 <b>${effectivePct}%</b> vs 必要 <b>${reqWinRate}%</b></div>`
+    : `<div class="sit-odds">勝率 <b>${effectivePct}%</b>（チェック可）</div>`;
+
   return `
-    <div class="sit-advice ${adviceClass}">${advice} <small>${sprComment}</small></div>
-    <details class="sit-stats-fold" open>
+    <div class="sit-advice ${adviceClass}">${advice}</div>
+    ${oddsLine}
+    ${dangerFlags.length ? `<div class="sit-danger">⚠ ${dangerFlags.join(' / ')}</div>` : ''}
+    ${drawInfo}
+    ${intentHint ? `<div class="sit-intent">🎭 ${intentHint}</div>` : ''}
+    <details class="sit-stats-fold">
       <summary>📊 詳細データ</summary>
       <div class="sit-row sit-row-stacks">
-        <span class="sit-label">スタック比</span>
+        <span class="sit-label">スタック</span>
         <span class="sit-bar"><span class="sit-bar-fill" style="width:${stackPct}%"></span></span>
         <span class="sit-value">${myStack} / ${oppStack}</span>
       </div>
       <div class="sit-grid">
-        <div class="sit-stat" title="絶対勝率（対ランダム）／実効勝率（ヘッズアップ補正後）">
+        <div class="sit-stat" title="絶対勝率／実効勝率（ヘッズアップ補正後）">
           <span class="sit-stat-label">勝率</span>
-          <span class="sit-stat-val">${hsPct}% <small>→${effectivePct}%</small></span>
+          <span class="sit-stat-val">${hsPct}%→${effectivePct}%</span>
         </div>
         <div class="sit-stat">
-          <span class="sit-stat-label">必要勝率</span>
+          <span class="sit-stat-label">必要</span>
           <span class="sit-stat-val">${need > 0 ? reqWinRate + '%' : '—'}</span>
         </div>
         <div class="sit-stat">
           <span class="sit-stat-label">SPR</span>
-          <span class="sit-stat-val">${spr}</span>
+          <span class="sit-stat-val">${spr}${sprComment ? '<small>'+sprComment+'</small>' : ''}</span>
         </div>
         <div class="sit-stat">
           <span class="sit-stat-label">ポット</span>
@@ -3851,26 +3930,21 @@ function renderSituationAnalysis() {
         </div>
       </div>
     </details>
-    ${dangerFlags.length ? `<div class="sit-danger">⚠ ボード警戒：${dangerFlags.join(' / ')}</div>` : ''}
-    ${intentHint ? `<div class="sit-intent">🎭 ${intentHint}</div>` : ''}
     ${(() => {
       const a = analyzeDraws();
-      if (!a || !a.draws || a.draws.length === 0) return '';
-      const ruleLabel = a.cardsLeft === 2 ? 'リバーまで' : '次の1枚で';
-      return `
-        <details class="sit-draws-fold" open>
-          <summary>🎯 狙える役 <small>（${ruleLabel}）</small></summary>
-          <div class="sit-draws">
-            ${a.draws.slice(0, 3).map(d => `
-              <div class="sit-draw-row">
-                <span class="sd-name">${d.name}</span>
-                <span class="sd-outs">${d.outs}枚</span>
-                <span class="sd-pct">${d.pct}%</span>
-              </div>
-            `).join('')}
-          </div>
-        </details>
-      `;
+      if (!a || !a.draws || a.draws.length <= 1) return '';
+      return `<details class="sit-draws-fold">
+        <summary>🎯 全ドロー候補</summary>
+        <div class="sit-draws">
+          ${a.draws.slice(0, 4).map(d => `
+            <div class="sit-draw-row">
+              <span class="sd-name">${d.name}</span>
+              <span class="sd-outs">${d.outs}枚</span>
+              <span class="sd-pct">${d.pct}%</span>
+            </div>
+          `).join('')}
+        </div>
+      </details>`;
     })()}
     ${renderSessionStats()}
   `;
@@ -3886,7 +3960,8 @@ function renderBackdoorPanel() {
   try {
     if (state.community.length >= 3) {
       const all = [...state.opponentHand, ...state.community];
-      const hs = handStrength01(all);
+      // 裏モード表示：プレイヤーが直感的に分かる勝率推定
+      const hs = realisticEquity01(all);
       hsPct = Math.round(hs * 100);
     } else {
       const hs = opponentPreflopStrength(state.opponentHand);
@@ -4144,12 +4219,7 @@ function renderBetUnified() {
   const buildRemainStack = (a) => buildHorizontalChips(a, 'large', 'bu-remain-num');
 
   return `
-    <!-- 1. 相手の残チップ -->
-    <div class="bu-cell bu-cell-remain bu-cell-opp-remain">
-      <div class="bu-cell-label">${oppShort} 残</div>
-      <div class="bu-remain">${buildVerticalChipColumns(state.opponentChips)}</div>
-    </div>
-    <!-- 2. 相手のベット（このストリート） -->
+    <!-- 1. 相手のベット（このストリート） -->
     <div class="bu-cell bu-cell-bet bu-cell-opp${opp > pl && opp > 0 ? ' bu-lead' : ''}">
       <div class="bu-cell-label">${oppShort} ベット</div>
       ${buildVerticalStack(opp, 'opp', newOpp)}
@@ -4188,10 +4258,38 @@ function renderBetUnified() {
           : `<span class="bu-status bu-status-empty">—</span>`)
       }</div>
     </div>
-    <!-- 5. ミミの残チップ -->
-    <div class="bu-cell bu-cell-remain bu-cell-pl-remain">
-      <div class="bu-cell-label">ミミ 残</div>
-      <div class="bu-remain">${buildVerticalChipColumns(state.playerChips)}</div>
+  `;
+}
+
+/* ===== 場札左右の残チップスタック表示（コンパクト・枠なし） =====
+   チップは「代表色 1〜2 種、各最大 4 枚」までに圧縮。
+   amount が大きい場合は数値テキストで主張させ、チップは雰囲気程度。 */
+function renderStackOnTable(side) {
+  const amt = side === 'player' ? state.playerChips : state.opponentChips;
+  const name = side === 'player' ? 'ミミ' : (state.opponentName || '相手');
+
+  // 代表色を最大2種類だけ：金額帯で決める
+  // - 5000以上：橙 + 紫
+  // - 1000以上：紫 + 黒
+  // - 300以上 ：黒 + 緑
+  // - それ以下 ：緑のみ
+  let repTiers = [];
+  if (amt >= 5000)      repTiers = [{cls:'chip-orange', n:4}, {cls:'chip-purple', n:3}];
+  else if (amt >= 1000) repTiers = [{cls:'chip-purple', n:4}, {cls:'chip-black', n:3}];
+  else if (amt >= 300)  repTiers = [{cls:'chip-black',  n:4}, {cls:'chip-green', n:2}];
+  else if (amt > 0)     repTiers = [{cls:'chip-green',  n:Math.min(4, Math.ceil(amt/25))}];
+
+  const chipsHtml = repTiers.map(t => `
+    <span class="ts-col">
+      ${Array.from({length: t.n}, () => `<span class="ts-chip ${t.cls}"></span>`).join('')}
+    </span>
+  `).join('');
+
+  return `
+    <div class="table-stack table-stack-${side}">
+      <div class="ts-name">${name.length > 4 ? name.slice(0,3) + '…' : name}</div>
+      <div class="ts-chips">${chipsHtml || '<span class="ts-empty">—</span>'}</div>
+      <div class="ts-amount">${amt}</div>
     </div>
   `;
 }
@@ -4291,7 +4389,7 @@ function renderSessionStats() {
     return '受け身';
   };
 
-  return `<details class="sess-stats"><summary>📊 戦績 <small>(${total}ハンド)</small></summary>
+  return `<details class="sess-stats"><summary>📈 戦績 <small>(${wins}勝${losses}敗 / ${total}ハンド)</small></summary>
     <div class="ss-grid">
       <div class="ss-row"><span class="ss-k">勝/負/分</span><span class="ss-v">${wins} / ${losses} / ${splits}</span></div>
       <div class="ss-row"><span class="ss-k">SD 到達率</span><span class="ss-v">${wtsdPct}%</span></div>
@@ -4300,6 +4398,7 @@ function renderSessionStats() {
       <div class="ss-row"><span class="ss-k">相手 AF</span><span class="ss-v">${oppAF} <small>${afLabel(oppAF)}</small></span></div>
     </div>
     <div class="ss-note">AF = (ベット+レイズ) ÷ コール。高いほど攻撃的</div>
+    <button class="btn btn-ghost ss-history-btn" data-action="open-history">📜 ハンドごとの詳細を見る</button>
   </details>`;
 }
 
@@ -4336,44 +4435,200 @@ function renderOpponentBet() {
   return `<span class="bet-active">▶ ${state.currentBetOpponent}ベット ${sizeLabel}${pct > 0 ? ` (ポットの${pct}%)` : ''}</span>`;
 }
 
+// プリフロップハンドのニックネーム＆強さ判定
+function getPreflopNickname(h) {
+  const r = h.map(c => c.rank).sort((a, b) => b - a);
+  const suited = h[0].suit === h[1].suit;
+  const pair = r[0] === r[1];
+  // 有名なニックネーム
+  const nicks = {
+    'A-A': '🔥 ポケットロケット', 'K-K': '🔥 カウボーイ', 'Q-Q': '👑 レディース',
+    'J-J': '🎣 フィッシュフック', 'T-T': '⚡ ダイムス',
+    'A-K': '🗡 ビッグスリック', 'A-Q': '💎 ビッグチック',
+    'K-Q': '🛡 ロイヤルカップル',
+  };
+  const key = pair ? `${h[0].label}-${h[0].label}` : `${r.map(x => 'A23456789TJQKA'[x===14?0:x-1])[0]}-${r.map(x => 'A23456789TJQKA'[x===14?0:x-1])[1]}`;
+  const nick = nicks[key];
+  if (nick) return suited ? `${nick}（スーテッド）` : nick;
+  // ティア判定
+  if (pair && r[0] >= 9) return '💪 ミドルペア';
+  if (pair) return '🌱 スモールペア';
+  if (r[0] === 14 && r[1] >= 9) return suited ? '✨ Aハイ・スーテッド' : '⭐ Aハイ';
+  if (r[0] >= 11 && r[1] >= 9 && suited) return '🎯 ブロードウェイ・スーテッド';
+  if (Math.abs(r[0] - r[1]) === 1 && suited && r[1] >= 5) return '🔗 スーテッドコネクター';
+  if (Math.abs(r[0] - r[1]) === 1 && r[1] >= 5) return '🔗 コネクター';
+  if (suited) return '♠ スーテッド（投機）';
+  return '🍃 オフスーツ（弱め）';
+}
+
+// ポストフロップ：自分が持っているブロッカー情報
+function getBlockerHint(h, board) {
+  if (board.length < 3) return '';
+  const hints = [];
+  // フラッシュドローブロッカー：盤面に同スート3枚 + 自分がそのスートのAやK持ち
+  const boardSuits = {};
+  board.forEach(c => boardSuits[c.suit] = (boardSuits[c.suit] || 0) + 1);
+  for (const suit in boardSuits) {
+    if (boardSuits[suit] >= 3) {
+      const myHigh = h.find(c => c.suit === suit && c.rank >= 13);
+      if (myHigh) hints.push(`♦ナッツ${suit}を阻害`);
+    }
+  }
+  // ストレートトップブロッカー：自分がAやKでハイストレート遮断
+  const allRanks = [...h.map(c => c.rank), ...board.map(c => c.rank)].sort((a,b) => b-a);
+  if (h.some(c => c.rank === 14) && allRanks.includes(13) && allRanks.includes(12)) {
+    hints.push('🎯 ハイストレート阻害');
+  }
+  return hints.length ? hints.join(' / ') : '';
+}
+
+// キッカー強さラベル（最大ランク値から判定）
+function kickerStrengthLabel(maxRank) {
+  if (maxRank >= 13) return '（強め）';     // A,K
+  if (maxRank >= 11) return '（中）';       // Q,J
+  if (maxRank >= 8)  return '（並）';       // 10,9,8
+  return '（弱め）';
+}
+
 function renderCurrentHandName() {
-  if (state.playerHand.length < 2) return '役：—';
+  if (state.playerHand.length < 2) return '—';
   const all = [...state.playerHand, ...state.community];
+  const h = state.playerHand;
+
   if (all.length < 5) {
-    // プリフロップやフロップ前
-    const ranks = state.playerHand.map(c => c.rank).sort((a, b) => b - a);
-    if (ranks[0] === ranks[1]) return `現在の手：<b>ポケットペア (${state.playerHand[0].label})</b>`;
-    if (state.playerHand[0].suit === state.playerHand[1].suit) return `現在の手：スーテッド ${state.playerHand[0].label}${state.playerHand[0].suit}${state.playerHand[1].label}${state.playerHand[1].suit}`;
-    return `現在の手：${state.playerHand[0].label}${state.playerHand[0].suit} ${state.playerHand[1].label}${state.playerHand[1].suit}`;
+    // プリフロップ／フロップ前：ニックネーム＆ティア
+    return `<b class="hl-main">${getPreflopNickname(h)}</b>`;
   }
+
+  // ポストフロップ：役名＋内訳ランク。キッカーは renderCurrentHandKicker 側
   const ev = evaluateHand(all);
-  const isStrong = ev.rank >= 3;  // スリーカード以上
-  // ストレート系はトップカードを明示（A-5 = ホイール表記）
-  let detail = '';
-  if (ev.rank === 4 || ev.rank === 8) {
-    // straight / straight flush 共通：bestFive から topStr 推定
-    if (ev.bestFive) {
-      const ranks = ev.bestFive.map(c => c.rank).sort((a,b) => b-a);
-      // ホイール判定（A,5,4,3,2）
-      if (ranks[0] === 14 && ranks[1] === 5) detail = '（A-5 ホイール）';
-      else detail = `（${RANK_NAMES[ranks[0]-2]} ハイ）`;
-    }
-  } else if (ev.rank === 5) {
-    // フラッシュ：トップカード
-    if (ev.bestFive) {
-      const top = Math.max(...ev.bestFive.map(c => c.rank));
-      detail = `（${RANK_NAMES[top-2]} ハイ）`;
-    }
-  } else if (ev.rank === 1 || ev.rank === 3) {
-    // ワンペア／スリーカード：ペア役のランク
-    if (ev.bestFive) {
-      const counts = {};
-      ev.bestFive.forEach(c => counts[c.rank] = (counts[c.rank] || 0) + 1);
-      const setRank = Object.keys(counts).find(r => counts[r] >= 2);
-      if (setRank) detail = `（${RANK_NAMES[setRank-2]}）`;
+  const isStrong = ev.rank >= 3;
+  const nameOf = (r) => RANK_NAMES[r-2];
+  let suffix = '';
+  if (ev.bestFive) {
+    const sortedRanks = ev.bestFive.map(c => c.rank).sort((a,b) => b-a);
+    const counts = {};
+    sortedRanks.forEach(r => counts[r] = (counts[r] || 0) + 1);
+    const groups = Object.entries(counts).map(([r,n]) => ({ r: +r, n }))
+                       .sort((a,b) => b.n - a.n || b.r - a.r);
+    switch (ev.rank) {
+      case 0: suffix = `(${nameOf(sortedRanks[0])} ハイ)`; break;
+      case 1: { const p = groups.find(g => g.n === 2); suffix = `(${nameOf(p.r)})`; break; }
+      case 2: {
+        const pairs = groups.filter(g => g.n === 2).sort((a,b) => b.r - a.r);
+        suffix = `(${nameOf(pairs[0].r)} & ${nameOf(pairs[1].r)})`; break;
+      }
+      case 3: { const t = groups.find(g => g.n === 3); suffix = `(${nameOf(t.r)})`; break; }
+      case 4: { // ストレート
+        if (sortedRanks[0] === 14 && sortedRanks[1] === 5) suffix = '(A-5 ホイール)';
+        else suffix = `(${nameOf(sortedRanks[0])} ハイ)`;
+        break;
+      }
+      case 5: suffix = `(${nameOf(sortedRanks[0])} ハイ)`; break;
+      case 6: {
+        const t = groups.find(g => g.n === 3);
+        const p = groups.find(g => g.n === 2);
+        suffix = `(${nameOf(t.r)} フル ${nameOf(p.r)})`;
+        break;
+      }
+      case 7: { const q = groups.find(g => g.n === 4); suffix = `(${nameOf(q.r)})`; break; }
+      case 8: {
+        if (sortedRanks[0] === 14 && sortedRanks[1] === 13) suffix = '(ロイヤル)';
+        else if (sortedRanks[0] === 14 && sortedRanks[1] === 5) suffix = '(A-5 ホイール)';
+        else suffix = `(${nameOf(sortedRanks[0])} ハイ)`;
+        break;
+      }
     }
   }
-  return `現在の役：<b class="${isStrong ? 'hand-strong' : ''}">${ev.name}${detail}</b>`;
+  return `<b class="hl-main ${isStrong ? 'hand-strong' : ''}">${ev.name}${suffix ? ' ' + suffix : ''}</b>`;
+}
+
+// 役名の下に表示するキッカー詳細＋強さラベル
+function renderCurrentHandKicker() {
+  if (state.playerHand.length < 2) return '';
+  const all = [...state.playerHand, ...state.community];
+  if (all.length < 5) return ''; // プリフロップは出さない
+  const ev = evaluateHand(all);
+  if (!ev.bestFive) return '';
+  const nameOf = (r) => RANK_NAMES[r-2];
+  const sortedRanks = ev.bestFive.map(c => c.rank).sort((a,b) => b-a);
+  const counts = {};
+  sortedRanks.forEach(r => counts[r] = (counts[r] || 0) + 1);
+  const groups = Object.entries(counts)
+    .map(([r, n]) => ({ r: +r, n }))
+    .sort((a, b) => b.n - a.n || b.r - a.r);
+
+  let mainInfo = '';     // 役の中身：ペアのランク等
+  let kickerLine = '';   // キッカー部分
+  let strength = '';
+
+  switch (ev.rank) {
+    case 0: { // ハイカード
+      const top = sortedRanks[0];
+      const ks = sortedRanks.slice(1, 3);
+      mainInfo = `${nameOf(top)} ハイ`;
+      kickerLine = `キッカー：${ks.map(nameOf).join(' ')}`;
+      strength = kickerStrengthLabel(Math.max(top, ks[0]));
+      break;
+    }
+    case 1: { // ワンペア
+      const pair = groups.find(g => g.n === 2);
+      const ks = sortedRanks.filter(r => r !== pair.r).slice(0, 3);
+      mainInfo = `${nameOf(pair.r)}`;
+      kickerLine = `キッカー：${ks.map(nameOf).join(' ')}`;
+      strength = kickerStrengthLabel(ks[0]);
+      break;
+    }
+    case 2: { // ツーペア
+      const pairs = groups.filter(g => g.n === 2).sort((a,b) => b.r - a.r);
+      const k = sortedRanks.find(r => r !== pairs[0].r && r !== pairs[1].r);
+      mainInfo = `${nameOf(pairs[0].r)} & ${nameOf(pairs[1].r)}`;
+      kickerLine = `キッカー：${nameOf(k)}`;
+      strength = kickerStrengthLabel(k);
+      break;
+    }
+    case 3: { // スリーカード
+      const trip = groups.find(g => g.n === 3);
+      const ks = sortedRanks.filter(r => r !== trip.r).slice(0, 2);
+      mainInfo = `${nameOf(trip.r)}`;
+      kickerLine = `キッカー：${ks.map(nameOf).join(' ')}`;
+      strength = kickerStrengthLabel(ks[0]);
+      break;
+    }
+    case 4: { // ストレート
+      if (sortedRanks[0] === 14 && sortedRanks[1] === 5) mainInfo = 'A-5（ホイール）';
+      else mainInfo = `${nameOf(sortedRanks[0])} ハイ`;
+      break;
+    }
+    case 5: { // フラッシュ
+      mainInfo = `${nameOf(sortedRanks[0])} ハイ`;
+      break;
+    }
+    case 6: { // フルハウス
+      const trip = groups.find(g => g.n === 3);
+      const pair = groups.find(g => g.n === 2);
+      mainInfo = `${nameOf(trip.r)} フル ${nameOf(pair.r)}`;
+      break;
+    }
+    case 7: { // フォーカード
+      const quad = groups.find(g => g.n === 4);
+      const k = sortedRanks.find(r => r !== quad.r);
+      mainInfo = `${nameOf(quad.r)}`;
+      kickerLine = `キッカー：${nameOf(k)}`;
+      strength = kickerStrengthLabel(k);
+      break;
+    }
+    case 8: { // ストレートフラッシュ／ロイヤル
+      if (sortedRanks[0] === 14 && sortedRanks[1] === 13) mainInfo = 'ロイヤル';
+      else if (sortedRanks[0] === 14 && sortedRanks[1] === 5) mainInfo = 'A-5（ホイール）';
+      else mainInfo = `${nameOf(sortedRanks[0])} ハイ`;
+      break;
+    }
+  }
+
+  // mainInfo（内訳ランク）は役名に含めるので、ここではキッカー詳細のみ表示
+  if (!kickerLine) return '';
+  return `<span class="hk-kicker">${kickerLine}${strength ? `<span class="hk-strength">${strength}</span>` : ''}</span>`;
 }
 
 function zazazoLabel(v) {
@@ -4524,50 +4779,62 @@ function renderActionArea(el) {
   if (state.handPhase === 'preflop') {
     const checkable = need === 0;
     slots = [
-      { kind: 'fold', label: 'フォールド', subText: checkable ? '不要' : '降りる',
-        action: 'player-fold', ghost: true,
-        enabled: !checkable,
-        title: checkable
-          ? '相手と同額（=0）なので、降りる必要はありません。チェックで無料で次へ進めます。'
-          : '手札を捨ててこのハンドを諦める。アンテ50チップは戻ってきません。' },
+      { kind: 'fold', label: 'フォールド',
+        subText: checkable ? '不要（チェック可）' : `追加 +0 で離脱`,
+        action: 'player-fold', ghost: true, enabled: !checkable },
       { kind: 'callcheck',
         label: checkable ? 'チェック' : 'コール',
         subText: checkable ? '見送り（無料）' : '同額',
         chipAmount: checkable ? 0 : need,
-        action: checkable ? 'player-checkcall' : 'player-call', primary: true,
-        enabled: true,
-        title: checkable
-          ? 'チェック＝今は賭けず、ベット0のままフロップ（場札3枚）を見にいく。'
-          : '相手のベットに同額を払ってフロップを見にいく。' },
-      { kind: 'sm',    label: '2.5BBレイズ', chipAmount: bb25, action: 'player-raise', dataSize: '2.5',
-        enabled: bb25 > need, title: '相手より大きくベット。強気の攻め。' },
-      { kind: 'md',    label: '3BBレイズ',   chipAmount: bb3,  action: 'player-raise', dataSize: '3',
-        enabled: bb3 > need, title: 'より大きいレイズ。' },
-      { kind: 'lg',    label: '—',            subText: 'ポストフロップ用', enabled: false,
-        title: 'フロップ後にポットベットが選べるようになります。' },
+        action: checkable ? 'player-checkcall' : 'player-call', primary: true, enabled: true },
+      { kind: 'sm',    label: '小レイズ', subText: '標準 (2.5BB)', chipAmount: bb25, action: 'player-raise', dataSize: '2.5',
+        enabled: bb25 > need },
+      { kind: 'md',    label: '中レイズ', subText: '強気 (3BB)', chipAmount: bb3,  action: 'player-raise', dataSize: '3',
+        enabled: bb3 > need },
+      { kind: 'lg',    label: '大レイズ', subText: '圧倒 (4BB)',
+        chipAmount: Math.min(200, state.playerChips), action: 'player-raise', dataSize: '4',
+        enabled: 200 > need && state.playerChips >= 200 },
       { kind: 'allin', label: 'オールイン', chipAmount: allInAmt, action: 'player-allin',
         enabled: allInAmt > 0, title: '持ちチップ全部を賭ける。' },
     ];
   } else {
     const showBet = need === 0;
-    const showRaise = need > 0 && state.playerChips > need * 2;
+    // レイズに必要な最低額（≒コール額＋同等以上）。これに満たない場合は、レイズ枠は「オールイン誘導」表示
+    const canFullRaise = need > 0 && state.playerChips > need * 2;
+    // レイズではないがオールインで上回ることはできるか
+    const canAllInOver = need > 0 && state.playerChips > need;
+    // 各サイズが残チップで足りるか
+    const fits = (amt) => state.playerChips >= (need + amt);
+    // 「サイズ別ボタン」共通の有効・サブテキスト整形
+    const sizeSlot = (amount, kind, label, sub, dataSize) => {
+      if (showBet) {
+        if (state.playerChips >= amount) {
+          return { kind, label, subText: sub, chipAmount: amount, action: 'player-bet', dataSize, enabled: true };
+        }
+        return { kind, label, subText: '→ オールイン', chipAmount: state.playerChips,
+                 action: 'player-allin', enabled: state.playerChips > 0 };
+      }
+      if (canFullRaise && fits(amount)) {
+        return { kind, label, subText: sub, chipAmount: amount, action: 'player-bet', dataSize, enabled: true };
+      }
+      if (canAllInOver) {
+        return { kind, label, subText: '→ オールイン', chipAmount: state.playerChips,
+                 action: 'player-allin', enabled: true };
+      }
+      return { kind, label, subText: '⚠ コイン不足', chipAmount: 0, enabled: false };
+    };
     slots = [
-      { kind: 'fold', label: 'フォールド', subText: '降りる', action: 'player-fold', ghost: true,
-        enabled: true, title: '手札を捨ててポットを諦める。これまで払ったチップは戻らない。' },
+      { kind: 'fold', label: 'フォールド',
+        subText: need > 0 ? `追加 +0 で離脱` : '見送り',
+        action: 'player-fold', ghost: true, enabled: true },
       { kind: 'callcheck',
         label: need > 0 ? 'コール' : 'チェック',
         subText: need > 0 ? null : '見送り',
         chipAmount: need > 0 ? need : 0,
-        action: 'player-checkcall', primary: true, enabled: true,
-        title: need > 0
-          ? 'コール＝相手のベットに同額で乗る。役に自信がある時。'
-          : 'チェック＝今は賭けない、次の場札を待つ。相手もチェックなら無料で次へ進める。' },
-      { kind: 'sm', label: '1/2ポット', subText: '標準', chipAmount: half, action: 'player-bet', dataSize: 'pot_1_2',
-        enabled: showBet || showRaise, title: 'ポットの半分。標準的なベット。' },
-      { kind: 'md', label: '2/3ポット', subText: '強気', chipAmount: twoThird, action: 'player-bet', dataSize: 'pot_2_3',
-        enabled: showBet || showRaise, title: 'ポットの2/3。強気の攻め。相手を降ろしに行く時にも。' },
-      { kind: 'lg', label: 'ポット',     subText: '最大圧', chipAmount: potBet, action: 'player-bet', dataSize: 'pot_1',
-        enabled: showBet || showRaise, title: 'ポット相当の大ベット。' },
+        action: 'player-checkcall', primary: true, enabled: true },
+      sizeSlot(half,     'sm', '1/2ポット', '標準',   'pot_1_2'),
+      sizeSlot(twoThird, 'md', '2/3ポット', '強気',   'pot_2_3'),
+      sizeSlot(potBet,   'lg', 'ポット',     '最大圧', 'pot_1'),
       { kind: 'allin', label: 'オールイン', chipAmount: allInAmt, action: 'player-allin',
         enabled: allInAmt > 0, title: '持ちチップ全部。逆転の最終手段。' },
     ];
@@ -4582,8 +4849,7 @@ function renderActionArea(el) {
       <button
         class="btn action-slot slot-${s.kind} ${s.primary ? 'btn-primary primary-action' : s.ghost ? 'btn-ghost' : 'btn-secondary'}"
         ${s.enabled ? `data-action="${s.action}"` : 'disabled'}
-        ${s.dataSize ? `data-size="${s.dataSize}"` : ''}
-        title="${s.title}">
+        ${s.dataSize ? `data-size="${s.dataSize}"` : ''}>
         <span class="slot-label">${s.label}</span>
         ${subHtml}
         ${chipHtml}
@@ -6826,12 +7092,42 @@ function opponentTurn() {
 }
 
 function opponentPreflopStrength(hand) {
+  // Chen フォーミュラ準拠：実戦に近いプリフロップ強度を 0-1 で返す
   const ranks = hand.map(c => c.rank).sort((a, b) => b - a);
-  let s = (ranks[0] + ranks[1]) / 28;
-  if (ranks[0] === ranks[1]) s += 0.25;
-  if (hand[0].suit === hand[1].suit) s += 0.05;
-  if (ranks[0] - ranks[1] === 1) s += 0.05;
-  return Math.min(1, s);
+  const [hi, lo] = ranks;
+  // カード基本点（Chenルール：A=10, K=8, Q=7, J=6, 10=5, 9以下は rank/2）
+  const cardPoint = (r) => {
+    if (r === 14) return 10;
+    if (r === 13) return 8;
+    if (r === 12) return 7;
+    if (r === 11) return 6;
+    if (r === 10) return 5;
+    return r / 2;
+  };
+  let score = cardPoint(hi);
+  if (hi === lo) {
+    // ペア：×2（ただし 22 は最低5点 → 22-> 2*2=4, 5以下なら min 5）
+    score = Math.max(5, score * 2);
+  }
+  // スーテッド +2
+  if (hand[0].suit === hand[1].suit) score += 2;
+  // ギャップ補正
+  if (hi !== lo) {
+    const gap = hi - lo - 1;
+    if (gap === 0)      score -= 0;
+    else if (gap === 1) score -= 1;
+    else if (gap === 2) score -= 2;
+    else if (gap === 3) score -= 4;
+    else                score -= 5;
+    // 両カードが Q 以下 & ギャップ 0-1 & スーテッド：ストレート可能性ボーナス
+    if (hi < 12 && gap <= 1) score += 1;
+  }
+  // Chen score の範囲：通常 -1 〜 20（AA）
+  // 0-1 にスケーリング：weak(0) ≈ 0.20、AA(20) ≈ 0.90
+  // 線形：(score - (-1)) / 21 にして 0.15-0.90 にマップ
+  const normalized = Math.max(0, Math.min(1, (score - (-1)) / 21));
+  // 0.15 〜 0.90 範囲にマップ（最弱でも 15%、最強でも 90% 程度）
+  return 0.15 + normalized * 0.75;
 }
 
 //=============================================================
