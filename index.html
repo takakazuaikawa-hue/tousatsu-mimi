@@ -8,7 +8,31 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#14081d">
 <title>闘札圧倒伝ミミ 〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</title>
-<link rel="stylesheet" href="style.css?v=20260530b">
+<!--
+  ★FOUC（Flash of Unstyled Content）対策：
+  外部 style.css の読み込みが遅延・混雑した瞬間に、無装飾の生HTML（黒文字＋白背景）が
+  一瞬表示されてしまう問題を防ぐための「クリティカルCSSの先出し」。
+  外部CSSが未着でも、最低限「真っ黒画面＋読み込み中の見た目」を即座に保証する。
+  外部CSSが読み込み完了すれば、通常のスタイルが上書きしてそのまま自然に引き継がれる。
+-->
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #000;
+    color: #f7eecf;
+    font-family: "Noto Sans JP", "Yu Gothic", "Hiragino Sans", sans-serif;
+  }
+  #preload-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background: #000;
+    text-align: center;
+  }
+  /* 外部CSSが未着の間だけ、素のテキストが見苦しく散らばらないよう非表示にしておく。
+     着荷後は style.css 側の .preload-overlay 等のルールが上書きして通常表示になる。 */
+  #portrait-warning, #fullscreen-btn-group { display: none; }
+</style>
+<link rel="stylesheet" href="style.css?v=20260603a">
 </head>
 <body>
 <div id="preload-overlay">
@@ -113,7 +137,6 @@
           <span class="panyu-free-emoji">🐰</span>
         </button>
         <span class="coin-display">💰 <span data-bind="saveCoins">0</span></span>
-        <button class="btn btn-ghost" data-action="reset-save" title="セーブデータをリセット">⟲</button>
       </div>
     </header>
     <main class="lobby-main">
@@ -241,7 +264,7 @@
     <footer class="bottom-bar">
       <div class="mimi-area">
         <div class="character-frame char-mimi">
-          <img data-bind="mimiImg" src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
+          <img data-bind="mimiImg" data-mimi-face src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
         </div>
       </div>
       <div class="mimi-hand-area">
@@ -280,7 +303,7 @@
       <!-- キャラポートレート行（モーダル内・顔から胸まで） -->
       <div class="battle-portraits">
         <div class="battle-portrait portrait-mimi">
-          <img src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
+          <img data-mimi-face src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
           <div class="portrait-name">ミミ</div>
         </div>
         <div class="battle-portrait portrait-opponent" data-bind="battleOpponentChar"></div>
@@ -337,6 +360,6 @@
   </div>
 </template>
 
-<script src="game.js?v=20260530i"></script>
+<script src="game.js?v=20260603a"></script>
 </body>
 </html>

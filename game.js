@@ -178,12 +178,24 @@ function checkHandAchievements(last, ctx) {
 function defaultSave() {
   return {
     version: 1,
+    // ── 基本進捗 ──
     coins: 0,
     clearedStages: [],
+    introPlayed: false,           // P2: 体験ハンド（初回導線）を消化済みか
     bestRanks: {},
     bestScores: {},
     firstClearRewardClaimed: [],
+    rematchWins: {},
+    chipChoice: {},
+
+    // ── 解放系フラグ（normalizeSaveで自動派生される。手動編集不要） ──
+    endingUnlocked: false,        // = clearedStages.includes('velvet')
+    backdoorUnlocked: false,      // ※デバッグ：エンディング後の隠し機能解放
+    backdoorOn: false,            // ※デバッグ：覗き見モードの今表示中フラグ
+
+    // ── 所持・装備 ──
     ownedItems: [],
+    shopSeenItems: [],            // 🆕新着マーク管理
     unlockedNotes: ['bluff_basic'],
     equippedCardSkin: 'default',
     equippedTableSkin: 'default',
@@ -194,23 +206,113 @@ function defaultSave() {
     equippedBgmLobby: 'default',
     equippedBgmBattle: 'default',
     equippedSePack: 'default',
-    extraInitialChips: 0,        // chips_plus_* 累積
-    panyuComboMultiplier: 1,     // panyu_combo_x2 で 2
-    panyuChronoBonus: 1.0,       // panyu_chrono で 1.5
+
+    // ── ぱにゅぱにゅ強化 ──
+    extraInitialChips: 0,
+    panyuComboMultiplier: 1,
+    panyuChronoBonus: 1.0,
     panyuGaugeMax: 100,
     panyuSkills: { senseLevel: 1, rangeLevel: 1, breakLevel: 0 },
     panyuSenseFreeUsed: false,
-    endingUnlocked: false,
-    psychEnabled: true,   // 心理バトルON/OFF
-    logicEnabled: true,   // 論理バトルON/OFF
-    backdoorUnlocked: false, // 裏モード（相手の手と心理を覗き見）
-    backdoorOn: false,       // 裏モードを今表示中か
-    bgmVolume: 35,           // BGM音量（0-100）
-    bgmOn: false,            // BGM初期OFF
-    chipChoice: {},          // 対戦相手ごとの初期チップ選択
-    rematchWins: {},         // 対戦相手ごとの再戦勝利回数（diminishing returns 用）
+
+    // ── 設定 ──
+    psychEnabled: true,
+    logicEnabled: true,
+    bgmVolume: 35,       // BGM 音量（0-100）
+    bgmOn: false,        // BGM 全体 ON/OFF（lobby/ending/minipoker BGM すべて従う）
+    sfxVolume: 60,       // SFX 音量（0-100）
+    sfxOn: true,         // SFX 全体 ON/OFF（minipoker SFX 等すべて従う）
+
+    // ── ミニポーカー（mpEnsureSaveで初期化される） ──
+    minipoker: null,
+
+    // ── ログ ──
     logs: { actions: [], bets: [], reactions: [], psych: [] },
+
+    // ── 達成（ensureAchievementsで初期化） ──
+    achievements: {},
   };
+}
+
+// セーブの整合性を保つ：派生フラグを正規化し、不足キーを補う
+function normalizeSave(s) {
+  if (!s) return defaultSave();
+  // 派生フラグ：endingUnlocked は velvet 撃破で自動 true
+  if (Array.isArray(s.clearedStages) && s.clearedStages.includes('velvet')) {
+    s.endingUnlocked = true;
+  }
+  // 配列・オブジェクトが null/undefined にならないよう保証
+  if (!Array.isArray(s.clearedStages)) s.clearedStages = [];
+  if (!Array.isArray(s.ownedItems)) s.ownedItems = [];
+  if (!Array.isArray(s.shopSeenItems)) s.shopSeenItems = [];
+  if (!Array.isArray(s.firstClearRewardClaimed)) s.firstClearRewardClaimed = [];
+  if (!s.bestRanks || typeof s.bestRanks !== 'object') s.bestRanks = {};
+  if (!s.bestScores || typeof s.bestScores !== 'object') s.bestScores = {};
+  if (!s.chipChoice || typeof s.chipChoice !== 'object') s.chipChoice = {};
+  if (!s.rematchWins || typeof s.rematchWins !== 'object') s.rematchWins = {};
+  if (!s.panyuSkills || typeof s.panyuSkills !== 'object') s.panyuSkills = { senseLevel: 1, rangeLevel: 1, breakLevel: 0 };
+  if (!s.logs || typeof s.logs !== 'object') s.logs = { actions: [], bets: [], reactions: [], psych: [] };
+  if (!s.achievements || typeof s.achievements !== 'object') s.achievements = {};
+  // 数値の正常範囲
+  if (typeof s.coins !== 'number' || isNaN(s.coins)) s.coins = 0;
+  if (s.coins < 0) s.coins = 0;
+  if (typeof s.bgmVolume !== 'number') s.bgmVolume = 35;
+  s.bgmVolume = Math.max(0, Math.min(100, s.bgmVolume));
+  if (typeof s.sfxVolume !== 'number') s.sfxVolume = 60;
+  s.sfxVolume = Math.max(0, Math.min(100, s.sfxVolume));
+  if (typeof s.sfxOn !== 'boolean') s.sfxOn = true;
+  if (typeof s.introPlayed !== 'boolean') s.introPlayed = false;
+  // ── ショップ整理：既に効果が無料公開されていた／実装が困難だった5商品を廃止。
+  //    既存の購入者には代金を全額返金し、所持記録も除去する（一度だけ・自動）。
+  const DISCONTINUED_REFUND = {
+    note_board_danger: 250,
+    note_bet_size:     300,
+    note_position:      350,
+    note_outs:          400,
+    note_equity:        600,
+  };
+  let refundTotal = 0;
+  const refundedNames = [];
+  Object.keys(DISCONTINUED_REFUND).forEach(id => {
+    const idx = s.ownedItems.indexOf(id);
+    if (idx !== -1) {
+      s.ownedItems.splice(idx, 1);
+      refundTotal += DISCONTINUED_REFUND[id];
+      refundedNames.push(id);
+      // note_ 系はunlockedNotesにも追加されていたので合わせて除去
+      const noteId = id.replace('note_', '');
+      if (Array.isArray(s.unlockedNotes)) {
+        const ni = s.unlockedNotes.indexOf(noteId);
+        if (ni !== -1) s.unlockedNotes.splice(ni, 1);
+      }
+    }
+  });
+  if (refundTotal > 0) {
+    s.coins = (s.coins || 0) + refundTotal;
+    // ロード直後にトーストで知らせるため、次のrender後に一度だけ表示するフラグを立てる
+    s.__pendingRefundNotice = { total: refundTotal, count: refundedNames.length };
+  }
+  return s;
+}
+
+// 音響共通ヘルパ
+function isBgmOn() { return !!(save && save.bgmOn); }
+function isSfxOn() { return !!(save && save.sfxOn); }
+function sfxVolFloat() {
+  const v = save && save.sfxVolume != null ? save.sfxVolume : 60;
+  return Math.max(0, Math.min(1, v / 100));
+}
+
+// 解放フラグの一元ヘルパ
+function isEndingUnlocked() { return !!(save && save.endingUnlocked); }
+function isStageCleared(stageId) {
+  return !!(save && Array.isArray(save.clearedStages) && save.clearedStages.includes(stageId));
+}
+// ステージクリア時に呼ぶ（派生フラグも一緒に更新）
+function markStageCleared(stageId) {
+  if (!save.clearedStages.includes(stageId)) save.clearedStages.push(stageId);
+  if (stageId === 'velvet') save.endingUnlocked = true;
+  saveProgress();
 }
 
 const SAVE_VERSION = 2;
@@ -218,15 +320,14 @@ let save = null;
 function loadProgress() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return defaultSave();
+    if (!raw) return normalizeSave(defaultSave());
     const data = JSON.parse(raw);
-    // 既知のフィールドだけマージ。未知のバージョンは将来用にそのまま受け入れ
     const merged = { ...defaultSave(), ...data };
     merged.version = SAVE_VERSION;
-    return merged;
+    return normalizeSave(merged);
   } catch (e) {
     console.warn('Save load failed; using default', e);
-    return defaultSave();
+    return normalizeSave(defaultSave());
   }
 }
 function saveProgress() {
@@ -367,6 +468,21 @@ window.assetFallback = function(imgEl, key) {
   frame.classList.add('fallback');
   frame.setAttribute('data-fallback', CHAR_FALLBACK[key] || '[画像なし]');
 };
+
+// P1-3: バトル中のミミ表情差分。画像が届いていない場合は mimi_default.png に、
+// それすら無ければ assetFallback の枠内表示に自然にフォールバックする。
+// 表情: default / win / sad / shock / think
+function setMimiExpression(expr) {
+  document.querySelectorAll('.battle-mimi-img, [data-mimi-face]').forEach(img => {
+    const goDefault = () => {
+      img.onerror = () => { img.onerror = null; window.assetFallback(img, 'mimi'); };
+      img.src = 'assets/characters/mimi_default.png';
+    };
+    if (!expr || expr === 'default') { goDefault(); return; }
+    img.onerror = goDefault;
+    img.src = `assets/characters/mimi_${expr}.png`;
+  });
+}
 
 //=============================================================
 // 1. 乱数・ユーティリティ
@@ -2180,7 +2296,7 @@ function render() {
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); break;
     case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); tryStartLobbyBgm(); break;
-    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); break;
+    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyBattleRicoOutfit(); applyNoteTellHint(); if (state.introHandMode) applyIntroHandUI(); break;
     case 'result':      renderTemplate('tpl-result'); applyBindings(); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
     case 'ending':      renderTemplate('tpl-ending'); showEndingMusicPrompt(); break;
@@ -2267,7 +2383,7 @@ function applyTitleButtons() {
   if (hasSave) {
     const cleared = save.clearedStages.filter(s => s !== 'rico_tutorial').length;
     const totalStages = 4; // polka, selina, grano, velvet
-    const ending = !!save.endingUnlocked;
+    const ending = isEndingUnlocked();
     el.innerHTML = `
       <button class="btn btn-primary" data-action="start">
         <span class="title-btn-main">続きから</span>
@@ -2381,8 +2497,9 @@ function applyBindings() {
           }
           break;
         }
-        // 状態キー：opponentId + 読み切り済か。同じなら再描画しない（アニメちらつき防止）
-        const stateKey = `${state.opponentId}:${state.opponentPersonalityRevealed ? 'r' : 'u'}`;
+        // 状態キー：opponentId + 読み切り済か + ミミミ0か否か。同じなら再描画しない（アニメちらつき防止）
+        const zazazoNow = state.zazazo || 0;
+        const stateKey = `${state.opponentId}:${state.opponentPersonalityRevealed ? 'r' : (zazazoNow > 0 ? 'u' : 'u0')}`;
         if (el.dataset.state === stateKey) break;
         el.dataset.state = stateKey;
         if (state.opponentPersonalityRevealed) {
@@ -2394,6 +2511,13 @@ function applyBindings() {
                 ${p.traits.map(t => `<li>${t}</li>`).join('')}
               </ul>
               <div class="opp-p-exploit"><b>攻略：</b> ${p.exploit}</div>
+            </div>
+          `;
+        } else if (zazazoNow <= 0) {
+          // P3: ミミミゲージ0（講義前の初心者）は情報過多を避けて1行に折りたたむ
+          el.innerHTML = `
+            <div class="opp-personality-card opp-p-collapsed">
+              <div class="opp-p-collapsed-line">👁 相手をよく観察しよう</div>
             </div>
           `;
         } else {
@@ -2473,12 +2597,21 @@ function applyBindings() {
       case 'lobbyBottomPanel':
         el.innerHTML = renderLobbyBottomPanel();
         el.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
-        const lbVol = el.querySelector('.lb-vol');
-        if (lbVol) lbVol.addEventListener('input', (e) => {
+        // BGM ボリュームスライダー
+        const lbVolBgm = el.querySelector('[data-vol="bgm"]');
+        if (lbVolBgm) lbVolBgm.addEventListener('input', (e) => {
           save.bgmVolume = +e.target.value;
           saveProgress();
           applyBgmVolume();
-          document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = save.bgmVolume);
+          document.querySelectorAll('.audio-bar-volume, [data-vol="bgm"]').forEach(v => v.value = save.bgmVolume);
+        });
+        // SFX ボリュームスライダー
+        const lbVolSfx = el.querySelector('[data-vol="sfx"]');
+        if (lbVolSfx) lbVolSfx.addEventListener('input', (e) => {
+          save.sfxVolume = +e.target.value;
+          saveProgress();
+          // 入力中に確認音
+          mpSfx('tap');
         });
         break;
       case 'lobbyRicoImg': {
@@ -2747,33 +2880,36 @@ function renderStageList() {
     const curChip = Math.max(baseChips, Math.min(maxChips, savedChip));
     const showSlider = !isRicoLecture && bonus > 0;
     const showChipRow = !isRicoLecture;
+    // 報酬：未クリアなら初回報酬、クリア済なら再戦報酬を主表示
+    const rewardLine = cleared
+      ? `<div class="stage-reward stage-reward-rematch">再戦 ${rematchPreview(sid)}🪙 <small>（初回 ${opp.rewardFirst} 済）</small></div>`
+      : `<div class="stage-reward">報酬 ${opp.rewardFirst}🪙</div>`;
     return `<div class="stage-card ${recommend ? 'recommended' : ''} ${cleared ? 'cleared' : ''} ${opp.isBoss ? 'boss-stage' : ''}">
       ${portrait}
       <div class="stage-card-body">
         <div class="stage-tags-row">
+          <span class="stage-number">${stageNum}</span>
           ${opp.isBoss ? '<span class="stage-tag boss-tag">BOSS</span>' : ''}
           ${recommend ? '<span class="stage-tag">おすすめ</span>' : ''}
-          ${cleared ? `<span class="stage-tag clear-tag">クリア済 ${bestRank || ''}</span>` : ''}
+          ${cleared ? `<span class="stage-tag clear-tag">✓ ${bestRank || ''}</span>` : ''}
         </div>
-        <div class="stage-number">Stage ${stageNum}</div>
         <div class="stage-name" data-action="${isRicoClearChoice ? 'rico-mode-chooser' : 'battle-start'}" data-opponent="${sid}" title="${opp.name} ${isRicoClearChoice ? 'モード選択' : 'と対戦開始'}">${opp.name}</div>
         <div class="stage-desc">${opp.desc}</div>
-        <div class="stage-reward">初回報酬：${opp.rewardFirst}コイン${cleared ? '<small>（取得済み）</small>' : ''}</div>
-        ${cleared ? `<div class="stage-rematch-reward">再戦報酬：${rematchPreview(sid)}コイン</div>` : ''}
+        ${rewardLine}
         ${!showChipRow ? '' : `<div class="stage-chips-row">
-          <span class="stage-chips-label">💰 初期${sid === 'rico_tutorial' ? '(🔥)' : ''}</span>
+          <span class="stage-chips-label">💰 ${sid === 'rico_tutorial' ? '🔥' : ''}</span>
           <span class="stage-chips-value" data-chip-display="${sid}">${curChip}</span>
           ${showSlider ? `<input class="stage-chips-slider" type="range" min="${baseChips}" max="${maxChips}" step="100" value="${curChip}" data-chip-slider="${sid}">` : ''}
         </div>`}
         <div class="stage-actions">
-          <button class="btn btn-primary" data-action="${isRicoClearChoice ? 'rico-mode-chooser' : 'battle-start'}" data-opponent="${sid}">${
+          <button class="btn btn-primary stage-main-btn" data-action="${isRicoClearChoice ? 'rico-mode-chooser' : 'battle-start'}" data-opponent="${sid}">${
             sid === 'rico_tutorial'
-              ? (cleared ? '対戦／受講' : '📚 受講する')
-              : (cleared ? '再戦' : '対戦開始')
+              ? (cleared ? '対戦／受講' : '📚 受講')
+              : (cleared ? '再戦' : '対戦')
           }</button>
-          ${(sid === 'rico_tutorial' && !cleared) ? `<button class="btn btn-secondary" data-action="rico-skip-tutorial" title="講義をスキップしていきなりリコ先輩と対戦（チュートリアル経験者向け）">🎲 いきなり対戦</button>` : ''}
-          ${(sid !== 'rico_tutorial' && !cleared) ? `<button class="btn btn-ghost stage-skip" data-action="skip-stage" data-opponent="${sid}" title="${skipStageCost(opp)}コインでスキップしてクリア扱い">⏭ スキップ</button>` : ''}
-          ${cleared && EPISODES[sid] ? `<button class="btn btn-ghost stage-recall" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">📜 回想</button>` : ''}
+          ${(sid === 'rico_tutorial' && !cleared) ? `<button class="btn btn-secondary stage-sub-btn" data-action="rico-skip-tutorial" title="講義をスキップしていきなりリコ先輩と対戦">🎲</button>` : ''}
+          ${(sid !== 'rico_tutorial' && !cleared) ? `<button class="btn btn-ghost stage-sub-btn" data-action="skip-stage" data-opponent="${sid}" title="${skipStageCost(opp)}コインでスキップしてクリア扱い">⏭</button>` : ''}
+          ${cleared && EPISODES[sid] ? `<button class="btn btn-ghost stage-sub-btn" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">📜</button>` : ''}
         </div>
       </div>
     </div>`;
@@ -2899,13 +3035,10 @@ const RICO_TRIVIA = {
 };
 
 function pickLobbyRico() {
-  // クリア前は常に制服（rico_default）固定。クリア後はユーザー装備優先＞ランダム
-  const cleared = save.clearedStages && save.clearedStages.includes('velvet');
-  if (!cleared) {
-    state.lobbyRicoIndex = 0;
-    return RICO_OUTFITS[0];
-  }
-  // 装備が 'default' 以外なら、装備IDで固定（クリア後の自由着替え）
+  // ★装備中の衣装が最優先。ショップの requires 判定（'polka'/'selina'/'grano'/'ending'）は
+  //   購入時点で既に通過済みなので、装備さえされていればクリア状況に関わらず即反映してよい。
+  //   （旧実装は「クリア前は常に制服固定」だったため、序盤で買える9着中8着が
+  //    ヴェルベット撃破まで一切見えないバグになっていた）
   const equipped = save && save.equippedRicoOutfit;
   if (equipped && equipped !== 'default') {
     const found = RICO_OUTFITS.find(o => outfitIdFor(o.file) === equipped);
@@ -2914,12 +3047,52 @@ function pickLobbyRico() {
       return found;
     }
   }
-  // セッションごとに変える（ロビー表示時に1回決める）
+  // クリア前・未装備なら制服固定
+  const cleared = save.clearedStages && save.clearedStages.includes('velvet');
+  if (!cleared) {
+    state.lobbyRicoIndex = 0;
+    return RICO_OUTFITS[0];
+  }
+  // クリア後・未装備ならセッションごとにランダム着せ替え（お楽しみ要素）
   if (state.lobbyRicoIndex == null || state.lobbyRicoChangedAt !== state.screen) {
     state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
     state.lobbyRicoChangedAt = state.screen;
   }
   return RICO_OUTFITS[state.lobbyRicoIndex];
+}
+// note_tell：対戦相手の傾向（攻撃的/受け身/ブラフ多）を事前表示。
+// 覗き見モード（デバッグ）の生の数値ログとは別物：定性的なタグのみ、購入者限定。
+function applyNoteTellHint() {
+  const container = document.querySelector('.opponent-info');
+  if (!container) return;
+  const old = container.querySelector('.note-tell-hint');
+  if (old) old.remove();
+  if (!save.unlockedNotes || !save.unlockedNotes.includes('tell')) return;
+  if (!state.opponentProfile) return;
+  const p = state.opponentProfile;
+  const tags = [];
+  if (p.aggression >= 0.7) tags.push('⚔ 攻撃的');
+  else if (p.aggression <= 0.4) tags.push('🛡 受け身');
+  if (p.bluffTendency >= 0.55) tags.push('🎭 ブラフ多め');
+  else if (p.bluffTendency <= 0.3) tags.push('🎯 バリュー志向');
+  if (p.foldDiscipline >= 0.7) tags.push('🧊 降りやすい');
+  else if (p.foldDiscipline <= 0.35) tags.push('🔥 粘り強い');
+  if (tags.length === 0) return;
+  const hint = document.createElement('div');
+  hint.className = 'note-tell-hint';
+  hint.innerHTML = `<span class="ntt-label">📓 相手の傾向</span>${tags.map(t => `<span class="ntt-tag">${t}</span>`).join('')}`;
+  container.appendChild(hint);
+}
+// バトル画面の左パネル（リコ助言役）にも装備中の衣装を反映
+function applyBattleRicoOutfit() {
+  const img = document.querySelector('.char-rico img');
+  if (!img) return;
+  const equipped = save && save.equippedRicoOutfit;
+  const found = equipped && equipped !== 'default'
+    ? RICO_OUTFITS.find(o => outfitIdFor(o.file) === equipped)
+    : null;
+  const file = found ? found.file : 'rico_default.png';
+  if (!img.src.endsWith(file)) img.src = `assets/characters/${file}`;
 }
 // ファイル名 → 装備ID 変換（rico_kimono.png → 'kimono'）
 function outfitIdFor(file) {
@@ -2950,13 +3123,20 @@ function lobbyRicoLine() {
 // ロビー下部：音楽コントロール＋設定ボタン（設定はモーダル）
 function renderLobbyBottomPanel() {
   const bgmOn = !!save.bgmOn;
-  const vol = save.bgmVolume != null ? save.bgmVolume : 35;
+  const sfxOn = !!save.sfxOn;
+  const bgmVol = save.bgmVolume != null ? save.bgmVolume : 35;
+  const sfxVol = save.sfxVolume != null ? save.sfxVolume : 60;
   const songLabel = bgmOn ? '♪ Lounge Jazz' : '♪ —（停止中）';
   return `
     <div class="lb-row lb-music-row">
       <button class="lb-bgm-toggle" data-action="toggle-bgm" title="BGM ON/OFF">${bgmOn ? '🔊' : '🔇'}</button>
-      <input class="lb-vol" type="range" min="0" max="100" value="${vol}" title="音量">
+      <input class="lb-vol" type="range" min="0" max="100" value="${bgmVol}" data-vol="bgm" title="BGM 音量">
       <button class="lb-settings-btn" data-action="open-settings" title="ゲーム設定">⚙</button>
+    </div>
+    <div class="lb-row lb-sfx-row">
+      <button class="lb-sfx-toggle" data-action="toggle-sfx" title="SFX ON/OFF">${sfxOn ? '🔔' : '🔕'}</button>
+      <input class="lb-vol lb-vol-sfx" type="range" min="0" max="100" value="${sfxVol}" data-vol="sfx" title="効果音 音量">
+      <span class="lb-sfx-label">SFX</span>
     </div>
     <div class="lb-song-label">${songLabel}</div>
   `;
@@ -2990,6 +3170,23 @@ function showSettingsModal() {
       <button class="btn btn-secondary settings-modal-trophy" data-action="open-collection">🏆 トロフィー手帳を開く</button>
       <button class="btn btn-secondary settings-modal-trophy" data-action="open-glossary">📖 ポーカー辞典を開く</button>
       <button class="btn btn-secondary settings-modal-trophy" data-action="equip-change">👗 装備変更</button>
+      ${(save.ownedItems || []).includes('memory_minipoker') ? `
+        <button class="btn btn-secondary settings-modal-trophy" data-action="play-minipoker">🎴 ファイブポーカー</button>
+      ` : ''}
+      ${save.backdoorUnlocked ? `
+        <div class="settings-modal-divider"></div>
+        <div class="settings-modal-debug">
+          <span class="settings-modal-debug-label">🔧 デバッグ：覗き見モード</span>
+          <button class="settings-modal-toggle ${save.backdoorOn ? 'on' : 'off'}" data-toggle="backdoor">
+            <span class="stm-knob"></span>
+            <span class="stm-status">${save.backdoorOn ? 'ON' : 'OFF'}</span>
+          </button>
+        </div>
+      ` : ''}
+      <div class="settings-modal-divider"></div>
+      <button class="btn btn-danger settings-modal-reset" data-action="reset-save">
+        ⚠ セーブデータをリセット
+      </button>
       <button class="btn btn-primary settings-modal-close">閉じる</button>
     </div>
   `;
@@ -3003,8 +3200,16 @@ function showSettingsModal() {
       const kind = btn.dataset.toggle;
       if (kind === 'psych') save.psychEnabled = !(save.psychEnabled !== false);
       else if (kind === 'logic') save.logicEnabled = !(save.logicEnabled !== false);
+      else if (kind === 'backdoor') save.backdoorOn = !save.backdoorOn;
       saveProgress();
-      const isOn = (kind === 'psych') ? (save.psychEnabled !== false) : (save.logicEnabled !== false);
+      let isOn;
+      if (kind === 'psych') isOn = (save.psychEnabled !== false);
+      else if (kind === 'logic') isOn = (save.logicEnabled !== false);
+      else if (kind === 'backdoor') {
+        isOn = !!save.backdoorOn;
+        // バトル画面の覗き見パネル即座反映
+        if (typeof updateBackdoorPanel === 'function') updateBackdoorPanel();
+      }
       btn.classList.toggle('on', isOn);
       btn.classList.toggle('off', !isOn);
       btn.querySelector('.stm-status').textContent = isOn ? 'ON' : 'OFF';
@@ -3067,9 +3272,7 @@ const SHOP_ITEMS = [
   { id: 'panyu_sense_lv2',     cat: 'panyu', name: 'ぱにゅぱにゅLv2',         price: 300, desc: '心理バトルのハズレ選択肢を1つグレーアウトして選べなくする' },
   { id: 'panyu_range_lv2',     cat: 'panyu', name: 'ぱにゅレンジLv2',         price: 500, desc: '心理バトル成功後の相手レンジ表示が詳しくなる' },
   { id: 'panyu_gauge_plus_20', cat: 'panyu', name: 'ぱにゅゲージ上限+20',      price: 900, desc: 'ぱにゅゲージの最大値が100→120に' },
-  { id: 'note_board_danger',   cat: 'note',  name: 'ボード危険度メモ',         price: 250, desc: '場札がフラッシュ/ストレート注意の時、ミミ思考に表示される' },
   { id: 'note_pot_odds',       cat: 'note',  name: 'ポットオッズ入門',         price: 350, desc: 'コール判断時に「割に合う/合わない」目安を表示' },
-  { id: 'note_bet_size',       cat: 'note',  name: 'ベットサイズ講座',         price: 300, desc: 'ベットボタンの説明が詳しくなる' },
   { id: 'skin_red_gold_card',  cat: 'skin',  name: '赤金カジノカード',         price: 300, desc: 'カード裏デザインを赤金カジノ風に変更' },
   { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 500, desc: 'テーブル背景をVIP風に変更' },
   { id: 'memory_ending',       cat: 'memory', name: 'エンディング映像',        price: 500, desc: 'クリア後限定。あの感動のエンディングを何度でも視聴可能に', requires: 'ending' },
@@ -3087,11 +3290,8 @@ const SHOP_ITEMS = [
   { id: 'panyu_gauge_plus_50', cat: 'panyu', name: 'ぱにゅゲージ上限+50',      price: 2200, desc: 'ぱにゅゲージの最大値が120→170に（要上限+20）' },
 
   /* ===== 追加：戦術ノート ===== */
-  { id: 'note_position',       cat: 'note',  name: 'ポジション講座',           price: 350,  desc: 'BTN/BB等のポジション解説をミミ思考に表示' },
-  { id: 'note_outs',           cat: 'note',  name: 'アウツ計算術',             price: 400,  desc: 'ドロー時に「あと何枚で完成」をリアルタイム表示' },
   { id: 'note_tell',           cat: 'note',  name: '相手の癖メモ',             price: 500,  desc: '対戦相手の傾向（攻撃的/受け身/ブラフ多）が事前に分かる' },
   { id: 'note_bankroll',       cat: 'note',  name: 'バンクロール管理',         price: 450,  desc: 'コイン獲得効率が+10%。ハンドリザルトにも収支表示' },
-  { id: 'note_equity',         cat: 'note',  name: 'エクイティ早見表',         price: 600,  desc: '結果モーダルのエクイティ推移グラフが詳細化' },
 
   /* ===== 追加：見た目（着替え・カード/テーブル/チップ・差分） ===== */
   /* リコ先輩の衣装（既存 RICO_OUTFITS のファイル名と一致するIDで管理） */
@@ -3141,19 +3341,19 @@ const SHOP_ITEMS = [
   { id: 'omake_drama_2',         cat: 'memory', name: '🎭 おまけ寸劇「対決前夜」', price: 700, desc: 'ヴェルベット戦前夜のリコと主人公の小話。クリア後', requires: 'ending' },
   { id: 'omake_voice_pack',      cat: 'memory', name: '🎙 リコ先輩ボイス集',    price: 900,  desc: '勝利・敗北・煽り等のセリフ集を自由再生' },
   { id: 'omake_credit',          cat: 'memory', name: '📜 スタッフロール再生',  price: 200,  desc: 'スタッフクレジットをいつでも再生可能。クリア後', requires: 'ending' },
+  { id: 'memory_minipoker',      cat: 'memory', name: '🎴 ミニキャラ・ファイブポーカー', price: 700, desc: 'ミミがミニキャラ仲間と5枚交換ポーカーで対戦！勝てばコインも稼げる、ふんわり楽しいミニゲーム' },
 ];
 
 const SHOP_COMMENTS = {
   panyu_sense_lv2:     'ふむ、迷うお嬢さんにこそ、これ。ハズレを1枚お引きしますから、お買い得ですよ',
   panyu_range_lv2:     'レンジが見える品、と言いましょうか。次の一手の読みが冴える、中級者向けの逸品ですな',
   panyu_gauge_plus_20: '長くお遊びになるなら、上限拡張は必須。お買い得な投資です',
-  note_board_danger:   '危険信号を教える、いわば早期警戒装置ですな。セリナさん戦の前に揃えると、ずいぶん楽ですよ',
   note_pot_odds:       'ふふ、私の専門分野ですな。「安いか、高いか」が即座に見える品。私との商談で必要になりますよ',
-  note_bet_size:       'ベットの作法をおさらいできる、初心者向けの基礎教材です。お得ですよ',
   skin_red_gold_card:  '見た目重視のお嬢さんに。テーブルが華やぎますよ',
   table_vip:           'VIPのお客様気分でお楽しみいただける一品。気分転換にぜひ',
   memory_ending:       'これは特別な品ですよ。あの夜の決着を、何度でも振り返れる映像です',
   memory_ending_theme: 'あの夜を彩った主題歌……何度でも聴き返したくなる一曲ですよ',
+  memory_minipoker:    'ふふ、息抜きの逸品。ちっこいキャラたちと5枚交換ポーカーですよ。勝てば小銭も付いてきます',
   chips_plus_500:  'チップが多いほうが、長く楽しめますからな。手始めに +500 はいかが？',
   chips_plus_1500: 'さらに+1500。腰を据えた読み合いができますよ',
   chips_plus_3000: '+3000ともなれば、本格的なロングゲーム。プロの卓ですな',
@@ -3167,11 +3367,8 @@ const SHOP_COMMENTS = {
   panyu_gauge_plus_50: '上限170、もはや別格。長丁場の決戦で物を言いますよ',
 
   /* 追加：戦術ノート */
-  note_position:       'ポジション、これは知っているだけで勝率が変わる魔法のような知識です',
-  note_outs:           'あと何枚で完成するか――数えるのは存外、難しいもの。任せてしまいましょう',
   note_tell:           '相手の癖を先に知る。これほど卑怯で、これほど合法な武器はありませんな',
   note_bankroll:       '稼ぐ者は管理する。コイン効率と収支管理、両方ついてお買い得',
-  note_equity:         'グラフを読める者だけが、運と実力を切り分けられるのですよ',
 
   /* 追加：見た目（衣装） */
   outfit_rico_pajama:   '寝起きのリコさん。生活感のある一着、いかがです？',
@@ -3306,7 +3503,6 @@ const SHOP_UNLOCK = {
   panyu_sense_lv2:       'always',
   panyu_gauge_plus_20:   'always',
   note_pot_odds:         'always',
-  note_bet_size:         'always',
   chips_plus_500:        'always',
   outfit_rico_pajama:    'always',
   outfit_rico_casual:    'always',
@@ -3314,8 +3510,6 @@ const SHOP_UNLOCK = {
 
   // ── ポルカ撃破で入荷 ──
   panyu_combo_x2:        'polka',
-  note_board_danger:     'polka',
-  note_position:         'polka',
   chips_plus_1500:       'polka',
   outfit_rico_dress:     'polka',
   table_emerald:         'polka',
@@ -3325,7 +3519,6 @@ const SHOP_UNLOCK = {
 
   // ── セリナ撃破で入荷 ──
   panyu_range_lv2:       'selina',
-  note_outs:             'selina',
   note_tell:             'selina',
   chips_plus_3000:       'selina',
   outfit_rico_school:    'selina',
@@ -3339,13 +3532,13 @@ const SHOP_UNLOCK = {
   bgm_battle_tense:      'selina',
   se_pack_casino:        'selina',
   omake_drama_1:         'selina',
+  memory_minipoker:      'selina',  // セリナ撃破で「ふんわり息抜き」枠を入荷
 
   // ── グラーノ撃破で入荷 ──
   panyu_chrono:          'grano',
   panyu_sense_lv3:       'grano',
   panyu_range_lv3:       'grano',
   note_bankroll:         'grano',
-  note_equity:           'grano',
   chips_plus_5000:       'grano',
   outfit_rico_kimono:    'grano',
   outfit_rico_witch:     'grano',
@@ -3412,11 +3605,12 @@ function renderShopItems(cat) {
     const isNew = isShopItemNew(i.id);
     // requires: 解放条件（ending限定）— 既存ロジック維持
     let lockedReason = null;
-    if (i.requires === 'ending' && !save.endingUnlocked) lockedReason = '🔒 ヴェルベット撃破で解放';
+    if (i.requires === 'ending' && !isEndingUnlocked()) lockedReason = '🔒 ヴェルベット撃破で解放';
     const canBuy = !owned && !lockedReason && save.coins >= i.price;
     // 視聴/再生系の購入後ボタン
     const playableId = (i.id === 'memory_ending') ? 'play-ending'
                       : (i.id === 'memory_ending_theme') ? 'play-ending-theme'
+                      : (i.id === 'memory_minipoker') ? 'play-minipoker'
                       : null;
     return `<div class="shop-item ${owned ? 'owned' : ''} ${lockedReason ? 'locked' : ''} ${isNew ? 'is-new' : ''}" data-item="${i.id}">
       ${isNew ? '<span class="shop-item-newtag">🆕 新着</span>' : ''}
@@ -4158,7 +4352,7 @@ function renderBetUnified() {
   // 1チップ = 25 単位。最大表示15枚、超過は数字に
   // newOnTop: 新規追加分（先頭枚）を pop アニメ対象としてマーク
   const buildVerticalStack = (amount, side, newAdded) => {
-    if (!amount || amount <= 0) return '<div class="bu-stack-empty">—</div>';
+    if (!amount || amount <= 0) return '<div class="bu-waiting">待機中</div>';
     const tiers = [
       { cls: 'chip-orange', val: 1000 },
       { cls: 'chip-purple', val: 500 },
@@ -4223,11 +4417,11 @@ function renderBetUnified() {
     <div class="bu-cell bu-cell-bet bu-cell-opp${opp > pl && opp > 0 ? ' bu-lead' : ''}">
       <div class="bu-cell-label">${oppShort} ベット</div>
       ${buildVerticalStack(opp, 'opp', newOpp)}
-      <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}${oppSizeLabel ? ` <span class="bu-size-tag">${oppSizeLabel}</span>` : ''}</div>
+      <div class="bu-cell-amt">${opp > 0 ? '+' + opp + (oppSizeLabel ? ` <span class="bu-size-tag">${oppSizeLabel}</span>` : '') : ''}</div>
       <div class="bu-status-slot">${
         opp > pl && opp > 0 ? `<span class="bu-status bu-status-lead">▲ リード</span>`
           : (pl > opp && opp > 0 ? `<span class="bu-status bu-status-behind">差 −${pl - opp}</span>`
-          : `<span class="bu-status bu-status-empty">—</span>`)
+          : `<span class="bu-status bu-status-empty"></span>`)
       }</div>
     </div>
     <!-- 3. ポット（物理チップ） -->
@@ -4238,24 +4432,24 @@ function renderBetUnified() {
       <div class="bu-pot-calc">${
         state.__lastPotCalc && state.__lastPotCalc.added > 0
           ? `<span class="bpc-before">${state.__lastPotCalc.before}</span> <span class="bpc-op">+</span> <span class="bpc-added">${state.__lastPotCalc.added}</span> <span class="bpc-op">=</span> <span class="bpc-after">${state.__lastPotCalc.after}</span>`
-          : `<span class="bpc-empty">—</span>`
+          : `<span class="bpc-empty"></span>`
       }</div>
       <div class="${callClass}">
         <span class="bu-call-key">コール</span>
         ${playerCallNeed > 0
           ? buildHorizontalChips(playerCallNeed, 'small', 'bu-call-num')
-          : '<span class="bu-call-empty">—</span>'}
+          : '<span class="bu-call-empty"></span>'}
       </div>
     </div>
     <!-- 4. ミミのベット（このストリート） -->
     <div class="bu-cell bu-cell-bet bu-cell-pl${pl > opp && pl > 0 ? ' bu-lead' : ''}">
       <div class="bu-cell-label">ミミ ベット</div>
       ${buildVerticalStack(pl, 'pl', newPl)}
-      <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}${plSizeLabel ? ` <span class="bu-size-tag">${plSizeLabel}</span>` : ''}</div>
+      <div class="bu-cell-amt">${pl > 0 ? '+' + pl + (plSizeLabel ? ` <span class="bu-size-tag">${plSizeLabel}</span>` : '') : ''}</div>
       <div class="bu-status-slot">${
         pl > opp && pl > 0 ? `<span class="bu-status bu-status-lead">▲ リード</span>`
           : (opp > pl ? `<span class="bu-status bu-status-behind">あと −${opp - pl} 必要</span>`
-          : `<span class="bu-status bu-status-empty">—</span>`)
+          : `<span class="bu-status bu-status-empty"></span>`)
       }</div>
     </div>
   `;
@@ -4361,9 +4555,8 @@ function renderSessionStats() {
   const results = state.handResults || [];
   const bets = (state.logs && state.logs.bets) || [];
   const total = results.length;
-  if (total === 0) {
-    return `<details class="sess-stats"><summary>📊 戦績 <small>(まだ集計なし)</small></summary><div class="sess-empty">— ハンド終了後に集計開始 —</div></details>`;
-  }
+  // P3: 中身が空（集計対象0件）のときはボタン自体を出さない（空アコーディオン廃止）
+  if (total === 0) return '';
   const wins   = results.filter(r => r.winner === 'player').length;
   const losses = results.filter(r => r.winner === 'opponent').length;
   const splits = results.filter(r => r.winner === 'split').length;
@@ -4389,7 +4582,7 @@ function renderSessionStats() {
     return '受け身';
   };
 
-  return `<details class="sess-stats"><summary>📈 戦績 <small>(${wins}勝${losses}敗 / ${total}ハンド)</small></summary>
+  return `<details class="sess-stats"><summary><span class="sess-title-txt">📈 戦績 <small>(${wins}勝${losses}敗 / ${total}ハンド)</small></span></summary>
     <div class="ss-grid">
       <div class="ss-row"><span class="ss-k">勝/負/分</span><span class="ss-v">${wins} / ${losses} / ${splits}</span></div>
       <div class="ss-row"><span class="ss-k">SD 到達率</span><span class="ss-v">${wtsdPct}%</span></div>
@@ -4836,8 +5029,17 @@ function renderActionArea(el) {
       sizeSlot(twoThird, 'md', '2/3ポット', '強気',   'pot_2_3'),
       sizeSlot(potBet,   'lg', 'ポット',     '最大圧', 'pot_1'),
       { kind: 'allin', label: 'オールイン', chipAmount: allInAmt, action: 'player-allin',
-        enabled: allInAmt > 0, title: '持ちチップ全部。逆転の最終手段。' },
+        enabled: allInAmt > 0, title: '持ちチップ全部。最大の圧。' },
     ];
+  }
+
+  // P2: 体験ハンドは「大きく行く」2択だけに絞る（没入・迷いのない導線）
+  if (state.introHandMode) {
+    slots = slots.map(s => {
+      if (s.kind === 'lg')    return { ...s, label: '大レイズ', subText: 'すごい手だ、大きく行こう！' };
+      if (s.kind === 'allin') return s;
+      return { ...s, enabled: false };
+    });
   }
 
   el.innerHTML = `<div class="action-grid">${slots.map(s => {
@@ -4876,7 +5078,19 @@ function onAction(e) {
   // 任意のアクションでカットインを閉じる
   dismissCutIn();
   switch (action) {
-    case 'start':         goLobby(); break;
+    case 'start':
+      // P2: 初回起動（未クリア＆体験ハンド未消化）はロビーではなく体験ハンドへ直行
+      if (save.clearedStages.length === 0 && !save.introPlayed) { startIntroHand(); }
+      else { goLobby(); }
+      break;
+    case 'intro-to-lecture':
+      document.querySelector('.intro-win-overlay')?.remove();
+      startBattle('rico_tutorial');
+      break;
+    case 'intro-to-lobby':
+      document.querySelector('.intro-win-overlay')?.remove();
+      goLobby();
+      break;
     case 'new-game':
       showNewGameModal();
       break;
@@ -4911,7 +5125,13 @@ function onAction(e) {
     }
     case 'skip-stage': skipStageWithCoins(data.opponent); break;
     case 'back-title':    stopEndingBgm(); state = defaultState(); render(); break;
-    case 'back-lobby':    stopEndingBgm(); goLobby(); break;
+    case 'back-lobby': {
+      stopEndingBgm();
+      // ショップから出る瞬間にここまで見た商品を seen マーク（NEW表示はショップ内では消えない）
+      if (state.screen === 'shop') markShopItemsSeen();
+      goLobby();
+      break;
+    }
     case 'open-shop': {
       const newCount = newItemCount();
       state.screen = 'shop';
@@ -4919,8 +5139,7 @@ function onAction(e) {
       if (newCount > 0) {
         toast(`🎴 新商品 ${newCount} 件入荷！`);
       }
-      // ショップ表示時点で既読マーク（少し遅延：ユーザーが NEW を視認できるように）
-      setTimeout(() => markShopItemsSeen(), 100);
+      // ※ markShopItemsSeen はショップを出る時に実行（NEWマークがショップ内で消えるバグの修正）
       break;
     }
     case 'reset-save':    resetProgress(); break;
@@ -5033,7 +5252,7 @@ function onAction(e) {
     case 'use-panyu-sense': usePanyuSense(); break;
     case 'panyu-free': {
       // 連打で裏モード解放（クリア後限定）
-      if (save.endingUnlocked && !save.backdoorUnlocked) {
+      if (isEndingUnlocked() && !save.backdoorUnlocked) {
         state.__panyuClickCount = (state.__panyuClickCount || 0) + 1;
         if (state.__panyuClickCount >= 7) {
           save.backdoorUnlocked = true;
@@ -5055,11 +5274,13 @@ function onAction(e) {
       break;
     }
     case 'toggle-bgm':    toggleLobbyBgm(); break;
+    case 'toggle-sfx':    toggleSfx(); mpSfx('tap'); /* 確認音 */ break;
     case 'toggle-psych':  save.psychEnabled = !(save.psychEnabled !== false); saveProgress(); applyBindings(); break;
     case 'toggle-logic':  save.logicEnabled = !(save.logicEnabled !== false); saveProgress(); applyBindings(); break;
     case 'open-settings': showSettingsModal(); break;
     case 'play-ending':   state.screen = 'ending'; render(); break;
     case 'play-ending-theme': toggleEndingThemePreview(); break;
+    case 'play-minipoker': showMiniPokerGame(); break;
     case 'toggle-backdoor':
       save.backdoorOn = !save.backdoorOn;
       saveProgress();
@@ -5144,55 +5365,70 @@ function startEndingShow(playMusic) {
   const stars = document.createElement('div');
   stars.className = 'ending-stars';
   stage.appendChild(stars);
-  const skip = document.createElement('button');
-  skip.className = 'ending-skip-btn';
-  skip.textContent = 'スキップ ▶▶';
-  skip.onclick = () => { cancelled = true; finale(); };
-  stage.appendChild(skip);
-
   let cancelled = false;
 
+  // 右上：スキップピルのみ（音量バーはエンディングでは表示しない＝没入優先）
+  const skipCtl = document.createElement('button');
+  skipCtl.className = 'ec-btn ec-skip ec-pill ec-pos-right';
+  skipCtl.title = 'スキップ';
+  skipCtl.textContent = 'スキップ ▶▶';
+  stage.appendChild(skipCtl);
+  const skip = skipCtl;
+  skip.addEventListener('click', () => {
+    // スキップは即時ロビー帰還（finale演出もスタッフロールもバイパス）
+    cancelled = true;
+    // 音楽を止める
+    const endA = document.getElementById('ending-bgm-audio');
+    if (endA) endA.pause();
+    // ロビーへ
+    goLobby();
+  });
+
+  // ===== 映画的エンディング：味わって楽しむ、ゆったり構成 =====
   const acts = [
-    { type: 'fade-text', text: '——あの夜、VIPルームの最奥で——', cls: 'narration', wait: 2400 },
+    // ── 序章 ──
+    { type: 'black-fade', text: '——あの夜、VIPルームの最奥で——', wait: 4400 },
 
-    // ヴェルベット
-    { type: 'speaker', who: 'velvet', img: 'velvet', name: 'ヴェルベット',
-      text: '「新人にしては悪くないわ。その妙なスキル、覚えておく」', wait: 3000 },
-    { type: 'speaker', who: 'velvet', img: 'velvet', name: 'ヴェルベット',
-      text: '「このグランドクロック・カジノシアターを支配するのは、貴方なのかもしれませんことね」', wait: 3600 },
+    // ── 第1幕：女王、玉座を降りる ──（velvet.png をキープ、セリフ2発）
+    { type: 'keyart', img: 'velvet', name: 'ヴェルベット',
+      text: '……新人さんに、こんな夜をいただくとは。', wait: 6200 },
+    { type: 'keyart', img: 'velvet', name: 'ヴェルベット',
+      text: '玉座は揺るがぬものと、信じていた。<br>今夜、私は知ったの。<br>——揺るがぬものなど、ない。', wait: 8000 },
 
-    // グラーノ
-    { type: 'speaker', who: 'grano', img: 'grano', name: 'グラーノ',
-      text: '「ふむ。お嬢さんの『割に合う判断』、見事でしたな」', wait: 2800 },
-    { type: 'speaker', who: 'grano', img: 'grano', name: 'グラーノ',
-      text: '「マクスウェル商会へ推薦させていただきます。お嬢さんなら、良い経営者になれましょう」', wait: 3400 },
+    // ── 第2幕：敗者たちの敬意 ──
+    { type: 'keyart', img: 'grano', name: 'グラーノ',
+      text: '商人として、申し上げる。<br>お嬢さんの判断は、利得を超えていた。<br>——あれは、美しかった。', wait: 7400 },
 
-    // セリナ
-    { type: 'speaker', who: 'selina', img: 'selina', name: 'セリナ',
-      text: '「ボードを読む目、確かなものでした。次は本気で相手をします」', wait: 3000 },
-    { type: 'speaker', who: 'selina', img: 'selina', name: 'セリナ',
-      text: '「……非凡な推理力。あの事件、任せられるかもしれません」', wait: 3400 },
+    { type: 'keyart', img: 'selina', name: 'セリナ',
+      text: 'ボードは、嘘をつかない。<br>けれど……心は、読み切れるものね。<br>羨ましいくらいに。', wait: 7200 },
 
-    // ポルカ
-    { type: 'speaker', who: 'polka', img: 'polka', name: 'ポルカ',
-      text: '「く、悔しいんだから。ウチのおじに言いつけておくからね」', wait: 2800 },
-    { type: 'speaker', who: 'polka', img: 'polka', name: 'ポルカ',
-      text: '「すごろくアイドル、なめないでよね」', wait: 2600 },
+    { type: 'keyart', img: 'polka', name: 'ポルカ',
+      text: 'うう、悔しい！<br>でも……うん、覚えとくから。<br>あなたの強さ、ぜったい、次は超えてやるんだから！', wait: 6800 },
 
-    // リコ先輩
-    { type: 'speaker', who: 'rico', img: 'rico', name: 'リコ先輩',
-      text: '「やるじゃん、ミミ。ちゃんと顔色まで読み切った」', wait: 2800 },
-    { type: 'speaker', who: 'rico', img: 'rico', name: 'リコ先輩',
-      text: '「ラパン・グラン・コンクイスタも夢じゃないかも？……なんてね、冗談」', wait: 3400 },
+    // ── 第3幕：師の祝福 ──
+    { type: 'portrait', img: 'rico_ending', fallback: 'rico_default', name: 'リコ先輩',
+      text: 'やるじゃん、ミミ。', wait: 3800 },
+    { type: 'portrait', img: 'rico_ending', fallback: 'rico_default', name: 'リコ先輩',
+      text: 'ねえ、今日って……あなたの、初日でしょう？<br>こんな新人、聞いたこともない。',
+      wait: 6400 },
 
-    // ミミ
-    { type: 'speaker', who: 'mimi', img: 'mimi', name: 'ミミ',
-      text: '「ぱにゅぱにゅだけが取り柄だと思ってた。でも、それも立派なスキルでした」', wait: 3400 },
-    { type: 'speaker', who: 'mimi', img: 'mimi', name: 'ミミ',
-      text: '「……それより。私の労務条件、早く確認したいんですけど」', wait: 3400 },
+    // ── 第4幕：主人公の独白（明るいコメディ調。ぱにゅぱにゅは結局意味なかった） ──
+    { type: 'portrait', img: 'mimi_ending', fallback: 'mimi_default', name: 'ミミ',
+      text: '「外れスキル《ぱにゅぱにゅ》」<br>——それが、今朝のわたしに与えられた、評価でした。',
+      wait: 6200 },
+    { type: 'portrait', img: 'mimi_ending', fallback: 'mimi_default', name: 'ミミ',
+      text: 'ぱにゅぱにゅ……一生懸命、発動したんですよ？',
+      wait: 4400 },
+    { type: 'portrait', img: 'mimi_ending', fallback: 'mimi_default', name: 'ミミ',
+      text: '……でも、振り返ってみて、気づきました。<br>このスキル、結局、<br>あんまり意味なかったかも？',
+      wait: 6400 },
+    { type: 'portrait', img: 'mimi_ending', fallback: 'mimi_default', name: 'ミミ',
+      text: 'でも、楽しかった（意味深）', wait: 6200, afterglow: 5200, keepCaption: true },
 
-    { type: 'fade-text', text: 'こうしてミミは、闘札の世界で名を上げていく——', cls: 'narration', wait: 3000 },
-    { type: 'fade-text', text: 'これは、外れスキルが世界を変える物語の、ほんの始まり。', cls: 'narration small', wait: 3200 },
+    // ── 終章：余韻ナレーション ──
+    { type: 'keyart', img: 'ending', name: null,
+      text: 'これは、外れスキルを抱いた少女が、<br>世界の頂に手をかける物語の、<br>——ほんの、はじまり。',
+      wait: 8400, narr: true },
   ];
 
   let idx = 0;
@@ -5204,9 +5440,9 @@ function startEndingShow(playMusic) {
   }
 
   function runAct(a, done) {
-    if (a.type === 'fade-text') {
+    if (a.type === 'fade-text' || a.type === 'black-fade') {
       const el = document.createElement('div');
-      el.className = `ending-narration ${a.cls || ''}`;
+      el.className = `ending-narration ${a.cls || ''} ${a.type === 'black-fade' ? 'black-fade' : ''}`;
       el.innerHTML = a.text;
       stage.appendChild(el);
       requestAnimationFrame(() => el.classList.add('show'));
@@ -5215,69 +5451,154 @@ function startEndingShow(playMusic) {
         setTimeout(() => el.remove(), 600);
         done();
       }, a.wait);
-    } else if (a.type === 'speaker') {
+    } else if (a.type === 'keyart') {
+      // 同じ画像の連続シーンは「キャプションだけ差替」でガタつき防止
+      const prev = stage.querySelector('.ending-keyart:not(.out)');
+      if (prev && prev.dataset.img === a.img) {
+        const cap = prev.querySelector('.ek-caption');
+        cap.classList.add('cap-out');
+        setTimeout(() => {
+          cap.className = `ek-caption ${a.narr ? 'narr' : ''}`;
+          cap.innerHTML = `
+            ${a.name ? `<div class="ek-name">${a.name}</div>` : ''}
+            <div class="ek-text">${a.text}</div>
+          `;
+        }, 450);
+        setTimeout(() => {
+          const nx = acts[idx];
+          if (!(nx && nx.type === 'keyart' && nx.img === a.img)) {
+            // 余韻：キャプションだけ先消し（image-only afterglow）→ done() で次シーン誘発
+            prev.classList.add('caption-out');
+            setTimeout(done, 2200);
+            // wrap本体は次シーンが .out を付けてフェードさせる（ここでは消さない）
+          } else {
+            done();
+          }
+        }, a.wait);
+        return;
+      }
+      // 新規キーアート：作る前に「直前シーン」を out にして 1.6s クロスフェード開始
+      stage.querySelectorAll('.ending-keyart:not(.out), .ending-portrait-scene:not(.out)').forEach(el => {
+        el.classList.add('out');
+        setTimeout(() => el.remove(), 1800);
+      });
       const wrap = document.createElement('div');
-      wrap.className = `ending-speaker speaker-${a.who}`;
+      wrap.className = 'ending-keyart';
+      wrap.dataset.img = a.img;
       wrap.innerHTML = `
-        <div class="ending-portrait">
-          <img src="assets/characters/${a.img}_default.png" alt="${a.name}" onerror="window.assetFallback(this,'${a.img}')">
+        <div class="ek-img-frame">
+          <img class="ek-img" src="assets/episodes/${a.img}.png" alt=""
+               onerror="this.style.display='none'; this.parentElement.classList.add('ek-fallback');">
         </div>
-        <div class="ending-bubble">
-          <div class="ending-bubble-name">${a.name}</div>
-          <div class="ending-bubble-text">${a.text}</div>
+        <div class="ek-vignette"></div>
+        <div class="ek-caption ${a.narr ? 'narr' : ''}">
+          ${a.name ? `<div class="ek-name">${a.name}</div>` : ''}
+          <div class="ek-text">${a.text}</div>
         </div>
       `;
       stage.appendChild(wrap);
       requestAnimationFrame(() => wrap.classList.add('show'));
       setTimeout(() => {
-        wrap.classList.add('out');
-        setTimeout(() => wrap.remove(), 600);
-        done();
+        const nx = acts[idx];
+        if (nx && nx.type === 'keyart' && nx.img === a.img) {
+          done();
+          return;
+        }
+        // 余韻：キャプションのみフェード（絵は残る）。done() を 2.2s 遅延して次シーンを起こす。
+        // 次シーン側が wrap.classList.add('out') してくれるので、ここでは消さない。
+        wrap.classList.add('caption-out');
+        setTimeout(done, 2200);
+      }, a.wait);
+    } else if (a.type === 'portrait' || a.type === 'speaker') {
+      // 同じキャラの連続セリフは「立ち絵そのまま」「キャプションだけ差替」で会話風に
+      const prevP = stage.querySelector('.ending-portrait-scene:not(.out)');
+      if (prevP && prevP.dataset.img === a.img) {
+        const cap = prevP.querySelector('.ek-caption');
+        // キャプション部のみフェードアウト → 中身差替 → フェードイン
+        cap.classList.add('cap-out');
+        prevP.classList.remove('caption-out'); // 前ターンの余韻クラスは除去
+        setTimeout(() => {
+          cap.classList.remove('cap-out');
+          cap.innerHTML = `
+            ${a.name ? `<div class="ek-name">${a.name}</div>` : ''}
+            <div class="ek-text">${a.text}</div>
+          `;
+        }, 450);
+        const afterglowMs = (typeof a.afterglow === 'number') ? a.afterglow : 2200;
+        setTimeout(() => {
+          const nx = acts[idx];
+          if (!(nx && (nx.type === 'portrait' || nx.type === 'speaker') && nx.img === a.img)) {
+            // keepCaption: テキストは残したまま余韻、そうでなければキャプションだけ先消し
+            if (!a.keepCaption) prevP.classList.add('caption-out');
+            setTimeout(done, afterglowMs);
+          } else {
+            done();
+          }
+        }, a.wait);
+        return;
+      }
+      // 新規立ち絵：直前シーンをクロスフェードで送り出す
+      stage.querySelectorAll('.ending-keyart:not(.out), .ending-portrait-scene:not(.out)').forEach(el => {
+        el.classList.add('out');
+        setTimeout(() => el.remove(), 1800);
+      });
+      // 立ち絵を中央に大きく＋台詞バンド
+      const wrap = document.createElement('div');
+      wrap.className = `ending-portrait-scene portrait-${a.img}`;
+      wrap.dataset.img = a.img;
+      const imgPath = a.type === 'speaker'
+        ? `assets/characters/${a.img}_default.png`
+        : `assets/characters/${a.img}.png`;
+      const fallbackPath = a.fallback ? `assets/characters/${a.fallback}.png` : '';
+      // onerror で fallback に切り替え、それでも駄目なら assetFallback で絵文字
+      const fallbackInline = a.fallback
+        ? `this.onerror=function(){this.onerror=null;window.assetFallback(this,this.src.split('/').pop().replace('.png','').split('_')[0])};this.src='${fallbackPath}';`
+        : `this.onerror=null;window.assetFallback(this,this.src.split('/').pop().replace('.png','').split('_')[0])`;
+      wrap.innerHTML = `
+        <div class="eps-portrait-frame">
+          <img class="eps-portrait" src="${imgPath}" alt="${a.name || ''}"
+               onerror="${fallbackInline}">
+        </div>
+        <div class="ek-caption">
+          ${a.name ? `<div class="ek-name">${a.name}</div>` : ''}
+          <div class="ek-text">${a.text}</div>
+        </div>
+      `;
+      stage.appendChild(wrap);
+      requestAnimationFrame(() => wrap.classList.add('show'));
+      const afterglowMs = (typeof a.afterglow === 'number') ? a.afterglow : 2200;
+      setTimeout(() => {
+        const nx = acts[idx];
+        if (nx && (nx.type === 'portrait' || nx.type === 'speaker') && nx.img === a.img) {
+          done();
+          return;
+        }
+        if (!a.keepCaption) wrap.classList.add('caption-out');
+        setTimeout(done, afterglowMs);
       }, a.wait);
     }
   }
 
   function finale() {
-    // 既存要素を片付け
-    stage.querySelectorAll('.ending-speaker, .ending-narration').forEach(e => e.remove());
-    skip.style.display = 'none';
-    // フラッシュ
-    const flash = document.createElement('div');
-    flash.className = 'ending-flash';
-    stage.appendChild(flash);
-    setTimeout(() => flash.remove(), 700);
-
-    // タイトルロゴが上から落下
-    setTimeout(() => {
-      const logo = document.createElement('div');
-      logo.className = 'ending-title-drop';
-      logo.innerHTML = `
-        <img src="assets/ui/title.png" alt="闘札圧倒伝ミミ"
-             onerror="this.style.display='none'; this.parentElement.classList.add('logo-fallback');">
-        <div class="ending-title-fallback">
-          <div class="ending-title-jp">闘札圧倒伝ミミ</div>
-          <div class="ending-title-sub">— 転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件 —</div>
-        </div>
-      `;
-      stage.appendChild(logo);
-      // 着地時にシェイク＋バースト
-      setTimeout(() => {
-        stage.classList.add('shake');
-        if (navigator.vibrate) navigator.vibrate([100, 50, 80]);
-        for (let i = 0; i < 24; i++) spawnEndingSparkle(stage);
-        setTimeout(() => stage.classList.remove('shake'), 600);
-      }, 1100);
-      // FIN 表示
-      setTimeout(() => {
-        const fin = document.createElement('div');
-        fin.className = 'ending-fin';
-        fin.textContent = 'FIN';
-        stage.appendChild(fin);
-        requestAnimationFrame(() => fin.classList.add('show'));
-      }, 2400);
-      // スタッフロール（FINの後）
-      setTimeout(() => startCreditsRoll(stage), 4200);
-    }, 500);
+    if (skip) skip.style.display = 'none';
+    // 余韻ナレーションが out → 透明 → 静かに片付け（一瞬の絵チラつき防止）
+    const lingering = stage.querySelectorAll(
+      '.ending-speaker, .ending-narration, .ending-keyart, .ending-portrait-scene'
+    );
+    lingering.forEach(el => {
+      el.classList.add('out');
+      el.style.transition = 'opacity 1.2s ease';
+      el.style.opacity = '0';
+    });
+    setTimeout(() => lingering.forEach(e => e.remove()), 1300);
+    // 黒幕を一枚敷いて、そのままスタッフロールへ（余計なキービジュアルは出さない）
+    const blackOut = document.createElement('div');
+    blackOut.className = 'ending-blackout';
+    blackOut.style.cssText = 'position:absolute;inset:0;background:#000;z-index:3;opacity:0;transition:opacity 1.2s ease;';
+    stage.appendChild(blackOut);
+    requestAnimationFrame(() => { blackOut.style.opacity = '1'; });
+    // ナレーション余韻 → 黒 → スタッフロール
+    setTimeout(() => startCreditsRoll(stage), 1600);
   }
 
   // 開始
@@ -5397,7 +5718,7 @@ const CREDITS = [
   { role: 'アニメーション設計', name: 'ClaudeCode' },
   { role: 'カットイン演出', name: 'ClaudeCode' },
   { role: '圧倒モード演出', name: 'ClaudeCode' },
-  { role: '闘札大逆転 演出', name: 'ClaudeCode' },
+  { role: '闘札仕留め 演出', name: 'ClaudeCode' },
   { role: 'ブラフブレイク 演出', name: 'ClaudeCode' },
   { role: 'オールイン カットイン', name: 'ClaudeCode' },
   { role: 'エンディング演出', name: 'ClaudeCode' },
@@ -5460,6 +5781,135 @@ const CREDITS = [
 function startCreditsRoll(stage) {
   const roll = document.createElement('div');
   roll.className = 'credits-roll';
+
+  // ── 装飾レイヤー：星屑背景＋舞う粒子＋ミニキャラ通過 ──
+  const stars = document.createElement('div');
+  stars.className = 'cr-stars';
+  // 80 個のランダム配置星をDOMで生成
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('span');
+    s.className = 'cr-star';
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.top = (Math.random() * 100) + '%';
+    s.style.animationDelay = (Math.random() * 5) + 's';
+    s.style.animationDuration = (2 + Math.random() * 3) + 's';
+    s.style.opacity = (0.3 + Math.random() * 0.7);
+    stars.appendChild(s);
+  }
+  roll.appendChild(stars);
+
+  // 装飾上下バー（金の唐草風）
+  const topDeco = document.createElement('div');
+  topDeco.className = 'cr-deco cr-deco-top';
+  const botDeco = document.createElement('div');
+  botDeco.className = 'cr-deco cr-deco-bot';
+  roll.appendChild(topDeco);
+  roll.appendChild(botDeco);
+
+  // ミニキャラ通過レイヤー（時間差でキャラが画面を横断）
+  const mini = document.createElement('div');
+  mini.className = 'cr-mini-layer';
+  roll.appendChild(mini);
+  // 各キャラの「素の立ち絵の向き」(true=右向き)
+  const facingRight = {
+    mimi: true, rico: true,
+    polka: false, selina: false, grano: false, velvet: false,
+  };
+  // 通過スケジュール（ラッパーの横移動 + img のパーソナリティ動作）
+  const miniCharSeq = [
+    { key: 'mimi',   delay: 3,   dir: 'lr', y: 88, dur: 14, personality: 'normal' },
+    { key: 'polka',  delay: 10,  dir: 'rl', y: 92, dur: 12, personality: 'jump'   },
+    { key: 'selina', delay: 20,  dir: 'lr', y: 90, dur: 16, personality: 'trip'   },
+    { key: 'mimi',   delay: 28,  dir: 'rl', y: 86, dur: 12, personality: 'normal' },
+    { key: 'grano',  delay: 36,  dir: 'lr', y: 89, dur: 18, personality: 'pauses' },
+    { key: 'rico',   delay: 44,  dir: 'rl', y: 87, dur: 13, personality: 'normal' },
+    // 最後のミミ＆ヴェルベット：楽しいテンポでぴょんぴょん往復
+    // ① まず左→右へ向かう
+    { key: 'mimi',   delay: 51, dir: 'lr', y: 91, dur: 10, personality: 'skip' },
+    { key: 'velvet', delay: 53, dir: 'lr', y: 84, dur: 10, personality: 'skip' },
+    // ② 右から出てきて左へ戻る
+    { key: 'mimi',   delay: 62, dir: 'rl', y: 91, dur: 10, personality: 'skip' },
+    { key: 'velvet', delay: 64, dir: 'rl', y: 84, dur: 10, personality: 'skip' },
+  ];
+
+  // ラッパー → img 構造。ラッパーが横移動、img がパーソナリティ動作
+  miniCharSeq.forEach((m, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = `cr-mini-wrap cr-mini-${m.dir}`;
+    wrap.style.bottom = `${100 - m.y}%`;
+    wrap.style.animationDelay = m.delay + 's';
+    wrap.style.animationDuration = m.dur + 's';
+    wrap.dataset.idx = idx;
+
+    const img = document.createElement('img');
+    const naturalRight = facingRight[m.key] !== false;
+    const movingRight = (m.dir === 'lr');
+    const needFlip = (naturalRight !== movingRight);
+    img.className = `cr-mini-img mini-pers-${m.personality}${needFlip ? ' cr-flip' : ''}`;
+    img.src = `assets/characters/${m.key}_mini.png`;
+    // 1ショット系（jump/trip）だけ：ラッパーの登場と同期するため delay と尺を合わせる。
+    // infinite 系（skip/normal/pauses）は CSS の固定サイクル(0.32s/0.5s/0.8s)に任せ、
+    // インラインで delay を付けると greeting 後に再開しなくなるため触らない。
+    if (m.personality === 'jump' || m.personality === 'trip') {
+      img.style.animationDelay = m.delay + 's';
+      img.style.animationDuration = m.dur + 's';
+    }
+    img.onerror = () => {
+      if (img.src.endsWith('_mini.png')) {
+        img.onerror = () => { img.style.display = 'none'; };
+        img.src = `assets/characters/${m.key}_default.png`;
+      } else { img.style.display = 'none'; }
+    };
+    wrap.appendChild(img);
+    mini.appendChild(wrap);
+
+    // グラーノの「立ち止まり」は JS でラッパー animation を一時停止
+    if (m.personality === 'pauses') {
+      const pauseTimes = [0.30, 0.65]; // 30%地点と65%地点で1.5秒立ち止まる
+      pauseTimes.forEach(p => {
+        const at = (m.delay + m.dur * p) * 1000;
+        setTimeout(() => {
+          wrap.style.animationPlayState = 'paused';
+          setTimeout(() => { wrap.style.animationPlayState = 'running'; }, 1500);
+        }, at);
+      });
+    }
+    // セリナの「転倒中はその場で固定」：ラッパーの横移動を一時停止
+    // 転倒-起き上がり-振り返り(44%〜88%) の間、足元はその場でじっとする
+    if (m.personality === 'trip') {
+      const pauseStartMs = (m.delay + m.dur * 0.44) * 1000;
+      const pauseDurMs   = (m.dur * (0.88 - 0.44)) * 1000;
+      setTimeout(() => {
+        wrap.style.animationPlayState = 'paused';
+        setTimeout(() => { wrap.style.animationPlayState = 'running'; }, pauseDurMs);
+      }, pauseStartMs);
+    }
+  });
+
+  // ── 出会いの挨拶：通過する2人を時刻指定でハイライト ──
+  // mimi (3s〜LR) と polka (10s〜RL) は 10〜17s 重なる → 13s 頃センターで遭遇
+  // ※ selina(2) × mimi(3) の遭遇挨拶は廃止：セリナの「転倒→振り返り」とぶつかって
+  //   look-back が見えなくなり、観客には「ミミが後ろを向いて止まった」ように見えてしまうため。
+  const greetings = [
+    { at: 13, indexes: [0, 1] }, // mimi(0) と polka(1)
+  ];
+  greetings.forEach(g => {
+    setTimeout(() => {
+      g.indexes.forEach(i => {
+        const w = mini.querySelector(`.cr-mini-wrap[data-idx="${i}"]`);
+        if (!w) return;
+        const im = w.querySelector('.cr-mini-img');
+        // 軽く立ち止まる
+        w.style.animationPlayState = 'paused';
+        if (im) im.classList.add('mini-greet');
+        setTimeout(() => {
+          w.style.animationPlayState = 'running';
+          if (im) im.classList.remove('mini-greet');
+        }, 1200);
+      });
+    }, g.at * 1000);
+  });
+
   const inner = document.createElement('div');
   inner.className = 'credits-inner';
   inner.innerHTML = CREDITS.map(c => {
@@ -5479,32 +5929,144 @@ function startCreditsRoll(stage) {
   const skip = document.createElement('button');
   skip.className = 'credits-skip';
   skip.textContent = '▶▶ スキップ';
-  skip.onclick = () => { showEndingFinalButtons(stage); roll.remove(); };
+  skip.onclick = () => {
+    const endA = document.getElementById('ending-bgm-audio');
+    if (endA) endA.pause();
+    roll.remove();
+    goLobby();
+  };
   roll.appendChild(skip);
   stage.appendChild(roll);
-  // スクロール開始
-  requestAnimationFrame(() => inner.classList.add('rolling'));
-  // 終了後にボタン表示
-  const duration = 60000; // 60秒
-  setTimeout(() => {
-    if (roll.parentNode) {
-      showEndingFinalButtons(stage);
-      roll.remove();
-    }
-  }, duration);
+
+  // ── コンテンツ実高に合わせてスクロール距離と所要時間を動的設定 ──
+  let finaleTimer = null;
+  const startScrollAndSchedule = () => {
+    const stageH = stage.offsetHeight || 800;
+    const contentH = inner.offsetHeight || 3200;
+    const endY = contentH + 80;       // コンテンツ末尾が画面上端を超えるまで
+    inner.style.setProperty('--scroll-end-y', `-${endY}px`);
+    const pxPerSec = 60;                // 約60px/秒（旧:53.3）少し早めに
+    const seconds = Math.max(60, Math.min(140, (stageH + endY) / pxPerSec));
+    inner.style.setProperty('--scroll-dur', `${seconds}s`);
+    inner.classList.add('rolling');
+    // ── ミニキャラの最終 event（velvet RL）が t=74s に終わる ──
+    // 集合シーンはその直後、フェードアウトはさらに後で実施する。
+    const miniEndSec = 74;
+    const groupAtMs = Math.max((miniEndSec + 1), (seconds - 4)) * 1000;
+    setTimeout(() => spawnFinaleLineup(), groupAtMs);
+    // 動的な所要時間でフィナーレへ。ミニキャラ往復＋集合の余韻を確保
+    const fadeAtMs = Math.max(seconds, miniEndSec + 12) * 1000;
+    finaleTimer = setTimeout(() => doSettleAndFadeOut(), fadeAtMs);
+  };
+  // 全員集合（シンプル）：画面外から歩いてきて定位置で止まる。バナー・派手な演出なし。
+  const spawnFinaleLineup = () => {
+    // 通過中のミニキャラを即フェードアウトして退場
+    mini.querySelectorAll('.cr-mini-wrap').forEach(w => {
+      w.style.transition = 'opacity 0.6s ease';
+      w.style.opacity = '0';
+      setTimeout(() => w.remove(), 700);
+    });
+    // 6キャラ：左半分は左から、右半分は右から歩いてくる
+    const lineup = [
+      { key: 'polka',  side: 'L' },
+      { key: 'grano',  side: 'L' },
+      { key: 'mimi',   side: 'L' },
+      { key: 'rico',   side: 'R' },
+      { key: 'selina', side: 'R' },
+      { key: 'velvet', side: 'R' },
+    ];
+    // 自然な向きが右のキャラ
+    const natRight = { mimi: true, rico: true };
+    const row = document.createElement('div');
+    row.className = 'cr-lineup-row';
+    lineup.forEach((m, i) => {
+      const slot = document.createElement('div');
+      slot.className = `cr-lineup-slot cr-from-${m.side}`;
+      // 左側からくる子は左にiずらし、右側からくる子は右からiずらして時間差登場
+      const orderFromEdge = m.side === 'L' ? i : (lineup.length - 1 - i);
+      slot.style.animationDelay = `${orderFromEdge * 0.25}s`;
+      const img = document.createElement('img');
+      // 歩いている間は normal、定位置に着いたら静止（CSS で animation 切替）
+      img.className = 'cr-mini-img mini-pers-normal';
+      // 進行方向を向く：L側は右向き、R側は左向き
+      const wantsRight = (m.side === 'L');
+      const isNatRight = !!natRight[m.key];
+      if (wantsRight !== isNatRight) img.classList.add('cr-flip');
+      img.src = `assets/characters/${m.key}_mini.png`;
+      img.onerror = () => {
+        if (img.src.endsWith('_mini.png')) {
+          img.onerror = () => { img.style.display = 'none'; };
+          img.src = `assets/characters/${m.key}_default.png`;
+        } else { img.style.display = 'none'; }
+      };
+      slot.appendChild(img);
+      row.appendChild(slot);
+    });
+    mini.appendChild(row);
+    // 到着したら歩きアニメ停止＆そのまま立ち止まる
+    setTimeout(() => {
+      row.querySelectorAll('.cr-mini-img').forEach(im => {
+        im.style.animation = 'none';
+      });
+    }, 2200);
+  };
+  // layout 完了を待ってから計測
+  requestAnimationFrame(() => requestAnimationFrame(startScrollAndSchedule));
+
+  // 静止＋フェードアウト処理を関数化
+  const doSettleAndFadeOut = () => {
+    if (!roll.parentNode) return;
+    // ① スクロールを止める（最後の文字が画面に残る）
+    inner.classList.add('settle');
+    // ② ミニキャラとスター層を緩やかに消す
+    const stars = roll.querySelector('.cr-stars');
+    const miniLayer = roll.querySelector('.cr-mini-layer');
+    if (stars) stars.style.transition = 'opacity 2.5s ease', stars.style.opacity = '0.3';
+    if (miniLayer) miniLayer.style.transition = 'opacity 2.5s ease', miniLayer.style.opacity = '0';
+    // ③ 4秒間「おわり」の余韻を保持
+    setTimeout(() => {
+      // ④ ロール全体をフェードアウト
+      roll.classList.add('roll-fadeout');
+      setTimeout(() => {
+        if (roll.parentNode) {
+          showEndingFinalButtons(stage);
+          roll.remove();
+        }
+      }, 1800);
+    }, 4000);
+  };
 }
 
 function showEndingFinalButtons(stage) {
   if (stage.querySelector('.ending-final-buttons')) return;
-  const btns = document.createElement('div');
-  btns.className = 'ending-final-buttons';
-  btns.innerHTML = `
-    <button class="btn btn-primary" data-action="back-title">タイトルへ</button>
-    <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+  // ── スタッフロール後の余韻シーン ── 一気にボタンを出さず、感謝メッセージで緩める
+  const epilogue = document.createElement('div');
+  epilogue.className = 'ending-epilogue';
+  epilogue.innerHTML = `
+    <div class="ep-img-wrap">
+      <img class="ep-img" src="assets/episodes/ending.png" alt=""
+           onerror="this.style.display='none'; this.parentElement.classList.add('ep-fallback');">
+      <div class="ep-vignette"></div>
+    </div>
+    <div class="ep-content">
+      <div class="ep-thanks">Thank you for playing</div>
+      <div class="ep-jp">プレイしてくれてありがとう</div>
+      <div class="ep-divider"></div>
+      <div class="ep-last-line">「またね、ミミ。<br>……次のハンドで、会いましょう」</div>
+      <div class="ep-signed">— リコ先輩</div>
+    </div>
+    <div class="ending-final-buttons">
+      <button class="btn btn-primary" data-action="back-lobby">ロビーへ戻る</button>
+    </div>
   `;
-  stage.appendChild(btns);
-  btns.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
-  requestAnimationFrame(() => btns.classList.add('show'));
+  stage.appendChild(epilogue);
+  epilogue.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+  // 段階的フェードイン：背景→感謝→台詞→ボタン
+  requestAnimationFrame(() => epilogue.classList.add('show'));
+  // FINとタイトルロゴが残っていたら片付ける
+  const stale = stage.querySelectorAll('.ending-fin, .ending-title-drop');
+  stale.forEach(el => el.classList.add('fade-out'));
+  setTimeout(() => stale.forEach(el => el.remove()), 1200);
 }
 
 function spawnEndingSparkle(parent) {
@@ -5523,6 +6085,7 @@ function spawnEndingSparkle(parent) {
 }
 
 function goLobby() {
+  if (typeof stopBattleBgmSkin === 'function') stopBattleBgmSkin(); // バトル専用BGMスキンを止めてロビーへ戻す
   state.screen = 'lobby';
   // 入室時にリコの衣装を抽選し直す
   state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
@@ -5642,11 +6205,10 @@ function initGlobalAudioBar() {
 }
 function tryStartLobbyBgm() {
   const a = document.getElementById('lobby-bgm-audio');
-  if (!a) return;
-  if (!save.bgmOn) { a.pause(); return; }
-  a.volume = bgmVolFloat();
-  const p = a.play();
-  if (p && p.catch) p.catch(() => {/* 自動再生ブロックは無視 */});
+  if (!save.bgmOn) { if (a) a.pause(); if (typeof _stopSkinBgm === 'function') _stopSkinBgm(); return; }
+  // equippedBgmLobby='jazz' ならシンセループ、既定ならこれまで通り実音源
+  if (typeof applyLobbyBgmSkin === 'function') applyLobbyBgmSkin();
+  else if (a) { a.volume = bgmVolFloat(); const p = a.play(); if (p && p.catch) p.catch(() => {}); }
 }
 
 function toggleLobbyBgm() {
@@ -5654,14 +6216,30 @@ function toggleLobbyBgm() {
   saveProgress();
   const a = document.getElementById('lobby-bgm-audio');
   if (save.bgmOn) {
-    if (a) { a.volume = bgmVolFloat(); a.play().catch(()=>{}); }
+    if (typeof applyLobbyBgmSkin === 'function') applyLobbyBgmSkin();
+    else if (a) { a.volume = bgmVolFloat(); a.play().catch(()=>{}); }
+    // ミニポーカーが起動中ならその synth BGM も開始
+    if (typeof mpStartBgm === 'function' && document.querySelector('.minipoker-overlay')) mpStartBgm();
   } else {
     if (a) a.pause();
+    if (typeof _stopSkinBgm === 'function') _stopSkinBgm();
     const endA = document.getElementById('ending-bgm-audio');
     if (endA) endA.pause();
+    // ミニポーカー synth BGM も停止
+    if (typeof mpStopBgm === 'function') mpStopBgm();
   }
   refreshAudioBars();
 }
+
+// SFX 全体ON/OFFトグル
+function toggleSfx() {
+  save.sfxOn = !save.sfxOn;
+  saveProgress();
+  refreshAudioBars();
+}
+
+// SFX 音量を反映（mpSfx は呼び出し時に sfxVolFloat() を読むので即座反映済み）
+function applySfxVolume() { /* no-op：実体は mpSfx 内で都度読み */ }
 
 //=============================================================
 // 10. バトル開始
@@ -5973,6 +6551,7 @@ function showEquipModal() {
         ${rows}
       </div>
       <div class="equip-modal-footer">※ 🔒 表示の項目は交換所で購入すると選択可能になります</div>
+      <div class="equip-modal-footer equip-modal-note">⚠ 効果はバトル画面／ミニゲーム画面で反映されます</div>
     </div>
   `;
   document.getElementById('stage').appendChild(overlay);
@@ -5989,7 +6568,7 @@ function showEquipModal() {
       const row = btn.closest('.equip-row');
       row.querySelectorAll('.equip-chip').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
-      // リコ衣装変更時はロビー立ち絵を即時更新（インデックスをリセットして pickLobbyRico を再評価）
+      // リコ衣装変更時はロビー立ち絵／バトル画面の両方を即時更新
       if (key === 'equippedRicoOutfit') {
         state.lobbyRicoIndex = null;
         state.lobbyRicoChangedAt = null;
@@ -5998,10 +6577,2098 @@ function showEquipModal() {
           const o = pickLobbyRico();
           img.src = `assets/characters/${o.file}`;
         }
+        applyBattleRicoOutfit();
+      }
+      // ロビーBGMスキンをその場で切替（ロビー滞在中に選んだ場合、即座に音が変わる）
+      if (key === 'equippedBgmLobby' && state.screen === 'lobby' && typeof applyLobbyBgmSkin === 'function') {
+        applyLobbyBgmSkin();
       }
       toast(`装備変更：${btn.textContent.trim()}`);
     });
   });
+}
+
+// ===== ミニキャラ・ファイブポーカー =====
+// コンセプト：中毒性 / 射幸性 / かわいさ
+// - Jacks-or-Better 風ペイテーブル＋ベットシステム
+// - 配布演出（時間差スライドイン＋めくり）
+// - リーチ検出（ニアミス効果）
+// - 連勝ボーナス（streak combo）
+// - ダブルアップ（赤黒チャレンジ最大3回）
+// - ロイヤル特別演出（金色フラッシュ＋コインの雨）
+// - キャラのリアクション吹き出し（応援役ミミ＋対戦相手）
+// - セッション記録＋セーブ蓄積
+
+const MP_PAYTABLE = [
+  // rank 0..9 と payout（ベット倍率）
+  { rank: 0, name: 'ハイカード',   mult: 0 },
+  { rank: 1, name: 'ペア（J以上）', mult: 1 },  // Jacks-or-Better
+  { rank: 2, name: 'ツーペア',     mult: 2 },
+  { rank: 3, name: 'スリー',       mult: 3 },
+  { rank: 4, name: 'ストレート',   mult: 4 },
+  { rank: 5, name: 'フラッシュ',   mult: 6 },
+  { rank: 6, name: 'フルハウス',   mult: 9 },
+  { rank: 7, name: 'フォーカード', mult: 25 },
+  { rank: 8, name: 'ストフラ',     mult: 50 },
+  { rank: 9, name: 'ロイヤル',     mult: 800 },
+];
+const MP_BET_LEVELS = [1, 5, 25, 100, 500];
+
+function mpEnsureSave() {
+  if (!save.minipoker) {
+    save.minipoker = {
+      bet: 5,
+      bestStreak: 0,
+      royalCount: 0,
+      stfCount: 0,
+      totalGames: 0,
+      totalWins: 0,
+      totalEarned: 0,
+      tutorialDone: false,
+      jackpot: 5000,
+      achievements: {},
+      muted: false,
+      missions: null,        // 当日のミッション
+      missionsDate: '',
+    };
+  }
+  if (typeof save.minipoker.tutorialDone === 'undefined') save.minipoker.tutorialDone = false;
+  if (typeof save.minipoker.jackpot === 'undefined') save.minipoker.jackpot = 5000;
+  if (!save.minipoker.achievements) save.minipoker.achievements = {};
+  if (typeof save.minipoker.muted === 'undefined') save.minipoker.muted = false;
+  // ミッション日替わり
+  const today = mpTodayKey();
+  if (save.minipoker.missionsDate !== today) {
+    save.minipoker.missions = mpRollDailyMissions(today);
+    save.minipoker.missionsDate = today;
+    save.minipoker.missionsProgress = {};
+  }
+  if (!save.minipoker.missionsProgress) save.minipoker.missionsProgress = {};
+  if (!save.minipoker.missions) save.minipoker.missions = mpRollDailyMissions(today);
+}
+
+// ── 日替わりミッション抽選 ──
+function mpRollDailyMissions(seedKey) {
+  const POOL = [
+    { id: 'win3',     name: '勝利を3回',         goal: 3, reward: 50,  metric: 'wins' },
+    { id: 'win5',     name: '勝利を5回',         goal: 5, reward: 100, metric: 'wins' },
+    { id: 'plays5',   name: '5回プレイ',         goal: 5, reward: 30,  metric: 'plays' },
+    { id: 'pair3',    name: 'ペア以上を3回',     goal: 3, reward: 70,  metric: 'pairPlus' },
+    { id: 'flush1',   name: 'フラッシュを1回',   goal: 1, reward: 150, metric: 'flushes' },
+    { id: 'fullhouse',name: 'フルハウスを1回',   goal: 1, reward: 200, metric: 'fullhouse' },
+    { id: 'streak3',  name: '3連勝する',         goal: 3, reward: 100, metric: 'maxStreak' },
+    { id: 'allin1',   name: 'ALL INを1回',        goal: 1, reward: 80,  metric: 'allins' },
+    { id: 'double1',  name: 'ダブルアップ成功1回', goal: 1, reward: 80, metric: 'doubleWins' },
+    { id: 'lucky1',   name: '今日のラッキー役を1回',goal: 1, reward: 200, metric: 'luckyHits' },
+  ];
+  // seedKey から3つを擬似ランダム抽出
+  const seed = [...seedKey].reduce((a, c) => a * 31 + c.charCodeAt(0), 0);
+  const arr = POOL.slice();
+  // Fisher–Yates with seed
+  let s = seed;
+  for (let i = arr.length - 1; i > 0; i--) {
+    s = (s * 9301 + 49297) % 233280;
+    const j = s % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, 3);
+}
+
+// ── 大幅増量：キャラ・場面別セリフバリエーション ──
+const MP_LINES = {
+  polka: {
+    start: ['えへへっ、いっぱい引いちゃおー！','よーし、ポルカいくよ〜！','じゃ、配ってね〜','次はわたしの番〜！','うん、勝負！'],
+    win:   ['やった〜！わたしの勝ち〜！','えへへっ、ポルカつよい〜！','どんなもんだいっ！','勝ったよ〜！'],
+    lose:  ['うぐぐ……つよ……','えぇ〜まけちゃった〜','むぅ、つぎは負けないもん','もう一回！もう一回〜！'],
+    tie:   ['ふぇ〜引き分け〜！','おあいこっ！','うむむ、わたしも強い！'],
+    reach: ['おっ、なんかいい感じ？','ふふっ、来そう……？','よしっ、その手で行け〜！'],
+    big:   ['うわっ、なにそれ強すぎ！','ふぇぇ、無理むり！','そんなのありー！？'],
+  },
+  selina: {
+    start: ['ぼ……ボード、いや、手札を、よく見て','……静かに、配って','こく……始めて','……お願い、します'],
+    win:   ['……運も、実力のうち、なんだって','こく……勝ち、ね','ふっ……ボードに従ったまで','ご……ごめんね？'],
+    lose:  ['う……強い。次は、ぼ、ぼくが……','こ、ここまで読まれたか……','ぐ、悔しい……ぼくが弱かった'],
+    tie:   ['ふ、引き分け','こく……まあ、いいわ','悪くない、結果ね'],
+    reach: ['……来そう、な、気配','こく……手札が騒いでいる','……感じる、何かが'],
+    big:   ['う、嘘……そんな手……','ぼ、ボードの神様……','……読みが、外れた'],
+  },
+  grano: {
+    start: ['期待値に従い、参りましょう','数字の前に、平等あれ','では、合理的に','計算通り、進めます'],
+    win:   ['数字は、私に微笑むものですから','確率に従っただけです','ふむ、期待値通り','商人の勝利、というやつです'],
+    lose:  ['見事。今夜の期待値は、お嬢さんに譲ります','ふむ、勘定が合いませんな','一本取られましたか','算盤を弾き直さねば'],
+    tie:   ['引き分け。割り勘で如何かな','収支、ゼロ。良き哉','勘定上は、対等ですな'],
+    reach: ['ふむ、確率収束の予感が','期待値が、囁いている','分母が動いていますな'],
+    big:   ['……これは、計算外でした','確率論を超越なされる','算盤が、燃えそうですな'],
+  },
+  velvet: {
+    start: ['ふふ、お遊びでも、本気で','ご縁ですわね、一手を','では、舞いましょうか','お相手致しますわ'],
+    win:   ['あら、私の勝ち。お小遣いを頂きますね','ふふ、楽しゅうございました','王座は、揺るがぬもの','勝負事は、こうでなくては'],
+    lose:  ['おみごと。今日は、あなたの夜','ふふ、お見事ですわ','降参いたします','次は、お手柔らかに'],
+    tie:   ['引き分け……悪くないわ','ご縁、続きますね','まあ、これも一興'],
+    reach: ['ふふ、なにか企んでいるのね？','面白い……手札が、騒ぐ','ふふっ、その瞳、知っているわ'],
+    big:   ['ま、まさか、その役……','王の手札……失敬','驚かせてくれますわね'],
+  },
+};
+const MP_MIMI_LINES = {
+  start: ['いきますよっ！','よし、本気出します！','うんっ、ベスト尽くします','ふっふー！見ててください','ぱにゅ……配ってください'],
+  win:   ['やったぁ！','ふっふ〜ん♪','ぱにゅ的勝利です！','うふふ、嬉しい……','勝てましたっ！'],
+  bigwin:['すごっ……これ、すごいやつ！','ぱ、ぱにゅ覚醒……？','フ、フルハウス……！','うっそ、来ちゃった……！'],
+  lose:  ['うう……','ぱにゅぱにゅ……次、次！','むむっ、悔しい','一回休憩……いやもう一回！'],
+  reach: ['ど、どきどき……','く、来ちゃう……？','期待しちゃっていいですか'],
+  surrender:['ふぅ……無理せず撤退！','ぱにゅ的、賢明な判断','逃げるは恥だが役に立つ'],
+};
+function mpLine(charKey, situation) {
+  const set = MP_LINES[charKey];
+  if (!set) return '';
+  const arr = set[situation];
+  if (!arr || arr.length === 0) return '';
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+function mpMimiLine(situation) {
+  const arr = MP_MIMI_LINES[situation];
+  if (!arr) return '';
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// ── ミニポーカー達成バッジ定義 ──
+const MP_ACHIEVEMENTS = [
+  { id: 'first_win',     icon: '🏆', name: '初勝利',       cond: 'win 1' },
+  { id: 'streak_3',      icon: '🔥', name: '3連勝',        cond: '3連続勝利' },
+  { id: 'streak_5',      icon: '🔥', name: '5連勝',        cond: '5連続勝利' },
+  { id: 'streak_10',     icon: '💎', name: '10連勝',       cond: '10連続勝利' },
+  { id: 'first_fh',      icon: '🎴', name: '初フルハウス', cond: 'フルハウス達成' },
+  { id: 'first_four',    icon: '🃏', name: '初フォー',     cond: 'フォーカード達成' },
+  { id: 'first_stf',     icon: '⭐', name: '初ストフラ',   cond: 'ストフラ達成' },
+  { id: 'first_royal',   icon: '👑', name: '初ロイヤル',   cond: 'ロイヤル達成' },
+  { id: 'plays_100',     icon: '📚', name: '100戦達成',    cond: '通算100戦プレイ' },
+  { id: 'big_win_100x',  icon: '🌟', name: '100倍勝ち',    cond: '1戦で100倍以上獲得' },
+  { id: 'jackpot_win',   icon: '💰', name: 'JP獲得',       cond: 'ジャックポット獲得' },
+  { id: 'survive_shield',icon: '🛡️', name: 'シールド使用',  cond: 'シールドで連勝維持' },
+];
+
+// ── Web Audio API：効果音シンセ ──
+let _mpAudioCtx = null;
+function mpAudioCtx() {
+  if (!_mpAudioCtx) {
+    try { _mpAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch (e) { return null; }
+  }
+  if (_mpAudioCtx.state === 'suspended') _mpAudioCtx.resume();
+  return _mpAudioCtx;
+}
+let _mpSfxScale = 1; // mpSfx 呼び出し直前にセットされる SFX 音量係数
+function mpTone(freq, dur, type = 'sine', gain = 0.06, attack = 0.005, release = 0.04, delayMs = 0) {
+  const ctx = mpAudioCtx(); if (!ctx) return;
+  const t0 = ctx.currentTime + delayMs / 1000;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t0);
+  const peak = Math.max(0.0001, gain * _mpSfxScale);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(peak, t0 + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(ctx.destination);
+  o.start(t0);
+  o.stop(t0 + dur + release);
+}
+function mpSweep(f0, f1, dur, type='sine', gain=0.05, delayMs=0) {
+  const ctx = mpAudioCtx(); if (!ctx) return;
+  const t0 = ctx.currentTime + delayMs / 1000;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(f0, t0);
+  o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+  const peak = Math.max(0.0001, gain * _mpSfxScale);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(peak, t0 + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(ctx.destination);
+  o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function mpSfx(kind) {
+  // 一元化ミュート：SFX全体OFFかミニポーカー個別ミュートで停止
+  if (!isSfxOn()) return;
+  if (save && save.minipoker && save.minipoker.muted) return;
+  // SFX全体音量を gain にかけるため、_mpSfxScale をセット
+  _mpSfxScale = sfxVolFloat();
+  switch (kind) {
+    case 'tap':       mpTone(720, 0.06, 'square', 0.03); break;
+    case 'deal':      for (let i = 0; i < 5; i++) mpTone(440 + i*30, 0.05, 'triangle', 0.04, 0.003, 0.03, i * 80); break;
+    case 'flip':      mpTone(620, 0.08, 'sine', 0.05); mpTone(880, 0.06, 'triangle', 0.04, 0.005, 0.03, 80); break;
+    case 'reach':     mpSweep(300, 700, 0.4, 'sine', 0.06); mpSweep(700, 1100, 0.35, 'triangle', 0.04, 100); break;
+    case 'bet':       mpTone(380, 0.06, 'square', 0.04); break;
+    case 'win':       mpTone(660, 0.1, 'triangle', 0.06); mpTone(880, 0.12, 'triangle', 0.06, 0.005, 0.05, 100); mpTone(1100, 0.18, 'triangle', 0.06, 0.005, 0.06, 220); break;
+    case 'bigwin':
+      [523, 659, 784, 1046].forEach((f, i) => mpTone(f, 0.18, 'triangle', 0.07, 0.005, 0.08, i * 90));
+      [392, 494, 587].forEach((f, i) => mpTone(f, 0.4, 'sawtooth', 0.025, 0.01, 0.2, 360 + i * 30));
+      break;
+    case 'royal':
+      // ファンファーレ：和音重ね＋上昇スイープ
+      [523, 659, 784].forEach(f => mpTone(f, 0.5, 'sawtooth', 0.05, 0.01, 0.3));
+      [659, 784, 988, 1318].forEach((f, i) => mpTone(f, 0.45, 'triangle', 0.06, 0.005, 0.2, 400 + i * 100));
+      mpSweep(200, 2000, 1.2, 'sine', 0.04, 200);
+      [1046, 1318, 1568, 2093].forEach((f, i) => mpTone(f, 0.6, 'triangle', 0.05, 0.005, 0.3, 1000 + i * 80));
+      break;
+    case 'lose':      mpSweep(440, 180, 0.3, 'sawtooth', 0.04); break;
+    case 'tie':       mpTone(440, 0.15, 'sine', 0.04); mpTone(440, 0.15, 'sine', 0.04, 0.005, 0.05, 180); break;
+    case 'double-win':mpSweep(440, 1200, 0.3, 'square', 0.05); mpTone(1500, 0.15, 'triangle', 0.06, 0.005, 0.08, 200); break;
+    case 'double-lose': mpSweep(800, 100, 0.5, 'sawtooth', 0.06); break;
+    case 'milestone': // 連勝マイルストーン
+      [523, 659, 784, 1046, 1318].forEach((f, i) => mpTone(f, 0.15, 'square', 0.06, 0.005, 0.05, i * 60));
+      break;
+    case 'allin':     mpSweep(80, 400, 0.4, 'sawtooth', 0.08); mpTone(120, 0.6, 'square', 0.05, 0.01, 0.3, 200); break;
+    case 'garapon':   mpSweep(200, 1500, 0.6, 'triangle', 0.05); mpTone(1800, 0.2, 'sine', 0.06, 0.005, 0.1, 600); break;
+
+    // ── 本編バトル用SFX（equippedSePack: 'casino' でチップ音が厚くリアル寄りに） ──
+    case 'check':     mpTone(500, 0.07, 'sine', 0.04); break;
+    case 'call':
+      mpTone(420, 0.07, 'triangle', 0.045);
+      if (save && save.equippedSePack === 'casino') mpChipClack(2);
+      break;
+    case 'battle-bet':
+      mpTone(500, 0.08, 'square', 0.045); mpTone(650, 0.06, 'triangle', 0.035, 0.004, 0.03, 60);
+      if (save && save.equippedSePack === 'casino') mpChipClack(3);
+      break;
+    case 'battle-allin':
+      mpSweep(100, 500, 0.45, 'sawtooth', 0.07); mpTone(140, 0.5, 'square', 0.05, 0.01, 0.25, 180);
+      if (save && save.equippedSePack === 'casino') mpChipClack(6);
+      break;
+    case 'fold':      mpSweep(400, 180, 0.25, 'sine', 0.035); break;
+    case 'hand-win':
+      mpTone(587, 0.14, 'triangle', 0.055); mpTone(784, 0.16, 'triangle', 0.055, 0.005, 0.06, 110);
+      mpTone(988, 0.22, 'triangle', 0.055, 0.005, 0.08, 240);
+      break;
+    case 'hand-lose':
+      mpSweep(380, 160, 0.35, 'sawtooth', 0.04);
+      break;
+  }
+}
+
+// 「カジノ」SEパック専用：チップが数枚パチパチと重なる音（bet/allin をリアル寄りに）
+function mpChipClack(n) {
+  const ctx = mpAudioCtx(); if (!ctx) return;
+  for (let i = 0; i < n; i++) {
+    mpTone(2200 + Math.random() * 900, 0.03, 'square', 0.025, 0.001, 0.02, i * 45 + Math.random() * 20);
+  }
+}
+
+// ── 環境BGM（低音パッドのカジノ風ループ） ──
+let _mpBgmNodes = [];
+let _mpBgmTimer = null;
+function mpStartBgm() {
+  // 一元化：BGM全体OFF または ミニポーカー個別ミュートなら再生しない
+  if (!isBgmOn()) return;
+  if (save && save.minipoker && save.minipoker.muted) return;
+  mpStopBgm();
+  const ctx = mpAudioCtx(); if (!ctx) return;
+  // 4小節 8秒：C-Am-F-G の和音をパッド音色で
+  const chords = [
+    [261.6, 329.6, 392.0], // C major
+    [220.0, 261.6, 329.6], // A minor
+    [174.6, 220.0, 261.6], // F major
+    [196.0, 246.9, 293.7], // G major
+  ];
+  const beatMs = 2000;
+  let beat = 0;
+  const playBeat = () => {
+    if (!isBgmOn()) return;
+    if (save && save.minipoker && save.minipoker.muted) return;
+    const chord = chords[beat % chords.length];
+    const tNow = ctx.currentTime;
+    // 全体BGM音量を反映
+    const bgmScale = bgmVolFloat();
+    const peak = 0.022 * bgmScale;
+    const sustain = 0.018 * bgmScale;
+    chord.forEach(f => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 800;
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0, tNow);
+      g.gain.linearRampToValueAtTime(Math.max(0.0001, peak), tNow + 0.4);
+      g.gain.linearRampToValueAtTime(Math.max(0.0001, sustain), tNow + beatMs / 1000 * 0.8);
+      g.gain.exponentialRampToValueAtTime(0.0001, tNow + beatMs / 1000);
+      o.connect(g).connect(lp).connect(ctx.destination);
+      o.start(tNow);
+      o.stop(tNow + beatMs / 1000 + 0.1);
+      _mpBgmNodes.push(o, g);
+    });
+    beat++;
+  };
+  playBeat();
+  _mpBgmTimer = setInterval(playBeat, beatMs);
+}
+function mpStopBgm() {
+  if (_mpBgmTimer) { clearInterval(_mpBgmTimer); _mpBgmTimer = null; }
+  _mpBgmNodes = [];
+}
+
+// ── BGMスキン（ロビー/バトル）：交換所で購入した equippedBgmLobby / equippedBgmBattle を
+//    実際に鳴らす。mpStartBgm と同じ和音ループ手法を流用し、スキンごとに音色/進行を変える。
+let _skinBgmNodes = [];
+let _skinBgmTimer = null;
+function _stopSkinBgm() {
+  if (_skinBgmTimer) { clearInterval(_skinBgmTimer); _skinBgmTimer = null; }
+  _skinBgmNodes = [];
+}
+// skin: 'jazz' | 'tense' | 'techno'
+function _startSkinBgm(skin) {
+  _stopSkinBgm();
+  if (!isBgmOn()) return;
+  const ctx = mpAudioCtx(); if (!ctx) return;
+
+  if (skin === 'jazz') {
+    // ロビーBGM「夜のジャズ」：スウィング感のある maj7/min7 進行、暖色ローパス
+    const chords = [
+      [261.6, 329.6, 392.0, 493.9],  // Cmaj7
+      [220.0, 261.6, 329.6, 392.0],  // Am7
+      [174.6, 220.0, 261.6, 329.6],  // Fmaj7
+      [196.0, 246.9, 293.7, 349.2],  // G7
+    ];
+    const beatMs = 1800;
+    let beat = 0;
+    const playBeat = () => {
+      if (!isBgmOn() || save.equippedBgmLobby !== 'jazz') return;
+      const chord = chords[beat % chords.length];
+      const tNow = ctx.currentTime;
+      const scale = bgmVolFloat();
+      chord.forEach((f, i) => {
+        const swing = (i % 2 === 1) ? beatMs * 0.12 / 1000 : 0; // 軽いスウィング
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass'; lp.frequency.value = 1100;
+        o.type = 'triangle';
+        o.frequency.value = f;
+        const t0 = tNow + swing;
+        const peak = 0.02 * scale, sustain = 0.014 * scale;
+        g.gain.setValueAtTime(0, t0);
+        g.gain.linearRampToValueAtTime(Math.max(0.0001, peak), t0 + 0.3);
+        g.gain.linearRampToValueAtTime(Math.max(0.0001, sustain), t0 + beatMs / 1000 * 0.75);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + beatMs / 1000);
+        o.connect(g).connect(lp).connect(ctx.destination);
+        o.start(t0); o.stop(t0 + beatMs / 1000 + 0.1);
+        _skinBgmNodes.push(o, g);
+      });
+      beat++;
+    };
+    playBeat();
+    _skinBgmTimer = setInterval(playBeat, beatMs);
+
+  } else if (skin === 'tense') {
+    // バトルBGM「緊迫の弦楽」：短調・トレモロがかった持続音で読み合いの緊張感
+    const chords = [
+      [220.0, 261.6, 311.1], // Am(b6)風
+      [196.0, 233.1, 293.7], // G dim寄り
+    ];
+    const beatMs = 2400;
+    let beat = 0;
+    const playBeat = () => {
+      if (!isBgmOn() || save.equippedBgmBattle !== 'tense') return;
+      const chord = chords[beat % chords.length];
+      const tNow = ctx.currentTime;
+      const scale = bgmVolFloat();
+      chord.forEach(f => {
+        const o = ctx.createOscillator();
+        const trem = ctx.createGain(); // トレモロ用の高速AM
+        const g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = f;
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.frequency.value = 6.5; lfo.type = 'sine';
+        lfoGain.gain.value = 0.5;
+        lfo.connect(lfoGain).connect(trem.gain);
+        trem.gain.value = 0.5;
+        const peak = 0.016 * scale;
+        g.gain.setValueAtTime(0, tNow);
+        g.gain.linearRampToValueAtTime(Math.max(0.0001, peak), tNow + 0.5);
+        g.gain.exponentialRampToValueAtTime(0.0001, tNow + beatMs / 1000);
+        o.connect(trem).connect(g).connect(ctx.destination);
+        lfo.start(tNow); o.start(tNow);
+        lfo.stop(tNow + beatMs / 1000 + 0.1); o.stop(tNow + beatMs / 1000 + 0.1);
+        _skinBgmNodes.push(o, g, lfo, trem, lfoGain);
+      });
+      beat++;
+    };
+    playBeat();
+    _skinBgmTimer = setInterval(playBeat, beatMs);
+
+  } else if (skin === 'techno') {
+    // バトルBGM「電脳テクノ」：四つ打ちキック＋短いアルペジオ
+    const arp = [523, 659, 784, 659];
+    const beatMs = 340; // 高速パルス
+    let beat = 0;
+    const playBeat = () => {
+      if (!isBgmOn() || save.equippedBgmBattle !== 'techno') return;
+      const tNow = ctx.currentTime;
+      const scale = bgmVolFloat();
+      // キック（低いサブサイン、短い減衰）
+      if (beat % 2 === 0) {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(140, tNow);
+        o.frequency.exponentialRampToValueAtTime(45, tNow + 0.12);
+        g.gain.setValueAtTime(Math.max(0.0001, 0.09 * scale), tNow);
+        g.gain.exponentialRampToValueAtTime(0.0001, tNow + 0.18);
+        o.connect(g).connect(ctx.destination);
+        o.start(tNow); o.stop(tNow + 0.2);
+        _skinBgmNodes.push(o, g);
+      }
+      // アルペジオ（軽いサウ音）
+      const f = arp[beat % arp.length];
+      const o2 = ctx.createOscillator();
+      const g2 = ctx.createGain();
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass'; hp.frequency.value = 300;
+      o2.type = 'sawtooth'; o2.frequency.value = f;
+      g2.gain.setValueAtTime(0, tNow);
+      g2.gain.linearRampToValueAtTime(Math.max(0.0001, 0.02 * scale), tNow + 0.01);
+      g2.gain.exponentialRampToValueAtTime(0.0001, tNow + beatMs / 1000 * 0.9);
+      o2.connect(g2).connect(hp).connect(ctx.destination);
+      o2.start(tNow); o2.stop(tNow + beatMs / 1000);
+      _skinBgmNodes.push(o2, g2);
+      beat++;
+    };
+    playBeat();
+    _skinBgmTimer = setInterval(playBeat, beatMs);
+  }
+}
+
+// ロビーBGMスキン切替の窓口：equippedBgmLobby が 'jazz' なら実ファイルの代わりにシンセを鳴らす
+function applyLobbyBgmSkin() {
+  const lobbyA = document.getElementById('lobby-bgm-audio');
+  if (save.equippedBgmLobby === 'jazz') {
+    if (lobbyA) lobbyA.pause();
+    if (isBgmOn()) _startSkinBgm('jazz'); else _stopSkinBgm();
+  } else {
+    _stopSkinBgm();
+    if (lobbyA && isBgmOn()) { lobbyA.volume = bgmVolFloat(); lobbyA.play().catch(() => {}); }
+  }
+}
+// バトル突入時：equippedBgmBattle が既定以外ならロビー音源を止めてシンセに切替
+function startBattleBgmSkin() {
+  const skin = save.equippedBgmBattle;
+  if (skin === 'tense' || skin === 'techno') {
+    const lobbyA = document.getElementById('lobby-bgm-audio');
+    if (lobbyA) lobbyA.pause();
+    _stopSkinBgm();
+    if (isBgmOn()) _startSkinBgm(skin);
+  }
+  // 'default' のときは何もしない＝これまで通りロビーBGMが鳴り続ける（既存挙動を維持）
+}
+// バトル退出時：バトル専用シンセを止めてロビーBGM（スキン込み）に戻す
+function stopBattleBgmSkin() {
+  if (save.equippedBgmBattle === 'tense' || save.equippedBgmBattle === 'techno') {
+    _stopSkinBgm();
+    applyLobbyBgmSkin();
+  }
+}
+
+// 今日の日付キー（YYYYMMDD）
+function mpTodayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}${(d.getMonth() + 1).toString().padStart(2, '0')}${d.getDate().toString().padStart(2, '0')}`;
+}
+
+// 日替わりカード裏スタイル（5種）
+function mpCardBackStyle() {
+  const styles = ['classic', 'check', 'wa', 'star', 'floral'];
+  const d = new Date();
+  const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  return styles[seed % styles.length];
+}
+
+// 今日のラッキー役（日付ベースで決定、ペア以上から）
+function mpDailyLuckyRank() {
+  const d = new Date();
+  const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  // ラッキー対象：1〜7（ロイヤル/ストフラは除外＝既に夢役）
+  return 1 + (seed % 7);
+}
+
+function showMiniPokerGame() {
+  mpEnsureSave();
+  // ── 対戦相手プール ──
+  const oppPool = [
+    { key: 'polka',  name: 'ポルカ',
+      lines: { start: 'えへへっ、いっぱい引いちゃおー！', win: 'やった〜！わたしの勝ち〜！',
+               lose: 'うぐぐ……つよ……', tie: 'ふぇ〜引き分け〜！',
+               reach: 'おっ、なんかいい感じ？', big: 'うわっ、なにそれ強すぎ！' } },
+    { key: 'selina', name: 'セリナ',
+      lines: { start: 'ぼ……ボード、いや、手札を、よく見て', win: '……運も、実力のうち、なんだって',
+               lose: 'う……強い。次は、ぼ、ぼくが……', tie: 'ふ、引き分け',
+               reach: '……来そう、な、気配', big: 'う、嘘……そんな手……' } },
+    { key: 'grano',  name: 'グラーノ',
+      lines: { start: '期待値に従い、参りましょう', win: '数字は、私に微笑むものですから',
+               lose: '見事。今夜の期待値は、お嬢さんに譲ります', tie: '引き分け。割り勘で如何かな',
+               reach: 'ふむ、確率収束の予感が', big: '……これは、計算外でした' } },
+    { key: 'velvet', name: 'ヴェルベット',
+      lines: { start: 'ふふ、お遊びでも、本気で', win: 'あら、私の勝ち。お小遣いを頂きますね',
+               lose: 'おみごと。今日は、あなたの夜', tie: '引き分け……悪くないわ',
+               reach: 'ふふ、なにか企んでいるのね？', big: 'ま、まさか、その役……' } },
+  ];
+  const cleared = save.clearedStages || [];
+  const available = oppPool.filter(o => o.key === 'polka' || o.key === 'selina' || cleared.includes(o.key));
+
+  // 既存 overlay クリア
+  const oldOv = document.querySelector('.minipoker-overlay');
+  if (oldOv) oldOv.remove();
+
+  // ── ゲーム状態 ──
+  const ctx = {
+    opp: available[Math.floor(Math.random() * available.length)],
+    deck: newDeck(),
+    player: [],
+    cpu: [],
+    held: [false, false, false, false, false],
+    phase: 'wager',  // wager → deal → choose → reveal → result → double? → garapon?
+    result: null,
+    reward: 0,
+    bet: save.minipoker.bet || 5,
+    streak: 0,           // セッション内連勝
+    doubleStack: 0,
+    doublePending: false,
+    bonusMult: 1.0,
+    sessionStartCoins: save.coins,  // 収支表示用
+    sessionWins: 0,
+    sessionPlays: 0,
+    sessionEarned: 0,
+    handsAchieved: {},
+    luckyRank: mpDailyLuckyRank(),
+    quickMode: false,
+    lastBetUsed: save.minipoker.bet || 5,
+    shields: 0,
+    history: [],
+    insuranceUsed: false,
+    dailyBonusUsed: (save.minipoker.dailyBonusDate === mpTodayKey()),  // 今日初回ボーナス済み？
+    allInArmed: false,  // ALL IN ボタン経由のベットか（ミッション判定用）
+  };
+  // ※ dailyBonusDate の記録は「実際に1戦プレイして倍率を消費した時」(judge内) に行う。
+  //   ここで書くと開いただけでボーナスが消滅してしまう。
+
+  const overlay = document.createElement('div');
+  overlay.className = 'minipoker-overlay';
+  document.getElementById('stage').appendChild(overlay);
+
+  // ── 初期 render（wager フェーズ） ──
+  // 今日のカード裏スタイル（日替わり5種）
+  ctx.cardBackStyle = mpCardBackStyle();
+  // ボス夜判定（8%）：撃破済みヴェルベットがいる場合のみ
+  const velvetAvail = available.find(o => o.key === 'velvet');
+  ctx.bossNight = !!velvetAvail && Math.random() < 0.08;
+  if (ctx.bossNight) ctx.opp = velvetAvail;
+  renderShell();
+  renderPhase();
+  updateBoardStats();
+  try { showTutorialIfNeeded(); } catch (e) { console.error('[mp] tutorial error:', e); }
+  try { mpStartBgm(); } catch (e) { console.error('[mp] bgm error:', e); }
+  try { startAmbientParticles(); } catch (e) { console.error('[mp] particles error:', e); }
+  // ボス夜のバナー表示
+  if (ctx.bossNight) {
+    setTimeout(() => showBanner('🌹 今夜の特別卓！ 配当 ×3 ／ ベットも ×3'), 600);
+  }
+  // overlay解除時にBGM/粒子/idleを必ず停止
+  // - MutationObserver でDOMから消えた瞬間に検出（safer than wrapping .remove）
+  const cleanupFn = () => { mpStopBgm(); stopAmbientParticles(); stopMimiIdleLoop(); };
+  const mObs = new MutationObserver(() => {
+    if (!overlay.isConnected) { cleanupFn(); mObs.disconnect(); }
+  });
+  mObs.observe(document.body, { childList: true, subtree: true });
+
+  function renderShell() {
+    const p = save.minipoker;
+    overlay.innerHTML = `
+      <div class="minipoker-modal">
+        <button class="minipoker-close" title="やめる">×</button>
+        <div class="mp-header">
+          <div class="mp-title">🎴 ファイブポーカー</div>
+          <div class="mp-stats">
+            <span class="mp-stat">💰 <span data-mpb="coins">${save.coins}</span></span>
+            <span class="mp-stat mp-stat-jp" title="ロイヤルストレートフラッシュで全額獲得">💎 JP <span data-mpb="jackpot">${p.jackpot}</span></span>
+            <span class="mp-stat mp-stat-session" data-mpb="sessionStat">💹 ±0</span>
+            <span class="mp-stat">🔥 連勝 <span data-mpb="streak">0</span><span data-mpb="shields"></span></span>
+            <span class="mp-stat">🏆 ${p.bestStreak}</span>
+            <button class="mp-history-btn" data-mp="missions" title="今日のミッション">🎯</button>
+            <button class="mp-history-btn" data-mp="history" title="履歴">📜</button>
+            <button class="mp-ach-btn" data-mp="achievements" title="達成">🏅</button>
+            <button class="mp-ach-btn" data-mp="mute" title="音">${save.minipoker.muted ? '🔇' : '🔊'}</button>
+          </div>
+        </div>
+
+        <div class="minipoker-board">
+          <!-- 配当表 -->
+          <div class="mp-paytable" data-mpb="paytable"></div>
+
+          <!-- メインプレイエリア -->
+          <div class="mp-play">
+            <!-- CPU 行 -->
+            <div class="mp-side mp-cpu" data-mpb="cpuSide"></div>
+
+            <!-- 中央：ステータス＋アクション -->
+            <div class="mp-center" data-mpb="center"></div>
+
+            <!-- プレイヤー行 -->
+            <div class="mp-side mp-player" data-mpb="playerSide"></div>
+          </div>
+        </div>
+
+        <!-- パーティクル/フラッシュ layer -->
+        <div class="mp-fx-layer" data-mpb="fx"></div>
+      </div>
+    `;
+    overlay.querySelector('.minipoker-close').addEventListener('click', () => {
+      if (ctx.sessionPlays > 0) showSessionSummary();
+      else overlay.remove();
+    });
+    // ── ヘッダボタン：renderShell の中で 1 回だけバインド（renderPhaseで再バインドしない）
+    const headerAct = (sel, fn) => {
+      const el = overlay.querySelector(sel);
+      if (el) el.addEventListener('click', fn);
+    };
+    headerAct('[data-mp="missions"]',     showMissionsPanel);
+    headerAct('[data-mp="history"]',      showHistoryPanel);
+    headerAct('[data-mp="achievements"]', showAchievementsPanel);
+    headerAct('[data-mp="mute"]',         toggleMute);
+    renderPaytable();
+  }
+
+  function renderPaytable() {
+    const cur = ctx.bet;
+    const luckyR = ctx.luckyRank;
+    const el = overlay.querySelector('[data-mpb="paytable"]');
+    const luckyName = MP_PAYTABLE[luckyR].name;
+    el.innerHTML = `
+      <div class="mp-pt-title">配当表</div>
+      <div class="mp-pt-lucky">🌟 今日のラッキー役<br><b>${luckyName}</b> が ×2 倍！</div>
+      <table class="mp-pt">
+        ${MP_PAYTABLE.slice().reverse().map(p => {
+          if (p.mult === 0) return '';
+          const isLucky = (p.rank === luckyR);
+          const eff = p.mult * (isLucky ? 2 : 1);
+          return `
+            <tr class="${p.rank === 9 ? 'mp-pt-royal' : ''} ${isLucky ? 'mp-pt-todaylucky' : ''}">
+              <td class="mp-pt-name">${isLucky ? '🌟' : ''}${p.name}</td>
+              <td class="mp-pt-mult">×${eff}</td>
+              <td class="mp-pt-payout">${eff * cur}</td>
+            </tr>
+          `;
+        }).join('')}
+      </table>
+      <div class="mp-pt-note">勝負に勝てば ベット×倍率 を獲得。🌟 はその日限定 ×2 倍。</div>
+    `;
+  }
+
+  function renderPhase() {
+    const ph = ctx.phase;
+    const cpuSide = overlay.querySelector('[data-mpb="cpuSide"]');
+    const playerSide = overlay.querySelector('[data-mpb="playerSide"]');
+    const center = overlay.querySelector('[data-mpb="center"]');
+    // 防御：レンダ内エラーでフェーズが止まらないよう try/catch で個別包括
+    try {
+      cpuSide.innerHTML = renderSide(ctx.opp, ctx.cpu, false, ph === 'reveal' || ph === 'result' || ph === 'double');
+    } catch (e) { console.error('[mp] cpuSide render error:', e); }
+    try {
+      playerSide.innerHTML = renderSide({ key: 'mimi', name: 'ミミ' }, ctx.player, true, true);
+    } catch (e) { console.error('[mp] playerSide render error:', e); }
+    try {
+      center.innerHTML = renderCenter();
+    } catch (e) {
+      console.error('[mp] center render error:', e);
+      // フォールバック：最低限の操作を確保
+      if (ph === 'choose') {
+        center.innerHTML = `
+          <div class="mp-status">操作してください</div>
+          <div class="mp-actions">
+            <button class="mp-btn mp-btn-primary" data-mp="draw">🔄 引く</button>
+            <button class="mp-btn mp-btn-ghost" data-mp="hold-all">⏸ 全部キープ</button>
+          </div>`;
+      } else if (ph === 'result') {
+        center.innerHTML = `
+          <div class="mp-status">結果</div>
+          <div class="mp-actions">
+            <button class="mp-btn mp-btn-primary" data-mp="next">もう一回</button>
+            <button class="mp-btn mp-btn-ghost" data-mp="quit">やめる</button>
+          </div>`;
+      } else if (ph === 'wager') {
+        center.innerHTML = `
+          <div class="mp-status">ベット選択</div>
+          <div class="mp-bet-row">
+            ${MP_BET_LEVELS.map(b => `<button class="mp-bet-chip" data-mp-bet="${b}">${b}</button>`).join('')}
+          </div>
+          <div class="mp-actions">
+            <button class="mp-btn mp-btn-primary" data-mp="deal">🎴 DEAL</button>
+          </div>`;
+      }
+    }
+    try { bindActions(); } catch (e) { console.error('[mp] bind error:', e); }
+    try {
+      if (ctx.phase === 'wager') startMimiIdleLoop();
+      else stopMimiIdleLoop();
+    } catch (e) { console.error('[mp] idle error:', e); }
+  }
+
+  function renderSide(charInfo, cards, isPlayer, faceUp) {
+    const rotateClass = isPlayer ? '' : 'mp-char-flip';
+    const cardsHtml = cards.length === 0
+      ? '<div class="mp-hand-placeholder">———</div>'
+      : `<div class="mp-hand">${cards.map((c, i) => renderCard(c, i, isPlayer, faceUp)).join('')}</div>`;
+    const ev = cards.length === 5 ? evaluateHand(cards) : null;
+    const showHandName = faceUp && ev;
+    // ムードバッジ（プレイヤーのみ、手札強度で表情変化）
+    let moodBadge = '';
+    if (isPlayer && cards.length === 5 && ctx.phase === 'choose') {
+      const pe = evaluateHand(cards);
+      const mood = pe.rank >= 5 ? '✨' : pe.rank >= 2 ? '😃' : pe.rank === 1 ? '🤔' : '😟';
+      const moodLabel = pe.rank >= 5 ? '期待大！' : pe.rank >= 2 ? '強気' : pe.rank === 1 ? '普通' : '困惑…';
+      moodBadge = `<div class="mp-mood-badge" title="${moodLabel}">${mood}</div>`;
+    }
+    return `
+      <div class="mp-char ${rotateClass}">
+        ${moodBadge}
+        <img class="mp-char-img" src="assets/characters/${charInfo.key}_mini.png"
+             onerror="this.onerror=null;this.src='assets/characters/${charInfo.key}_default.png';this.onerror=function(){this.style.display='none'};">
+        <div class="mp-char-name">${charInfo.name}</div>
+      </div>
+      ${cardsHtml}
+      <div class="mp-handname ${ev && ev.rank >= 4 ? 'mp-handname-big' : ''}">
+        ${showHandName ? ev.name : (cards.length === 5 ? '？？？' : '')}
+      </div>
+    `;
+  }
+
+  function renderCard(c, i, isPlayer, faceUp) {
+    if (!faceUp) return `<div class="mp-card mp-card-back mp-cb-${ctx.cardBackStyle || 'classic'} mp-card-dealt" style="animation-delay:${i * 0.08}s" data-i="${i}"></div>`;
+    const red = (c.suit === '♥' || c.suit === '♦');
+    const held = isPlayer && ctx.held[i];
+    const tapClass = (isPlayer && ctx.phase === 'choose') ? 'mp-tap' : '';
+    // 役構成カードのハイライト（result/reveal フェーズのみ）
+    let winnerClass = '';
+    if ((ctx.phase === 'result' || ctx.phase === 'reveal') && faceUp) {
+      const cards = isPlayer ? ctx.player : ctx.cpu;
+      const ev = evaluateHand(cards);
+      if (ev.bestFive && ev.rank >= 1) {
+        const matches = ev.bestFive.some(b => b.rank === c.rank && b.suit === c.suit);
+        if (matches && ev.rank >= 1) winnerClass = 'mp-card-winner';
+      }
+    }
+    return `<div class="mp-card ${red ? 'mp-red' : 'mp-black'} ${held ? 'mp-held' : ''} ${tapClass} mp-card-dealt ${winnerClass}"
+                 style="animation-delay:${i * 0.08}s"
+                 data-i="${i}" ${isPlayer && ctx.phase === 'choose' ? 'data-mp-tap="1"' : ''}>
+      <div class="mp-card-corner mp-card-tl">${c.label}<br>${c.suit}</div>
+      <div class="mp-card-suit-big">${c.suit}</div>
+      <div class="mp-card-corner mp-card-br">${c.label}<br>${c.suit}</div>
+      ${held ? '<div class="mp-card-keep">KEEP</div>' : ''}
+    </div>`;
+  }
+
+  function renderCenter() {
+    if (ctx.phase === 'wager') {
+      const betIdx = MP_BET_LEVELS.indexOf(ctx.bet);
+      const allInAmount = Math.min(save.coins, 10000);
+      const canAllIn = save.coins >= 100;
+      const showDailyBonus = !ctx.dailyBonusUsed;
+      const chipStackHtml = renderChipStack(ctx.bet);
+      const hotcold = renderHotCold();
+      return `
+        ${hotcold}
+        ${showDailyBonus ? '<div class="mp-daily-bonus">🌸 今日の初戦ボーナス　配当 ×2 ！</div>' : ''}
+        <div class="mp-status mp-status-wager">
+          ベットを選んで「DEAL」<br>
+          <small>勝てば <b>ベット×倍率</b> のコイン獲得</small>
+        </div>
+        ${chipStackHtml}
+        <div class="mp-bet-row">
+          ${MP_BET_LEVELS.map((b, i) => `
+            <button class="mp-bet-chip ${i === betIdx ? 'on' : ''}" data-mp-bet="${b}" ${b > save.coins ? 'disabled' : ''}>${b}</button>
+          `).join('')}
+        </div>
+        ${canAllIn ? `
+          <button class="mp-allin-btn" data-mp-bet="${allInAmount}">
+            🔥 ALL IN（${allInAmount} 🪙 全力勝負）
+          </button>
+        ` : ''}
+        <div class="mp-bet-display">現在のベット：<b>${ctx.bet}</b>　🪙</div>
+        <div class="mp-vol-bar mp-vol-${ctx.bet >= 500 ? 'high' : ctx.bet >= 100 ? 'mid' : 'low'}">
+          <span class="mp-vol-label">ボラ予測</span>
+          <span class="mp-vol-text">期待損益 ± ${Math.round(ctx.bet * 8)} 🪙</span>
+        </div>
+        <div class="mp-actions">
+          <button class="mp-btn mp-btn-deal" data-mp="deal" ${save.coins < (ctx.bossNight ? ctx.bet * 3 : ctx.bet) ? 'disabled' : ''}>
+            🎴 DEAL${ctx.bossNight ? `（💎 特別卓 ${ctx.bet * 3} 🪙）` : ''}
+          </button>
+          <button class="mp-btn mp-btn-auto" data-mp="autoplay" ${save.coins < ctx.bet * 3 ? 'disabled' : ''}>
+            ▶▶ 3連戦自動
+          </button>
+        </div>
+        ${save.coins < (ctx.bossNight ? ctx.bet * 3 : ctx.bet) ? '<div class="mp-warn">⚠ コイン不足（特別卓はベット×3必要）</div>' : ''}
+      `;
+    }
+    if (ctx.phase === 'deal') {
+      return `<div class="mp-status">カード配布中…</div>`;
+    }
+    if (ctx.phase === 'choose') {
+      const keep = ctx.held.filter(Boolean).length;
+      const drop = 5 - keep;
+      const reach = detectReach(ctx.player);
+      const reachProb = computeReachProb(ctx.player, ctx.deck.length);
+      const surrenderReturn = Math.floor((ctx.effectiveBet || ctx.bet) / 2);
+      const round = (ctx.drawRound || 0) + 1;  // 表示用 1-indexed
+      const isLastRound = (ctx.drawRound || 0) >= 1;  // 2回引き終わったら強制勝負
+      return `
+        <div class="mp-status">
+          <b>${round}回目の交換</b> ／ 残すカードはそのまま、いらない札をタップで外す<br>
+          <small>${drop > 0 ? `${drop}枚を引き直す（KEEPマーク付きは残す）` : '全部キープ＝そのまま勝負'}</small>
+        </div>
+        ${reach ? `<div class="mp-reach">${reach}${reachProb ? ` <span class="mp-reach-prob">(完成${reachProb}%)</span>` : ''}</div>` : ''}
+        <div class="mp-actions">
+          <button class="mp-btn mp-btn-primary" data-mp="draw">
+            ${drop > 0 ? `🔄 ${drop}枚を引く${isLastRound ? '（最終）' : ''}` : '⚡ そのまま勝負'}
+          </button>
+          <button class="mp-btn mp-btn-ghost" data-mp="hold-all">⏸ 全部キープして勝負</button>
+          ${!isLastRound ? '' : ''}
+          <button class="mp-btn mp-btn-surrender" data-mp="surrender" title="負け確実なら半額返却で降りる">
+            🩹 サレンダー（${surrenderReturn} 🪙 返却）
+          </button>
+        </div>
+      `;
+    }
+    if (ctx.phase === 'reveal') {
+      return `<div class="mp-status">勝負！</div>`;
+    }
+    if (ctx.phase === 'result') {
+      const r = ctx.result;
+      const next = nextLabel();
+      const canRepeat = save.coins >= ctx.lastBetUsed;
+      // 大きな結果バナー（操作可能までしばらく目立たせる）
+      return `
+        <div class="mp-result-banner mp-result-${r}">
+          ${r === 'win'  ? `<div class="mp-result-headline">🏆 勝利！</div><div class="mp-result-amount">+${ctx.reward} 🪙</div>` :
+            r === 'lose' ? `<div class="mp-result-headline">💧 ${ctx.opp.name} の勝ち</div><div class="mp-result-amount">${ctx.reward > 0 ? `返却 +${ctx.reward} 🪙` : 'ベット没収……'}</div>` :
+                           `<div class="mp-result-headline">🤝 引き分け</div><div class="mp-result-amount">返金 +${ctx.reward} 🪙</div>`}
+        </div>
+        ${(r === 'win' && ctx.canDouble && ctx.doubleStack < 3) ? `
+          <div class="mp-double-pitch">
+            🎲 <b>ダブルアップに挑戦？</b><br>
+            <small>次の1枚が赤か黒、当てたら <b>×2</b>（最大×8）</small>
+          </div>
+          <div class="mp-actions">
+            <button class="mp-btn mp-btn-double" data-mp="double">▶ 挑戦</button>
+            <button class="mp-btn mp-btn-primary" data-mp="next">${next}</button>
+          </div>
+        ` : `
+          <div class="mp-actions">
+            <button class="mp-btn mp-btn-primary" data-mp="next">${next}</button>
+            ${canRepeat ? `<button class="mp-btn mp-btn-repeat" data-mp="repeat">▶▶ 同ベットで連戦（${ctx.lastBetUsed} 🪙）</button>` : ''}
+            <button class="mp-btn mp-btn-ghost" data-mp="quit">やめる</button>
+          </div>
+        `}
+      `;
+    }
+    if (ctx.phase === 'garapon') {
+      return `
+        <div class="mp-status mp-status-bonus">
+          🎰 <b>ボーナスチャンス！</b><br>
+          <small>3つのガラポンから1つ選んで！</small>
+        </div>
+        <div class="mp-garapon-row" data-mpb="garaponSlots">
+          <button class="mp-garapon-slot" data-mp-garapon="0">？</button>
+          <button class="mp-garapon-slot" data-mp-garapon="1">？</button>
+          <button class="mp-garapon-slot" data-mp-garapon="2">？</button>
+        </div>
+        <div class="mp-double-hint">外れ：そのまま／当たり：報酬の <b>×2〜×5</b></div>
+      `;
+    }
+    if (ctx.phase === 'double') {
+      const total = ctx.reward;
+      const stack = ctx.doubleStack;
+      // Hi-Lo方式：見せ札は ctx.doubleShowCard
+      if (!ctx.doubleShowCard) ctx.doubleShowCard = ctx.deck.shift();
+      const sc = ctx.doubleShowCard;
+      const red = (sc.suit === '♥' || sc.suit === '♦');
+      const r = sc.rank;
+      // 7はジョーカー扱い：プッシュ（引き分け）
+      return `
+        <div class="mp-status mp-status-double">
+          🎲 Hi-Lo ダブルアップ（×${Math.pow(2, stack)} → ×${Math.pow(2, stack + 1)}）<br>
+          <small>見せ札より「高い」「低い」を予想　獲得：<b>${total}</b> → 当てれば <b>${total * 2}</b></small>
+        </div>
+        <div class="mp-double-cards">
+          <div class="mp-card ${red ? 'mp-red' : 'mp-black'} mp-card-shown">
+            <div class="mp-card-corner mp-card-tl">${sc.label}<br>${sc.suit}</div>
+            <div class="mp-card-suit-big">${sc.suit}</div>
+            <div class="mp-card-corner mp-card-br">${sc.label}<br>${sc.suit}</div>
+          </div>
+          <div class="mp-card mp-card-back mp-card-next-hl">？</div>
+        </div>
+        <div class="mp-hilo-actions">
+          <button class="mp-btn mp-btn-double" data-mp-hilo="low">▼ 低い（2〜${r - 1 || '?'}）</button>
+          <button class="mp-btn mp-btn-double" data-mp-hilo="high">▲ 高い（${r + 1 > 14 ? '?' : r + 1}〜A）</button>
+        </div>
+        <div class="mp-double-hint">7 が出ると引き分けで没収（賢く選んで）</div>
+      `;
+    }
+    return '';
+  }
+
+  function nextLabel() {
+    if (ctx.streak >= 5) return '🔥 絶好調！もう一勝！';
+    if (ctx.streak >= 3) return '🔥 連勝続行！次へ';
+    if (ctx.result === 'win') return '✨ もう一回';
+    if (ctx.result === 'lose') return '⚡ リベンジ！';
+    return 'もう一回';
+  }
+
+  // ベット額に応じたチップスタック描画
+  function renderChipStack(bet) {
+    let stacks;
+    if (bet >= 5000) stacks = 6;
+    else if (bet >= 500) stacks = 5;
+    else if (bet >= 100) stacks = 4;
+    else if (bet >= 25)  stacks = 3;
+    else if (bet >= 5)   stacks = 2;
+    else stacks = 1;
+    const colors = ['#ddd', '#54c9ff', '#80c060', '#c084fc', '#f5d77a', '#ff4060'];
+    let html = '<div class="mp-chipstack">';
+    for (let i = 0; i < stacks; i++) {
+      html += `<div class="mp-chip-piece" style="background:${colors[Math.min(i, colors.length-1)]};bottom:${i * 6}px;animation-delay:${i*0.05}s"></div>`;
+    }
+    html += `<div class="mp-chipstack-label">${bet}</div></div>`;
+    return html;
+  }
+
+  // 直近10戦の勝率からホット/コールド表示
+  function renderHotCold() {
+    if (ctx.history.length < 3) return '';
+    const wins = ctx.history.filter(h => h.result === 'win').length;
+    const rate = wins / ctx.history.length;
+    if (rate >= 0.7) return `<div class="mp-hotcold mp-hot">🔥 絶好調！（${Math.round(rate*100)}%）</div>`;
+    if (rate <= 0.3) return `<div class="mp-hotcold mp-cold">🧊 ピンチ……（${Math.round(rate*100)}%）リベンジ！</div>`;
+    return '';
+  }
+
+  // 残デッキから役完成確率を計算（防御的）
+  function computeReachProb(cards, deckLen) {
+    try {
+      if (!cards || !Array.isArray(cards) || cards.length === 0) return null;
+      if (!deckLen || deckLen <= 0) return null;
+      const ranks = cards.map(c => c.rank);
+      const suits = cards.map(c => c.suit);
+      const suitCount = {};
+      suits.forEach(s => suitCount[s] = (suitCount[s] || 0) + 1);
+      if (Object.values(suitCount).some(v => v === 4)) {
+        return Math.round((9 / deckLen) * 100);
+      }
+      const uniq = [...new Set(ranks)].sort((a, b) => a - b);
+      if (uniq.length >= 4) {
+        for (let i = 0; i + 3 < uniq.length; i++) {
+          if (uniq[i + 3] - uniq[i] === 3) {
+            const need = (uniq[i] === 2 || uniq[i + 3] === 14) ? 4 : 8;
+            return Math.round((need / deckLen) * 100);
+          }
+        }
+      }
+      const rc = {};
+      ranks.forEach(r => rc[r] = (rc[r] || 0) + 1);
+      if (Object.values(rc).some(v => v === 3)) return Math.round((1 / deckLen) * 100);
+      return null;
+    } catch (e) {
+      console.error('[mp] computeReachProb error:', e);
+      return null;
+    }
+  }
+
+  function detectReach(cards) {
+    try {
+      if (!cards || !Array.isArray(cards) || cards.length < 5) return null;
+      return _detectReach(cards);
+    } catch (e) { console.error('[mp] detectReach error:', e); return null; }
+  }
+  function _detectReach(cards) {
+    // 4to-Royal / 4to-Flush / 4to-Straight / 4-of-a-kindの素材 を簡易検出
+    const ranks = cards.map(c => c.rank);
+    const suits = cards.map(c => c.suit);
+    // フラッシュリーチ：同スートが4枚
+    const suitCount = {};
+    suits.forEach(s => suitCount[s] = (suitCount[s] || 0) + 1);
+    if (Object.values(suitCount).some(v => v === 4)) return '🌟 フラッシュ リーチ！（あと1枚で完成）';
+    // ストレートリーチ：5枚中4枚が連続してる組み合わせ
+    const uniq = [...new Set(ranks)].sort((a, b) => a - b);
+    if (uniq.length >= 4) {
+      for (let i = 0; i <= uniq.length - 4; i++) {
+        if (uniq[i + 3] - uniq[i] === 3) return '🌟 ストレート リーチ！（あと1枚で完成）';
+      }
+      // A-2-3-4 や 10-J-Q-K の wheel/high
+      if (uniq.includes(14)) {
+        const lowSet = uniq.filter(r => r <= 5);
+        if (lowSet.length >= 3) return '🌟 ストレート リーチ！（A-2-3-4-5 狙い）';
+      }
+    }
+    // フォーリーチ：3 of a kind
+    const rc = {};
+    ranks.forEach(r => rc[r] = (rc[r] || 0) + 1);
+    if (Object.values(rc).some(v => v === 3)) return '✨ フォーカード リーチ！（あと1枚）';
+    return null;
+  }
+
+  function bindActions() {
+    overlay.querySelectorAll('[data-mp-bet]').forEach(b => {
+      b.addEventListener('click', () => {
+        ctx.bet = +b.dataset.mpBet;
+        save.minipoker.bet = ctx.bet;
+        // ALL IN 判定はボタン自体で行う（額での推定は少額オールインを取りこぼす）
+        ctx.allInArmed = b.classList.contains('mp-allin-btn');
+        saveProgress();
+        mpSfx('bet');
+        if (ctx.allInArmed) {
+          mpSfx('allin');
+          const sh = overlay.querySelector('.minipoker-modal');
+          sh.classList.add('mp-shake-light');
+          setTimeout(() => sh.classList.remove('mp-shake-light'), 400);
+          showBanner('🔥 ALL IN！');
+        }
+        renderPaytable();
+        renderPhase();
+      });
+    });
+    overlay.querySelectorAll('[data-mp-tap]').forEach(el => {
+      el.addEventListener('click', () => {
+        if (ctx.phase !== 'choose') return;
+        const i = +el.dataset.i;
+        ctx.held[i] = !ctx.held[i];
+        spawnTapParticles(el);
+        renderPhase();
+        playFx('tap');
+        mpSfx('tap');
+      });
+    });
+    overlay.querySelectorAll('[data-mp-double]').forEach(el => {
+      el.addEventListener('click', () => doDouble(+el.dataset.mpDouble));
+    });
+    overlay.querySelectorAll('[data-mp-garapon]').forEach(el => {
+      el.addEventListener('click', () => doGarapon(+el.dataset.mpGarapon));
+    });
+    const act = (sel, fn) => overlay.querySelector(sel)?.addEventListener('click', fn);
+    act('[data-mp="deal"]', () => startDeal(false));
+    act('[data-mp="draw"]', doDraw);
+    act('[data-mp="hold-all"]', () => {
+      ctx.held = [true, true, true, true, true];
+      doDraw();
+    });
+    act('[data-mp="next"]', startNext);
+    act('[data-mp="repeat"]', () => {
+      // 同ベットで連戦：ベットを前回値に戻して即DEAL
+      ctx.bet = ctx.lastBetUsed;
+      save.minipoker.bet = ctx.bet;
+      // ボス卓（×3）を黙って持ち越さない：連戦でも毎回抽選し直し、当選時は明示
+      const velvetAvail = available.find(o => o.key === 'velvet');
+      ctx.bossNight = !!velvetAvail && Math.random() < 0.08;
+      ctx.opp = ctx.bossNight ? velvetAvail
+                              : available[Math.floor(Math.random() * available.length)];
+      ctx.player = [];
+      ctx.cpu = [];
+      ctx.held = [false, false, false, false, false];
+      ctx.phase = 'wager';
+      saveProgress();
+      renderPhase();
+      if (ctx.bossNight) showBanner('🌹 特別卓！ 配当 ×3 ／ ベットも ×3');
+      // 即DEAL（quick mode）
+      setTimeout(() => startDeal(true), 50);
+    });
+    act('[data-mp="quit"]', () => overlay.remove());
+    act('[data-mp="double"]', () => {
+      ctx.phase = 'double';
+      ctx.doubleShowCard = null;
+      renderPhase();
+    });
+    act('[data-mp="surrender"]', doSurrender);
+    act('[data-mp="autoplay"]', startAutoPlay);
+    // ヘッダボタン (history/achievements/missions/mute) は renderShell で1度だけバインド済み
+    overlay.querySelectorAll('[data-mp-hilo]').forEach(el => {
+      el.addEventListener('click', () => doHiLo(el.dataset.mpHilo));
+    });
+  }
+
+  function doSurrender() {
+    // 実際に支払った額（ボス夜は×3）の半額を返却
+    const refund = Math.floor((ctx.effectiveBet || ctx.bet) / 2);
+    save.coins += refund;
+    ctx.reward = refund;
+    ctx.result = 'lose';
+    ctx.streak = 0; // サレンダーは連勝途切れ
+    ctx.phase = 'result';
+    ctx.canDouble = false;
+    saveProgress();
+    updateBoardStats();
+    renderPhase();
+    mpSfx('lose');
+    showBanner('🩹 サレンダー');
+    flashCharLine('player', 'ふぅ……無理せず撤退！');
+  }
+
+  function doHiLo(dir) {
+    const sc = ctx.doubleShowCard;
+    const nextCard = ctx.deck.shift();
+    const slot = overlay.querySelector('.mp-card-next-hl');
+    if (slot) {
+      const red = (nextCard.suit === '♥' || nextCard.suit === '♦');
+      slot.classList.remove('mp-card-back');
+      slot.classList.add(red ? 'mp-red' : 'mp-black', 'mp-card-flipped');
+      slot.innerHTML = `
+        <div class="mp-card-corner mp-card-tl">${nextCard.label}<br>${nextCard.suit}</div>
+        <div class="mp-card-suit-big">${nextCard.suit}</div>
+        <div class="mp-card-corner mp-card-br">${nextCard.label}<br>${nextCard.suit}</div>
+      `;
+    }
+    setTimeout(() => {
+      let win;
+      if (nextCard.rank === sc.rank) {
+        // 同値はプッシュ＝失敗扱い
+        win = false;
+      } else if (dir === 'high') {
+        win = (nextCard.rank > sc.rank);
+      } else {
+        win = (nextCard.rank < sc.rank);
+      }
+      if (win) {
+        ctx.doubleStack += 1;
+        const newReward = ctx.reward * 2;
+        save.coins += (newReward - ctx.reward);
+        ctx.reward = newReward;
+        save.minipoker.totalEarned = (save.minipoker.totalEarned || 0) + (newReward / 2);
+        incrementMissionProgress('doubleWins', 1); // ミッション「ダブルアップ成功」
+        saveProgress();
+        updateBoardStats();
+        playFx('double-win'); mpSfx('double-win');
+        showBanner(`🎯 的中！ ×${Math.pow(2, ctx.doubleStack)} → ${ctx.reward} 🪙`);
+        ctx.phase = 'result';
+        ctx.canDouble = ctx.doubleStack < 3;
+        ctx.doubleShowCard = null;
+        renderPhase();
+      } else {
+        save.coins -= ctx.reward;
+        if (save.coins < 0) save.coins = 0;
+        save.minipoker.totalEarned = (save.minipoker.totalEarned || 0) - ctx.reward;
+        ctx.reward = 0;
+        ctx.result = 'lose';
+        ctx.streak = 0;
+        saveProgress();
+        updateBoardStats();
+        playFx('double-lose'); mpSfx('double-lose');
+        showBanner('💧 失敗… 没収');
+        ctx.phase = 'result';
+        ctx.canDouble = false;
+        ctx.doubleShowCard = null;
+        renderPhase();
+      }
+    }, 900);
+  }
+
+  function showHistoryPanel() {
+    const exist = overlay.querySelector('.mp-panel-history');
+    if (exist) { exist.remove(); return; }
+    const panel = document.createElement('div');
+    panel.className = 'mp-side-panel mp-panel-history';
+    panel.innerHTML = `
+      <div class="mp-panel-title">📜 履歴（直近10戦）</div>
+      <div class="mp-panel-body">
+        ${ctx.history.length === 0 ? '<div class="mp-panel-empty">まだプレイしてません</div>' :
+          ctx.history.map(h => `
+            <div class="mp-hist-row mp-hist-${h.result}">
+              <span class="mp-hist-hand">${h.hand}</span>
+              <span class="mp-hist-result">${h.result === 'win' ? '勝' : h.result === 'lose' ? '負' : '分'}</span>
+              <span class="mp-hist-reward">${h.reward >= 0 ? '+' : ''}${h.reward}</span>
+            </div>
+          `).join('')}
+      </div>
+      <button class="mp-panel-close" data-mp-panel-close>×</button>
+    `;
+    overlay.querySelector('.minipoker-modal').appendChild(panel);
+    panel.querySelector('[data-mp-panel-close]').addEventListener('click', () => panel.remove());
+  }
+
+  function showAchievementsPanel() {
+    const exist = overlay.querySelector('.mp-panel-ach');
+    if (exist) { exist.remove(); return; }
+    const ach = save.minipoker.achievements;
+    const panel = document.createElement('div');
+    panel.className = 'mp-side-panel mp-panel-ach';
+    panel.innerHTML = `
+      <div class="mp-panel-title">🏅 達成バッジ <small>${Object.keys(ach).length}/${MP_ACHIEVEMENTS.length}</small></div>
+      <div class="mp-panel-body">
+        ${MP_ACHIEVEMENTS.map(a => {
+          const got = !!ach[a.id];
+          return `
+            <div class="mp-ach-row ${got ? 'on' : 'off'}">
+              <span class="mp-ach-icon">${got ? a.icon : '🔒'}</span>
+              <span class="mp-ach-info">
+                <span class="mp-ach-name">${got ? a.name : '？？？'}</span>
+                <span class="mp-ach-cond">${a.cond}</span>
+              </span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <button class="mp-panel-close" data-mp-panel-close>×</button>
+    `;
+    overlay.querySelector('.minipoker-modal').appendChild(panel);
+    panel.querySelector('[data-mp-panel-close]').addEventListener('click', () => panel.remove());
+  }
+
+  function toggleMute() {
+    save.minipoker.muted = !save.minipoker.muted;
+    saveProgress();
+    if (save.minipoker.muted) mpStopBgm();
+    else mpStartBgm();
+    const btn = overlay.querySelector('[data-mp="mute"]');
+    if (btn) btn.textContent = save.minipoker.muted ? '🔇' : '🔊';
+  }
+
+  function showMissionsPanel() {
+    const exist = overlay.querySelector('.mp-panel-mission');
+    if (exist) { exist.remove(); return; }
+    const ms = save.minipoker.missions || [];
+    const prog = save.minipoker.missionsProgress || {};
+    const panel = document.createElement('div');
+    panel.className = 'mp-side-panel mp-panel-mission';
+    panel.innerHTML = `
+      <div class="mp-panel-title">🎯 今日のミッション</div>
+      <div class="mp-panel-body">
+        ${ms.map(m => {
+          const cur = Math.min(prog[m.id] || 0, m.goal);
+          const done = cur >= m.goal;
+          const claimed = !!prog[m.id + '_claimed'];
+          return `
+            <div class="mp-mission-row ${done ? 'done' : ''}">
+              <div class="mp-mission-name">${m.name}</div>
+              <div class="mp-mission-progress">${cur}/${m.goal}</div>
+              <div class="mp-mission-reward">💰+${m.reward}</div>
+              ${done && !claimed ? `<button class="mp-mission-claim" data-mp-claim="${m.id}" data-reward="${m.reward}">受取</button>` : claimed ? '<span class="mp-mission-claimed">✓</span>' : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <button class="mp-panel-close" data-mp-panel-close>×</button>
+    `;
+    overlay.querySelector('.minipoker-modal').appendChild(panel);
+    panel.querySelector('[data-mp-panel-close]').addEventListener('click', () => panel.remove());
+    panel.querySelectorAll('[data-mp-claim]').forEach(b => {
+      b.addEventListener('click', () => {
+        const id = b.dataset.mpClaim;
+        const reward = +b.dataset.reward;
+        save.coins += reward;
+        save.minipoker.missionsProgress[id + '_claimed'] = true;
+        saveProgress();
+        updateBoardStats();
+        showBanner(`🎯 ミッション報酬 +${reward} 🪙`);
+        mpSfx('milestone');
+        panel.remove();
+        showMissionsPanel();
+      });
+    });
+  }
+
+  function incrementMissionProgress(metric, value) {
+    const ms = save.minipoker.missions || [];
+    const prog = save.minipoker.missionsProgress || {};
+    let unlocked = false;
+    ms.forEach(m => {
+      if (m.metric !== metric) return;
+      const prev = prog[m.id] || 0;
+      if (prev >= m.goal) return;
+      if (metric === 'maxStreak') {
+        prog[m.id] = Math.max(prev, value);
+      } else {
+        prog[m.id] = prev + value;
+      }
+      if (prog[m.id] >= m.goal && prev < m.goal) {
+        unlocked = true;
+        setTimeout(() => showBanner(`🎯 ミッション「${m.name}」達成！`), 800);
+      }
+    });
+    save.minipoker.missionsProgress = prog;
+    saveProgress();
+  }
+
+  function startAutoPlay() {
+    if (ctx.phase !== 'wager') return;
+    ctx.autoCount = 3;
+    runAutoStep();
+  }
+  function runAutoStep() {
+    if (!ctx.autoCount || ctx.autoCount <= 0) return;
+    if (save.coins < ctx.bet) return;
+    ctx.autoCount--;
+    startDeal(true);
+    // 高速：configure choose to draw all (no holds)
+    setTimeout(() => {
+      if (ctx.phase === 'choose') {
+        // 自動ホールド：シンプル戦略でキープ
+        const cpuHold = cpuPickHolds(ctx.player);
+        ctx.held = cpuHold;
+        doDraw();
+      }
+    }, 600);
+    // 次戦へ
+    setTimeout(() => {
+      if (ctx.autoCount > 0 && ctx.phase === 'result') {
+        ctx.opp = available[Math.floor(Math.random() * available.length)];
+        ctx.player = [];
+        ctx.cpu = [];
+        ctx.held = [false, false, false, false, false];
+        ctx.phase = 'wager';
+        renderPhase();
+        setTimeout(() => runAutoStep(), 300);
+      }
+    }, 2400);
+  }
+
+  // ── 環境粒子（漂うハート・星・コイン） ──
+  // ※ var 必須：showMiniPokerGame 冒頭から呼ばれるため let だと TDZ エラー
+  var _ambientTimer = null;
+  function startAmbientParticles() {
+    stopAmbientParticles();
+    const tick = () => {
+      const fx = overlay.querySelector('[data-mpb="fx"]');
+      if (!fx) return;
+      const emojis = ['💖', '✨', '⭐', '🪙', '💕', '🌟'];
+      const e = document.createElement('div');
+      e.className = 'mp-ambient-particle';
+      e.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      e.style.left = Math.random() * 100 + '%';
+      e.style.fontSize = (12 + Math.random() * 12) + 'px';
+      e.style.animationDuration = (8 + Math.random() * 6) + 's';
+      fx.appendChild(e);
+      setTimeout(() => e.remove(), 14000);
+    };
+    _ambientTimer = setInterval(tick, 1800);
+  }
+  function stopAmbientParticles() {
+    if (_ambientTimer) { clearInterval(_ambientTimer); _ambientTimer = null; }
+  }
+
+  function unlockAchievement(id) {
+    if (save.minipoker.achievements[id]) return;
+    const a = MP_ACHIEVEMENTS.find(x => x.id === id);
+    if (!a) return;
+    save.minipoker.achievements[id] = Date.now();
+    saveProgress();
+    // トースト
+    const t = document.createElement('div');
+    t.className = 'mp-ach-toast';
+    t.innerHTML = `<span class="mp-ach-toast-icon">${a.icon}</span><span class="mp-ach-toast-name">${a.name} 達成！</span>`;
+    overlay.querySelector('[data-mpb="fx"]').appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+    mpSfx('milestone');
+  }
+
+  // ── フェーズ進行 ──
+  function startDeal(quick) {
+    // ボス夜は実質ベット×3 を消費
+    const effectiveBet = ctx.bossNight ? ctx.bet * 3 : ctx.bet;
+    if (save.coins < effectiveBet) return;
+    save.coins -= effectiveBet;
+    ctx.effectiveBet = effectiveBet;
+    ctx.lastBetUsed = ctx.bet;
+    ctx.quickMode = !!quick;
+    // ジャックポット積立（ベットの5%）
+    save.minipoker.jackpot = (save.minipoker.jackpot || 5000) + Math.ceil(effectiveBet * 0.05);
+    ctx.insuranceUsed = false;
+    // ALL IN ミッション進捗
+    if (ctx.allInArmed) incrementMissionProgress('allins', 1);
+    incrementMissionProgress('plays', 1);
+    saveProgress();
+    updateBoardStats();
+    // 新規ハンド
+    ctx.deck = newDeck();
+    ctx.player = ctx.deck.splice(0, 5);
+    ctx.cpu = ctx.deck.splice(0, 5);
+    ctx.held = [false, false, false, false, false];
+    ctx.phase = 'deal';
+    ctx.doubleStack = 0;
+    renderPhase();
+    mpSfx('deal');
+    flashCharLine('player', mpMimiLine('start'));
+    if (!quick) flashCharLine('cpu', mpLine(ctx.opp.key, 'start'));
+    const dealMs = quick ? 400 : 700;
+    setTimeout(() => {
+      try {
+        // ── 自動おすすめキープ：シンプル戦略でペア以上のカード等を pre-hold ──
+        // ユーザーは「ハズレ札だけタップして外す」操作で済む
+        ctx.held = cpuPickHolds(ctx.player);
+        ctx.drawRound = 0; // 1回目の交換ラウンド
+        ctx.phase = 'choose';
+        renderPhase();
+      } catch (e) { console.error('[mp] deal->choose transition error:', e); ctx.phase = 'choose'; renderPhase(); }
+      try {
+        const reach = detectReach(ctx.player);
+        if (reach) { playFx('reach'); mpSfx('reach'); flashCharLine('cpu', mpLine(ctx.opp.key, 'reach')); }
+      } catch (e) { console.error('[mp] reach detection error:', e); }
+    }, dealMs);
+  }
+
+  function doDraw() {
+    // プレイヤー側：held=false のカードを引き直し
+    for (let i = 0; i < 5; i++) {
+      if (!ctx.held[i]) ctx.player[i] = ctx.deck.shift();
+    }
+    const round = ctx.drawRound || 0;
+    // ── 1回目で全部 KEEP（drop=0）の場合は即勝負へ、それ以外は2回目チャンス ──
+    const keepCount = ctx.held.filter(Boolean).length;
+    const dropCount = 5 - keepCount;
+    const wasAllKeep = dropCount === 0;
+    if (round === 0 && !wasAllKeep) {
+      // 1回目の交換完了。CPUはまだ動かさず、プレイヤーに 2回目の選択肢を与える
+      ctx.drawRound = 1;
+      // 2回目用に再 auto-hold（新しい配り直し札を踏まえて）
+      ctx.held = cpuPickHolds(ctx.player);
+      ctx.phase = 'choose';
+      renderPhase();
+      mpSfx('flip');
+      flashCharLine('player', 'もう一回交換できますっ！');
+      return;
+    }
+    // 最終ラウンド：CPU も引き直し → reveal
+    const cpuHold = cpuPickHolds(ctx.cpu);
+    for (let i = 0; i < 5; i++) {
+      if (!cpuHold[i]) ctx.cpu[i] = ctx.deck.shift();
+    }
+    ctx.phase = 'reveal';
+    renderPhase();
+    playFx('flip');
+    mpSfx('flip');
+    // 大役（フラッシュ以上）はタメ時間を延長＋途中で「……！」
+    const pe = evaluateHand(ctx.player);
+    const longSuspense = pe.rank >= 5 && !ctx.quickMode;
+    if (longSuspense) {
+      setTimeout(() => {
+        // 1.2秒の地点で「来る…！」フラッシュ
+        const fx = overlay.querySelector('[data-mpb="fx"]');
+        if (fx) {
+          const sus = document.createElement('div');
+          sus.className = 'mp-suspense';
+          sus.textContent = '……！';
+          fx.appendChild(sus);
+          setTimeout(() => sus.remove(), 800);
+          mpSfx('reach');
+        }
+      }, 1200);
+    }
+    const revealMs = ctx.quickMode ? 700 : (longSuspense ? 2000 : 1200);
+    setTimeout(judge, revealMs);
+  }
+
+  function judge() {
+    const pe = evaluateHand(ctx.player);
+    const ce = evaluateHand(ctx.cpu);
+    let result, payout = 0;
+    // Jacks-or-Better 判定（ペアは J 以上のみ配当）
+    const playerHasPayHand = (pe.rank >= 2) || (pe.rank === 1 && pe.bestFive && pe.bestFive.some(c => c.rank >= 11 && pe.bestFive.filter(x => x.rank === c.rank).length === 2));
+    let result2;
+    if (pe.score > ce.score) {
+      result2 = 'win';
+    } else if (pe.score < ce.score) {
+      result2 = 'lose';
+    } else {
+      result2 = 'tie';
+    }
+    // 配当計算
+    const payEntry = MP_PAYTABLE[pe.rank];
+    const mult = (pe.rank === 1)
+      ? (playerHasPayHand ? 1 : 0)
+      : payEntry.mult;
+
+    // 連勝補正
+    let bonusMult = 1.0;
+    if (ctx.streak >= 5) bonusMult = 2.0;
+    else if (ctx.streak >= 3) bonusMult = 1.5;
+
+    // 今日のラッキー役なら ×2 補正
+    const luckyMult = (pe.rank === ctx.luckyRank) ? 2 : 1;
+    // 初日ボーナス：当日初プレイは配当×2
+    const dailyMult = (!ctx.dailyBonusUsed) ? 2 : 1;
+    let usedShield = false;
+    // ボス夜は配当×3
+    const bossMult = ctx.bossNight ? 3 : 1;
+    if (result2 === 'win') {
+      payout = Math.max(1, Math.floor(ctx.bet * (mult || 1) * bonusMult * luckyMult * dailyMult * bossMult));
+      ctx.streak += 1;
+      // ミッション：勝利数 / 連勝 / ペア+ / フラッシュ / フルハウス / ラッキー
+      incrementMissionProgress('wins', 1);
+      incrementMissionProgress('maxStreak', ctx.streak);
+      if (pe.rank >= 1) incrementMissionProgress('pairPlus', 1);
+      if (pe.rank === 5) incrementMissionProgress('flushes', 1);
+      if (pe.rank === 6) incrementMissionProgress('fullhouse', 1);
+      if (pe.rank === ctx.luckyRank) incrementMissionProgress('luckyHits', 1);
+      // 5連勝でシールド獲得（上限2）
+      if (ctx.streak === 5 && ctx.shields < 2) { ctx.shields += 1; showBanner('🛡️ シールド獲得！'); mpSfx('milestone'); }
+      if (ctx.streak === 10 && ctx.shields < 2) { ctx.shields += 1; showBanner('🛡️🛡️ シールド2個目！'); mpSfx('milestone'); }
+    } else if (result2 === 'tie') {
+      // 返金は実際に支払った額（ボス夜は×3を払っているので×3返す）
+      payout = ctx.effectiveBet || ctx.bet;
+    } else {
+      payout = 0;
+      // シールドで連勝救済
+      if (ctx.shields > 0 && ctx.streak >= 3) {
+        ctx.shields -= 1;
+        usedShield = true;
+        showBanner('🛡️ シールド発動！連勝維持');
+        mpSfx('milestone');
+        unlockAchievement('survive_shield');
+      } else {
+        ctx.streak = 0;
+      }
+    }
+    // ジャックポット獲得（ロイヤル時、全額放出して初期値5000に戻す）
+    let jackpotPayout = 0;
+    if (pe.rank === 9 && result2 === 'win') {
+      jackpotPayout = save.minipoker.jackpot || 5000;
+      save.minipoker.jackpot = 5000;
+      payout += jackpotPayout;
+      unlockAchievement('jackpot_win');
+    }
+    ctx.reward = payout;
+    ctx.result = result2;
+    ctx.phase = 'result';
+    ctx.canDouble = (result2 === 'win' && payout > 0);
+    ctx.bonusMult = bonusMult;
+    // 報酬付与
+    save.coins += payout;
+    // 初日ボーナス消費（実プレイ時にはじめて日付を記録＝開いただけでは消えない）
+    if (!ctx.dailyBonusUsed) {
+      ctx.dailyBonusUsed = true;
+      save.minipoker.dailyBonusDate = mpTodayKey();
+    }
+    // コイン飛翔演出（勝利時）
+    if (result2 === 'win' && payout > 0) {
+      flyCoinsToStat(Math.min(20, Math.max(5, Math.floor(payout / 50))));
+    }
+    // 大役カットイン（フラッシュ以上）
+    if (pe.rank >= 5 && pe.rank < 9) {
+      showHandCutin(pe.name);
+    }
+    // セーブ蓄積
+    save.minipoker.totalGames = (save.minipoker.totalGames || 0) + 1;
+    save.minipoker.totalEarned = (save.minipoker.totalEarned || 0) + payout - ctx.bet;
+    if (result2 === 'win') save.minipoker.totalWins = (save.minipoker.totalWins || 0) + 1;
+    if (ctx.streak > (save.minipoker.bestStreak || 0)) save.minipoker.bestStreak = ctx.streak;
+    if (pe.rank === 9) save.minipoker.royalCount = (save.minipoker.royalCount || 0) + 1;
+    if (pe.rank === 8) save.minipoker.stfCount = (save.minipoker.stfCount || 0) + 1;
+    // セッション記録
+    ctx.sessionPlays += 1;
+    if (result2 === 'win') ctx.sessionWins += 1;
+    ctx.sessionEarned += (payout - ctx.bet);
+    ctx.handsAchieved[pe.rank] = (ctx.handsAchieved[pe.rank] || 0) + 1;
+    // 履歴に追記
+    ctx.history.unshift({ hand: pe.name, result: result2, reward: payout - ctx.bet });
+    if (ctx.history.length > 10) ctx.history.pop();
+    // 達成バッジ判定
+    if (result2 === 'win') unlockAchievement('first_win');
+    if (ctx.streak >= 3) unlockAchievement('streak_3');
+    if (ctx.streak >= 5) unlockAchievement('streak_5');
+    if (ctx.streak >= 10) unlockAchievement('streak_10');
+    if (pe.rank === 6) unlockAchievement('first_fh');
+    if (pe.rank === 7) unlockAchievement('first_four');
+    if (pe.rank === 8) unlockAchievement('first_stf');
+    if (pe.rank === 9) unlockAchievement('first_royal');
+    if (save.minipoker.totalGames >= 100) unlockAchievement('plays_100');
+    if (payout >= ctx.bet * 100) unlockAchievement('big_win_100x');
+    saveProgress();
+    renderPhase();
+    updateBoardStats();
+
+    // ── 演出（音＋画像姿勢＋エフェクト） ──
+    setCharPose('player', null);
+    setCharPose('cpu', null);
+    if (pe.rank === 9) {
+      // ロイヤル：超特別＋ジャックポット獲得
+      playFx('royal');
+      mpSfx('royal');
+      setCharPose('player', 'win-pose');
+      setCharPose('cpu', 'lose-pose');
+      flashCharLine('cpu', mpLine(ctx.opp.key, 'big'));
+      flashCharLine('player', `ロイヤル！＋💎JP ${jackpotPayout}🪙！`);
+      jumboCharCelebrate('player');
+      if (jackpotPayout > 0) {
+        setTimeout(() => showBanner(`💎 JACKPOT +${jackpotPayout} 🪙`), 600);
+        rainCoins(80, 5000);
+      }
+    } else if (result2 === 'win') {
+      setCharPose('player', 'win-pose');
+      setCharPose('cpu', 'lose-pose');
+      if (pe.rank >= 7) {
+        playFx('bigwin'); mpSfx('bigwin');
+        flashCharLine('cpu', mpLine(ctx.opp.key, 'big'));
+        jumboCharCelebrate('player');
+      } else if (pe.rank >= 4) {
+        playFx('bigwin'); mpSfx('bigwin');
+      } else {
+        playFx('win'); mpSfx('win');
+      }
+      flashCharLine('player', pe.rank >= 4 ? 'やったぁ！' : 'ふっふ〜ん♪');
+      // マイルストーン連勝演出
+      milestoneCheck(ctx.streak);
+      // フォーカード以上はガラポンチャンス発火
+      if (pe.rank >= 7 && Math.random() < 0.7) {
+        setTimeout(() => {
+          ctx.phase = 'garapon';
+          ctx.garaponBase = ctx.reward;
+          // 3つのスロットに [×1, ×2, ×5] をランダム配置
+          const choices = [1, 2, 5].sort(() => Math.random() - 0.5);
+          ctx.garaponChoices = choices;
+          renderPhase();
+          showBanner('🎰 ボーナスチャンス！');
+          mpSfx('garapon');
+        }, 1400);
+      }
+    } else if (result2 === 'tie') {
+      playFx('tie'); mpSfx('tie');
+    } else {
+      playFx('lose'); mpSfx('lose');
+      setCharPose('player', 'lose-pose');
+      setCharPose('cpu', 'win-pose');
+      flashCharLine('cpu', mpLine(ctx.opp.key, 'win'));
+      flashCharLine('player', 'うう……');
+    }
+  }
+
+  function milestoneCheck(streak) {
+    const milestones = [3, 5, 10, 15, 20];
+    if (!milestones.includes(streak)) return;
+    const banners = {
+      3:  '🔥 3連勝！次戦 ×1.5 ボーナス',
+      5:  '🔥🔥 5連勝！絶好調 ×2.0 ボーナス',
+      10: '💎 10連勝！伝説の波',
+      15: '👑 15連勝！神域到達',
+      20: '🌌 20連勝！レジェンド',
+    };
+    showBanner(banners[streak]);
+    mpSfx('milestone');
+    const sh = overlay.querySelector('.minipoker-modal');
+    sh.classList.add('mp-shake-light');
+    setTimeout(() => sh.classList.remove('mp-shake-light'), 400);
+    if (streak >= 10) rainCoins(20, 1800);
+  }
+
+  function setCharPose(side, poseClass) {
+    const sel = side === 'cpu' ? '.mp-cpu .mp-char' : '.mp-player .mp-char';
+    const el = overlay.querySelector(sel);
+    if (!el) return;
+    el.classList.remove('mp-char-win-pose', 'mp-char-lose-pose');
+    if (poseClass) el.classList.add(`mp-char-${poseClass}`);
+    if (poseClass === 'win-pose') {
+      // ハート粒子
+      for (let i = 0; i < 4; i++) {
+        const h = document.createElement('div');
+        h.className = 'mp-char-heart';
+        h.textContent = ['💖', '✨', '💕', '🌟'][i];
+        h.style.left = (40 + Math.random() * 20) + 'px';
+        h.style.animationDelay = (i * 0.15) + 's';
+        el.appendChild(h);
+        setTimeout(() => h.remove(), 2000);
+      }
+    }
+  }
+
+  function jumboCharCelebrate(side) {
+    // 勝利キャラが画面中央に jumbo で飛び出す（1.5s）
+    const src = side === 'player' ? 'assets/characters/mimi_mini.png' : `assets/characters/${ctx.opp.key}_mini.png`;
+    const fx = overlay.querySelector('[data-mpb="fx"]');
+    const jumbo = document.createElement('div');
+    jumbo.className = 'mp-jumbo-char';
+    jumbo.innerHTML = `<img src="${src}" onerror="this.onerror=null;this.src='${src.replace('_mini.png','_default.png')}';this.onerror=function(){this.style.display='none'}"/>`;
+    fx.appendChild(jumbo);
+    setTimeout(() => jumbo.remove(), 1800);
+  }
+
+  function doGarapon(idx) {
+    const choices = ctx.garaponChoices;
+    const pick = choices[idx];
+    const slots = overlay.querySelectorAll('[data-mp-garapon]');
+    slots.forEach((el, i) => {
+      const v = choices[i];
+      el.textContent = v === 1 ? '×1' : v === 2 ? '×2' : '×5';
+      el.classList.add(`mp-garapon-${v}`);
+      if (i === idx) el.classList.add('mp-garapon-picked');
+    });
+    setTimeout(() => {
+      const extra = ctx.garaponBase * (pick - 1);
+      if (extra > 0) {
+        save.coins += extra;
+        ctx.reward += extra;
+        save.minipoker.totalEarned = (save.minipoker.totalEarned || 0) + extra;
+        ctx.sessionEarned += extra;
+        saveProgress();
+        updateBoardStats();
+        playFx('bigwin'); mpSfx('bigwin');
+        showBanner(pick === 5 ? `🎯 大当たり！+${extra} 🪙` : `🎉 当たり！+${extra} 🪙`);
+        rainCoins(15, 1800);
+      } else {
+        showBanner('🪙 残念！そのまま');
+        mpSfx('tie');
+      }
+      ctx.phase = 'result';
+      renderPhase();
+    }, 1100);
+  }
+
+  function doDouble(idx) {
+    // 3枚のカードからランダムで「正解」枠を決め、選んだ位置と照合
+    const cards = [];
+    for (let i = 0; i < 3; i++) cards.push(ctx.deck.shift());
+    const picked = cards[idx];
+    // 赤/黒のターゲット：プレイヤーには事前に「赤当てる？黒当てる？」聞かない簡易版
+    // → カードの色をランダムに決め、合えば勝ち
+    // 公平性：赤と黒は各26枚なので5割（条件付きでもほぼ50%）
+    const correct = (picked.suit === '♥' || picked.suit === '♦');
+    // 全カードを公開（演出）
+    const slots = overlay.querySelectorAll('[data-mp-double]');
+    slots.forEach((el, i) => {
+      const c = cards[i];
+      const red = (c.suit === '♥' || c.suit === '♦');
+      el.classList.remove('mp-card-back');
+      el.classList.add('mp-card-flipped');
+      el.classList.add(red ? 'mp-red' : 'mp-black');
+      el.innerHTML = `
+        <div class="mp-card-corner mp-card-tl">${c.label}<br>${c.suit}</div>
+        <div class="mp-card-suit-big">${c.suit}</div>
+        <div class="mp-card-corner mp-card-br">${c.label}<br>${c.suit}</div>
+      `;
+      if (i === idx) el.classList.add('mp-card-picked');
+    });
+    setTimeout(() => {
+      if (correct) {
+        ctx.doubleStack += 1;
+        const newReward = ctx.reward * 2;
+        save.coins += (newReward - ctx.reward); // 差分を追加
+        ctx.reward = newReward;
+        save.minipoker.totalEarned = (save.minipoker.totalEarned || 0) + (newReward - ctx.reward / 2);
+        saveProgress();
+        updateBoardStats();
+        playFx('double-win');
+        showBanner(`🎯 ダブルアップ成功！ ×${Math.pow(2, ctx.doubleStack)} → ${ctx.reward} 🪙`);
+        ctx.phase = 'result';
+        ctx.canDouble = ctx.doubleStack < 3;
+        renderPhase();
+      } else {
+        // 失敗：reward を没収
+        save.coins -= ctx.reward;
+        if (save.coins < 0) save.coins = 0;
+        save.minipoker.totalEarned = (save.minipoker.totalEarned || 0) - ctx.reward;
+        saveProgress();
+        updateBoardStats();
+        ctx.reward = 0;
+        ctx.result = 'lose';
+        ctx.streak = 0;
+        playFx('double-lose');
+        showBanner('💧 ダブルアップ失敗… 没収');
+        ctx.phase = 'result';
+        ctx.canDouble = false;
+        renderPhase();
+      }
+    }, 900);
+  }
+
+  function startNext() {
+    // 次戦：bossNight を再抽選（永続化バグ修正）
+    const velvetAvail = available.find(o => o.key === 'velvet');
+    ctx.bossNight = !!velvetAvail && Math.random() < 0.08;
+    ctx.opp = ctx.bossNight ? velvetAvail
+                            : available[Math.floor(Math.random() * available.length)];
+    ctx.phase = 'wager';
+    ctx.player = [];
+    ctx.cpu = [];
+    ctx.held = [false, false, false, false, false];
+    ctx.doubleStack = 0;
+    ctx.doubleShowCard = null;
+    renderPhase();
+    if (ctx.bossNight) {
+      setTimeout(() => showBanner('🌹 今夜の特別卓！ 配当 ×3 ／ ベットも ×3'), 200);
+    }
+  }
+
+  // ── 補助：ステータス更新 ──
+  function updateBoardStats() {
+    const c = overlay.querySelector('[data-mpb="coins"]');
+    const s = overlay.querySelector('[data-mpb="streak"]');
+    const sh = overlay.querySelector('[data-mpb="shields"]');
+    const jp = overlay.querySelector('[data-mpb="jackpot"]');
+    const sess = overlay.querySelector('[data-mpb="sessionStat"]');
+    if (c) animateNumber(c, save.coins);
+    if (s) s.textContent = ctx.streak;
+    if (sh) sh.textContent = ctx.shields > 0 ? ' ' + '🛡️'.repeat(ctx.shields) : '';
+    if (jp) animateNumber(jp, save.minipoker.jackpot || 5000);
+    if (sess) {
+      const delta = save.coins - ctx.sessionStartCoins;
+      sess.textContent = `💹 ${delta >= 0 ? '+' : ''}${delta}`;
+      sess.classList.toggle('mp-stat-plus', delta > 0);
+      sess.classList.toggle('mp-stat-minus', delta < 0);
+    }
+  }
+
+  // ── セッションサマリー ──
+  function showSessionSummary() {
+    const delta = save.coins - ctx.sessionStartCoins;
+    const winRate = ctx.sessionPlays > 0 ? Math.round((ctx.sessionWins / ctx.sessionPlays) * 100) : 0;
+    const bestHand = Object.keys(ctx.handsAchieved).map(k => +k).reduce((a, b) => a > b ? a : b, 0);
+    const bestHandName = MP_PAYTABLE[bestHand]?.name || 'ハイカード';
+    // 明日のラッキー役予告
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    const tomorrowSeed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    const tomorrowRank = 1 + (tomorrowSeed % 7);
+    const tomorrowName = MP_PAYTABLE[tomorrowRank].name;
+    const dialog = document.createElement('div');
+    dialog.className = 'mp-summary-dialog';
+    dialog.innerHTML = `
+      <div class="mp-summary-card">
+        <div class="mp-summary-title">📊 今夜のセッション</div>
+        <div class="mp-summary-stats">
+          <div class="mp-sum-row"><span>プレイ回数</span><b>${ctx.sessionPlays}</b></div>
+          <div class="mp-sum-row"><span>勝率</span><b>${winRate}%</b></div>
+          <div class="mp-sum-row"><span>最高役</span><b>${bestHandName}</b></div>
+          <div class="mp-sum-row mp-sum-${delta >= 0 ? 'plus' : 'minus'}"><span>収支</span><b>${delta >= 0 ? '+' : ''}${delta} 🪙</b></div>
+        </div>
+        <div class="mp-summary-tomorrow">
+          🌟 明日のラッキー役予告：<b>${tomorrowName}</b>
+        </div>
+        <div class="mp-summary-actions">
+          <button class="mp-btn mp-btn-primary" data-mp-sum="continue">▶ 続ける</button>
+          <button class="mp-btn mp-btn-ghost" data-mp-sum="quit">またね</button>
+        </div>
+      </div>
+    `;
+    overlay.appendChild(dialog);
+    dialog.querySelector('[data-mp-sum="continue"]').addEventListener('click', () => dialog.remove());
+    dialog.querySelector('[data-mp-sum="quit"]').addEventListener('click', () => overlay.remove());
+  }
+
+  // ── チュートリアル（初回のみ）──
+  function showTutorialIfNeeded() {
+    if (save.minipoker.tutorialDone) return;
+    const tut = document.createElement('div');
+    tut.className = 'mp-tutorial';
+    tut.innerHTML = `
+      <div class="mp-tut-card">
+        <div class="mp-tut-title">🎴 ファイブポーカー 入門</div>
+        <ol class="mp-tut-steps">
+          <li>① <b>ベットを選ぶ</b>（チップ or ALL IN）</li>
+          <li>② DEAL → カードを <b>残すかタップで指定</b></li>
+          <li>③ 引き直して <b>役で配当ゲット</b>！</li>
+        </ol>
+        <div class="mp-tut-hint">🌟 今日のラッキー役は ×2 倍、勝てばダブルアップも狙えます。</div>
+        <button class="mp-btn mp-btn-primary" data-mp-tut="ok">はじめる！</button>
+      </div>
+    `;
+    overlay.appendChild(tut);
+    tut.querySelector('[data-mp-tut]').addEventListener('click', () => {
+      tut.remove();
+      save.minipoker.tutorialDone = true;
+      saveProgress();
+    });
+  }
+
+  function animateNumber(el, to) {
+    const from = +el.textContent || 0;
+    const dur = 600;
+    const start = performance.now();
+    const tick = (t) => {
+      const k = Math.min(1, (t - start) / dur);
+      const v = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3)));
+      el.textContent = v;
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  // ── キャラ吹き出し ──
+  function flashCharLine(side, text) {
+    const target = overlay.querySelector(side === 'cpu' ? '.mp-cpu .mp-char' : '.mp-player .mp-char');
+    if (!target || !text) return;
+    // 既存の吹き出しを片付け
+    target.querySelectorAll('.mp-bubble').forEach(b => b.remove());
+    const bubble = document.createElement('div');
+    bubble.className = `mp-bubble mp-bubble-${side}`;
+    bubble.textContent = text;
+    target.appendChild(bubble);
+    setTimeout(() => bubble.remove(), 2800);
+  }
+
+  // ── 中央バナー ──
+  function showBanner(text) {
+    const fx = overlay.querySelector('[data-mpb="fx"]');
+    if (!fx) return;
+    const b = document.createElement('div');
+    b.className = 'mp-banner';
+    b.textContent = text;
+    fx.appendChild(b);
+    setTimeout(() => b.remove(), 2400);
+  }
+
+  // ── エフェクト ──
+  function playFx(kind) {
+    const fx = overlay.querySelector('[data-mpb="fx"]');
+    if (!fx) return;
+    if (kind === 'royal') {
+      // ロイヤル：金フラッシュ＋コイン雨＋特大ロゴ
+      const flash = document.createElement('div');
+      flash.className = 'mp-flash-royal';
+      fx.appendChild(flash);
+      setTimeout(() => flash.remove(), 1800);
+      const logo = document.createElement('div');
+      logo.className = 'mp-royal-logo';
+      logo.innerHTML = '<div>ROYAL</div><div>FLUSH!!</div>';
+      fx.appendChild(logo);
+      setTimeout(() => logo.remove(), 4000);
+      rainCoins(60, 4000);
+    } else if (kind === 'bigwin') {
+      const flash = document.createElement('div');
+      flash.className = 'mp-flash-big';
+      fx.appendChild(flash);
+      setTimeout(() => flash.remove(), 900);
+      rainCoins(24, 1800);
+    } else if (kind === 'win') {
+      rainCoins(8, 1200);
+    } else if (kind === 'lose') {
+      const sh = overlay.querySelector('.minipoker-modal');
+      sh.classList.add('mp-shake-light');
+      setTimeout(() => sh.classList.remove('mp-shake-light'), 400);
+    } else if (kind === 'reach') {
+      const flash = document.createElement('div');
+      flash.className = 'mp-flash-reach';
+      fx.appendChild(flash);
+      setTimeout(() => flash.remove(), 700);
+    } else if (kind === 'double-win') {
+      rainCoins(20, 1600);
+    } else if (kind === 'double-lose') {
+      const sh = overlay.querySelector('.minipoker-modal');
+      sh.classList.add('mp-shake-light');
+      setTimeout(() => sh.classList.remove('mp-shake-light'), 400);
+    }
+  }
+
+  // コインがプレイエリア中央から所持コイン表示へ飛んでいく
+  function flyCoinsToStat(count) {
+    const fx = overlay.querySelector('[data-mpb="fx"]');
+    const target = overlay.querySelector('[data-mpb="coins"]');
+    if (!target || !fx) return;
+    const tr = target.getBoundingClientRect();
+    const sr = fx.getBoundingClientRect();
+    const dx = tr.left + tr.width / 2 - sr.left;
+    const dy = tr.top  + tr.height / 2 - sr.top;
+    for (let i = 0; i < count; i++) {
+      const c = document.createElement('div');
+      c.className = 'mp-coin-fly';
+      c.textContent = '🪙';
+      c.style.left = (50 + (Math.random() - 0.5) * 20) + '%';
+      c.style.top = (50 + (Math.random() - 0.5) * 10) + '%';
+      c.style.setProperty('--dx', dx + 'px');
+      c.style.setProperty('--dy', dy + 'px');
+      c.style.animationDelay = (i * 30) + 'ms';
+      fx.appendChild(c);
+      setTimeout(() => c.remove(), 1100 + i * 30);
+    }
+  }
+
+  // 大役カットイン
+  function showHandCutin(name) {
+    const fx = overlay.querySelector('[data-mpb="fx"]');
+    if (!fx) return;
+    const cut = document.createElement('div');
+    cut.className = 'mp-hand-cutin';
+    cut.textContent = name + '！';
+    fx.appendChild(cut);
+    setTimeout(() => cut.remove(), 1400);
+  }
+
+  // タップ時の可愛い粒子
+  function spawnTapParticles(el) {
+    const rect = el.getBoundingClientRect();
+    const fx = overlay.querySelector('[data-mpb="fx"]');
+    if (!fx) return;
+    const fxRect = fx.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2 - fxRect.left;
+    const cy = rect.top  + rect.height / 2 - fxRect.top;
+    const emojis = ['💖', '✨', '⭐', '💕', 'ぱにゅ'];
+    for (let i = 0; i < 3; i++) {
+      const p = document.createElement('div');
+      p.className = 'mp-tap-particle';
+      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      p.style.left = cx + 'px';
+      p.style.top  = cy + 'px';
+      const ang = (Math.PI * 2 * i / 3) + Math.random() * 0.5;
+      const dist = 40 + Math.random() * 20;
+      p.style.setProperty('--ddx', Math.cos(ang) * dist + 'px');
+      p.style.setProperty('--ddy', Math.sin(ang) * dist + 'px');
+      fx.appendChild(p);
+      setTimeout(() => p.remove(), 900);
+    }
+  }
+
+  // ミミのアイドルジェスチャー（wager 中ランダム）
+  // ※ var 必須：renderPhase が宣言行より先に実行されるため let だと TDZ エラー
+  var _mimiIdleTimer = null;
+  function startMimiIdleLoop() {
+    stopMimiIdleLoop();
+    const tick = () => {
+      if (ctx.phase !== 'wager') return;
+      const img = overlay.querySelector('.mp-player .mp-char-img');
+      if (img) {
+        const gestures = ['mp-idle-wink', 'mp-idle-tilt', 'mp-idle-hop', 'mp-idle-punyu', 'mp-idle-stretch'];
+        const g = gestures[Math.floor(Math.random() * gestures.length)];
+        img.classList.add(g);
+        setTimeout(() => img.classList.remove(g), 1200);
+      }
+      _mimiIdleTimer = setTimeout(tick, 3500 + Math.random() * 4000);
+    };
+    _mimiIdleTimer = setTimeout(tick, 2000);
+  }
+  function stopMimiIdleLoop() {
+    if (_mimiIdleTimer) { clearTimeout(_mimiIdleTimer); _mimiIdleTimer = null; }
+  }
+
+  function rainCoins(count, duration) {
+    const fx = overlay.querySelector('[data-mpb="fx"]');
+    for (let i = 0; i < count; i++) {
+      const c = document.createElement('div');
+      c.className = 'mp-coin-drop';
+      c.textContent = '🪙';
+      c.style.left = (Math.random() * 100) + '%';
+      c.style.animationDuration = (1.4 + Math.random() * 1.6) + 's';
+      c.style.animationDelay = (Math.random() * 0.8) + 's';
+      c.style.fontSize = (18 + Math.random() * 18) + 'px';
+      fx.appendChild(c);
+      setTimeout(() => c.remove(), duration + 800);
+    }
+  }
+
+  // ── CPU AI（保持選択） ──
+  function cpuPickHolds(cards) {
+    const ev = evaluateHand(cards);
+    const hold = [false, false, false, false, false];
+    if (ev.rank >= 4) { return [true, true, true, true, true]; } // ストレート以上は全キープ
+    const rc = {};
+    cards.forEach(c => rc[c.rank] = (rc[c.rank] || 0) + 1);
+    // フラッシュドロー検出（同スート4枚）
+    const sc = {};
+    cards.forEach(c => sc[c.suit] = (sc[c.suit] || 0) + 1);
+    const flushSuit = Object.entries(sc).find(([s, n]) => n === 4)?.[0];
+    if (flushSuit) {
+      cards.forEach((c, i) => { hold[i] = (c.suit === flushSuit); });
+      return hold;
+    }
+    // ペア以上は役構成だけ保持
+    if (ev.rank >= 1) {
+      cards.forEach((c, i) => { if (rc[c.rank] >= 2) hold[i] = true; });
+      return hold;
+    }
+    // ハイカード：A/K のみ
+    cards.forEach((c, i) => { if (c.rank >= 13) hold[i] = true; });
+    return hold;
+  }
 }
 
 function showMemoryViewer(memoryId) {
@@ -6057,7 +8724,7 @@ function showCollectionModal() {
     { id: 'reader',      name: 'ボード読み', desc: 'セリナ撃破', achieved: save.clearedStages.includes('selina') },
     { id: 'math',        name: '算数の徒', desc: 'グラーノ撃破', achieved: save.clearedStages.includes('grano') },
     { id: 'champion',    name: '圧倒の継承者', desc: 'ヴェルベット撃破', achieved: save.clearedStages.includes('velvet') },
-    { id: 'ending',      name: 'エンディング', desc: '物語を見届けた', achieved: !!save.endingUnlocked },
+    { id: 'ending',      name: 'エンディング', desc: '物語を見届けた', achieved: isEndingUnlocked() },
     { id: 'backdoor',    name: '裏モード解放', desc: '7タップの秘密', achieved: !!save.backdoorUnlocked },
   ];
 
@@ -6147,7 +8814,7 @@ function showCollectionModal() {
             : `<div class="coll-locked-hint">🔒 ヴェルベット撃破で全衣装＆鑑賞モードが解放されます</div>`}
         </section>
         ${(() => {
-          const memoryIds = ['gallery_rico','gallery_opponents','gallery_mimi','omake_drama_1','omake_drama_2','omake_voice_pack','omake_credit','memory_ending','memory_ending_theme'];
+          const memoryIds = ['gallery_rico','gallery_opponents','gallery_mimi','omake_drama_1','omake_drama_2','omake_voice_pack','omake_credit','memory_ending','memory_ending_theme','memory_minipoker'];
           const ownedMemories = memoryIds.filter(id => ownedItems.includes(id));
           if (ownedMemories.length === 0) return '';
           const cards = ownedMemories.map(id => {
@@ -6155,6 +8822,7 @@ function showCollectionModal() {
             if (!meta) return '';
             const action = (id === 'memory_ending') ? 'play-ending'
                          : (id === 'memory_ending_theme') ? 'play-ending-theme'
+                         : (id === 'memory_minipoker') ? 'play-minipoker'
                          : 'view-memory';
             return `<button class="memory-card" data-action="${action}" data-memory-id="${id}">
               <div class="memory-card-title">${meta.name}</div>
@@ -6515,7 +9183,8 @@ function skipStageWithCoins(opponentId) {
   if (save.coins < cost) { alert(`コイン不足：${cost}コイン必要`); return; }
   if (!confirm(`${cost}コインを払って ${opp.name} 戦をスキップしますか？\n（クリア扱いだが報酬・ランクは無し。次のステージが解放）`)) return;
   save.coins -= cost;
-  if (!save.clearedStages.includes(opponentId)) save.clearedStages.push(opponentId);
+  // markStageCleared：clearedStages 追加＋velvet なら endingUnlocked も同時に立てる（派生フラグの一貫性）
+  markStageCleared(opponentId);
   // 初回クリア扱いするが報酬は払わない（firstClearRewardClaimedにフラグ立てる）
   if (!save.firstClearRewardClaimed.includes(opponentId)) save.firstClearRewardClaimed.push(opponentId);
   // ノート自動解放
@@ -6608,6 +9277,7 @@ function startBattleInternal(opponentId) {
   state.isBoss = seriousRico ? true : !!opp.isBoss; // 心理バトル全ストリート発動
   state.seriousRicoMode = seriousRico;
   state.screen = 'battle';
+  if (typeof startBattleBgmSkin === 'function') startBattleBgmSkin();
   state.handPhase = 'idle';
   state.panyuMax = save.panyuGaugeMax || 100;
   state.panyuSenseFreeUsed = save.panyuSenseFreeUsed;
@@ -6644,7 +9314,7 @@ function startBattleInternal(opponentId) {
         '✅ <b>コール</b>＝相手と同額を払って勝負を続ける<br>' +
         '👁 <b>チェック</b>＝相手が何も賭けてない時、自分も賭けず次の場札を待つ（無料で進める）<br>' +
         '💵 <b>ベット/レイズ</b>＝自分から仕掛ける。1/2〜ポット、強気の度合いで選ぶ<br>' +
-        '🔥 <b>オールイン</b>＝持ちチップ全部。逆転狙いの最終手段<br><br>' +
+        '🔥 <b>オールイン</b>＝持ちチップ全部。決め手・最大の圧をかける時<br><br>' +
         '<u>各ボタンにマウスを乗せると詳しい説明が出るよ。</u>')
     ), 600);
   } else {
@@ -6655,12 +9325,112 @@ function startBattleInternal(opponentId) {
 }
 
 //=============================================================
+// P2: 体験ハンド（初回導線ファネル）
+// 固定シナリオ：ミミ A♠A♥、フロップ A♦7♣2♠（セット確定）で必ず勝つ。
+// 相手は必ずコール、選択肢は大きく行く2択のみ。戦績・実績にはカウントしない。
+//=============================================================
+function startIntroHand() {
+  state = defaultState();
+  const opp = OPPONENTS.polka;
+  state.opponentId = opp.id;
+  state.opponentName = opp.name;
+  state.opponentProfile = opp.profile;
+  state.opponentImgKey = opp.imgKey;
+  state.maxHands = 1;
+  state.playerChips = 500;
+  state.opponentChips = 500;
+  state.tutorialMode = false;
+  state.fullHand = false;
+  state.isBoss = false;
+  state.introHandMode = true; // 体験ハンド：戦績非カウント・行動制限・相手は必ずコール
+  state.screen = 'battle';
+  state.handPhase = 'idle';
+  state.handNo = 0;
+  state.panyuMax = save.panyuGaugeMax || 100;
+  state.mimiThought = '「よし、まずは1ハンドやってみよう」';
+  state.ricoAdvice = '「気楽に見ててね〜。まずは私が手ほどきするよ」';
+  render();
+  setTimeout(dealIntroHand, 900);
+}
+
+function dealIntroHand() {
+  if (state.screen !== 'battle' || !state.introHandMode) return;
+  state.handNo = 1;
+  const ante = 50;
+  state.playerChips -= ante; state.opponentChips -= ante;
+  state.pot = ante * 2;
+  resetPotChips(); pushPotChips(ante * 2);
+  state.currentBetPlayer = 0;
+  state.currentBetOpponent = 0;
+  // 固定シナリオ：使用済みカードを除いた残りデッキ（オポーネントの2枚・演出上の重複防止のみ）
+  const used = new Set(['♠-14', '♥-14', '♦-14', '♣-7', '♠-2']);
+  state.deck = newDeck().filter(c => !used.has(`${c.suit}-${c.rank}`));
+  state.playerHand = [{ suit: '♠', rank: 14, label: 'A' }, { suit: '♥', rank: 14, label: 'A' }];
+  state.opponentHand = [state.deck.pop(), state.deck.pop()];
+  state.community = [{ suit: '♦', rank: 14, label: 'A' }, { suit: '♣', rank: 7, label: '7' }, { suit: '♠', rank: 2, label: '2' }];
+  state.equityHistory = [];
+  state.psychResolved = true;       // 体験ハンドでは心理バトルを出さない
+  state.logicResolvedStreet = true; // 論理バトルも封印
+  state.psychPending = false;
+  state.handPhase = 'flop';
+  state.isPlayerTurn = true;
+  state.opponentSpeech = '';
+  state.mimiThought = '「……このカード、セット完成してる……！」';
+  state.ricoAdvice = '「すごい手が来てる。大きく行こ！」';
+  log('actions', { phase: 'intro_flop_start' });
+  render();
+}
+
+// 体験ハンド専用のショーダウン：ランダム要素に左右されず必ずミミの勝利にする
+function introHandShowdown() {
+  const playerAll = [...state.playerHand, ...state.community];
+  const pEv = evaluateHand(playerAll);
+  state.opponentSpeech = '……強すぎる。降参だよ';
+  state.playerChips += state.pot;
+  state.mimiThought = `「やった！${pEv.name}で勝った！」`;
+  state.pot = 0; resetPotChips();
+  render();
+  setTimeout(showIntroHandWinScreen, 1800);
+}
+
+function showIntroHandWinScreen() {
+  save.coins = (save.coins || 0) + 200;
+  save.introPlayed = true;
+  saveProgress();
+  const overlay = document.createElement('div');
+  overlay.className = 'intro-win-overlay';
+  overlay.innerHTML = `
+    <div class="intro-win-modal">
+      <div class="intro-win-badge">🏆 勝利！</div>
+      <div class="intro-win-title">大きく勝てた！</div>
+      <div class="intro-win-coins">💰 +200 コイン獲得</div>
+      <div class="intro-win-question">ポーカー、もっと知りたい？</div>
+      <div class="intro-win-buttons">
+        <button class="btn btn-primary" data-action="intro-to-lecture">📚 リコの講義へ</button>
+        <button class="btn btn-secondary" data-action="intro-to-lobby">🎮 このままロビーへ</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+  overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+}
+
+// 体験ハンド中は「中断」等を隠して没入を優先
+function applyIntroHandUI() {
+  const pauseBtn = document.querySelector('.battle-screen .top-hud [data-action="back-lobby"]');
+  if (pauseBtn) pauseBtn.style.display = 'none';
+  const backdoorBtn = document.querySelector('.backdoor-toggle');
+  if (backdoorBtn) backdoorBtn.style.display = 'none';
+}
+
+//=============================================================
 // 11. ハンド進行
 //=============================================================
 function startHand() {
   if (state.playerChips <= 0 || state.opponentChips <= 0) { return endBattle(); }
   state.handNo++;
   if (state.handNo > state.maxHands) { return endBattle(); }
+  mpSfx('deal'); // 配布音（equippedSePack設定を反映）
 
   // ブラインド簡略化（v4: 各50チップアンティ）
   const ante = Math.min(50, state.playerChips, state.opponentChips);
@@ -6780,6 +9550,7 @@ function mimiAssess(allCards, community, opponentBet, pot, callNeed) {
 // 12. プレイヤーアクション
 //=============================================================
 function playerFold() {
+  mpSfx('fold');
   state.opponentSpeech = opponentReactToPlayerFold();
   log('actions', { actor: 'player', type: 'fold' });
   state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'fold', pot: state.pot, by: '降伏' });
@@ -6789,6 +9560,7 @@ function playerFold() {
   setTimeout(endHand, 1000);
 }
 function playerCall() {
+  mpSfx('call');
   const need = state.currentBetOpponent - state.currentBetPlayer;
   const pay = Math.max(0, Math.min(need, state.playerChips));
   state.playerChips = Math.max(0, state.playerChips - pay);
@@ -6803,6 +9575,7 @@ function playerCall() {
 function playerCheckCall() {
   const need = state.currentBetOpponent - state.currentBetPlayer;
   if (need > 0) return playerCall();
+  mpSfx('check');
   // 両者チェック → 次ストリートへ
   log('actions', { actor: 'player', type: 'check' });
   state.isPlayerTurn = false;
@@ -6811,6 +9584,7 @@ function playerCheckCall() {
   setTimeout(advanceAfterCall, 700);
 }
 function playerRaise(bb) {
+  mpSfx('battle-bet');
   const amount = Math.max(0, Math.min(50 * bb, state.playerChips));
   state.playerChips = Math.max(0, state.playerChips - amount);
   state.currentBetPlayer += amount;
@@ -6822,6 +9596,7 @@ function playerRaise(bb) {
   setTimeout(opponentTurn, 700);
 }
 function playerBet(size) {
+  mpSfx('battle-bet');
   const amount = betSizeToChips(size, state.pot, state.playerChips);
   state.playerChips = Math.max(0, state.playerChips - amount);
   state.currentBetPlayer += amount;
@@ -6833,6 +9608,7 @@ function playerBet(size) {
   setTimeout(opponentTurn, 700);
 }
 function playerAllIn() {
+  mpSfx('battle-allin');
   const amount = state.playerChips;
   state.playerChips = 0;
   state.currentBetPlayer += amount;
@@ -6918,6 +9694,20 @@ function opponentTurn() {
   const hs = state.community.length >= 3 ? handStrength01(allCards) : opponentPreflopStrength(state.opponentHand);
   const boardDanger = evaluateBoardDanger(state.community);
   const ctx = { handStrength: hs, toCall: need, boardDanger, canCheck: need === 0 };
+
+  // P2: 体験ハンドでは相手は必ずチェック/コールで応じ、そのまま次ストリートへ自動進行
+  // （体験ハンドはフロップの1択のみ・以降は自動でミミの勝利へ。フォールドもレイズもしない＝確実にミミが勝つ）
+  if (state.introHandMode) {
+    state.lastOpponentIntent = 'check_call';
+    const pay = Math.max(0, Math.min(need, state.opponentChips));
+    state.opponentChips = Math.max(0, state.opponentChips - pay);
+    state.currentBetOpponent += pay;
+    state.pot += pay; pushPotChips(pay);
+    state.opponentSpeech = pay > 0 ? 'う……いいよ、コール' : 'チェックで';
+    render();
+    setTimeout(advanceAfterCall, 900);
+    return;
+  }
 
   // v4: 第1ハンドのフロップ後、ポルカは必ず2/3以上ベット → 心理バトル強制発生
   // チュートリアル時もリコ先輩は同様にブラフベットして練習させる
@@ -7237,6 +10027,7 @@ function triggerPsychBattle(qid) {
   const shuffled = shuffle(q.choices);
   const labels = ['A','B','C','D','E'];
 
+  setMimiExpression('think'); // P1-3: 心理バトル開始で真剣な表情に
   // モーダル描画
   const tpl = document.getElementById('tpl-psych-modal');
   const modal = tpl.content.cloneNode(true);
@@ -7253,18 +10044,29 @@ function triggerPsychBattle(qid) {
       <div class="portrait-name">${oppName}</div>
     `;
   }
-  // モーダルタイプによってヘッダー差し替え（心理 / 論理）
+  // モーダルタイプによってヘッダー差し替え（講義 / 心理 / 論理）
   const isLogic = q.type === 'logic';
+  const isLecture = !!state.lectureMode;
   const titleEl = root.querySelector('.psych-title');
   if (titleEl) {
-    titleEl.innerHTML = isLogic
-      ? '🧮 論理バトル<small class="battle-subtitle">— ポーカーの数学を覚える —</small>'
-      : '🧠 心理バトル<small class="battle-subtitle">— 相手の本心を読む —</small>';
-    titleEl.classList.toggle('logic-mode', isLogic);
+    if (isLecture) {
+      // 講義モード：内容は講義なのに「心理バトル」と出る不一致を解消
+      const chapterSub = q.chapterTitle || '— ポーカーの基礎を学ぶ —';
+      titleEl.innerHTML = `📚 リコ先輩の講義<small class="battle-subtitle">${chapterSub}</small>`;
+    } else {
+      titleEl.innerHTML = isLogic
+        ? '🧮 論理バトル<small class="battle-subtitle">— ポーカーの数学を覚える —</small>'
+        : '🧠 心理バトル<small class="battle-subtitle">— 相手の本心を読む —</small>';
+    }
+    titleEl.classList.toggle('logic-mode', isLogic && !isLecture);
+    titleEl.classList.toggle('lecture-mode', isLecture);
   }
   // モーダル全体にもクラス
   const modalEl = root.querySelector('.psych-modal');
-  if (modalEl) modalEl.classList.toggle('logic-mode', isLogic);
+  if (modalEl) {
+    modalEl.classList.toggle('logic-mode', isLogic && !isLecture);
+    modalEl.classList.toggle('lecture-mode', isLecture);
+  }
   // ルール文を上部に挿入
   if (isLogic && q.rule) {
     let ruleBox = root.querySelector('.logic-rule-box');
@@ -7802,6 +10604,15 @@ function resolvePsych(qid, choice, btn) {
     }
     state.mimiThought = `「読めた……！${eff.hint}」`;
     state.ricoAdvice = `「${eff.rico}」`;
+    // note_range_lv2/3：心理バトル成功時に相手レンジのヒントを追加表示
+    const rangeLv = save.panyuSkills?.rangeLevel || 1;
+    if (rangeLv >= 2 && state.opponentProfile) {
+      const bluffPct = Math.round((state.opponentProfile.bluffTendency || 0) * 100);
+      const rangeText = rangeLv >= 3
+        ? `📓 相手レンジ：ブラフ確率 約${bluffPct}%`
+        : `📓 相手レンジ：${bluffPct >= 55 ? 'ブラフ寄り' : bluffPct <= 30 ? 'バリュー寄り' : '五分五分'}`;
+      state.ricoAdvice += `<br><small class="range-hint">${rangeText}</small>`;
+    }
     log('psych', { qid, choice: choice.id, success: true });
     // 証拠突きつけ成功でブラフブレイク確定
     if (eff.bluffBreak) triggerBluffBreak();
@@ -7840,11 +10651,27 @@ function resolvePsych(qid, choice, btn) {
       state.psychRoot.remove();
       state.psychRoot = null;
     }
-    // 講義モード：正解数カウント＋次の問題へ
+    setMimiExpression('default'); // P1-3: 心理バトル解決後は表情を戻す
+    // 講義モード：正解数カウント＋コンボ＆コイン報酬＋次の問題へ（ゲーム化）
     if (state.lectureMode) {
-      if (isCorrect) state.lectureCorrect++;
+      let rewardMsg = '';
+      if (isCorrect) {
+        state.lectureCorrect++;
+        state.lectureCombo = (state.lectureCombo || 0) + 1;
+        // 正解 +5🪙、3コンボ以降はさらに +5（🔥ボーナス）
+        const gain = 5 + (state.lectureCombo >= 3 ? 5 : 0);
+        save.coins += gain;
+        state.lectureEarned = (state.lectureEarned || 0) + gain;
+        saveProgress();
+        rewardMsg = state.lectureCombo >= 3
+          ? `　🔥${state.lectureCombo}コンボ！ +${gain}🪙`
+          : `　+${gain}🪙`;
+      } else {
+        state.lectureCombo = 0;
+      }
       state.lectureIdx++;
-      const resultPrefix = isCorrect ? '✓ 正解！　' : '✗ 残念……　';
+      updateLectureHud();
+      const resultPrefix = isCorrect ? '✓ 正解！' + rewardMsg + '　' : '✗ 残念……　';
       showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, () => {
         triggerLectureQuestion();
       });
@@ -7920,6 +10747,7 @@ function skipPsychBattle() {
     state.psychRoot.remove();
     state.psychRoot = null;
   }
+  setMimiExpression('default'); // P1-3: スキップ時も表情を戻す
   state.psychPending = false;
   state.psychResolved = true; // 同ハンド再発動防止
   state.logicResolvedStreet = true;
@@ -8025,6 +10853,7 @@ function triggerBluffBreak() {
 // 16. ショーダウン → ハンド終了
 //=============================================================
 function showdown() {
+  if (state.introHandMode) return introHandShowdown();
   const playerAll = [...state.playerHand, ...state.community];
   const oppAll = [...state.opponentHand, ...state.community];
   const pEv = evaluateHand(playerAll);
@@ -8071,6 +10900,11 @@ function endHand() {
   if (last) {
     if (last.winner === 'player') state.consecutiveWins = (state.consecutiveWins || 0) + 1;
     else if (last.winner === 'opponent') state.consecutiveWins = 0;
+    // P1-3: ハンドの勝敗でミミの表情を切り替え
+    setMimiExpression(last.winner === 'player' ? 'win' : last.winner === 'opponent' ? 'sad' : 'default');
+    // ハンド勝敗SFX
+    if (last.winner === 'player') mpSfx('hand-win');
+    else if (last.winner === 'opponent') mpSfx('hand-lose');
   }
   // 結果バナー表示
   showHandResultBanner();
@@ -8374,6 +11208,7 @@ function continueButtonLabel() {
 }
 
 function continueAfterHand() {
+  setMimiExpression('default'); // P1-3: 次のハンドへ進む際は表情をリセット
   if (state.playerChips <= 0 || state.opponentChips <= 0 || state.handNo >= state.maxHands) {
     return endBattle();
   }
@@ -8381,26 +11216,21 @@ function continueAfterHand() {
   const domMode = isDominanceMode();
   if (domMode && !state.tutorialMode) {
     state.dominanceUsed = true;
-    state.dominanceType = domMode;  // 'complete' or 'comeback'
+    state.dominanceType = domMode;  // 'complete' のみ（comeback は廃止）
     return startDominanceMode();
   }
   state.mimiThought = '「次のハンドだ。集中していこう」';
   render();
 }
 
-// 圧倒モード判定：プレイヤーチップが初期の1.7倍以上 かつ 相手が初期の半分以下
-// 圧倒モード発動判定：
-// - 完勝モード：プレイヤー優勢時に5連勝
-// - 逆転モード：プレイヤー劣勢時に2連勝
+// 圧倒モード判定：プレイヤー優勢 + 連勝5以上で発動（1戦1回まで）
+// ポーカーは累積差で勝つゲームのため、いわゆる「大逆転」は採用しない
 function isDominanceMode() {
-  if (state.dominanceUsed) return false; // 1戦1回まで
+  if (state.dominanceUsed) return false;
   const initial = OPPONENTS[state.opponentId]?.chips || 1000;
   const wins = state.consecutiveWins || 0;
   const playerAhead = state.playerChips > initial;
-  // 完勝モード：優勢 + 5連勝
   if (playerAhead && wins >= 5) return 'complete';
-  // 逆転モード：劣勢 + 2連勝
-  if (!playerAhead && wins >= 2) return 'comeback';
   return false;
 }
 
@@ -8412,19 +11242,16 @@ function startDominanceMode() {
   });
 }
 
-// 完勝/逆転モードの導入バナー
+// 圧倒モードの導入バナー
 function showDominanceIntro(onContinue) {
-  const type = state.dominanceType || 'complete';
   const overlay = document.createElement('div');
   overlay.className = 'dominance-overlay dominance-intro';
-  const titleText = type === 'comeback' ? '✦ 逆転の刻 ✦' : '⚡ 圧倒モード ⚡';
-  const subText = type === 'comeback'
-    ? `2連勝で勝負空気が変わった！ ミミの覚醒！`
-    : `${state.consecutiveWins}連勝！ 完全に流れを掴んだ！`;
+  const titleText = '⚡ 圧倒モード ⚡';
+  const subText = `${state.consecutiveWins}連勝！ 完全に流れを掴んだ！`;
   overlay.innerHTML = `
     <div class="dominance-flash"></div>
     <div class="dominance-banner">
-      <div class="dominance-text dominance-${type}">${titleText}</div>
+      <div class="dominance-text dominance-complete">${titleText}</div>
       <div class="dominance-sub">— ${subText} —</div>
     </div>
   `;
@@ -8442,13 +11269,12 @@ function showDominanceIntro(onContinue) {
 
 // 3つの選択肢モーダル
 function showDominanceChoiceModal() {
-  const type = state.dominanceType || 'complete';
   const overlay = document.createElement('div');
   overlay.className = 'dominance-choice-overlay';
   overlay.innerHTML = `
     <div class="dominance-choice-modal">
-      <h2 class="dominance-choice-title">${type === 'comeback' ? '🔥 逆転の鍵を選べ' : '⚡ どう仕留める？'}</h2>
-      <p class="dominance-choice-sub">${type === 'comeback' ? '流れを完全に変える一手を' : '完勝の決め手を選ぼう'}</p>
+      <h2 class="dominance-choice-title">⚡ どう仕留める？</h2>
+      <p class="dominance-choice-sub">完勝の決め手を選ぼう</p>
       <div class="dominance-choice-list">
         <button class="dominance-choice-btn" data-choice="full">
           <div class="dchoice-icon">💰</div>
@@ -8657,9 +11483,9 @@ function endBattle() {
         rewards.push(`戦術ノート所持済み → +100コイン補填`);
       }
     }
-    // クリア記録
+    // クリア記録（velvet なら endingUnlocked も同時に立つ）
     if (!save.clearedStages.includes(state.opponentId)) {
-      save.clearedStages.push(state.opponentId);
+      markStageCleared(state.opponentId);
       unlockAchievement('first_clear');
     }
     // 圧倒（相手チップ0で勝利）
@@ -8735,7 +11561,7 @@ function endBattle() {
         reasonEl.innerHTML = `<div class="velvet-concession">💋 ヴェルベット：「${concession}」</div>` + reasonEl.innerHTML;
       }
     }, 300);
-    triggerTousatsuDaigyakuten();
+    triggerVelvetVictoryEffect();
     const btns = document.querySelector('[data-bind="resultButtons"]');
     if (btns) {
       btns.innerHTML = `
@@ -8748,13 +11574,14 @@ function endBattle() {
   }
 }
 
-function triggerTousatsuDaigyakuten() {
+// ヴェルベット撃破時の勝利演出（「逆転」表現を排除：ポーカーは累積で勝つゲーム）
+function triggerVelvetVictoryEffect() {
   const eff = document.createElement('div');
   eff.className = 'tousatsu-effect';
   eff.innerHTML = `
     <div class="tousatsu-glow"></div>
-    <div class="tousatsu-text">闘札<br>大逆転！</div>
-    <div class="tousatsu-sub">— ミミの読みが、すべてを覆した —</div>
+    <div class="tousatsu-text">闘札<br>制覇</div>
+    <div class="tousatsu-sub">— ラビリンスの女王、陥落 —</div>
   `;
   document.body.appendChild(eff);
   setTimeout(() => eff.classList.add('out'), 3000);
@@ -8790,6 +11617,31 @@ const LESSON_CHAPTERS = [
 // フラット順序（互換性）
 const LESSON_ORDER = LESSON_CHAPTERS.flatMap(c => c.ids);
 
+// 講義中の常設 進捗HUD（章・正解・コンボ・獲得コイン）— 講義のゲーム化
+function updateLectureHud() {
+  let hud = document.getElementById('lecture-hud');
+  if (!state.lectureMode) { if (hud) hud.remove(); return; }
+  if (!hud) {
+    hud = document.createElement('div');
+    hud.id = 'lecture-hud';
+    hud.className = 'lecture-hud';
+    document.getElementById('app').appendChild(hud);
+  }
+  const total = state.lectureTotal || LESSON_ORDER.length;
+  const done = Math.min(state.lectureIdx, total);
+  const pct = Math.round((done / total) * 100);
+  const combo = state.lectureCombo || 0;
+  hud.innerHTML = `
+    <div class="lh-bar"><div class="lh-fill" style="width:${pct}%"></div></div>
+    <div class="lh-stats">
+      <span>📚 ${done}/${total}問</span>
+      <span>⭐ ${state.lectureCorrect || 0}</span>
+      ${combo >= 2 ? `<span class="lh-combo">🔥${combo}</span>` : ''}
+      <span>💰 +${state.lectureEarned || 0}</span>
+    </div>
+  `;
+}
+
 function startLecture(opponentId) {
   state = defaultState();
   state.opponentId = opponentId;
@@ -8801,13 +11653,16 @@ function startLecture(opponentId) {
   const saved = save.lectureProgress || null;
   state.lectureIdx = saved ? saved.idx : 0;
   state.lectureCorrect = saved ? saved.correct : 0;
+  state.lectureEarned = saved ? (saved.earned || 0) : 0;
   state.lectureTotal = LESSON_ORDER.length;
   state.screen = 'battle';
   state.handPhase = 'lecture';
   state.tutorialMode = true;
   state.ricoAdvice = '「ようこそ。じっくり基礎を覚えていこ〜」';
   state.mimiThought = saved ? '「続きから……お願いします！」' : '「リコ先輩、よろしくお願いします！」';
+  state.lectureCombo = 0; // コンボは再開時リセット（earned は saved から復元済み）
   render();
+  updateLectureHud();
   showLectureIntro(() => {
     triggerLectureQuestion();
   }, saved);
@@ -8897,6 +11752,8 @@ const HANDS_ON_AFTER = {
 };
 
 function triggerLectureQuestion() {
+  // HUD を毎問更新（render() で消えても復活させる）
+  setTimeout(() => updateLectureHud(), 50);
   if (state.lectureIdx >= LESSON_ORDER.length) {
     finishLecture(false);
     return;
@@ -8988,7 +11845,7 @@ function showHandsOnExercise(ex, onClose) {
 
 function exitLectureMidway() {
   // 進捗を保存して中断
-  save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect };
+  save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect, earned: state.lectureEarned || 0 };
   saveProgress();
   state = defaultState();
   state.screen = 'lobby';
@@ -9035,16 +11892,29 @@ function doLectureModal(qid) {
 }
 
 function finishLecture(skipped) {
+  document.getElementById('lecture-hud')?.remove();
   const overlay = document.createElement('div');
   overlay.className = 'tutorial-overlay';
   const scorePct = Math.round((state.lectureCorrect / state.lectureTotal) * 100);
+  // 成績グレード（ゲーム化：S/A/B/C）＋成績ボーナス
+  const grade = scorePct >= 90 ? 'S' : scorePct >= 70 ? 'A' : scorePct >= 50 ? 'B' : 'C';
+  const gradeColor = { S: '#ffd700', A: '#f5d77a', B: '#a7d8ff', C: '#cccccc' }[grade];
+  const gradeBonus = skipped ? 0 : { S: 200, A: 120, B: 60, C: 20 }[grade];
+  const earned = state.lectureEarned || 0;
   overlay.innerHTML = `
     <div class="tutorial-bubble">
       <div class="tutorial-step">講義完了</div>
       <h2 style="color:var(--c-red);font-size:26px;margin:0 0 14px;letter-spacing:0.15em;">📖 講義お疲れさま！</h2>
       ${skipped
         ? '<p style="font-size:17px;">スキップでもOK。実戦で覚えていこ〜</p>'
-        : `<p style="font-size:17px;">${state.lectureTotal}問中 <b>${state.lectureCorrect}問正解</b>（${scorePct}%）！</p>`
+        : `
+        <div style="font-size:64px;font-weight:900;color:${gradeColor};text-shadow:0 0 24px ${gradeColor};margin:4px 0;line-height:1.1;">${grade}</div>
+        <p style="font-size:17px;margin:4px 0 10px;">${state.lectureTotal}問中 <b>${state.lectureCorrect}問正解</b>（${scorePct}%）</p>
+        <div style="font-size:14px;background:rgba(245,215,122,0.12);border:1px solid rgba(245,215,122,0.4);border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.8;">
+          正解報酬：<b>+${earned}🪙</b>（獲得済み）<br>
+          成績ボーナス（${grade}）：<b>+${gradeBonus}🪙</b><br>
+          初回クリア報酬：<b>+300🪙</b>
+        </div>`
       }
       <p style="font-size:15px;line-height:1.7;">これで基本はバッチリ。<br>次は<b>Stage 2「ポルカ戦」</b>で実戦練習だよ。</p>
       <div class="tutorial-actions">
@@ -9055,18 +11925,20 @@ function finishLecture(skipped) {
   document.body.appendChild(overlay);
   overlay.querySelector('.next-btn').addEventListener('click', () => {
     overlay.remove();
-    // 講義クリア記録＋進捗クリア
+    // 講義クリア記録＋成績ボーナス＋進捗クリア
+    let totalGain = gradeBonus;
     if (!save.firstClearRewardClaimed.includes('rico_tutorial')) {
-      save.coins += 300;
+      totalGain += 300;
       save.firstClearRewardClaimed.push('rico_tutorial');
     }
+    save.coins += totalGain;
     if (!save.clearedStages.includes('rico_tutorial')) save.clearedStages.push('rico_tutorial');
-    save.lectureProgress = null;  // 完了したので進捗削除
+    save.lectureProgress = null;
     saveProgress();
     state = defaultState();
     state.screen = 'lobby';
     render();
-    toast(`✨ 講義完了！${skipped ? '' : '+300コイン'}`);
+    toast(`✨ 講義完了！${totalGain > 0 ? ` +${totalGain}コイン` : ''}`);
   });
 }
 
@@ -9165,6 +12037,8 @@ function showOpponentCutIn(text, betSize) {
   const intensity = betSize === 'allin' ? 'cutin-allin' :
                     betSize === 'pot_1' ? 'cutin-pot' :
                     betSize === 'pot_2_3' ? 'cutin-strong' : '';
+  // P1-3: 相手のオールイン・大レイズにミミが動揺する表情
+  if (betSize === 'allin' || betSize === 'pot_1') setMimiExpression('shock');
   const cut = document.createElement('div');
   cut.className = `rico-cutin opponent-cutin ${intensity}`;
   // 強度別パーティクル数（allin=多、pot=中、strong=少）
@@ -9192,6 +12066,8 @@ function showOpponentCutIn(text, betSize) {
     activeCutInDismiss = null;
     if (autoDismissTimer) clearTimeout(autoDismissTimer);
     cut.classList.add('cutin-out');
+    // P1-3: 動揺表情はカットインが消えたら通常に戻す
+    if (betSize === 'allin' || betSize === 'pot_1') setMimiExpression('default');
     setTimeout(() => cut.remove(), 500);
   };
   // 自動消滅：通常 3.5s、オールイン等は 4.5s
@@ -9262,6 +12138,16 @@ function fitStage() {
 }
 window.addEventListener('resize', fitStage);
 window.addEventListener('orientationchange', () => setTimeout(fitStage, 100));
+// ★ window の 'resize' イベントは、埋め込みプレビューペインやPWA/一部モバイル環境では
+//   ビューポートサイズが変わっても発火しないことがある（実機で確認済みのバグ）。
+//   ResizeObserver は要素の実サイズ変化を直接監視するため、resize イベントに依存せず
+//   確実にスケールを再計算できる。html要素自体を監視することで取りこぼしを防ぐ。
+if (typeof ResizeObserver !== 'undefined') {
+  const ro = new ResizeObserver(() => fitStage());
+  ro.observe(document.documentElement);
+}
+// 保険：resize/orientationchange/ResizeObserver いずれも取りこぼした場合に備えて低頻度で再計算
+setInterval(fitStage, 1000);
 fitStage();
 
 //=============================================================
@@ -9550,4 +12436,13 @@ reapplyAllOwnedEffects();
 startPreload().then(() => {
   render();
   initGlobalAudioBar();
+  // 廃止商品の自動返金があれば、起動後に一度だけ通知
+  if (save.__pendingRefundNotice) {
+    const { total } = save.__pendingRefundNotice;
+    delete save.__pendingRefundNotice;
+    saveProgress();
+    setTimeout(() => {
+      toast(`🛍 交換所の商品整理により +${total}コインを返金しました`);
+    }, 900);
+  }
 });

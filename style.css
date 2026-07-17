@@ -1450,6 +1450,36 @@ html, body {
   gap: 8px;
 }
 .lb-music-row { border-bottom: 1px dashed rgba(245,215,122,0.2); padding-bottom: 4px; }
+.lb-sfx-row {
+  border-bottom: 1px dashed rgba(245,215,122,0.15);
+  padding-bottom: 4px;
+  margin-top: 4px;
+}
+.lb-sfx-toggle {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(245,215,122,0.6);
+  background: rgba(20,8,29,0.8);
+  color: var(--c-gold-bright);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.lb-sfx-toggle:hover { background: rgba(50,20,80,0.95); }
+.lb-vol-sfx {
+  height: 6px;
+}
+.lb-vol-sfx::-webkit-slider-thumb { width: 16px; height: 16px; }
+.lb-vol-sfx::-moz-range-thumb { width: 16px; height: 16px; }
+.lb-sfx-label {
+  font-size: 10px;
+  color: rgba(245,215,122,0.6);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
 .lb-bgm-toggle {
   width: 44px; height: 44px;
   border-radius: 50%;
@@ -1665,8 +1695,8 @@ html, body {
   display: flex; flex-direction: column;
   gap: 4px;
   min-width: 0;
-  flex: 1 1 auto;
-  min-height: 0;
+  /* 本文（ボタン含む）は自然高を維持し、ポートレート側が伸縮して収める */
+  flex: 0 0 auto;
 }
 .lobby-stage-list .stage-card .stage-tags-row {
   display: flex; gap: 6px; flex-wrap: wrap;
@@ -1679,8 +1709,9 @@ html, body {
 }
 .stage-portrait {
   width: 100%;
-  flex: 1 1 auto;
-  min-height: 150px;
+  /* 縮小可能に：カード全体が枠に収まることを優先（flex-shrink:0だと下端ボタンが見切れる） */
+  flex: 1 1 140px;
+  min-height: 110px;
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
@@ -1688,7 +1719,6 @@ html, body {
   background: linear-gradient(180deg, rgba(60,30,90,0.6) 0%, rgba(20,8,29,0.9) 100%);
   border: 2px solid var(--c-gold);
   position: relative;
-  flex-shrink: 0;
 }
 .stage-portrait img {
   width: 100%; height: 100%; object-fit: cover;
@@ -1808,21 +1838,22 @@ html, body {
 }
 .lobby-stage-list .stage-card .stage-actions {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;      /* 横一列：メイン＋アイコンサブ（column だとカードが縦に溢れる） */
+  align-items: stretch;
+  gap: 4px;
   margin-top: 6px;
 }
 .lobby-stage-list .stage-card .stage-actions .btn {
   font-size: 14px;
   font-weight: 700;
-  padding: 12px 8px;
+  padding: 10px 6px;
   min-height: 44px;
   border-radius: 8px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
 }
 .lobby-stage-list .stage-card .stage-actions .btn-primary {
-  font-size: 16px;
-  min-height: 50px;
+  font-size: 15px;
+  min-height: 44px;
 }
 .lobby-stage-list .stage-card .stage-actions .stage-recall { width: 34px; padding: 4px; font-size: 14px; }
 
@@ -1977,13 +2008,8 @@ html, body {
   color: var(--c-text);
   padding: 0 60px;
 }
-.credits-inner.rolling {
-  animation: creditsScroll 60s linear forwards;
-}
-@keyframes creditsScroll {
-  0%   { top: 100%; }
-  100% { top: -3200px; }
-}
+/* creditsScroll は新仕様（var --scroll-dur, --scroll-end-y）で再定義（line 9700 付近） */
+/* 旧固定値の定義は削除 */
 .cr-title {
   font-size: 32px;
   font-weight: 900;
@@ -2342,6 +2368,85 @@ html, body {
 .settings-modal-trophy.locked {
   cursor: not-allowed;
   opacity: 0.7;
+}
+/* 設定モーダル内のデバッグ行 */
+.settings-modal-debug {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(60,28,90,0.4);
+  border: 1px dashed rgba(180,140,255,0.4);
+  border-radius: 8px;
+  margin: 2px 0;
+}
+.settings-modal-debug-label {
+  font-size: 13px;
+  color: #c0a0ff;
+  font-weight: 600;
+}
+
+/* ステージカード：タイトな改修版 */
+.lobby-stage-list .stage-card .stage-tags-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 20px;
+}
+.lobby-stage-list .stage-card .stage-tags-row .stage-number {
+  font-size: 10px;
+  background: rgba(245,215,122,0.15);
+  border: 1px solid rgba(245,215,122,0.4);
+  color: var(--c-gold-bright);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.stage-reward-rematch {
+  color: var(--c-gold-bright);
+  font-weight: 700;
+}
+.stage-reward-rematch small {
+  color: rgba(255,255,255,0.5);
+  font-weight: 400;
+  margin-left: 4px;
+}
+.stage-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+  margin-top: auto;
+}
+.stage-main-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.stage-sub-btn {
+  flex: 0 0 32px;
+  padding: 6px 0;
+  font-size: 14px;
+  min-width: 32px;
+  max-width: 36px;
+}
+
+/* 設定モーダル内の危険ボタン（リセット） */
+.settings-modal-reset {
+  align-self: stretch;
+  min-height: 44px;
+  font-size: 14px;
+  background: linear-gradient(180deg, rgba(180,40,60,0.35) 0%, rgba(80,10,20,0.5) 100%) !important;
+  color: #ffb0c0 !important;
+  border: 1px dashed rgba(255,120,140,0.6) !important;
+  letter-spacing: 0.05em;
+}
+.settings-modal-reset:hover {
+  background: linear-gradient(180deg, rgba(220,60,80,0.5) 0%, rgba(120,20,30,0.7) 100%) !important;
+  color: #fff !important;
 }
 
 /* === ポーカー辞典モーダル === */
@@ -2753,6 +2858,15 @@ html, body {
   align-items: center;
   justify-content: space-between;
   user-select: none;
+  min-width: 0; /* P0-2: flex子でellipsisを効かせるため */
+}
+/* P0-2: 戦績ラベル見切れ対策。どんな文言でも枠内に収める */
+.sess-title-txt {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .sess-stats summary::before {
   content: '▶';
@@ -3113,6 +3227,67 @@ html, body {
   padding: 4px 14px;
   font-size: 14px;
 }
+/* ヘッダー系ボタン共通：視覚サイズを変えずにタップ判定を四方に拡張
+   （ゲーム全体が transform: scale で縮小されるため、スマホでは実効タップ領域が
+    極端に小さくなる。透明の ::before ヒットエリアで補う） */
+.top-hud .btn,
+.top-hud button,
+.audio-bar-toggle,
+.panyu-free-btn,
+.lb-bgm-toggle,
+.lb-sfx-toggle,
+.lb-settings-btn,
+.backdoor-toggle {
+  position: relative;
+}
+.top-hud .btn::before,
+.top-hud button::before,
+.audio-bar-toggle::before,
+.panyu-free-btn::before,
+.lb-bgm-toggle::before,
+.lb-sfx-toggle::before,
+.lb-settings-btn::before,
+.backdoor-toggle::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+}
+
+/* ── スマホ横持ち（実ビューポート幅 ≤ 920px）：ヘッダーUIを物理的に大型化 ──
+   キャンバスは 0.42〜0.55 倍に縮小されるため、レイアウト上で約2倍にして
+   実効タップサイズ 44px 前後を確保する */
+@media (max-width: 920px) {
+  .top-hud {
+    min-height: 72px;
+    padding: 6px 16px;
+  }
+  .top-hud .btn {
+    min-height: 64px;
+    padding: 10px 22px;
+    font-size: 22px;
+    border-radius: 14px;
+  }
+  .top-hud h2 { font-size: 28px; }
+  .coin-display { font-size: 26px; }
+  .hand-info { font-size: 22px; }
+  .opponent-name { font-size: 24px; }
+  .panyu-free-btn {
+    width: 72px; height: 72px;
+    font-size: 34px;
+  }
+  .audio-bar-toggle,
+  .lb-bgm-toggle,
+  .lb-sfx-toggle,
+  .lb-settings-btn {
+    width: 64px; height: 64px;
+    font-size: 28px;
+  }
+  .backdoor-toggle {
+    width: 64px; height: 64px;
+    font-size: 26px;
+  }
+  .lobby-main { padding-top: 4px; }
+}
 .top-hud h2 {
   margin: 0;
   font-size: 22px;
@@ -3440,13 +3615,18 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 14px;
+  padding: 6px 14px;
+  overflow: hidden; /* P0-1: 溢れた要素を隠す最終防波堤（本体は下記の高さ配分で収める） */
   background:
     radial-gradient(ellipse at center, rgba(120,15,30,0.7) 0%, rgba(30,8,15,0.9) 100%);
   border-radius: 12px;
   border: 2px solid var(--c-gold);
   box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
 }
+/* P0-1: 子要素の高さ配分を明示（テキストのflex圧縮は禁止・bet-unifiedは自然高を死守） */
+.center-table > .opponent-area  { flex: 0 1 auto; min-height: 0; }
+.center-table > .community-row  { flex: 1 1 auto; min-height: 90px; }
+.center-table > .bet-unified    { flex: 0 0 auto; }
 .opponent-area {
   display: flex;
   align-items: stretch;
@@ -4131,7 +4311,7 @@ html, body {
   width: 100%;
   max-width: 880px;
   margin: 0 auto;
-  padding: 8px 12px 10px;
+  padding: 4px 12px 6px;
   background: linear-gradient(180deg, rgba(20,8,30,0.85) 0%, rgba(10,4,20,0.95) 100%);
   border: 1px solid rgba(245,215,122,0.45);
   border-radius: 12px;
@@ -4140,7 +4320,7 @@ html, body {
   grid-template-columns: 1fr 1fr 1.4fr 1fr 1fr;
   gap: 8px;
   align-items: end;
-  min-height: 150px;
+  min-height: 100px; /* P0-1: 150→100。実内容(各種縮小後)に合わせた床値 */
 }
 .bu-cell-remain { background: rgba(245,215,122,0.04); border-radius: 6px; padding: 4px 0; }
 .bu-cell-bet    { background: rgba(255,134,179,0.04); border-radius: 6px; padding: 4px 0; position: relative; }
@@ -4238,7 +4418,7 @@ html, body {
   padding-bottom: 2px;
 }
 /* ポット物理チップ：少し大きめ */
-.bu-pot-physical { display: flex; justify-content: center; min-height: 70px; align-items: flex-end; }
+.bu-pot-physical { display: flex; justify-content: center; min-height: 28px; align-items: flex-end; } /* P0-1: 70→28（空/少チップ時の余剰スペース削減。実チップが多い時は自然に伸びる） */
 .bu-pot-physical .bu-vc-chip { width: 30px; height: 8px; margin-top: -3px; }
 .bu-pot-physical .bu-vc-col { gap: 0; }
 .bu-remain-chips {
@@ -4375,7 +4555,7 @@ html, body {
   text-shadow: 0 0 6px rgba(255,134,179,0.5);
 }
 .bu-callneed-idle {
-  color: rgba(200,180,200,0.4);
+  display: none; /* P0-3: コール不要時は「コール —」を出さず要素ごと非表示 */
 }
 /* プレイヤー対戦行：ミミ ─ VS ─ 相手 */
 .bu-stack-row {
@@ -4498,8 +4678,8 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 4px;
-  min-height: 110px;
+  gap: 2px; /* P0-1: 4→2、縦オーバーフロー対策 */
+  min-height: 90px; /* P0-1: 110→90 */
 }
 .bu-cell-label {
   font-size: 11px;
@@ -4652,6 +4832,16 @@ html, body {
   display: flex;
   align-items: center;
 }
+/* P0-3: 空状態は「—」の羅列ではなく淡い待機表示に */
+.bu-waiting {
+  opacity: 0.35;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  color: var(--c-text-dim);
+}
 .bu-cell-pot .bu-vstack { min-height: 50px; }
 .bu-cell-pot .bu-chip { width: 44px; height: 10px; margin-top: -4px; }
 
@@ -4758,6 +4948,20 @@ html, body {
   border-color: rgba(245,215,122,0.3);
   box-shadow: none;
 }
+/* P3: ミミミゲージ0（講義前）は情報過多を避けて1行に折りたたむ。
+   カード自体の高さは既存(132px)のまま保ち、行の見た目が跳ねないようにする */
+.opp-personality-card.opp-p-collapsed {
+  background: linear-gradient(180deg, rgba(40,20,60,0.4) 0%, rgba(20,8,30,0.55) 100%);
+  border-color: rgba(245,215,122,0.2);
+  box-shadow: none;
+  align-items: center;
+}
+.opp-p-collapsed-line {
+  font-size: 13px;
+  color: rgba(244,232,200,0.75);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
 .opp-personality-card.opp-p-revealed {
   animation: personalityIn 0.6s ease-out;
 }
@@ -4783,6 +4987,39 @@ html, body {
   font-weight: 700;
   letter-spacing: 0.1em;
   margin-bottom: 2px;
+}
+
+/* note_tell：相手の傾向ヒント（購入者限定） */
+.note-tell-hint {
+  margin-top: 6px;
+  padding: 5px 8px;
+  background: rgba(245,215,122,0.08);
+  border: 1px dashed rgba(245,215,122,0.35);
+  border-radius: 6px;
+  font-size: 11px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.ntt-label {
+  color: #fbe28a;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-right: 2px;
+}
+.ntt-tag {
+  background: rgba(0,0,0,0.35);
+  border-radius: 10px;
+  padding: 2px 8px;
+  color: #f4e8c8;
+}
+
+/* note_range：心理バトル成功時のレンジヒント（リコ助言に追記） */
+.range-hint {
+  color: #a7d8ff;
+  font-style: italic;
+  opacity: 0.9;
 }
 .opp-p-text {
   font-size: 12px;
@@ -6189,6 +6426,418 @@ html, body {
 }
 .psych-rico:empty { display: none; }
 
+/* ======================================================
+   心理／論理バトル v3：商業作品クオリティのリファイン
+   ====================================================== */
+
+/* モーダル全体：商業品質のフレーム（720pxキャンバスにスクロール無しで収める） */
+.battle-modal-overlay .psych-modal {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(138,76,196,0.18) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(28,12,42,0.96) 0%, rgba(14,6,24,0.98) 100%);
+  border: 1px solid rgba(245,215,122,0.55);
+  border-radius: 18px;
+  padding: 12px 24px 14px;
+  gap: 8px;
+  max-height: 97%;
+  box-shadow:
+    0 0 80px rgba(138,76,196,0.4),
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 24px 60px rgba(0,0,0,0.85);
+}
+/* ★重要：子要素の flex 圧縮を禁止（圧縮されるとテキスト下端が切れて読めなくなる）
+   収まらない場合はモーダル自体が overflow-y: auto でスクロールする */
+.battle-modal-overlay .psych-modal > * {
+  flex-shrink: 0;
+}
+/* モーダル内ポートレートはコンパクトに（180px→110px） */
+.battle-modal-overlay .battle-portrait {
+  height: 110px;
+}
+.battle-modal-overlay .battle-portraits {
+  margin-bottom: 0;
+}
+.battle-modal-overlay .battle-portrait .portrait-name {
+  font-size: 13px;
+  padding: 5px 8px 4px;
+}
+/* ★顔クロップ修正：ベースの scale(1.9) は 180px 枠用。110px 枠では頭頂部しか
+   写らない帯になるため、モーダル内では transform を外して object-position で顔位置を合わせる */
+.battle-modal-overlay .battle-portrait img {
+  transform: none !important;
+  object-fit: cover;
+  object-position: 50% 12%;
+}
+
+/* ===== 講義モード（lecture-mode）：心理バトルと明確に区別 ===== */
+/* タイトル：紫（心理）/青（論理）に対し、講義は金×臙脂の「教室」カラー */
+.battle-modal-overlay .psych-title.lecture-mode,
+.psych-modal .psych-title.lecture-mode {
+  background:
+    linear-gradient(90deg, rgba(150,30,40,0.95) 0%, rgba(200,144,32,0.85) 50%, rgba(150,30,40,0.95) 100%) !important;
+  border-color: #ffe2a0 !important;
+  text-shadow: 0 0 8px rgba(255,220,150,0.9), 0 2px 4px rgba(0,0,0,0.95) !important;
+  box-shadow: 0 4px 18px rgba(200,120,40,0.55), 0 0 0 1px rgba(255,255,255,0.1) inset !important;
+}
+.battle-modal-overlay .psych-title.lecture-mode .battle-subtitle {
+  color: #fff2d8 !important;
+}
+/* 講義中はミミvs相手のポートレート行は情報過多なので出さない
+   （リコの顔はセリフ行に表示済み。110px 節約でテキストに余白を回す） */
+.psych-modal.lecture-mode .battle-portraits {
+  display: none;
+}
+/* 講義モーダルの枠色も教室カラーに */
+.battle-modal-overlay .psych-modal.lecture-mode {
+  border-color: rgba(255,210,140,0.6);
+  box-shadow:
+    0 0 80px rgba(200,140,40,0.35),
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 24px 60px rgba(0,0,0,0.85);
+}
+.battle-modal-overlay .psych-modal.logic-mode {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(80,180,255,0.18) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(8,18,40,0.96) 0%, rgba(4,10,26,0.98) 100%);
+  border-color: rgba(120,200,255,0.55);
+  box-shadow:
+    0 0 80px rgba(80,180,255,0.4),
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 24px 60px rgba(0,0,0,0.85);
+}
+
+/* タイトル：商業品質のバナー（高コントラスト＋確実な可読性） */
+.battle-modal-overlay .psych-title,
+.psych-modal .psych-title {
+  position: relative !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.16em !important;
+  color: #fff !important;
+  padding: 8px 20px !important;
+  margin: 0 0 6px !important;
+  border-radius: 12px !important;
+  background:
+    linear-gradient(90deg, rgba(80,30,140,0.95) 0%, rgba(180,50,150,0.9) 50%, rgba(80,30,140,0.95) 100%) !important;
+  border: 2px solid #ffd0f0 !important;
+  text-shadow: 0 0 8px rgba(255,180,240,0.9), 0 2px 4px rgba(0,0,0,0.95), 0 0 14px rgba(0,0,0,0.5) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 3px !important;
+  z-index: 2 !important;
+  box-shadow: 0 4px 18px rgba(140,40,180,0.6), 0 0 0 1px rgba(255,255,255,0.1) inset !important;
+}
+.battle-modal-overlay .psych-title.logic-mode,
+.psych-modal .psych-title.logic-mode {
+  background:
+    linear-gradient(90deg, rgba(20,60,150,0.95) 0%, rgba(60,140,220,0.9) 50%, rgba(20,60,150,0.95) 100%) !important;
+  border-color: #b0e0ff !important;
+  text-shadow: 0 0 8px rgba(150,210,255,0.9), 0 2px 4px rgba(0,0,0,0.95), 0 0 14px rgba(0,0,0,0.5) !important;
+  box-shadow: 0 4px 18px rgba(60,140,220,0.6), 0 0 0 1px rgba(255,255,255,0.1) inset !important;
+}
+.battle-modal-overlay .psych-title .battle-subtitle,
+.psych-modal .psych-title .battle-subtitle {
+  font-size: 12px !important;
+  letter-spacing: 0.2em !important;
+  color: #ffeefe !important;
+  font-weight: 600 !important;
+  margin-top: 2px !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8) !important;
+}
+.battle-modal-overlay .psych-title.logic-mode .battle-subtitle,
+.psych-modal .psych-title.logic-mode .battle-subtitle {
+  color: #e0f4ff !important;
+}
+
+/* ポートレート枠：商業品質の装飾を追加（既存のサイズ・ズームはそのまま） */
+.battle-modal-overlay .battle-portrait {
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.6),
+    0 0 30px rgba(138,76,196,0.35);
+  transition: box-shadow 0.3s ease;
+}
+.psych-modal.logic-mode .battle-portrait {
+  border-color: rgba(150,210,255,0.6) !important;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.6),
+    0 0 30px rgba(80,180,255,0.35);
+}
+.psych-modal.logic-mode .battle-portrait.portrait-opponent {
+  border-color: rgba(150,210,255,0.8) !important;
+}
+.psych-modal.logic-mode .battle-portrait .portrait-name { color: #9fd0ff; }
+.psych-modal.logic-mode .battle-portrait.portrait-opponent .portrait-name { color: #9fd0ff; }
+
+/* 場札／手札パネル：洗練されたボード */
+.battle-modal-overlay .psych-cards-row {
+  gap: 12px;
+}
+.battle-modal-overlay .psych-board-info,
+.battle-modal-overlay .psych-hand-info {
+  background: linear-gradient(180deg, rgba(40,18,60,0.6) 0%, rgba(20,8,32,0.85) 100%);
+  border: 1px solid rgba(245,215,122,0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.psych-modal.logic-mode .psych-board-info,
+.psych-modal.logic-mode .psych-hand-info {
+  background: linear-gradient(180deg, rgba(12,28,60,0.6) 0%, rgba(4,12,30,0.85) 100%);
+  border-color: rgba(120,180,255,0.3);
+}
+.battle-modal-overlay .psych-board-label,
+.battle-modal-overlay .psych-hand-label {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: rgba(245,215,122,0.8);
+  margin-bottom: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.psych-modal.logic-mode .psych-board-label,
+.psych-modal.logic-mode .psych-hand-label {
+  color: rgba(180,220,255,0.85);
+}
+.battle-modal-overlay .psych-pot {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(245,215,122,0.25);
+  text-align: right;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.05em;
+}
+
+/* 状況文：洗練された読み物パネル（高コントラスト保証） */
+.battle-modal-overlay .psych-situation {
+  background: linear-gradient(180deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.45) 100%) !important;
+  border-left: 4px solid var(--c-gold-bright) !important;
+  border-radius: 0 10px 10px 0 !important;
+  padding: 10px 16px !important;
+  color: #fffceb !important;
+  margin: 0 0 6px !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+/* スピーチ・ヒントの余白もタイトに */
+.battle-modal-overlay .psych-speech.with-portrait { margin: 0 0 6px; padding: 8px 12px; }
+.battle-modal-overlay .zazazo-hint { margin: 0 0 6px; }
+.battle-modal-overlay .psych-cards-row .psych-board-info,
+.battle-modal-overlay .psych-cards-row .psych-hand-info { padding: 8px 12px; }
+.battle-modal-overlay .choice-btn { min-height: 56px; }
+.psych-modal.logic-mode .psych-situation {
+  border-left-color: #6ec5ff;
+  color: #e0f0ff;
+}
+.battle-modal-overlay .psych-situation b {
+  color: var(--c-gold-bright);
+  font-weight: 700;
+}
+.psych-modal.logic-mode .psych-situation b { color: #9fd0ff; }
+
+/* 相手スピーチ：吹き出し感をリッチに（face のサイズ・scale はオリジナル保持） */
+.battle-modal-overlay .psych-speech.with-portrait {
+  background: linear-gradient(135deg, rgba(245,215,122,0.12) 0%, rgba(245,215,122,0.05) 100%);
+  border: 1px solid rgba(245,215,122,0.45);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 0 0 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+.battle-modal-overlay .psych-opponent-face {
+  border-color: rgba(245,215,122,0.7) !important;
+  box-shadow: 0 0 14px rgba(245,215,122,0.4);
+}
+.psych-modal.logic-mode .psych-opponent-face {
+  border-color: rgba(150,210,255,0.7) !important;
+  box-shadow: 0 0 14px rgba(80,180,255,0.4);
+}
+.psych-modal.logic-mode .psych-opponent-name { color: #9fd0ff; }
+
+/* ヒント：控えめなアクセント */
+.battle-modal-overlay .zazazo-hint {
+  background: linear-gradient(90deg, rgba(245,215,122,0.08) 0%, rgba(245,215,122,0.02) 100%);
+  border: 1px dashed rgba(245,215,122,0.4);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: rgba(255,235,195,0.85);
+  margin: 0 0 14px;
+  letter-spacing: 0.03em;
+}
+.psych-modal.logic-mode .zazazo-hint {
+  background: linear-gradient(90deg, rgba(120,200,255,0.08) 0%, rgba(120,200,255,0.02) 100%);
+  border-color: rgba(120,200,255,0.4);
+  color: rgba(220,240,255,0.85);
+}
+
+/* 選択肢：プロ品質のカード型ボタン（2列グリッドで縦幅を半減） */
+.battle-modal-overlay .psych-choices {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+/* 選択肢が奇数のとき最後の1個は全幅 */
+.battle-modal-overlay .psych-choices > .choice-btn:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.battle-modal-overlay .choice-btn {
+  position: relative;
+  background: linear-gradient(135deg, rgba(60,28,96,0.6) 0%, rgba(30,12,48,0.85) 100%);
+  border: 1px solid rgba(180,140,220,0.45);
+  color: #fff;
+  padding: 14px 18px 14px 56px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  text-align: left;
+}
+.psych-modal.logic-mode .choice-btn {
+  background: linear-gradient(135deg, rgba(20,50,100,0.6) 0%, rgba(8,20,50,0.85) 100%);
+  border-color: rgba(120,180,240,0.45);
+}
+.battle-modal-overlay .choice-btn:hover:not(:disabled) {
+  transform: translateX(4px);
+  border-color: var(--c-gold-bright);
+  background: linear-gradient(135deg, rgba(80,40,120,0.85) 0%, rgba(40,16,64,0.95) 100%);
+  box-shadow:
+    0 4px 18px rgba(138,76,196,0.4),
+    inset 4px 0 0 var(--c-gold-bright);
+}
+.psych-modal.logic-mode .choice-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(40,90,170,0.85) 0%, rgba(8,30,80,0.95) 100%);
+  box-shadow:
+    0 4px 18px rgba(80,180,255,0.4),
+    inset 4px 0 0 #6ec5ff;
+  border-color: #6ec5ff;
+}
+.battle-modal-overlay .choice-btn .choice-label {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--c-gold-bright) 0%, #c89020 100%);
+  color: #1a0a26;
+  font-weight: 900;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+  letter-spacing: 0;
+}
+.psych-modal.logic-mode .choice-btn .choice-label {
+  background: linear-gradient(180deg, #9fd0ff 0%, #3070c0 100%);
+  color: #08152e;
+}
+.battle-modal-overlay .choice-btn.disabled-by-sense {
+  opacity: 0.3;
+  pointer-events: none;
+  filter: grayscale(0.6);
+  text-decoration: line-through;
+}
+
+/* ぱにゅぱにゅフローティング：装飾を整理 */
+.battle-modal-overlay .panyu-floating-btn {
+  background: linear-gradient(180deg, rgba(255,140,200,0.95) 0%, rgba(200,80,160,0.95) 100%);
+  border: 2px solid rgba(255,200,230,0.7);
+  box-shadow: 0 6px 18px rgba(255,100,180,0.5), 0 0 0 1px rgba(255,255,255,0.2) inset;
+}
+
+/* スキップボタン */
+.battle-modal-overlay .psych-skip-btn {
+  align-self: center;
+  background: rgba(245,215,122,0.15);
+  border: 1px dashed rgba(245,215,122,0.4);
+  color: rgba(255,235,195,0.9);
+  padding: 8px 18px;
+  border-radius: 50px;
+  font-size: 12px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: all 0.15s ease;
+}
+.battle-modal-overlay .psych-skip-btn:hover {
+  background: rgba(245,215,122,0.3);
+  color: #fff;
+}
+
+/* 論理バトル：薄いグリッド装飾 */
+.psych-modal.logic-mode::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background-image:
+    linear-gradient(rgba(120,200,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120,200,255,0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+.psych-modal.logic-mode > * { position: relative; z-index: 1; }
+
+/* 論理バトル：ルールボックス改修 */
+.battle-modal-overlay .logic-rule-box {
+  background: linear-gradient(180deg, rgba(80,180,255,0.18) 0%, rgba(20,50,100,0.4) 100%);
+  border: 1px solid rgba(150,210,255,0.5);
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin: 0 0 12px;
+  box-shadow: 0 0 18px rgba(80,180,255,0.2) inset;
+}
+.battle-modal-overlay .logic-rule-label {
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  color: #9fd0ff;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.battle-modal-overlay .logic-rule-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e0f0ff;
+}
+
+/* 結果バナー：商業品質に */
+.battle-modal-overlay .psych-result-banner {
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  border: 2px solid;
+  background-clip: padding-box;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+.battle-modal-overlay .psych-result-banner.success {
+  background: linear-gradient(135deg, rgba(245,215,122,0.4) 0%, rgba(200,144,32,0.5) 100%);
+  border-color: var(--c-gold-bright);
+  color: #fff;
+  box-shadow: 0 0 22px rgba(245,215,122,0.5);
+}
+.battle-modal-overlay .psych-result-banner.fail {
+  background: linear-gradient(135deg, rgba(200,40,80,0.4) 0%, rgba(80,20,40,0.5) 100%);
+  border-color: #ff8fa3;
+  color: #fff;
+  box-shadow: 0 0 22px rgba(200,40,80,0.4);
+}
+
+/* 小型化レスポンシブ（既存ポートレート 180px はそのまま） */
+@media (max-width: 900px) {
+  .battle-modal-overlay .psych-title { font-size: 18px; padding: 10px 14px; }
+  .battle-modal-overlay .choice-btn { padding: 12px 14px 12px 50px; font-size: 13px; }
+  .battle-modal-overlay .choice-btn .choice-label { width: 28px; height: 28px; font-size: 14px; left: 10px; }
+}
+
 /* ========== リザルト画面 ========== */
 .result-screen { grid-template-rows: 1fr; }
 .result-inner {
@@ -7269,6 +7918,13 @@ html, body {
   padding: 14px 38px;
   min-height: 56px;
   letter-spacing: 0.15em;
+  /* 本文が長くてもボタンは常に見える（スクロール領域内 sticky） */
+  position: sticky;
+  bottom: 0;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 -14px 18px rgba(0,0,0,0.75), 0 4px 14px rgba(0,0,0,0.6);
 }
 
 /* ========== 圧倒モード演出 ========== */
@@ -7621,7 +8277,7 @@ html, body {
   /* 左玉用画像（あれば共通画像を上書き、無ければ共通画像のまま） */
   background:
     url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
-    url('assets/ui/panyu_ball.png') center/cover no-repeat,
+    url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
     transparent;
 }
 /* 右の玉：左側を平らに押しつぶす */
@@ -7630,7 +8286,7 @@ html, body {
   /* 右玉用画像（あれば共通画像を上書き、無ければ共通画像のまま） */
   background:
     url('assets/ui/panyu_ball_r.png') center/cover no-repeat,
-    url('assets/ui/panyu_ball.png') center/cover no-repeat,
+    url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
     transparent;
 }
 .panyu-clicker-blob {
@@ -7644,7 +8300,7 @@ html, body {
   max-height: 360px;
   /* デフォルトは共通画像（あれば）／無ければ透明 */
   background:
-    url('assets/ui/panyu_ball.png') center/cover no-repeat,
+    url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
     transparent;
   border-radius: 50%;
   border: 6px solid #fff;
@@ -8006,27 +8662,13 @@ html, body {
   80% { transform: translate(2px, -1px); }
 }
 
-/* 背景：濃紫→黒のグラデ＋光点 */
+/* 背景：映画的な漆黒（紫グラデ廃止：シーン切替時の色透けを完全防止） */
 .ending-bg {
   position: absolute; inset: 0; z-index: 0;
-  background:
-    radial-gradient(ellipse at 50% 30%, rgba(120,40,180,0.45) 0%, transparent 60%),
-    radial-gradient(ellipse at 50% 80%, rgba(200,40,80,0.35) 0%, transparent 60%),
-    linear-gradient(180deg, #060010 0%, #16002a 50%, #2a0420 100%);
+  background: #000;
 }
-.ending-stars {
-  position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background-image:
-    radial-gradient(circle at 10% 20%, rgba(255,255,255,0.9) 0, transparent 1.2px),
-    radial-gradient(circle at 85% 15%, rgba(245,215,122,0.7) 0, transparent 1.2px),
-    radial-gradient(circle at 25% 65%, rgba(255,255,255,0.7) 0, transparent 1.4px),
-    radial-gradient(circle at 70% 80%, rgba(245,215,122,0.6) 0, transparent 1.2px),
-    radial-gradient(circle at 50% 45%, rgba(255,255,255,0.5) 0, transparent 1px),
-    radial-gradient(circle at 92% 55%, rgba(255,200,200,0.6) 0, transparent 1.2px),
-    radial-gradient(circle at 35% 90%, rgba(255,255,255,0.5) 0, transparent 1.1px),
-    radial-gradient(circle at 60% 28%, rgba(245,215,122,0.5) 0, transparent 1px);
-  animation: endingStarsTwinkle 3s ease-in-out infinite;
-}
+/* 星空は廃止（純黒の方が一枚絵が映える） */
+.ending-stars { display: none; }
 @keyframes endingStarsTwinkle {
   0%, 100% { opacity: 0.55; }
   50%      { opacity: 1.0; }
@@ -8350,6 +8992,59 @@ html, body {
 .memory-card-play { font-size: 13px; color: var(--c-gold-bright); margin-top: 6px; font-weight: 600; }
 
 /* メモリビューア（モーダル） */
+/* ===== P2: 体験ハンド 勝利画面 ===== */
+.intro-win-overlay {
+  position: absolute; inset: 0; z-index: 95;
+  background: rgba(4,2,10,0.88);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: collIn 0.3s ease-out;
+}
+.intro-win-modal {
+  width: min(480px, calc(100% - 40px));
+  background: linear-gradient(180deg, #2a1238 0%, #1a0820 100%);
+  border: 2px solid var(--c-gold-bright);
+  border-radius: 16px;
+  padding: 32px 28px;
+  text-align: center;
+  color: #fbeec8;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.75), 0 0 60px rgba(245,215,122,0.2);
+}
+.intro-win-badge {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--c-gold-bright);
+  text-shadow: 0 0 20px rgba(245,215,122,0.6);
+  margin-bottom: 8px;
+}
+.intro-win-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.intro-win-coins {
+  font-size: 18px;
+  color: #8aff9a;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(138,255,154,0.5);
+  margin-bottom: 20px;
+}
+.intro-win-question {
+  font-size: 15px;
+  opacity: 0.85;
+  margin-bottom: 18px;
+}
+.intro-win-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.intro-win-buttons .btn {
+  width: 100%;
+  min-height: 52px;
+  font-size: 16px;
+}
+
 .memory-viewer-overlay {
   position: absolute; inset: 0; z-index: 90;
   background: rgba(4,2,10,0.85);
@@ -8474,6 +9169,13 @@ html, body {
   border-top: 1px solid rgba(245,215,122,0.2);
   background: rgba(0,0,0,0.25);
 }
+/* P1-1: 装備の反映先に関する注記（既存フッターの直下・二重罫線を避ける） */
+.equip-modal-footer.equip-modal-note {
+  border-top: none;
+  padding-top: 0;
+  opacity: 0.85;
+  color: #ffd0d6;
+}
 .equip-row {
   display: grid;
   grid-template-columns: 120px 1fr;
@@ -8550,19 +9252,46 @@ body[data-table-skin="emerald"]    .center-table { background: radial-gradient(e
 body[data-table-skin="neon"]       .center-table { background: radial-gradient(ellipse at center, #4a1a6a 0%, #1a0a3a 70%, #050020 100%); box-shadow: inset 0 0 40px rgba(190, 90, 255, 0.3) !important; }
 body[data-table-skin="speakeasy"]  .center-table { background: radial-gradient(ellipse at center, #5a3a1a 0%, #2a1808 70%, #150a04 100%) !important; }
 
-/* チップ：data-chip-skin 別（チップ表示の縁色を変更） */
-body[data-chip-skin="ivory"]  .chip-pill { box-shadow: 0 0 8px rgba(240,230,200,0.6) !important; }
-body[data-chip-skin="jade"]   .chip-pill { box-shadow: 0 0 8px rgba(80,200,150,0.6) !important; }
-body[data-chip-skin="dragon"] .chip-pill { box-shadow: 0 0 8px rgba(255,80,40,0.7) !important; }
+/* チップ：data-chip-skin 別（チップ表示の縁色を変更）
+   P1-1: 旧セレクタ .chip-pill はゲーム内に存在せず未配線だったため、
+   実際にレンダリングされるチップ要素（.bu-chip / .bu-vc-chip / .bu-rchip）に配線し直す */
+body[data-chip-skin="ivory"]  .bu-chip,
+body[data-chip-skin="ivory"]  .bu-vc-chip,
+body[data-chip-skin="ivory"]  .bu-rchip { box-shadow: 0 0 7px rgba(240,230,200,0.9), inset 0 1px 0 rgba(255,255,255,0.5) !important; border-color: rgba(250,245,225,0.95) !important; }
+body[data-chip-skin="jade"]   .bu-chip,
+body[data-chip-skin="jade"]   .bu-vc-chip,
+body[data-chip-skin="jade"]   .bu-rchip { box-shadow: 0 0 7px rgba(80,200,150,0.9), inset 0 1px 0 rgba(200,255,230,0.5) !important; border-color: rgba(80,220,160,0.95) !important; }
+body[data-chip-skin="dragon"] .bu-chip,
+body[data-chip-skin="dragon"] .bu-vc-chip,
+body[data-chip-skin="dragon"] .bu-rchip { box-shadow: 0 0 7px rgba(255,80,40,0.9), inset 0 1px 0 rgba(255,200,180,0.5) !important; border-color: rgba(255,110,60,0.95) !important; }
 
-/* ミミ：data-mimi-skin 別（panyu-clicker-blob のフィルター） */
-body[data-mimi-skin="pink"]  .panyu-clicker-blob { filter: hue-rotate(-20deg) saturate(1.3) brightness(1.1) !important; }
-body[data-mimi-skin="panda"] .panyu-clicker-blob { filter: grayscale(1) contrast(1.4) !important; }
-body[data-mimi-skin="gold"]  .panyu-clicker-blob { filter: hue-rotate(40deg) saturate(2) brightness(1.3) drop-shadow(0 0 12px gold) !important; }
+/* ミミ：data-mimi-skin 別（見た目フィルター。専用画像が届くまではCSSフィルタで機能させる）
+   P1-1: panyu-clicker-blob だけでなく、バトル画面本体のミミ立ち絵・ミニポーカーのミミ・
+   心理バトルモーダルのミミポートレートにも適用（購入した衣装が実際の画面で変化するように配線） */
+body[data-mimi-skin="pink"]  .panyu-clicker-blob,
+body[data-mimi-skin="pink"]  .char-mimi img,
+body[data-mimi-skin="pink"]  .mp-player .mp-char-img,
+body[data-mimi-skin="pink"]  .portrait-mimi img { filter: hue-rotate(-20deg) saturate(1.3) brightness(1.1) !important; }
+body[data-mimi-skin="panda"] .panyu-clicker-blob,
+body[data-mimi-skin="panda"] .char-mimi img,
+body[data-mimi-skin="panda"] .mp-player .mp-char-img,
+body[data-mimi-skin="panda"] .portrait-mimi img { filter: grayscale(1) contrast(1.4) !important; }
+body[data-mimi-skin="gold"]  .panyu-clicker-blob,
+body[data-mimi-skin="gold"]  .char-mimi img,
+body[data-mimi-skin="gold"]  .mp-player .mp-char-img,
+body[data-mimi-skin="gold"]  .portrait-mimi img { filter: hue-rotate(40deg) saturate(2) brightness(1.3) drop-shadow(0 0 12px gold) !important; }
 
-/* カットイン：data-cutin-skin 別 */
-body[data-cutin-skin="classic"] .cutin-overlay { background: repeating-linear-gradient(0deg, rgba(0,0,0,0.8) 0 4px, transparent 4px 12px) !important; filter: grayscale(0.6) !important; }
-body[data-cutin-skin="neon"]    .cutin-overlay { background: radial-gradient(circle, rgba(190,80,255,0.5) 0%, rgba(0,0,40,0.85) 70%) !important; box-shadow: inset 0 0 80px rgba(255,80,255,0.6); }
+/* カットイン：data-cutin-skin 別
+   P1-1: 旧セレクタ .cutin-overlay はゲーム内に存在せず未配線だったため、
+   実際の心理バトルカットイン要素（.rico-cutin / .cutin-flash / .cutin-portrait）に配線し直す */
+body[data-cutin-skin="classic"] .rico-cutin { filter: grayscale(0.65) drop-shadow(0 8px 24px rgba(0,0,0,0.6)) !important; }
+body[data-cutin-skin="classic"] .cutin-flash {
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.35) 0 3px, transparent 3px 10px),
+    radial-gradient(ellipse at 80% 50%, rgba(200,37,58,0.25) 0%, transparent 60%) !important;
+}
+body[data-cutin-skin="neon"] .cutin-portrait { box-shadow: 0 0 24px 6px rgba(190,80,255,0.8) !important; border-color: #ff7cf5 !important; }
+body[data-cutin-skin="neon"] .cutin-flash { background: radial-gradient(ellipse at 80% 50%, rgba(190,80,255,0.55) 0%, transparent 65%) !important; }
 
 /* ===== ショップUIアトラス（1536×512 単一PNG） =====
    ファイル配置: assets/ui/shop_atlas.png
@@ -8810,7 +9539,7 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   gap: 12px;
   align-items: center;
   width: 100%;
-  margin: 4px 0;
+  margin: 0; /* P0-1: 4px→0、縦オーバーフロー対策の一部 */
 }
 .table-stack-slot {
   display: flex;
@@ -8820,6 +9549,10 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
 .community-row .community-cards {
   margin: 0;
   justify-content: center;
+}
+/* P0-1: 場札カードだけ高さを縮小（他画面のカードには影響させない・センターテーブルの縦オーバーフロー対策） */
+.community-row .community-cards .card {
+  height: 90px;
 }
 .table-stack {
   display: flex;
@@ -8959,4 +9692,2468 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   color: rgba(255,255,255,0.8);
   letter-spacing: 0.02em;
   text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* ===== エンディング映画化：一枚絵キーアート＋下部キャプション ===== */
+
+/* 黒フェード（場面転換用） — 親 .ending-narration の transform/max-width をリセット */
+.ending-narration.black-fade {
+  background: #000 !important;
+  color: #fff !important;
+  font-size: 28px !important;
+  letter-spacing: 0.25em !important;
+  text-align: center !important;
+  position: absolute !important;
+  inset: 0 !important;
+  left: 0 !important;
+  top: 0 !important;
+  max-width: none !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0;
+  transform: none !important;
+  transition: opacity 0.8s ease !important;
+  z-index: 5;
+  padding: 40px;
+  box-sizing: border-box;
+}
+.ending-narration.black-fade.show { opacity: 1; transform: none !important; }
+.ending-narration.black-fade.out  { opacity: 0; transform: none !important; }
+
+/* 一枚絵シーン（全画面 + Ken Burns ズーム） */
+.ending-keyart {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #000;
+  /* 重ねた時、新しい方が前面に出るよう、出現時は z-index を上げる */
+}
+.ending-keyart.show { opacity: 1; z-index: 5; }
+.ending-keyart.out  { opacity: 0; z-index: 4; transition: opacity 1.6s cubic-bezier(0.4, 0, 0.6, 1); }
+
+/* ポートレートシーンも同じ作法でクロスフェード */
+.ending-portrait-scene {
+  transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.ending-portrait-scene.show { z-index: 5; }
+.ending-portrait-scene.out  { z-index: 4; transition: opacity 1.6s cubic-bezier(0.4, 0, 0.6, 1) !important; }
+
+/* 黒フェードも上層に */
+.ending-narration.black-fade.show { z-index: 6; }
+
+/* キャプションのフェードイン：画像から少し遅らせて出現 */
+@keyframes capFadeIn {
+  0%   { opacity: 0; transform: translateY(28px); filter: blur(4px); }
+  60%  { opacity: 1; transform: translateY(0); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.ek-caption {
+  animation: capFadeIn 1.4s ease 0.8s both !important;
+}
+/* シーン余韻：キャプションだけ先にフェード（絵はそのまま残す）。
+   caption-out / out のどちらでもキャプションは確実にフェードアウトする。 */
+.ending-keyart.caption-out .ek-caption,
+.ending-keyart.out .ek-caption,
+.ending-portrait-scene.caption-out .ek-caption,
+.ending-portrait-scene.out .ek-caption {
+  opacity: 0;
+  transform: translateY(-12px);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+  animation: none !important;
+}
+/* ナレーション中央配置でも transform を確実に reset しないように */
+.ending-keyart.caption-out .ek-caption.narr,
+.ending-keyart.out .ek-caption.narr {
+  transform: translate(0, -50%) translateY(-12px);
+}
+.ek-img-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.ek-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* ゆったり長尺の Ken Burns（一枚絵をじっくり味わう） */
+  transform-origin: center 35%;
+  animation: kenBurns 16s ease-out forwards;
+  will-change: transform;
+}
+@keyframes kenBurns {
+  from { transform: scale(1.02); }
+  to   { transform: scale(1.14); }
+}
+.ek-img-frame.ek-fallback {
+  background: #000; /* 紫グラデのフォールバックは廃止：色透け防止 */
+}
+.ek-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%),
+    linear-gradient(0deg, rgba(0,0,0,0.75) 0%, transparent 35%);
+  pointer-events: none;
+}
+.ek-caption {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 10%;
+  z-index: 2;
+  color: #fbeec8;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.95), 0 0 14px rgba(0,0,0,0.6);
+  animation: capFadeIn 1.0s ease 0.4s both;
+  text-align: center;            /* デフォルト中央寄せ */
+}
+@keyframes capFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ek-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.18em;
+  margin-bottom: 8px;
+  padding: 0;
+  display: inline-block;
+  border-bottom: 2px solid var(--c-gold-bright);
+  padding-bottom: 4px;
+}
+.ek-text {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.55;
+  padding: 0;
+}
+/* ナレーション扱い（narr）：背景画像を隠して黒地に文字だけ表示 */
+.ending-keyart:has(.ek-caption.narr) .ek-img-frame,
+.ending-keyart:has(.ek-caption.narr) .ek-vignette {
+  display: none;
+}
+.ending-keyart:has(.ek-caption.narr) {
+  background: #000;
+}
+.ek-caption.narr {
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  text-align: center;
+}
+.ek-caption.narr .ek-text {
+  padding-left: 0;
+  font-style: italic;
+  font-size: 30px;
+  letter-spacing: 0.15em;
+  line-height: 1.8;
+}
+
+/* 立ち絵シーン（中央立ち絵 + 下部キャプション） */
+.ending-portrait-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  background: #000; /* 漆黒：シーン切替時の色透けを完全防止 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ending-portrait-scene.show { opacity: 1; }
+.ending-portrait-scene.out  { opacity: 0; }
+.eps-portrait-frame {
+  width: 420px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-top: -40px;
+}
+.eps-portrait {
+  height: 88%;
+  width: auto;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 12px 30px rgba(0,0,0,0.85))
+    drop-shadow(0 0 40px rgba(245,215,122,0.25));
+  animation: portraitFloat 4.5s ease-in-out infinite;
+}
+@keyframes portraitFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+/* 立ち絵の台詞は「会話風」に左揃え（中央寄せより会話の流れが見える） */
+.ending-portrait-scene .ek-caption {
+  text-align: left;
+  left: 12%;
+  right: 12%;
+}
+.ending-portrait-scene .ek-name {
+  border-left: 3px solid var(--c-gold-bright);
+  padding-left: 14px;
+  text-align: left;
+}
+.ending-portrait-scene .ek-text {
+  padding-left: 14px;
+  text-align: left;
+}
+
+/* エンディング最終背景：キーアート + ヴィネット */
+.ending-finale-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  opacity: 0;
+  animation: finaleBgFadeIn 1.2s ease-out forwards, kenBurnsSlow 12s ease-out 1s forwards;
+}
+.ending-finale-bg img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+}
+.ending-finale-bg.ek-fallback {
+  background: #000;
+}
+@keyframes finaleBgFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes kenBurnsSlow {
+  from { transform: scale(1.0); }
+  to   { transform: scale(1.05); }
+}
+
+/* ===== エンディング中：操作パネル（音量・ミュート・スキップ） ===== */
+.ending-controls {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(10, 4, 18, 0.7);
+  border: 1px solid rgba(245,215,122,0.4);
+  border-radius: 100px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+  opacity: 0.55;
+  transition: opacity 0.25s ease;
+}
+.ending-controls:hover { opacity: 1; }
+.ec-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--c-gold-bright);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 100px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ec-btn:hover {
+  background: rgba(245,215,122,0.15);
+  border-color: rgba(245,215,122,0.5);
+}
+.ec-mute { font-size: 16px; padding: 4px 8px; }
+.ec-vol {
+  width: 100px;
+  accent-color: var(--c-gold-bright);
+  cursor: pointer;
+}
+/* finale 進行中はスキップだけ隠す */
+.ending-controls.ec-finale .ec-skip { display: none; }
+/* スマホで控えめに */
+@media (max-aspect-ratio: 1/1) {
+  .ec-vol { width: 70px; }
+}
+
+/* ===== エンディング演出のクオリティUP ===== */
+/* キャプション台詞のフォント・字間を整える */
+.ek-text {
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Meiryo", serif;
+}
+.ek-name {
+  font-family: "Yu Gothic UI", "Hiragino Kaku Gothic ProN", sans-serif;
+}
+
+/* Ken Burns は .ek-img の基本定義に統一済（重複ルールは撤去してガタつき解消） */
+
+/* 立ち絵シーン：夜明けの窓辺背景（ending_room.png）＋光のオーバーレイ
+   画像なし時は漆黒フォールバック（紫グラデは廃止：シーン切替時の色透けを完全防止） */
+.ending-portrait-scene {
+  background:
+    /* 上層：暖色光暈＋ヴィネット（背景画像を整える） */
+    radial-gradient(ellipse 80% 50% at 50% 35%, rgba(245,215,122,0.10) 0%, transparent 65%),
+    radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%),
+    /* 中層：背景画像（あれば優先） */
+    url('assets/backgrounds/ending_room.png') center / cover no-repeat,
+    /* 最背面：漆黒 */
+    #000;
+}
+.ending-portrait-scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* 紫アンビエンスは廃止。控えめなゴールド・トップライトのみ残す */
+  background:
+    radial-gradient(circle at 50% 0%, rgba(245,215,122,0.05) 0%, transparent 40%);
+  pointer-events: none;
+  animation: portraitAmbience 8s ease-in-out infinite;
+}
+@keyframes portraitAmbience {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* キャプション登場アニメをよりエレガントに */
+@keyframes capFadeIn {
+  0%   { opacity: 0; transform: translateY(28px); filter: blur(4px); }
+  60%  { opacity: 1; transform: translateY(0); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+/* キャプション名前にゴールド下線アクセント */
+.ek-name::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--c-gold-bright), transparent);
+  margin-top: 4px;
+}
+.ending-portrait-scene .ek-name::after {
+  margin-left: auto;
+  margin-right: auto;
+  background: linear-gradient(90deg, transparent, var(--c-gold-bright), transparent);
+}
+
+/* テキスト末尾に句点フェードイン（タイプライター風じゃないがリズム感を強化） */
+.ek-text {
+  animation: textShine 1.5s ease-out 0.6s both;
+}
+@keyframes textShine {
+  0%   { text-shadow: 0 2px 8px rgba(0,0,0,0.95); }
+  50%  { text-shadow: 0 2px 8px rgba(0,0,0,0.95), 0 0 24px rgba(245,215,122,0.5); }
+  100% { text-shadow: 0 2px 8px rgba(0,0,0,0.95); }
+}
+
+/* ===== エンディング操作パネル：音量＝左上／スキップ＝右上 ===== */
+.ec-pill {
+  position: absolute;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(10, 4, 18, 0.72);
+  border: 1px solid rgba(245,215,122,0.4);
+  border-radius: 100px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+  opacity: 0.6;
+  transition: opacity 0.25s ease;
+}
+.ec-pill:hover { opacity: 1; }
+.ec-pos-left  { top: 14px; left: 14px; }
+.ec-pos-right { top: 14px; right: 14px; }
+.ec-pill-audio { padding-right: 16px; }
+.ec-skip {
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--c-gold-bright);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.ec-skip:hover {
+  background: rgba(245,215,122,0.18);
+  color: #fff;
+}
+/* finale中はスキップだけ隠す */
+.ec-skip.ec-finale { display: none; }
+
+/* ===== エンディング 余韻シーン（スタッフロール後） ===== */
+.ending-epilogue {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  background: #000;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ending-epilogue.show { opacity: 1; }
+.ep-img-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.ep-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  transform: scale(1.05);
+  filter: brightness(0.5) saturate(0.85);
+  animation: epImgZoom 18s ease-out forwards;
+}
+@keyframes epImgZoom {
+  from { transform: scale(1.05); }
+  to   { transform: scale(1.12); }
+}
+.ep-img-wrap.ep-fallback {
+  background: linear-gradient(180deg, #2a1238 0%, #1a0820 100%);
+}
+.ep-vignette {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.85) 100%),
+    linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 30%, rgba(0,0,0,0.7) 100%);
+}
+.ep-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: #fbeec8;
+  padding: 40px;
+  max-width: 720px;
+  animation: epContentFadeIn 2.2s ease-out 0.6s both;
+}
+@keyframes epContentFadeIn {
+  from { opacity: 0; transform: translateY(20px); filter: blur(6px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.ep-thanks {
+  font-family: "Georgia", "Yu Mincho", serif;
+  font-size: 38px;
+  font-weight: 400;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.15em;
+  margin-bottom: 8px;
+  text-shadow: 0 0 24px rgba(245,215,122,0.6), 0 2px 8px rgba(0,0,0,0.8);
+}
+.ep-jp {
+  font-size: 18px;
+  color: #fbeec8;
+  letter-spacing: 0.3em;
+  opacity: 0.85;
+  margin-bottom: 28px;
+}
+.ep-divider {
+  width: 120px;
+  height: 1px;
+  margin: 0 auto 28px;
+  background: linear-gradient(90deg, transparent, var(--c-gold-bright), transparent);
+  animation: epDividerExpand 1.4s ease-out 1.2s both;
+}
+@keyframes epDividerExpand {
+  from { width: 0; opacity: 0; }
+  to   { width: 120px; opacity: 1; }
+}
+.ep-last-line {
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 24px;
+  font-style: italic;
+  line-height: 1.8;
+  color: #fff5d8;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+  margin-bottom: 16px;
+  animation: epLineFadeIn 2.0s ease-out 2.0s both;
+}
+@keyframes epLineFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.ep-signed {
+  font-size: 14px;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.2em;
+  opacity: 0.85;
+  margin-bottom: 36px;
+  animation: epLineFadeIn 2.0s ease-out 3.4s both;
+}
+.ending-epilogue .ending-final-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  position: relative;
+  margin-top: 8px;
+  opacity: 0;
+  animation: epLineFadeIn 1.4s ease-out 5.0s forwards;
+}
+
+/* FIN/タイトルロゴをepilogue遷移時にフェードアウト */
+.ending-fin.fade-out,
+.ending-title-drop.fade-out {
+  opacity: 0;
+  transition: opacity 1.0s ease;
+}
+
+/* 同一キーアート上でキャプションだけ差替するアニメ */
+.ek-caption.cap-out {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+/* ===== スタッフロール 豪華化 ===== */
+.credits-roll {
+  /* staffroll.png を背景、上下に暗み・両端から中央へ明るみ */
+  background:
+    linear-gradient(180deg, rgba(10,4,18,0.85) 0%, rgba(10,4,18,0.55) 30%, rgba(10,4,18,0.55) 70%, rgba(10,4,18,0.85) 100%),
+    url('assets/backgrounds/staffroll.png') center / cover no-repeat,
+    /* 画像がない時のフォールバック */
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(140,50,90,0.4) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(90,40,140,0.4) 0%, transparent 60%),
+    linear-gradient(180deg, #0a0414 0%, #1a0a28 50%, #0a0414 100%) !important;
+}
+
+/* 星屑層 */
+.cr-stars {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.cr-star {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(255,255,255,0.8);
+  animation: starTwinkle 3s ease-in-out infinite;
+}
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.4); }
+}
+
+/* 上下の装飾バー（金の唐草の代わりにグラデ＋彫りライン） */
+.cr-deco {
+  position: absolute;
+  left: 0; right: 0;
+  height: 50px;
+  z-index: 2;
+  pointer-events: none;
+}
+.cr-deco-top {
+  top: 0;
+  background: linear-gradient(180deg, rgba(10,4,18,0.92) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(245,215,122,0.35);
+  box-shadow: 0 1px 8px rgba(245,215,122,0.2);
+}
+.cr-deco-bot {
+  bottom: 0;
+  background: linear-gradient(0deg, rgba(10,4,18,0.92) 0%, transparent 100%);
+  border-top: 1px solid rgba(245,215,122,0.35);
+  box-shadow: 0 -1px 8px rgba(245,215,122,0.2);
+}
+.cr-deco-top::before, .cr-deco-bot::before {
+  content: '◆';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--c-gold-bright);
+  font-size: 14px;
+  opacity: 0.7;
+  text-shadow: 0 0 8px rgba(245,215,122,0.8);
+}
+.cr-deco-top::before { bottom: 6px; }
+.cr-deco-bot::before { top: 6px; }
+
+/* ミニキャラ通過レイヤー */
+.cr-mini-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+/* ===== ミニキャラ（ラッパー：横移動 / img：パーソナリティ動作） ===== */
+.cr-mini-wrap {
+  position: absolute;
+  width: auto;
+  height: 180px;
+  will-change: left, right;
+}
+.cr-mini-wrap.cr-mini-lr {
+  left: -180px;
+  animation: miniWalkLR linear forwards;
+}
+.cr-mini-wrap.cr-mini-rl {
+  right: -180px;
+  animation: miniWalkRL linear forwards;
+}
+@keyframes miniWalkLR {
+  0%   { left: -180px; }
+  100% { left: 105%; }
+}
+@keyframes miniWalkRL {
+  0%   { right: -180px; }
+  100% { right: 105%; }
+}
+
+.cr-mini-img {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.85)) drop-shadow(0 0 12px rgba(245,215,122,0.25));
+  opacity: 0.95;
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+/* === ミニキャラ動作：画像は絶対に伸び縮みさせない（translateYのみ） === */
+/* 反転（左右の見た目を逆に）は CSS変数で扱い、scale ではなく rotate(180deg)?
+   → 反転は scaleX(-1) しかないので CSS変数 --sx で管理 */
+.cr-mini-img        { --sx: 1; }
+.cr-mini-img.cr-flip{ --sx: -1; }
+
+/* ① ふつう歩き（小さくぴょこぴょこ） */
+.mini-pers-normal {
+  animation: miniBob 0.5s ease-in-out infinite;
+}
+@keyframes miniBob {
+  0%, 100% { transform: scaleX(var(--sx)) translateY(0); }
+  50%      { transform: scaleX(var(--sx)) translateY(-6px); }
+}
+
+/* ② ポルカ：通過中に一回だけ大ジャンプ（高さのみ、形は変えない） */
+.mini-pers-jump {
+  animation: polkaJump ease-in-out 1 both;
+  animation-duration: inherit;
+}
+@keyframes polkaJump {
+  0%, 100% { transform: scaleX(var(--sx)) translateY(0); }
+  44%      { transform: scaleX(var(--sx)) translateY(0); }
+  48%      { transform: scaleX(var(--sx)) translateY(-10px); }   /* タメ */
+  52%      { transform: scaleX(var(--sx)) translateY(-110px); }  /* 跳躍ピーク */
+  58%      { transform: scaleX(var(--sx)) translateY(-110px); }  /* 浮遊 */
+  64%      { transform: scaleX(var(--sx)) translateY(0); }       /* 着地 */
+  68%      { transform: scaleX(var(--sx)) translateY(-4px); }    /* 反動小 */
+  72%      { transform: scaleX(var(--sx)) translateY(0); }
+}
+
+/* ③ セリナ：転ぶ（画面中央付近で派手にこける→振り返って気まずそうに歩き出す） */
+/* 画像は変形しない（scale 1固定、回転と translateXY のみ） */
+.mini-pers-trip {
+  animation: selinaTrip linear 1 both;
+  animation-duration: inherit;
+  transform-origin: 50% 95% !important; /* 足元寄りで前のめり */
+}
+@keyframes selinaTrip {
+  /* ── 0-40%：平穏な歩き（軽くぴょこぴょこ）── 画面中央付近まで進む ── */
+  0%   { transform: scaleX(var(--sx)) rotate(0deg) translate(0, 0); }
+  8%   { transform: scaleX(var(--sx)) rotate(0deg) translate(0, -5px); }
+  16%  { transform: scaleX(var(--sx)) rotate(0deg) translate(0, 0); }
+  24%  { transform: scaleX(var(--sx)) rotate(0deg) translate(0, -5px); }
+  32%  { transform: scaleX(var(--sx)) rotate(0deg) translate(0, 0); }
+  40%  { transform: scaleX(var(--sx)) rotate(0deg) translate(0, -5px); }
+  /* ── 44-50%：つんのめる（中央〜右寄り、見せ場！） ── */
+  44%  { transform: scaleX(var(--sx)) rotate(-18deg) translate(10px, 4px); }
+  48%  { transform: scaleX(var(--sx)) rotate(-55deg) translate(26px, 28px); }
+  /* ── 52-66%：ほぼ伏せ＆短いジタバタ ── */
+  52%  { transform: scaleX(var(--sx)) rotate(-88deg) translate(42px, 56px); }
+  58%  { transform: scaleX(var(--sx)) rotate(-92deg) translate(46px, 60px); }
+  64%  { transform: scaleX(var(--sx)) rotate(-88deg) translate(42px, 58px); }
+  /* ── 68-76%：起き上がり（ヨロヨロ） ── */
+  70%  { transform: scaleX(var(--sx)) rotate(-45deg) translate(26px, 32px); }
+  74%  { transform: scaleX(var(--sx)) rotate(-12deg) translate(8px, 6px); }
+  77%  { transform: scaleX(var(--sx)) rotate(0deg)   translate(0, 0); }
+  /* ── 80-88%：振り返って "誰か見てた…？" ── */
+  /* 振り返り：scaleX を反転（sx → -sx）して一瞬だけ逆向き */
+  80%  { transform: scaleX(calc(var(--sx) * -1)) rotate(0deg) translate(0, -4px); }
+  84%  { transform: scaleX(calc(var(--sx) * -1)) rotate(0deg) translate(0, 0); }
+  87%  { transform: scaleX(calc(var(--sx) * -1)) rotate(0deg) translate(0, -3px); }
+  /* ── 90-100%：気まずそうに小走り（前向きに戻す） ── */
+  90%  { transform: scaleX(var(--sx)) rotate(0deg) translate(0, -8px); }
+  95%  { transform: scaleX(var(--sx)) rotate(0deg) translate(0, 0); }
+  100% { transform: scaleX(var(--sx)) rotate(0deg) translate(0, 0); }
+}
+
+/* ④ グラーノ：ゆっくりぴょこ（立ち止まりは JS で wrapper の animationPlayState） */
+.mini-pers-pauses {
+  animation: granoStep 0.8s ease-in-out infinite;
+}
+@keyframes granoStep {
+  0%, 100% { transform: scaleX(var(--sx)) translateY(0); }
+  50%      { transform: scaleX(var(--sx)) translateY(-4px); }
+}
+
+/* ⑤ ぴょんぴょんスキップ（ヴェルベット＆最後のミミ） */
+/* 楽しい程度のぴょんぴょん：軽快だけど派手すぎない */
+.mini-pers-skip {
+  animation: velvetSkip 0.46s ease-in-out infinite;
+}
+@keyframes velvetSkip {
+  0%   { transform: scaleX(var(--sx)) translateY(0); }
+  40%  { transform: scaleX(var(--sx)) translateY(-26px); }  /* ピーク：ほどよく跳ねる */
+  70%  { transform: scaleX(var(--sx)) translateY(-2px); }   /* 着地寸前 */
+  100% { transform: scaleX(var(--sx)) translateY(0); }      /* 着地→次の踏切へ */
+}
+
+/* ===== 全員集合フィナーレ（スタッフロール終盤）：歩いてきて定位置で止まる ===== */
+.cr-lineup-row {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 30px;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 14px;
+  z-index: 2;
+  pointer-events: none;
+}
+.cr-lineup-slot {
+  width: 140px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+}
+.cr-lineup-slot .cr-mini-img {
+  height: 100%;
+}
+/* 左側から歩いてくる */
+.cr-lineup-slot.cr-from-L {
+  animation: lineupWalkInL 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+/* 右側から歩いてくる */
+.cr-lineup-slot.cr-from-R {
+  animation: lineupWalkInR 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+@keyframes lineupWalkInL {
+  0%   { opacity: 0; transform: translateX(-600px); }
+  20%  { opacity: 1; }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes lineupWalkInR {
+  0%   { opacity: 0; transform: translateX(600px); }
+  20%  { opacity: 1; }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* 出会いの挨拶：その場で1回ぴょこん */
+.cr-mini-img.mini-greet {
+  animation: miniGreet 1.2s ease-in-out 1 both !important;
+}
+@keyframes miniGreet {
+  0%   { transform: scaleX(var(--sx)) translateY(0); }
+  40%  { transform: scaleX(var(--sx)) translateY(-22px); }
+  60%  { transform: scaleX(var(--sx)) translateY(-22px); }
+  100% { transform: scaleX(var(--sx)) translateY(0); }
+}
+
+/* === スタッフロール本体：スクロール変数化 === */
+.credits-inner.rolling {
+  animation: creditsScroll var(--scroll-dur, 60s) linear forwards;
+}
+@keyframes creditsScroll {
+  0%   { top: 100%; }
+  100% { top: var(--scroll-end-y, -3200px); }
+}
+
+/* スタッフロール本体は装飾層より前面に */
+.credits-inner {
+  z-index: 3 !important;
+  position: absolute !important;
+}
+.credits-skip {
+  z-index: 10 !important;
+}
+
+/* タイトル文字をより華やかに */
+.cr-title {
+  background: linear-gradient(180deg, #fff5d8 0%, var(--c-gold-bright) 50%, #c89020 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 12px rgba(245,215,122,0.8)) drop-shadow(0 4px 6px rgba(0,0,0,0.8));
+}
+.cr-section {
+  background: linear-gradient(90deg, transparent, rgba(255,122,164,0.15), transparent);
+  padding: 8px 24px;
+  border-radius: 100px;
+  display: inline-block;
+}
+
+/* スタッフロール：終わりで止まる＋フェードアウト */
+.credits-inner.settle {
+  /* スクロール停止：最後の位置（動的）で固定 */
+  animation: none !important;
+  top: var(--scroll-end-y, -3200px) !important;
+  transition: filter 1.5s ease;
+  filter: brightness(1.1) drop-shadow(0 0 12px rgba(245,215,122,0.4));
+}
+.credits-roll.roll-fadeout {
+  opacity: 0;
+  transition: opacity 1.8s ease;
+}
+
+/* ===== 講義ゲーム化：進捗HUD ===== */
+.lecture-hud {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  width: 340px;
+  background: linear-gradient(180deg, rgba(28,12,42,0.92) 0%, rgba(14,6,24,0.95) 100%);
+  border: 1px solid rgba(245,215,122,0.5);
+  border-radius: 50px;
+  padding: 7px 18px 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+.lecture-hud .lh-bar {
+  height: 5px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+.lecture-hud .lh-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--c-gold) 0%, var(--c-gold-bright) 100%);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 8px rgba(245,215,122,0.7);
+}
+.lecture-hud .lh-stats {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbeec8;
+  letter-spacing: 0.04em;
+}
+.lecture-hud .lh-combo {
+  color: #ffb060;
+  animation: lhComboPulse 0.8s ease-in-out infinite;
+}
+@keyframes lhComboPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.15); }
+}
+
+/* ===========================================================
+   ミニキャラ・ファイブポーカー v2（中毒性 / 射幸性 / かわいさ）
+   =========================================================== */
+.minipoker-overlay {
+  position: absolute; inset: 0;
+  background: rgba(8, 4, 18, 0.94);
+  backdrop-filter: blur(6px);
+  z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  animation: mpFadeIn 0.4s ease forwards;
+}
+@keyframes mpFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.minipoker-modal {
+  position: relative;
+  width: 92%; max-width: 1180px;
+  height: 90%; max-height: 760px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(245,215,122,0.12) 0%, transparent 60%),
+    linear-gradient(180deg, #1a0a26 0%, #0a0612 60%, #14041e 100%);
+  border: 2px solid rgba(245,215,122,0.45);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.85), inset 0 0 60px rgba(245,215,122,0.06);
+  padding: 18px 24px 16px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.minipoker-close {
+  position: absolute; top: 10px; right: 12px;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.5); color: #fff;
+  font-size: 22px; cursor: pointer;
+  z-index: 5;
+}
+.minipoker-close:hover { background: rgba(245,215,122,0.2); }
+.minipoker-title {
+  text-align: center;
+  font-size: 24px; font-weight: 700;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 12px rgba(245,215,122,0.6);
+  margin-bottom: 8px;
+}
+
+/* ── ボード本体：3カラム（CPU・中央・プレイヤー） ── */
+.minipoker-board {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1.05fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+  min-height: 0;
+}
+.mp-side { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
+.mp-cpu    { padding: 6px; }
+.mp-player { padding: 6px; }
+
+/* キャラ表示 */
+.mp-char {
+  position: relative;
+  height: 140px; display: flex; flex-direction: column; align-items: center;
+}
+.mp-char-img {
+  height: 110px; width: auto;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 14px rgba(245,215,122,0.2));
+  animation: mpCharBob 0.9s ease-in-out infinite;
+}
+.mp-char-cpu .mp-char-img { transform: scaleX(-1); } /* CPU側は中央を向く */
+@keyframes mpCharBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+.mp-char-cpu .mp-char-img { animation-name: mpCharBobFlip; }
+@keyframes mpCharBobFlip {
+  0%, 100% { transform: scaleX(-1) translateY(0); }
+  50%      { transform: scaleX(-1) translateY(-6px); }
+}
+.mp-char-name {
+  margin-top: 4px;
+  font-size: 16px; font-weight: 700;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.1em;
+}
+
+/* 手札 */
+.mp-hand {
+  display: flex; gap: 8px; justify-content: center;
+  flex-wrap: wrap;
+}
+.mp-card {
+  width: 64px; height: 92px;
+  background: linear-gradient(180deg, #fffdf3 0%, #f0e8d0 100%);
+  border: 2px solid #2a1810;
+  border-radius: 8px;
+  position: relative;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  font-family: 'Georgia', serif;
+  cursor: default;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  user-select: none;
+}
+.mp-card.mp-tap { cursor: pointer; }
+.mp-card.mp-tap:hover { transform: translateY(-6px); box-shadow: 0 10px 18px rgba(0,0,0,0.6); }
+.mp-card.mp-held {
+  transform: translateY(-10px);
+  border-color: var(--c-gold-bright);
+  box-shadow: 0 12px 22px rgba(245,215,122,0.4), 0 0 12px rgba(245,215,122,0.6);
+}
+.mp-card.mp-red   { color: #c8182a; }
+.mp-card.mp-black { color: #181818; }
+.mp-card-corner {
+  position: absolute;
+  font-size: 14px; font-weight: 700;
+  line-height: 1.05;
+  text-align: center;
+}
+.mp-card-tl { top: 4px; left: 6px; }
+.mp-card-br { bottom: 4px; right: 6px; transform: rotate(180deg); }
+.mp-card-suit-big {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; opacity: 0.95;
+}
+.mp-card-keep {
+  position: absolute; bottom: -16px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--c-gold-bright); color: #2a1810;
+  font-size: 10px; font-weight: 800;
+  padding: 1px 6px; border-radius: 6px;
+  letter-spacing: 0.08em;
+}
+.mp-card-back {
+  background:
+    repeating-linear-gradient(45deg, rgba(245,215,122,0.25) 0 4px, transparent 4px 8px),
+    linear-gradient(180deg, #4a1230 0%, #2a0820 100%);
+  border-color: rgba(245,215,122,0.6);
+}
+.mp-handname {
+  font-size: 18px; font-weight: 700;
+  color: #fbeec8;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+  margin-top: 16px;
+  letter-spacing: 0.08em;
+  min-height: 24px;
+}
+
+/* 中央：状況表示＋ボタン（オーバーフロー対策） */
+.mp-center {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start;
+  gap: 8px;
+  padding: 4px;
+  overflow-y: auto;
+  max-height: 100%;
+  min-height: 0;
+}
+.mp-center > * { flex-shrink: 0; }
+.mp-status {
+  font-size: 18px; font-weight: 700;
+  color: #fbeec8; text-align: center;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+  padding: 12px 16px;
+  background: rgba(60,28,90,0.5);
+  border: 1px solid rgba(245,215,122,0.3);
+  border-radius: 10px;
+  min-width: 220px;
+  letter-spacing: 0.05em;
+  line-height: 1.5;
+  animation: mpStatusPop 0.5s ease;
+}
+@keyframes mpStatusPop {
+  0%   { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.mp-actions {
+  display: flex; flex-direction: column; gap: 10px;
+  width: 100%; max-width: 240px;
+}
+.mp-btn {
+  padding: 12px 18px;
+  font-size: 16px; font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid rgba(245,215,122,0.4);
+  letter-spacing: 0.1em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.mp-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.5); }
+.mp-btn-primary {
+  background: linear-gradient(180deg, #f5d77a 0%, #c89020 100%);
+  color: #2a1810;
+  border-color: #f5d77a;
+}
+.mp-btn-ghost {
+  background: rgba(255,255,255,0.05); color: #fbeec8;
+}
+
+/* フッター */
+.mp-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(245,215,122,0.2);
+  margin-top: 8px;
+}
+.mp-coins {
+  font-size: 17px; font-weight: 700;
+  color: var(--c-gold-bright);
+}
+.mp-tip {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.04em;
+}
+
+/* キャラ吹き出し（勝敗ライン）— CPUは下に、Playerは上に出して画面端で崩れないように */
+.mp-bubble {
+  position: absolute;
+  left: 50%;
+  background: #fffdf3; color: #2a1810;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px; font-weight: 600;
+  line-height: 1.4;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.6);
+  max-width: 180px;
+  width: max-content;
+  min-width: 60px;
+  white-space: normal;
+  text-align: center;
+  word-break: break-word;
+  z-index: 10;
+}
+/* Player は上に */
+.mp-bubble-player {
+  bottom: 100%;
+  transform: translateX(-50%) translateY(-10px);
+  animation: mpBubbleInUp 0.4s ease forwards, mpBubbleOutUp 0.5s ease 2.3s forwards;
+}
+.mp-bubble-player::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: #fffdf3;
+}
+/* CPU は下に（モーダル上端と衝突しないよう） */
+.mp-bubble-cpu {
+  top: 100%;
+  transform: translateX(-50%) translateY(10px);
+  animation: mpBubbleInDown 0.4s ease forwards, mpBubbleOutDown 0.5s ease 2.3s forwards;
+}
+.mp-bubble-cpu::after {
+  content: '';
+  position: absolute;
+  bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-bottom-color: #fffdf3;
+}
+@keyframes mpBubbleInUp {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(-10px); }
+}
+@keyframes mpBubbleOutUp {
+  to { opacity: 0; transform: translateX(-50%) translateY(-22px); }
+}
+@keyframes mpBubbleInDown {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(10px); }
+}
+@keyframes mpBubbleOutDown {
+  to { opacity: 0; transform: translateX(-50%) translateY(22px); }
+}
+@keyframes mpBubbleIn {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(-8px); }
+}
+@keyframes mpBubbleOut {
+  to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+}
+
+/* リザルト時：勝者をキラリ */
+.mp-side.mp-player .mp-char-img,
+.mp-side.mp-cpu .mp-char-img {
+  transition: filter 0.5s ease;
+}
+
+/* ===== v2 拡張：ヘッダ・ペイテーブル・ベット・ダブルアップ・演出 ===== */
+
+/* モーダル本体のレイアウトを上下に */
+.minipoker-modal {
+  height: 92%;
+  max-height: 800px;
+}
+.minipoker-board {
+  display: flex !important;
+  flex-direction: row;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* ── ヘッダ（オーバーフロー対策で flex-wrap） ── */
+.mp-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid rgba(245,215,122,0.2);
+  margin-bottom: 10px;
+}
+.mp-title {
+  font-size: 20px; font-weight: 700;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 12px rgba(245,215,122,0.6);
+  flex-shrink: 0;
+}
+.mp-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: #fbeec8;
+  align-items: center;
+  min-width: 0;
+}
+.mp-stat {
+  background: rgba(60,28,90,0.5);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(245,215,122,0.2);
+  font-weight: 700;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ── ペイテーブル（左サイド） ── */
+.mp-paytable {
+  width: 200px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(60,28,90,0.4) 0%, rgba(20,8,30,0.6) 100%);
+  border: 1px solid rgba(245,215,122,0.3);
+  border-radius: 10px;
+  padding: 10px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+.mp-pt-title {
+  text-align: center;
+  font-size: 13px;
+  color: var(--c-gold-bright);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(245,215,122,0.3);
+  padding-bottom: 4px;
+}
+.mp-pt {
+  width: 100%; border-collapse: collapse;
+  color: #fbeec8;
+}
+.mp-pt tr { border-bottom: 1px solid rgba(255,255,255,0.05); }
+.mp-pt-name { padding: 4px 2px; font-weight: 600; }
+.mp-pt-mult {
+  text-align: right;
+  color: rgba(245,215,122,0.8);
+  font-family: 'Courier New', monospace;
+  padding-right: 6px;
+}
+.mp-pt-payout {
+  text-align: right;
+  color: var(--c-gold-bright);
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+}
+.mp-pt-royal {
+  background: linear-gradient(90deg, transparent, rgba(245,215,122,0.15), transparent);
+  animation: mpPtRoyalGlow 2s ease-in-out infinite;
+}
+.mp-pt-royal .mp-pt-payout { font-size: 13px; }
+@keyframes mpPtRoyalGlow {
+  0%, 100% { background-color: rgba(245,215,122,0.05); }
+  50%      { background-color: rgba(245,215,122,0.18); }
+}
+.mp-pt-note {
+  margin-top: 8px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.4;
+}
+
+/* ── プレイエリア（中央）── */
+.mp-play {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.mp-play .mp-side {
+  display: grid;
+  grid-template-columns: 100px 1fr 100px;
+  gap: 12px;
+  align-items: center;
+  min-height: 130px;
+}
+.mp-play .mp-side .mp-char { grid-column: 1; }
+.mp-play .mp-side .mp-hand,
+.mp-play .mp-side .mp-hand-placeholder { grid-column: 2; }
+.mp-play .mp-side .mp-handname { grid-column: 3; text-align: center; margin-top: 0; }
+.mp-play .mp-center {
+  background: linear-gradient(180deg, rgba(40,20,60,0.4) 0%, rgba(10,4,18,0.6) 100%);
+  border-top: 1px solid rgba(245,215,122,0.2);
+  border-bottom: 1px solid rgba(245,215,122,0.2);
+  padding: 10px;
+  border-radius: 8px;
+}
+.mp-hand-placeholder {
+  text-align: center;
+  color: rgba(255,255,255,0.25);
+  font-size: 18px;
+  letter-spacing: 0.4em;
+}
+.mp-handname-big {
+  color: var(--c-gold-bright);
+  font-size: 22px !important;
+  text-shadow: 0 0 12px rgba(245,215,122,0.8);
+  animation: mpHandnamePulse 1.2s ease-in-out infinite;
+}
+@keyframes mpHandnamePulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+
+/* CPU側はキャラ画像を反転 */
+.mp-char-flip .mp-char-img { transform: scaleX(-1); }
+.mp-char-flip .mp-char-img { animation-name: mpCharBobFlip !important; }
+
+/* ── ベットチップ ── */
+.mp-bet-row {
+  display: flex; gap: 8px; justify-content: center;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.mp-bet-chip {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 3px dashed rgba(245,215,122,0.4);
+  background: radial-gradient(circle at 30% 30%, #4a1230 0%, #2a0820 100%);
+  color: #fbeec8;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex; align-items: center; justify-content: center;
+}
+.mp-bet-chip:hover:not(:disabled) {
+  transform: translateY(-4px) scale(1.05);
+  border-color: var(--c-gold-bright);
+  box-shadow: 0 6px 16px rgba(245,215,122,0.5);
+}
+.mp-bet-chip.on {
+  background: radial-gradient(circle at 30% 30%, #f5d77a 0%, #c89020 100%);
+  color: #2a1810;
+  border-style: solid;
+  border-color: #fffdf3;
+  box-shadow: 0 0 18px rgba(245,215,122,0.7);
+}
+.mp-bet-chip:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.mp-bet-display {
+  text-align: center;
+  color: #fbeec8;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.mp-bet-display b {
+  color: var(--c-gold-bright);
+  font-size: 18px;
+}
+
+/* ── DEAL ボタン、その他 ── */
+.mp-btn-deal {
+  background: linear-gradient(180deg, #ff8fa3 0%, #c8324a 100%);
+  color: #fff;
+  border: 1px solid #fff5d8;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  font-size: 18px;
+  padding: 14px;
+  box-shadow: 0 4px 14px rgba(200,50,74,0.6);
+  animation: mpDealPulse 1.6s ease-in-out infinite;
+}
+@keyframes mpDealPulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(200,50,74,0.6); }
+  50%      { box-shadow: 0 4px 24px rgba(255,140,180,0.9); }
+}
+.mp-btn-double {
+  background: linear-gradient(180deg, #c084fc 0%, #6b21a8 100%);
+  color: #fff;
+  border: 1px solid #fff5d8;
+  font-size: 16px;
+}
+
+/* ── 状態別ステータス ── */
+.mp-status-wager  { color: #fbeec8; }
+.mp-status-win    { background: linear-gradient(180deg, rgba(245,215,122,0.3) 0%, rgba(200,144,32,0.4) 100%); color: #fff; }
+.mp-status-lose   { background: rgba(60,28,90,0.6); color: #fbb; }
+.mp-status-tie    { background: rgba(60,60,60,0.6); color: #ddd; }
+.mp-status-double { background: linear-gradient(180deg, rgba(192,132,252,0.25) 0%, rgba(107,33,168,0.4) 100%); color: #fff; }
+
+/* ── リーチ表示（ニアミス効果） ── */
+.mp-reach {
+  text-align: center;
+  background: linear-gradient(90deg, transparent, rgba(255,200,100,0.3), transparent);
+  color: #ffe080;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 8px 12px;
+  margin: 8px 0;
+  border-radius: 8px;
+  letter-spacing: 0.1em;
+  animation: mpReachBlink 0.8s ease-in-out infinite;
+}
+@keyframes mpReachBlink {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 1.0; transform: scale(1.04); }
+}
+
+/* ── ダブルアップピッチ＆カード ── */
+.mp-double-pitch {
+  background: linear-gradient(180deg, rgba(192,132,252,0.2) 0%, rgba(107,33,168,0.3) 100%);
+  border: 1px solid rgba(192,132,252,0.5);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 8px 0;
+  color: #fff;
+  text-align: center;
+}
+.mp-double-cards {
+  display: flex; gap: 16px; justify-content: center;
+  margin: 12px 0;
+}
+.mp-card-double {
+  width: 72px; height: 104px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.mp-card-double:hover { transform: translateY(-8px) scale(1.05); }
+.mp-card-flipped { animation: mpDoubleFlip 0.5s ease forwards; }
+@keyframes mpDoubleFlip {
+  0%   { transform: rotateY(0deg); }
+  50%  { transform: rotateY(90deg); }
+  100% { transform: rotateY(0deg); }
+}
+.mp-card-picked {
+  box-shadow: 0 0 24px rgba(245,215,122,1), inset 0 0 12px rgba(245,215,122,0.5) !important;
+  border-color: var(--c-gold-bright) !important;
+  transform: translateY(-12px) !important;
+}
+.mp-double-hint {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.05em;
+}
+
+/* ── 警告 ── */
+.mp-warn {
+  text-align: center;
+  color: #ff8fa3;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+/* ── 配布アニメ（カードが滑り込んでくる） ── */
+.mp-card-dealt {
+  animation: mpCardDeal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@keyframes mpCardDeal {
+  0%   { opacity: 0; transform: translate(-40px, -60px) rotate(-15deg); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translate(0, 0) rotate(0); }
+}
+
+/* ── 演出 FX レイヤ ── */
+.mp-fx-layer {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 6;
+}
+
+/* バナー */
+.mp-banner {
+  position: absolute;
+  top: 30%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(180deg, #fff5d8 0%, #c89020 100%);
+  color: #2a1810;
+  padding: 14px 32px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  border-radius: 50px;
+  box-shadow: 0 8px 32px rgba(245,215,122,0.8), 0 0 60px rgba(245,215,122,0.5);
+  animation: mpBannerIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), mpBannerOut 0.6s ease 1.8s forwards;
+}
+@keyframes mpBannerIn {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes mpBannerOut {
+  to { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+}
+
+/* 通常勝利フラッシュ */
+.mp-flash-big {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(245,215,122,0.5) 0%, transparent 70%);
+  animation: mpFlashBig 0.9s ease-out forwards;
+}
+@keyframes mpFlashBig {
+  0%   { opacity: 1; transform: scale(0.6); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+/* リーチフラッシュ */
+.mp-flash-reach {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(255,200,100,0.4) 0%, transparent 60%);
+  animation: mpFlashBig 0.7s ease-out forwards;
+}
+
+/* ロイヤル特大フラッシュ */
+.mp-flash-royal {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(255,245,200,0.95) 0%, rgba(245,215,122,0.8) 30%, transparent 100%);
+  animation: mpFlashRoyal 1.8s ease-out forwards;
+}
+@keyframes mpFlashRoyal {
+  0%   { opacity: 0; transform: scale(0.3); }
+  20%  { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0; transform: scale(2); }
+}
+
+/* ロイヤルロゴ */
+.mp-royal-logo {
+  position: absolute;
+  top: 30%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  background: linear-gradient(180deg, #fffdf3 0%, var(--c-gold-bright) 50%, #c89020 100%);
+  font-size: 70px;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  text-align: center;
+  line-height: 1.0;
+  filter: drop-shadow(0 0 24px rgba(245,215,122,1)) drop-shadow(0 8px 16px rgba(0,0,0,0.8));
+  animation: mpRoyalLogoIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), mpRoyalLogoBounce 1.6s ease-in-out 0.6s infinite;
+}
+.mp-royal-logo div:nth-child(2) { font-size: 90px; }
+@keyframes mpRoyalLogoIn {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-15deg); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+}
+@keyframes mpRoyalLogoBounce {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%      { transform: translate(-50%, -50%) scale(1.08); }
+}
+
+/* コイン降下 */
+.mp-coin-drop {
+  position: absolute;
+  top: -40px;
+  animation: mpCoinDrop linear forwards;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+}
+@keyframes mpCoinDrop {
+  0%   { transform: translateY(0) rotate(0); opacity: 1; }
+  10%  { opacity: 1; }
+  100% { transform: translateY(800px) rotate(720deg); opacity: 0.7; }
+}
+
+/* シェイク */
+.mp-shake-light {
+  animation: mpShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+@keyframes mpShake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 0); }
+  40% { transform: translate(5px, 0); }
+  60% { transform: translate(-4px, 0); }
+  80% { transform: translate(3px, 0); }
+}
+
+/* ── v3: 追加要素（チュートリアル/ALLIN/ガラポン/姿勢/連戦/収支/今日のラッキー） ── */
+
+/* セッション収支 */
+.mp-stat-session { transition: color 0.3s ease, background-color 0.3s ease; }
+.mp-stat-plus  { color: var(--c-gold-bright) !important; background: rgba(245,215,122,0.2) !important; }
+.mp-stat-minus { color: #ff8fa3 !important; background: rgba(200,50,80,0.2) !important; }
+
+/* 今日のラッキー強調 */
+.mp-pt-lucky {
+  text-align: center;
+  background: linear-gradient(90deg, rgba(255,200,100,0.2), rgba(255,200,100,0.4), rgba(255,200,100,0.2));
+  border: 1px solid rgba(255,200,100,0.6);
+  border-radius: 6px;
+  padding: 6px 4px;
+  margin-bottom: 8px;
+  color: #ffe080;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  animation: mpLuckyGlow 2.4s ease-in-out infinite;
+}
+.mp-pt-lucky b { font-size: 13px; color: #fff; }
+@keyframes mpLuckyGlow {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,200,100,0.3); }
+  50%      { box-shadow: 0 0 14px rgba(255,200,100,0.8); }
+}
+.mp-pt-todaylucky {
+  background: rgba(255,200,100,0.15) !important;
+  font-weight: 700;
+}
+.mp-pt-todaylucky .mp-pt-name { color: #ffe080; }
+.mp-pt-todaylucky .mp-pt-mult,
+.mp-pt-todaylucky .mp-pt-payout { color: #ffd060 !important; }
+
+/* ALL IN ボタン */
+.mp-allin-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin: 4px 0 8px;
+  background: linear-gradient(180deg, #ff4060 0%, #80001a 100%);
+  color: #fff;
+  border: 2px solid #fff5d8;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  box-shadow: 0 4px 14px rgba(255,64,96,0.5);
+  animation: mpAllInPulse 1.2s ease-in-out infinite;
+  transition: transform 0.15s ease;
+}
+.mp-allin-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+@keyframes mpAllInPulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(255,64,96,0.5), 0 0 0 0 rgba(255,64,96,0.4); }
+  50%      { box-shadow: 0 4px 24px rgba(255,140,180,0.9), 0 0 0 8px rgba(255,64,96,0); }
+}
+
+/* 連戦ボタン */
+.mp-btn-repeat {
+  background: linear-gradient(180deg, #54c9ff 0%, #1a5080 100%);
+  color: #fff;
+  border: 1px solid #fff5d8;
+  font-size: 14px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* ガラポン */
+.mp-status-bonus {
+  background: linear-gradient(180deg, rgba(255,200,100,0.3) 0%, rgba(200,144,32,0.5) 100%);
+  color: #fff;
+  text-align: center;
+  animation: mpBonusGlow 1.2s ease-in-out infinite;
+}
+@keyframes mpBonusGlow {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,200,100,0.5); }
+  50%      { box-shadow: 0 0 22px rgba(255,200,100,1); }
+}
+.mp-garapon-row {
+  display: flex; gap: 16px; justify-content: center;
+  margin: 14px 0;
+}
+.mp-garapon-slot {
+  width: 80px; height: 100px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 30% 30%, #f5d77a 0%, #a06010 100%);
+  border: 3px solid #fff5d8;
+  color: #2a1810;
+  font-size: 32px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+  animation: mpGaraponWobble 1.4s ease-in-out infinite;
+}
+.mp-garapon-slot:nth-child(2) { animation-delay: 0.15s; }
+.mp-garapon-slot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes mpGaraponWobble {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+.mp-garapon-slot:hover { transform: scale(1.1); }
+.mp-garapon-1 { background: radial-gradient(circle at 30% 30%, #b0b0b0 0%, #555 100%); color: #333; }
+.mp-garapon-2 { background: radial-gradient(circle at 30% 30%, #ffcc66 0%, #cc7700 100%); color: #2a1810; }
+.mp-garapon-5 {
+  background: radial-gradient(circle at 30% 30%, #ff70a0 0%, #c01060 100%);
+  color: #fff;
+  animation: mpGaraponJackpot 0.4s ease-in-out infinite;
+}
+@keyframes mpGaraponJackpot {
+  0%, 100% { box-shadow: 0 0 20px rgba(255,112,160,0.8); }
+  50%      { box-shadow: 0 0 40px rgba(255,140,200,1); }
+}
+.mp-garapon-picked {
+  transform: scale(1.2) translateY(-10px) !important;
+  border-color: #fff5d8 !important;
+  box-shadow: 0 0 30px rgba(245,215,122,1) !important;
+}
+
+/* キャラ姿勢：勝利 / 敗北 */
+.mp-char-win-pose .mp-char-img {
+  animation: mpCharWinJump 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) infinite alternate !important;
+  filter: drop-shadow(0 0 14px rgba(245,215,122,0.8)) drop-shadow(0 6px 12px rgba(0,0,0,0.5)) !important;
+}
+.mp-char-flip.mp-char-win-pose .mp-char-img {
+  animation: mpCharWinJumpFlip 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) infinite alternate !important;
+}
+@keyframes mpCharWinJump {
+  0%   { transform: translateY(0)   scale(1); }
+  100% { transform: translateY(-14px) scale(1.08); }
+}
+@keyframes mpCharWinJumpFlip {
+  0%   { transform: scaleX(-1) translateY(0); }
+  100% { transform: scaleX(-1.08) translateY(-14px) scaleY(1.08); }
+}
+.mp-char-lose-pose .mp-char-img {
+  animation: mpCharLoseDroop 1.4s ease-in-out infinite !important;
+  filter: grayscale(0.5) brightness(0.7) !important;
+}
+.mp-char-flip.mp-char-lose-pose .mp-char-img {
+  animation: mpCharLoseDroopFlip 1.4s ease-in-out infinite !important;
+}
+@keyframes mpCharLoseDroop {
+  0%, 100% { transform: rotate(-3deg) translateY(2px); }
+  50%      { transform: rotate(3deg) translateY(4px); }
+}
+@keyframes mpCharLoseDroopFlip {
+  0%, 100% { transform: scaleX(-1) rotate(-3deg) translateY(2px); }
+  50%      { transform: scaleX(-1) rotate(3deg) translateY(4px); }
+}
+.mp-char-heart {
+  position: absolute;
+  bottom: 100%;
+  font-size: 22px;
+  animation: mpHeartFloat 1.8s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes mpHeartFloat {
+  0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+  20%  { opacity: 1; transform: translateY(-20px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-80px) scale(0.8); }
+}
+
+/* キャラジャンボ祝福（画面中央に飛び出す） */
+.mp-jumbo-char {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: mpJumboCelebrate 1.8s ease-out forwards;
+  pointer-events: none;
+  z-index: 8;
+}
+.mp-jumbo-char img {
+  height: 320px; width: auto;
+  filter: drop-shadow(0 0 32px rgba(245,215,122,0.9)) drop-shadow(0 12px 24px rgba(0,0,0,0.8));
+}
+@keyframes mpJumboCelebrate {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.7) translateY(40px); }
+}
+
+/* チュートリアル */
+.mp-tutorial {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  animation: mpFadeIn 0.4s ease;
+}
+.mp-tut-card {
+  background: linear-gradient(180deg, #1a0a26 0%, #0a0612 100%);
+  border: 2px solid rgba(245,215,122,0.5);
+  border-radius: 14px;
+  padding: 24px 28px;
+  max-width: 480px;
+  text-align: center;
+}
+.mp-tut-title {
+  font-size: 22px;
+  color: var(--c-gold-bright);
+  margin-bottom: 14px;
+  font-weight: 700;
+}
+.mp-tut-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+  color: #fbeec8;
+  font-size: 14px;
+  text-align: left;
+}
+.mp-tut-steps li {
+  padding: 8px 12px;
+  margin: 6px 0;
+  background: rgba(60,28,90,0.4);
+  border-left: 3px solid var(--c-gold-bright);
+  border-radius: 6px;
+}
+.mp-tut-hint {
+  color: #ffe080;
+  font-size: 12px;
+  margin-bottom: 14px;
+  padding: 8px;
+  background: rgba(255,200,100,0.1);
+  border-radius: 6px;
+}
+
+/* ── v4: JP / シールド / Hi-Lo / 勝ち札グロー / 履歴・達成パネル / サマリ / サレンダー ── */
+
+/* ジャックポット */
+.mp-stat-jp {
+  background: linear-gradient(90deg, rgba(255,200,100,0.2) 0%, rgba(255,100,200,0.2) 100%) !important;
+  border-color: rgba(255,200,100,0.6) !important;
+  animation: mpJpPulse 2s ease-in-out infinite;
+}
+@keyframes mpJpPulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(255,200,100,0.4); }
+  50%      { box-shadow: 0 0 14px rgba(255,200,100,0.9); }
+}
+.mp-stat-jp [data-mpb="jackpot"] {
+  color: var(--c-gold-bright);
+  font-weight: 800;
+  font-family: 'Courier New', monospace;
+}
+
+/* ヘッダのアクションボタン */
+.mp-history-btn, .mp-ach-btn {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(245,215,122,0.3);
+  background: rgba(60,28,90,0.5);
+  color: #fbeec8;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.mp-history-btn:hover, .mp-ach-btn:hover {
+  background: rgba(245,215,122,0.3);
+  transform: translateY(-2px);
+}
+
+/* 勝ち札グロー */
+.mp-card-winner {
+  border-color: var(--c-gold-bright) !important;
+  box-shadow:
+    0 0 20px rgba(245,215,122,0.9),
+    inset 0 0 10px rgba(245,215,122,0.3),
+    0 6px 14px rgba(0,0,0,0.5) !important;
+  animation: mpWinnerPulse 1s ease-in-out infinite alternate;
+}
+@keyframes mpWinnerPulse {
+  0%   { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-4px) scale(1.04); }
+}
+
+/* サレンダーボタン */
+.mp-btn-surrender {
+  background: rgba(60, 60, 60, 0.6);
+  color: rgba(255,255,255,0.6);
+  border: 1px dashed rgba(255,255,255,0.3);
+  font-size: 13px;
+}
+.mp-btn-surrender:hover { color: #fff; border-color: #fff; }
+
+/* Hi-Lo ダブルアップ */
+.mp-card-shown {
+  cursor: default !important;
+  box-shadow: 0 0 18px rgba(245,215,122,0.6), 0 6px 14px rgba(0,0,0,0.5);
+}
+.mp-card-next-hl {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; color: rgba(245,215,122,0.6);
+  font-weight: 900;
+}
+.mp-hilo-actions {
+  display: flex; gap: 10px; justify-content: center;
+  margin: 10px 0;
+}
+.mp-hilo-actions .mp-btn-double { flex: 1; max-width: 160px; font-size: 14px; padding: 10px; }
+
+/* 履歴 / 達成パネル */
+.mp-side-panel {
+  position: absolute;
+  top: 70px; right: 12px;
+  width: 280px;
+  max-height: 60%;
+  background: linear-gradient(180deg, #1a0a26 0%, #0a0612 100%);
+  border: 2px solid rgba(245,215,122,0.5);
+  border-radius: 12px;
+  padding: 12px;
+  z-index: 50;
+  overflow-y: auto;
+  box-shadow: -8px 12px 40px rgba(0,0,0,0.8);
+  animation: mpPanelSlide 0.3s ease-out;
+}
+@keyframes mpPanelSlide {
+  0%   { opacity: 0; transform: translateX(20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.mp-panel-title {
+  font-size: 16px;
+  color: var(--c-gold-bright);
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-align: center;
+  border-bottom: 1px solid rgba(245,215,122,0.2);
+  padding-bottom: 6px;
+}
+.mp-panel-title small { font-size: 11px; opacity: 0.7; margin-left: 6px; }
+.mp-panel-body { color: #fbeec8; font-size: 13px; }
+.mp-panel-empty { text-align: center; color: rgba(255,255,255,0.4); padding: 20px 0; }
+.mp-panel-close {
+  position: absolute; top: 8px; right: 10px;
+  width: 28px; height: 28px;
+  border-radius: 50%; border: none;
+  background: rgba(255,255,255,0.1); color: #fff;
+  cursor: pointer; font-size: 16px;
+}
+
+/* 履歴行 */
+.mp-hist-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.mp-hist-win  { background: rgba(245,215,122,0.15); }
+.mp-hist-lose { background: rgba(200,50,80,0.15); }
+.mp-hist-tie  { background: rgba(100,100,100,0.15); }
+.mp-hist-hand { font-weight: 600; }
+.mp-hist-result { font-weight: 800; }
+.mp-hist-reward { font-family: 'Courier New', monospace; font-weight: 700; }
+.mp-hist-win .mp-hist-reward { color: var(--c-gold-bright); }
+.mp-hist-lose .mp-hist-reward { color: #ff8fa3; }
+
+/* 達成バッジ行 */
+.mp-ach-row {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  background: rgba(60,28,90,0.3);
+}
+.mp-ach-row.on { background: rgba(245,215,122,0.2); border-left: 3px solid var(--c-gold-bright); }
+.mp-ach-row.off { opacity: 0.5; }
+.mp-ach-icon { font-size: 24px; text-align: center; }
+.mp-ach-info { display: flex; flex-direction: column; }
+.mp-ach-name { font-weight: 700; font-size: 13px; color: #fff; }
+.mp-ach-cond { font-size: 10px; opacity: 0.7; }
+
+/* 達成トースト */
+.mp-ach-toast {
+  position: absolute;
+  top: 80px; left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #fff5d8 0%, #c89020 100%);
+  color: #2a1810;
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(245,215,122,0.7);
+  z-index: 100;
+  animation: mpAchToastIn 0.4s ease-out, mpAchToastOut 0.5s ease 2.4s forwards;
+  display: flex; align-items: center; gap: 10px;
+}
+@keyframes mpAchToastIn {
+  0%   { opacity: 0; transform: translate(-50%, -10px); }
+  100% { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes mpAchToastOut {
+  to { opacity: 0; transform: translate(-50%, -10px); }
+}
+.mp-ach-toast-icon { font-size: 22px; }
+
+/* セッションサマリー */
+.mp-summary-dialog {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  animation: mpFadeIn 0.3s ease;
+}
+.mp-summary-card {
+  width: 88%; max-width: 460px;
+  background: linear-gradient(180deg, #1a0a26 0%, #0a0612 100%);
+  border: 2px solid var(--c-gold-bright);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+}
+.mp-summary-title {
+  font-size: 22px;
+  color: var(--c-gold-bright);
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+.mp-summary-stats {
+  background: rgba(60,28,90,0.4);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.mp-sum-row {
+  display: flex; justify-content: space-between;
+  padding: 6px 4px;
+  color: #fbeec8;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.mp-sum-row:last-child { border-bottom: none; }
+.mp-sum-row b { font-weight: 800; }
+.mp-sum-plus b  { color: var(--c-gold-bright); }
+.mp-sum-minus b { color: #ff8fa3; }
+.mp-summary-tomorrow {
+  background: rgba(255,200,100,0.15);
+  border: 1px dashed rgba(255,200,100,0.5);
+  padding: 10px;
+  border-radius: 8px;
+  color: #ffe080;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+.mp-summary-tomorrow b { color: #fff; }
+.mp-summary-actions { display: flex; gap: 10px; justify-content: center; }
+
+/* ── v5: チップスタック / ホット・コールド / 確率 / アイドル / タップ粒子 / コイン飛翔 / 大役カットイン / 初日ボーナス ── */
+
+/* 初日ボーナス */
+.mp-daily-bonus {
+  text-align: center;
+  background: linear-gradient(90deg, transparent, rgba(255,180,200,0.4), transparent);
+  border: 1px solid rgba(255,180,200,0.5);
+  border-radius: 8px;
+  color: #ffd0e0;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px;
+  margin-bottom: 8px;
+  animation: mpDailyBonusGlow 2s ease-in-out infinite;
+}
+@keyframes mpDailyBonusGlow {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,180,200,0.4); }
+  50%      { box-shadow: 0 0 16px rgba(255,180,200,0.9); }
+}
+
+/* チップスタック */
+.mp-chipstack {
+  position: relative;
+  width: 80px;
+  height: 60px;
+  margin: 8px auto;
+}
+.mp-chip-piece {
+  position: absolute;
+  left: 50%;
+  width: 56px;
+  height: 12px;
+  border-radius: 6px;
+  border: 2px solid rgba(255,255,255,0.6);
+  transform: translateX(-50%);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  animation: mpChipDrop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@keyframes mpChipDrop {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.mp-chipstack-label {
+  position: absolute;
+  bottom: -22px; left: 50%;
+  transform: translateX(-50%);
+  color: var(--c-gold-bright);
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* ホット・コールド */
+.mp-hotcold {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 12px;
+  margin: 4px 0;
+  border-radius: 50px;
+  letter-spacing: 0.05em;
+}
+.mp-hot {
+  background: linear-gradient(90deg, rgba(255,80,40,0.2), rgba(255,140,40,0.4), rgba(255,80,40,0.2));
+  color: #ffb060;
+  border: 1px solid rgba(255,120,40,0.6);
+  animation: mpHotPulse 1s ease-in-out infinite;
+}
+@keyframes mpHotPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255,80,40,0.4); }
+  50%      { box-shadow: 0 0 20px rgba(255,140,40,0.9); }
+}
+.mp-cold {
+  background: linear-gradient(90deg, rgba(80,120,255,0.2), rgba(120,200,255,0.4), rgba(80,120,255,0.2));
+  color: #a0d0ff;
+  border: 1px solid rgba(120,180,255,0.6);
+}
+
+/* 確率表示 */
+.mp-reach-prob {
+  display: inline-block;
+  margin-left: 8px;
+  background: rgba(0,0,0,0.4);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-family: 'Courier New', monospace;
+  color: #ffe080;
+  font-size: 13px;
+}
+
+/* ミミのアイドルジェスチャー */
+@keyframes mpIdleWink {
+  0%, 30%, 60%, 100% { transform: scaleY(1); }
+  35%, 50% { transform: scaleY(0.6) translateY(2px); }
+}
+.mp-idle-wink { animation: mpIdleWink 1.2s ease-in-out !important; }
+
+@keyframes mpIdleTilt {
+  0%, 100% { transform: rotate(0); }
+  40%      { transform: rotate(-15deg); }
+  60%      { transform: rotate(-12deg); }
+}
+.mp-idle-tilt { animation: mpIdleTilt 1.2s ease-in-out !important; }
+
+@keyframes mpIdleHop {
+  0%, 100% { transform: translateY(0); }
+  30%      { transform: translateY(-18px); }
+  60%      { transform: translateY(0); }
+  80%      { transform: translateY(-6px); }
+  90%      { transform: translateY(0); }
+}
+.mp-idle-hop { animation: mpIdleHop 1.2s ease-in-out !important; }
+
+@keyframes mpIdlePunyu {
+  0%, 100% { transform: scaleY(1) scaleX(1); }
+  40%      { transform: scaleY(0.85) scaleX(1.1); }
+  60%      { transform: scaleY(1.05) scaleX(0.95); }
+}
+.mp-idle-punyu { animation: mpIdlePunyu 1.2s ease-in-out !important; }
+
+@keyframes mpIdleStretch {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(1.08) translateY(-4px); }
+}
+.mp-idle-stretch { animation: mpIdleStretch 1.2s ease-in-out !important; }
+
+/* タップ粒子 */
+.mp-tap-particle {
+  position: absolute;
+  pointer-events: none;
+  font-size: 14px;
+  color: #ffb0d0;
+  font-weight: 700;
+  text-shadow: 0 0 6px rgba(255,200,220,0.8);
+  animation: mpTapParticleOut 0.85s ease-out forwards;
+}
+@keyframes mpTapParticleOut {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0.5); }
+  20%  { opacity: 1; transform: translate(calc(var(--ddx) * 0.3), calc(var(--ddy) * 0.3)) scale(1.2); }
+  100% { opacity: 0; transform: translate(var(--ddx), var(--ddy)) scale(0.6); }
+}
+
+/* コイン飛翔 */
+.mp-coin-fly {
+  position: absolute;
+  font-size: 22px;
+  pointer-events: none;
+  animation: mpCoinFlyTo 0.9s cubic-bezier(0.45, 0, 0.2, 1) forwards;
+  filter: drop-shadow(0 0 8px rgba(245,215,122,0.8));
+}
+@keyframes mpCoinFlyTo {
+  0%   { opacity: 0; transform: scale(0.5) rotate(0); }
+  15%  { opacity: 1; transform: scale(1.3) rotate(60deg); }
+  100% { opacity: 1; transform: translate(var(--dx), var(--dy)) scale(0.6) rotate(720deg); }
+}
+
+/* 大役カットイン（フラッシュ以上） */
+.mp-hand-cutin {
+  position: absolute;
+  top: 35%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 64px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  background: linear-gradient(180deg, #fff5d8 0%, var(--c-gold-bright) 50%, #c89020 100%);
+  filter: drop-shadow(0 0 20px rgba(245,215,122,0.9)) drop-shadow(0 6px 14px rgba(0,0,0,0.8));
+  animation: mpHandCutin 1.4s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes mpHandCutin {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotateY(180deg); filter: blur(20px) drop-shadow(0 0 20px rgba(245,215,122,0.9)); }
+  30%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1) rotateY(0); filter: blur(0) drop-shadow(0 0 20px rgba(245,215,122,1)); }
+  70%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4); filter: blur(8px); }
+}
+
+/* ── レスポンシブ ── */
+/* ── v6: 環境粒子 / ボラ / カード裏 / ミッション / 自動連戦 / ムード / サスペンス / ボス夜 ── */
+
+/* 環境ふわふわ粒子 */
+.mp-ambient-particle {
+  position: absolute;
+  bottom: -20px;
+  opacity: 0.7;
+  pointer-events: none;
+  animation: mpAmbientFloat linear forwards;
+  filter: drop-shadow(0 0 6px rgba(255,200,220,0.5));
+}
+@keyframes mpAmbientFloat {
+  0%   { transform: translateY(0) rotate(0); opacity: 0; }
+  15%  { opacity: 0.7; }
+  100% { transform: translateY(-800px) rotate(360deg); opacity: 0; }
+}
+
+/* サスペンス「……！」 */
+.mp-suspense {
+  position: absolute;
+  top: 35%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 64px;
+  font-weight: 900;
+  color: var(--c-gold-bright);
+  text-shadow: 0 0 24px rgba(245,215,122,1), 0 8px 16px rgba(0,0,0,0.9);
+  letter-spacing: 0.2em;
+  animation: mpSuspenseIn 0.4s ease-out, mpSuspenseOut 0.4s ease 0.4s forwards;
+  pointer-events: none;
+}
+@keyframes mpSuspenseIn {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+}
+@keyframes mpSuspenseOut {
+  to { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+/* ボラ予測バー */
+.mp-vol-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  margin: 4px 0;
+  border-radius: 8px;
+  font-size: 12px;
+  border: 1px solid rgba(245,215,122,0.3);
+  background: rgba(60,28,90,0.4);
+}
+.mp-vol-low  { color: #9fc090; border-color: rgba(120,180,80,0.4); }
+.mp-vol-mid  { color: #ffe080; border-color: rgba(255,200,80,0.5); }
+.mp-vol-high {
+  color: #ff8fa3;
+  border-color: rgba(255,80,120,0.7);
+  animation: mpVolHigh 1s ease-in-out infinite;
+}
+@keyframes mpVolHigh {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,80,120,0.4); }
+  50%      { box-shadow: 0 0 14px rgba(255,80,120,0.9); }
+}
+.mp-vol-label { font-weight: 700; opacity: 0.7; }
+.mp-vol-text  { font-weight: 800; font-family: 'Courier New', monospace; }
+
+/* カード裏：5種 */
+.mp-cb-classic {
+  background:
+    repeating-linear-gradient(45deg, rgba(245,215,122,0.25) 0 4px, transparent 4px 8px),
+    linear-gradient(180deg, #4a1230 0%, #2a0820 100%);
+}
+.mp-cb-check {
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.15) 0 6px, transparent 6px 12px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.15) 0 6px, transparent 6px 12px),
+    linear-gradient(180deg, #1a2a4a 0%, #0a1a30 100%);
+}
+.mp-cb-wa {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255,200,200,0.3) 0%, transparent 30%),
+    radial-gradient(circle at 50% 70%, rgba(255,200,200,0.3) 0%, transparent 30%),
+    linear-gradient(180deg, #4a1818 0%, #2a0808 100%);
+}
+.mp-cb-star {
+  background:
+    radial-gradient(circle at 25% 25%, #fff 0.5px, transparent 1.5px),
+    radial-gradient(circle at 75% 35%, #ffe080 0.5px, transparent 1.5px),
+    radial-gradient(circle at 50% 50%, #fff 0.5px, transparent 1.5px),
+    radial-gradient(circle at 20% 75%, #ffe080 0.5px, transparent 1.5px),
+    radial-gradient(circle at 80% 80%, #fff 0.5px, transparent 1.5px),
+    linear-gradient(180deg, #0a1030 0%, #02041a 100%);
+  background-size: 14px 14px;
+}
+.mp-cb-floral {
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(255,150,180,0.4) 0%, transparent 25%),
+    radial-gradient(ellipse at 70% 70%, rgba(255,150,180,0.4) 0%, transparent 25%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 6px, transparent 6px 12px),
+    linear-gradient(180deg, #2a0e20 0%, #1a0612 100%);
+}
+
+/* ムードバッジ */
+.mp-mood-badge {
+  position: absolute;
+  top: -6px; right: -8px;
+  background: rgba(255,255,255,0.95);
+  border: 2px solid var(--c-gold-bright);
+  border-radius: 50%;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  animation: mpMoodPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 5;
+}
+@keyframes mpMoodPop {
+  0%   { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+/* AUTO ボタン */
+.mp-btn-auto {
+  background: linear-gradient(180deg, #80e0a0 0%, #208048 100%);
+  color: #fff;
+  border: 1px solid #fff5d8;
+  font-size: 14px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* ミッションパネル */
+.mp-panel-mission { width: 320px; }
+.mp-mission-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 6px;
+  align-items: center;
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  background: rgba(60,28,90,0.3);
+  font-size: 12px;
+}
+.mp-mission-row.done {
+  background: rgba(245,215,122,0.2);
+  border-left: 3px solid var(--c-gold-bright);
+}
+.mp-mission-name { font-weight: 700; color: #fbeec8; }
+.mp-mission-progress {
+  font-family: 'Courier New', monospace;
+  color: rgba(255,255,255,0.7);
+}
+.mp-mission-reward { color: var(--c-gold-bright); font-weight: 700; }
+.mp-mission-claim {
+  padding: 4px 10px;
+  background: linear-gradient(180deg, #f5d77a 0%, #c89020 100%);
+  color: #2a1810;
+  border: none;
+  border-radius: 6px;
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 11px;
+  animation: mpClaimPulse 1s ease-in-out infinite;
+}
+@keyframes mpClaimPulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(245,215,122,0.6); }
+  50%      { box-shadow: 0 0 14px rgba(245,215,122,1); }
+}
+.mp-mission-claimed { color: var(--c-gold-bright); font-size: 16px; font-weight: 900; }
+
+/* 大きな結果バナー（読みやすく目立たせる） */
+.mp-result-banner {
+  padding: 18px 14px;
+  border-radius: 14px;
+  text-align: center;
+  margin-bottom: 6px;
+  animation: mpResultPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  border: 2px solid;
+}
+.mp-result-win {
+  background: linear-gradient(180deg, rgba(245,215,122,0.45) 0%, rgba(200,144,32,0.35) 100%);
+  border-color: var(--c-gold-bright);
+  color: #fff;
+  box-shadow: 0 0 22px rgba(245,215,122,0.5);
+}
+.mp-result-lose {
+  background: linear-gradient(180deg, rgba(200,80,120,0.3) 0%, rgba(80,30,50,0.4) 100%);
+  border-color: rgba(255,140,170,0.6);
+  color: #fff;
+}
+.mp-result-tie {
+  background: linear-gradient(180deg, rgba(100,150,200,0.25) 0%, rgba(40,80,120,0.35) 100%);
+  border-color: rgba(180,210,255,0.5);
+  color: #fff;
+}
+.mp-result-headline {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+  text-shadow: 0 0 14px currentColor, 0 4px 8px rgba(0,0,0,0.7);
+}
+.mp-result-amount {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: var(--c-gold-bright);
+}
+.mp-result-lose .mp-result-amount,
+.mp-result-tie  .mp-result-amount { color: #fff; }
+@keyframes mpResultPop {
+  0%   { opacity: 0; transform: scale(0.7); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* タップ領域を広く（カード自体の hit-area を確保） */
+.mp-card.mp-tap {
+  cursor: pointer;
+  position: relative;
+}
+.mp-card.mp-tap::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  z-index: 1;
+}
+.mp-card.mp-tap > * { position: relative; z-index: 2; }
+/* KEEPマーク：より目立つ（自動おすすめが見えやすいように） */
+.mp-card-keep {
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+  background: linear-gradient(180deg, #ffe080 0%, #f5d77a 100%) !important;
+  box-shadow: 0 2px 6px rgba(245,215,122,0.6);
+}
+
+@media (max-width: 1000px) {
+  .mp-paytable { width: 160px; font-size: 11px; }
+  .mp-play .mp-side { grid-template-columns: 80px 1fr 80px; }
+  .mp-side-panel { width: 220px; }
+  .mp-hand-cutin { font-size: 44px; }
+  .mp-suspense { font-size: 44px; }
+  .mp-panel-mission { width: 260px; }
+  .mp-result-headline { font-size: 22px; }
+  .mp-result-amount { font-size: 18px; }
+  .mp-bubble { max-width: 140px; font-size: 11px; }
+}
+@media (max-width: 800px) {
+  .minipoker-board { flex-direction: column !important; }
+  .mp-paytable { width: 100%; max-height: 140px; }
+  .mp-card { width: 50px; height: 72px; }
+  .mp-card-suit-big { font-size: 26px; }
+  .mp-card-corner { font-size: 11px; }
+  .mp-royal-logo { font-size: 48px; }
+  .mp-royal-logo div:nth-child(2) { font-size: 60px; }
+  .mp-jumbo-char img { height: 220px; }
+  .mp-side-panel { width: 90%; right: 5%; }
 }
