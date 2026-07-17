@@ -1859,7 +1859,10 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   flex-direction: row;      /* 横一列：メイン＋アイコンサブ（column だとカードが縦に溢れる） */
   align-items: stretch;
   gap: 4px;
-  margin-top: 6px;
+  /* margin-top: auto で本文（min-height統一済み）の下端にアンカー
+     → 全カードのボタン行が水平に揃う。6px は padding で確保 */
+  margin-top: auto;
+  padding-top: 6px;
 }
 .lobby-stage-list .stage-card .stage-actions .btn {
   font-size: 14px;
