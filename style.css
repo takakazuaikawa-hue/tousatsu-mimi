@@ -382,6 +382,21 @@ html, body {
   background-repeat: no-repeat, no-repeat;
   background-color: var(--c-bg-dark);
 }
+/* 対戦相手別テーブル背景（CODEX納品画像）。
+   2層目に相手専用画像、3層目に共通画像を重ねておくことで、
+   万一ファイルが無い環境でも共通背景に自動フォールバックする */
+body[data-opp-bg="polka"]  .bg-poker,
+body[data-opp-bg="selina"] .bg-poker,
+body[data-opp-bg="grano"]  .bg-poker,
+body[data-opp-bg="velvet"] .bg-poker {
+  background-size: cover, cover, cover;
+  background-position: center, center, center;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+}
+body[data-opp-bg="polka"]  .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(20,8,29,0.45) 80%), url('assets/backgrounds/table_polka.png'),  url('assets/backgrounds/poker_table_bg.png'); }
+body[data-opp-bg="selina"] .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(20,8,29,0.45) 80%), url('assets/backgrounds/table_selina.png'), url('assets/backgrounds/poker_table_bg.png'); }
+body[data-opp-bg="grano"]  .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(20,8,29,0.45) 80%), url('assets/backgrounds/table_grano.png'),  url('assets/backgrounds/poker_table_bg.png'); }
+body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(20,8,29,0.45) 80%), url('assets/backgrounds/table_velvet.png'), url('assets/backgrounds/poker_table_bg.png'); }
 .bg-result {
   background:
     radial-gradient(ellipse at 50% 30%, rgba(245,215,122,0.25), transparent 60%),
@@ -3272,19 +3287,19 @@ html, body {
   .hand-info { font-size: 22px; }
   .opponent-name { font-size: 24px; }
   .panyu-free-btn {
-    width: 72px; height: 72px;
-    font-size: 34px;
+    width: 72px !important; height: 72px !important;
+    font-size: 34px !important;
   }
   .audio-bar-toggle,
   .lb-bgm-toggle,
   .lb-sfx-toggle,
   .lb-settings-btn {
-    width: 64px; height: 64px;
-    font-size: 28px;
+    width: 64px !important; height: 64px !important;
+    font-size: 28px !important;
   }
   .backdoor-toggle {
-    width: 64px; height: 64px;
-    font-size: 26px;
+    width: 64px !important; height: 64px !important;
+    font-size: 26px !important;
   }
   .lobby-main { padding-top: 4px; }
 }
@@ -9268,18 +9283,16 @@ body[data-chip-skin="dragon"] .bu-rchip { box-shadow: 0 0 7px rgba(255,80,40,0.9
 /* ミミ：data-mimi-skin 別（見た目フィルター。専用画像が届くまではCSSフィルタで機能させる）
    P1-1: panyu-clicker-blob だけでなく、バトル画面本体のミミ立ち絵・ミニポーカーのミミ・
    心理バトルモーダルのミミポートレートにも適用（購入した衣装が実際の画面で変化するように配線） */
+/* ミミ立ち絵（.char-mimi / .portrait-mimi）は CODEX 納品の専用画像
+   （mimi_pink/panda/gold.png）を setMimiExpression が差し替えるため、
+   CSSフィルタは「専用画像が存在しない表示物」だけに適用する：
+   ぱにゅブロブとミニポーカーのミニミミ（mimi_mini.png 1種のみ） */
 body[data-mimi-skin="pink"]  .panyu-clicker-blob,
-body[data-mimi-skin="pink"]  .char-mimi img,
-body[data-mimi-skin="pink"]  .mp-player .mp-char-img,
-body[data-mimi-skin="pink"]  .portrait-mimi img { filter: hue-rotate(-20deg) saturate(1.3) brightness(1.1) !important; }
+body[data-mimi-skin="pink"]  .mp-player .mp-char-img { filter: hue-rotate(-20deg) saturate(1.3) brightness(1.1) !important; }
 body[data-mimi-skin="panda"] .panyu-clicker-blob,
-body[data-mimi-skin="panda"] .char-mimi img,
-body[data-mimi-skin="panda"] .mp-player .mp-char-img,
-body[data-mimi-skin="panda"] .portrait-mimi img { filter: grayscale(1) contrast(1.4) !important; }
+body[data-mimi-skin="panda"] .mp-player .mp-char-img { filter: grayscale(1) contrast(1.4) !important; }
 body[data-mimi-skin="gold"]  .panyu-clicker-blob,
-body[data-mimi-skin="gold"]  .char-mimi img,
-body[data-mimi-skin="gold"]  .mp-player .mp-char-img,
-body[data-mimi-skin="gold"]  .portrait-mimi img { filter: hue-rotate(40deg) saturate(2) brightness(1.3) drop-shadow(0 0 12px gold) !important; }
+body[data-mimi-skin="gold"]  .mp-player .mp-char-img { filter: hue-rotate(40deg) saturate(2) brightness(1.3) drop-shadow(0 0 12px gold) !important; }
 
 /* カットイン：data-cutin-skin 別
    P1-1: 旧セレクタ .cutin-overlay はゲーム内に存在せず未配線だったため、
@@ -10560,6 +10573,44 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
 @keyframes lhComboPulse {
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.15); }
+}
+
+/* ⚡スピードボーナス：10秒カウントダウンバー（講義問題モーダル内） */
+.lecture-speed-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 8px;
+  transition: opacity 0.6s ease;
+}
+.lecture-speed-bar.lsb-expired { opacity: 0; }
+.lsb-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffd77a;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+.lsb-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.lsb-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #ffd77a 0%, #ff9040 100%);
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(255,180,80,0.7);
+  animation: lsbCountdown 10s linear forwards;
+  transform-origin: left center;
+}
+@keyframes lsbCountdown {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
 }
 
 /* ===========================================================

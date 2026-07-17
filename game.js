@@ -473,10 +473,24 @@ window.assetFallback = function(imgEl, key) {
 // それすら無ければ assetFallback の枠内表示に自然にフォールバックする。
 // 表情: default / win / sad / shock / think
 function setMimiExpression(expr) {
+  // 現在の表情を記録（render() 後の再適用で表情もスキンも維持するため）
+  if (state) state.mimiExpr = expr || 'default';
   document.querySelectorAll('.battle-mimi-img, [data-mimi-face]').forEach(img => {
-    const goDefault = () => {
+    // 平常時（default）は装備中スキンの専用画像を優先（mimi_pink/panda/gold.png）。
+    // 表情リアクション中（win/sad/shock/think）は表情画像を優先する。
+    const skin = (save && save.equippedMimiSkin && save.equippedMimiSkin !== 'default')
+      ? save.equippedMimiSkin : null;
+    const goPlainDefault = () => {
       img.onerror = () => { img.onerror = null; window.assetFallback(img, 'mimi'); };
       img.src = 'assets/characters/mimi_default.png';
+    };
+    const goDefault = () => {
+      if (skin) {
+        img.onerror = goPlainDefault; // スキン画像が無ければ通常ミミへ
+        img.src = `assets/characters/mimi_${skin}.png`;
+      } else {
+        goPlainDefault();
+      }
     };
     if (!expr || expr === 'default') { goDefault(); return; }
     img.onerror = goDefault;
@@ -2296,7 +2310,7 @@ function render() {
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); break;
     case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); tryStartLobbyBgm(); break;
-    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyBattleRicoOutfit(); applyNoteTellHint(); if (state.introHandMode) applyIntroHandUI(); break;
+    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI(); break;
     case 'result':      renderTemplate('tpl-result'); applyBindings(); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
     case 'ending':      renderTemplate('tpl-ending'); showEndingMusicPrompt(); break;
@@ -6086,6 +6100,7 @@ function spawnEndingSparkle(parent) {
 
 function goLobby() {
   if (typeof stopBattleBgmSkin === 'function') stopBattleBgmSkin(); // バトル専用BGMスキンを止めてロビーへ戻す
+  document.body.dataset.oppBg = ''; // 相手別テーブル背景を解除
   state.screen = 'lobby';
   // 入室時にリコの衣装を抽選し直す
   state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
@@ -9278,6 +9293,8 @@ function startBattleInternal(opponentId) {
   state.seriousRicoMode = seriousRico;
   state.screen = 'battle';
   if (typeof startBattleBgmSkin === 'function') startBattleBgmSkin();
+  // 相手別テーブル背景（CODEX納品画像）を適用
+  document.body.dataset.oppBg = ['polka','selina','grano','velvet'].includes(opp.id) ? opp.id : '';
   state.handPhase = 'idle';
   state.panyuMax = save.panyuGaugeMax || 100;
   state.panyuSenseFreeUsed = save.panyuSenseFreeUsed;
@@ -10658,14 +10675,16 @@ function resolvePsych(qid, choice, btn) {
       if (isCorrect) {
         state.lectureCorrect++;
         state.lectureCombo = (state.lectureCombo || 0) + 1;
-        // 正解 +5🪙、3コンボ以降はさらに +5（🔥ボーナス）
-        const gain = 5 + (state.lectureCombo >= 3 ? 5 : 0);
+        // 正解 +5🪙、3コンボ以降さらに +5、10秒以内の早答えでさらに +5（⚡スピード）
+        const fast = state.__lectureQStart && (Date.now() - state.__lectureQStart) <= 10000;
+        const gain = 5 + (state.lectureCombo >= 3 ? 5 : 0) + (fast ? 5 : 0);
         save.coins += gain;
         state.lectureEarned = (state.lectureEarned || 0) + gain;
         saveProgress();
-        rewardMsg = state.lectureCombo >= 3
-          ? `　🔥${state.lectureCombo}コンボ！ +${gain}🪙`
-          : `　+${gain}🪙`;
+        const parts = [];
+        if (fast) parts.push('⚡スピード');
+        if (state.lectureCombo >= 3) parts.push(`🔥${state.lectureCombo}コンボ`);
+        rewardMsg = `　${parts.length ? parts.join(' ') + '！ ' : ''}+${gain}🪙`;
       } else {
         state.lectureCombo = 0;
       }
@@ -11642,6 +11661,14 @@ function updateLectureHud() {
   `;
 }
 
+// 現在のコースに応じた出題順を返す（⚡ライトコース＝1章・2章・5章のみ）
+function lectureOrder() {
+  if (state && state.lectureLite) {
+    return LESSON_CHAPTERS.filter(c => c.key === 1 || c.key === 2 || c.key === 5).flatMap(c => c.ids);
+  }
+  return LESSON_ORDER;
+}
+
 function startLecture(opponentId) {
   state = defaultState();
   state.opponentId = opponentId;
@@ -11649,12 +11676,13 @@ function startLecture(opponentId) {
   state.opponentName = opp.name;
   state.opponentImgKey = opp.imgKey;
   state.lectureMode = true;
-  // 中断進捗があれば引き継ぎ
+  // 中断進捗があれば引き継ぎ（コース種別も復元）
   const saved = save.lectureProgress || null;
+  state.lectureLite = saved ? !!saved.lite : false;
   state.lectureIdx = saved ? saved.idx : 0;
   state.lectureCorrect = saved ? saved.correct : 0;
   state.lectureEarned = saved ? (saved.earned || 0) : 0;
-  state.lectureTotal = LESSON_ORDER.length;
+  state.lectureTotal = lectureOrder().length;
   state.screen = 'battle';
   state.handPhase = 'lecture';
   state.tutorialMode = true;
@@ -11679,28 +11707,58 @@ function showLectureIntro(onContinue, savedProgress) {
       <div class="tutorial-step">${savedProgress ? '講義再開' : '講義開始'}</div>
       <h2 style="color:var(--c-red);font-size:24px;margin:0 0 14px;letter-spacing:0.15em;">📚 リコ先輩のポーカー講義</h2>
       ${resumeMsg}
-      <p style="font-size:17px;line-height:1.8;">よろしく〜！ ミミに <b>ポーカーの基本</b> をじっくり教えるね。</p>
-      <p style="font-size:15px;line-height:1.7;">
-        全 <b>11章 ／ ${LESSON_ORDER.length}問</b>。<br>
-        歴史・用語・流れ・アクション・役・確率・定石・心理戦・<br>
-        <b>用語集（s/o・ナッツ等）／実戦ハンズオン／マナー・禁止行為</b>まで網羅。
-      </p>
-      <p style="font-size:14px;color:var(--c-red);line-height:1.7;">
-        ※ 各章の開始時に「<u>始める／スキップ／中断</u>」が選べる<br>
-        ※ 間違えても OK、解説で覚えればOK
+      <p style="font-size:17px;line-height:1.8;">よろしく〜！ ミミに <b>ポーカーの基本</b> を教えるね。コースを選んで！</p>
+      ${savedProgress ? '' : `
+      <div style="display:flex;flex-direction:column;gap:8px;margin:6px 0 10px;">
+        <div style="background:rgba(245,215,122,0.12);border:1px solid var(--c-gold);border-radius:10px;padding:10px 14px;text-align:left;">
+          <b style="color:var(--c-gold-bright);">⚡ ライトコース（おすすめ）</b><br>
+          <small>基本ルール・用語・役の強さの<b>3章9問だけ</b>。5分で実戦へ！<br>
+          正解ごとに🪙、早答えでさらにボーナス。残りの章は後からいつでも受講OK</small>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px 14px;text-align:left;">
+          <b>📚 フルコース</b><br>
+          <small>全 <b>11章／${LESSON_ORDER.length}問</b>。確率・定石・心理戦・用語集・実戦ハンズオン・マナーまで完全網羅</small>
+        </div>
+      </div>`}
+      <p style="font-size:13px;color:var(--c-red);line-height:1.6;">
+        ※ 各章の開始時に「始める／スキップ／中断」が選べる ※ 間違えてもOK
       </p>
       <div class="tutorial-actions">
-        <button class="next-btn" type="button">▶ ${savedProgress ? '続ける' : '始める'}</button>
-        ${savedProgress ? '<button class="restart-btn" type="button">最初からやり直す</button>' : ''}
+        ${savedProgress
+          ? `<button class="next-btn" type="button">▶ 続ける</button>
+             <button class="restart-btn" type="button">最初からやり直す</button>`
+          : `<button class="lite-btn next-btn" type="button">⚡ ライトコースで始める</button>
+             <button class="full-btn" type="button">📚 フルコースで始める</button>`}
         <button class="skip-btn" type="button">全スキップ</button>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.next-btn').addEventListener('click', () => {
-    overlay.remove();
-    onContinue();
-  });
+  // 続きから（保存済み進捗あり）
+  const nextBtn = overlay.querySelector('.next-btn');
+  if (savedProgress && nextBtn) {
+    nextBtn.addEventListener('click', () => { overlay.remove(); onContinue(); });
+  }
+  // ⚡ライトコース（新規時：next-btn を兼ねる）
+  const liteBtn = overlay.querySelector('.lite-btn');
+  if (!savedProgress && liteBtn) {
+    liteBtn.addEventListener('click', () => {
+      state.lectureLite = true;
+      state.lectureTotal = lectureOrder().length;
+      overlay.remove();
+      onContinue();
+    });
+  }
+  // 📚フルコース
+  const fullBtn = overlay.querySelector('.full-btn');
+  if (fullBtn) {
+    fullBtn.addEventListener('click', () => {
+      state.lectureLite = false;
+      state.lectureTotal = lectureOrder().length;
+      overlay.remove();
+      onContinue();
+    });
+  }
   const restartBtn = overlay.querySelector('.restart-btn');
   if (restartBtn) {
     restartBtn.addEventListener('click', () => {
@@ -11754,18 +11812,19 @@ const HANDS_ON_AFTER = {
 function triggerLectureQuestion() {
   // HUD を毎問更新（render() で消えても復活させる）
   setTimeout(() => updateLectureHud(), 50);
-  if (state.lectureIdx >= LESSON_ORDER.length) {
+  const order = lectureOrder(); // ⚡ライトコース対応：コース別の出題順
+  if (state.lectureIdx >= order.length) {
     finishLecture(false);
     return;
   }
-  const qid = LESSON_ORDER[state.lectureIdx];
+  const qid = order[state.lectureIdx];
   const q = PSYCH_QUESTIONS[qid];
   if (!q) {
     state.lectureIdx++;
     return triggerLectureQuestion();
   }
   // 章タイトルが変わるタイミングで章バナーを表示
-  const prevChapter = state.lectureIdx > 0 ? PSYCH_QUESTIONS[LESSON_ORDER[state.lectureIdx - 1]]?.chapter : null;
+  const prevChapter = state.lectureIdx > 0 ? PSYCH_QUESTIONS[order[state.lectureIdx - 1]]?.chapter : null;
   if (q.chapter !== prevChapter) {
     // 前の章が終わった瞬間にハンズオン演習を挿入（同じ演習は1回だけ）
     if (typeof prevChapter === 'number' && HANDS_ON_AFTER[prevChapter]) {
@@ -11844,8 +11903,8 @@ function showHandsOnExercise(ex, onClose) {
 }
 
 function exitLectureMidway() {
-  // 進捗を保存して中断
-  save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect, earned: state.lectureEarned || 0 };
+  // 進捗を保存して中断（コース種別も保存）
+  save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect, earned: state.lectureEarned || 0, lite: !!state.lectureLite };
   saveProgress();
   state = defaultState();
   state.screen = 'lobby';
@@ -11887,8 +11946,20 @@ function showChapterBanner(num, title, onClose) {
 
 function doLectureModal(qid) {
   triggerPsychBattle(qid);
-  // 心理バトル resolve をフックして lecture 進行
-  // 既存 resolvePsych の最後に lecture 進行を埋め込みたいので、ここでは何もしない（resolvePsychが lecture用にも対応する）
+  // ⚡スピードボーナス計測開始＋10秒カウントダウンバーをモーダルに注入
+  state.__lectureQStart = Date.now();
+  setTimeout(() => {
+    const modal = document.querySelector('.psych-modal');
+    if (!modal || modal.querySelector('.lecture-speed-bar')) return;
+    const bar = document.createElement('div');
+    bar.className = 'lecture-speed-bar';
+    bar.innerHTML = '<div class="lsb-label">⚡ 10秒以内で +5🪙</div><div class="lsb-track"><div class="lsb-fill"></div></div>';
+    const title = modal.querySelector('.psych-title');
+    if (title) title.insertAdjacentElement('afterend', bar);
+    else modal.prepend(bar);
+    // 10秒経過でバーをそっと消す（減点はなし＝プレッシャーは軽く）
+    setTimeout(() => { bar.classList.add('lsb-expired'); }, 10000);
+  }, 120);
 }
 
 function finishLecture(skipped) {
