@@ -1712,6 +1712,9 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   min-width: 0;
   /* 本文（ボタン含む）は自然高を維持し、ポートレート側が伸縮して収める */
   flex: 0 0 auto;
+  /* ★全カードで本文高を統一（最大構成＝チップ選択行ありのカードに合わせる）。
+     これにより立ち絵ポートレートの下端が全カードで水平に揃う */
+  min-height: 174px;
 }
 .lobby-stage-list .stage-card .stage-tags-row {
   display: flex; gap: 6px; flex-wrap: wrap;
