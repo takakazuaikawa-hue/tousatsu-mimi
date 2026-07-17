@@ -382,21 +382,6 @@ html, body {
   background-repeat: no-repeat, no-repeat;
   background-color: var(--c-bg-dark);
 }
-/* 対戦相手別テーブル背景（CODEX納品画像）。
-   2層目に相手専用画像、3層目に共通画像を重ねておくことで、
-   万一ファイルが無い環境でも共通背景に自動フォールバックする */
-body[data-opp-bg="polka"]  .bg-poker,
-body[data-opp-bg="selina"] .bg-poker,
-body[data-opp-bg="grano"]  .bg-poker,
-body[data-opp-bg="velvet"] .bg-poker {
-  background-size: cover, cover, cover;
-  background-position: center, center, center;
-  background-repeat: no-repeat, no-repeat, no-repeat;
-}
-body[data-opp-bg="polka"]  .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(20,8,29,0.45) 80%), url('assets/backgrounds/table_polka.png'),  url('assets/backgrounds/poker_table_bg.png'); }
-body[data-opp-bg="selina"] .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(20,8,29,0.45) 80%), url('assets/backgrounds/table_selina.png'), url('assets/backgrounds/poker_table_bg.png'); }
-body[data-opp-bg="grano"]  .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(20,8,29,0.45) 80%), url('assets/backgrounds/table_grano.png'),  url('assets/backgrounds/poker_table_bg.png'); }
-body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(20,8,29,0.45) 80%), url('assets/backgrounds/table_velvet.png'), url('assets/backgrounds/poker_table_bg.png'); }
 .bg-result {
   background:
     radial-gradient(ellipse at 50% 30%, rgba(245,215,122,0.25), transparent 60%),
@@ -1710,8 +1695,8 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   display: flex; flex-direction: column;
   gap: 4px;
   min-width: 0;
-  /* 本文（ボタン含む）は自然高を維持し、ポートレート側が伸縮して収める */
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .lobby-stage-list .stage-card .stage-tags-row {
   display: flex; gap: 6px; flex-wrap: wrap;
@@ -1724,9 +1709,8 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 }
 .stage-portrait {
   width: 100%;
-  /* 縮小可能に：カード全体が枠に収まることを優先（flex-shrink:0だと下端ボタンが見切れる） */
-  flex: 1 1 140px;
-  min-height: 110px;
+  flex: 1 1 auto;
+  min-height: 150px;
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
@@ -1734,6 +1718,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   background: linear-gradient(180deg, rgba(60,30,90,0.6) 0%, rgba(20,8,29,0.9) 100%);
   border: 2px solid var(--c-gold);
   position: relative;
+  flex-shrink: 0;
 }
 .stage-portrait img {
   width: 100%; height: 100%; object-fit: cover;
@@ -1853,22 +1838,21 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 }
 .lobby-stage-list .stage-card .stage-actions {
   display: flex;
-  flex-direction: row;      /* 横一列：メイン＋アイコンサブ（column だとカードが縦に溢れる） */
-  align-items: stretch;
-  gap: 4px;
+  flex-direction: column;
+  gap: 6px;
   margin-top: 6px;
 }
 .lobby-stage-list .stage-card .stage-actions .btn {
   font-size: 14px;
   font-weight: 700;
-  padding: 10px 6px;
+  padding: 12px 8px;
   min-height: 44px;
   border-radius: 8px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
 }
 .lobby-stage-list .stage-card .stage-actions .btn-primary {
-  font-size: 15px;
-  min-height: 44px;
+  font-size: 16px;
+  min-height: 50px;
 }
 .lobby-stage-list .stage-card .stage-actions .stage-recall { width: 34px; padding: 4px; font-size: 14px; }
 
@@ -2873,15 +2857,6 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   align-items: center;
   justify-content: space-between;
   user-select: none;
-  min-width: 0; /* P0-2: flex子でellipsisを効かせるため */
-}
-/* P0-2: 戦績ラベル見切れ対策。どんな文言でも枠内に収める */
-.sess-title-txt {
-  display: block;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 .sess-stats summary::before {
   content: '▶';
@@ -3244,7 +3219,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 }
 /* ヘッダー系ボタン共通：視覚サイズを変えずにタップ判定を四方に拡張
    （ゲーム全体が transform: scale で縮小されるため、スマホでは実効タップ領域が
-    極端に小さくなる。透明の ::before ヒットエリアで補う） */
+    極端に小さくなる。::after の透明ヒットエリアで補う） */
 .top-hud .btn,
 .top-hud button,
 .audio-bar-toggle,
@@ -3266,6 +3241,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   content: '';
   position: absolute;
   inset: -12px;
+  /* 透明だがクリック判定は持つ */
 }
 
 /* ── スマホ横持ち（実ビューポート幅 ≤ 920px）：ヘッダーUIを物理的に大型化 ──
@@ -3287,20 +3263,21 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   .hand-info { font-size: 22px; }
   .opponent-name { font-size: 24px; }
   .panyu-free-btn {
-    width: 72px !important; height: 72px !important;
-    font-size: 34px !important;
+    width: 72px; height: 72px;
+    font-size: 34px;
   }
   .audio-bar-toggle,
   .lb-bgm-toggle,
   .lb-sfx-toggle,
   .lb-settings-btn {
-    width: 64px !important; height: 64px !important;
-    font-size: 28px !important;
+    width: 64px; height: 64px;
+    font-size: 28px;
   }
   .backdoor-toggle {
-    width: 64px !important; height: 64px !important;
-    font-size: 26px !important;
+    width: 64px; height: 64px;
+    font-size: 26px;
   }
+  /* ヘッダーが太る分、ロビーのメイン領域を少し詰める */
   .lobby-main { padding-top: 4px; }
 }
 .top-hud h2 {
@@ -3425,10 +3402,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   position: relative;
   background: linear-gradient(180deg, #fff8dc 0%, #f5d77a 100%);
   color: #1a0e2a;
-  padding: 24px 28px 20px;
-  /* CODEX納品の金フレーム（404時は枠なし＝従来の角丸パネルのまま） */
-  border: 18px solid transparent;
-  border-image: url('assets/ui/frame_gold.png') 96 / 18px stretch;
+  padding: 32px 36px 26px;
   border-radius: 18px;
   width: min(780px, 94vw);
   max-height: 86vh;
@@ -3633,18 +3607,13 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 14px;
-  overflow: hidden; /* P0-1: 溢れた要素を隠す最終防波堤（本体は下記の高さ配分で収める） */
+  padding: 14px;
   background:
     radial-gradient(ellipse at center, rgba(120,15,30,0.7) 0%, rgba(30,8,15,0.9) 100%);
   border-radius: 12px;
   border: 2px solid var(--c-gold);
   box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
 }
-/* P0-1: 子要素の高さ配分を明示（テキストのflex圧縮は禁止・bet-unifiedは自然高を死守） */
-.center-table > .opponent-area  { flex: 0 1 auto; min-height: 0; }
-.center-table > .community-row  { flex: 1 1 auto; min-height: 90px; }
-.center-table > .bet-unified    { flex: 0 0 auto; }
 .opponent-area {
   display: flex;
   align-items: stretch;
@@ -4329,7 +4298,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   width: 100%;
   max-width: 880px;
   margin: 0 auto;
-  padding: 4px 12px 6px;
+  padding: 8px 12px 10px;
   background: linear-gradient(180deg, rgba(20,8,30,0.85) 0%, rgba(10,4,20,0.95) 100%);
   border: 1px solid rgba(245,215,122,0.45);
   border-radius: 12px;
@@ -4338,7 +4307,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   grid-template-columns: 1fr 1fr 1.4fr 1fr 1fr;
   gap: 8px;
   align-items: end;
-  min-height: 100px; /* P0-1: 150→100。実内容(各種縮小後)に合わせた床値 */
+  min-height: 150px;
 }
 .bu-cell-remain { background: rgba(245,215,122,0.04); border-radius: 6px; padding: 4px 0; }
 .bu-cell-bet    { background: rgba(255,134,179,0.04); border-radius: 6px; padding: 4px 0; position: relative; }
@@ -4436,7 +4405,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   padding-bottom: 2px;
 }
 /* ポット物理チップ：少し大きめ */
-.bu-pot-physical { display: flex; justify-content: center; min-height: 28px; align-items: flex-end; } /* P0-1: 70→28（空/少チップ時の余剰スペース削減。実チップが多い時は自然に伸びる） */
+.bu-pot-physical { display: flex; justify-content: center; min-height: 70px; align-items: flex-end; }
 .bu-pot-physical .bu-vc-chip { width: 30px; height: 8px; margin-top: -3px; }
 .bu-pot-physical .bu-vc-col { gap: 0; }
 .bu-remain-chips {
@@ -4573,7 +4542,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   text-shadow: 0 0 6px rgba(255,134,179,0.5);
 }
 .bu-callneed-idle {
-  display: none; /* P0-3: コール不要時は「コール —」を出さず要素ごと非表示 */
+  color: rgba(200,180,200,0.4);
 }
 /* プレイヤー対戦行：ミミ ─ VS ─ 相手 */
 .bu-stack-row {
@@ -4696,8 +4665,8 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 2px; /* P0-1: 4→2、縦オーバーフロー対策 */
-  min-height: 90px; /* P0-1: 110→90 */
+  gap: 4px;
+  min-height: 110px;
 }
 .bu-cell-label {
   font-size: 11px;
@@ -4850,16 +4819,6 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   display: flex;
   align-items: center;
 }
-/* P0-3: 空状態は「—」の羅列ではなく淡い待機表示に */
-.bu-waiting {
-  opacity: 0.35;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  color: var(--c-text-dim);
-}
 .bu-cell-pot .bu-vstack { min-height: 50px; }
 .bu-cell-pot .bu-chip { width: 44px; height: 10px; margin-top: -4px; }
 
@@ -4966,20 +4925,6 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   border-color: rgba(245,215,122,0.3);
   box-shadow: none;
 }
-/* P3: ミミミゲージ0（講義前）は情報過多を避けて1行に折りたたむ。
-   カード自体の高さは既存(132px)のまま保ち、行の見た目が跳ねないようにする */
-.opp-personality-card.opp-p-collapsed {
-  background: linear-gradient(180deg, rgba(40,20,60,0.4) 0%, rgba(20,8,30,0.55) 100%);
-  border-color: rgba(245,215,122,0.2);
-  box-shadow: none;
-  align-items: center;
-}
-.opp-p-collapsed-line {
-  font-size: 13px;
-  color: rgba(244,232,200,0.75);
-  text-align: center;
-  letter-spacing: 0.05em;
-}
 .opp-personality-card.opp-p-revealed {
   animation: personalityIn 0.6s ease-out;
 }
@@ -5005,39 +4950,6 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   font-weight: 700;
   letter-spacing: 0.1em;
   margin-bottom: 2px;
-}
-
-/* note_tell：相手の傾向ヒント（購入者限定） */
-.note-tell-hint {
-  margin-top: 6px;
-  padding: 5px 8px;
-  background: rgba(245,215,122,0.08);
-  border: 1px dashed rgba(245,215,122,0.35);
-  border-radius: 6px;
-  font-size: 11px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 5px;
-}
-.ntt-label {
-  color: #fbe28a;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  margin-right: 2px;
-}
-.ntt-tag {
-  background: rgba(0,0,0,0.35);
-  border-radius: 10px;
-  padding: 2px 8px;
-  color: #f4e8c8;
-}
-
-/* note_range：心理バトル成功時のレンジヒント（リコ助言に追記） */
-.range-hint {
-  color: #a7d8ff;
-  font-style: italic;
-  opacity: 0.9;
 }
 .opp-p-text {
   font-size: 12px;
@@ -6448,207 +6360,16 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
    心理／論理バトル v3：商業作品クオリティのリファイン
    ====================================================== */
 
-/* モーダル全体：商業品質のフレーム（720pxキャンバスにスクロール無しで収める） */
+/* モーダル全体：商業品質のフレーム */
 .battle-modal-overlay .psych-modal {
   background:
     radial-gradient(ellipse at 50% 0%, rgba(138,76,196,0.18) 0%, transparent 60%),
     linear-gradient(180deg, rgba(28,12,42,0.96) 0%, rgba(14,6,24,0.98) 100%);
-  /* ★CODEX納品フレーム（9スライス）。画像404時は下の色付きborderがそのまま
-     フォールバック枠として機能する（border-image失敗時の標準挙動） */
-  border: 14px solid rgba(120,60,170,0.55);
-  border-image: url('assets/ui/frame_psych.png') 96 / 14px stretch;
-  border-radius: 0; /* border-image使用時 radius は効かないため明示的に無効化 */
-  padding: 5px 12px 6px;
-  gap: 6px;
-  max-height: 99%;
+  border: 1px solid rgba(245,215,122,0.55);
+  border-radius: 18px;
+  padding: 20px 28px 24px;
   box-shadow:
     0 0 80px rgba(138,76,196,0.4),
-    0 24px 60px rgba(0,0,0,0.85);
-}
-/* 論理バトル：青銀フレーム＋電脳グリッドテクスチャ */
-.battle-modal-overlay .psych-modal.logic-mode {
-  border-color: rgba(80,140,220,0.55);
-  border-image: url('assets/ui/frame_logic.png') 96 / 14px stretch;
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(80,180,255,0.16) 0%, transparent 60%),
-    linear-gradient(180deg, rgba(8,18,40,0.94) 0%, rgba(4,10,26,0.96) 100%),
-    url('assets/ui/tex_grid_blue.png');
-  background-size: auto, auto, 256px 256px;
-}
-/* 講義：教室フレーム */
-.battle-modal-overlay .psych-modal.lecture-mode {
-  border-color: rgba(200,120,40,0.55);
-  border-image: url('assets/ui/frame_lecture.png') 96 / 14px stretch;
-}
-/* 心理バトル：紫ダマスク織テクスチャを地に敷く */
-.battle-modal-overlay .psych-modal:not(.logic-mode):not(.lecture-mode) {
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(138,76,196,0.16) 0%, transparent 60%),
-    linear-gradient(180deg, rgba(28,12,42,0.94) 0%, rgba(14,6,24,0.96) 100%),
-    url('assets/ui/tex_damask_purple.png');
-  background-size: auto, auto, 256px 256px;
-}
-
-/* ===== CODEX FX：バトルモーダル背後の妖気／電脳オーラ ===== */
-/* overlay の背景レイヤーに敷く（モーダルの外＝画面全体の雰囲気作り） */
-.battle-modal-overlay .battle-vignette {
-  background:
-    radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 90%),
-    url('assets/ui/fx_aura_psych.png') center bottom / cover no-repeat;
-}
-.battle-modal-overlay:has(.psych-modal.logic-mode) .battle-vignette {
-  background:
-    radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 90%),
-    url('assets/ui/fx_aura_logic.png') center bottom / cover no-repeat;
-}
-.battle-modal-overlay:has(.psych-modal.lecture-mode) .battle-vignette {
-  /* 講義は落ち着いた既定ビネットのみ（オーラなし） */
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 90%);
-}
-
-/* ===== CODEX FX：カットイン強化（集中線＋金閃光） ===== */
-.rico-cutin::before,
-.cutin-overlay::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url('assets/ui/fx_speedlines.png') center / cover no-repeat;
-  opacity: 0.55;
-  pointer-events: none;
-  z-index: 0;
-}
-.rico-cutin::after,
-.cutin-overlay::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url('assets/ui/fx_flash_gold.png') center / cover no-repeat;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 1;
-  animation: fxFlashSweep 0.7s ease-out forwards;
-}
-@keyframes fxFlashSweep {
-  0%   { opacity: 0.9; transform: translateX(-6%); }
-  100% { opacity: 0;   transform: translateX(6%); }
-}
-/* カットイン内のコンテンツはFXより前面へ */
-.rico-cutin > *, .cutin-overlay > * { position: relative; z-index: 2; }
-
-/* ===== CODEX 章バナー：講義リボン ===== */
-.chapter-banner .chapter-title {
-  background: url('assets/ui/lecture_ribbon.png') center / 100% 100% no-repeat;
-  padding: 18px 60px;
-}
-
-/* ===== CODEX スタンプ演出（講義の正解／不正解／スピード） ===== */
-.lecture-stamp {
-  position: fixed;
-  top: 38%;
-  left: 50%;
-  width: 180px;
-  height: 180px;
-  margin-left: -90px;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  pointer-events: none;
-  z-index: 12000;
-  animation: stampSlam 0.85s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
-}
-.lecture-stamp.stamp-correct { background-image: url('assets/ui/stamp_correct.png'); }
-.lecture-stamp.stamp-wrong   { background-image: url('assets/ui/stamp_wrong.png'); }
-.lecture-stamp.stamp-speed   {
-  background-image: url('assets/ui/stamp_speed.png');
-  width: 110px; height: 110px; margin-left: 40px; top: 32%;
-  animation-delay: 0.15s;
-}
-@keyframes stampSlam {
-  0%   { opacity: 0; transform: scale(2.4) rotate(-18deg); }
-  55%  { opacity: 1; transform: scale(0.94) rotate(-8deg); }
-  70%  { transform: scale(1.06) rotate(-10deg); }
-  100% { opacity: 1; transform: scale(1) rotate(-9deg); }
-}
-
-/* ===== CODEX ボタン素材：大型CTAに金の重厚枠を適用 =====
-   小さいボタンは 9-slice の角が潰れるため、大型の主要CTAに限定。
-   画像404時は transparent border のみ＝従来デザインが残るフォールバック */
-.btn-primary.big,
-.title-buttons .btn-primary,
-.episode-continue,
-.stage-main-btn,
-.mp-btn-deal {
-  border: 4px solid transparent;
-  border-image: url('assets/ui/btn_gold_large.png') 48 fill / 14px / 4px stretch;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.85), 0 0 10px rgba(0,0,0,0.5);
-}
-/* ★重要：子要素の flex 圧縮を禁止（圧縮されるとテキスト下端が切れて読めなくなる）
-   収まらない場合はモーダル自体が overflow-y: auto でスクロールする */
-.battle-modal-overlay .psych-modal > * {
-  flex-shrink: 0;
-}
-/* フレーム分の内寸減を吸収する圧縮セット（装飾フレーム導入に伴う調整） */
-.battle-modal-overlay .psych-modal .psych-board-cards .card,
-.battle-modal-overlay .psych-modal .psych-hand-cards .card {
-  width: 48px;
-  height: 66px;
-  padding: 3px 4px;
-}
-.battle-modal-overlay .psych-modal .psych-board-cards .card .center-suit,
-.battle-modal-overlay .psych-modal .psych-hand-cards .card .center-suit { font-size: 20px; }
-.battle-modal-overlay .psych-modal .psych-board-cards .card .rank,
-.battle-modal-overlay .psych-modal .psych-hand-cards .card .rank { font-size: 13px; }
-.battle-modal-overlay .battle-portrait { height: 78px; }
-.battle-modal-overlay .psych-title { padding: 5px 18px !important; }
-.battle-modal-overlay .psych-cards-row .psych-board-info,
-.battle-modal-overlay .psych-cards-row .psych-hand-info { padding: 5px 10px; }
-.battle-modal-overlay .zazazo-hint { padding: 5px 10px; font-size: 12px; }
-.battle-modal-overlay .psych-situation { font-size: 15px !important; line-height: 1.55 !important; padding: 7px 12px !important; }
-.battle-modal-overlay .psych-speech { font-size: 15px; }
-.battle-modal-overlay .psych-opponent-quote { font-size: 14px; }
-.battle-modal-overlay .psych-pot { margin-top: 4px; padding-top: 4px; font-size: 13px; }
-/* モーダル内ポートレートはコンパクトに（180px→78px：装飾フレーム分の高さを捻出） */
-.battle-modal-overlay .battle-portrait {
-  height: 78px;
-}
-.battle-modal-overlay .battle-portraits {
-  margin-bottom: 0;
-}
-.battle-modal-overlay .battle-portrait .portrait-name {
-  font-size: 13px;
-  padding: 5px 8px 4px;
-}
-/* ★顔クロップ修正：ベースの scale(1.9) は 180px 枠用。78px 枠では頭頂部しか
-   写らない帯になるため、モーダル内では transform を外して object-position で顔位置を合わせる */
-.battle-modal-overlay .battle-portrait img {
-  transform: none !important;
-  object-fit: cover;
-  object-position: 50% 15%;
-}
-
-/* ===== 講義モード（lecture-mode）：心理バトルと明確に区別 ===== */
-/* タイトル：紫（心理）/青（論理）に対し、講義は金×臙脂の「教室」カラー */
-.battle-modal-overlay .psych-title.lecture-mode,
-.psych-modal .psych-title.lecture-mode {
-  background:
-    linear-gradient(90deg, rgba(150,30,40,0.95) 0%, rgba(200,144,32,0.85) 50%, rgba(150,30,40,0.95) 100%) !important;
-  border-color: #ffe2a0 !important;
-  text-shadow: 0 0 8px rgba(255,220,150,0.9), 0 2px 4px rgba(0,0,0,0.95) !important;
-  box-shadow: 0 4px 18px rgba(200,120,40,0.55), 0 0 0 1px rgba(255,255,255,0.1) inset !important;
-}
-.battle-modal-overlay .psych-title.lecture-mode .battle-subtitle {
-  color: #fff2d8 !important;
-}
-/* 講義中はミミvs相手のポートレート行は情報過多なので出さない
-   （リコの顔はセリフ行に表示済み。110px 節約でテキストに余白を回す） */
-.psych-modal.lecture-mode .battle-portraits {
-  display: none;
-}
-/* 講義モーダルの枠色も教室カラーに */
-.battle-modal-overlay .psych-modal.lecture-mode {
-  border-color: rgba(255,210,140,0.6);
-  box-shadow:
-    0 0 80px rgba(200,140,40,0.35),
     0 0 0 1px rgba(255,255,255,0.04) inset,
     0 24px 60px rgba(0,0,0,0.85);
 }
@@ -6667,12 +6388,12 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .battle-modal-overlay .psych-title,
 .psych-modal .psych-title {
   position: relative !important;
-  font-size: 20px !important;
+  font-size: 24px !important;
   font-weight: 900 !important;
   letter-spacing: 0.16em !important;
   color: #fff !important;
-  padding: 5px 18px !important;
-  margin: 0 0 6px !important;
+  padding: 14px 24px !important;
+  margin: 0 0 14px !important;
   border-radius: 12px !important;
   background:
     linear-gradient(90deg, rgba(80,30,140,0.95) 0%, rgba(180,50,150,0.9) 50%, rgba(80,30,140,0.95) 100%) !important;
@@ -6771,17 +6492,11 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   background: linear-gradient(180deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.45) 100%) !important;
   border-left: 4px solid var(--c-gold-bright) !important;
   border-radius: 0 10px 10px 0 !important;
-  padding: 10px 16px !important;
+  padding: 14px 18px !important;
   color: #fffceb !important;
-  margin: 0 0 6px !important;
+  margin: 0 0 12px !important;
   text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
-/* スピーチ・ヒントの余白もタイトに */
-.battle-modal-overlay .psych-speech.with-portrait { margin: 0 0 6px; padding: 8px 12px; }
-.battle-modal-overlay .zazazo-hint { margin: 0 0 6px; }
-.battle-modal-overlay .psych-cards-row .psych-board-info,
-.battle-modal-overlay .psych-cards-row .psych-hand-info { padding: 8px 12px; }
-.battle-modal-overlay .choice-btn { min-height: 56px; }
 .psych-modal.logic-mode .psych-situation {
   border-left-color: #6ec5ff;
   color: #e0f0ff;
@@ -6828,16 +6543,10 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   color: rgba(220,240,255,0.85);
 }
 
-/* 選択肢：プロ品質のカード型ボタン（2列グリッドで縦幅を半減） */
+/* 選択肢：プロ品質のカード型ボタン */
 .battle-modal-overlay .psych-choices {
-  display: grid !important;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-bottom: 6px;
-}
-/* 選択肢が奇数のとき最後の1個は全幅 */
-.battle-modal-overlay .psych-choices > .choice-btn:last-child:nth-child(odd) {
-  grid-column: 1 / -1;
+  margin-bottom: 14px;
 }
 .battle-modal-overlay .choice-btn {
   position: relative;
@@ -8075,13 +7784,6 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   padding: 14px 38px;
   min-height: 56px;
   letter-spacing: 0.15em;
-  /* 本文が長くてもボタンは常に見える（スクロール領域内 sticky） */
-  position: sticky;
-  bottom: 0;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  box-shadow: 0 -14px 18px rgba(0,0,0,0.75), 0 4px 14px rgba(0,0,0,0.6);
 }
 
 /* ========== 圧倒モード演出 ========== */
@@ -8434,7 +8136,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   /* 左玉用画像（あれば共通画像を上書き、無ければ共通画像のまま） */
   background:
     url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
-    url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
+    url('assets/ui/panyu_ball.png') center/cover no-repeat,
     transparent;
 }
 /* 右の玉：左側を平らに押しつぶす */
@@ -8443,7 +8145,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   /* 右玉用画像（あれば共通画像を上書き、無ければ共通画像のまま） */
   background:
     url('assets/ui/panyu_ball_r.png') center/cover no-repeat,
-    url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
+    url('assets/ui/panyu_ball.png') center/cover no-repeat,
     transparent;
 }
 .panyu-clicker-blob {
@@ -8457,7 +8159,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   max-height: 360px;
   /* デフォルトは共通画像（あれば）／無ければ透明 */
   background:
-    url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
+    url('assets/ui/panyu_ball.png') center/cover no-repeat,
     transparent;
   border-radius: 50%;
   border: 6px solid #fff;
@@ -9149,59 +8851,6 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .memory-card-play { font-size: 13px; color: var(--c-gold-bright); margin-top: 6px; font-weight: 600; }
 
 /* メモリビューア（モーダル） */
-/* ===== P2: 体験ハンド 勝利画面 ===== */
-.intro-win-overlay {
-  position: absolute; inset: 0; z-index: 95;
-  background: rgba(4,2,10,0.88);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
-  animation: collIn 0.3s ease-out;
-}
-.intro-win-modal {
-  width: min(480px, calc(100% - 40px));
-  background: linear-gradient(180deg, #2a1238 0%, #1a0820 100%);
-  border: 2px solid var(--c-gold-bright);
-  border-radius: 16px;
-  padding: 32px 28px;
-  text-align: center;
-  color: #fbeec8;
-  box-shadow: 0 12px 48px rgba(0,0,0,0.75), 0 0 60px rgba(245,215,122,0.2);
-}
-.intro-win-badge {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--c-gold-bright);
-  text-shadow: 0 0 20px rgba(245,215,122,0.6);
-  margin-bottom: 8px;
-}
-.intro-win-title {
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-.intro-win-coins {
-  font-size: 18px;
-  color: #8aff9a;
-  font-weight: 700;
-  text-shadow: 0 0 10px rgba(138,255,154,0.5);
-  margin-bottom: 20px;
-}
-.intro-win-question {
-  font-size: 15px;
-  opacity: 0.85;
-  margin-bottom: 18px;
-}
-.intro-win-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.intro-win-buttons .btn {
-  width: 100%;
-  min-height: 52px;
-  font-size: 16px;
-}
-
 .memory-viewer-overlay {
   position: absolute; inset: 0; z-index: 90;
   background: rgba(4,2,10,0.85);
@@ -9326,13 +8975,6 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   border-top: 1px solid rgba(245,215,122,0.2);
   background: rgba(0,0,0,0.25);
 }
-/* P1-1: 装備の反映先に関する注記（既存フッターの直下・二重罫線を避ける） */
-.equip-modal-footer.equip-modal-note {
-  border-top: none;
-  padding-top: 0;
-  opacity: 0.85;
-  color: #ffd0d6;
-}
 .equip-row {
   display: grid;
   grid-template-columns: 120px 1fr;
@@ -9409,44 +9051,19 @@ body[data-table-skin="emerald"]    .center-table { background: radial-gradient(e
 body[data-table-skin="neon"]       .center-table { background: radial-gradient(ellipse at center, #4a1a6a 0%, #1a0a3a 70%, #050020 100%); box-shadow: inset 0 0 40px rgba(190, 90, 255, 0.3) !important; }
 body[data-table-skin="speakeasy"]  .center-table { background: radial-gradient(ellipse at center, #5a3a1a 0%, #2a1808 70%, #150a04 100%) !important; }
 
-/* チップ：data-chip-skin 別（チップ表示の縁色を変更）
-   P1-1: 旧セレクタ .chip-pill はゲーム内に存在せず未配線だったため、
-   実際にレンダリングされるチップ要素（.bu-chip / .bu-vc-chip / .bu-rchip）に配線し直す */
-body[data-chip-skin="ivory"]  .bu-chip,
-body[data-chip-skin="ivory"]  .bu-vc-chip,
-body[data-chip-skin="ivory"]  .bu-rchip { box-shadow: 0 0 7px rgba(240,230,200,0.9), inset 0 1px 0 rgba(255,255,255,0.5) !important; border-color: rgba(250,245,225,0.95) !important; }
-body[data-chip-skin="jade"]   .bu-chip,
-body[data-chip-skin="jade"]   .bu-vc-chip,
-body[data-chip-skin="jade"]   .bu-rchip { box-shadow: 0 0 7px rgba(80,200,150,0.9), inset 0 1px 0 rgba(200,255,230,0.5) !important; border-color: rgba(80,220,160,0.95) !important; }
-body[data-chip-skin="dragon"] .bu-chip,
-body[data-chip-skin="dragon"] .bu-vc-chip,
-body[data-chip-skin="dragon"] .bu-rchip { box-shadow: 0 0 7px rgba(255,80,40,0.9), inset 0 1px 0 rgba(255,200,180,0.5) !important; border-color: rgba(255,110,60,0.95) !important; }
+/* チップ：data-chip-skin 別（チップ表示の縁色を変更） */
+body[data-chip-skin="ivory"]  .chip-pill { box-shadow: 0 0 8px rgba(240,230,200,0.6) !important; }
+body[data-chip-skin="jade"]   .chip-pill { box-shadow: 0 0 8px rgba(80,200,150,0.6) !important; }
+body[data-chip-skin="dragon"] .chip-pill { box-shadow: 0 0 8px rgba(255,80,40,0.7) !important; }
 
-/* ミミ：data-mimi-skin 別（見た目フィルター。専用画像が届くまではCSSフィルタで機能させる）
-   P1-1: panyu-clicker-blob だけでなく、バトル画面本体のミミ立ち絵・ミニポーカーのミミ・
-   心理バトルモーダルのミミポートレートにも適用（購入した衣装が実際の画面で変化するように配線） */
-/* ミミ立ち絵（.char-mimi / .portrait-mimi）は CODEX 納品の専用画像
-   （mimi_pink/panda/gold.png）を setMimiExpression が差し替えるため、
-   CSSフィルタは「専用画像が存在しない表示物」だけに適用する：
-   ぱにゅブロブとミニポーカーのミニミミ（mimi_mini.png 1種のみ） */
-body[data-mimi-skin="pink"]  .panyu-clicker-blob,
-body[data-mimi-skin="pink"]  .mp-player .mp-char-img { filter: hue-rotate(-20deg) saturate(1.3) brightness(1.1) !important; }
-body[data-mimi-skin="panda"] .panyu-clicker-blob,
-body[data-mimi-skin="panda"] .mp-player .mp-char-img { filter: grayscale(1) contrast(1.4) !important; }
-body[data-mimi-skin="gold"]  .panyu-clicker-blob,
-body[data-mimi-skin="gold"]  .mp-player .mp-char-img { filter: hue-rotate(40deg) saturate(2) brightness(1.3) drop-shadow(0 0 12px gold) !important; }
+/* ミミ：data-mimi-skin 別（panyu-clicker-blob のフィルター） */
+body[data-mimi-skin="pink"]  .panyu-clicker-blob { filter: hue-rotate(-20deg) saturate(1.3) brightness(1.1) !important; }
+body[data-mimi-skin="panda"] .panyu-clicker-blob { filter: grayscale(1) contrast(1.4) !important; }
+body[data-mimi-skin="gold"]  .panyu-clicker-blob { filter: hue-rotate(40deg) saturate(2) brightness(1.3) drop-shadow(0 0 12px gold) !important; }
 
-/* カットイン：data-cutin-skin 別
-   P1-1: 旧セレクタ .cutin-overlay はゲーム内に存在せず未配線だったため、
-   実際の心理バトルカットイン要素（.rico-cutin / .cutin-flash / .cutin-portrait）に配線し直す */
-body[data-cutin-skin="classic"] .rico-cutin { filter: grayscale(0.65) drop-shadow(0 8px 24px rgba(0,0,0,0.6)) !important; }
-body[data-cutin-skin="classic"] .cutin-flash {
-  background:
-    repeating-linear-gradient(0deg, rgba(0,0,0,0.35) 0 3px, transparent 3px 10px),
-    radial-gradient(ellipse at 80% 50%, rgba(200,37,58,0.25) 0%, transparent 60%) !important;
-}
-body[data-cutin-skin="neon"] .cutin-portrait { box-shadow: 0 0 24px 6px rgba(190,80,255,0.8) !important; border-color: #ff7cf5 !important; }
-body[data-cutin-skin="neon"] .cutin-flash { background: radial-gradient(ellipse at 80% 50%, rgba(190,80,255,0.55) 0%, transparent 65%) !important; }
+/* カットイン：data-cutin-skin 別 */
+body[data-cutin-skin="classic"] .cutin-overlay { background: repeating-linear-gradient(0deg, rgba(0,0,0,0.8) 0 4px, transparent 4px 12px) !important; filter: grayscale(0.6) !important; }
+body[data-cutin-skin="neon"]    .cutin-overlay { background: radial-gradient(circle, rgba(190,80,255,0.5) 0%, rgba(0,0,40,0.85) 70%) !important; box-shadow: inset 0 0 80px rgba(255,80,255,0.6); }
 
 /* ===== ショップUIアトラス（1536×512 単一PNG） =====
    ファイル配置: assets/ui/shop_atlas.png
@@ -9694,7 +9311,7 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   gap: 12px;
   align-items: center;
   width: 100%;
-  margin: 0; /* P0-1: 4px→0、縦オーバーフロー対策の一部 */
+  margin: 4px 0;
 }
 .table-stack-slot {
   display: flex;
@@ -9704,10 +9321,6 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
 .community-row .community-cards {
   margin: 0;
   justify-content: center;
-}
-/* P0-1: 場札カードだけ高さを縮小（他画面のカードには影響させない・センターテーブルの縦オーバーフロー対策） */
-.community-row .community-cards .card {
-  height: 90px;
 }
 .table-stack {
   display: flex;
@@ -10670,91 +10283,6 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   transition: opacity 1.8s ease;
 }
 
-/* ===== 講義ゲーム化：進捗HUD ===== */
-.lecture-hud {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 90;
-  width: 340px;
-  background: linear-gradient(180deg, rgba(28,12,42,0.92) 0%, rgba(14,6,24,0.95) 100%);
-  border: 1px solid rgba(245,215,122,0.5);
-  border-radius: 50px;
-  padding: 7px 18px 8px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-  pointer-events: none;
-}
-.lecture-hud .lh-bar {
-  height: 5px;
-  background: rgba(255,255,255,0.12);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 5px;
-}
-.lecture-hud .lh-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--c-gold) 0%, var(--c-gold-bright) 100%);
-  border-radius: 3px;
-  transition: width 0.4s ease;
-  box-shadow: 0 0 8px rgba(245,215,122,0.7);
-}
-.lecture-hud .lh-stats {
-  display: flex;
-  justify-content: center;
-  gap: 14px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fbeec8;
-  letter-spacing: 0.04em;
-}
-.lecture-hud .lh-combo {
-  color: #ffb060;
-  animation: lhComboPulse 0.8s ease-in-out infinite;
-}
-@keyframes lhComboPulse {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.15); }
-}
-
-/* ⚡スピードボーナス：10秒カウントダウンバー（講義問題モーダル内） */
-.lecture-speed-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 8px;
-  transition: opacity 0.6s ease;
-}
-.lecture-speed-bar.lsb-expired { opacity: 0; }
-.lsb-label {
-  flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 700;
-  color: #ffd77a;
-  letter-spacing: 0.05em;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-}
-.lsb-track {
-  flex: 1;
-  height: 8px;
-  background: rgba(255,255,255,0.12);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.lsb-fill {
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(90deg, #ffd77a 0%, #ff9040 100%);
-  border-radius: 4px;
-  box-shadow: 0 0 8px rgba(255,180,80,0.7);
-  animation: lsbCountdown 10s linear forwards;
-  transform-origin: left center;
-}
-@keyframes lsbCountdown {
-  from { transform: scaleX(1); }
-  to   { transform: scaleX(0); }
-}
-
 /* ===========================================================
    ミニキャラ・ファイブポーカー v2（中毒性 / 射幸性 / かわいさ）
    =========================================================== */
@@ -10775,12 +10303,10 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   background:
     radial-gradient(ellipse at 50% 0%, rgba(245,215,122,0.12) 0%, transparent 60%),
     linear-gradient(180deg, #1a0a26 0%, #0a0612 60%, #14041e 100%);
-  /* CODEX納品の金フレーム（404時は色付きborderにフォールバック） */
-  border: 20px solid rgba(245,215,122,0.45);
-  border-image: url('assets/ui/frame_gold.png') 96 / 20px stretch;
-  border-radius: 0;
+  border: 2px solid rgba(245,215,122,0.45);
+  border-radius: 18px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.85), inset 0 0 60px rgba(245,215,122,0.06);
-  padding: 10px 16px 10px;
+  padding: 18px 24px 16px;
   display: flex; flex-direction: column;
   overflow: hidden;
 }

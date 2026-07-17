@@ -181,7 +181,6 @@ function defaultSave() {
     // ── 基本進捗 ──
     coins: 0,
     clearedStages: [],
-    introPlayed: false,           // P2: 体験ハンド（初回導線）を消化済みか
     bestRanks: {},
     bestScores: {},
     firstClearRewardClaimed: [],
@@ -261,37 +260,6 @@ function normalizeSave(s) {
   if (typeof s.sfxVolume !== 'number') s.sfxVolume = 60;
   s.sfxVolume = Math.max(0, Math.min(100, s.sfxVolume));
   if (typeof s.sfxOn !== 'boolean') s.sfxOn = true;
-  if (typeof s.introPlayed !== 'boolean') s.introPlayed = false;
-  // ── ショップ整理：既に効果が無料公開されていた／実装が困難だった5商品を廃止。
-  //    既存の購入者には代金を全額返金し、所持記録も除去する（一度だけ・自動）。
-  const DISCONTINUED_REFUND = {
-    note_board_danger: 250,
-    note_bet_size:     300,
-    note_position:      350,
-    note_outs:          400,
-    note_equity:        600,
-  };
-  let refundTotal = 0;
-  const refundedNames = [];
-  Object.keys(DISCONTINUED_REFUND).forEach(id => {
-    const idx = s.ownedItems.indexOf(id);
-    if (idx !== -1) {
-      s.ownedItems.splice(idx, 1);
-      refundTotal += DISCONTINUED_REFUND[id];
-      refundedNames.push(id);
-      // note_ 系はunlockedNotesにも追加されていたので合わせて除去
-      const noteId = id.replace('note_', '');
-      if (Array.isArray(s.unlockedNotes)) {
-        const ni = s.unlockedNotes.indexOf(noteId);
-        if (ni !== -1) s.unlockedNotes.splice(ni, 1);
-      }
-    }
-  });
-  if (refundTotal > 0) {
-    s.coins = (s.coins || 0) + refundTotal;
-    // ロード直後にトーストで知らせるため、次のrender後に一度だけ表示するフラグを立てる
-    s.__pendingRefundNotice = { total: refundTotal, count: refundedNames.length };
-  }
   return s;
 }
 
@@ -468,35 +436,6 @@ window.assetFallback = function(imgEl, key) {
   frame.classList.add('fallback');
   frame.setAttribute('data-fallback', CHAR_FALLBACK[key] || '[画像なし]');
 };
-
-// P1-3: バトル中のミミ表情差分。画像が届いていない場合は mimi_default.png に、
-// それすら無ければ assetFallback の枠内表示に自然にフォールバックする。
-// 表情: default / win / sad / shock / think
-function setMimiExpression(expr) {
-  // 現在の表情を記録（render() 後の再適用で表情もスキンも維持するため）
-  if (state) state.mimiExpr = expr || 'default';
-  document.querySelectorAll('.battle-mimi-img, [data-mimi-face]').forEach(img => {
-    // 平常時（default）は装備中スキンの専用画像を優先（mimi_pink/panda/gold.png）。
-    // 表情リアクション中（win/sad/shock/think）は表情画像を優先する。
-    const skin = (save && save.equippedMimiSkin && save.equippedMimiSkin !== 'default')
-      ? save.equippedMimiSkin : null;
-    const goPlainDefault = () => {
-      img.onerror = () => { img.onerror = null; window.assetFallback(img, 'mimi'); };
-      img.src = 'assets/characters/mimi_default.png';
-    };
-    const goDefault = () => {
-      if (skin) {
-        img.onerror = goPlainDefault; // スキン画像が無ければ通常ミミへ
-        img.src = `assets/characters/mimi_${skin}.png`;
-      } else {
-        goPlainDefault();
-      }
-    };
-    if (!expr || expr === 'default') { goDefault(); return; }
-    img.onerror = goDefault;
-    img.src = `assets/characters/mimi_${expr}.png`;
-  });
-}
 
 //=============================================================
 // 1. 乱数・ユーティリティ
@@ -2310,7 +2249,7 @@ function render() {
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); break;
     case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); tryStartLobbyBgm(); break;
-    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI(); break;
+    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); break;
     case 'result':      renderTemplate('tpl-result'); applyBindings(); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
     case 'ending':      renderTemplate('tpl-ending'); showEndingMusicPrompt(); break;
@@ -2511,9 +2450,8 @@ function applyBindings() {
           }
           break;
         }
-        // 状態キー：opponentId + 読み切り済か + ミミミ0か否か。同じなら再描画しない（アニメちらつき防止）
-        const zazazoNow = state.zazazo || 0;
-        const stateKey = `${state.opponentId}:${state.opponentPersonalityRevealed ? 'r' : (zazazoNow > 0 ? 'u' : 'u0')}`;
+        // 状態キー：opponentId + 読み切り済か。同じなら再描画しない（アニメちらつき防止）
+        const stateKey = `${state.opponentId}:${state.opponentPersonalityRevealed ? 'r' : 'u'}`;
         if (el.dataset.state === stateKey) break;
         el.dataset.state = stateKey;
         if (state.opponentPersonalityRevealed) {
@@ -2525,13 +2463,6 @@ function applyBindings() {
                 ${p.traits.map(t => `<li>${t}</li>`).join('')}
               </ul>
               <div class="opp-p-exploit"><b>攻略：</b> ${p.exploit}</div>
-            </div>
-          `;
-        } else if (zazazoNow <= 0) {
-          // P3: ミミミゲージ0（講義前の初心者）は情報過多を避けて1行に折りたたむ
-          el.innerHTML = `
-            <div class="opp-personality-card opp-p-collapsed">
-              <div class="opp-p-collapsed-line">👁 相手をよく観察しよう</div>
             </div>
           `;
         } else {
@@ -3049,10 +2980,13 @@ const RICO_TRIVIA = {
 };
 
 function pickLobbyRico() {
-  // ★装備中の衣装が最優先。ショップの requires 判定（'polka'/'selina'/'grano'/'ending'）は
-  //   購入時点で既に通過済みなので、装備さえされていればクリア状況に関わらず即反映してよい。
-  //   （旧実装は「クリア前は常に制服固定」だったため、序盤で買える9着中8着が
-  //    ヴェルベット撃破まで一切見えないバグになっていた）
+  // クリア前は常に制服（rico_default）固定。クリア後はユーザー装備優先＞ランダム
+  const cleared = save.clearedStages && save.clearedStages.includes('velvet');
+  if (!cleared) {
+    state.lobbyRicoIndex = 0;
+    return RICO_OUTFITS[0];
+  }
+  // 装備が 'default' 以外なら、装備IDで固定（クリア後の自由着替え）
   const equipped = save && save.equippedRicoOutfit;
   if (equipped && equipped !== 'default') {
     const found = RICO_OUTFITS.find(o => outfitIdFor(o.file) === equipped);
@@ -3061,52 +2995,12 @@ function pickLobbyRico() {
       return found;
     }
   }
-  // クリア前・未装備なら制服固定
-  const cleared = save.clearedStages && save.clearedStages.includes('velvet');
-  if (!cleared) {
-    state.lobbyRicoIndex = 0;
-    return RICO_OUTFITS[0];
-  }
-  // クリア後・未装備ならセッションごとにランダム着せ替え（お楽しみ要素）
+  // セッションごとに変える（ロビー表示時に1回決める）
   if (state.lobbyRicoIndex == null || state.lobbyRicoChangedAt !== state.screen) {
     state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
     state.lobbyRicoChangedAt = state.screen;
   }
   return RICO_OUTFITS[state.lobbyRicoIndex];
-}
-// note_tell：対戦相手の傾向（攻撃的/受け身/ブラフ多）を事前表示。
-// 覗き見モード（デバッグ）の生の数値ログとは別物：定性的なタグのみ、購入者限定。
-function applyNoteTellHint() {
-  const container = document.querySelector('.opponent-info');
-  if (!container) return;
-  const old = container.querySelector('.note-tell-hint');
-  if (old) old.remove();
-  if (!save.unlockedNotes || !save.unlockedNotes.includes('tell')) return;
-  if (!state.opponentProfile) return;
-  const p = state.opponentProfile;
-  const tags = [];
-  if (p.aggression >= 0.7) tags.push('⚔ 攻撃的');
-  else if (p.aggression <= 0.4) tags.push('🛡 受け身');
-  if (p.bluffTendency >= 0.55) tags.push('🎭 ブラフ多め');
-  else if (p.bluffTendency <= 0.3) tags.push('🎯 バリュー志向');
-  if (p.foldDiscipline >= 0.7) tags.push('🧊 降りやすい');
-  else if (p.foldDiscipline <= 0.35) tags.push('🔥 粘り強い');
-  if (tags.length === 0) return;
-  const hint = document.createElement('div');
-  hint.className = 'note-tell-hint';
-  hint.innerHTML = `<span class="ntt-label">📓 相手の傾向</span>${tags.map(t => `<span class="ntt-tag">${t}</span>`).join('')}`;
-  container.appendChild(hint);
-}
-// バトル画面の左パネル（リコ助言役）にも装備中の衣装を反映
-function applyBattleRicoOutfit() {
-  const img = document.querySelector('.char-rico img');
-  if (!img) return;
-  const equipped = save && save.equippedRicoOutfit;
-  const found = equipped && equipped !== 'default'
-    ? RICO_OUTFITS.find(o => outfitIdFor(o.file) === equipped)
-    : null;
-  const file = found ? found.file : 'rico_default.png';
-  if (!img.src.endsWith(file)) img.src = `assets/characters/${file}`;
 }
 // ファイル名 → 装備ID 変換（rico_kimono.png → 'kimono'）
 function outfitIdFor(file) {
@@ -3286,7 +3180,9 @@ const SHOP_ITEMS = [
   { id: 'panyu_sense_lv2',     cat: 'panyu', name: 'ぱにゅぱにゅLv2',         price: 300, desc: '心理バトルのハズレ選択肢を1つグレーアウトして選べなくする' },
   { id: 'panyu_range_lv2',     cat: 'panyu', name: 'ぱにゅレンジLv2',         price: 500, desc: '心理バトル成功後の相手レンジ表示が詳しくなる' },
   { id: 'panyu_gauge_plus_20', cat: 'panyu', name: 'ぱにゅゲージ上限+20',      price: 900, desc: 'ぱにゅゲージの最大値が100→120に' },
+  { id: 'note_board_danger',   cat: 'note',  name: 'ボード危険度メモ',         price: 250, desc: '場札がフラッシュ/ストレート注意の時、ミミ思考に表示される' },
   { id: 'note_pot_odds',       cat: 'note',  name: 'ポットオッズ入門',         price: 350, desc: 'コール判断時に「割に合う/合わない」目安を表示' },
+  { id: 'note_bet_size',       cat: 'note',  name: 'ベットサイズ講座',         price: 300, desc: 'ベットボタンの説明が詳しくなる' },
   { id: 'skin_red_gold_card',  cat: 'skin',  name: '赤金カジノカード',         price: 300, desc: 'カード裏デザインを赤金カジノ風に変更' },
   { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 500, desc: 'テーブル背景をVIP風に変更' },
   { id: 'memory_ending',       cat: 'memory', name: 'エンディング映像',        price: 500, desc: 'クリア後限定。あの感動のエンディングを何度でも視聴可能に', requires: 'ending' },
@@ -3304,8 +3200,11 @@ const SHOP_ITEMS = [
   { id: 'panyu_gauge_plus_50', cat: 'panyu', name: 'ぱにゅゲージ上限+50',      price: 2200, desc: 'ぱにゅゲージの最大値が120→170に（要上限+20）' },
 
   /* ===== 追加：戦術ノート ===== */
+  { id: 'note_position',       cat: 'note',  name: 'ポジション講座',           price: 350,  desc: 'BTN/BB等のポジション解説をミミ思考に表示' },
+  { id: 'note_outs',           cat: 'note',  name: 'アウツ計算術',             price: 400,  desc: 'ドロー時に「あと何枚で完成」をリアルタイム表示' },
   { id: 'note_tell',           cat: 'note',  name: '相手の癖メモ',             price: 500,  desc: '対戦相手の傾向（攻撃的/受け身/ブラフ多）が事前に分かる' },
   { id: 'note_bankroll',       cat: 'note',  name: 'バンクロール管理',         price: 450,  desc: 'コイン獲得効率が+10%。ハンドリザルトにも収支表示' },
+  { id: 'note_equity',         cat: 'note',  name: 'エクイティ早見表',         price: 600,  desc: '結果モーダルのエクイティ推移グラフが詳細化' },
 
   /* ===== 追加：見た目（着替え・カード/テーブル/チップ・差分） ===== */
   /* リコ先輩の衣装（既存 RICO_OUTFITS のファイル名と一致するIDで管理） */
@@ -3362,7 +3261,9 @@ const SHOP_COMMENTS = {
   panyu_sense_lv2:     'ふむ、迷うお嬢さんにこそ、これ。ハズレを1枚お引きしますから、お買い得ですよ',
   panyu_range_lv2:     'レンジが見える品、と言いましょうか。次の一手の読みが冴える、中級者向けの逸品ですな',
   panyu_gauge_plus_20: '長くお遊びになるなら、上限拡張は必須。お買い得な投資です',
+  note_board_danger:   '危険信号を教える、いわば早期警戒装置ですな。セリナさん戦の前に揃えると、ずいぶん楽ですよ',
   note_pot_odds:       'ふふ、私の専門分野ですな。「安いか、高いか」が即座に見える品。私との商談で必要になりますよ',
+  note_bet_size:       'ベットの作法をおさらいできる、初心者向けの基礎教材です。お得ですよ',
   skin_red_gold_card:  '見た目重視のお嬢さんに。テーブルが華やぎますよ',
   table_vip:           'VIPのお客様気分でお楽しみいただける一品。気分転換にぜひ',
   memory_ending:       'これは特別な品ですよ。あの夜の決着を、何度でも振り返れる映像です',
@@ -3381,8 +3282,11 @@ const SHOP_COMMENTS = {
   panyu_gauge_plus_50: '上限170、もはや別格。長丁場の決戦で物を言いますよ',
 
   /* 追加：戦術ノート */
+  note_position:       'ポジション、これは知っているだけで勝率が変わる魔法のような知識です',
+  note_outs:           'あと何枚で完成するか――数えるのは存外、難しいもの。任せてしまいましょう',
   note_tell:           '相手の癖を先に知る。これほど卑怯で、これほど合法な武器はありませんな',
   note_bankroll:       '稼ぐ者は管理する。コイン効率と収支管理、両方ついてお買い得',
+  note_equity:         'グラフを読める者だけが、運と実力を切り分けられるのですよ',
 
   /* 追加：見た目（衣装） */
   outfit_rico_pajama:   '寝起きのリコさん。生活感のある一着、いかがです？',
@@ -3517,6 +3421,7 @@ const SHOP_UNLOCK = {
   panyu_sense_lv2:       'always',
   panyu_gauge_plus_20:   'always',
   note_pot_odds:         'always',
+  note_bet_size:         'always',
   chips_plus_500:        'always',
   outfit_rico_pajama:    'always',
   outfit_rico_casual:    'always',
@@ -3524,6 +3429,8 @@ const SHOP_UNLOCK = {
 
   // ── ポルカ撃破で入荷 ──
   panyu_combo_x2:        'polka',
+  note_board_danger:     'polka',
+  note_position:         'polka',
   chips_plus_1500:       'polka',
   outfit_rico_dress:     'polka',
   table_emerald:         'polka',
@@ -3533,6 +3440,7 @@ const SHOP_UNLOCK = {
 
   // ── セリナ撃破で入荷 ──
   panyu_range_lv2:       'selina',
+  note_outs:             'selina',
   note_tell:             'selina',
   chips_plus_3000:       'selina',
   outfit_rico_school:    'selina',
@@ -3553,6 +3461,7 @@ const SHOP_UNLOCK = {
   panyu_sense_lv3:       'grano',
   panyu_range_lv3:       'grano',
   note_bankroll:         'grano',
+  note_equity:           'grano',
   chips_plus_5000:       'grano',
   outfit_rico_kimono:    'grano',
   outfit_rico_witch:     'grano',
@@ -4366,7 +4275,7 @@ function renderBetUnified() {
   // 1チップ = 25 単位。最大表示15枚、超過は数字に
   // newOnTop: 新規追加分（先頭枚）を pop アニメ対象としてマーク
   const buildVerticalStack = (amount, side, newAdded) => {
-    if (!amount || amount <= 0) return '<div class="bu-waiting">待機中</div>';
+    if (!amount || amount <= 0) return '<div class="bu-stack-empty">—</div>';
     const tiers = [
       { cls: 'chip-orange', val: 1000 },
       { cls: 'chip-purple', val: 500 },
@@ -4431,11 +4340,11 @@ function renderBetUnified() {
     <div class="bu-cell bu-cell-bet bu-cell-opp${opp > pl && opp > 0 ? ' bu-lead' : ''}">
       <div class="bu-cell-label">${oppShort} ベット</div>
       ${buildVerticalStack(opp, 'opp', newOpp)}
-      <div class="bu-cell-amt">${opp > 0 ? '+' + opp + (oppSizeLabel ? ` <span class="bu-size-tag">${oppSizeLabel}</span>` : '') : ''}</div>
+      <div class="bu-cell-amt">${opp > 0 ? '+' + opp : '—'}${oppSizeLabel ? ` <span class="bu-size-tag">${oppSizeLabel}</span>` : ''}</div>
       <div class="bu-status-slot">${
         opp > pl && opp > 0 ? `<span class="bu-status bu-status-lead">▲ リード</span>`
           : (pl > opp && opp > 0 ? `<span class="bu-status bu-status-behind">差 −${pl - opp}</span>`
-          : `<span class="bu-status bu-status-empty"></span>`)
+          : `<span class="bu-status bu-status-empty">—</span>`)
       }</div>
     </div>
     <!-- 3. ポット（物理チップ） -->
@@ -4446,24 +4355,24 @@ function renderBetUnified() {
       <div class="bu-pot-calc">${
         state.__lastPotCalc && state.__lastPotCalc.added > 0
           ? `<span class="bpc-before">${state.__lastPotCalc.before}</span> <span class="bpc-op">+</span> <span class="bpc-added">${state.__lastPotCalc.added}</span> <span class="bpc-op">=</span> <span class="bpc-after">${state.__lastPotCalc.after}</span>`
-          : `<span class="bpc-empty"></span>`
+          : `<span class="bpc-empty">—</span>`
       }</div>
       <div class="${callClass}">
         <span class="bu-call-key">コール</span>
         ${playerCallNeed > 0
           ? buildHorizontalChips(playerCallNeed, 'small', 'bu-call-num')
-          : '<span class="bu-call-empty"></span>'}
+          : '<span class="bu-call-empty">—</span>'}
       </div>
     </div>
     <!-- 4. ミミのベット（このストリート） -->
     <div class="bu-cell bu-cell-bet bu-cell-pl${pl > opp && pl > 0 ? ' bu-lead' : ''}">
       <div class="bu-cell-label">ミミ ベット</div>
       ${buildVerticalStack(pl, 'pl', newPl)}
-      <div class="bu-cell-amt">${pl > 0 ? '+' + pl + (plSizeLabel ? ` <span class="bu-size-tag">${plSizeLabel}</span>` : '') : ''}</div>
+      <div class="bu-cell-amt">${pl > 0 ? '+' + pl : '—'}${plSizeLabel ? ` <span class="bu-size-tag">${plSizeLabel}</span>` : ''}</div>
       <div class="bu-status-slot">${
         pl > opp && pl > 0 ? `<span class="bu-status bu-status-lead">▲ リード</span>`
           : (opp > pl ? `<span class="bu-status bu-status-behind">あと −${opp - pl} 必要</span>`
-          : `<span class="bu-status bu-status-empty"></span>`)
+          : `<span class="bu-status bu-status-empty">—</span>`)
       }</div>
     </div>
   `;
@@ -4569,8 +4478,9 @@ function renderSessionStats() {
   const results = state.handResults || [];
   const bets = (state.logs && state.logs.bets) || [];
   const total = results.length;
-  // P3: 中身が空（集計対象0件）のときはボタン自体を出さない（空アコーディオン廃止）
-  if (total === 0) return '';
+  if (total === 0) {
+    return `<details class="sess-stats"><summary>📊 戦績 <small>(まだ集計なし)</small></summary><div class="sess-empty">— ハンド終了後に集計開始 —</div></details>`;
+  }
   const wins   = results.filter(r => r.winner === 'player').length;
   const losses = results.filter(r => r.winner === 'opponent').length;
   const splits = results.filter(r => r.winner === 'split').length;
@@ -4596,7 +4506,7 @@ function renderSessionStats() {
     return '受け身';
   };
 
-  return `<details class="sess-stats"><summary><span class="sess-title-txt">📈 戦績 <small>(${wins}勝${losses}敗 / ${total}ハンド)</small></span></summary>
+  return `<details class="sess-stats"><summary>📈 戦績 <small>(${wins}勝${losses}敗 / ${total}ハンド)</small></summary>
     <div class="ss-grid">
       <div class="ss-row"><span class="ss-k">勝/負/分</span><span class="ss-v">${wins} / ${losses} / ${splits}</span></div>
       <div class="ss-row"><span class="ss-k">SD 到達率</span><span class="ss-v">${wtsdPct}%</span></div>
@@ -5047,15 +4957,6 @@ function renderActionArea(el) {
     ];
   }
 
-  // P2: 体験ハンドは「大きく行く」2択だけに絞る（没入・迷いのない導線）
-  if (state.introHandMode) {
-    slots = slots.map(s => {
-      if (s.kind === 'lg')    return { ...s, label: '大レイズ', subText: 'すごい手だ、大きく行こう！' };
-      if (s.kind === 'allin') return s;
-      return { ...s, enabled: false };
-    });
-  }
-
   el.innerHTML = `<div class="action-grid">${slots.map(s => {
     const chipHtml = (s.chipAmount && s.chipAmount > 0)
       ? `<span class="slot-chips">${buildHorizontalChips(s.chipAmount, 'small', 'slot-chip-num', 'bu-rchip-tiny')}</span>`
@@ -5092,19 +4993,7 @@ function onAction(e) {
   // 任意のアクションでカットインを閉じる
   dismissCutIn();
   switch (action) {
-    case 'start':
-      // P2: 初回起動（未クリア＆体験ハンド未消化）はロビーではなく体験ハンドへ直行
-      if (save.clearedStages.length === 0 && !save.introPlayed) { startIntroHand(); }
-      else { goLobby(); }
-      break;
-    case 'intro-to-lecture':
-      document.querySelector('.intro-win-overlay')?.remove();
-      startBattle('rico_tutorial');
-      break;
-    case 'intro-to-lobby':
-      document.querySelector('.intro-win-overlay')?.remove();
-      goLobby();
-      break;
+    case 'start':         goLobby(); break;
     case 'new-game':
       showNewGameModal();
       break;
@@ -6099,8 +5988,6 @@ function spawnEndingSparkle(parent) {
 }
 
 function goLobby() {
-  if (typeof stopBattleBgmSkin === 'function') stopBattleBgmSkin(); // バトル専用BGMスキンを止めてロビーへ戻す
-  document.body.dataset.oppBg = ''; // 相手別テーブル背景を解除
   state.screen = 'lobby';
   // 入室時にリコの衣装を抽選し直す
   state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
@@ -6220,10 +6107,11 @@ function initGlobalAudioBar() {
 }
 function tryStartLobbyBgm() {
   const a = document.getElementById('lobby-bgm-audio');
-  if (!save.bgmOn) { if (a) a.pause(); if (typeof _stopSkinBgm === 'function') _stopSkinBgm(); return; }
-  // equippedBgmLobby='jazz' ならシンセループ、既定ならこれまで通り実音源
-  if (typeof applyLobbyBgmSkin === 'function') applyLobbyBgmSkin();
-  else if (a) { a.volume = bgmVolFloat(); const p = a.play(); if (p && p.catch) p.catch(() => {}); }
+  if (!a) return;
+  if (!save.bgmOn) { a.pause(); return; }
+  a.volume = bgmVolFloat();
+  const p = a.play();
+  if (p && p.catch) p.catch(() => {/* 自動再生ブロックは無視 */});
 }
 
 function toggleLobbyBgm() {
@@ -6231,13 +6119,11 @@ function toggleLobbyBgm() {
   saveProgress();
   const a = document.getElementById('lobby-bgm-audio');
   if (save.bgmOn) {
-    if (typeof applyLobbyBgmSkin === 'function') applyLobbyBgmSkin();
-    else if (a) { a.volume = bgmVolFloat(); a.play().catch(()=>{}); }
+    if (a) { a.volume = bgmVolFloat(); a.play().catch(()=>{}); }
     // ミニポーカーが起動中ならその synth BGM も開始
     if (typeof mpStartBgm === 'function' && document.querySelector('.minipoker-overlay')) mpStartBgm();
   } else {
     if (a) a.pause();
-    if (typeof _stopSkinBgm === 'function') _stopSkinBgm();
     const endA = document.getElementById('ending-bgm-audio');
     if (endA) endA.pause();
     // ミニポーカー synth BGM も停止
@@ -6566,7 +6452,6 @@ function showEquipModal() {
         ${rows}
       </div>
       <div class="equip-modal-footer">※ 🔒 表示の項目は交換所で購入すると選択可能になります</div>
-      <div class="equip-modal-footer equip-modal-note">⚠ 効果はバトル画面／ミニゲーム画面で反映されます</div>
     </div>
   `;
   document.getElementById('stage').appendChild(overlay);
@@ -6583,7 +6468,7 @@ function showEquipModal() {
       const row = btn.closest('.equip-row');
       row.querySelectorAll('.equip-chip').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
-      // リコ衣装変更時はロビー立ち絵／バトル画面の両方を即時更新
+      // リコ衣装変更時はロビー立ち絵を即時更新（インデックスをリセットして pickLobbyRico を再評価）
       if (key === 'equippedRicoOutfit') {
         state.lobbyRicoIndex = null;
         state.lobbyRicoChangedAt = null;
@@ -6592,11 +6477,6 @@ function showEquipModal() {
           const o = pickLobbyRico();
           img.src = `assets/characters/${o.file}`;
         }
-        applyBattleRicoOutfit();
-      }
-      // ロビーBGMスキンをその場で切替（ロビー滞在中に選んだ場合、即座に音が変わる）
-      if (key === 'equippedBgmLobby' && state.screen === 'lobby' && typeof applyLobbyBgmSkin === 'function') {
-        applyLobbyBgmSkin();
       }
       toast(`装備変更：${btn.textContent.trim()}`);
     });
@@ -6835,37 +6715,6 @@ function mpSfx(kind) {
       break;
     case 'allin':     mpSweep(80, 400, 0.4, 'sawtooth', 0.08); mpTone(120, 0.6, 'square', 0.05, 0.01, 0.3, 200); break;
     case 'garapon':   mpSweep(200, 1500, 0.6, 'triangle', 0.05); mpTone(1800, 0.2, 'sine', 0.06, 0.005, 0.1, 600); break;
-
-    // ── 本編バトル用SFX（equippedSePack: 'casino' でチップ音が厚くリアル寄りに） ──
-    case 'check':     mpTone(500, 0.07, 'sine', 0.04); break;
-    case 'call':
-      mpTone(420, 0.07, 'triangle', 0.045);
-      if (save && save.equippedSePack === 'casino') mpChipClack(2);
-      break;
-    case 'battle-bet':
-      mpTone(500, 0.08, 'square', 0.045); mpTone(650, 0.06, 'triangle', 0.035, 0.004, 0.03, 60);
-      if (save && save.equippedSePack === 'casino') mpChipClack(3);
-      break;
-    case 'battle-allin':
-      mpSweep(100, 500, 0.45, 'sawtooth', 0.07); mpTone(140, 0.5, 'square', 0.05, 0.01, 0.25, 180);
-      if (save && save.equippedSePack === 'casino') mpChipClack(6);
-      break;
-    case 'fold':      mpSweep(400, 180, 0.25, 'sine', 0.035); break;
-    case 'hand-win':
-      mpTone(587, 0.14, 'triangle', 0.055); mpTone(784, 0.16, 'triangle', 0.055, 0.005, 0.06, 110);
-      mpTone(988, 0.22, 'triangle', 0.055, 0.005, 0.08, 240);
-      break;
-    case 'hand-lose':
-      mpSweep(380, 160, 0.35, 'sawtooth', 0.04);
-      break;
-  }
-}
-
-// 「カジノ」SEパック専用：チップが数枚パチパチと重なる音（bet/allin をリアル寄りに）
-function mpChipClack(n) {
-  const ctx = mpAudioCtx(); if (!ctx) return;
-  for (let i = 0; i < n; i++) {
-    mpTone(2200 + Math.random() * 900, 0.03, 'square', 0.025, 0.001, 0.02, i * 45 + Math.random() * 20);
   }
 }
 
@@ -6921,167 +6770,6 @@ function mpStartBgm() {
 function mpStopBgm() {
   if (_mpBgmTimer) { clearInterval(_mpBgmTimer); _mpBgmTimer = null; }
   _mpBgmNodes = [];
-}
-
-// ── BGMスキン（ロビー/バトル）：交換所で購入した equippedBgmLobby / equippedBgmBattle を
-//    実際に鳴らす。mpStartBgm と同じ和音ループ手法を流用し、スキンごとに音色/進行を変える。
-let _skinBgmNodes = [];
-let _skinBgmTimer = null;
-function _stopSkinBgm() {
-  if (_skinBgmTimer) { clearInterval(_skinBgmTimer); _skinBgmTimer = null; }
-  _skinBgmNodes = [];
-}
-// skin: 'jazz' | 'tense' | 'techno'
-function _startSkinBgm(skin) {
-  _stopSkinBgm();
-  if (!isBgmOn()) return;
-  const ctx = mpAudioCtx(); if (!ctx) return;
-
-  if (skin === 'jazz') {
-    // ロビーBGM「夜のジャズ」：スウィング感のある maj7/min7 進行、暖色ローパス
-    const chords = [
-      [261.6, 329.6, 392.0, 493.9],  // Cmaj7
-      [220.0, 261.6, 329.6, 392.0],  // Am7
-      [174.6, 220.0, 261.6, 329.6],  // Fmaj7
-      [196.0, 246.9, 293.7, 349.2],  // G7
-    ];
-    const beatMs = 1800;
-    let beat = 0;
-    const playBeat = () => {
-      if (!isBgmOn() || save.equippedBgmLobby !== 'jazz') return;
-      const chord = chords[beat % chords.length];
-      const tNow = ctx.currentTime;
-      const scale = bgmVolFloat();
-      chord.forEach((f, i) => {
-        const swing = (i % 2 === 1) ? beatMs * 0.12 / 1000 : 0; // 軽いスウィング
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        const lp = ctx.createBiquadFilter();
-        lp.type = 'lowpass'; lp.frequency.value = 1100;
-        o.type = 'triangle';
-        o.frequency.value = f;
-        const t0 = tNow + swing;
-        const peak = 0.02 * scale, sustain = 0.014 * scale;
-        g.gain.setValueAtTime(0, t0);
-        g.gain.linearRampToValueAtTime(Math.max(0.0001, peak), t0 + 0.3);
-        g.gain.linearRampToValueAtTime(Math.max(0.0001, sustain), t0 + beatMs / 1000 * 0.75);
-        g.gain.exponentialRampToValueAtTime(0.0001, t0 + beatMs / 1000);
-        o.connect(g).connect(lp).connect(ctx.destination);
-        o.start(t0); o.stop(t0 + beatMs / 1000 + 0.1);
-        _skinBgmNodes.push(o, g);
-      });
-      beat++;
-    };
-    playBeat();
-    _skinBgmTimer = setInterval(playBeat, beatMs);
-
-  } else if (skin === 'tense') {
-    // バトルBGM「緊迫の弦楽」：短調・トレモロがかった持続音で読み合いの緊張感
-    const chords = [
-      [220.0, 261.6, 311.1], // Am(b6)風
-      [196.0, 233.1, 293.7], // G dim寄り
-    ];
-    const beatMs = 2400;
-    let beat = 0;
-    const playBeat = () => {
-      if (!isBgmOn() || save.equippedBgmBattle !== 'tense') return;
-      const chord = chords[beat % chords.length];
-      const tNow = ctx.currentTime;
-      const scale = bgmVolFloat();
-      chord.forEach(f => {
-        const o = ctx.createOscillator();
-        const trem = ctx.createGain(); // トレモロ用の高速AM
-        const g = ctx.createGain();
-        o.type = 'sawtooth'; o.frequency.value = f;
-        const lfo = ctx.createOscillator();
-        const lfoGain = ctx.createGain();
-        lfo.frequency.value = 6.5; lfo.type = 'sine';
-        lfoGain.gain.value = 0.5;
-        lfo.connect(lfoGain).connect(trem.gain);
-        trem.gain.value = 0.5;
-        const peak = 0.016 * scale;
-        g.gain.setValueAtTime(0, tNow);
-        g.gain.linearRampToValueAtTime(Math.max(0.0001, peak), tNow + 0.5);
-        g.gain.exponentialRampToValueAtTime(0.0001, tNow + beatMs / 1000);
-        o.connect(trem).connect(g).connect(ctx.destination);
-        lfo.start(tNow); o.start(tNow);
-        lfo.stop(tNow + beatMs / 1000 + 0.1); o.stop(tNow + beatMs / 1000 + 0.1);
-        _skinBgmNodes.push(o, g, lfo, trem, lfoGain);
-      });
-      beat++;
-    };
-    playBeat();
-    _skinBgmTimer = setInterval(playBeat, beatMs);
-
-  } else if (skin === 'techno') {
-    // バトルBGM「電脳テクノ」：四つ打ちキック＋短いアルペジオ
-    const arp = [523, 659, 784, 659];
-    const beatMs = 340; // 高速パルス
-    let beat = 0;
-    const playBeat = () => {
-      if (!isBgmOn() || save.equippedBgmBattle !== 'techno') return;
-      const tNow = ctx.currentTime;
-      const scale = bgmVolFloat();
-      // キック（低いサブサイン、短い減衰）
-      if (beat % 2 === 0) {
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.type = 'sine'; o.frequency.setValueAtTime(140, tNow);
-        o.frequency.exponentialRampToValueAtTime(45, tNow + 0.12);
-        g.gain.setValueAtTime(Math.max(0.0001, 0.09 * scale), tNow);
-        g.gain.exponentialRampToValueAtTime(0.0001, tNow + 0.18);
-        o.connect(g).connect(ctx.destination);
-        o.start(tNow); o.stop(tNow + 0.2);
-        _skinBgmNodes.push(o, g);
-      }
-      // アルペジオ（軽いサウ音）
-      const f = arp[beat % arp.length];
-      const o2 = ctx.createOscillator();
-      const g2 = ctx.createGain();
-      const hp = ctx.createBiquadFilter();
-      hp.type = 'highpass'; hp.frequency.value = 300;
-      o2.type = 'sawtooth'; o2.frequency.value = f;
-      g2.gain.setValueAtTime(0, tNow);
-      g2.gain.linearRampToValueAtTime(Math.max(0.0001, 0.02 * scale), tNow + 0.01);
-      g2.gain.exponentialRampToValueAtTime(0.0001, tNow + beatMs / 1000 * 0.9);
-      o2.connect(g2).connect(hp).connect(ctx.destination);
-      o2.start(tNow); o2.stop(tNow + beatMs / 1000);
-      _skinBgmNodes.push(o2, g2);
-      beat++;
-    };
-    playBeat();
-    _skinBgmTimer = setInterval(playBeat, beatMs);
-  }
-}
-
-// ロビーBGMスキン切替の窓口：equippedBgmLobby が 'jazz' なら実ファイルの代わりにシンセを鳴らす
-function applyLobbyBgmSkin() {
-  const lobbyA = document.getElementById('lobby-bgm-audio');
-  if (save.equippedBgmLobby === 'jazz') {
-    if (lobbyA) lobbyA.pause();
-    if (isBgmOn()) _startSkinBgm('jazz'); else _stopSkinBgm();
-  } else {
-    _stopSkinBgm();
-    if (lobbyA && isBgmOn()) { lobbyA.volume = bgmVolFloat(); lobbyA.play().catch(() => {}); }
-  }
-}
-// バトル突入時：equippedBgmBattle が既定以外ならロビー音源を止めてシンセに切替
-function startBattleBgmSkin() {
-  const skin = save.equippedBgmBattle;
-  if (skin === 'tense' || skin === 'techno') {
-    const lobbyA = document.getElementById('lobby-bgm-audio');
-    if (lobbyA) lobbyA.pause();
-    _stopSkinBgm();
-    if (isBgmOn()) _startSkinBgm(skin);
-  }
-  // 'default' のときは何もしない＝これまで通りロビーBGMが鳴り続ける（既存挙動を維持）
-}
-// バトル退出時：バトル専用シンセを止めてロビーBGM（スキン込み）に戻す
-function stopBattleBgmSkin() {
-  if (save.equippedBgmBattle === 'tense' || save.equippedBgmBattle === 'techno') {
-    _stopSkinBgm();
-    applyLobbyBgmSkin();
-  }
 }
 
 // 今日の日付キー（YYYYMMDD）
@@ -7161,10 +6849,11 @@ function showMiniPokerGame() {
     history: [],
     insuranceUsed: false,
     dailyBonusUsed: (save.minipoker.dailyBonusDate === mpTodayKey()),  // 今日初回ボーナス済み？
-    allInArmed: false,  // ALL IN ボタン経由のベットか（ミッション判定用）
   };
-  // ※ dailyBonusDate の記録は「実際に1戦プレイして倍率を消費した時」(judge内) に行う。
-  //   ここで書くと開いただけでボーナスが消滅してしまう。
+  // 初回ボーナス：日付セット
+  if (!ctx.dailyBonusUsed) {
+    save.minipoker.dailyBonusDate = mpTodayKey();
+  }
 
   const overlay = document.createElement('div');
   overlay.className = 'minipoker-overlay';
@@ -7413,14 +7102,14 @@ function showMiniPokerGame() {
           <span class="mp-vol-text">期待損益 ± ${Math.round(ctx.bet * 8)} 🪙</span>
         </div>
         <div class="mp-actions">
-          <button class="mp-btn mp-btn-deal" data-mp="deal" ${save.coins < (ctx.bossNight ? ctx.bet * 3 : ctx.bet) ? 'disabled' : ''}>
-            🎴 DEAL${ctx.bossNight ? `（💎 特別卓 ${ctx.bet * 3} 🪙）` : ''}
+          <button class="mp-btn mp-btn-deal" data-mp="deal" ${save.coins < ctx.bet ? 'disabled' : ''}>
+            🎴 DEAL${ctx.bossNight ? '（💎 特別卓 ×3）' : ''}
           </button>
           <button class="mp-btn mp-btn-auto" data-mp="autoplay" ${save.coins < ctx.bet * 3 ? 'disabled' : ''}>
             ▶▶ 3連戦自動
           </button>
         </div>
-        ${save.coins < (ctx.bossNight ? ctx.bet * 3 : ctx.bet) ? '<div class="mp-warn">⚠ コイン不足（特別卓はベット×3必要）</div>' : ''}
+        ${save.coins < ctx.bet ? '<div class="mp-warn">⚠ コイン不足</div>' : ''}
       `;
     }
     if (ctx.phase === 'deal') {
@@ -7431,7 +7120,7 @@ function showMiniPokerGame() {
       const drop = 5 - keep;
       const reach = detectReach(ctx.player);
       const reachProb = computeReachProb(ctx.player, ctx.deck.length);
-      const surrenderReturn = Math.floor((ctx.effectiveBet || ctx.bet) / 2);
+      const surrenderReturn = Math.floor(ctx.bet / 2);
       const round = (ctx.drawRound || 0) + 1;  // 表示用 1-indexed
       const isLastRound = (ctx.drawRound || 0) >= 1;  // 2回引き終わったら強制勝負
       return `
@@ -7463,7 +7152,7 @@ function showMiniPokerGame() {
       return `
         <div class="mp-result-banner mp-result-${r}">
           ${r === 'win'  ? `<div class="mp-result-headline">🏆 勝利！</div><div class="mp-result-amount">+${ctx.reward} 🪙</div>` :
-            r === 'lose' ? `<div class="mp-result-headline">💧 ${ctx.opp.name} の勝ち</div><div class="mp-result-amount">${ctx.reward > 0 ? `返却 +${ctx.reward} 🪙` : 'ベット没収……'}</div>` :
+            r === 'lose' ? `<div class="mp-result-headline">💧 ${ctx.opp.name} の勝ち</div><div class="mp-result-amount">慰謝 +${ctx.reward} 🪙</div>` :
                            `<div class="mp-result-headline">🤝 引き分け</div><div class="mp-result-amount">返金 +${ctx.reward} 🪙</div>`}
         </div>
         ${(r === 'win' && ctx.canDouble && ctx.doubleStack < 3) ? `
@@ -7635,11 +7324,10 @@ function showMiniPokerGame() {
       b.addEventListener('click', () => {
         ctx.bet = +b.dataset.mpBet;
         save.minipoker.bet = ctx.bet;
-        // ALL IN 判定はボタン自体で行う（額での推定は少額オールインを取りこぼす）
-        ctx.allInArmed = b.classList.contains('mp-allin-btn');
         saveProgress();
         mpSfx('bet');
-        if (ctx.allInArmed) {
+        // ALL IN ボタン押した時の演出
+        if (ctx.bet >= 1000) {
           mpSfx('allin');
           const sh = overlay.querySelector('.minipoker-modal');
           sh.classList.add('mp-shake-light');
@@ -7679,18 +7367,13 @@ function showMiniPokerGame() {
       // 同ベットで連戦：ベットを前回値に戻して即DEAL
       ctx.bet = ctx.lastBetUsed;
       save.minipoker.bet = ctx.bet;
-      // ボス卓（×3）を黙って持ち越さない：連戦でも毎回抽選し直し、当選時は明示
-      const velvetAvail = available.find(o => o.key === 'velvet');
-      ctx.bossNight = !!velvetAvail && Math.random() < 0.08;
-      ctx.opp = ctx.bossNight ? velvetAvail
-                              : available[Math.floor(Math.random() * available.length)];
+      ctx.opp = available[Math.floor(Math.random() * available.length)];
       ctx.player = [];
       ctx.cpu = [];
       ctx.held = [false, false, false, false, false];
       ctx.phase = 'wager';
       saveProgress();
       renderPhase();
-      if (ctx.bossNight) showBanner('🌹 特別卓！ 配当 ×3 ／ ベットも ×3');
       // 即DEAL（quick mode）
       setTimeout(() => startDeal(true), 50);
     });
@@ -7709,8 +7392,8 @@ function showMiniPokerGame() {
   }
 
   function doSurrender() {
-    // 実際に支払った額（ボス夜は×3）の半額を返却
-    const refund = Math.floor((ctx.effectiveBet || ctx.bet) / 2);
+    // ベットの半額を返却、即result phase（lose扱いだが慰謝多め）
+    const refund = Math.floor(ctx.bet / 2);
     save.coins += refund;
     ctx.reward = refund;
     ctx.result = 'lose';
@@ -7755,7 +7438,6 @@ function showMiniPokerGame() {
         save.coins += (newReward - ctx.reward);
         ctx.reward = newReward;
         save.minipoker.totalEarned = (save.minipoker.totalEarned || 0) + (newReward / 2);
-        incrementMissionProgress('doubleWins', 1); // ミッション「ダブルアップ成功」
         saveProgress();
         updateBoardStats();
         playFx('double-win'); mpSfx('double-win');
@@ -7943,8 +7625,7 @@ function showMiniPokerGame() {
   }
 
   // ── 環境粒子（漂うハート・星・コイン） ──
-  // ※ var 必須：showMiniPokerGame 冒頭から呼ばれるため let だと TDZ エラー
-  var _ambientTimer = null;
+  let _ambientTimer = null;
   function startAmbientParticles() {
     stopAmbientParticles();
     const tick = () => {
@@ -7994,7 +7675,7 @@ function showMiniPokerGame() {
     save.minipoker.jackpot = (save.minipoker.jackpot || 5000) + Math.ceil(effectiveBet * 0.05);
     ctx.insuranceUsed = false;
     // ALL IN ミッション進捗
-    if (ctx.allInArmed) incrementMissionProgress('allins', 1);
+    if (ctx.bet >= 1000) incrementMissionProgress('allins', 1);
     incrementMissionProgress('plays', 1);
     saveProgress();
     updateBoardStats();
@@ -8123,8 +7804,7 @@ function showMiniPokerGame() {
       if (ctx.streak === 5 && ctx.shields < 2) { ctx.shields += 1; showBanner('🛡️ シールド獲得！'); mpSfx('milestone'); }
       if (ctx.streak === 10 && ctx.shields < 2) { ctx.shields += 1; showBanner('🛡️🛡️ シールド2個目！'); mpSfx('milestone'); }
     } else if (result2 === 'tie') {
-      // 返金は実際に支払った額（ボス夜は×3を払っているので×3返す）
-      payout = ctx.effectiveBet || ctx.bet;
+      payout = ctx.bet;
     } else {
       payout = 0;
       // シールドで連勝救済
@@ -8153,10 +7833,9 @@ function showMiniPokerGame() {
     ctx.bonusMult = bonusMult;
     // 報酬付与
     save.coins += payout;
-    // 初日ボーナス消費（実プレイ時にはじめて日付を記録＝開いただけでは消えない）
+    // 初日ボーナス消費
     if (!ctx.dailyBonusUsed) {
       ctx.dailyBonusUsed = true;
-      save.minipoker.dailyBonusDate = mpTodayKey();
     }
     // コイン飛翔演出（勝利時）
     if (result2 === 'win' && payout > 0) {
@@ -8624,8 +8303,7 @@ function showMiniPokerGame() {
   }
 
   // ミミのアイドルジェスチャー（wager 中ランダム）
-  // ※ var 必須：renderPhase が宣言行より先に実行されるため let だと TDZ エラー
-  var _mimiIdleTimer = null;
+  let _mimiIdleTimer = null;
   function startMimiIdleLoop() {
     stopMimiIdleLoop();
     const tick = () => {
@@ -9198,8 +8876,7 @@ function skipStageWithCoins(opponentId) {
   if (save.coins < cost) { alert(`コイン不足：${cost}コイン必要`); return; }
   if (!confirm(`${cost}コインを払って ${opp.name} 戦をスキップしますか？\n（クリア扱いだが報酬・ランクは無し。次のステージが解放）`)) return;
   save.coins -= cost;
-  // markStageCleared：clearedStages 追加＋velvet なら endingUnlocked も同時に立てる（派生フラグの一貫性）
-  markStageCleared(opponentId);
+  if (!save.clearedStages.includes(opponentId)) save.clearedStages.push(opponentId);
   // 初回クリア扱いするが報酬は払わない（firstClearRewardClaimedにフラグ立てる）
   if (!save.firstClearRewardClaimed.includes(opponentId)) save.firstClearRewardClaimed.push(opponentId);
   // ノート自動解放
@@ -9292,9 +8969,6 @@ function startBattleInternal(opponentId) {
   state.isBoss = seriousRico ? true : !!opp.isBoss; // 心理バトル全ストリート発動
   state.seriousRicoMode = seriousRico;
   state.screen = 'battle';
-  if (typeof startBattleBgmSkin === 'function') startBattleBgmSkin();
-  // 相手別テーブル背景（CODEX納品画像）を適用
-  document.body.dataset.oppBg = ['polka','selina','grano','velvet'].includes(opp.id) ? opp.id : '';
   state.handPhase = 'idle';
   state.panyuMax = save.panyuGaugeMax || 100;
   state.panyuSenseFreeUsed = save.panyuSenseFreeUsed;
@@ -9342,112 +9016,12 @@ function startBattleInternal(opponentId) {
 }
 
 //=============================================================
-// P2: 体験ハンド（初回導線ファネル）
-// 固定シナリオ：ミミ A♠A♥、フロップ A♦7♣2♠（セット確定）で必ず勝つ。
-// 相手は必ずコール、選択肢は大きく行く2択のみ。戦績・実績にはカウントしない。
-//=============================================================
-function startIntroHand() {
-  state = defaultState();
-  const opp = OPPONENTS.polka;
-  state.opponentId = opp.id;
-  state.opponentName = opp.name;
-  state.opponentProfile = opp.profile;
-  state.opponentImgKey = opp.imgKey;
-  state.maxHands = 1;
-  state.playerChips = 500;
-  state.opponentChips = 500;
-  state.tutorialMode = false;
-  state.fullHand = false;
-  state.isBoss = false;
-  state.introHandMode = true; // 体験ハンド：戦績非カウント・行動制限・相手は必ずコール
-  state.screen = 'battle';
-  state.handPhase = 'idle';
-  state.handNo = 0;
-  state.panyuMax = save.panyuGaugeMax || 100;
-  state.mimiThought = '「よし、まずは1ハンドやってみよう」';
-  state.ricoAdvice = '「気楽に見ててね〜。まずは私が手ほどきするよ」';
-  render();
-  setTimeout(dealIntroHand, 900);
-}
-
-function dealIntroHand() {
-  if (state.screen !== 'battle' || !state.introHandMode) return;
-  state.handNo = 1;
-  const ante = 50;
-  state.playerChips -= ante; state.opponentChips -= ante;
-  state.pot = ante * 2;
-  resetPotChips(); pushPotChips(ante * 2);
-  state.currentBetPlayer = 0;
-  state.currentBetOpponent = 0;
-  // 固定シナリオ：使用済みカードを除いた残りデッキ（オポーネントの2枚・演出上の重複防止のみ）
-  const used = new Set(['♠-14', '♥-14', '♦-14', '♣-7', '♠-2']);
-  state.deck = newDeck().filter(c => !used.has(`${c.suit}-${c.rank}`));
-  state.playerHand = [{ suit: '♠', rank: 14, label: 'A' }, { suit: '♥', rank: 14, label: 'A' }];
-  state.opponentHand = [state.deck.pop(), state.deck.pop()];
-  state.community = [{ suit: '♦', rank: 14, label: 'A' }, { suit: '♣', rank: 7, label: '7' }, { suit: '♠', rank: 2, label: '2' }];
-  state.equityHistory = [];
-  state.psychResolved = true;       // 体験ハンドでは心理バトルを出さない
-  state.logicResolvedStreet = true; // 論理バトルも封印
-  state.psychPending = false;
-  state.handPhase = 'flop';
-  state.isPlayerTurn = true;
-  state.opponentSpeech = '';
-  state.mimiThought = '「……このカード、セット完成してる……！」';
-  state.ricoAdvice = '「すごい手が来てる。大きく行こ！」';
-  log('actions', { phase: 'intro_flop_start' });
-  render();
-}
-
-// 体験ハンド専用のショーダウン：ランダム要素に左右されず必ずミミの勝利にする
-function introHandShowdown() {
-  const playerAll = [...state.playerHand, ...state.community];
-  const pEv = evaluateHand(playerAll);
-  state.opponentSpeech = '……強すぎる。降参だよ';
-  state.playerChips += state.pot;
-  state.mimiThought = `「やった！${pEv.name}で勝った！」`;
-  state.pot = 0; resetPotChips();
-  render();
-  setTimeout(showIntroHandWinScreen, 1800);
-}
-
-function showIntroHandWinScreen() {
-  save.coins = (save.coins || 0) + 200;
-  save.introPlayed = true;
-  saveProgress();
-  const overlay = document.createElement('div');
-  overlay.className = 'intro-win-overlay';
-  overlay.innerHTML = `
-    <div class="intro-win-modal">
-      <div class="intro-win-badge">🏆 勝利！</div>
-      <div class="intro-win-title">大きく勝てた！</div>
-      <div class="intro-win-coins">💰 +200 コイン獲得</div>
-      <div class="intro-win-question">ポーカー、もっと知りたい？</div>
-      <div class="intro-win-buttons">
-        <button class="btn btn-primary" data-action="intro-to-lecture">📚 リコの講義へ</button>
-        <button class="btn btn-secondary" data-action="intro-to-lobby">🎮 このままロビーへ</button>
-      </div>
-    </div>
-  `;
-  document.getElementById('stage').appendChild(overlay);
-  overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
-}
-
-// 体験ハンド中は「中断」等を隠して没入を優先
-function applyIntroHandUI() {
-  const pauseBtn = document.querySelector('.battle-screen .top-hud [data-action="back-lobby"]');
-  if (pauseBtn) pauseBtn.style.display = 'none';
-  const backdoorBtn = document.querySelector('.backdoor-toggle');
-  if (backdoorBtn) backdoorBtn.style.display = 'none';
-}
-
-//=============================================================
 // 11. ハンド進行
 //=============================================================
 function startHand() {
   if (state.playerChips <= 0 || state.opponentChips <= 0) { return endBattle(); }
   state.handNo++;
   if (state.handNo > state.maxHands) { return endBattle(); }
-  mpSfx('deal'); // 配布音（equippedSePack設定を反映）
 
   // ブラインド簡略化（v4: 各50チップアンティ）
   const ante = Math.min(50, state.playerChips, state.opponentChips);
@@ -9567,7 +9141,6 @@ function mimiAssess(allCards, community, opponentBet, pot, callNeed) {
 // 12. プレイヤーアクション
 //=============================================================
 function playerFold() {
-  mpSfx('fold');
   state.opponentSpeech = opponentReactToPlayerFold();
   log('actions', { actor: 'player', type: 'fold' });
   state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'fold', pot: state.pot, by: '降伏' });
@@ -9577,7 +9150,6 @@ function playerFold() {
   setTimeout(endHand, 1000);
 }
 function playerCall() {
-  mpSfx('call');
   const need = state.currentBetOpponent - state.currentBetPlayer;
   const pay = Math.max(0, Math.min(need, state.playerChips));
   state.playerChips = Math.max(0, state.playerChips - pay);
@@ -9592,7 +9164,6 @@ function playerCall() {
 function playerCheckCall() {
   const need = state.currentBetOpponent - state.currentBetPlayer;
   if (need > 0) return playerCall();
-  mpSfx('check');
   // 両者チェック → 次ストリートへ
   log('actions', { actor: 'player', type: 'check' });
   state.isPlayerTurn = false;
@@ -9601,7 +9172,6 @@ function playerCheckCall() {
   setTimeout(advanceAfterCall, 700);
 }
 function playerRaise(bb) {
-  mpSfx('battle-bet');
   const amount = Math.max(0, Math.min(50 * bb, state.playerChips));
   state.playerChips = Math.max(0, state.playerChips - amount);
   state.currentBetPlayer += amount;
@@ -9613,7 +9183,6 @@ function playerRaise(bb) {
   setTimeout(opponentTurn, 700);
 }
 function playerBet(size) {
-  mpSfx('battle-bet');
   const amount = betSizeToChips(size, state.pot, state.playerChips);
   state.playerChips = Math.max(0, state.playerChips - amount);
   state.currentBetPlayer += amount;
@@ -9625,7 +9194,6 @@ function playerBet(size) {
   setTimeout(opponentTurn, 700);
 }
 function playerAllIn() {
-  mpSfx('battle-allin');
   const amount = state.playerChips;
   state.playerChips = 0;
   state.currentBetPlayer += amount;
@@ -9711,20 +9279,6 @@ function opponentTurn() {
   const hs = state.community.length >= 3 ? handStrength01(allCards) : opponentPreflopStrength(state.opponentHand);
   const boardDanger = evaluateBoardDanger(state.community);
   const ctx = { handStrength: hs, toCall: need, boardDanger, canCheck: need === 0 };
-
-  // P2: 体験ハンドでは相手は必ずチェック/コールで応じ、そのまま次ストリートへ自動進行
-  // （体験ハンドはフロップの1択のみ・以降は自動でミミの勝利へ。フォールドもレイズもしない＝確実にミミが勝つ）
-  if (state.introHandMode) {
-    state.lastOpponentIntent = 'check_call';
-    const pay = Math.max(0, Math.min(need, state.opponentChips));
-    state.opponentChips = Math.max(0, state.opponentChips - pay);
-    state.currentBetOpponent += pay;
-    state.pot += pay; pushPotChips(pay);
-    state.opponentSpeech = pay > 0 ? 'う……いいよ、コール' : 'チェックで';
-    render();
-    setTimeout(advanceAfterCall, 900);
-    return;
-  }
 
   // v4: 第1ハンドのフロップ後、ポルカは必ず2/3以上ベット → 心理バトル強制発生
   // チュートリアル時もリコ先輩は同様にブラフベットして練習させる
@@ -10044,7 +9598,6 @@ function triggerPsychBattle(qid) {
   const shuffled = shuffle(q.choices);
   const labels = ['A','B','C','D','E'];
 
-  setMimiExpression('think'); // P1-3: 心理バトル開始で真剣な表情に
   // モーダル描画
   const tpl = document.getElementById('tpl-psych-modal');
   const modal = tpl.content.cloneNode(true);
@@ -10061,29 +9614,18 @@ function triggerPsychBattle(qid) {
       <div class="portrait-name">${oppName}</div>
     `;
   }
-  // モーダルタイプによってヘッダー差し替え（講義 / 心理 / 論理）
+  // モーダルタイプによってヘッダー差し替え（心理 / 論理）
   const isLogic = q.type === 'logic';
-  const isLecture = !!state.lectureMode;
   const titleEl = root.querySelector('.psych-title');
   if (titleEl) {
-    if (isLecture) {
-      // 講義モード：内容は講義なのに「心理バトル」と出る不一致を解消
-      const chapterSub = q.chapterTitle || '— ポーカーの基礎を学ぶ —';
-      titleEl.innerHTML = `📚 リコ先輩の講義<small class="battle-subtitle">${chapterSub}</small>`;
-    } else {
-      titleEl.innerHTML = isLogic
-        ? '🧮 論理バトル<small class="battle-subtitle">— ポーカーの数学を覚える —</small>'
-        : '🧠 心理バトル<small class="battle-subtitle">— 相手の本心を読む —</small>';
-    }
-    titleEl.classList.toggle('logic-mode', isLogic && !isLecture);
-    titleEl.classList.toggle('lecture-mode', isLecture);
+    titleEl.innerHTML = isLogic
+      ? '🧮 論理バトル<small class="battle-subtitle">— ポーカーの数学を覚える —</small>'
+      : '🧠 心理バトル<small class="battle-subtitle">— 相手の本心を読む —</small>';
+    titleEl.classList.toggle('logic-mode', isLogic);
   }
   // モーダル全体にもクラス
   const modalEl = root.querySelector('.psych-modal');
-  if (modalEl) {
-    modalEl.classList.toggle('logic-mode', isLogic && !isLecture);
-    modalEl.classList.toggle('lecture-mode', isLecture);
-  }
+  if (modalEl) modalEl.classList.toggle('logic-mode', isLogic);
   // ルール文を上部に挿入
   if (isLogic && q.rule) {
     let ruleBox = root.querySelector('.logic-rule-box');
@@ -10600,19 +10142,6 @@ function resolvePsych(qid, choice, btn) {
     }
   }
   btn.style.borderColor = isCorrect ? 'var(--c-gold-bright)' : 'var(--c-red-bright)';
-  // 講義モード：正誤スタンプ演出（CODEX素材。⚡スピード達成時は稲妻スタンプも追加）
-  if (state.lectureMode) {
-    const st = document.createElement('div');
-    st.className = 'lecture-stamp ' + (isCorrect ? 'stamp-correct' : 'stamp-wrong');
-    document.body.appendChild(st);
-    let sp = null;
-    if (isCorrect && state.__lectureQStart && (Date.now() - state.__lectureQStart) <= 10000) {
-      sp = document.createElement('div');
-      sp.className = 'lecture-stamp stamp-speed';
-      document.body.appendChild(sp);
-    }
-    setTimeout(() => { st.remove(); if (sp) sp.remove(); }, 1400);
-  }
 
   if (isCorrect) {
     const eff = q.onSuccess;
@@ -10634,15 +10163,6 @@ function resolvePsych(qid, choice, btn) {
     }
     state.mimiThought = `「読めた……！${eff.hint}」`;
     state.ricoAdvice = `「${eff.rico}」`;
-    // note_range_lv2/3：心理バトル成功時に相手レンジのヒントを追加表示
-    const rangeLv = save.panyuSkills?.rangeLevel || 1;
-    if (rangeLv >= 2 && state.opponentProfile) {
-      const bluffPct = Math.round((state.opponentProfile.bluffTendency || 0) * 100);
-      const rangeText = rangeLv >= 3
-        ? `📓 相手レンジ：ブラフ確率 約${bluffPct}%`
-        : `📓 相手レンジ：${bluffPct >= 55 ? 'ブラフ寄り' : bluffPct <= 30 ? 'バリュー寄り' : '五分五分'}`;
-      state.ricoAdvice += `<br><small class="range-hint">${rangeText}</small>`;
-    }
     log('psych', { qid, choice: choice.id, success: true });
     // 証拠突きつけ成功でブラフブレイク確定
     if (eff.bluffBreak) triggerBluffBreak();
@@ -10681,29 +10201,11 @@ function resolvePsych(qid, choice, btn) {
       state.psychRoot.remove();
       state.psychRoot = null;
     }
-    setMimiExpression('default'); // P1-3: 心理バトル解決後は表情を戻す
-    // 講義モード：正解数カウント＋コンボ＆コイン報酬＋次の問題へ（ゲーム化）
+    // 講義モード：正解数カウント＋次の問題へ
     if (state.lectureMode) {
-      let rewardMsg = '';
-      if (isCorrect) {
-        state.lectureCorrect++;
-        state.lectureCombo = (state.lectureCombo || 0) + 1;
-        // 正解 +5🪙、3コンボ以降さらに +5、10秒以内の早答えでさらに +5（⚡スピード）
-        const fast = state.__lectureQStart && (Date.now() - state.__lectureQStart) <= 10000;
-        const gain = 5 + (state.lectureCombo >= 3 ? 5 : 0) + (fast ? 5 : 0);
-        save.coins += gain;
-        state.lectureEarned = (state.lectureEarned || 0) + gain;
-        saveProgress();
-        const parts = [];
-        if (fast) parts.push('⚡スピード');
-        if (state.lectureCombo >= 3) parts.push(`🔥${state.lectureCombo}コンボ`);
-        rewardMsg = `　${parts.length ? parts.join(' ') + '！ ' : ''}+${gain}🪙`;
-      } else {
-        state.lectureCombo = 0;
-      }
+      if (isCorrect) state.lectureCorrect++;
       state.lectureIdx++;
-      updateLectureHud();
-      const resultPrefix = isCorrect ? '✓ 正解！' + rewardMsg + '　' : '✗ 残念……　';
+      const resultPrefix = isCorrect ? '✓ 正解！　' : '✗ 残念……　';
       showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, () => {
         triggerLectureQuestion();
       });
@@ -10779,7 +10281,6 @@ function skipPsychBattle() {
     state.psychRoot.remove();
     state.psychRoot = null;
   }
-  setMimiExpression('default'); // P1-3: スキップ時も表情を戻す
   state.psychPending = false;
   state.psychResolved = true; // 同ハンド再発動防止
   state.logicResolvedStreet = true;
@@ -10885,7 +10386,6 @@ function triggerBluffBreak() {
 // 16. ショーダウン → ハンド終了
 //=============================================================
 function showdown() {
-  if (state.introHandMode) return introHandShowdown();
   const playerAll = [...state.playerHand, ...state.community];
   const oppAll = [...state.opponentHand, ...state.community];
   const pEv = evaluateHand(playerAll);
@@ -10932,11 +10432,6 @@ function endHand() {
   if (last) {
     if (last.winner === 'player') state.consecutiveWins = (state.consecutiveWins || 0) + 1;
     else if (last.winner === 'opponent') state.consecutiveWins = 0;
-    // P1-3: ハンドの勝敗でミミの表情を切り替え
-    setMimiExpression(last.winner === 'player' ? 'win' : last.winner === 'opponent' ? 'sad' : 'default');
-    // ハンド勝敗SFX
-    if (last.winner === 'player') mpSfx('hand-win');
-    else if (last.winner === 'opponent') mpSfx('hand-lose');
   }
   // 結果バナー表示
   showHandResultBanner();
@@ -11240,7 +10735,6 @@ function continueButtonLabel() {
 }
 
 function continueAfterHand() {
-  setMimiExpression('default'); // P1-3: 次のハンドへ進む際は表情をリセット
   if (state.playerChips <= 0 || state.opponentChips <= 0 || state.handNo >= state.maxHands) {
     return endBattle();
   }
@@ -11515,9 +11009,9 @@ function endBattle() {
         rewards.push(`戦術ノート所持済み → +100コイン補填`);
       }
     }
-    // クリア記録（velvet なら endingUnlocked も同時に立つ）
+    // クリア記録
     if (!save.clearedStages.includes(state.opponentId)) {
-      markStageCleared(state.opponentId);
+      save.clearedStages.push(state.opponentId);
       unlockAchievement('first_clear');
     }
     // 圧倒（相手チップ0で勝利）
@@ -11649,39 +11143,6 @@ const LESSON_CHAPTERS = [
 // フラット順序（互換性）
 const LESSON_ORDER = LESSON_CHAPTERS.flatMap(c => c.ids);
 
-// 講義中の常設 進捗HUD（章・正解・コンボ・獲得コイン）— 講義のゲーム化
-function updateLectureHud() {
-  let hud = document.getElementById('lecture-hud');
-  if (!state.lectureMode) { if (hud) hud.remove(); return; }
-  if (!hud) {
-    hud = document.createElement('div');
-    hud.id = 'lecture-hud';
-    hud.className = 'lecture-hud';
-    document.getElementById('app').appendChild(hud);
-  }
-  const total = state.lectureTotal || LESSON_ORDER.length;
-  const done = Math.min(state.lectureIdx, total);
-  const pct = Math.round((done / total) * 100);
-  const combo = state.lectureCombo || 0;
-  hud.innerHTML = `
-    <div class="lh-bar"><div class="lh-fill" style="width:${pct}%"></div></div>
-    <div class="lh-stats">
-      <span>📚 ${done}/${total}問</span>
-      <span>⭐ ${state.lectureCorrect || 0}</span>
-      ${combo >= 2 ? `<span class="lh-combo">🔥${combo}</span>` : ''}
-      <span>💰 +${state.lectureEarned || 0}</span>
-    </div>
-  `;
-}
-
-// 現在のコースに応じた出題順を返す（⚡ライトコース＝1章・2章・5章のみ）
-function lectureOrder() {
-  if (state && state.lectureLite) {
-    return LESSON_CHAPTERS.filter(c => c.key === 1 || c.key === 2 || c.key === 5).flatMap(c => c.ids);
-  }
-  return LESSON_ORDER;
-}
-
 function startLecture(opponentId) {
   state = defaultState();
   state.opponentId = opponentId;
@@ -11689,21 +11150,17 @@ function startLecture(opponentId) {
   state.opponentName = opp.name;
   state.opponentImgKey = opp.imgKey;
   state.lectureMode = true;
-  // 中断進捗があれば引き継ぎ（コース種別も復元）
+  // 中断進捗があれば引き継ぎ
   const saved = save.lectureProgress || null;
-  state.lectureLite = saved ? !!saved.lite : false;
   state.lectureIdx = saved ? saved.idx : 0;
   state.lectureCorrect = saved ? saved.correct : 0;
-  state.lectureEarned = saved ? (saved.earned || 0) : 0;
-  state.lectureTotal = lectureOrder().length;
+  state.lectureTotal = LESSON_ORDER.length;
   state.screen = 'battle';
   state.handPhase = 'lecture';
   state.tutorialMode = true;
   state.ricoAdvice = '「ようこそ。じっくり基礎を覚えていこ〜」';
   state.mimiThought = saved ? '「続きから……お願いします！」' : '「リコ先輩、よろしくお願いします！」';
-  state.lectureCombo = 0; // コンボは再開時リセット（earned は saved から復元済み）
   render();
-  updateLectureHud();
   showLectureIntro(() => {
     triggerLectureQuestion();
   }, saved);
@@ -11720,58 +11177,28 @@ function showLectureIntro(onContinue, savedProgress) {
       <div class="tutorial-step">${savedProgress ? '講義再開' : '講義開始'}</div>
       <h2 style="color:var(--c-red);font-size:24px;margin:0 0 14px;letter-spacing:0.15em;">📚 リコ先輩のポーカー講義</h2>
       ${resumeMsg}
-      <p style="font-size:17px;line-height:1.8;">よろしく〜！ ミミに <b>ポーカーの基本</b> を教えるね。コースを選んで！</p>
-      ${savedProgress ? '' : `
-      <div style="display:flex;flex-direction:column;gap:8px;margin:6px 0 10px;">
-        <div style="background:rgba(245,215,122,0.12);border:1px solid var(--c-gold);border-radius:10px;padding:10px 14px;text-align:left;">
-          <b style="color:var(--c-gold-bright);">⚡ ライトコース（おすすめ）</b><br>
-          <small>基本ルール・用語・役の強さの<b>3章9問だけ</b>。5分で実戦へ！<br>
-          正解ごとに🪙、早答えでさらにボーナス。残りの章は後からいつでも受講OK</small>
-        </div>
-        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px 14px;text-align:left;">
-          <b>📚 フルコース</b><br>
-          <small>全 <b>11章／${LESSON_ORDER.length}問</b>。確率・定石・心理戦・用語集・実戦ハンズオン・マナーまで完全網羅</small>
-        </div>
-      </div>`}
-      <p style="font-size:13px;color:var(--c-red);line-height:1.6;">
-        ※ 各章の開始時に「始める／スキップ／中断」が選べる ※ 間違えてもOK
+      <p style="font-size:17px;line-height:1.8;">よろしく〜！ ミミに <b>ポーカーの基本</b> をじっくり教えるね。</p>
+      <p style="font-size:15px;line-height:1.7;">
+        全 <b>11章 ／ ${LESSON_ORDER.length}問</b>。<br>
+        歴史・用語・流れ・アクション・役・確率・定石・心理戦・<br>
+        <b>用語集（s/o・ナッツ等）／実戦ハンズオン／マナー・禁止行為</b>まで網羅。
+      </p>
+      <p style="font-size:14px;color:var(--c-red);line-height:1.7;">
+        ※ 各章の開始時に「<u>始める／スキップ／中断</u>」が選べる<br>
+        ※ 間違えても OK、解説で覚えればOK
       </p>
       <div class="tutorial-actions">
-        ${savedProgress
-          ? `<button class="next-btn" type="button">▶ 続ける</button>
-             <button class="restart-btn" type="button">最初からやり直す</button>`
-          : `<button class="lite-btn next-btn" type="button">⚡ ライトコースで始める</button>
-             <button class="full-btn" type="button">📚 フルコースで始める</button>`}
+        <button class="next-btn" type="button">▶ ${savedProgress ? '続ける' : '始める'}</button>
+        ${savedProgress ? '<button class="restart-btn" type="button">最初からやり直す</button>' : ''}
         <button class="skip-btn" type="button">全スキップ</button>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
-  // 続きから（保存済み進捗あり）
-  const nextBtn = overlay.querySelector('.next-btn');
-  if (savedProgress && nextBtn) {
-    nextBtn.addEventListener('click', () => { overlay.remove(); onContinue(); });
-  }
-  // ⚡ライトコース（新規時：next-btn を兼ねる）
-  const liteBtn = overlay.querySelector('.lite-btn');
-  if (!savedProgress && liteBtn) {
-    liteBtn.addEventListener('click', () => {
-      state.lectureLite = true;
-      state.lectureTotal = lectureOrder().length;
-      overlay.remove();
-      onContinue();
-    });
-  }
-  // 📚フルコース
-  const fullBtn = overlay.querySelector('.full-btn');
-  if (fullBtn) {
-    fullBtn.addEventListener('click', () => {
-      state.lectureLite = false;
-      state.lectureTotal = lectureOrder().length;
-      overlay.remove();
-      onContinue();
-    });
-  }
+  overlay.querySelector('.next-btn').addEventListener('click', () => {
+    overlay.remove();
+    onContinue();
+  });
   const restartBtn = overlay.querySelector('.restart-btn');
   if (restartBtn) {
     restartBtn.addEventListener('click', () => {
@@ -11823,21 +11250,18 @@ const HANDS_ON_AFTER = {
 };
 
 function triggerLectureQuestion() {
-  // HUD を毎問更新（render() で消えても復活させる）
-  setTimeout(() => updateLectureHud(), 50);
-  const order = lectureOrder(); // ⚡ライトコース対応：コース別の出題順
-  if (state.lectureIdx >= order.length) {
+  if (state.lectureIdx >= LESSON_ORDER.length) {
     finishLecture(false);
     return;
   }
-  const qid = order[state.lectureIdx];
+  const qid = LESSON_ORDER[state.lectureIdx];
   const q = PSYCH_QUESTIONS[qid];
   if (!q) {
     state.lectureIdx++;
     return triggerLectureQuestion();
   }
   // 章タイトルが変わるタイミングで章バナーを表示
-  const prevChapter = state.lectureIdx > 0 ? PSYCH_QUESTIONS[order[state.lectureIdx - 1]]?.chapter : null;
+  const prevChapter = state.lectureIdx > 0 ? PSYCH_QUESTIONS[LESSON_ORDER[state.lectureIdx - 1]]?.chapter : null;
   if (q.chapter !== prevChapter) {
     // 前の章が終わった瞬間にハンズオン演習を挿入（同じ演習は1回だけ）
     if (typeof prevChapter === 'number' && HANDS_ON_AFTER[prevChapter]) {
@@ -11916,8 +11340,8 @@ function showHandsOnExercise(ex, onClose) {
 }
 
 function exitLectureMidway() {
-  // 進捗を保存して中断（コース種別も保存）
-  save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect, earned: state.lectureEarned || 0, lite: !!state.lectureLite };
+  // 進捗を保存して中断
+  save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect };
   saveProgress();
   state = defaultState();
   state.screen = 'lobby';
@@ -11959,46 +11383,21 @@ function showChapterBanner(num, title, onClose) {
 
 function doLectureModal(qid) {
   triggerPsychBattle(qid);
-  // ⚡スピードボーナス計測開始＋10秒カウントダウンバーをモーダルに注入
-  state.__lectureQStart = Date.now();
-  setTimeout(() => {
-    const modal = document.querySelector('.psych-modal');
-    if (!modal || modal.querySelector('.lecture-speed-bar')) return;
-    const bar = document.createElement('div');
-    bar.className = 'lecture-speed-bar';
-    bar.innerHTML = '<div class="lsb-label">⚡ 10秒以内で +5🪙</div><div class="lsb-track"><div class="lsb-fill"></div></div>';
-    const title = modal.querySelector('.psych-title');
-    if (title) title.insertAdjacentElement('afterend', bar);
-    else modal.prepend(bar);
-    // 10秒経過でバーをそっと消す（減点はなし＝プレッシャーは軽く）
-    setTimeout(() => { bar.classList.add('lsb-expired'); }, 10000);
-  }, 120);
+  // 心理バトル resolve をフックして lecture 進行
+  // 既存 resolvePsych の最後に lecture 進行を埋め込みたいので、ここでは何もしない（resolvePsychが lecture用にも対応する）
 }
 
 function finishLecture(skipped) {
-  document.getElementById('lecture-hud')?.remove();
   const overlay = document.createElement('div');
   overlay.className = 'tutorial-overlay';
   const scorePct = Math.round((state.lectureCorrect / state.lectureTotal) * 100);
-  // 成績グレード（ゲーム化：S/A/B/C）＋成績ボーナス
-  const grade = scorePct >= 90 ? 'S' : scorePct >= 70 ? 'A' : scorePct >= 50 ? 'B' : 'C';
-  const gradeColor = { S: '#ffd700', A: '#f5d77a', B: '#a7d8ff', C: '#cccccc' }[grade];
-  const gradeBonus = skipped ? 0 : { S: 200, A: 120, B: 60, C: 20 }[grade];
-  const earned = state.lectureEarned || 0;
   overlay.innerHTML = `
     <div class="tutorial-bubble">
       <div class="tutorial-step">講義完了</div>
       <h2 style="color:var(--c-red);font-size:26px;margin:0 0 14px;letter-spacing:0.15em;">📖 講義お疲れさま！</h2>
       ${skipped
         ? '<p style="font-size:17px;">スキップでもOK。実戦で覚えていこ〜</p>'
-        : `
-        <div style="font-size:64px;font-weight:900;color:${gradeColor};text-shadow:0 0 24px ${gradeColor};margin:4px 0;line-height:1.1;">${grade}</div>
-        <p style="font-size:17px;margin:4px 0 10px;">${state.lectureTotal}問中 <b>${state.lectureCorrect}問正解</b>（${scorePct}%）</p>
-        <div style="font-size:14px;background:rgba(245,215,122,0.12);border:1px solid rgba(245,215,122,0.4);border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.8;">
-          正解報酬：<b>+${earned}🪙</b>（獲得済み）<br>
-          成績ボーナス（${grade}）：<b>+${gradeBonus}🪙</b><br>
-          初回クリア報酬：<b>+300🪙</b>
-        </div>`
+        : `<p style="font-size:17px;">${state.lectureTotal}問中 <b>${state.lectureCorrect}問正解</b>（${scorePct}%）！</p>`
       }
       <p style="font-size:15px;line-height:1.7;">これで基本はバッチリ。<br>次は<b>Stage 2「ポルカ戦」</b>で実戦練習だよ。</p>
       <div class="tutorial-actions">
@@ -12009,20 +11408,18 @@ function finishLecture(skipped) {
   document.body.appendChild(overlay);
   overlay.querySelector('.next-btn').addEventListener('click', () => {
     overlay.remove();
-    // 講義クリア記録＋成績ボーナス＋進捗クリア
-    let totalGain = gradeBonus;
+    // 講義クリア記録＋進捗クリア
     if (!save.firstClearRewardClaimed.includes('rico_tutorial')) {
-      totalGain += 300;
+      save.coins += 300;
       save.firstClearRewardClaimed.push('rico_tutorial');
     }
-    save.coins += totalGain;
     if (!save.clearedStages.includes('rico_tutorial')) save.clearedStages.push('rico_tutorial');
-    save.lectureProgress = null;
+    save.lectureProgress = null;  // 完了したので進捗削除
     saveProgress();
     state = defaultState();
     state.screen = 'lobby';
     render();
-    toast(`✨ 講義完了！${totalGain > 0 ? ` +${totalGain}コイン` : ''}`);
+    toast(`✨ 講義完了！${skipped ? '' : '+300コイン'}`);
   });
 }
 
@@ -12121,8 +11518,6 @@ function showOpponentCutIn(text, betSize) {
   const intensity = betSize === 'allin' ? 'cutin-allin' :
                     betSize === 'pot_1' ? 'cutin-pot' :
                     betSize === 'pot_2_3' ? 'cutin-strong' : '';
-  // P1-3: 相手のオールイン・大レイズにミミが動揺する表情
-  if (betSize === 'allin' || betSize === 'pot_1') setMimiExpression('shock');
   const cut = document.createElement('div');
   cut.className = `rico-cutin opponent-cutin ${intensity}`;
   // 強度別パーティクル数（allin=多、pot=中、strong=少）
@@ -12150,8 +11545,6 @@ function showOpponentCutIn(text, betSize) {
     activeCutInDismiss = null;
     if (autoDismissTimer) clearTimeout(autoDismissTimer);
     cut.classList.add('cutin-out');
-    // P1-3: 動揺表情はカットインが消えたら通常に戻す
-    if (betSize === 'allin' || betSize === 'pot_1') setMimiExpression('default');
     setTimeout(() => cut.remove(), 500);
   };
   // 自動消滅：通常 3.5s、オールイン等は 4.5s
@@ -12222,16 +11615,6 @@ function fitStage() {
 }
 window.addEventListener('resize', fitStage);
 window.addEventListener('orientationchange', () => setTimeout(fitStage, 100));
-// ★ window の 'resize' イベントは、埋め込みプレビューペインやPWA/一部モバイル環境では
-//   ビューポートサイズが変わっても発火しないことがある（実機で確認済みのバグ）。
-//   ResizeObserver は要素の実サイズ変化を直接監視するため、resize イベントに依存せず
-//   確実にスケールを再計算できる。html要素自体を監視することで取りこぼしを防ぐ。
-if (typeof ResizeObserver !== 'undefined') {
-  const ro = new ResizeObserver(() => fitStage());
-  ro.observe(document.documentElement);
-}
-// 保険：resize/orientationchange/ResizeObserver いずれも取りこぼした場合に備えて低頻度で再計算
-setInterval(fitStage, 1000);
 fitStage();
 
 //=============================================================
@@ -12520,13 +11903,4 @@ reapplyAllOwnedEffects();
 startPreload().then(() => {
   render();
   initGlobalAudioBar();
-  // 廃止商品の自動返金があれば、起動後に一度だけ通知
-  if (save.__pendingRefundNotice) {
-    const { total } = save.__pendingRefundNotice;
-    delete save.__pendingRefundNotice;
-    saveProgress();
-    setTimeout(() => {
-      toast(`🛍 交換所の商品整理により +${total}コインを返金しました`);
-    }, 900);
-  }
 });
