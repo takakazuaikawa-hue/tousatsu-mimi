@@ -2910,8 +2910,9 @@ function renderStageList() {
     const stageNum = i + 1;
     // リコクリア後はモードチューザー、それ以外は通常バトル開始
     const isRicoClearChoice = (sid === 'rico_tutorial' && cleared);
-    const portrait = `<div class="stage-portrait">
+    const portrait = `<div class="stage-portrait" data-action="char-profile" data-char="${sid}" title="${opp.name}のプロフィールを見る">
       <img src="assets/characters/${opp.imgKey}_default.png" alt="${opp.name}" onerror="window.assetFallback(this,'${opp.imgKey}')">
+      <span class="stage-portrait-hint">👤 プロフィール</span>
     </div>`;
     if (!unlocked) {
       return `<div class="stage-card locked">
@@ -5206,6 +5207,13 @@ function onAction(e) {
       }
       showRicoViewer();
       break;
+    case 'char-profile': {
+      // 立ち絵クリック → キャラクター名鑑。__opponent__ は現在の対戦相手に解決
+      let cid = data.char;
+      if (cid === '__opponent__') cid = state.opponentId;
+      if (cid) showCharacterProfile(cid);
+      break;
+    }
     case 'open-collection':
       showCollectionModal();
       break;
@@ -6321,6 +6329,149 @@ function showRicoModeChooser() {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
+}
+
+// =============================================================
+// キャラクター名鑑：立ち絵＋キャラ設定を表示するビューア
+// 立ち絵クリックで開く。進行度に応じて開示情報を段階化（ネタバレ防止）。
+// =============================================================
+// 主人公ミミのプロフィール（OPPONENTS に居ないため個別定義）
+const MIMI_PROFILE = {
+  name: 'ミミ',
+  imgKey: 'mimi',
+  icon: '🐰',
+  title: '外れスキル持ちの新人ディーラー',
+  appearance: '🐰 ウサ耳カチューシャ／黒×赤のバニー衣装／茶髪お団子と赤い瞳',
+  desc: '異世界に転生し、授かったのは「ぱにゅぱにゅ」——場を和ませるだけの外れスキル。' +
+        'それでも卓に立ち、読みと度胸で伝説のディーラーたちに挑む。',
+  traits: [
+    'スキル《ぱにゅぱにゅ》で相手の緊張をほぐし、本音を引き出す',
+    '知識ゼロから始めて、実戦で読み合いを覚えていく',
+    '劣勢でも降りない粘り強さが持ち味',
+  ],
+};
+
+// 立ち絵ファイル名を解決（ミミ／リコは装備スキン・衣装を反映）
+function profileArtFile(charId) {
+  if (charId === 'mimi') {
+    const skin = save && save.equippedMimiSkin;
+    return (skin && skin !== 'default') ? `mimi_${skin}.png` : 'mimi_default.png';
+  }
+  if (charId === 'rico_tutorial') {
+    const o = typeof pickLobbyRico === 'function' ? pickLobbyRico() : null;
+    return o ? o.file : 'rico_default.png';
+  }
+  const opp = OPPONENTS[charId];
+  return opp ? `${opp.imgKey}_default.png` : 'mimi_default.png';
+}
+
+function showCharacterProfile(charId) {
+  document.querySelectorAll('.char-profile-overlay').forEach(e => e.remove());
+  const isMimi = charId === 'mimi';
+  const opp = OPPONENTS[charId];
+  if (!isMimi && !opp) return;
+
+  // 進行度による開示段階
+  const unlocked = isMimi || (typeof isStageUnlocked === 'function' ? isStageUnlocked(charId) : true);
+  const cleared  = isMimi || (save.clearedStages || []).includes(charId);
+  if (!unlocked) return; // 未解放キャラは開かない（カード側でも抑止）
+
+  const p = isMimi ? MIMI_PROFILE : null;
+  const persona = isMimi ? null : (OPPONENT_PERSONALITY[charId] || null);
+  const name = isMimi ? p.name : opp.name;
+  const icon = isMimi ? p.icon : (persona ? persona.icon : '🎴');
+  const title = isMimi ? p.title : (cleared && persona ? persona.title : '？？？');
+  const appearance = isMimi ? p.appearance : (OPPONENT_APPEARANCE[charId] || '——');
+  const desc = isMimi ? p.desc : opp.desc;
+  const artFile = profileArtFile(charId);
+  const fallbackKey = isMimi ? 'mimi' : opp.imgKey;
+
+  // 戦術傾向バー（撃破済みのみ開示）
+  const statRows = (!isMimi && cleared && opp.profile) ? [
+    { label: 'ブラフ',   v: opp.profile.bluffTendency },
+    { label: '攻撃性',   v: opp.profile.aggression },
+    { label: '降りやすさ', v: opp.profile.foldDiscipline },
+    { label: 'バリュー',  v: opp.profile.valueBetTendency },
+  ].map(s => `
+    <div class="cp-stat">
+      <span class="cp-stat-label">${s.label}</span>
+      <span class="cp-stat-bar"><span class="cp-stat-fill" style="width:${Math.round((s.v || 0) * 100)}%"></span></span>
+      <span class="cp-stat-val">${Math.round((s.v || 0) * 100)}</span>
+    </div>`).join('') : '';
+
+  // 性格・攻略（撃破済みのみ）
+  const traits = isMimi ? p.traits : (persona ? persona.traits : []);
+  const traitsHtml = (isMimi || cleared)
+    ? `<ul class="cp-traits">${traits.map(t => `<li>${t}</li>`).join('')}</ul>`
+    : `<div class="cp-locked-hint">🔒 撃破すると性格・攻略法が記録されます</div>`;
+  const exploitHtml = (!isMimi && cleared && persona)
+    ? `<div class="cp-exploit"><b>⚔ 攻略</b> ${persona.exploit}</div>` : '';
+
+  // 得意分野・初期チップ（相手のみ）
+  const metaHtml = !isMimi ? `
+    <div class="cp-meta">
+      <span class="cp-meta-item">🎯 ${opp.theme}</span>
+      <span class="cp-meta-item">💰 初期 ${opp.chips}</span>
+      ${cleared ? '<span class="cp-meta-item cp-cleared">✓ 撃破済み</span>' : ''}
+    </div>` : `
+    <div class="cp-meta">
+      <span class="cp-meta-item">🎯 スキル《ぱにゅぱにゅ》</span>
+      <span class="cp-meta-item">💰 所持 ${save.coins}</span>
+    </div>`;
+
+  // リコは衣装ギャラリーへの導線を追加（解放済みのみ）
+  const ricoGalleryBtn = (charId === 'rico_tutorial' && typeof isRicoViewerUnlocked === 'function' && isRicoViewerUnlocked())
+    ? '<button class="btn btn-secondary cp-gallery-btn" data-action="open-rico-viewer">👗 衣装ギャラリーへ</button>' : '';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'char-profile-overlay';
+  overlay.innerHTML = `
+    <div class="char-profile-modal">
+      <button class="cp-close" title="閉じる">×</button>
+      <div class="cp-art">
+        <img src="assets/characters/${artFile}" alt="${name}"
+             onerror="window.assetFallback(this,'${fallbackKey}')">
+      </div>
+      <div class="cp-panel">
+        <div class="cp-head">
+          <div class="cp-icon">${icon}</div>
+          <div class="cp-names">
+            <div class="cp-name">${name}</div>
+            <div class="cp-title">${title}</div>
+          </div>
+        </div>
+        ${metaHtml}
+        <div class="cp-section">
+          <div class="cp-section-label">見た目・雰囲気</div>
+          <div class="cp-appearance">${appearance}</div>
+        </div>
+        <div class="cp-section">
+          <div class="cp-section-label">プロフィール</div>
+          <div class="cp-desc">${desc}</div>
+        </div>
+        <div class="cp-section">
+          <div class="cp-section-label">${isMimi ? '特徴' : '性格・行動傾向'}</div>
+          ${traitsHtml}
+          ${exploitHtml}
+        </div>
+        ${statRows ? `<div class="cp-section">
+          <div class="cp-section-label">戦術パラメータ</div>
+          <div class="cp-stats">${statRows}</div>
+        </div>` : ''}
+        ${ricoGalleryBtn}
+      </div>
+    </div>
+  `;
+  (document.getElementById('stage') || document.body).appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.querySelector('.cp-close').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  // ギャラリーボタン等の data-action を通常フローへ流す
+  overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', (e) => {
+    close();
+    onAction(e);
+  }));
+  mpSfx('tap');
 }
 
 function showRicoViewer() {
