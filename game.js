@@ -498,6 +498,41 @@ function setMimiExpression(expr) {
   });
 }
 
+// ── 相手キャラの表情差分システム（フォルダに実在する差分だけを結線）──
+// 抽象ムード → キャラ別の実ファイル名。存在しない組み合わせは default にフォールバック。
+//   polka  : blush（照れ/羞恥）, panic（動揺）
+//   grano  : concerned（不安）, bow（敗北の礼）, recommend（自信/満足）
+//   rico   : serious（本気）, smile（余裕/勝ち誇り）
+//   selina / velvet : 差分なし（default のみ）
+const OPPONENT_EXPRESSIONS = {
+  polka:  { pressure: 'panic',    rattled: 'panic',     pleased: 'blush',     defeat: 'blush' },
+  grano:  { pressure: 'concerned',rattled: 'concerned', pleased: 'recommend', defeat: 'bow'   },
+  rico:   { pressure: 'serious',  rattled: 'serious',   pleased: 'smile',     defeat: 'smile' },
+  velvet: {},
+  selina: {},
+};
+
+// mood: 'default' | 'pressure'（大ベット/強気）| 'rattled'（ブラフ露呈/劣勢）
+//       | 'pleased'（勝ち/余裕）| 'defeat'（敗北）
+function setOpponentExpression(mood) {
+  if (state) state.opponentExpr = mood || 'default';
+  const key = state && state.opponentImgKey;
+  if (!key) return;
+  const map = OPPONENT_EXPRESSIONS[key] || {};
+  const expr = (mood && mood !== 'default') ? map[mood] : null;
+  // 相手が写る全要素：バトル左パネル・心理モーダルのポートレート/セリフ顔
+  const targets = document.querySelectorAll('[data-bind="opponentImg"], [data-opp-face]');
+  targets.forEach(img => {
+    const goDefault = () => {
+      img.onerror = () => { img.onerror = null; window.assetFallback(img, key); };
+      img.src = `assets/characters/${key}_default.png`;
+    };
+    if (!expr) { goDefault(); return; }
+    img.onerror = goDefault; // 差分ファイルが無ければ default へ
+    img.src = `assets/characters/${key}_${expr}.png`;
+  });
+}
+
 //=============================================================
 // 1. 乱数・ユーティリティ
 //=============================================================
@@ -2673,6 +2708,10 @@ function applyBindings() {
       case 'opponentImg':
         el.onerror = function() { window.assetFallback(this, state.opponentImgKey); };
         el.src = `assets/characters/${state.opponentImgKey}_default.png`;
+        // 現在の表情ムードがあれば再適用（render後も表情を維持）
+        if (state.opponentExpr && state.opponentExpr !== 'default') {
+          setTimeout(() => setOpponentExpression(state.opponentExpr), 0);
+        }
         break;
     }
   });
@@ -9405,6 +9444,8 @@ function introHandShowdown() {
   state.opponentSpeech = '……強すぎる。降参だよ';
   state.playerChips += state.pot;
   state.mimiThought = `「やった！${pEv.name}で勝った！」`;
+  setMimiExpression('win');
+  setOpponentExpression('defeat'); // ポルカが負けを認める表情に
   state.pot = 0; resetPotChips();
   render();
   setTimeout(showIntroHandWinScreen, 1800);
@@ -9447,6 +9488,8 @@ function startHand() {
   if (state.playerChips <= 0 || state.opponentChips <= 0) { return endBattle(); }
   state.handNo++;
   if (state.handNo > state.maxHands) { return endBattle(); }
+  setOpponentExpression('default'); // 新ハンドは平常表情から
+  setMimiExpression('default');
   mpSfx('deal'); // 配布音（equippedSePack設定を反映）
 
   // ブラインド簡略化（v4: 各50チップアンティ）
@@ -9820,11 +9863,13 @@ function opponentTurn() {
   log('reactions', { intent: action.intent, speech: state.opponentSpeech });
   // オールイン特別演出：実際にチップが動き、かつ残スタックが0になった瞬間のみ
   if (amount > 0 && (action.size === 'allin' || state.opponentChips === 0)) {
+    setOpponentExpression('pressure'); // 相手を強気表情に
     showAllInCutIn('opponent', amount);
   } else {
     // 大ベット時に重さ演出＋相手カットイン
     const bigBet = (action.size === 'pot_2_3' || action.size === 'pot_1');
     if (bigBet) {
+      setOpponentExpression('pressure'); // 相手を強気表情に
       triggerBetShake(action.size);
       setTimeout(() => showOpponentCutIn(state.opponentSpeech, action.size), 300);
     }
@@ -10057,7 +10102,7 @@ function triggerPsychBattle(qid) {
     const imgKey = state.opponentImgKey || 'polka';
     const oppName = state.opponentName || '相手';
     oppCharEl.innerHTML = `
-      <img src="assets/characters/${imgKey}_default.png" alt="${oppName}" onerror="window.assetFallback(this,'${imgKey}')">
+      <img data-opp-face src="assets/characters/${imgKey}_default.png" alt="${oppName}" onerror="window.assetFallback(this,'${imgKey}')">
       <div class="portrait-name">${oppName}</div>
     `;
   }
@@ -10111,7 +10156,7 @@ function triggerPsychBattle(qid) {
   if (!isLogic && state.opponentImgKey && qid !== 'velvet_opening') {
     speechEl.innerHTML = `
       <div class="psych-opponent-face">
-        <img src="assets/characters/${state.opponentImgKey}_default.png" alt="${state.opponentName}" onerror="window.assetFallback(this,'${state.opponentImgKey}')">
+        <img data-opp-face src="assets/characters/${state.opponentImgKey}_default.png" alt="${state.opponentName}" onerror="window.assetFallback(this,'${state.opponentImgKey}')">
       </div>
       <div class="psych-opponent-line">
         <div class="psych-opponent-name">${state.opponentName}</div>
@@ -10165,6 +10210,9 @@ function triggerPsychBattle(qid) {
   render(); // 背景再描画
   // モーダルは render() で消えるので再追加
   app.appendChild(root);
+  // 心理バトルは相手が圧をかけてくる場面 → 相手を「強気」表情に（講義/論理は素の表情）
+  if (!isLogic && !isLecture) setOpponentExpression('pressure');
+  else setOpponentExpression('default');
 }
 
 function usePanyuSense(qid, isFree) {
@@ -10878,7 +10926,9 @@ function triggerBluffBreak() {
   eff.innerHTML = '<div class="text">ブラフブレイク！</div>';
   document.body.appendChild(eff);
   setTimeout(() => eff.remove(), 1800);
-  toast('ポルカの勝負空気が崩れた！');
+  // 相手の虚勢が崩れた表情に（差分があるキャラのみ変化・他はdefaultのまま）
+  setOpponentExpression('rattled');
+  toast(`${state.opponentName || '相手'}の勝負空気が崩れた！`);
 }
 
 //=============================================================
@@ -10934,6 +10984,8 @@ function endHand() {
     else if (last.winner === 'opponent') state.consecutiveWins = 0;
     // P1-3: ハンドの勝敗でミミの表情を切り替え
     setMimiExpression(last.winner === 'player' ? 'win' : last.winner === 'opponent' ? 'sad' : 'default');
+    // 相手の表情：相手が勝てば余裕顔、負ければ敗北顔（差分のあるキャラのみ変化）
+    setOpponentExpression(last.winner === 'opponent' ? 'pleased' : last.winner === 'player' ? 'defeat' : 'default');
     // ハンド勝敗SFX
     if (last.winner === 'player') mpSfx('hand-win');
     else if (last.winner === 'opponent') mpSfx('hand-lose');
