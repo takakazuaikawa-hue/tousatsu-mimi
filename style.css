@@ -1089,8 +1089,9 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   max-width: 960px;
   max-height: 100%;
   background: linear-gradient(180deg, rgba(28,12,46,0.97) 0%, rgba(14,6,26,0.99) 100%);
-  border: 1px solid rgba(245,215,122,0.5);
-  border-radius: 14px;
+  border: 16px solid rgba(245,215,122,0.5);
+  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-radius: 0;
   box-shadow: 0 12px 36px rgba(0,0,0,0.7), inset 0 0 32px rgba(245,215,122,0.06);
   display: flex; flex-direction: column;
   position: relative;
@@ -2113,9 +2114,10 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 }
 .ending-prompt-modal {
   background: linear-gradient(180deg, rgba(50,20,80,0.97) 0%, rgba(20,8,29,0.98) 100%);
-  border: 3px solid var(--c-gold-bright);
-  border-radius: 16px;
-  padding: 32px 40px;
+  border: 14px solid rgba(245,215,122,0.5);
+  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-radius: 0;
+  padding: 20px 26px;
   box-shadow: 0 0 40px rgba(245,215,122,0.6), 0 12px 40px rgba(0,0,0,0.8);
   min-width: 480px;
   text-align: center;
@@ -2482,9 +2484,10 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 }
 .settings-modal {
   background: linear-gradient(180deg, rgba(50,20,80,0.97) 0%, rgba(20,8,29,0.98) 100%);
-  border: 3px solid var(--c-gold-bright);
-  border-radius: 16px;
-  padding: 28px 32px;
+  border: 14px solid rgba(245,215,122,0.5);
+  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-radius: 0;
+  padding: 16px 20px;
   min-width: 380px;
   max-width: 90%;
   box-shadow: 0 0 30px rgba(245,215,122,0.5), 0 12px 36px rgba(0,0,0,0.8);
@@ -2666,8 +2669,9 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   max-width: 760px;
   max-height: 100%;
   background: linear-gradient(180deg, rgba(28,12,46,0.97) 0%, rgba(14,6,26,0.99) 100%);
-  border: 1px solid rgba(245,215,122,0.5);
-  border-radius: 14px;
+  border: 16px solid rgba(245,215,122,0.5);
+  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-radius: 0;
   box-shadow: 0 12px 36px rgba(0,0,0,0.7);
   display: flex; flex-direction: column;
   position: relative;
@@ -3199,9 +3203,10 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 }
 .rico-mode-modal {
   background: linear-gradient(180deg, rgba(50,20,80,0.97) 0%, rgba(20,8,29,0.98) 100%);
-  border: 3px solid var(--c-gold-bright);
-  border-radius: 16px;
-  padding: 28px 36px;
+  border: 14px solid rgba(245,215,122,0.5);
+  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-radius: 0;
+  padding: 16px 22px;
   min-width: 460px;
   max-width: 92%;
   box-shadow: 0 0 40px rgba(245,215,122,0.6), 0 12px 36px rgba(0,0,0,0.8);
@@ -3248,9 +3253,10 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 }
 .newgame-modal {
   background: linear-gradient(180deg, rgba(50,20,80,0.97) 0%, rgba(20,8,29,0.98) 100%);
-  border: 3px solid var(--c-gold-bright);
-  border-radius: 16px;
-  padding: 28px 32px;
+  border: 14px solid rgba(245,215,122,0.5);
+  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-radius: 0;
+  padding: 16px 20px;
   box-shadow: 0 0 30px rgba(245,215,122,0.5), 0 12px 36px rgba(0,0,0,0.7);
   min-width: 440px;
   display: flex;
@@ -3497,7 +3503,8 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   color: var(--c-gold-bright);
   letter-spacing: 0.1em;
 }
-.coin-display { color: var(--c-gold-bright); font-size: 18px; font-weight: 600; }
+.coin-display { color: var(--c-gold-bright); font-size: 18px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.coin-display-icon { width: 22px; height: 22px; object-fit: contain; vertical-align: middle; }
 
 /* 現在のストリート表示 */
 .street-tracker {
@@ -3788,9 +3795,24 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   line-height: 1.55;
   max-height: 55%;
   overflow-y: auto;
+  /* ★横スクロールバー禁止。
+     overflow-y:auto を指定すると overflow-x は visible→auto に強制されるため、
+     日本語の禁則処理で数pxはみ出すだけで横バーが出て最終行に被る。 */
+  overflow-x: hidden;
+  overflow-wrap: break-word;
   box-shadow: 0 4px 12px rgba(0,0,0,0.5);
   backdrop-filter: blur(3px);
   z-index: 2;
+}
+/* ★セリフ吹き出し系は横スクロール禁止（rico-bubble と同じ禁則はみ出し対策）。
+   縦スクロール指定があると overflow-x が auto に強制される仕様への一括ガード。 */
+.rico-shop-bubble,
+.tutorial-bubble,
+.lobby-rico-bubble,
+.psych-log,
+.opponent-speech {
+  overflow-x: hidden;
+  overflow-wrap: break-word;
 }
 .rico-bubble u {
   text-decoration: none;
@@ -5387,11 +5409,14 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   max-width: 560px;
   max-height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   background: linear-gradient(180deg, rgba(28,12,46,0.97) 0%, rgba(14,6,26,0.99) 100%);
-  border: 2px solid #6dd96d;
-  border-radius: 14px;
+  /* 講義パートと同じ教室フレーム。実践演習の識別色(緑)はフォールバック時の枠色として残す */
+  border: 14px solid #6dd96d;
+  border-image: url('assets/ui/frame_lecture.png') 96 / 14px stretch;
+  border-radius: 0;
   box-shadow: 0 12px 36px rgba(0,0,0,0.7), 0 0 32px rgba(109,217,109,0.3);
-  padding: 22px 26px;
+  padding: 16px 20px;
   text-align: center;
 }
 .ho-tag {
@@ -5562,8 +5587,9 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   max-width: 560px;
   max-height: 100%;
   background: linear-gradient(180deg, rgba(28,12,46,0.97) 0%, rgba(14,6,26,0.99) 100%);
-  border: 1px solid rgba(245,215,122,0.5);
-  border-radius: 14px;
+  border: 14px solid rgba(245,215,122,0.5);
+  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-radius: 0;
   box-shadow: 0 12px 36px rgba(0,0,0,0.7);
   position: relative;
   display: flex; flex-direction: column;
@@ -6770,6 +6796,14 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   border-image: url('assets/ui/btn_gold_large.png') 48 fill / 14px / 4px stretch;
   text-shadow: 0 2px 4px rgba(0,0,0,0.85), 0 0 10px rgba(0,0,0,0.5);
 }
+/* 主CTA(.btn-primary.big)の隣に並ぶ副CTAが素の .btn-secondary のままだと
+   額縁の有無で釣り合いが崩れる（例：勝利画面の「エンディングへ／ロビーへ」）。
+   同じ理由で紫の大型ボタン素材を副CTA側にも適用する */
+.btn-secondary.big {
+  border: 4px solid transparent;
+  border-image: url('assets/ui/btn_purple_large.png') 48 fill / 14px / 4px stretch;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.85), 0 0 10px rgba(0,0,0,0.5);
+}
 /* ★重要：子要素の flex 圧縮を禁止（圧縮されるとテキスト下端が切れて読めなくなる）
    収まらない場合はモーダル自体が overflow-y: auto でスクロールする */
 .battle-modal-overlay .psych-modal > * {
@@ -7196,6 +7230,26 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   background: rgba(0,0,0,0.5);
   border: 2px solid var(--c-gold);
   border-radius: 16px;
+  /* ★内訳テキストが伸びると枠ごとキャンバス(800px)を突き抜け、
+     下のボタンが画面外に切れていた。高さを上限で止め、
+     可変長の .result-reason だけ内部スクロールさせてボタンは常時表示する。 */
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - 32px);
+  min-height: 0;
+}
+.result-inner > .result-title,
+.result-inner > .rank-display,
+.result-inner > .result-stats,
+.result-inner > .result-buttons {
+  flex-shrink: 0;
+}
+.result-inner > .result-reason {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: break-word;
 }
 .result-title {
   font-size: 42px;
@@ -7333,6 +7387,11 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   border-radius: 50%;
   background: linear-gradient(180deg, var(--c-purple) 0%, var(--c-bg-dark) 100%);
   position: relative;
+  /* ★丸い立ち絵を吹き出しパネルの上に重ねて「繋がって見せる」。
+     従来は -8px しか重ねておらず、円は上下で内側に湾曲するため
+     四角の直線的な左辺と円の間に隙間ができ、別々の図形に見えていた。 */
+  margin-right: -52px;
+  z-index: 3 !important;
 }
 .cutin-portrait img {
   width: 100%;
@@ -7352,10 +7411,12 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .cutin-text {
   background: linear-gradient(90deg, var(--c-bg-mid) 0%, var(--c-bg-dark) 100%);
   border: 3px solid var(--c-gold-bright);
-  border-left: none;
-  border-radius: 0 12px 12px 0;
-  padding: 18px 24px;
-  margin-left: -8px;
+  border-radius: 12px;
+  /* 左は重なる丸を避けるため深く空ける */
+  padding: 18px 26px 18px 76px;
+  margin-left: 0;
+  align-self: center;
+  min-height: 168px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -7427,13 +7488,17 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   border-color: var(--c-red-bright);
   box-shadow: 0 0 30px var(--c-red), inset 0 0 20px rgba(255,61,87,0.3);
 }
+.rico-cutin.opponent-cutin .cutin-portrait {
+  margin-right: 0;
+  margin-left: -52px;
+}
 .rico-cutin.opponent-cutin .cutin-text {
   border-color: var(--c-red);
-  border-left: 3px solid var(--c-red);
-  border-right: none;
-  border-radius: 12px 0 0 12px;
-  margin-right: -8px;
-  margin-left: 0;
+  border-radius: 12px;
+  /* 右側に丸が重なるので余白を反転 */
+  padding: 18px 76px 18px 26px;
+  text-align: right;
+  margin-right: 0;
 }
 .rico-cutin.opponent-cutin .cutin-name {
   color: var(--c-red-bright);
@@ -7548,6 +7613,41 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 @keyframes narrationFadeIn {
   0% { opacity: 0; transform: translateY(6px); }
   100% { opacity: 0.85; transform: translateY(0); }
+}
+/* ===== カットイン：狭幅（スマホ）調整 =====
+   丸は 200px 固定なので 88vw では本文が数十pxしか残らず溢れる。
+   丸・重なり・余白・文字を等比で縮める。 */
+@media (max-width: 720px) {
+  /* 着地位置(left:40px)は共通キーフレームのまま。
+     @media 内で @keyframes を再定義するとアニメーションが停止するため触らない。 */
+  .rico-cutin {
+    bottom: 60px;
+    max-width: calc(100vw - 56px);
+  }
+  .cutin-portrait {
+    width: 108px;
+    height: 108px;
+    border-width: 3px;
+    margin-right: -30px;
+  }
+  .rico-cutin.opponent-cutin .cutin-portrait {
+    margin-right: 0;
+    margin-left: -30px;
+  }
+  .cutin-text {
+    height: auto;
+    min-height: 92px;
+    padding: 12px 14px 12px 44px;
+    border-width: 2px;
+    gap: 4px;
+  }
+  .rico-cutin.opponent-cutin .cutin-text {
+    padding: 12px 44px 12px 14px;
+  }
+  .cutin-name { font-size: 13px; letter-spacing: 0.2em; }
+  .cutin-line { font-size: 15px; line-height: 1.45; }
+  .rico-cutin.cutin-allin .cutin-line { font-size: 17px; }
+  .cutin-narration { font-size: 13px; margin-top: 6px; padding-top: 6px; }
 }
 
 /* ========== ハンド結果バナー（毎ハンド終了後に表示） ========== */
@@ -8367,9 +8467,10 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .dominance-choice-modal {
   width: min(900px, 96vw);
   background: linear-gradient(180deg, var(--c-bg-mid) 0%, var(--c-bg-dark) 100%);
-  border: 3px solid var(--c-gold-bright);
-  border-radius: 18px;
-  padding: 30px 36px;
+  border: 16px solid var(--c-gold-bright);
+  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-radius: 0;
+  padding: 18px 24px;
   text-align: center;
   box-shadow:
     0 0 0 3px var(--c-red) inset,
@@ -9348,9 +9449,10 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .intro-win-modal {
   width: min(480px, calc(100% - 40px));
   background: linear-gradient(180deg, #2a1238 0%, #1a0820 100%);
-  border: 2px solid var(--c-gold-bright);
-  border-radius: 16px;
-  padding: 32px 28px;
+  border: 14px solid var(--c-gold-bright);
+  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-radius: 0;
+  padding: 20px 22px;
   text-align: center;
   color: #fbeec8;
   box-shadow: 0 12px 48px rgba(0,0,0,0.75), 0 0 60px rgba(245,215,122,0.2);
@@ -9401,10 +9503,12 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   width: min(720px, calc(100% - 40px));
   max-height: calc(100% - 40px);
   overflow-y: auto;
+  overflow-x: hidden;
   background: linear-gradient(180deg, #2a1238 0%, #1a0820 100%);
-  border: 2px solid var(--c-gold-bright);
-  border-radius: 14px;
-  padding: 24px 28px;
+  border: 16px solid var(--c-gold-bright);
+  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-radius: 0;
+  padding: 18px 22px;
   color: #fbeec8;
   box-shadow: 0 12px 40px rgba(0,0,0,0.7);
 }
@@ -9482,8 +9586,9 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   display: flex;
   flex-direction: column;
   background: linear-gradient(180deg, #2a1238 0%, #1a0820 100%);
-  border: 2px solid var(--c-gold-bright);
-  border-radius: 14px;
+  border: 16px solid var(--c-gold-bright);
+  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-radius: 0;
   color: #fbeec8;
   box-shadow: 0 12px 40px rgba(0,0,0,0.7);
   overflow: hidden;

@@ -11801,7 +11801,7 @@ function endBattle() {
     if (btns) {
       btns.innerHTML = `
         <button class="btn btn-primary big" data-action="go-ending">✨ エンディングへ ✨</button>
-        <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+        <button class="btn btn-secondary big" data-action="back-lobby">ロビーへ</button>
       `;
       // 動的に追加したボタンを再バインド
       btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
