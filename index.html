@@ -32,7 +32,7 @@
      着荷後は style.css 側の .preload-overlay 等のルールが上書きして通常表示になる。 */
   #portrait-warning, #fullscreen-btn-group { display: none; }
 </style>
-<link rel="stylesheet" href="style.css?v=20260603q">
+<link rel="stylesheet" href="style.css?v=20260603r">
 </head>
 <body>
 <div id="preload-overlay">
@@ -53,6 +53,9 @@
   <source src="assets/bgm/ending.m4a" type="audio/mp4">
   <source src="assets/bgm/ending.mp3" type="audio/mpeg">
 </audio>
+<!-- シーン専用BGM（タイトル/バトル/ボス/ミニゲーム）。src を差し替えて使い回し、
+     ロビー/エンディング/シンセと排他再生することで二重再生（＝うるささ）を防ぐ -->
+<audio id="scene-bgm-audio" loop preload="auto"></audio>
 
 <div id="stage">
   <div id="app"></div>
@@ -366,6 +369,6 @@
   </div>
 </template>
 
-<script src="game.js?v=20260603q"></script>
+<script src="game.js?v=20260603r"></script>
 </body>
 </html>

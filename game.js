@@ -2343,12 +2343,12 @@ const app = document.getElementById('app');
 
 function render() {
   switch (state.screen) {
-    case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); break;
+    case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); if (isBgmOn()) playSceneBgm('title'); break;
     case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); tryStartLobbyBgm(); break;
     case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI(); break;
     case 'result':      renderTemplate('tpl-result'); applyBindings(); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
-    case 'ending':      renderTemplate('tpl-ending'); showEndingMusicPrompt(); break;
+    case 'ending':      renderTemplate('tpl-ending'); stopSceneBgm(); _stopNonSceneBgm(); showEndingMusicPrompt(); break;
   }
   bindActions();
   injectAudioBars();
@@ -6202,6 +6202,61 @@ function applyBgmVolume() {
   const endA = document.getElementById('ending-bgm-audio');
   if (lobbyA) lobbyA.volume = bgmVolFloat();
   if (endA)   endA.volume   = Math.min(1, bgmVolFloat() * 1.6);
+  // シーンBGMもスライダーに追従
+  const scA = document.getElementById('scene-bgm-audio');
+  if (scA && _sceneBgmKey && SCENE_BGM[_sceneBgmKey]) {
+    scA.volume = Math.min(1, bgmVolFloat() * SCENE_BGM[_sceneBgmKey].gain);
+  }
+}
+
+// ── シーン専用BGM（実音源）──────────────────────────────
+// タイトル/バトル/ボス/ミニは #scene-bgm-audio 1本を使い回し、
+// 常にロビー/ED/シンセを止めてから鳴らす＝二重再生ゼロ（うるさくしない核）。
+// gain は「うるさくならない」ための曲別控えめ倍率（bgmVolFloat にさらに掛ける）。
+const SCENE_BGM = {
+  title:    { file: 'assets/bgm/title.mp3',    gain: 0.70 },
+  battle:   { file: 'assets/bgm/battle.mp3',   gain: 0.60 },
+  boss:     { file: 'assets/bgm/boss.mp3',     gain: 0.72 },
+  minigame: { file: 'assets/bgm/minigame.mp3', gain: 0.55 },
+};
+let _sceneBgmKey = null;
+// ロビー/ED/シンセを止める（シーンBGM自身には触れない＝同曲ガードを壊さない）
+function _stopNonSceneBgm() {
+  const lobbyA = document.getElementById('lobby-bgm-audio');
+  const endA = document.getElementById('ending-bgm-audio');
+  if (lobbyA) lobbyA.pause();
+  if (endA) endA.pause();
+  if (typeof _stopSkinBgm === 'function') _stopSkinBgm();
+}
+function playSceneBgm(key) {
+  const def = SCENE_BGM[key];
+  const a = document.getElementById('scene-bgm-audio');
+  if (!def || !a) return;
+  if (!isBgmOn()) { a.pause(); return; }      // BGM全体OFFなら鳴らさない（既定OFF）
+  _stopNonSceneBgm();
+  a.loop = true;
+  a.volume = Math.max(0, Math.min(1, bgmVolFloat() * def.gain));
+  if (_sceneBgmKey !== key) {                  // 同じ曲なら頭出しせず継続（再レンダーで途切れない）
+    _sceneBgmKey = key;
+    a.src = def.file;
+    a.currentTime = 0;
+  }
+  const p = a.play(); if (p && p.catch) p.catch(() => {});
+}
+function stopSceneBgm() {
+  const a = document.getElementById('scene-bgm-audio');
+  if (a) a.pause();
+  _sceneBgmKey = null;
+}
+// 現在の画面に応じて正しい1曲だけを鳴らす（BGM ON トグル時の復帰に使用）
+function startBgmForScreen() {
+  if (!isBgmOn()) { _stopNonSceneBgm(); stopSceneBgm(); return; }
+  if (document.querySelector('.minipoker-overlay')) { playSceneBgm('minigame'); return; }
+  const sc = state && state.screen;
+  if (sc === 'title')       playSceneBgm('title');
+  else if (sc === 'battle') { if (typeof startBattleBgmSkin === 'function') startBattleBgmSkin(); }
+  else if (sc === 'ending') { stopSceneBgm(); }   // ED音源はプロンプトで別途
+  else                      tryStartLobbyBgm();
 }
 
 // 音量バーHTML（戻るボタンの隣に挿入）
@@ -6267,6 +6322,7 @@ function initGlobalAudioBar() {
 }
 function tryStartLobbyBgm() {
   const a = document.getElementById('lobby-bgm-audio');
+  if (typeof stopSceneBgm === 'function') stopSceneBgm(); // シーンBGMがあれば止めてロビーへ
   if (!save.bgmOn) { if (a) a.pause(); if (typeof _stopSkinBgm === 'function') _stopSkinBgm(); return; }
   // equippedBgmLobby='jazz' ならシンセループ、既定ならこれまで通り実音源
   if (typeof applyLobbyBgmSkin === 'function') applyLobbyBgmSkin();
@@ -6276,18 +6332,14 @@ function tryStartLobbyBgm() {
 function toggleLobbyBgm() {
   save.bgmOn = !save.bgmOn;
   saveProgress();
-  const a = document.getElementById('lobby-bgm-audio');
   if (save.bgmOn) {
-    if (typeof applyLobbyBgmSkin === 'function') applyLobbyBgmSkin();
-    else if (a) { a.volume = bgmVolFloat(); a.play().catch(()=>{}); }
-    // ミニポーカーが起動中ならその synth BGM も開始
-    if (typeof mpStartBgm === 'function' && document.querySelector('.minipoker-overlay')) mpStartBgm();
+    // 今いる画面の正しい1曲だけを鳴らす（タイトル/バトル/ボス/ミニ/ロビー）
+    startBgmForScreen();
   } else {
-    if (a) a.pause();
-    if (typeof _stopSkinBgm === 'function') _stopSkinBgm();
+    _stopNonSceneBgm();
+    if (typeof stopSceneBgm === 'function') stopSceneBgm();
     const endA = document.getElementById('ending-bgm-audio');
     if (endA) endA.pause();
-    // ミニポーカー synth BGM も停止
     if (typeof mpStopBgm === 'function') mpStopBgm();
   }
   refreshAudioBars();
@@ -7063,54 +7115,17 @@ function mpChipClack(n) {
 let _mpBgmNodes = [];
 let _mpBgmTimer = null;
 function mpStartBgm() {
-  // 一元化：BGM全体OFF または ミニポーカー個別ミュートなら再生しない
+  // BGM全体OFF または ミニポーカー個別ミュートなら鳴らさない
   if (!isBgmOn()) return;
   if (save && save.minipoker && save.minipoker.muted) return;
-  mpStopBgm();
-  const ctx = mpAudioCtx(); if (!ctx) return;
-  // 4小節 8秒：C-Am-F-G の和音をパッド音色で
-  const chords = [
-    [261.6, 329.6, 392.0], // C major
-    [220.0, 261.6, 329.6], // A minor
-    [174.6, 220.0, 261.6], // F major
-    [196.0, 246.9, 293.7], // G major
-  ];
-  const beatMs = 2000;
-  let beat = 0;
-  const playBeat = () => {
-    if (!isBgmOn()) return;
-    if (save && save.minipoker && save.minipoker.muted) return;
-    const chord = chords[beat % chords.length];
-    const tNow = ctx.currentTime;
-    // 全体BGM音量を反映
-    const bgmScale = bgmVolFloat();
-    const peak = 0.022 * bgmScale;
-    const sustain = 0.018 * bgmScale;
-    chord.forEach(f => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.value = 800;
-      o.type = 'sine';
-      o.frequency.value = f;
-      g.gain.setValueAtTime(0, tNow);
-      g.gain.linearRampToValueAtTime(Math.max(0.0001, peak), tNow + 0.4);
-      g.gain.linearRampToValueAtTime(Math.max(0.0001, sustain), tNow + beatMs / 1000 * 0.8);
-      g.gain.exponentialRampToValueAtTime(0.0001, tNow + beatMs / 1000);
-      o.connect(g).connect(lp).connect(ctx.destination);
-      o.start(tNow);
-      o.stop(tNow + beatMs / 1000 + 0.1);
-      _mpBgmNodes.push(o, g);
-    });
-    beat++;
-  };
-  playBeat();
-  _mpBgmTimer = setInterval(playBeat, beatMs);
+  // 実音源のミニゲームBGMへ（ロビー曲を止めて排他再生）
+  playSceneBgm('minigame');
 }
 function mpStopBgm() {
+  // 旧シンセループが残っていれば掃除（現在は未使用だが安全のため）
   if (_mpBgmTimer) { clearInterval(_mpBgmTimer); _mpBgmTimer = null; }
   _mpBgmNodes = [];
+  if (typeof stopSceneBgm === 'function') stopSceneBgm();
 }
 
 // ── BGMスキン（ロビー/バトル）：交換所で購入した equippedBgmLobby / equippedBgmBattle を
@@ -7255,23 +7270,29 @@ function applyLobbyBgmSkin() {
     if (lobbyA && isBgmOn()) { lobbyA.volume = bgmVolFloat(); lobbyA.play().catch(() => {}); }
   }
 }
-// バトル突入時：equippedBgmBattle が既定以外ならロビー音源を止めてシンセに切替
+// バトル突入時：シンセスキン購入者はシンセ、既定は実バトル/ボスBGMへ切替（ロビー曲は止める）
 function startBattleBgmSkin() {
   const skin = save.equippedBgmBattle;
   if (skin === 'tense' || skin === 'techno') {
     const lobbyA = document.getElementById('lobby-bgm-audio');
     if (lobbyA) lobbyA.pause();
+    if (typeof stopSceneBgm === 'function') stopSceneBgm();
     _stopSkinBgm();
     if (isBgmOn()) _startSkinBgm(skin);
+    return;
   }
-  // 'default' のときは何もしない＝これまで通りロビーBGMが鳴り続ける（既存挙動を維持）
+  // 既定：実音源のバトルBGM。ボス戦（ヴェルベット/裏リコ）は boss.mp3、通常は battle.mp3。
+  const isBoss = !!(state && (state.isBoss || state.opponentId === 'velvet'));
+  playSceneBgm(isBoss ? 'boss' : 'battle');
 }
-// バトル退出時：バトル専用シンセを止めてロビーBGM（スキン込み）に戻す
+// バトル退出時：バトル専用音を止める（ロビーBGMは goLobby→tryStartLobbyBgm が再開）
 function stopBattleBgmSkin() {
   if (save.equippedBgmBattle === 'tense' || save.equippedBgmBattle === 'techno') {
     _stopSkinBgm();
     applyLobbyBgmSkin();
+    return;
   }
+  if (typeof stopSceneBgm === 'function') stopSceneBgm();
 }
 
 // 今日の日付キー（YYYYMMDD）
@@ -7379,7 +7400,11 @@ function showMiniPokerGame() {
   }
   // overlay解除時にBGM/粒子/idleを必ず停止
   // - MutationObserver でDOMから消えた瞬間に検出（safer than wrapping .remove）
-  const cleanupFn = () => { mpStopBgm(); stopAmbientParticles(); stopMimiIdleLoop(); };
+  const cleanupFn = () => {
+    mpStopBgm(); stopAmbientParticles(); stopMimiIdleLoop();
+    // ミニゲームはロビーの上に開くので、閉じたらロビーBGMへ戻す
+    if (isBgmOn() && state && state.screen === 'lobby') tryStartLobbyBgm();
+  };
   const mObs = new MutationObserver(() => {
     if (!overlay.isConnected) { cleanupFn(); mObs.disconnect(); }
   });
