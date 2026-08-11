@@ -5348,6 +5348,7 @@ function onAction(e) {
       break;
     }
     case 'toggle-bgm':    toggleLobbyBgm(); break;
+    case 'toggle-audio-all': toggleAllAudio(); break;
     case 'toggle-sfx':    toggleSfx(); mpSfx('tap'); /* 確認音 */ break;
     case 'toggle-psych':  save.psychEnabled = !(save.psychEnabled !== false); saveProgress(); applyBindings(); break;
     case 'toggle-logic':  save.logicEnabled = !(save.logicEnabled !== false); saveProgress(); applyBindings(); break;
@@ -6274,15 +6275,36 @@ function startBgmForScreen() {
 }
 
 // 音量バーHTML（戻るボタンの隣に挿入）
+// ★このバーは「その画面で唯一の音声UI」なので、トグルは BGM だけでなく
+//   効果音も含めた“音まるごと”のON/OFFにする。
+//   （BGMだけを切るトグルに🔇を出すと「OFF表示なのにSEが鳴る」と読めてしまうため。
+//     BGMと効果音を個別に触りたい場合はロビー下部パネル／設定から行う）
+function isAnyAudioOn() { return !!(save && (save.bgmOn || save.sfxOn)); }
 function audioBarHTML() {
-  const on = !!save.bgmOn;
+  const on = isAnyAudioOn();
   const vol = save.bgmVolume != null ? save.bgmVolume : 35;
   return `
     <div class="audio-bar">
-      <button class="audio-bar-toggle" data-action="toggle-bgm" title="BGM ON/OFF">${on ? '🔊' : '🔇'}</button>
-      <input class="audio-bar-volume" type="range" min="0" max="100" value="${vol}" title="音量">
+      <button class="audio-bar-toggle" data-action="toggle-audio-all" title="音（BGM・効果音）ON/OFF">${on ? '🔊' : '🔇'}</button>
+      <input class="audio-bar-volume" type="range" min="0" max="100" value="${vol}" title="BGM 音量">
     </div>
   `;
+}
+
+// 音まるごとON/OFF。OFF表示のときは本当に何も鳴らない状態にする。
+function toggleAllAudio() {
+  const turnOff = isAnyAudioOn();
+  save.bgmOn = !turnOff;
+  save.sfxOn = !turnOff;
+  saveProgress();
+  if (turnOff) {
+    _stopNonSceneBgm();
+    if (typeof stopSceneBgm === 'function') stopSceneBgm();
+    if (typeof mpStopBgm === 'function') mpStopBgm();
+  } else {
+    startBgmForScreen();
+  }
+  refreshAudioBars();
 }
 
 // top-hud のある画面（ロビー/交換所/バトル等）で、戻るボタンの隣に音量セットを挿入。
@@ -6295,7 +6317,7 @@ function injectAudioBars() {
     const bar = wrap.firstElementChild;
     if (anchorEl) anchorEl.insertAdjacentElement('afterend', bar);
     else container.appendChild(bar);
-    bar.querySelector('[data-action="toggle-bgm"]').addEventListener('click', onAction);
+    bar.querySelector('[data-action="toggle-audio-all"]').addEventListener('click', onAction);
     bar.querySelector('.audio-bar-volume').addEventListener('input', (e) => {
       save.bgmVolume = +e.target.value;
       saveProgress();
@@ -6324,10 +6346,17 @@ function injectAudioBars() {
 function refreshAudioBars() {
   const icon = save.bgmOn ? '🔊' : '🔇';
   const vol = save.bgmVolume != null ? save.bgmVolume : 35;
-  document.querySelectorAll('.audio-bar-toggle').forEach(t => t.textContent = icon);
+  // 隅のバーは“音まるごと”の状態を表す（BGMだけの状態を出すと OFF表示なのにSEが鳴る）
+  document.querySelectorAll('.audio-bar-toggle').forEach(t => t.textContent = isAnyAudioOn() ? '🔊' : '🔇');
   document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = vol);
   document.querySelectorAll('.lb-bgm-toggle').forEach(t => t.textContent = icon);
-  document.querySelectorAll('.lb-vol').forEach(v => v.value = vol);
+  // ★ '.lb-vol' は効果音スライダー（class="lb-vol lb-vol-sfx"）にも一致してしまい、
+  //   BGM音量で上書きしていた。BGM用だけに限定する。
+  document.querySelectorAll('.lb-vol:not(.lb-vol-sfx)').forEach(v => v.value = vol);
+  // ★効果音トグル／スライダーの同期が抜けていて、押してもアイコンが変わらなかった。
+  const sfxVol = save.sfxVolume != null ? save.sfxVolume : 60;
+  document.querySelectorAll('.lb-sfx-toggle').forEach(t => t.textContent = save.sfxOn ? '🔔' : '🔕');
+  document.querySelectorAll('.lb-vol-sfx').forEach(v => v.value = sfxVol);
   document.querySelectorAll('.lb-song-label').forEach(s => {
     s.textContent = save.bgmOn ? '♪ Lounge Jazz' : '♪ —（停止中）';
   });
