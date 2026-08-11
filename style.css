@@ -414,6 +414,8 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  /* 全体は画面中央基準に戻す（CTAが右にずれると座りが悪い）。
+     ミミを避けるための右寄せは .title-logo-frame 側だけで行う。 */
   padding: 32px 40px;
   text-align: center;
   pointer-events: none;
@@ -421,8 +423,12 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 }
 .title-inner > * { pointer-events: auto; }
 .title-logo-frame {
-  width: 860px;
-  max-width: 84%;
+  /* 中央寄せに戻しつつ、少し小さく＋上へ逃がす。
+     ミミの指先はゲーム座標で y≈430 付近にあるので、ロゴ下端をそれより上に置けば
+     中央寄せでも指に被らない（横に避けるのではなく縦に避ける）。 */
+  width: 660px;
+  max-width: 66%;
+  top: -56px;
   margin: 0;
   text-align: center;
   position: relative;
@@ -3367,6 +3373,23 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   cursor: pointer;
 }
 .audio-bar-title { display: flex; justify-content: center; margin-bottom: 12px; }
+/* タイトル画面の音量バー：構図を邪魔しない右下の隅に置く（中央帯だとヒーロー構図が崩れる）。
+   タイトルにはtop-hudが無いため、これが唯一のBGM停止手段＝必ず出す。 */
+.audio-bar-corner {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  z-index: 5;
+}
+/* 背景が明るく賑やかなので、既定の半透明バーだと埋もれて「音の止め方が分からない」になる。
+   タイトルの隅バーだけ地を濃く・枠を明るくして必ず見つかるようにする。 */
+.audio-bar-corner .audio-bar {
+  background: rgba(10,4,18,0.82);
+  border-color: var(--c-gold-bright);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.7);
+  padding: 4px 12px 4px 6px;
+}
+.audio-bar-corner .audio-bar-volume { width: 88px; }
 
 /* ========== プリロード（ローディング画面） ========== */
 #preload-overlay {

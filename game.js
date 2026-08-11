@@ -6271,7 +6271,8 @@ function audioBarHTML() {
   `;
 }
 
-// 各画面のtop-hudの最初のボタン（タイトル/ロビーへ）の隣に音量セットを挿入
+// top-hud のある画面（ロビー/交換所/バトル等）で、戻るボタンの隣に音量セットを挿入。
+// ※タイトル画面には挿入しない（中央の帯がヒーロー構図を壊すため）。
 function injectAudioBars() {
   const installInto = (container, anchorEl) => {
     if (container.querySelector('.audio-bar')) return;
@@ -6288,17 +6289,17 @@ function injectAudioBars() {
       document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = save.bgmVolume);
     });
   };
-  // top-hud のある画面：戻るボタンの隣
   document.querySelectorAll('.top-hud').forEach(hud => {
     const firstBtn = hud.querySelector('.btn');
     if (firstBtn) installInto(hud, firstBtn);
   });
-  // タイトル画面：ボタン群の上に
-  const titleBtns = document.querySelector('.title-buttons');
-  if (titleBtns && !titleBtns.previousElementSibling?.classList?.contains('audio-bar-wrap')) {
+  // タイトル画面：top-hudが無いので隅（右下）に置く。
+  // ★ここを省くとタイトルでBGMを止める手段が無くなる（鳴りっぱなし）ので必須。
+  const titleScreen = document.querySelector('.title-screen');
+  if (titleScreen && !titleScreen.querySelector('.audio-bar')) {
     const w = document.createElement('div');
-    w.className = 'audio-bar-wrap audio-bar-title';
-    titleBtns.parentNode.insertBefore(w, titleBtns);
+    w.className = 'audio-bar-wrap audio-bar-corner';
+    titleScreen.appendChild(w);
     installInto(w, null);
   }
 }
@@ -6308,17 +6309,23 @@ function refreshAudioBars() {
   const vol = save.bgmVolume != null ? save.bgmVolume : 35;
   document.querySelectorAll('.audio-bar-toggle').forEach(t => t.textContent = icon);
   document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = vol);
-  // ロビー下部パネルの音声ボタンも更新
   document.querySelectorAll('.lb-bgm-toggle').forEach(t => t.textContent = icon);
   document.querySelectorAll('.lb-vol').forEach(v => v.value = vol);
-  // 曲名ラベルも更新
   document.querySelectorAll('.lb-song-label').forEach(s => {
     s.textContent = save.bgmOn ? '♪ Lounge Jazz' : '♪ —（停止中）';
   });
 }
 
 function initGlobalAudioBar() {
-  // 後方互換用の空関数。実体は injectAudioBars に統合
+  // iPhone の消音スイッチに従わせる（起動時＋復帰時に貼り直す）
+  applyAudioSession();
+  try {
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) applyAudioSession();
+    });
+    ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+      window.addEventListener(ev, applyAudioSession, { passive: true }));
+  } catch (e) {}
 }
 function tryStartLobbyBgm() {
   const a = document.getElementById('lobby-bgm-audio');
@@ -7012,6 +7019,21 @@ function mpAudioCtx() {
   }
   if (_mpAudioCtx.state === 'suspended') _mpAudioCtx.resume();
   return _mpAudioCtx;
+}
+
+// ── iPhone の「消音スイッチ（サイレントモード）」に従わせる（ドラゴンレースと同方式）──
+// iOS Safari の仕様：Web Audio(効果音)は消音スイッチに従うが、HTML <audio>(BGM)は無視して鳴り続ける。
+// ＝実機で「本体を消音にしてもBGMだけ鳴る」問題。Audio Session API(iOS 16.4+)で種別を
+//   "ambient" にするとページ全体が消音スイッチに従う（＝BGMも従う／他アプリ音楽とも共存）。
+// 非対応環境では何も起きない安全な no-op。既定は端末尊重(ambient)。
+function applyAudioSession() {
+  try {
+    if (navigator.audioSession && 'type' in navigator.audioSession) {
+      navigator.audioSession.type = 'ambient';
+      return true;
+    }
+  } catch (e) {}
+  return false;
 }
 let _mpSfxScale = 1; // mpSfx 呼び出し直前にセットされる SFX 音量係数
 function mpTone(freq, dur, type = 'sine', gain = 0.06, attack = 0.005, release = 0.04, delayMs = 0) {
