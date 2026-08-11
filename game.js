@@ -9588,7 +9588,9 @@ function startBattle(opponentId) {
   if (!isLecture) {
     window.__chosenStartChips = stored ? Math.max(base, stored) : base;
   }
-  const isFirstTime = !save.firstClearRewardClaimed.includes(opponentId);
+  let isFirstTime = !save.firstClearRewardClaimed.includes(opponentId);
+  // 体験ハンドの直前に第1話を見せているので、続けて講義へ入るときに二度出さない
+  if (opponentId === 'rico_tutorial' && save.introEpisodeShown) isFirstTime = false;
   if (isFirstTime && EPISODES[opponentId]) {
     showEpisodeTitle(opponentId, () => startBattleInternal(opponentId));
     return;
@@ -9683,9 +9685,18 @@ function startBattleInternal(opponentId) {
 // 固定シナリオ：ミミ A♠A♥、フロップ A♦7♣2♠（セット確定）で必ず勝つ。
 // 相手は必ずコール、選択肢は大きく行く2択のみ。戦績・実績にはカウントしない。
 //=============================================================
+// ★物語順どおりに始める：まず第1話（更衣室でリコ先輩に連行される回）を見せてから、
+//   その第1話の相手であるリコ先輩と初めての卓につく。
+//   （以前はいきなり第2話の相手ポルカと対戦が始まり、話の順序が逆だった）
 function startIntroHand() {
+  save.introEpisodeShown = true;   // 後で講義に入るとき第1話を二度出さないための記録
+  saveProgress();
+  showEpisodeTitle('rico_tutorial', beginIntroHand);
+}
+
+function beginIntroHand() {
   state = defaultState();
-  const opp = OPPONENTS.polka;
+  const opp = OPPONENTS.rico_tutorial;   // 初めての卓の相手＝リコ先輩
   state.opponentId = opp.id;
   state.opponentName = opp.name;
   state.opponentProfile = opp.profile;
@@ -9693,7 +9704,7 @@ function startIntroHand() {
   state.maxHands = 1;
   state.playerChips = 500;
   state.opponentChips = 500;
-  state.tutorialMode = false;
+  state.tutorialMode = false;   // 講義（全8章）ではなく1ハンドの体験なのでOFF
   state.fullHand = false;
   state.isBoss = false;
   state.introHandMode = true; // 体験ハンド：戦績非カウント・行動制限・相手は必ずコール
@@ -9701,8 +9712,9 @@ function startIntroHand() {
   state.handPhase = 'idle';
   state.handNo = 0;
   state.panyuMax = save.panyuGaugeMax || 100;
-  state.mimiThought = '「よし、まずは1ハンドやってみよう」';
-  state.ricoAdvice = '「気楽に見ててね〜。まずは私が手ほどきするよ」';
+  state.mimiThought = '「い、いきなり卓……！？　やるしかない……！」';
+  state.ricoAdvice = '「まずは1ハンドだけ、私が相手するよ。習うより慣れろ〜」';
+  state.opponentSpeech = '「そんな固くならないの。ほら、座った座った」';
   render();
   setTimeout(dealIntroHand, 900);
 }
@@ -9728,7 +9740,7 @@ function dealIntroHand() {
   state.psychPending = false;
   state.handPhase = 'flop';
   state.isPlayerTurn = true;
-  state.opponentSpeech = '';
+  state.opponentSpeech = '「さ、配ったよ。手札はあなただけのもの」';
   state.mimiThought = '「……このカード、セット完成してる……！」';
   state.ricoAdvice = '「すごい手が来てる。大きく行こ！」';
   log('actions', { phase: 'intro_flop_start' });
@@ -9739,11 +9751,12 @@ function dealIntroHand() {
 function introHandShowdown() {
   const playerAll = [...state.playerHand, ...state.community];
   const pEv = evaluateHand(playerAll);
-  state.opponentSpeech = '……強すぎる。降参だよ';
+  state.opponentSpeech = '「……お見事。初日でその度胸は上等だよ」';
   state.playerChips += state.pot;
   state.mimiThought = `「やった！${pEv.name}で勝った！」`;
+  state.ricoAdvice = '「ね、楽しいでしょ。これがポーカーだよ」';
   setMimiExpression('win');
-  setOpponentExpression('defeat'); // ポルカが負けを認める表情に
+  setOpponentExpression('defeat'); // リコ先輩が笑って負けを認める表情に
   state.pot = 0; resetPotChips();
   render();
   setTimeout(showIntroHandWinScreen, 1800);
