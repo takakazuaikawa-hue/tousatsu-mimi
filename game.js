@@ -2367,7 +2367,7 @@ function showAboutModal() {
   overlay.innerHTML = `
     <div class="memory-viewer">
       <button class="memory-viewer-close" title="閉じる">×</button>
-      <div class="memory-viewer-title">📖 闘札圧倒伝ミミ について</div>
+      <div class="memory-viewer-title">📖 ミミのテキサスホールデムポーカー について</div>
       <div class="memory-viewer-body">
         <p style="font-size:16px; text-align:center; color:var(--c-gold-bright); margin-bottom:16px;">
           夜霧のカジノ、伝説の闘札。<br>直感の少女が、絶対王者に挑む。
@@ -2405,7 +2405,7 @@ function showAboutModal() {
 /* ===== ゲームシェア ===== */
 function shareGame() {
   const url = 'https://takakazuaikawa-hue.github.io/tousatsu-mimi/';
-  const title = '闘札圧倒伝ミミ';
+  const title = 'ミミのテキサスホールデムポーカー';
   const text = '夜霧のカジノで本格心理戦ポーカー。ブラウザで無料で遊べる！';
   // Web Share API 優先（スマホ）
   if (navigator.share) {
@@ -2421,7 +2421,7 @@ function shareGame() {
     }).catch(() => {});
   }
   // Twitter共有ウィンドウ
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=闘札圧倒伝ミミ`;
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=ミミのテキサスホールデムポーカー`;
   window.open(twitterUrl, '_blank', 'width=600,height=400');
 }
 
@@ -5835,7 +5835,7 @@ const CREDITS = [
   { role: '原案者・監修', name: 'あいかわ' },
   { type: 'gap' },
   { type: 'title', text: '— おわり —' },
-  { type: 'small', text: '闘札圧倒伝ミミ' },
+  { type: 'small', text: 'ミミのテキサスホールデムポーカー' },
   { type: 'small', text: '〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜' },
 ];
 
@@ -6623,7 +6623,7 @@ const MEMORY_CONTENT = {
     title: '📜 スタッフロール',
     body: `
       <div class="memory-credit">
-        <h4>闘札圧倒伝ミミ</h4>
+        <h4>ミミのテキサスホールデムポーカー</h4>
         <p>Game Design — 主人公チーム</p>
         <p>Scenario — リコの記憶より</p>
         <p>Character — グラーノ商会</p>
@@ -12575,7 +12575,6 @@ const PRELOAD_ASSETS = [
   'assets/characters/velvet_default.png',
   'assets/characters/mimi_default.png',
   // UI
-  'assets/ui/title.png',
   'assets/ui/pot.png',
   'assets/ui/chip_white.png',
   'assets/ui/chip_red.png',

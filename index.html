@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#14081d">
-<title>闘札圧倒伝ミミ 〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</title>
+<title>ミミのテキサスホールデムポーカー 〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</title>
 <!--
   ★FOUC（Flash of Unstyled Content）対策：
   外部 style.css の読み込みが遅延・混雑した瞬間に、無装飾の生HTML（黒文字＋白背景）が
@@ -32,12 +32,12 @@
      着荷後は style.css 側の .preload-overlay 等のルールが上書きして通常表示になる。 */
   #portrait-warning, #fullscreen-btn-group { display: none; }
 </style>
-<link rel="stylesheet" href="style.css?v=20260603o">
+<link rel="stylesheet" href="style.css?v=20260603q">
 </head>
 <body>
 <div id="preload-overlay">
   <div class="preload-inner">
-    <div class="preload-logo">闘札圧倒伝ミミ</div>
+    <div class="preload-logo">ミミのテキサスホールデムポーカー</div>
     <div class="preload-sub">— Loading · ポーカー豆知識をどうぞ —</div>
     <div class="preload-bar"><div class="preload-bar-fill" id="preload-fill"></div></div>
     <div class="preload-count"><span id="preload-loaded">0</span> / <span id="preload-total">0</span></div>
@@ -93,16 +93,22 @@
 
     <div class="title-inner">
 
-      <!-- タイトルロゴ画像：assets/ui/title.png（サブタイトル込み） -->
+      <!-- タイトルロゴ画像：新タイトルのロゴを assets/ui/title_logo.png に置くと自動表示。
+           未納品の間はCSSで組んだテキストロゴにフォールバック（旧 title.png は改名により不使用）。 -->
       <div class="title-logo-frame">
         <img
           class="title-logo-img"
-          src="assets/ui/title.png"
-          alt="闘札圧倒伝ミミ"
+          src="assets/ui/title_logo.png"
+          alt="ミミのテキサスホールデムポーカー"
           onerror="this.style.display='none'; this.closest('.title-logo-frame').classList.add('logo-fallback');"
         >
         <div class="title-logo-fallback">
-          <h1 class="game-title"><span class="title-line1">闘札圧倒伝ミミ</span></h1>
+          <h1 class="game-title">
+            <span class="title-line1">ミミの</span>
+            <span class="title-line2">テキサスホールデム</span>
+            <span class="title-line3">ポーカー</span>
+          </h1>
+          <div class="title-logo-sub">〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</div>
         </div>
       </div>
 
@@ -360,6 +366,6 @@
   </div>
 </template>
 
-<script src="game.js?v=20260603o"></script>
+<script src="game.js?v=20260603q"></script>
 </body>
 </html>

@@ -450,7 +450,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   display: block;
 }
 .game-title {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   background: linear-gradient(180deg, var(--c-gold-bright) 0%, var(--c-red) 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -459,12 +459,30 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   letter-spacing: 0.05em;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  line-height: 1.2;
+  align-items: center;
+  gap: 2px;
+  line-height: 1.12;
 }
-.game-title .title-line1 { font-size: 28px; letter-spacing: 0.1em; }
-.game-title .title-line2 { font-size: 56px; letter-spacing: 0.05em; }
-.game-title .title-line3 { font-size: 28px; letter-spacing: 0.1em; }
+.game-title .title-line1 { font-size: 34px; letter-spacing: 0.18em; }
+.game-title .title-line2 { font-size: 64px; letter-spacing: 0.04em; font-weight: 900; }
+.game-title .title-line3 { font-size: 52px; letter-spacing: 0.14em; font-weight: 900; }
+/* テキストロゴのサブタイトル（旧ロゴ画像に焼かれていた煽り文を再現） */
+.title-logo-sub {
+  margin-top: 12px;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+  color: var(--c-gold-bright);
+  opacity: 0.9;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  max-width: 92%;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* テキストロゴ時も画像ロゴと同じふわっと浮遊を効かせる */
+.title-logo-frame.logo-fallback {
+  animation: logoFloat 4s ease-in-out infinite;
+}
 .subcopy {
   font-size: 18px;
   color: var(--c-gold-bright);
