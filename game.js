@@ -222,6 +222,7 @@ function defaultSave() {
     bgmOn: false,        // BGM 全体 ON/OFF（lobby/ending/minipoker BGM すべて従う）
     sfxVolume: 60,       // SFX 音量（0-100）
     sfxOn: true,         // SFX 全体 ON/OFF（minipoker SFX 等すべて従う）
+    forceSound: false,   // 端末が消音でも音を出す（iOS消音スイッチより優先）。既定OFF＝端末を尊重
 
     // ── ミニポーカー（mpEnsureSaveで初期化される） ──
     minipoker: null,
@@ -261,6 +262,7 @@ function normalizeSave(s) {
   if (typeof s.sfxVolume !== 'number') s.sfxVolume = 60;
   s.sfxVolume = Math.max(0, Math.min(100, s.sfxVolume));
   if (typeof s.sfxOn !== 'boolean') s.sfxOn = true;
+  if (typeof s.forceSound !== 'boolean') s.forceSound = false;
   if (typeof s.introPlayed !== 'boolean') s.introPlayed = false;
   // ── ショップ整理：既に効果が無料公開されていた／実装が困難だった5商品を廃止。
   //    既存の購入者には代金を全額返金し、所持記録も除去する（一度だけ・自動）。
@@ -3221,6 +3223,15 @@ function showSettingsModal() {
       </div>
       <div class="settings-modal-note">※チュートリアル（講義）モード中は<br>これらの設定を無視して常時ONになります</div>
       <div class="settings-modal-divider"></div>
+      <div class="settings-modal-row">
+        <span class="settings-modal-label">端末が消音でも音を出す</span>
+        <button class="settings-modal-toggle ${save.forceSound ? 'on' : 'off'}" data-toggle="forcesound">
+          <span class="stm-knob"></span>
+          <span class="stm-status">${save.forceSound ? 'ON' : 'OFF'}</span>
+        </button>
+      </div>
+      <div class="settings-modal-note">※OFF（既定）＝iPhoneの消音スイッチに従います<br>ONにすると消音中でも音が鳴ります</div>
+      <div class="settings-modal-divider"></div>
       <button class="btn btn-secondary settings-modal-trophy" data-action="open-collection">🏆 トロフィー手帳を開く</button>
       <button class="btn btn-secondary settings-modal-trophy" data-action="open-glossary">📖 ポーカー辞典を開く</button>
       <button class="btn btn-secondary settings-modal-trophy" data-action="equip-change">👗 装備変更</button>
@@ -3255,10 +3266,12 @@ function showSettingsModal() {
       if (kind === 'psych') save.psychEnabled = !(save.psychEnabled !== false);
       else if (kind === 'logic') save.logicEnabled = !(save.logicEnabled !== false);
       else if (kind === 'backdoor') save.backdoorOn = !save.backdoorOn;
+      else if (kind === 'forcesound') setForceSound(!save.forceSound); // 内部でsaveProgress+即反映
       saveProgress();
       let isOn;
       if (kind === 'psych') isOn = (save.psychEnabled !== false);
       else if (kind === 'logic') isOn = (save.logicEnabled !== false);
+      else if (kind === 'forcesound') isOn = !!save.forceSound;
       else if (kind === 'backdoor') {
         isOn = !!save.backdoorOn;
         // バトル画面の覗き見パネル即座反映
@@ -6234,6 +6247,7 @@ function playSceneBgm(key) {
   if (!def || !a) return;
   if (!isBgmOn()) { a.pause(); return; }      // BGM全体OFFなら鳴らさない（既定OFF）
   _stopNonSceneBgm();
+  routeThroughWebAudio(a);                    // 旧iOSでだけ消音スイッチに従わせる保険
   a.loop = true;
   a.volume = Math.max(0, Math.min(1, bgmVolFloat() * def.gain));
   if (_sceneBgmKey !== key) {                  // 同じ曲なら頭出しせず継続（再レンダーで途切れない）
@@ -6290,6 +6304,9 @@ function injectAudioBars() {
     });
   };
   document.querySelectorAll('.top-hud').forEach(hud => {
+    // ★ロビーは下部パネルに BGM＋SFX の完全な音量UIを持つので、ここには入れない。
+    //   （入れると同じ画面に音量調節が2つ並ぶ＝どちらを触ればいいか分からなくなる）
+    if (hud.classList.contains('lobby-hud')) return;
     const firstBtn = hud.querySelector('.btn');
     if (firstBtn) installInto(hud, firstBtn);
   });
@@ -6331,6 +6348,7 @@ function tryStartLobbyBgm() {
   const a = document.getElementById('lobby-bgm-audio');
   if (typeof stopSceneBgm === 'function') stopSceneBgm(); // シーンBGMがあれば止めてロビーへ
   if (!save.bgmOn) { if (a) a.pause(); if (typeof _stopSkinBgm === 'function') _stopSkinBgm(); return; }
+  routeThroughWebAudio(a);                    // 旧iOSでだけ消音スイッチに従わせる保険
   // equippedBgmLobby='jazz' ならシンセループ、既定ならこれまで通り実音源
   if (typeof applyLobbyBgmSkin === 'function') applyLobbyBgmSkin();
   else if (a) { a.volume = bgmVolFloat(); const p = a.play(); if (p && p.catch) p.catch(() => {}); }
@@ -7021,19 +7039,72 @@ function mpAudioCtx() {
   return _mpAudioCtx;
 }
 
-// ── iPhone の「消音スイッチ（サイレントモード）」に従わせる（ドラゴンレースと同方式）──
+// ── iPhone の「消音スイッチ（サイレントモード）」対応（ドラゴンレースと同方式・二段構え）──
 // iOS Safari の仕様：Web Audio(効果音)は消音スイッチに従うが、HTML <audio>(BGM)は無視して鳴り続ける。
-// ＝実機で「本体を消音にしてもBGMだけ鳴る」問題。Audio Session API(iOS 16.4+)で種別を
-//   "ambient" にするとページ全体が消音スイッチに従う（＝BGMも従う／他アプリ音楽とも共存）。
-// 非対応環境では何も起きない安全な no-op。既定は端末尊重(ambient)。
+// ＝実機で「本体を消音にしてもBGMだけ鳴る」問題。対処は環境で2通り：
+//   ① iOS 16.4+ … Audio Session API で種別を宣言する。
+//        "ambient"  = 端末の消音スイッチに従う（既定・他アプリの音楽とも共存）
+//        "playback" = 消音スイッチを無視して鳴らす（プレイヤーが明示的に選んだときだけ）
+//   ② それ以前のiOS … ①のAPIが無いので、BGMの音を Web Audio 経由に流す。
+//        Web Audio は消音に従うので、通すだけでBGMも従うようになる。
+// ★どちらを上位にするかはプレイヤーが決める（消音スイッチの状態を読むAPIはWebに無いので、
+//   「いま消音中です」と正確に出すことはできない。できるのは主導権を選ばせることだけ）。
+//   既定は OFF＝端末を尊重（マナーモードなのに突然鳴る事故を起こさない）。
+// ★非対応環境では何も起きない安全な no-op。
+function isForceSound() { return !!(save && save.forceSound); }
 function applyAudioSession() {
   try {
     if (navigator.audioSession && 'type' in navigator.audioSession) {
-      navigator.audioSession.type = 'ambient';
+      navigator.audioSession.type = isForceSound() ? 'playback' : 'ambient';
       return true;
     }
   } catch (e) {}
   return false;
+}
+function audioSessionInfo() {
+  let sup = false, t = null;
+  try { sup = !!(navigator.audioSession && 'type' in navigator.audioSession); if (sup) t = navigator.audioSession.type; } catch (e) {}
+  return { supported: sup, type: t, forceSound: isForceSound() };
+}
+function _isIOS() {
+  try {
+    const ua = navigator.userAgent || '';
+    return /iPad|iPhone|iPod/.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
+  } catch (e) { return false; }
+}
+function _audioSessionOK() {
+  try { return !!(navigator.audioSession && 'type' in navigator.audioSession); } catch (e) { return false; }
+}
+// ②旧iOS向けの保険。★「効かない環境」にだけ当てる：効いている環境で二重に細工すると、
+//   AudioContextが未解錠のときに無音になる等の別事故を招くため。
+const _routedAudio = (typeof WeakSet !== 'undefined') ? new WeakSet() : null;
+function routeThroughWebAudio(a) {
+  if (!a) return;
+  if (isForceSound()) return;                  // 「消音でも鳴らす」時は保険を当てない＝素のaudioのまま鳴る
+  if (!_isIOS() || _audioSessionOK()) return;  // iOS以外／①で足りる環境では何もしない
+  try {
+    if (_routedAudio && _routedAudio.has(a)) return;  // 同じ要素に二度つなぐと例外
+    const c = mpAudioCtx();
+    if (!c || !c.createMediaElementSource) return;
+    const src = c.createMediaElementSource(a);
+    src.connect(c.destination);
+    if (_routedAudio) _routedAudio.add(a);
+    if (c.state === 'suspended' && c.resume) { try { c.resume(); } catch (e) {} }
+  } catch (e) { /* 失敗しても素の再生に落ちるだけ＝音が消えることはない */ }
+}
+// 「端末が消音でも鳴らす」の切り替え。即座に反映して保存する。
+function setForceSound(on) {
+  save.forceSound = !!on;
+  saveProgress();
+  applyAudioSession();
+  // 旧iOSは経路（Web Audio経由か否か）が変わるため、鳴らし直さないと新しい設定が効かない。
+  if (_isIOS() && !_audioSessionOK()) {
+    const wasKey = _sceneBgmKey;
+    if (wasKey) { stopSceneBgm(); playSceneBgm(wasKey); }
+    else if (isBgmOn() && state && state.screen === 'lobby') tryStartLobbyBgm();
+  }
+  return save.forceSound;
 }
 let _mpSfxScale = 1; // mpSfx 呼び出し直前にセットされる SFX 音量係数
 function mpTone(freq, dur, type = 'sine', gain = 0.06, attack = 0.005, release = 0.04, delayMs = 0) {
