@@ -12828,6 +12828,8 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   30%, 50%, 70% { transform: translate3d(-7px, 0, 0); }
   40%, 60% { transform: translate3d(7px, 0, 0); }
 
+}
+
 /* ===== 連勝モメンタム演出 ===== */
 /* 卓上（ミミの立ち絵付近）にポップする連勝バッジ。document.body 直付けの fixed 配置。
    ハンド結果モーダル（z-index:120）より手前に出したいので z-index は高めに設定。 */
@@ -12901,6 +12903,8 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   .opponent-speech.speech-pop {
     animation-duration: 0.01s;
   }
+
+}
 
 /* ===== ログインボーナス ===== */
 .login-bonus-overlay {
@@ -13036,6 +13040,8 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   .login-bonus-amount { font-size: 10px; }
   .login-bonus-coin { font-size: 15px; }
 
+}
+
 /* ===== リザルト演出 ===== */
 /* タイトル→ランク→統計行→次の目標→報酬理由→ボタンの順に段階フェードイン。
    要素の最終位置・サイズは変えず、transform（translateY）と opacity のみをアニメさせる。 */
@@ -13092,6 +13098,9 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
     animation-duration: 0.01s;
     animation-delay: 0s;
     transform: none;
+
+}
+}
 
 /* ===== ピンチ演出・オールインの重さ ===== */
 
