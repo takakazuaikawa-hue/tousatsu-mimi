@@ -11284,6 +11284,35 @@ function showdown() {
   setTimeout(endHand, 2200);
 }
 
+// === 連勝モメンタム演出 ===
+// 連勝数に応じた卓上バッジのテキスト/演出tierを決める（2連勝から表示、3連勝以上は派手化）
+function streakMomentumInfo(n) {
+  if (n >= 5) return { tier: 'big',  text: `🔥✨ ${n}連勝！！！ ✨🔥` };
+  if (n >= 3) return { tier: 'fire', text: `🔥 ${n}連勝！！ 🔥` };
+  if (n >= 2) return { tier: 'normal', text: `${n}連勝！` };
+  return null;
+}
+// ミミの立ち絵（.char-mimi）付近にポップする連勝バッジ。#stage の再生成に巻き込まれないよう
+// document.body に直接 append し、setTimeout で自前削除する。
+function showStreakBadge(text, tier) {
+  try {
+    const anchor = document.querySelector('.char-mimi');
+    const el = document.createElement('div');
+    el.className = 'streak-badge streak-badge-' + tier;
+    el.textContent = text;
+    if (anchor) {
+      const r = anchor.getBoundingClientRect();
+      el.style.left = (r.left + r.width / 2) + 'px';
+      el.style.top = r.top + 'px';
+    } else {
+      el.style.left = '50%';
+      el.style.top = '28%';
+    }
+    document.body.appendChild(el);
+    setTimeout(() => { el.remove(); }, 1650);
+  } catch (e) { /* 演出失敗はゲーム進行に影響させない */ }
+}
+
 function endHand() {
   if (state.screen !== 'battle') return;
   state.handPhase = 'idle';
@@ -11291,8 +11320,21 @@ function endHand() {
   // 連勝カウンタ更新
   const last = state.handResults[state.handResults.length - 1];
   if (last) {
-    if (last.winner === 'player') state.consecutiveWins = (state.consecutiveWins || 0) + 1;
-    else if (last.winner === 'opponent') state.consecutiveWins = 0;
+    if (last.winner === 'player') {
+      state.consecutiveWins = (state.consecutiveWins || 0) + 1;
+      // 連勝モメンタム演出：2連勝目から卓上バッジを表示
+      const momentum = streakMomentumInfo(state.consecutiveWins);
+      if (momentum) {
+        showStreakBadge(momentum.text, momentum.tier);
+        if (state.consecutiveWins >= 5) mpSfx('bigwin');
+        else if (state.consecutiveWins >= 3) mpSfx('milestone');
+      }
+    } else if (last.winner === 'opponent') {
+      const brokenStreak = state.consecutiveWins || 0;
+      state.consecutiveWins = 0;
+      // 3連勝以上が途切れた時だけ、控えめに「連勝ストップ」を知らせる
+      if (brokenStreak >= 3) showStreakBadge('連勝ストップ…', 'stop');
+    }
     // P1-3: ハンドの勝敗でミミの表情を切り替え
     setMimiExpression(last.winner === 'player' ? 'win' : last.winner === 'opponent' ? 'sad' : 'default');
     // 相手の表情：相手が勝てば余裕顔、負ければ敗北顔（差分のあるキャラのみ変化）
@@ -11520,6 +11562,11 @@ function showHandResultBanner(snapshot) {
     ? `<div class="hr-strong-badge">✨ ${last.pEv.name} ✨</div>`
     : '';
 
+  // 連勝中バッジ（ライブ表示のみ・1行小さめ）
+  const streakBadgeHtml = (!isReplay && last.winner === 'player' && (state.consecutiveWins || 0) >= 2)
+    ? `<div class="hr-streak-badge">🔥 ${state.consecutiveWins}連勝中</div>`
+    : '';
+
   // ポット獲得量と残チップ表記
   const potDelta = last.pot;
   const playerChipDeltaText = last.winner === 'player' ? `+${potDelta}` : last.winner === 'opponent' ? `-?` : `+${Math.floor(potDelta/2)}`;
@@ -11532,6 +11579,7 @@ function showHandResultBanner(snapshot) {
       </div>
       ${strongBadge}
       <div class="hr-title">${winnerText}</div>
+      ${streakBadgeHtml}
       <div class="hr-pot">ポット <b>${potDelta}</b> 獲得 ${last.winner === 'player' ? `(<span class="hr-pot-plus">+${potDelta}</span>)` : ''}</div>
       ${verdict ? `<div class="hr-verdict-desc">${verdict.desc}</div>` : ''}
       ${showdownHtml}
