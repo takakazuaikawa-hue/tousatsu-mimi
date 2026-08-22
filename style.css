@@ -12827,4 +12827,63 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   20%, 80% { transform: translate3d(4px, 0, 0); }
   30%, 50%, 70% { transform: translate3d(-7px, 0, 0); }
   40%, 60% { transform: translate3d(7px, 0, 0); }
+
+/* ===== 連勝モメンタム演出 ===== */
+/* 卓上（ミミの立ち絵付近）にポップする連勝バッジ。document.body 直付けの fixed 配置。
+   ハンド結果モーダル（z-index:120）より手前に出したいので z-index は高めに設定。 */
+.streak-badge {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  z-index: 150;
+  pointer-events: none;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+  animation: streakBadgePop 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.streak-badge-normal {
+  font-size: 22px;
+  color: #fbe28a;
+}
+.streak-badge-fire {
+  font-size: 30px;
+  color: #ffb347;
+  text-shadow: 0 0 14px rgba(255,120,40,0.8), 0 2px 6px rgba(0,0,0,0.7);
+}
+.streak-badge-big {
+  font-size: 38px;
+  color: #fff2b0;
+  text-shadow: 0 0 20px rgba(255,200,60,0.95), 0 0 40px rgba(255,120,40,0.6), 0 2px 6px rgba(0,0,0,0.7);
+}
+.streak-badge-stop {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ff8a9a;
+  opacity: 0.9;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+@keyframes streakBadgePop {
+  0%   { transform: translate(-50%, -70%)  scale(0.4); opacity: 0; }
+  18%  { transform: translate(-50%, -105%) scale(1.15); opacity: 1; }
+  30%  { transform: translate(-50%, -100%) scale(1); opacity: 1; }
+  78%  { opacity: 1; }
+  100% { transform: translate(-50%, -120%) scale(0.92); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .streak-badge { animation: streakBadgeFadeReduced 0.7s ease-out forwards; }
+  @keyframes streakBadgeFadeReduced {
+    0%   { opacity: 0; transform: translate(-50%, -100%) scale(0.9); }
+    25%  { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -100%) scale(1); }
+  }
+}
+
+/* ハンド結果モーダル内：連勝中バッジ（縦に溢れないよう1行・小さめ） */
+.hr-streak-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffb347;
+  margin: 2px 0 4px;
+  letter-spacing: 0.05em;
 }
