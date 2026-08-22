@@ -11845,6 +11845,7 @@ function showStreakBadge(text, tier) {
     const el = document.createElement('div');
     el.className = 'streak-badge streak-badge-' + tier;
     el.textContent = text;
+    if (typeof juiceScale === 'function') el.style.fontSize = Math.round((tier === 'big' ? 34 : tier === 'fire' ? 28 : 22) * juiceScale()) + 'px';
     if (anchor) {
       const r = anchor.getBoundingClientRect();
       el.style.left = (r.left + r.width / 2) + 'px';
