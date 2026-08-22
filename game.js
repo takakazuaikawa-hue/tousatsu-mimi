@@ -2540,6 +2540,8 @@ function render() {
   injectAudioBars();
   // ピンチ演出：battle 以外の画面（case 'battle' 以外・switch に該当が無い場合も含む）では必ず解除する
   updateDangerState();
+  // ロビー専用モーダル（ログインボーナス）が他画面に残らないよう掃除
+  if (state.screen !== 'lobby') document.querySelectorAll('.login-bonus-overlay').forEach(e => e.remove());
 }
 
 function renderTemplate(id) {
@@ -10970,6 +10972,13 @@ function triggerPsychBattle(qid) {
       <div class="portrait-name">${oppName}</div>
     `;
   }
+  // 上段ポートレート：立ち絵を丸窓アバターに（額だけ写る帯クロップの解消）
+  root.querySelectorAll('.battle-portrait > img').forEach(img => {
+    const wrap = document.createElement('span');
+    wrap.className = 'bp-avatar';
+    img.replaceWith(wrap);
+    wrap.appendChild(img);
+  });
   // モーダルタイプによってヘッダー差し替え（講義 / 心理 / 論理）
   const isLogic = q.type === 'logic';
   const isLecture = !!state.lectureMode;

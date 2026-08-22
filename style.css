@@ -12769,7 +12769,7 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
 .center-table { position: relative; }
 .sd-callout {
   position: absolute;
-  left: 50%; top: 46%;
+  left: 50%; top: 63%;
   transform: translate(-50%, -50%);
   z-index: 40;
   text-align: center;
@@ -13217,7 +13217,45 @@ body.is-danger .bu-remain-num {
 .battle-screen.intro-hand-mode .left-panel {
   background:
     radial-gradient(ellipse at 50% 30%, rgba(255,193,216,0.18), transparent 60%),
-    url('assets/characters/mimi_mini.png') center 22% / 70% auto no-repeat,
+    url('assets/characters/mimi_mini.png') center 30% / 92% auto no-repeat,
     rgba(0,0,0,0.35);
 }
 .battle-screen.intro-hand-mode .rico-bubble { position: absolute; left: 8px; right: 8px; bottom: 12px; }
+
+/* ===== 心理バトル上段ポートレート：額だけ見える帯クロップをやめ、丸顔アバター＋名前に ===== */
+.battle-modal-overlay .battle-portrait {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 6px 16px;
+}
+.battle-modal-overlay .battle-portrait .bp-avatar {
+  width: 62px;
+  height: 62px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid var(--c-gold);
+  overflow: hidden;
+  background: rgba(0,0,0,0.4);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+.battle-modal-overlay .battle-portrait .bp-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 8%;
+  transform: scale(2.2) !important;
+  transform-origin: 50% 10%;
+}
+.battle-modal-overlay .battle-portrait.portrait-opponent { flex-direction: row-reverse; }
+.battle-modal-overlay .battle-portrait.portrait-opponent .bp-avatar { border-color: var(--c-red); }
+.battle-modal-overlay .battle-portrait .portrait-name {
+  position: static;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font-size: 20px;
+  letter-spacing: 0.18em;
+}
+.battle-modal-overlay .battle-portrait.portrait-opponent .portrait-name { text-align: right; }
