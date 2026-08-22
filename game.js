@@ -9877,15 +9877,44 @@ function dealIntroHand() {
 function introHandShowdown() {
   const playerAll = [...state.playerHand, ...state.community];
   const pEv = evaluateHand(playerAll);
-  state.opponentSpeech = '「……お見事。初日でその度胸は上等だよ」';
-  state.playerChips += state.pot;
-  state.mimiThought = `「やった！${pEv.name}で勝った！」`;
-  state.ricoAdvice = '「ね、楽しいでしょ。これがポーカーだよ」';
-  setMimiExpression('win');
-  setOpponentExpression('defeat'); // リコ先輩が笑って負けを認める表情に
-  state.pot = 0; resetPotChips();
+  const oEv = evaluateHand([...state.opponentHand, ...state.community]);
+  const pot = state.pot;
+  // 本編と同じ段階演出：めくり → 勝ち札ハイライト → チップが飛んでくる
+  state.handPhase = 'showdown';
+  state.isPlayerTurn = false;
+  state.opponentSpeech = '「……ショーダウン。見せてごらん」';
+  state.mimiThought = '「……勝負！」';
   render();
-  setTimeout(showIntroHandWinScreen, 1800);
+  setTimeout(() => {
+    if (state.screen !== 'battle') return;
+    state.opponentRevealed = true;
+    state.__dealSeen.opp = 0;
+    state.opponentSpeech = `相手の役：${oEv.name}`;
+    mpSfx('flip');
+    render();
+  }, 550);
+  setTimeout(() => {
+    if (state.screen !== 'battle') return;
+    state.sdHighlight = new Set((pEv.bestFive || []).map(cardKey));
+    state.opponentSpeech = '「……お見事。初日でその度胸は上等だよ」';
+    state.mimiThought = `「${pEv.name}……勝った！」`;
+    setMimiExpression('win');
+    setOpponentExpression('defeat'); // リコ先輩が笑って負けを認める表情に
+    render();
+    showShowdownCallout('player', pEv, oEv);
+    mpSfx('bigwin');
+  }, 1500);
+  setTimeout(() => {
+    if (state.screen !== 'battle') return;
+    state.playerChips += pot;
+    state.pot = 0; resetPotChips();
+    state.mimiThought = `「やった！${pEv.name}で勝った！」`;
+    state.ricoAdvice = '「ね、楽しいでしょ。これがポーカーだよ」';
+    render();
+    flyChips('.bu-pot-physical', '.char-mimi', pot);
+    floatText('.char-mimi', `+${pot}`, 'ft-gain');
+  }, 2600);
+  setTimeout(() => { if (state.screen === 'battle') showIntroHandWinScreen(); }, 3900);
 }
 
 function showIntroHandWinScreen() {
