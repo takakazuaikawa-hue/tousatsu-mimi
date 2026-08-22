@@ -12691,3 +12691,138 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   .mp-jumbo-char img { height: 220px; }
   .mp-side-panel { width: 90%; right: 5%; }
 }
+
+/* ===== ログインボーナス ===== */
+.login-bonus-overlay {
+  position: absolute; inset: 0; z-index: 95;
+  background: rgba(4,2,10,0.85);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: collIn 0.25s ease-out;
+}
+.login-bonus-modal {
+  position: relative;
+  width: min(720px, calc(100% - 40px));
+  max-height: calc(100% - 40px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(180deg, #2a1238 0%, #1a0820 100%);
+  border: 16px solid var(--c-gold-bright);
+  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  color: #fbeec8;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+  overflow: hidden;
+  padding: 20px 24px 24px;
+}
+.login-bonus-modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-gold-bright);
+  text-align: center;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.login-bonus-modal-sub {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffd76a;
+  text-shadow: 0 0 10px rgba(255,215,100,0.6);
+  margin-bottom: 16px;
+}
+.login-bonus-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 20px;
+}
+.login-bonus-day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 4px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(245,215,122,0.25);
+  background: rgba(0,0,0,0.28);
+}
+.login-bonus-day-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #d8c3a8;
+  letter-spacing: 0.03em;
+}
+.login-bonus-coin { font-size: 18px; line-height: 1.1; }
+.login-bonus-amount {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbeec8;
+}
+.login-bonus-day-future { opacity: 0.45; }
+.login-bonus-day-claimed {
+  border-color: rgba(120,220,150,0.5);
+  background: rgba(60,160,90,0.18);
+}
+.login-bonus-day-claimed .login-bonus-amount { color: #a6f0bd; }
+.login-bonus-day-today {
+  border-color: var(--c-gold-bright);
+  background: rgba(245,215,122,0.16);
+  box-shadow: 0 0 14px rgba(245,215,122,0.55);
+  animation: loginBonusGlow 1.4s ease-in-out infinite;
+}
+.login-bonus-check {
+  position: absolute; top: -6px; right: -6px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #3fae63;
+  color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 6px rgba(0,0,0,0.4);
+}
+.login-bonus-tag {
+  position: absolute; top: -10px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--c-gold-bright);
+  color: var(--c-bg-dark);
+  font-size: 9px; font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.login-bonus-tag-next {
+  background: rgba(245,215,122,0.5);
+  color: #2a1238;
+}
+.login-bonus-claim-btn {
+  padding: 12px 40px;
+  border: none;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffe9a8 0%, var(--c-gold-bright) 100%);
+  color: #3a2306;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4), 0 0 16px rgba(245,215,122,0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.login-bonus-claim-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45), 0 0 22px rgba(245,215,122,0.6);
+}
+.login-bonus-claim-btn:active { transform: translateY(0); }
+@keyframes loginBonusGlow {
+  0%, 100% { box-shadow: 0 0 14px rgba(245,215,122,0.55); }
+  50% { box-shadow: 0 0 22px rgba(245,215,122,0.9); }
+}
+@media (max-width: 800px) {
+  .login-bonus-day-label { font-size: 9px; }
+  .login-bonus-amount { font-size: 10px; }
+  .login-bonus-coin { font-size: 15px; }
+}

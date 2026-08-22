@@ -227,6 +227,9 @@ function defaultSave() {
     // ── ミニポーカー（mpEnsureSaveで初期化される） ──
     minipoker: null,
 
+    // ── デイリーログインボーナス ──
+    loginBonus: { lastDate: '', streak: 0 },
+
     // ── ログ ──
     logs: { actions: [], bets: [], reactions: [], psych: [] },
 
@@ -254,6 +257,9 @@ function normalizeSave(s) {
   if (!s.panyuSkills || typeof s.panyuSkills !== 'object') s.panyuSkills = { senseLevel: 1, rangeLevel: 1, breakLevel: 0 };
   if (!s.logs || typeof s.logs !== 'object') s.logs = { actions: [], bets: [], reactions: [], psych: [] };
   if (!s.achievements || typeof s.achievements !== 'object') s.achievements = {};
+  if (!s.loginBonus || typeof s.loginBonus !== 'object') s.loginBonus = { lastDate: '', streak: 0 };
+  if (typeof s.loginBonus.lastDate !== 'string') s.loginBonus.lastDate = '';
+  if (typeof s.loginBonus.streak !== 'number' || isNaN(s.loginBonus.streak) || s.loginBonus.streak < 0) s.loginBonus.streak = 0;
   // 数値の正常範囲
   if (typeof s.coins !== 'number' || isNaN(s.coins)) s.coins = 0;
   if (s.coins < 0) s.coins = 0;
@@ -6168,6 +6174,7 @@ function goLobby() {
   state.lobbyRicoChangedAt = 'lobby';
   render();
   tryStartLobbyBgm();
+  maybeShowLoginBonus();
 }
 
 function stopEndingBgm() {
@@ -7437,6 +7444,106 @@ function mpDailyLuckyRank() {
   const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
   // ラッキー対象：1〜7（ロイヤル/ストフラは除外＝既に夢役）
   return 1 + (seed % 7);
+}
+
+/* =============================================================
+   デイリーログインボーナス
+   - 7日サイクル：Day1 50 / Day2 60 / Day3 80 / Day4 100 / Day5 120 / Day6 150 / Day7 300
+   - 連続判定：前回受取が「昨日」なら streak+1、それ以外は streak=1 にリセット
+   - 日付キーは mpTodayKey()（'YYYYMMDD' 形式）を再利用
+   ============================================================= */
+const LOGIN_BONUS_TABLE = [50, 60, 80, 100, 120, 150, 300]; // index 0 = Day1
+
+// day（1〜7）に対応する受取コイン数
+function loginBonusRewardForDay(day) {
+  const idx = ((Math.max(1, day) - 1) % 7 + 7) % 7;
+  return LOGIN_BONUS_TABLE[idx];
+}
+
+// 'YYYYMMDD' キーの「前日」の 'YYYYMMDD' キーを返す（DOM非依存の純関数）
+function loginBonusPrevDateKey(key) {
+  const y = parseInt(key.slice(0, 4), 10);
+  const m = parseInt(key.slice(4, 6), 10) - 1;
+  const d = parseInt(key.slice(6, 8), 10);
+  const dt = new Date(y, m, d);
+  dt.setDate(dt.getDate() - 1);
+  return `${dt.getFullYear()}${(dt.getMonth() + 1).toString().padStart(2, '0')}${dt.getDate().toString().padStart(2, '0')}`;
+}
+
+// 純関数：前回受取日・streak・今日のキーから「今日受け取れる内容」を算出する
+// 戻り値: { alreadyClaimedToday, day(1-7), reward, newStreak }
+function loginBonusCompute(lastDate, streak, todayKey) {
+  streak = (typeof streak === 'number' && !isNaN(streak) && streak > 0) ? streak : 0;
+  if (lastDate === todayKey) {
+    // 同日2回目：既に受取済みなので現在のstreakのまま返す（呼び出し側はalreadyClaimedTodayを見て何もしない）
+    const day = ((Math.max(1, streak) - 1) % 7) + 1;
+    return { alreadyClaimedToday: true, day, reward: loginBonusRewardForDay(day), newStreak: streak };
+  }
+  let newStreak;
+  if (!lastDate) {
+    newStreak = 1; // 初回
+  } else {
+    const yesterdayKey = loginBonusPrevDateKey(todayKey);
+    newStreak = (lastDate === yesterdayKey) ? streak + 1 : 1; // 連続なら+1、空いたらリセット
+  }
+  const day = ((newStreak - 1) % 7) + 1;
+  return { alreadyClaimedToday: false, day, reward: loginBonusRewardForDay(day), newStreak };
+}
+
+// ロビー入室時に1日1回だけ判定して表示する（初回導線を邪魔しないよう introPlayed 済みのみ）
+function maybeShowLoginBonus() {
+  if (!save || save.introPlayed !== true) return;
+  const todayKey = mpTodayKey();
+  const lb = save.loginBonus || { lastDate: '', streak: 0 };
+  const plan = loginBonusCompute(lb.lastDate, lb.streak, todayKey);
+  if (plan.alreadyClaimedToday) return;
+  showLoginBonusModal(plan, todayKey);
+}
+
+function showLoginBonusModal(plan, todayKey) {
+  const days = [];
+  for (let i = 1; i <= 7; i++) {
+    let status = 'future';
+    if (i < plan.day) status = 'claimed';
+    else if (i === plan.day) status = 'today';
+    days.push({ day: i, reward: loginBonusRewardForDay(i), status });
+  }
+  const daysHtml = days.map(d => {
+    const tag = d.status === 'claimed' ? '<div class="login-bonus-check">✓</div>'
+              : d.status === 'today'   ? '<div class="login-bonus-tag">TODAY</div>'
+              : (d.day === plan.day + 1) ? '<div class="login-bonus-tag login-bonus-tag-next">明日</div>' : '';
+    return `
+      <div class="login-bonus-day login-bonus-day-${d.status}">
+        ${tag}
+        <div class="login-bonus-day-label">Day${d.day}</div>
+        <div class="login-bonus-coin">🪙</div>
+        <div class="login-bonus-amount">${d.reward}</div>
+      </div>
+    `;
+  }).join('');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'login-bonus-overlay';
+  overlay.innerHTML = `
+    <div class="login-bonus-modal">
+      <div class="login-bonus-modal-title">🎁 ログインボーナス Day${plan.day}</div>
+      <div class="login-bonus-modal-sub">+${plan.reward} コイン</div>
+      <div class="login-bonus-calendar">${daysHtml}</div>
+      <button class="login-bonus-claim-btn">受け取る</button>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+
+  overlay.querySelector('.login-bonus-claim-btn').addEventListener('click', () => {
+    // 再帰的な二重表示を防ぐため、先にセーブへ書き込んでから演出・表示更新を行う
+    save.loginBonus = { lastDate: todayKey, streak: plan.newStreak };
+    save.coins = (save.coins || 0) + plan.reward;
+    saveProgress();
+    mpSfx('milestone');
+    document.querySelectorAll('[data-bind="saveCoins"]').forEach(el => { el.textContent = save.coins; });
+    overlay.remove();
+    toast(`🎁 ログインボーナス Day${plan.day}：+${plan.reward} コイン！`);
+  });
 }
 
 function showMiniPokerGame() {
