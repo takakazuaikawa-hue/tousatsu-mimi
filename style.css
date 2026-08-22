@@ -12691,3 +12691,130 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   .mp-jumbo-char img { height: 220px; }
   .mp-side-panel { width: 90%; right: 5%; }
 }
+
+/* =====================================================================
+   ゲームフィール（演出）：配布アニメ・めくり・勝ち札ハイライト・チップ飛行
+   ===================================================================== */
+.card-deal {
+  animation: cardDealIn 0.42s cubic-bezier(.2,.9,.3,1.15) both;
+  animation-delay: calc(var(--di, 0) * 0.13s);
+}
+@keyframes cardDealIn {
+  0%   { transform: translate(0, -42px) rotate(-6deg) scale(0.7); opacity: 0; }
+  60%  { transform: translate(0, 4px) rotate(1deg) scale(1.04); opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+.card-flip {
+  animation: cardFlipIn 0.5s cubic-bezier(.3,.8,.3,1) both;
+  animation-delay: calc(var(--di, 0) * 0.28s);
+  transform-style: preserve-3d;
+}
+@keyframes cardFlipIn {
+  0%   { transform: perspective(600px) rotateY(92deg) scale(0.95); filter: brightness(0.6); }
+  55%  { transform: perspective(600px) rotateY(-12deg) scale(1.06); filter: brightness(1.15); }
+  100% { transform: none; filter: none; }
+}
+.opponent-hand.revealed .card { box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 10px rgba(245,215,122,0.25); }
+.card.card-dim {
+  opacity: 0.42;
+  filter: saturate(0.4) brightness(0.8);
+  transition: opacity .35s, filter .35s;
+}
+.card.sd-win {
+  animation: sdWinPulse 0.9s ease-in-out 2;
+  z-index: 2;
+}
+@keyframes sdWinPulse {
+  0%,100% { transform: translateY(0) scale(1); box-shadow: 0 0 0 3px var(--c-gold-bright), 0 4px 12px rgba(245,215,122,0.5); }
+  50%     { transform: translateY(-8px) scale(1.06); box-shadow: 0 0 0 3px #fff3c4, 0 10px 26px rgba(245,215,122,0.85); }
+}
+
+/* 飛ぶチップ（body 直下・fixed） */
+.fly-chip {
+  position: fixed;
+  z-index: 9000;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform, opacity;
+  box-shadow: 0 2px 5px rgba(0,0,0,.55), inset 0 0 0 3px rgba(255,255,255,.85), inset 0 0 0 5px rgba(0,0,0,.15);
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.55), rgba(255,255,255,0) 40%), #c0392b;
+}
+.fly-chip.fc-red    { background-color: #c0392b; }
+.fly-chip.fc-blue   { background-color: #2e6fd8; }
+.fly-chip.fc-green  { background-color: #2d9a55; }
+.fly-chip.fc-purple { background-color: #7b3fb8; }
+.fly-chip.fc-black  { background-color: #2b2b33; }
+
+/* 浮かぶ数字 */
+.float-text {
+  position: fixed;
+  z-index: 9001;
+  transform: translate(-50%, 0);
+  font-weight: 900;
+  letter-spacing: .02em;
+  pointer-events: none;
+  text-shadow: 0 2px 0 rgba(0,0,0,.6), 0 0 14px rgba(0,0,0,.5);
+  animation: floatTextUp 1.4s cubic-bezier(.2,.8,.3,1) both;
+}
+.float-text.ft-gain { color: #ffe27a; }
+.float-text.ft-loss { color: #ff8a8a; }
+@keyframes floatTextUp {
+  0%   { transform: translate(-50%, 10px) scale(0.6); opacity: 0; }
+  15%  { transform: translate(-50%, -6px) scale(1.25); opacity: 1; }
+  70%  { transform: translate(-50%, -40px) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -70px) scale(0.95); opacity: 0; }
+}
+
+/* ショーダウン勝敗コール（center-table 内に絶対配置） */
+.center-table { position: relative; }
+.sd-callout {
+  position: absolute;
+  left: 50%; top: 46%;
+  transform: translate(-50%, -50%);
+  z-index: 40;
+  text-align: center;
+  padding: 10px 28px;
+  border-radius: 14px;
+  background: rgba(12, 8, 24, 0.82);
+  border: 2px solid var(--c-gold);
+  box-shadow: 0 8px 30px rgba(0,0,0,.6), 0 0 24px rgba(245,215,122,.35);
+  pointer-events: none;
+  animation: sdCalloutIn 0.45s cubic-bezier(.2,.9,.3,1.2) both;
+}
+.sd-callout.out { animation: sdCalloutOut 0.4s ease-in both; }
+.sd-callout-title { font-size: 30px; font-weight: 900; letter-spacing: .06em; line-height: 1.1; }
+.sd-callout-sub { font-size: 15px; margin-top: 4px; opacity: .9; }
+.sd-callout.sd-win  .sd-callout-title { color: #ffe27a; text-shadow: 0 0 14px rgba(255,226,122,.8); }
+.sd-callout.sd-lose .sd-callout-title { color: #ff9a9a; }
+.sd-callout.sd-split .sd-callout-title { color: #dfe6ff; }
+.sd-callout.sd-win { border-color: #ffe27a; }
+.sd-callout.sd-lose { border-color: #c0392b; box-shadow: 0 8px 30px rgba(0,0,0,.6); }
+@keyframes sdCalloutIn {
+  0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+@keyframes sdCalloutOut {
+  0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -60%) scale(1.08); opacity: 0; }
+}
+.status-note.sd-note { color: #ffe27a; font-weight: 800; letter-spacing: .08em; animation: sdNotePulse 0.8s ease-in-out infinite alternate; }
+@keyframes sdNotePulse { from { opacity: .6; } to { opacity: 1; } }
+
+/* 相手の「考え中」ドット */
+.opponent-speech.is-thinking { min-height: 1.6em; }
+.think-dots { display: inline-flex; gap: 6px; align-items: center; padding: 2px 4px; }
+.think-dots i {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,.85);
+  animation: thinkDot 1s ease-in-out infinite;
+}
+.think-dots i:nth-child(2) { animation-delay: .18s; }
+.think-dots i:nth-child(3) { animation-delay: .36s; }
+@keyframes thinkDot {
+  0%, 100% { transform: translateY(0); opacity: .35; }
+  50%      { transform: translateY(-5px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-deal, .card-flip, .card.sd-win, .sd-callout, .float-text { animation-duration: 0.01s !important; }
+  .fly-chip { display: none; }
+}

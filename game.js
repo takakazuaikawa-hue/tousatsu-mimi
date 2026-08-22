@@ -2592,7 +2592,15 @@ function applyBindings() {
         break;
       }
       case 'ricoAdvice': el.innerHTML = state.ricoAdvice; break;
-      case 'opponentSpeech': el.textContent = state.opponentSpeech; break;
+      case 'opponentSpeech':
+        if (state.opponentThinking) {
+          el.innerHTML = `<span class="think-dots" aria-label="考え中"><i></i><i></i><i></i></span>`;
+          el.classList.add('is-thinking');
+        } else {
+          el.textContent = state.opponentSpeech;
+          el.classList.remove('is-thinking');
+        }
+        break;
       case 'opponentBet': el.innerHTML = renderOpponentBet(); break;
       case 'currentHandName': el.innerHTML = renderCurrentHandName(); break;
       case 'currentHandKicker': el.innerHTML = renderCurrentHandKicker(); break;
@@ -2611,8 +2619,9 @@ function applyBindings() {
         if (side) side.classList.toggle('empty', v === 0);
         break;
       }
-      case 'communityCards': renderCardsInto(el, state.community, 5); break;
-      case 'playerHand': renderCardsInto(el, state.playerHand, 2); break;
+      case 'communityCards': renderCardsInto(el, state.community, 5, 'community'); break;
+      case 'playerHand': renderCardsInto(el, state.playerHand, 2, 'player'); break;
+      case 'opponentHand': renderOpponentHand(el); break;
       case 'psychLog': renderPsychLog(el); break;
       case 'psychStats': el.innerHTML = renderPsychStats(); break;
       case 'actionArea': renderActionArea(el); break;
@@ -4978,22 +4987,133 @@ function getOpponentPersonality(id) {
   return OPPONENT_PERSONALITY[id] || { icon: '?', title: '???', traits: ['不明'], exploit: '不明' };
 }
 
-function renderCardsInto(el, cards, slotCount) {
+function cardKey(c) { return c ? `${c.suit}${c.rank}` : ''; }
+// key: 'community' | 'player' | 'opp' — 既に表示済みの枚数を記憶し、新しく出た札だけ配布アニメを付ける
+function renderCardsInto(el, cards, slotCount, key) {
   el.innerHTML = '';
+  if (!state.__dealSeen) state.__dealSeen = {};
+  const seen = key ? (state.__dealSeen[key] || 0) : cards.length;
+  const hl = state.sdHighlight;
   for (let i = 0; i < slotCount; i++) {
     const c = cards[i];
     if (!c) {
       el.insertAdjacentHTML('beforeend', '<div class="card empty"></div>');
     } else {
       const isRed = c.suit === '♥' || c.suit === '♦';
+      const isNew = i >= seen;
+      let cls = 'card';
+      if (isRed) cls += ' red';
+      if (isNew) cls += (key === 'opp' ? ' card-flip' : ' card-deal');
+      if (hl) cls += hl.has(cardKey(c)) ? ' highlight sd-win' : ' card-dim';
       el.insertAdjacentHTML('beforeend', `
-        <div class="card ${isRed ? 'red' : ''}">
+        <div class="${cls}" style="--di:${isNew ? i - seen : 0}">
           <span class="rank">${c.label}</span>
           <span class="suit">${c.suit}</span>
           <span class="center-suit">${c.suit}</span>
         </div>`);
     }
   }
+  if (key) state.__dealSeen[key] = cards.length;
+}
+
+// 相手の手札：通常は裏向き、ショーダウンで表向き（めくりアニメ付き）
+function renderOpponentHand(el) {
+  if (state.opponentRevealed && state.opponentHand && state.opponentHand.length === 2) {
+    renderCardsInto(el, state.opponentHand, 2, 'opp');
+    el.classList.add('revealed');
+  } else {
+    el.classList.remove('revealed');
+    el.innerHTML = '<div class="card card-back"></div><div class="card card-back"></div>';
+  }
+}
+
+//=============================================================
+// ゲームフィール（演出）ヘルパ：チップ飛行・浮遊数字・ショーダウン吹き出し
+//=============================================================
+function juiceScale() {
+  const st = document.getElementById('stage');
+  return st ? Math.max(0.35, st.getBoundingClientRect().width / 1280) : 1;
+}
+function juiceRect(sel) {
+  const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  if (!r.width && !r.height) return null;
+  return r;
+}
+function chipColorClass(amount) {
+  if (amount >= 1000) return 'fc-black';
+  if (amount >= 500) return 'fc-purple';
+  if (amount >= 200) return 'fc-green';
+  if (amount >= 100) return 'fc-blue';
+  return 'fc-red';
+}
+// fromSel → toSel へチップが数枚飛ぶ。amount が大きいほど枚数が増える
+function flyChips(fromSel, toSel, amount, opts = {}) {
+  if (!amount || amount <= 0) return;
+  const a = juiceRect(fromSel), b = juiceRect(toSel);
+  if (!a || !b) return;
+  const sc = juiceScale();
+  const n = Math.max(3, Math.min(14, Math.round(Math.sqrt(amount / 20))));
+  const size = Math.round(22 * sc);
+  const ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+  const bx = b.left + b.width / 2, by = b.top + b.height / 2;
+  const color = chipColorClass(amount / n);
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    el.className = `fly-chip ${color}`;
+    const jx = (rand() - 0.5) * 50 * sc, jy = (rand() - 0.5) * 30 * sc;
+    const tx = (rand() - 0.5) * 36 * sc, ty = (rand() - 0.5) * 18 * sc;
+    el.style.cssText = `left:${ax + jx - size / 2}px;top:${ay + jy - size / 2}px;width:${size}px;height:${size}px;`;
+    document.body.appendChild(el);
+    const dx = (bx + tx) - (ax + jx), dy = (by + ty) - (ay + jy);
+    const lift = -60 * sc - rand() * 40 * sc;
+    const anim = el.animate([
+      { transform: 'translate(0,0) scale(0.9)', opacity: 0.95 },
+      { transform: `translate(${dx * 0.5}px,${dy * 0.5 + lift}px) scale(1.25)`, opacity: 1, offset: 0.5 },
+      { transform: `translate(${dx}px,${dy}px) scale(0.85)`, opacity: 0.9 }
+    ], { duration: 420 + rand() * 160, delay: i * 38 + (opts.delay || 0), easing: 'cubic-bezier(.25,.7,.3,1)', fill: 'forwards' });
+    anim.onfinish = () => el.remove();
+  }
+  // チップの着地音（SFX ON時のみ、少量）
+  if (isSfxOn()) {
+    _mpSfxScale = sfxVolFloat();
+    for (let i = 0; i < Math.min(n, 6); i++) mpTone(1800 + rand() * 700, 0.03, 'square', 0.02, 0.001, 0.02, (opts.delay || 0) + 380 + i * 55);
+  }
+}
+// 要素の上に浮かぶ数字（+350 など）
+function floatText(sel, text, cls = '') {
+  const r = juiceRect(sel); if (!r) return;
+  const sc = juiceScale();
+  const el = document.createElement('div');
+  el.className = `float-text ${cls}`;
+  el.textContent = text;
+  el.style.cssText = `left:${r.left + r.width / 2}px;top:${r.top + r.height * 0.3}px;font-size:${Math.round(30 * sc)}px;`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+// ショーダウンの勝敗コール（卓の中央に一瞬出る）
+function showShowdownCallout(winner, pEv, oEv) {
+  document.querySelectorAll('.sd-callout').forEach(e => e.remove());
+  const host = document.querySelector('.center-table') || document.getElementById('stage');
+  if (!host) return;
+  const el = document.createElement('div');
+  const cls = winner === 'player' ? 'sd-win' : winner === 'opponent' ? 'sd-lose' : 'sd-split';
+  const title = winner === 'player' ? 'ミミの勝ち！' : winner === 'opponent' ? `${state.opponentName || '相手'}の勝ち` : '引き分け';
+  const sub = winner === 'player' ? pEv.name : winner === 'opponent' ? oEv.name : `${pEv.name} ＝ ${oEv.name}`;
+  el.className = `sd-callout ${cls}`;
+  el.innerHTML = `<div class="sd-callout-title">${title}</div><div class="sd-callout-sub">${sub}</div>`;
+  host.appendChild(el);
+  setTimeout(() => el.classList.add('out'), 1500);
+  setTimeout(() => el.remove(), 1900);
+}
+// ハンド開始時に演出状態をリセット
+function resetHandJuice() {
+  state.__dealSeen = { community: 0, player: 0, opp: 0 };
+  state.opponentRevealed = false;
+  state.sdHighlight = null;
+  state.opponentThinking = false;
+  document.querySelectorAll('.sd-callout').forEach(e => e.remove());
 }
 
 function renderPsychStats() {
@@ -5020,6 +5140,10 @@ function renderActionArea(el) {
   }
   if (state.psychPending) {
     el.innerHTML = `<div class="status-note">心理バトル中……</div>`;
+    return;
+  }
+  if (state.handPhase === 'showdown') {
+    el.innerHTML = `<div class="status-note sd-note">ショーダウン！</div>`;
     return;
   }
   if (!state.isPlayerTurn) {
@@ -9722,6 +9846,8 @@ function beginIntroHand() {
 function dealIntroHand() {
   if (state.screen !== 'battle' || !state.introHandMode) return;
   state.handNo = 1;
+  resetHandJuice();
+  mpSfx('deal');
   const ante = 50;
   state.playerChips -= ante; state.opponentChips -= ante;
   state.pot = ante * 2;
@@ -9801,6 +9927,7 @@ function startHand() {
   if (state.handNo > state.maxHands) { return endBattle(); }
   setOpponentExpression('default'); // 新ハンドは平常表情から
   setMimiExpression('default');
+  resetHandJuice();
   mpSfx('deal'); // 配布音（equippedSePack設定を反映）
 
   // ブラインド簡略化（v4: 各50チップアンティ）
@@ -9925,10 +10052,12 @@ function playerFold() {
   state.opponentSpeech = opponentReactToPlayerFold();
   log('actions', { actor: 'player', type: 'fold' });
   state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'fold', pot: state.pot, by: '降伏' });
+  const potWon = state.pot;
   state.opponentChips += state.pot;
   state.pot = 0; resetPotChips();
+  flyChips('.bu-pot-physical', '.char-opponent', potWon);
   render();
-  setTimeout(endHand, 1000);
+  setTimeout(endHand, 1100);
 }
 function playerCall() {
   mpSfx('call');
@@ -9941,6 +10070,7 @@ function playerCall() {
   state.isPlayerTurn = false;
   state.mimiThought = '「コールした。次の場札を見よう」';
   render();
+  flyChips('.char-mimi', '.bu-pot-physical', pay);
   setTimeout(advanceAfterCall, 700);
 }
 function playerCheckCall() {
@@ -9964,6 +10094,7 @@ function playerRaise(bb) {
   state.isPlayerTurn = false;
   state.mimiThought = `「${bb}BBレイズ！」`;
   render();
+  flyChips('.char-mimi', '.bu-pot-physical', amount);
   setTimeout(opponentTurn, 700);
 }
 function playerBet(size) {
@@ -9976,6 +10107,7 @@ function playerBet(size) {
   state.isPlayerTurn = false;
   state.mimiThought = `「${amount}ベット」`;
   render();
+  flyChips('.char-mimi', '.bu-pot-physical', amount);
   setTimeout(opponentTurn, 700);
 }
 function playerAllIn() {
@@ -9988,6 +10120,7 @@ function playerAllIn() {
   state.isPlayerTurn = false;
   state.mimiThought = '「オールイン！」';
   render();
+  flyChips('.char-mimi', '.bu-pot-physical', amount);
   showAllInCutIn('player', amount);
   setTimeout(opponentTurn, 1800);
 }
@@ -10043,7 +10176,22 @@ function spawnAllInSpark(parent) {
 //=============================================================
 // 13. 相手アクション
 //=============================================================
+// 相手の「考える間」：即答ではなく、状況が重いほど長く迷ってから決める（読み合いの手触り）
 function opponentTurn() {
+  if (state.screen !== 'battle' || state.handPhase === 'idle' || state.handPhase === 'showdown') return;
+  if (state.introHandMode || state.opponentChips <= 0) return opponentTurnDecide();
+  const need = state.currentBetPlayer - state.currentBetOpponent;
+  const heavy = need > 0 && need >= Math.max(100, state.pot * 0.35);
+  const delay = heavy ? 900 + rand() * 800 : 380 + rand() * 320;
+  state.opponentThinking = true;
+  render();
+  setTimeout(() => {
+    state.opponentThinking = false;
+    if (state.screen !== 'battle') return;
+    opponentTurnDecide();
+  }, delay);
+}
+function opponentTurnDecide() {
   // 画面遷移後のゾンビ実行ガード
   if (state.screen !== 'battle' || state.handPhase === 'idle' || state.handPhase === 'showdown') return;
   // 既にオールイン済み（チップ0）なら追加アクション不可：自動チェック扱いで次に進める
@@ -10076,6 +10224,7 @@ function opponentTurn() {
     state.pot += pay; pushPotChips(pay);
     state.opponentSpeech = pay > 0 ? 'う……いいよ、コール' : 'チェックで';
     render();
+    if (pay > 0) flyChips('.char-opponent', '.bu-pot-physical', pay);
     setTimeout(advanceAfterCall, 900);
     return;
   }
@@ -10109,10 +10258,14 @@ function opponentTurn() {
     state.opponentSpeech = opponentSpeech(action);
     log('actions', { actor: 'opponent', type: 'fold' });
     state.handResults.push({ hand: state.handNo, winner: 'player', reason: 'opponentFold', pot: state.pot, by: '相手降伏' });
+    const potWon = state.pot;
     state.playerChips += state.pot;
     state.pot = 0; resetPotChips();
+    flyChips('.bu-pot-physical', '.char-mimi', potWon);
+    setOpponentExpression('defeat');
     render();
-    setTimeout(endHand, 1000);
+    floatText('.char-mimi', `+${potWon}`, 'ft-gain');
+    setTimeout(endHand, 1300);
     return;
   }
   // チェック/コール
@@ -10125,7 +10278,9 @@ function opponentTurn() {
     log('actions', { actor: 'opponent', type: pay > 0 ? 'call' : 'check', amount: pay });
     // 今ストリートで相手がチェックした事実を記録（次のレイズで check-raise 検出に使う）
     if (pay === 0) state.opponentCheckedThisStreet = true;
+    mpSfx(pay > 0 ? 'call' : 'check');
     render();
+    if (pay > 0) flyChips('.char-opponent', '.bu-pot-physical', pay);
     if (pay > 0) {
       // 相手がコール → ベットマッチ → 次ストリートへ
       setTimeout(advanceAfterCall, 900);
@@ -10157,7 +10312,9 @@ function opponentTurn() {
       state.pot += pay; pushPotChips(pay);
       state.opponentSpeech = opponentSpeech({ type: 'check_call', intent: 'reluctant_call' });
       log('actions', { actor: 'opponent', type: 'call_fallback', amount: pay });
+      mpSfx('call');
       render();
+      flyChips('.char-opponent', '.bu-pot-physical', pay);
       setTimeout(advanceAfterCall, 900);
       return;
     }
@@ -10172,6 +10329,8 @@ function opponentTurn() {
   state.opponentSpeech = opponentSpeech(action);
   log('bets', { actor: 'opponent', type: 'bet', size: action.size, amount, intent: action.intent });
   log('reactions', { intent: action.intent, speech: state.opponentSpeech });
+  mpSfx(action.size === 'allin' ? 'battle-allin' : 'battle-bet');
+  flyChips('.char-opponent', '.bu-pot-physical', amount);
   // オールイン特別演出：実際にチップが動き、かつ残スタックが0になった瞬間のみ
   if (amount > 0 && (action.size === 'allin' || state.opponentChips === 0)) {
     setOpponentExpression('pressure'); // 相手を強気表情に
@@ -11263,25 +11422,68 @@ function showdown() {
   else if (pEv.score < oEv.score) winner = 'opponent';
   else winner = 'split';
 
-  state.opponentSpeech = `相手の役：${oEv.name}`;
-
-  if (winner === 'player') {
-    state.playerChips += state.pot;
-    state.mimiThought = `「やった！${pEv.name}で勝った！」`;
-    state.handResults.push({ hand: state.handNo, winner: 'player', reason: 'showdown', pot: state.pot, pEv, oEv });
-  } else if (winner === 'opponent') {
-    state.opponentChips += state.pot;
-    state.mimiThought = `「うう……${oEv.name}には勝てなかった……」`;
-    state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'showdown', pot: state.pot, pEv, oEv });
-  } else {
-    state.playerChips += Math.floor(state.pot / 2);
-    state.opponentChips += Math.ceil(state.pot / 2);
-    state.mimiThought = '「引き分けだ……」';
-    state.handResults.push({ hand: state.handNo, winner: 'split', reason: 'showdown', pot: state.pot, pEv, oEv });
-  }
-  state.pot = 0; resetPotChips();
+  // ── 段階演出：①相手の手札めくり → ②勝ち札ハイライト＋勝敗コール → ③チップ移動 → 結果モーダル ──
+  const pot = state.pot;
+  const handNoAtStart = state.handNo;
+  const alive = () => state.screen === 'battle' && state.handPhase === 'showdown' && state.handNo === handNoAtStart;
+  state.handPhase = 'showdown';
+  state.isPlayerTurn = false;
+  state.opponentSpeech = pick(['「……ショーダウンだね」', '「さあ、見せ合おうか」', '「……オープン」']);
+  state.mimiThought = '「……勝負！」';
   render();
-  setTimeout(endHand, 2200);
+
+  setTimeout(() => {
+    if (!alive()) return;
+    state.opponentRevealed = true;
+    state.__dealSeen.opp = 0;
+    state.opponentSpeech = `相手の役：${oEv.name}`;
+    mpSfx('flip');
+    render();
+  }, 550);
+
+  setTimeout(() => {
+    if (!alive()) return;
+    const win5 = winner === 'player' ? pEv.bestFive : winner === 'opponent' ? oEv.bestFive : [...pEv.bestFive, ...oEv.bestFive];
+    state.sdHighlight = new Set((win5 || []).map(cardKey));
+    if (winner === 'player') state.mimiThought = `「${pEv.name}……勝った！」`;
+    else if (winner === 'opponent') state.mimiThought = `「${oEv.name}……負けた……」`;
+    else state.mimiThought = '「引き分けか……」';
+    setMimiExpression(winner === 'player' ? 'win' : winner === 'opponent' ? 'sad' : 'default');
+    setOpponentExpression(winner === 'opponent' ? 'pleased' : winner === 'player' ? 'defeat' : 'default');
+    render();
+    showShowdownCallout(winner, pEv, oEv);
+    if (winner === 'player') mpSfx(pot >= 800 ? 'bigwin' : 'hand-win');
+    else if (winner === 'opponent') mpSfx('hand-lose');
+    else mpSfx('tie');
+  }, 1500);
+
+  setTimeout(() => {
+    if (!alive()) return;
+    if (winner === 'player') {
+      state.playerChips += pot;
+      state.mimiThought = `「やった！${pEv.name}で勝った！」`;
+      state.handResults.push({ hand: state.handNo, winner: 'player', reason: 'showdown', pot, pEv, oEv });
+      flyChips('.bu-pot-physical', '.char-mimi', pot);
+      floatText('.char-mimi', `+${pot}`, 'ft-gain');
+    } else if (winner === 'opponent') {
+      state.opponentChips += pot;
+      state.mimiThought = `「うう……${oEv.name}には勝てなかった……」`;
+      state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'showdown', pot, pEv, oEv });
+      flyChips('.bu-pot-physical', '.char-opponent', pot);
+      floatText('.char-opponent', `+${pot}`, 'ft-loss');
+    } else {
+      state.playerChips += Math.floor(pot / 2);
+      state.opponentChips += Math.ceil(pot / 2);
+      state.mimiThought = '「引き分けだ……」';
+      state.handResults.push({ hand: state.handNo, winner: 'split', reason: 'showdown', pot, pEv, oEv });
+      flyChips('.bu-pot-physical', '.char-mimi', Math.floor(pot / 2));
+      flyChips('.bu-pot-physical', '.char-opponent', Math.ceil(pot / 2));
+    }
+    state.pot = 0; resetPotChips();
+    render();
+  }, 2600);
+
+  setTimeout(() => { if (alive()) endHand(); }, 3600);
 }
 
 function endHand() {
@@ -11297,9 +11499,11 @@ function endHand() {
     setMimiExpression(last.winner === 'player' ? 'win' : last.winner === 'opponent' ? 'sad' : 'default');
     // 相手の表情：相手が勝てば余裕顔、負ければ敗北顔（差分のあるキャラのみ変化）
     setOpponentExpression(last.winner === 'opponent' ? 'pleased' : last.winner === 'player' ? 'defeat' : 'default');
-    // ハンド勝敗SFX
-    if (last.winner === 'player') mpSfx('hand-win');
-    else if (last.winner === 'opponent') mpSfx('hand-lose');
+    // ハンド勝敗SFX（ショーダウンは演出内で再生済み）
+    if (last.reason !== 'showdown') {
+      if (last.winner === 'player') mpSfx('hand-win');
+      else if (last.winner === 'opponent') mpSfx('hand-lose');
+    }
   }
   // 結果バナー表示
   showHandResultBanner();
