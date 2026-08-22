@@ -12691,3 +12691,18 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   .mp-jumbo-char img { height: 220px; }
   .mp-side-panel { width: 90%; right: 5%; }
 }
+
+/* ===== 相手セリフのポップ ===== */
+.opponent-speech.speech-pop {
+  animation: opponentSpeechPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes opponentSpeechPop {
+  0%   { transform: scale(0.9); opacity: 0.4; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .opponent-speech.speech-pop {
+    animation-duration: 0.01s;
+  }
+}
