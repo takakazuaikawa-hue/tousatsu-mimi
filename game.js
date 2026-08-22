@@ -2287,6 +2287,11 @@ function renderCardsText(cards) {
 // 6. ゲーム状態
 //=============================================================
 let state = null;
+// ピンチ演出（心音）のインターバルID。
+// state は state = defaultState() で丸ごと差し替えられる箇所が複数あるため、
+// state 側のプロパティにしか保持しないと差し替え時にタイマーが孤立して鳴り続ける
+// 「ゾンビタイマー」になる。state を跨いで確実に止められるようモジュール変数で持つ。
+let __dangerTimer = null;
 function defaultState() {
   return {
     screen: 'title',
@@ -2354,12 +2359,59 @@ function render() {
   }
   bindActions();
   injectAudioBars();
+  // ピンチ演出：battle 以外の画面（case 'battle' 以外・switch に該当が無い場合も含む）では必ず解除する
+  updateDangerState();
 }
 
 function renderTemplate(id) {
   const tpl = document.getElementById(id);
   app.innerHTML = '';
   app.appendChild(tpl.content.cloneNode(true));
+}
+
+//=============================================================
+// 7.1 ピンチ演出（チップ危機）状態管理
+// バトル中、プレイヤーのチップが対戦開始時の30%以下（かつ0より大きい）になったら
+// 「ピンチ状態」として画面に赤いビネット＋心音、瀕死ラインを割った瞬間にミミの表情変化を出す。
+// チップ計算・勝敗・AIロジックには一切触れない、演出のみの機能。
+//=============================================================
+function battleInitialChips() {
+  if (state && typeof state.__initialChips === 'number' && state.__initialChips > 0) return state.__initialChips;
+  const opp = state && OPPONENTS[state.opponentId];
+  return (opp && opp.chips) || 1000;
+}
+
+function stopDangerHeartbeat() {
+  if (__dangerTimer) { clearInterval(__dangerTimer); __dangerTimer = null; }
+}
+
+function startDangerHeartbeat() {
+  if (__dangerTimer) return; // 既に鳴動中なら二重起動しない
+  const beat = () => {
+    if (!isSfxOn()) return; // 消音時は鳴らさない（毎拍チェック＝設定変更に即追従）
+    mpTone(55, 0.12, 'sine', 0.09);
+    mpTone(50, 0.10, 'sine', 0.07, 0.005, 0.06, 180);
+  };
+  beat();
+  __dangerTimer = setInterval(beat, 1100);
+}
+
+function updateDangerState() {
+  const isDanger = !!(state && state.screen === 'battle' && !state.introHandMode && !state.tutorialMode
+    && state.playerChips > 0 && state.playerChips <= battleInitialChips() * 0.3);
+  const wasDanger = document.body.classList.contains('is-danger');
+  if (isDanger) {
+    document.body.classList.add('is-danger');
+    startDangerHeartbeat();
+    if (!wasDanger) {
+      // 非danger → danger に切り替わった瞬間だけ演出（表情・心の声）
+      setMimiExpression('shock');
+      state.mimiThought = '「チップが……！　ここからが勝負……！」';
+    }
+  } else {
+    document.body.classList.remove('is-danger');
+    stopDangerHeartbeat();
+  }
 }
 
 /* ===== ゲーム紹介モーダル（タイトルから） ===== */
@@ -6162,6 +6214,7 @@ function spawnEndingSparkle(parent) {
 function goLobby() {
   if (typeof stopBattleBgmSkin === 'function') stopBattleBgmSkin(); // バトル専用BGMスキンを止めてロビーへ戻す
   document.body.dataset.oppBg = ''; // 相手別テーブル背景を解除
+  document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
   state.screen = 'lobby';
   // 入室時にリコの衣装を抽選し直す
   state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
@@ -9626,6 +9679,7 @@ function startBattleInternal(opponentId) {
     state.playerChips   = seriousRico ? 2000 : opp.chips;
     state.opponentChips = seriousRico ? 2000 : opp.chips;
   }
+  state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
   state.tutorialMode = seriousRico ? false : opp.tutorial;
   state.fullHand = seriousRico ? true : !!opp.fullHand;
   state.isBoss = seriousRico ? true : !!opp.isBoss; // 心理バトル全ストリート発動
@@ -9704,6 +9758,7 @@ function beginIntroHand() {
   state.maxHands = 1;
   state.playerChips = 500;
   state.opponentChips = 500;
+  state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
   state.tutorialMode = false;   // 講義（全8章）ではなく1ハンドの体験なのでOFF
   state.fullHand = false;
   state.isBoss = false;
@@ -10026,6 +10081,9 @@ function showAllInCutIn(side, amount) {
   }
   setTimeout(() => overlay.classList.add('out'), 1500);
   setTimeout(() => overlay.remove(), 2100);
+  // オールイン対決の「一撃の重さ」演出：卓を一瞬暗転＋わずかにズーム
+  document.body.classList.add('allin-tension');
+  setTimeout(() => document.body.classList.remove('allin-tension'), 1200);
 }
 function spawnAllInSpark(parent) {
   const s = document.createElement('div');
@@ -11800,6 +11858,7 @@ const RANK_THRESHOLDS = [
 ];
 
 function endBattle() {
+  document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
   // セーブ反映：ぱにゅぱにゅ初回無料を消費したか
   if (state.panyuSenseFreeUsed) save.panyuSenseFreeUsed = true;
 
