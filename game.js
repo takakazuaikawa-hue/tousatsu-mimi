@@ -11159,6 +11159,19 @@ function resolvePsych(qid, choice, btn) {
       document.body.appendChild(sp);
     }
     setTimeout(() => { st.remove(); if (sp) sp.remove(); }, 1400);
+  } else {
+    // バトル中の心理バトル：正誤を音・スタンプ・相手の表情で即座に返す（読み合いの快感）
+    const st = document.createElement('div');
+    st.className = 'lecture-stamp psych-stamp ' + (isCorrect ? 'stamp-correct' : 'stamp-wrong');
+    document.body.appendChild(st);
+    setTimeout(() => st.remove(), 1200);
+    mpSfx(isCorrect ? 'win' : 'lose');
+    setOpponentExpression(isCorrect ? 'rattled' : 'pleased');
+    if (navigator.vibrate) navigator.vibrate(isCorrect ? [40, 30, 60] : 120);
+    if (!isCorrect && state.psychRoot) {
+      state.psychRoot.classList.add('psych-shake');
+      setTimeout(() => state.psychRoot && state.psychRoot.classList.remove('psych-shake'), 450);
+    }
   }
 
   if (isCorrect) {
