@@ -12579,7 +12579,11 @@ function endBattle() {
 
 // 次に挑戦すべきステージ名を1行で返す（解放ルール／クリア記録は既存関数をそのまま読むだけ）
 function nextGoalText() {
-  const nextId = STAGE_ORDER.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
+  // 今の相手より「先」の未クリアを優先（ポルカに勝った直後に「リコ先輩に挑戦」と出ないように）
+  const curIdx = STAGE_ORDER.indexOf(state.opponentId);
+  const after = STAGE_ORDER.slice(curIdx + 1);
+  const pickFrom = (list) => list.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
+  const nextId = pickFrom(after) || pickFrom(STAGE_ORDER);
   if (nextId) {
     const opp = OPPONENTS[nextId];
     return `次の目標：${opp.name}に挑戦`;
