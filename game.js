@@ -5465,7 +5465,7 @@ function renderActionArea(el) {
   // P2: 体験ハンドは「大きく行く」2択だけに絞る（没入・迷いのない導線）
   if (state.introHandMode) {
     slots = slots.map(s => {
-      if (s.kind === 'lg')    return { ...s, label: '大レイズ', subText: 'すごい手だ、大きく行こう！' };
+      if (s.kind === 'lg')    return { ...s, label: '大レイズ', subText: '大きく行こう！' };
       if (s.kind === 'allin') return s;
       return { ...s, enabled: false };
     });
@@ -10285,6 +10285,9 @@ function showIntroHandWinScreen() {
 function applyIntroHandUI() {
   const pauseBtn = document.querySelector('.battle-screen .top-hud [data-action="back-lobby"]');
   if (pauseBtn) pauseBtn.style.display = 'none';
+  // 体験ハンドはリコ先輩自身が対戦相手なので、左の「先輩立ち絵」を二重に出さない
+  const scr = document.querySelector('.battle-screen');
+  if (scr) scr.classList.add('intro-hand-mode');
   const backdoorBtn = document.querySelector('.backdoor-toggle');
   if (backdoorBtn) backdoorBtn.style.display = 'none';
 }
@@ -10928,6 +10931,9 @@ function advanceAfterCall() {
 function triggerPsychBattle(qid) {
   // 多重起動・画面遷移ガード
   if (state.psychRoot && state.psychRoot.isConnected) return;
+  // 相手のカットインが残っていると心理バトルの選択肢を覆い隠すので先に畳む
+  if (typeof dismissCutIn === 'function') dismissCutIn();
+  document.querySelectorAll('.opp-cutin, .opponent-cutin, .cutin-overlay').forEach(e => e.remove());
   if (state.screen !== 'battle' && !state.lectureMode) return;
   if (!qid || !PSYCH_QUESTIONS[qid]) {
     console.warn('Psych battle: invalid qid', qid);
@@ -12186,7 +12192,11 @@ function showHandResultBanner(snapshot) {
       ${strongBadge}
       <div class="hr-title">${winnerText}</div>
       ${streakBadgeHtml}
-      <div class="hr-pot">ポット <b>${potDelta}</b> 獲得 ${last.winner === 'player' ? `(<span class="hr-pot-plus">+${potDelta}</span>)` : ''}</div>
+      <div class="hr-pot">${
+        last.winner === 'player' ? `ポット <b>${potDelta}</b> 獲得 (<span class="hr-pot-plus">+${potDelta}</span>)`
+        : last.winner === 'opponent' ? `${opponentName}がポット <b>${potDelta}</b> を獲得 (<span class="hr-pot-minus">−${potDelta}</span>)`
+        : `ポット <b>${potDelta}</b> を折半`
+      }</div>
       ${verdict ? `<div class="hr-verdict-desc">${verdict.desc}</div>` : ''}
       ${showdownHtml}
       ${equityTimelineHtml}
@@ -12578,6 +12588,21 @@ function endBattle() {
   if (t) {
     t.textContent = won ? '勝利' : '敗北';
     if (!won) t.classList.add('lose');
+  }
+  // リザルトの立ち絵：勝てばミミが笑い相手がうなだれる／負ければ逆（差分が無いキャラは default）
+  const rs = document.querySelector('.result-screen');
+  if (rs) rs.classList.add(won ? 'result-won' : 'result-lost');
+  const mimiImg = document.querySelector('[data-result-mimi]');
+  if (mimiImg) {
+    mimiImg.src = `assets/characters/${won ? 'mimi_win' : 'mimi_sad'}.png`;
+    mimiImg.onerror = () => { mimiImg.onerror = null; mimiImg.src = 'assets/characters/mimi_default.png'; };
+  }
+  const oppImg = document.querySelector('[data-result-opp]');
+  if (oppImg && state.opponentImgKey) {
+    const key = state.opponentImgKey;
+    const mood = (OPPONENT_EXPRESSIONS[key] || {})[won ? 'defeat' : 'pleased'];
+    oppImg.onerror = () => { oppImg.onerror = null; oppImg.src = `assets/characters/${key}_default.png`; };
+    oppImg.src = `assets/characters/${key}_${mood || 'default'}.png`;
   }
   const setText = (k, v) => { const el = document.querySelector(`[data-bind="${k}"]`); if (el) el.textContent = v; };
   setText('rankValue', rank);

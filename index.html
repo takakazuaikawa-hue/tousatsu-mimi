@@ -346,7 +346,9 @@
 
 <template id="tpl-result">
   <div class="screen result-screen">
-    <div class="bg-layer bg-result"></div>
+    <div class="bg-layer bg-result bg-poker"></div>
+    <div class="result-char result-char-mimi"><img data-result-mimi src="assets/characters/mimi_win.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')"></div>
+    <div class="result-char result-char-opp"><img data-result-opp alt="相手"></div>
     <div class="result-inner">
       <h2 class="result-title" data-bind="resultTitle">勝利</h2>
       <div class="rank-display">
