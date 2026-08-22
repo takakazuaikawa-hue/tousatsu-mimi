@@ -12691,3 +12691,62 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   .mp-jumbo-char img { height: 220px; }
   .mp-side-panel { width: 90%; right: 5%; }
 }
+
+/* ===== リザルト演出 ===== */
+/* タイトル→ランク→統計行→次の目標→報酬理由→ボタンの順に段階フェードイン。
+   要素の最終位置・サイズは変えず、transform（translateY）と opacity のみをアニメさせる。 */
+.result-screen .result-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: mpResultReveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 0.12s);
+}
+@keyframes mpResultReveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 「次の目標」ライン：統計の下に1行 */
+.result-next-goal {
+  margin: -8px 0 20px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: rgba(245, 215, 122, 0.85); /* opacityプロパティは使わない：result-revealのフェード演出と競合するため */
+}
+
+/* ランクのスタンプ演出：大きく→縮小して着地する判子アニメ */
+.rank-value.rank-stamp {
+  animation: mpRankStamp 0.6s cubic-bezier(0.32, 1.6, 0.5, 1) both;
+  animation-delay: calc(var(--i, 1) * 0.12s + 0.08s);
+}
+@keyframes mpRankStamp {
+  0%   { opacity: 0; transform: scale(2.6) rotate(-6deg); }
+  55%  { opacity: 1; transform: scale(0.94) rotate(2deg); }
+  80%  { transform: scale(1.04) rotate(0deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+/* S/SS ランクは金色グロー */
+.rank-value.rank-stamp-gold {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: #ffe487;
+  text-shadow:
+    0 0 16px rgba(255, 224, 135, 0.9),
+    0 0 34px rgba(255, 196, 60, 0.65),
+    0 0 60px rgba(255, 196, 60, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-screen .result-reveal {
+    animation-duration: 0.01s;
+    animation-delay: 0s;
+    transform: none;
+  }
+  .rank-value.rank-stamp {
+    animation-duration: 0.01s;
+    animation-delay: 0s;
+    transform: none;
+  }
+}

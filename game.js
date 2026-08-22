@@ -11915,6 +11915,7 @@ function endBattle() {
   state.resultWon = won;
   state.rank = rank;
   state.scoreReasons = reasons;
+  state.__resultFxDone = false; // リザルト演出：この対戦分は未実行に戻す
   render();
 
   // 結果反映
@@ -11936,6 +11937,14 @@ function endBattle() {
       (reasons.length ? reasons.join(' / ') : '加点なし') +
       '<br><br><strong>獲得報酬：</strong><br>' +
       (state.rewards && state.rewards.length ? state.rewards.join('<br>') : 'なし');
+  }
+  // 次の目標（統計の下に1行）：既存の解放ルール・クリア記録をそのまま読むだけ
+  const statsBox = document.querySelector('.result-stats');
+  if (statsBox) {
+    const goalLine = document.createElement('div');
+    goalLine.className = 'result-next-goal';
+    goalLine.textContent = nextGoalText();
+    statsBox.insertAdjacentElement('afterend', goalLine);
   }
 
   // ヴェルベット勝利 → エンディングへ進むボタン追加 + 闘札大逆転演出 + 降伏セリフ
@@ -11967,6 +11976,107 @@ function endBattle() {
       btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
     }
   }
+
+  // リザルト演出（段階表示・コインカウントアップ・ランクスタンプ）
+  // → 全ての表示内容（ヴェルベット特殊分岐含む）が確定した最後にだけ起動する
+  startResultFx();
+}
+
+// 次に挑戦すべきステージ名を1行で返す（解放ルール／クリア記録は既存関数をそのまま読むだけ）
+function nextGoalText() {
+  const nextId = STAGE_ORDER.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
+  if (nextId) {
+    const opp = OPPONENTS[nextId];
+    return `次の目標：${opp.name}に挑戦`;
+  }
+  return '全ステージ制覇！再戦でSランクを狙おう';
+}
+
+// リザルト画面の「ご褒美感」演出をまとめて起動する。
+// render() は他の画面遷移からも呼ばれるため、state.__resultFxDone フラグで
+// 「result 画面になった直後の1回」だけ実行されるようにガードする
+// （フラグ自体は endBattle() が新しい対戦結果ごとに false へ戻す）。
+function startResultFx() {
+  if (state.__resultFxDone) return;
+  state.__resultFxDone = true;
+  const root = document.querySelector('.result-screen');
+  if (!root) return;
+  const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  // 1) 段階表示：タイトル→ランク→統計行→次の目標→報酬理由→ボタンの順にフェード/スライドイン
+  const revealTargets = [];
+  const titleEl = root.querySelector('[data-bind="resultTitle"]');
+  const rankBox = root.querySelector('.rank-display');
+  if (titleEl) revealTargets.push(titleEl);
+  if (rankBox) revealTargets.push(rankBox);
+  root.querySelectorAll('.result-stats > div').forEach(row => revealTargets.push(row));
+  const nextGoalEl = root.querySelector('.result-next-goal');
+  if (nextGoalEl) revealTargets.push(nextGoalEl);
+  const reasonEl = root.querySelector('[data-bind="resultReason"]');
+  if (reasonEl) revealTargets.push(reasonEl);
+  const btnsEl = root.querySelector('[data-bind="resultButtons"]');
+  if (btnsEl) revealTargets.push(btnsEl);
+  const rankBoxIndex = rankBox ? revealTargets.indexOf(rankBox) : -1;
+  revealTargets.forEach((el, i) => {
+    el.style.setProperty('--i', i);
+    el.classList.add('result-reveal');
+  });
+
+  // 2) ランクのスタンプ演出＋結果SFX（rankValue が表示される瞬間に判子のように着地）
+  const rankEl = root.querySelector('[data-bind="rankValue"]');
+  if (rankEl) {
+    const rankText = (rankEl.textContent || '').trim();
+    const isTopRank = rankText === 'S' || rankText === 'SS';
+    rankEl.style.setProperty('--i', rankBoxIndex >= 0 ? rankBoxIndex : 1);
+    rankEl.classList.add('rank-stamp');
+    if (isTopRank) rankEl.classList.add('rank-stamp-gold');
+    const sfxDelay = reduceMotion ? 0 : (rankBoxIndex >= 0 ? rankBoxIndex : 1) * 120 + 260;
+    setTimeout(() => {
+      if (state.resultWon) {
+        mpSfx(isTopRank ? 'royal' : 'bigwin');
+      } else {
+        mpSfx('lose');
+      }
+    }, sfxDelay);
+  }
+
+  // 3) 獲得コインのカウントアップ（約0.8秒でイーズアウト、途中で最大6回タップ音）
+  const coinEl = root.querySelector('[data-bind="earnedCoins"]');
+  if (coinEl) {
+    const target = Math.max(0, Math.round(state.coinsEarned || 0));
+    if (reduceMotion || target === 0) {
+      coinEl.textContent = target;
+    } else {
+      coinEl.textContent = '0';
+      animateCoinCountUp(coinEl, target);
+    }
+  }
+}
+
+// requestAnimationFrame でイーズアウトしながら 0→target をカウントアップし、
+// 節目ごとに mpSfx('tap') を（最大6回まで）鳴らす
+function animateCoinCountUp(el, target) {
+  const duration = 800;
+  const maxTicks = 6;
+  let ticksPlayed = 0;
+  const startTime = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - startTime) / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const val = Math.round(target * eased);
+    el.textContent = val;
+    const expectedTicks = Math.min(maxTicks, Math.floor(eased * maxTicks));
+    if (expectedTicks > ticksPlayed) {
+      ticksPlayed = expectedTicks;
+      mpSfx('tap');
+    }
+    if (t < 1) {
+      requestAnimationFrame(tick);
+    } else {
+      el.textContent = target;
+    }
+  }
+  requestAnimationFrame(tick);
 }
 
 // ヴェルベット撃破時の勝利演出（「逆転」表現を排除：ポーカーは累積で勝つゲーム）
