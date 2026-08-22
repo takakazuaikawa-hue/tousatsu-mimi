@@ -1060,6 +1060,179 @@ function opponentReactToPlayerFold() {
     default: return '……';
   }
 }
+
+// プレイヤー（ミミ）の攻め（ベット/レイズ/オールイン）への即時反応セリフ
+// kind: 'bet_small'（pot 1/2以下）| 'bet_big'（2/3〜pot）| 'raise' | 'allin'
+function opponentReactToPlayerAggression(kind, amount) {
+  if (state.opponentId === 'rico_tutorial' && state.seriousRicoMode) {
+    switch (kind) {
+      case 'bet_small': return pick([
+        'その程度、揺らがないわ',
+        'ふぅん、小さく刻んできたのね',
+        '様子見ね。悪くないわ',
+        '慎重ね。でも、まだ足りない',
+      ]);
+      case 'bet_big': return pick([
+        '……本気になってきたじゃない',
+        'そのサイズ、意味はわかってるの？',
+        '来たわね。受けて立つわ',
+        'ふぅん、強気に出たわね',
+      ]);
+      case 'raise': return pick([
+        'レイズ……いい度胸ね',
+        'ミミ、本当に来るとは思わなかった',
+        '面白い。受けましょう',
+        'その手、本気で通すつもり？',
+      ]);
+      case 'allin': return pick([
+        'オールイン……本気なのね、ミミ',
+        '全部……いいわ、受けて立つ',
+        '弟子が師匠に挑む顔ね、それ',
+        'その覚悟、見せてもらうわ',
+      ]);
+      default: return '……';
+    }
+  }
+  switch (state.opponentId) {
+    case 'rico_tutorial': switch (kind) {
+      case 'bet_small': return pick([
+        'お、来たね〜。それくらいなら余裕だよ',
+        'ふふ、ミミも慣れてきたじゃん',
+        'そのサイズかー、ちゃんと見せてもらうよ',
+        'いいね、その調子っ',
+      ]);
+      case 'bet_big': return pick([
+        'えっ、そこそこ来たね……ちょっと考えるよ',
+        'おおっ、強気じゃん。ふーむ……',
+        'ミミ、本気出してきた？ちょっと待って〜',
+        'あちゃー、そのサイズは効くなぁ',
+      ]);
+      case 'raise': return pick([
+        'レイズ！？ちょっとちょっと、待って〜',
+        'お、やるじゃん。よし、考えるよ',
+        'ミミがレイズしてくるとはねぇ……',
+        'うわ、成長したね……ちょっと悩むわ',
+      ]);
+      case 'allin': return pick([
+        'えっ、オールイン！？ま、まじで！？',
+        'ちょ、待って！本当に全部乗せた！？',
+        'ミミ、それ本気の顔してる……どうしよ',
+        'うわぁ、これは……教え子が怖いよ',
+      ]);
+      default: return '……';
+    }
+    case 'polka': switch (kind) {
+      case 'bet_small': return pick([
+        'お、来たね！でもその程度じゃボクには効かないよ〜',
+        'ふーん、まあその額なら見てあげる',
+        'そんなんじゃボク倒せないよー？',
+        'その程度、想定内だし〜',
+      ]);
+      case 'bet_big': return pick([
+        'うわっ、急に大きくない！？ちょっと待ってよ〜',
+        'え、ええ！？そのサイズはズルいって〜',
+        'ボ、ボク別に怖くないし……ちょっとだけ考える',
+        'なっ……そんなに来る！？',
+      ]);
+      case 'raise': return pick([
+        'レイズ！？え、待って待って〜',
+        'う、うわー、ミミちゃん強気すぎ〜！',
+        'そ、そんな……ボクの計画が……！',
+        'ちょっとタンマ！考えさせてー！',
+      ]);
+      case 'allin': return pick([
+        'ええーっ！？オールイン！？う、嘘でしょ〜！？',
+        'ちょ、ま、待って！心の準備が〜！',
+        'ボ、ボクの人生終わった……（涙目）',
+        'えぇぇ！？そこまでやる！？',
+      ]);
+      default: return '……';
+    }
+    case 'selina': switch (kind) {
+      case 'bet_small': return pick([
+        '標準的なサイズですね。想定内です。',
+        'その額なら、判断は容易です。',
+        '様子見ですね。受け止めます。',
+        '妥当な一手です。',
+      ]);
+      case 'bet_big': return pick([
+        '……大きいサイズですね。意図を読ませてください。',
+        'そのサイズ、軽視はできません。',
+        '強気ですね。少し、時間をください。',
+        '想定より重いですね。考えます。',
+      ]);
+      case 'raise': return pick([
+        'レイズ……レンジを絞らせてください。',
+        'なるほど、そう来ましたか。考えます。',
+        '想定より強い一手ですね。',
+        '……見直す必要がありそうです。',
+      ]);
+      case 'allin': return pick([
+        'オールイン……予想以上です。少し、驚きました。',
+        'そこまでの覚悟とは。慎重に判断します。',
+        '全て、ですか。……興味深いです。',
+        '……想定外です。じっくり読ませてください。',
+      ]);
+      default: return '……';
+    }
+    case 'grano': switch (kind) {
+      case 'bet_small': return pick([
+        'ふむ、手頃な値札ですな。',
+        'なるほど、様子見の投資ですか。',
+        'その額なら、じっくり吟味できますね。',
+        '妥当な商談ですね。',
+      ]);
+      case 'bet_big': return pick([
+        'おや、大きな買い物に出ましたね……値踏みさせてください。',
+        'ほう、強気な商談ですな。',
+        'これは……少々値が張りますね。考えましょう。',
+        'なかなかの一手ですね、お嬢さん。',
+      ]);
+      case 'raise': return pick([
+        'レイズとは、大胆な取引ですな。',
+        'ふむ、値を吊り上げてきましたか。',
+        'お嬢さん、本気の商談のようですね。',
+        'これは考えものですね。',
+      ]);
+      case 'allin': return pick([
+        'オールイン……全財産を賭けるとは、大した度胸ですな。',
+        'これは大きな取引になりましたね……検討します。',
+        'まさか、そこまでの覚悟とは。驚きました。',
+        'ふむ……これは商談の域を超えていますね。',
+      ]);
+      default: return '……';
+    }
+    case 'velvet': switch (kind) {
+      case 'bet_small': return pick([
+        'あら、可愛いサイズね。',
+        'ふふ、様子見？いいわ、受けてあげる。',
+        'その程度で、私が揺らぐと思った？',
+        'まだ本気じゃないのね。',
+      ]);
+      case 'bet_big': return pick([
+        'あら、少しはやる気になったのね。面白いわ。',
+        'ふふん、いいサイズじゃない。楽しませて。',
+        'その圧、悪くないわよ、新人。',
+        'あら……ちょっとは骨があるじゃない。',
+      ]);
+      case 'raise': return pick([
+        'レイズ……あら、牙を剥いてきたわね。',
+        'いいわ、そういうの好きよ。',
+        'ふふ、ようやく本気になったの？',
+        'あら素敵。もっと見せて？',
+      ]);
+      case 'allin': return pick([
+        'オールイン……あら、素敵。全部賭ける覚悟、気に入ったわ。',
+        'ふふふ、いいわ。そこまでするなら、受けて立つ。',
+        '震えるどころか、笑えてきたわ。楽しませてくれるじゃない。',
+        'あら、あらあら。新人にしては上出来よ。',
+      ]);
+      default: return '……';
+    }
+    default: return '……';
+  }
+}
+
 function polkaSpeech(action) {
   if (action.intent === 'bluff' || action.intent === 'forced_bluff') {
     return pick([
@@ -2592,15 +2765,22 @@ function applyBindings() {
         break;
       }
       case 'ricoAdvice': el.innerHTML = state.ricoAdvice; break;
-      case 'opponentSpeech':
+      case 'opponentSpeech': {
         if (state.opponentThinking) {
           el.innerHTML = `<span class="think-dots" aria-label="考え中"><i></i><i></i><i></i></span>`;
           el.classList.add('is-thinking');
-        } else {
-          el.textContent = state.opponentSpeech;
-          el.classList.remove('is-thinking');
+          break;
         }
+        el.classList.remove('is-thinking');
+        el.textContent = state.opponentSpeech;
+        if (state.opponentSpeech && state.opponentSpeech !== state.__lastSpeechShown) {
+          el.classList.remove('speech-pop');
+          void el.offsetWidth; // reflow でアニメを再起動
+          el.classList.add('speech-pop');
+        }
+        state.__lastSpeechShown = state.opponentSpeech;
         break;
+      }
       case 'opponentBet': el.innerHTML = renderOpponentBet(); break;
       case 'currentHandName': el.innerHTML = renderCurrentHandName(); break;
       case 'currentHandKicker': el.innerHTML = renderCurrentHandKicker(); break;
@@ -10122,6 +10302,10 @@ function playerRaise(bb) {
   log('bets', { actor: 'player', type: 'raise', amount });
   state.isPlayerTurn = false;
   state.mimiThought = `「${bb}BBレイズ！」`;
+  state.opponentSpeech = opponentReactToPlayerAggression('raise', amount);
+  if (!state.introHandMode && !state.tutorialMode) {
+    setOpponentExpression(state.opponentId === 'velvet' ? 'pleased' : 'rattled');
+  }
   render();
   flyChips('.char-mimi', '.bu-pot-physical', amount);
   setTimeout(opponentTurn, 700);
@@ -10135,6 +10319,12 @@ function playerBet(size) {
   log('bets', { actor: 'player', type: 'bet', size, amount });
   state.isPlayerTurn = false;
   state.mimiThought = `「${amount}ベット」`;
+  // pot 1/2以下は 'bet_small'、2/3〜pot は 'bet_big'
+  const aggroKind = (size === 'pot_2_3' || size === 'pot_1') ? 'bet_big' : 'bet_small';
+  state.opponentSpeech = opponentReactToPlayerAggression(aggroKind, amount);
+  if (!state.introHandMode && !state.tutorialMode && aggroKind === 'bet_big') {
+    setOpponentExpression(state.opponentId === 'velvet' ? 'pleased' : 'rattled');
+  }
   render();
   flyChips('.char-mimi', '.bu-pot-physical', amount);
   setTimeout(opponentTurn, 700);
@@ -10148,6 +10338,10 @@ function playerAllIn() {
   log('bets', { actor: 'player', type: 'allin', amount });
   state.isPlayerTurn = false;
   state.mimiThought = '「オールイン！」';
+  state.opponentSpeech = opponentReactToPlayerAggression('allin', amount);
+  if (!state.introHandMode && !state.tutorialMode) {
+    setOpponentExpression(state.opponentId === 'velvet' ? 'pleased' : 'rattled');
+  }
   render();
   flyChips('.char-mimi', '.bu-pot-physical', amount);
   showAllInCutIn('player', amount);
