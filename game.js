@@ -4976,8 +4976,9 @@ function renderPotBlock() {
     <div class="v2-disp v2-pot-num bu-pot-physical">${state.pot || 0}</div>
     <div class="v2-pot-sub">
       ${opp > 0 ? `<span class="v2-chip v2-chip-red">${oppName} +${opp} <em>${sizeTag}</em></span>` : ''}
-      <span class="v2-chip v2-chip-dark">残り ${state.opponentChips}</span>
-    </div>`;
+      <span class="v2-chip v2-chip-dark"><img class="v2-chip-icon" src="assets/ui/chip_red.png" alt="">残り ${state.opponentChips}</span>
+    </div>
+    <div class="v2-stackbar v2-stackbar-opp"><i style="width:${chipBarPct(state.opponentChips)}%"></i></div>`;
 }
 function renderTellTags() {
   const tags = state.tellTags || [];

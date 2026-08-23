@@ -14027,3 +14027,28 @@ body.is-danger .battle-screen.v2::after { box-shadow: inset 0 0 120px rgba(200,3
 .v2-cutin .v2c-art img { -webkit-mask-image: none; mask-image: none; filter: none !important; }
 .v2p-opponent-stage.v2p-mode-cutin, .v2-cutin .v2c-art {
   -webkit-mask-image: radial-gradient(ellipse 44% 50% at 56% 50%, #000 40%, rgba(0,0,0,0) 100%); mask-image: radial-gradient(ellipse 44% 50% at 56% 50%, #000 40%, rgba(0,0,0,0) 100%); }
+
+/* ===== バトル v2 改善（ユーザーフィードバック 2026-08-24） ===== */
+/* ① 相手の立ち絵：字幕帯より下（指先・ブーツ）をフェードで消す。胴体切れの「ごみ」対策 */
+.battle-screen.v2 .v2-opp { -webkit-mask-image: linear-gradient(180deg, #000 0 46%, rgba(0,0,0,0) 54%); mask-image: linear-gradient(180deg, #000 0 46%, rgba(0,0,0,0) 54%); }
+/* ② 場札：テーブル背景の中心に合わせる */
+.battle-screen.v2 .community-cards { left: 50%; }
+.v2-danger { left: 50%; top: 156px; transform: translateX(-50%); }
+/* ③ スタックバー：格ゲーの体力バーの文法で残チップを可視化 */
+.v2-stackbar { width: 200px; height: 9px; background: rgba(255,255,255,.1); transform: skewX(-12deg); overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+.v2-stackbar i { display: block; height: 100%; transition: width .5s cubic-bezier(.2,.8,.3,1); }
+.v2-stackbar-opp { margin: 8px 0 0 auto; }
+.v2-stackbar-opp i { background: linear-gradient(90deg, #ff3d57, #c8253a); }
+.v2-stackbar-pl { margin: 6px 0 0 auto; }
+.v2-stackbar-pl i { background: linear-gradient(90deg, #f5d77a, #d9b35a); }
+.v2-chip-icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; }
+/* ④ コメント帯：ミミの心の声→リコの助言を左下に縦2段。決断前に一箇所で読める */
+.battle-screen.v2 .v2-comments.left-panel { position: absolute; left: 56px; bottom: 306px; width: 310px; display: flex; flex-direction: column; gap: 8px; background: none; border: 0; padding: 0; overflow: visible; z-index: 3; }
+.v2-com { display: flex; gap: 8px; align-items: flex-start; }
+.v2-com-face { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; flex: 0 0 auto; border: 2px solid #ffc1d8; background: #2a0f3d; position: static; }
+.v2-com-rico .v2-com-face { border-color: #d9b35a; }
+.v2-com-face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 8%; }
+.v2-com-rico .v2-com-face img { transform: scale(2.2); transform-origin: 50% 10%; }
+.battle-screen.v2 .mimi-thought-bubble.v2-com-text { position: static; width: auto; min-height: 0; max-height: 60px; padding: 6px 10px; background: rgba(255,193,216,.12); border: 0; border-left: 3px solid #ffc1d8; border-radius: 0 8px 8px 0; box-shadow: none; font-size: 12.5px; font-weight: 700; font-style: italic; color: #ffc1d8; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; }
+.battle-screen.v2 .rico-bubble.v2-com-text { position: static; max-height: 54px; padding: 6px 10px; background: rgba(245,215,122,.14); border: 0; border-left: 3px solid #d9b35a; border-radius: 0 8px 8px 0; color: #f5d77a; font-size: 12.5px; font-weight: 700; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.battle-screen.v2 .rico-bubble.v2-com-text:empty, .battle-screen.v2 .mimi-thought-bubble.v2-com-text:empty { display: none; }

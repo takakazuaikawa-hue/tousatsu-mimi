@@ -34,7 +34,7 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
-<link rel="stylesheet" href="style.css?v=20260824b">
+<link rel="stylesheet" href="style.css?v=20260824c">
 </head>
 <body>
 <div id="preload-overlay">
@@ -268,13 +268,18 @@
       <div class="situation-analysis" data-bind="situationAnalysis"></div>
     </aside>
 
-    <!-- 左：ミミの心の声 ＋ リコ先輩の小さなささやき -->
-    <div class="v2-thought mimi-thought-bubble" data-bind="mimiThought"></div>
-    <div class="v2-rico left-panel">
-      <div class="character-frame char-rico v2-rico-face" data-action="char-profile" data-char="rico_tutorial" title="リコ先輩のプロフィールを見る">
-        <img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+    <!-- 左下：コメント帯（ミミの心の声→リコの助言を一箇所に。決断の直前に読む位置） -->
+    <div class="v2-comments left-panel">
+      <div class="v2-com v2-com-mimi">
+        <div class="v2-com-face"><img src="assets/characters/mimi_mini.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')"></div>
+        <div class="mimi-thought-bubble v2-com-text" data-bind="mimiThought"></div>
       </div>
-      <div class="rico-bubble v2-rico-bubble" data-bind="ricoAdvice"></div>
+      <div class="v2-com v2-com-rico">
+        <div class="v2-com-face character-frame char-rico v2-rico-face" data-action="char-profile" data-char="rico_tutorial" title="リコ先輩のプロフィールを見る">
+          <img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+        </div>
+        <div class="rico-bubble v2-com-text v2-rico-bubble" data-bind="ricoAdvice"></div>
+      </div>
     </div>
 
     <!-- 右下：ミミのバストアップ＋手札＋役 -->
@@ -288,7 +293,8 @@
         <div class="v2-role-label">ミミの役</div>
         <div class="hand-label hand-label-hand v2-role-name" data-bind="currentHandName">—</div>
         <div class="hand-kicker v2-role-kicker" data-bind="currentHandKicker"></div>
-        <div class="v2-role-chips">残り <span data-bind="playerChips">0</span></div>
+        <div class="v2-role-chips"><img class="v2-chip-icon" src="assets/ui/chip_gold.png" alt="">残り <span data-bind="playerChips">0</span></div>
+        <div class="v2-stackbar v2-stackbar-pl"><i data-bind="playerChipBar"></i></div>
       </div>
       <div class="player-hand" data-bind="playerHand">
         <div class="card empty"></div><div class="card empty"></div>
@@ -424,6 +430,6 @@
   </div>
 </template>
 
-<script src="game.js?v=20260824a"></script>
+<script src="game.js?v=20260824c"></script>
 </body>
 </html>
