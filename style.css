@@ -14020,3 +14020,10 @@ body.is-danger .battle-screen.v2::after { box-shadow: inset 0 0 120px rgba(200,3
     radial-gradient(ellipse at 22% 60%, rgba(80,160,255,.18) 0%, rgba(0,0,0,0) 46%),
     linear-gradient(180deg, rgba(5,10,20,.25) 0%, rgba(5,10,20,0) 38%, rgba(5,10,20,.85) 100%); }
 .v2p-opponent-stage.character-frame { background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; overflow: visible !important; }
+.v2p-opponent-stage.v2p-mode-cutin { filter: none !important;
+  -webkit-mask-image: radial-gradient(ellipse 50% 54% at 56% 50%, #000 42%, rgba(0,0,0,0) 100%); mask-image: radial-gradient(ellipse 50% 54% at 56% 50%, #000 42%, rgba(0,0,0,0) 100%); }
+.v2p-opponent-stage.v2p-mode-cutin .v2p-stage-img { -webkit-mask-image: none; mask-image: none; }
+.v2-cutin .v2c-art { -webkit-mask-image: radial-gradient(ellipse 50% 54% at 56% 50%, #000 42%, rgba(0,0,0,0) 100%); mask-image: radial-gradient(ellipse 50% 54% at 56% 50%, #000 42%, rgba(0,0,0,0) 100%); }
+.v2-cutin .v2c-art img { -webkit-mask-image: none; mask-image: none; filter: none !important; }
+.v2p-opponent-stage.v2p-mode-cutin, .v2-cutin .v2c-art {
+  -webkit-mask-image: radial-gradient(ellipse 44% 50% at 56% 50%, #000 40%, rgba(0,0,0,0) 100%); mask-image: radial-gradient(ellipse 44% 50% at 56% 50%, #000 40%, rgba(0,0,0,0) 100%); }
