@@ -12773,7 +12773,16 @@ function endBattle() {
     const pickFrom = (list) => list.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
     const nextId = pickFrom(after) || pickFrom(STAGE_ORDER) || null;
     const btns = document.querySelector('[data-bind="resultButtons"]');
-    if (btns) {
+    if (btns && !won && state.opponentId !== 'rico_tutorial') {
+      // 敗北：主ボタンは「同じ相手に再挑戦」。悔しさをそのまま次の一手に繋ぐ
+      btns.innerHTML = `
+          <button class="btn btn-primary result-main-btn" data-action="rematch"><span>${(state.opponentName || '相手').replace(/（.*）/, '')}に再挑戦</span><span>→</span></button>
+          <div class="result-sub-buttons">
+            <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+          </div>
+        `;
+      btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
+    } else if (btns) {
       if (nextId) {
         const nOpp = OPPONENTS[nextId];
         btns.innerHTML = `
@@ -12839,6 +12848,9 @@ function nextGoalText() {
   const after = STAGE_ORDER.slice(curIdx + 1);
   const pickFrom = (list) => list.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
   const nextId = pickFrom(after) || pickFrom(STAGE_ORDER);
+  if (state.resultWon === false && state.opponentId !== 'rico_tutorial') {
+    return `次の目標：${(state.opponentName || '相手').replace(/（.*）/, '')}にリベンジ`;
+  }
   if (nextId) {
     const opp = OPPONENTS[nextId];
     return `次の目標：${opp.name}に挑戦`;
