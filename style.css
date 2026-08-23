@@ -13453,3 +13453,8 @@ body.is-danger .battle-screen.v2::after { box-shadow: inset 0 0 120px rgba(200,3
 .battle-screen.v2 .sd-callout { left: 32%; top: 112%; }
 .v2-pause { top: 16px; left: 196px; }
 .battle-screen.v2 .backdoor-toggle { left: 262px; top: 16px; }
+/* 拍④ 決断：背景と相手を沈め、札・額・スラブだけ明るく */
+.battle-screen.v2 .bg-poker, .battle-screen.v2 .v2-opp .char-opponent img { transition: filter .45s ease; }
+.battle-screen.v2.is-deciding .bg-poker { filter: saturate(.6) brightness(.5); }
+.battle-screen.v2.is-deciding .v2-opp .char-opponent img { filter: brightness(.55) drop-shadow(0 20px 40px rgba(0,0,0,.8)) !important; }
+.battle-screen.v2.is-deciding .v2-tag { opacity: .85; }
