@@ -11653,7 +11653,8 @@ function resolvePsych(qid, choice, btn) {
     state.mimiThought = `「読めた……！${eff.hint}」`;
     // v2：読み取った「テル」を卓上の付箋として残す
     if (!state.tellTags) state.tellTags = [];
-    const tellText = (q.tell || (eff.hint || '').replace(/[「」。]/g, '')).slice(0, 14);
+    const rawTell = (q.zazazoHint || '').replace(/^ゾゾゾ反応[：:]\s*/, '').split(/[。．]/)[0];
+    const tellText = (rawTell || (eff.hint || '').replace(/[「」。]/g, '')).slice(0, 16);
     if (tellText) state.tellTags.push(tellText);
     state.ricoAdvice = `「${eff.rico}」`;
     // note_range_lv2/3：心理バトル成功時に相手レンジのヒントを追加表示
