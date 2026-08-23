@@ -500,6 +500,13 @@ function setMimiExpression(expr) {
         goPlainDefault();
       }
     };
+    // v2 バトル画面：バストアップ差分（think / shock / win）を優先。無ければ従来PNGへ
+    if (img.closest('.battle-screen.v2')) {
+      const bust = { default: 'think', think: 'think', shock: 'shock', win: 'win', sad: 'think', blush: 'win' }[expr || 'default'] || 'think';
+      img.onerror = () => { img.onerror = goDefault; img.src = `assets/characters/mimi_${expr && expr !== 'default' ? expr : 'default'}.png`; };
+      img.src = `assets/characters/mimi_bust_${bust}.webp`;
+      return;
+    }
     if (!expr || expr === 'default') { goDefault(); return; }
     img.onerror = goDefault;
     img.src = `assets/characters/mimi_${expr}.png`;
@@ -2956,6 +2963,15 @@ function applyBindings() {
         break;
       case 'shopItems': el.innerHTML = renderShopItems('panyu'); break;
       case 'ricoShopComment': /* default initial */ break;
+      // ===== v2 バトル画面（舞台演出レイアウト）用バインド =====
+      case 'handNo2': el.textContent = String(state.handNo || 1).padStart(2, '0'); break;
+      case 'handMax2': el.textContent = state.maxHands >= 999 ? '' : '/ ' + String(state.maxHands || 0).padStart(2, '0'); break;
+      case 'streetList': el.innerHTML = renderStreetList(); break;
+      case 'opponentNameLatin': el.textContent = opponentLatinName(); break;
+      case 'potBlock': el.innerHTML = renderPotBlock(); break;
+      case 'tellTags': el.innerHTML = renderTellTags(); break;
+      case 'winrateSeal': el.innerHTML = renderWinrateSeal(); break;
+      case 'dangerBar': el.innerHTML = renderDangerBar(); break;
       case 'opponentImg':
         el.onerror = function() { window.assetFallback(this, state.opponentImgKey); };
         el.src = `assets/characters/${state.opponentImgKey}_default.png`;
@@ -4912,6 +4928,63 @@ function renderSessionStats() {
 }
 
 // 現在のストリート進行表示
+// ===== v2 レンダラ群 =====
+const OPP_LATIN = { polka: 'POLKA', selina: 'SELINA', grano: 'GRANO', velvet: 'VELVET', rico_tutorial: 'RICO' };
+function opponentLatinName() { return OPP_LATIN[state.opponentId] || (state.opponentName || '').toUpperCase(); }
+function renderStreetList() {
+  const order = ['preflop', 'flop', 'turn', 'river', 'showdown'];
+  const labels = { preflop: 'PREFLOP', flop: 'FLOP', turn: 'TURN', river: 'RIVER', showdown: 'SHOWDOWN' };
+  let cur = state.handPhase || 'preflop';
+  if (cur === 'turnRiver') cur = 'river';
+  if (cur === 'idle') cur = state.handNo ? 'showdown' : 'preflop';
+  const curIdx = order.indexOf(cur);
+  return order.filter(s => (state.fullHand || s !== 'turn') && (s !== 'showdown' || cur === 'showdown')).map(s => {
+    const i = order.indexOf(s);
+    const cls = i < curIdx ? 'v2-st-done' : i === curIdx ? 'v2-st-cur' : 'v2-st-future';
+    return `<span class="v2-disp v2-st ${cls}">${labels[s]}${i < curIdx ? ' ✓' : ''}</span>`;
+  }).join('');
+}
+function renderPotBlock() {
+  const opp = state.currentBetOpponent || 0;
+  const oppName = (state.opponentName || '相手').replace(/（.*）/, '');
+  const sizeTag = (() => {
+    const base = state.pot - opp; if (opp <= 0 || base <= 0) return '';
+    const r = opp / base; if (r >= 0.95) return 'ポット'; if (r >= 0.6) return '2/3ポット'; if (r >= 0.4) return '1/2ポット'; return '小ベット';
+  })();
+  return `
+    <div class="v2-disp v2-pot-label">POT</div>
+    <div class="v2-disp v2-pot-num bu-pot-physical">${state.pot || 0}</div>
+    <div class="v2-pot-sub">
+      ${opp > 0 ? `<span class="v2-chip v2-chip-red">${oppName} +${opp} <em>${sizeTag}</em></span>` : ''}
+      <span class="v2-chip v2-chip-dark">残り ${state.opponentChips}</span>
+    </div>`;
+}
+function renderTellTags() {
+  const tags = state.tellTags || [];
+  return tags.slice(-2).map((t, i) => `<div class="v2-tag ${i === 1 ? 'v2-tag-b' : ''}">${t}</div>`).join('');
+}
+function renderWinrateSeal() {
+  if (state.handPhase === 'idle' || !state.playerHand || state.playerHand.length < 2) return '';
+  if (state.winrateRevealed || state.tutorialMode || state.introHandMode) {
+    const all = [...state.playerHand, ...(state.community || [])];
+    const eq = state.community.length >= 3 ? realisticEquity01(all) : opponentPreflopStrength(state.playerHand);
+    const pct = Math.round(Math.max(0, Math.min(1, eq)) * 100);
+    return `<div class="v2-seal-open"><div class="v2-disp v2-seal-pct">${pct}%</div><div class="v2-seal-cap">勝率</div></div>`;
+  }
+  return `<div class="v2-seal-closed" data-action="toggle-v2-detail" title="詳細データを開く"><div class="v2-disp v2-seal-q">?</div><div class="v2-seal-cap">勝率 封印中</div></div>`;
+}
+function renderDangerBar() {
+  if (!state.community || state.community.length < 3) return '';
+  const d = evaluateBoardDanger(state.community);
+  const parts = [];
+  if (d.flushAlert) parts.push('フラッシュ気配');
+  if (d.straightAlert) parts.push('ストレート気配');
+  if (d.pairBoard) parts.push('ペアボード');
+  const pct = Math.min(100, parts.length * 34 + (state.community.length - 3) * 8);
+  const label = parts.join('・');
+  if (!label) return '';
+  return `<div class="v2-danger-track"><div class="v2-danger-fill" style="width:${pct}%"></div></div><div class="v2-danger-label">${label}</div>`;
+}
 function renderStreetTracker() {
   const order = ['preflop', 'flop', 'turn', 'river', 'showdown'];
   const labels = { preflop: 'プリフロップ', flop: 'フロップ', turn: 'ターン', river: 'リバー', showdown: 'ショー' };
@@ -5350,6 +5423,8 @@ function showShowdownCallout(winner, pEv, oEv) {
 // ハンド開始時に演出状態をリセット
 function resetHandJuice() {
   state.__dealSeen = { community: 0, player: 0, opp: 0 };
+  state.tellTags = [];
+  state.winrateRevealed = false;
   state.opponentRevealed = false;
   state.sdHighlight = null;
   state.opponentThinking = false;
@@ -5720,6 +5795,11 @@ function onAction(e) {
     case 'play-ending':   state.screen = 'ending'; render(); break;
     case 'play-ending-theme': toggleEndingThemePreview(); break;
     case 'play-minipoker': showMiniPokerGame(); break;
+    case 'toggle-v2-detail': {
+      const panel = document.querySelector('.v2-detail');
+      if (panel) panel.classList.toggle('open');
+      break;
+    }
     case 'toggle-backdoor':
       save.backdoorOn = !save.backdoorOn;
       saveProgress();
@@ -11092,6 +11172,7 @@ function usePanyuSense(qid, isFree) {
   if (!state.psychRoot) return;
   const cost = isFree ? 0 : 25;
   if (!isFree && state.panyu < 25) return;
+  state.winrateRevealed = true; // v2：このハンドの勝率封印を解く
   // 即時にコスト消費・ボタン無効化（取り消し不可なコミット）
   state.panyu -= cost;
   if (isFree) {
@@ -11567,6 +11648,10 @@ function resolvePsych(qid, choice, btn) {
       setTimeout(() => showPersonalityRevealBanner(), 600);
     }
     state.mimiThought = `「読めた……！${eff.hint}」`;
+    // v2：読み取った「テル」を卓上の付箋として残す
+    if (!state.tellTags) state.tellTags = [];
+    const tellText = (q.tell || (eff.hint || '').replace(/[「」。]/g, '')).slice(0, 14);
+    if (tellText) state.tellTags.push(tellText);
     state.ricoAdvice = `「${eff.rico}」`;
     // note_range_lv2/3：心理バトル成功時に相手レンジのヒントを追加表示
     const rangeLv = save.panyuSkills?.rangeLevel || 1;
@@ -11839,6 +11924,7 @@ function showdown() {
   else winner = 'split';
 
   // ── 段階演出：①相手の手札めくり → ②勝ち札ハイライト＋勝敗コール → ③チップ移動 → 結果モーダル ──
+  if (typeof dismissCutIn === 'function') dismissCutIn();
   const pot = state.pot;
   const handNoAtStart = state.handNo;
   const alive = () => state.screen === 'battle' && state.handPhase === 'showdown' && state.handNo === handNoAtStart;
@@ -11934,6 +12020,7 @@ function showStreakBadge(text, tier) {
 
 function endHand() {
   if (state.screen !== 'battle') return;
+  if (typeof dismissCutIn === 'function') dismissCutIn();
   state.handPhase = 'idle';
   state.opponentSpeech = '';
   // 連勝カウンタ更新
@@ -13291,6 +13378,32 @@ function showOpponentCutIn(text, betSize) {
   if (betSize === 'allin' || betSize === 'pot_1') setMimiExpression('shock');
   const cut = document.createElement('div');
   cut.className = `rico-cutin opponent-cutin ${intensity}`;
+  // v2：画面全体を暗転させ、相手の顔アップ・セリフ帯・額だけを浴びせるカットイン
+  if (document.querySelector('.battle-screen.v2')) {
+    const amt = state.currentBetOpponent || 0;
+    const sizeTag = betSize === 'allin' ? 'ALL IN' : betSize === 'pot_1' ? 'POT' : betSize === 'pot_2_3' ? '2/3 POT' : 'BET';
+    const latin = (typeof opponentLatinName === 'function') ? opponentLatinName() : oppName;
+    cut.className += ' v2-cutin';
+    cut.innerHTML = `
+      <div class="v2c-dim"></div>
+      <div class="v2c-slash"></div>
+      <div class="v2c-art"><img src="assets/characters/${imgKey}_cutin_smug.webp" alt="${oppName}" onerror="this.onerror=null;this.src='assets/characters/${imgKey}_default.png';this.classList.add('v2c-fallback')"></div>
+      <div class="v2c-band"><div class="v2c-name v2-disp">${latin}</div><div class="v2c-line">「${text}」</div></div>
+      <div class="v2c-amount"><div class="v2-disp v2c-amount-num">${sizeTag} +${amt}</div><div class="v2c-amount-sub">タップで閉じる</div></div>
+    `;
+    document.body.appendChild(cut);
+    let dismissed = false;
+    const dismiss = () => {
+      if (dismissed) return; dismissed = true; activeCutInDismiss = null;
+      clearTimeout(autoT); cut.classList.add('cutin-out');
+      if (betSize === 'allin' || betSize === 'pot_1') setMimiExpression('default');
+      setTimeout(() => cut.remove(), 450);
+    };
+    const autoT = setTimeout(dismiss, (betSize === 'allin' || betSize === 'pot_1') ? 3200 : 2600);
+    cut.addEventListener('click', dismiss);
+    activeCutInDismiss = dismiss;
+    return;
+  }
   // 強度別パーティクル数（allin=多、pot=中、strong=少）
   const sparkles = (betSize === 'allin') ? 8 : (betSize === 'pot_1') ? 5 : 0;
   const sparkleHtml = Array.from({ length: sparkles }, (_, i) =>
@@ -13299,7 +13412,7 @@ function showOpponentCutIn(text, betSize) {
   cut.innerHTML = `
     <div class="cutin-flash"></div>
     <div class="cutin-portrait">
-      <img src="assets/characters/${imgKey}_default.png" alt="${oppName}" onerror="window.assetFallback(this,'${imgKey}')">
+      <img src="assets/characters/${imgKey}_cutin_smug.webp" alt="${oppName}" onerror="this.onerror=null;this.classList.add('no-cutin-art');this.src='assets/characters/${imgKey}_default.png'">
       ${sparkleHtml}
     </div>
     <div class="cutin-text">
