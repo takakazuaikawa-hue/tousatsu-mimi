@@ -7263,80 +7263,10 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   .battle-modal-overlay .choice-btn .choice-label { width: 28px; height: 28px; font-size: 14px; left: 10px; }
 }
 
-/* ========== リザルト画面 ========== */
-.result-screen { grid-template-rows: 1fr; }
-.result-inner {
-  position: relative;
-  z-index: 1;
-  align-self: center;
-  text-align: center;
-  padding: 30px;
-  width: min(560px, 92vw);
-  margin: 0 auto;
-  background: rgba(0,0,0,0.5);
-  border: 2px solid var(--c-gold);
-  border-radius: 16px;
-  /* ★内訳テキストが伸びると枠ごとキャンバス(800px)を突き抜け、
-     下のボタンが画面外に切れていた。高さを上限で止め、
-     可変長の .result-reason だけ内部スクロールさせてボタンは常時表示する。 */
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100% - 32px);
-  min-height: 0;
-}
-.result-inner > .result-title,
-.result-inner > .rank-display,
-.result-inner > .result-stats,
-.result-inner > .result-buttons {
-  flex-shrink: 0;
-}
-.result-inner > .result-reason {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overflow-wrap: break-word;
-}
-.result-title {
-  font-size: 42px;
-  margin: 0 0 16px;
-  color: var(--c-gold-bright);
-  letter-spacing: 0.2em;
-}
-.result-title.lose { color: var(--c-text-dim); }
-.rank-display { margin-bottom: 20px; }
-.rank-label { font-size: 13px; color: var(--c-text-dim); letter-spacing: 0.2em; }
-.rank-value {
-  font-size: 80px;
-  font-weight: 900;
-  background: linear-gradient(180deg, var(--c-gold-bright) 0%, var(--c-red) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  line-height: 1;
-}
-.result-stats {
-  display: grid;
-  gap: 8px;
-  font-size: 18px;
-  margin-bottom: 20px;
-  text-align: left;
-  padding: 18px 22px;
-  background: rgba(255,255,255,0.04);
-  border-radius: 8px;
-  border: 1px solid rgba(217,179,90,0.3);
-}
-.result-reason {
-  background: rgba(217,179,90,0.1);
-  border-left: 3px solid var(--c-gold);
-  padding: 14px 18px;
-  font-size: 16px;
-  text-align: left;
-  margin-bottom: 20px;
-  line-height: 1.65;
-  color: var(--c-text);
-}
-.result-buttons { display: flex; gap: 12px; justify-content: center; }
+/* ========== リザルト画面 ==========
+   本体スタイルは「結果画面 v2：舞台演出レイアウト」セクション（バトル画面 v2 の直前）
+   にまとめてある。ここでは画面の grid だけ最低限リセットする。 */
+.result-screen { grid-template-rows: 1fr; display: block; overflow: hidden; }
 
 /* ========== 演出 ========== */
 .bluff-break-effect {
@@ -13056,13 +12986,31 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* 「次の目標」ライン：統計の下に1行 */
+/* 「次の目標」ライン：統計の下に1行（rz-panel のフレックス子として自然に並ぶ） */
 .result-next-goal {
-  margin: -8px 0 20px;
-  font-size: 13px;
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
   letter-spacing: 0.04em;
-  text-align: center;
-  color: rgba(245, 215, 122, 0.85); /* opacityプロパティは使わない：result-revealのフェード演出と競合するため */
+  text-align: left;
+  background: rgba(245,215,122,0.08);
+  border-left: 3px solid rgba(245,215,122,0.6);
+  color: rgba(247, 238, 207, 0.92); /* opacityプロパティは使わない：result-revealのフェード演出と競合するため */
+}
+.result-next-goal::before {
+  content: 'NEXT';
+  font-family: "Bebas Neue", "Noto Sans JP", Impact, sans-serif;
+  letter-spacing: 0.35em;
+  color: var(--c-gold-bright);
+  margin-right: 12px;
+  font-size: 13px;
+}
+.result-screen.result-lost .result-next-goal {
+  border-left-color: rgba(196,184,154,0.6);
+}
+.result-screen.result-lost .result-next-goal::before {
+  color: var(--c-text-dim);
 }
 
 /* ランクのスタンプ演出：大きく→縮小して着地する判子アニメ */
@@ -13158,25 +13106,47 @@ body.is-danger .bu-remain-num {
   }
 }
 
-/* ===== リザルト画面：卓の背景＋立ち絵で「勝負の余韻」を出す（安っぽい単色カード脱却） ===== */
-.result-screen .bg-result.bg-poker {
-  background-image:
-    linear-gradient(180deg, rgba(20,8,29,0.55) 0%, rgba(20,8,29,0.35) 40%, rgba(20,8,29,0.8) 100%),
-    url('assets/backgrounds/poker_table_bg.png');
-  background-size: cover;
-  background-position: center;
-  filter: saturate(0.9);
+/* =====================================================================
+   結果画面 v2：舞台演出レイアウト（黒×深紅×金、斜めスラブ、縦書き勝敗、紋章判子）
+   docs/design-ref/result-design.html を正として、1280×800 固定キャンバス前提の
+   絶対配置で再構成。data-bind 名・.result-won/.result-lost・.rank-stamp・
+   .result-reveal・[data-result-mimi]/[data-result-opp]・.result-next-goal は
+   endBattle()/startResultFx() がそのまま読み書きするため、名前は変更しない。
+   ===================================================================== */
+.bg-result-stage {
+  background:
+    radial-gradient(ellipse at 30% 45%, rgba(245,215,122,0.28) 0%, rgba(0,0,0,0) 48%),
+    linear-gradient(180deg, rgba(20,8,29,0.55) 0%, rgba(20,8,29,0.25) 40%, rgba(20,8,29,0.92) 100%),
+    url('assets/backgrounds/bg_result_stage.jpg') center 30% / 130% no-repeat,
+    linear-gradient(180deg, var(--c-purple) 0%, var(--c-bg-dark) 100%);
+  filter: saturate(0.95);
 }
+/* 背面の巨大ランク文字：透かし（JS が data-rank-watermark 属性にランクを入れる） */
+.result-screen::before {
+  content: attr(data-rank-watermark);
+  position: absolute;
+  right: -10px;
+  top: -30px;
+  font-family: "Bebas Neue", "Noto Sans JP", Impact, sans-serif;
+  font-size: 380px;
+  line-height: 1;
+  color: rgba(245,215,122,0.055);
+  letter-spacing: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.result-screen.result-lost::before { color: rgba(255,138,138,0.05); }
+
+/* 勝者／敗者の立ち絵：勝った側を左に大きく、負けた側を右に小さく暗く */
 .result-char {
   position: absolute;
   bottom: 0;
-  width: 34%;
-  height: 96%;
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  transition: none;
   animation: resultCharIn 0.7s cubic-bezier(.2,.8,.3,1) both;
 }
 .result-char img {
@@ -13185,20 +13155,248 @@ body.is-danger .bu-remain-num {
   object-fit: contain;
   filter: drop-shadow(0 12px 24px rgba(0,0,0,0.7));
 }
-.result-char-mimi { left: 1%; }
-.result-char-opp  { right: 1%; animation-delay: 0.15s; }
-.result-screen.result-won  .result-char-opp  img { filter: drop-shadow(0 12px 24px rgba(0,0,0,0.7)) brightness(0.6) saturate(0.6); transform: translateY(14px) scale(0.94); }
-.result-screen.result-lost .result-char-mimi img { filter: drop-shadow(0 12px 24px rgba(0,0,0,0.7)) brightness(0.65) saturate(0.7); transform: translateY(14px) scale(0.94); }
-.result-screen.result-won  .result-char-mimi img { filter: drop-shadow(0 0 28px rgba(245,215,122,0.45)) drop-shadow(0 12px 24px rgba(0,0,0,0.7)); }
-.result-screen.result-lost .result-char-opp  img { filter: drop-shadow(0 0 28px rgba(255,80,80,0.35)) drop-shadow(0 12px 24px rgba(0,0,0,0.7)); }
-.result-inner {
-  background: rgba(12, 6, 20, 0.78);
-  backdrop-filter: blur(3px);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,215,122,0.25) inset;
+.result-char-mimi { left: -1%; width: 46%; height: 98%; }
+.result-char-opp  { right: 1%;  width: 46%; height: 98%; animation-delay: 0.15s; }
+/* ミミ勝利：ミミを主役サイズのまま、相手は右奥へ小さく沈める */
+.result-screen.result-won .result-char-opp {
+  width: 17%;
+  height: 42%;
+  right: 3%;
+  bottom: 30%;
+  opacity: 0.68;
+}
+.result-screen.result-won .result-char-mimi img {
+  filter: drop-shadow(0 0 34px rgba(245,215,122,0.5)) drop-shadow(0 16px 28px rgba(0,0,0,0.75));
+}
+.result-screen.result-won .result-char-opp img {
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.8)) brightness(0.55) saturate(0.55);
+}
+/* ミミ敗北：相手を主役サイズへ、ミミは右奥へ小さく沈める */
+.result-screen.result-lost .result-char-mimi {
+  width: 17%;
+  height: 42%;
+  left: 3%;
+  bottom: 30%;
+  opacity: 0.68;
+}
+.result-screen.result-lost .result-char-opp {
+  left: auto;
+  right: -1%;
+  width: 46%;
+  height: 98%;
+}
+.result-screen.result-lost .result-char-mimi img {
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.8)) brightness(0.6) saturate(0.6);
+}
+.result-screen.result-lost .result-char-opp img {
+  filter: drop-shadow(0 0 30px rgba(255,90,90,0.4)) drop-shadow(0 16px 28px rgba(0,0,0,0.75));
 }
 @keyframes resultCharIn {
   0%   { opacity: 0; transform: translateY(30px); }
   100% { opacity: 1; transform: none; }
+}
+
+/* 勝敗：縦書きの巨大文字＋ステージ帯 */
+.rz-titleblock {
+  position: absolute;
+  left: 44%;
+  top: 26px;
+  bottom: 20px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  pointer-events: none;
+}
+.result-title {
+  writing-mode: vertical-rl;
+  margin: 0;
+  font-size: 104px;
+  font-weight: 900;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-shadow: 0 0 40px rgba(245,215,122,0.6), 0 10px 0 rgba(0,0,0,0.5);
+}
+.result-title.lose {
+  color: #ff6f6f;
+  text-shadow: 0 0 36px rgba(255,90,90,0.55), 0 10px 0 rgba(0,0,0,0.5);
+}
+.result-stage-tag {
+  writing-mode: vertical-rl;
+  font-size: 17px;
+  color: var(--c-text-dim);
+  letter-spacing: 0.4em;
+}
+
+/* 右側パネル：ランク／コイン／戦績／内訳／ボタンを縦積み */
+.rz-panel {
+  position: absolute;
+  left: 58%;
+  right: 40px;
+  top: 40px;
+  bottom: 32px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rz-top-row {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+/* ランク判子：紋章の上にランク文字を重ねる */
+.rank-display { flex: 0 0 auto; }
+.rank-emblem-wrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-8deg);
+}
+.rank-emblem-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 22px rgba(245,215,122,0.5));
+}
+.rank-emblem-inner { position: relative; text-align: center; }
+.rank-label {
+  font-size: 13px;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.4em;
+}
+.rank-value {
+  font-size: 82px;
+  font-weight: 400;
+  line-height: 0.85;
+  color: var(--c-gold-bright);
+  text-shadow: 0 0 20px rgba(245,215,122,0.8);
+}
+/* ランク帯：S/SS/A は金、B は銀、C は銅（.result-screen で包んで .rank-stamp-gold より詳細度を上げる） */
+.result-screen .rank-value.rank-tier-silver {
+  color: #d7dce6;
+  text-shadow: 0 0 16px rgba(210,216,230,0.6);
+}
+.result-screen .rank-emblem-wrap.tier-silver .rank-emblem-img { filter: grayscale(0.55) brightness(0.95) drop-shadow(0 0 18px rgba(210,216,230,0.4)); }
+.result-screen .rank-value.rank-tier-bronze {
+  color: #e0ab6e;
+  text-shadow: 0 0 16px rgba(224,171,110,0.55);
+}
+.result-screen .rank-emblem-wrap.tier-bronze .rank-emblem-img { filter: sepia(0.35) saturate(1.4) hue-rotate(-15deg) brightness(0.92) drop-shadow(0 0 18px rgba(224,171,110,0.4)); }
+.result-screen.result-lost .rank-emblem-img { filter: grayscale(0.65) brightness(0.85); }
+.result-screen.result-lost .rank-value { color: #cfd3dc; text-shadow: 0 0 16px rgba(200,200,220,0.4); }
+
+/* コイン：巨大数字＋内訳チップ */
+.coins-block { flex: 1 1 auto; min-width: 0; }
+.coins-label { font-size: 15px; color: var(--c-text-dim); letter-spacing: 0.35em; }
+.coins-value {
+  font-size: 92px;
+  line-height: 0.85;
+  color: var(--c-gold-bright);
+  text-shadow: 0 0 40px rgba(245,215,122,0.6);
+}
+.coins-value::before { content: '+'; }
+.result-screen.result-lost .coins-value { color: #d7dce6; text-shadow: 0 0 26px rgba(200,205,220,0.35); }
+.reward-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.v2-chip-gold { background: rgba(245,215,122,0.92); color: #14081d; }
+.result-screen.result-lost .v2-chip-gold { background: rgba(196,184,154,0.85); }
+.reward-chip-label { font-weight: 900; }
+.reward-chip-value { font-weight: 900; margin-left: 4px; }
+
+/* 戦績：横一列 */
+.result-stats { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 26px; }
+.rz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 14px;
+  border-left: 2px solid rgba(245,215,122,0.5);
+}
+.result-screen.result-lost .rz-stat { border-left-color: rgba(196,184,154,0.5); }
+.rz-stat-k { font-size: 11px; letter-spacing: 0.25em; color: var(--c-text-dim); font-weight: 900; }
+.rz-stat-v { font-size: 28px; line-height: 1; color: var(--c-text); }
+.rz-stat-hand { font-size: 20px; }
+.rz-stat-bluff { color: #ff9a9a; }
+
+/* スコア内訳：折りたたみ */
+.result-breakdown { flex: 0 1 auto; min-height: 0; }
+.result-breakdown[open] .result-reason { margin-top: 8px; max-height: 150px; overflow-y: auto; }
+.result-breakdown-toggle {
+  list-style: none;
+  display: inline-flex;
+}
+.result-breakdown-toggle::-webkit-details-marker { display: none; }
+.result-reason {
+  background: rgba(217,179,90,0.1);
+  border-left: 3px solid var(--c-gold);
+  padding: 12px 16px;
+  font-size: 14px;
+  text-align: left;
+  line-height: 1.6;
+  color: var(--c-text);
+  overflow-wrap: break-word;
+}
+
+/* ボタン：主ボタン（斜めスラブ）＋副ボタン2つ */
+.result-buttons {
+  flex: 0 0 auto;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.result-main-btn {
+  height: 68px;
+  border: 0;
+  border-radius: 0;
+  font-size: 22px;
+  transform: skewX(-12deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(90deg, #f5d77a, #d9b35a);
+  color: #14081d;
+  text-shadow: none;
+  box-shadow: 0 0 30px rgba(245,215,122,0.45), 0 12px 26px rgba(0,0,0,0.6);
+}
+.result-main-btn > * { transform: skewX(12deg); }
+.result-screen.result-lost .result-main-btn {
+  background: linear-gradient(90deg, #cfd3dc, #9aa0ae);
+  box-shadow: 0 0 24px rgba(200,205,220,0.35), 0 12px 26px rgba(0,0,0,0.6);
+}
+.result-sub-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 12px;
+}
+.result-sub-buttons .btn {
+  height: 50px;
+  border: 0;
+  border-radius: 0;
+  transform: skewX(-12deg);
+  background: rgba(0,0,0,0.55);
+  color: var(--c-text);
+  box-shadow: inset 0 0 0 1px rgba(245,215,122,0.4);
+  font-size: 15px;
+}
+.result-sub-buttons .btn > * { transform: skewX(12deg); }
+
+@media (max-width: 900px) {
+  .rz-titleblock { left: 40%; }
+  .result-title { font-size: 78px; }
+  .rz-panel { left: 55%; }
+  .coins-value { font-size: 68px; }
+  .rank-value { font-size: 60px; }
+  .rank-emblem-wrap { width: 108px; height: 108px; }
 }
 
 /* ===== 体験ハンド：リコ先輩は対戦席にいるので左の立ち絵を出さない ===== */

@@ -354,26 +354,64 @@
 
 <template id="tpl-result">
   <div class="screen result-screen">
-    <div class="bg-layer bg-result bg-poker"></div>
+    <div class="bg-layer bg-result-stage"></div>
+    <div class="v2-slash v2-slash-gold"></div>
+
     <div class="result-char result-char-mimi"><img data-result-mimi src="assets/characters/mimi_win.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')"></div>
     <div class="result-char result-char-opp"><img data-result-opp alt="相手"></div>
-    <div class="result-inner">
+
+    <div class="rz-titleblock">
       <h2 class="result-title" data-bind="resultTitle">勝利</h2>
-      <div class="rank-display">
-        <div class="rank-label">評価ランク</div>
-        <div class="rank-value" data-bind="rankValue">A</div>
+      <div class="result-stage-tag v2-disp" data-bind="resultStageTag">STAGE 01 — ???</div>
+    </div>
+
+    <div class="rz-panel">
+      <div class="rz-top-row">
+        <div class="rank-display">
+          <div class="rank-emblem-wrap">
+            <img class="rank-emblem-img" src="assets/ui/emblem_rabbit_gold.webp" alt="" onerror="this.style.display='none'">
+            <div class="rank-emblem-inner">
+              <div class="rank-label v2-disp">RANK</div>
+              <div class="rank-value v2-disp" data-bind="rankValue">A</div>
+            </div>
+          </div>
+        </div>
+        <div class="coins-block">
+          <div class="coins-label v2-disp">COINS</div>
+          <div class="coins-value v2-disp"><span data-bind="earnedCoins">0</span></div>
+          <div class="reward-chips" data-bind="rewardChips"></div>
+        </div>
       </div>
+
       <div class="result-stats">
-        <div>獲得コイン：<span data-bind="earnedCoins">0</span></div>
-        <div>スコア：<span data-bind="score">0</span></div>
-        <div>心理バトル成功数：<span data-bind="psychSuccess">0</span></div>
-        <div>最大役：<span data-bind="bestHand">-</span></div>
-        <div>ブラフブレイク：<span data-bind="bluffBreak">なし</span></div>
+        <div class="rz-stat">
+          <div class="rz-stat-k">SCORE</div>
+          <div class="rz-stat-v v2-disp" data-bind="score">0</div>
+        </div>
+        <div class="rz-stat">
+          <div class="rz-stat-k">心理バトル</div>
+          <div class="rz-stat-v v2-disp"><span data-bind="psychSuccess">0</span></div>
+        </div>
+        <div class="rz-stat">
+          <div class="rz-stat-k">最大役</div>
+          <div class="rz-stat-v v2-disp rz-stat-hand" data-bind="bestHand">-</div>
+        </div>
+        <div class="rz-stat">
+          <div class="rz-stat-k">ブラフブレイク</div>
+          <div class="rz-stat-v v2-disp rz-stat-bluff" data-bind="bluffBreak">なし</div>
+        </div>
       </div>
-      <div class="result-reason" data-bind="resultReason"></div>
+
+      <details class="result-breakdown">
+        <summary class="result-breakdown-toggle v2-detail-toggle">スコア内訳を見る ▾</summary>
+        <div class="result-reason" data-bind="resultReason"></div>
+      </details>
+
       <div class="result-buttons" data-bind="resultButtons">
-        <button class="btn btn-primary" data-action="rematch">再戦</button>
-        <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+        <button class="btn btn-primary result-main-btn" data-action="rematch"><span>再戦</span></button>
+        <div class="result-sub-buttons">
+          <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+        </div>
       </div>
     </div>
   </div>

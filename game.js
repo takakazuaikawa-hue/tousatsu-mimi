@@ -12691,7 +12691,10 @@ function endBattle() {
   }
   // リザルトの立ち絵：勝てばミミが笑い相手がうなだれる／負ければ逆（差分が無いキャラは default）
   const rs = document.querySelector('.result-screen');
-  if (rs) rs.classList.add(won ? 'result-won' : 'result-lost');
+  if (rs) {
+    rs.classList.add(won ? 'result-won' : 'result-lost');
+    rs.setAttribute('data-rank-watermark', rank); // 背面の巨大ランク透かし文字（CSS attr()で参照）
+  }
   const mimiImg = document.querySelector('[data-result-mimi]');
   if (mimiImg) {
     mimiImg.src = `assets/characters/${won ? 'mimi_win' : 'mimi_sad'}.png`;
@@ -12711,6 +12714,41 @@ function endBattle() {
   setText('psychSuccess', state.psychSuccessCount);
   setText('bestHand', state.bestHandName);
   setText('bluffBreak', state.bluffBreakHappened ? 'あり' : 'なし');
+  // ステージ帯（縦書きタイトルの脇）：STAGE 0N — 相手名（英字表記）
+  {
+    const stageIdx = STAGE_ORDER.indexOf(state.opponentId);
+    const stageNo = stageIdx >= 0 ? String(stageIdx + 1).padStart(2, '0') : '01';
+    const enName = (state.opponentImgKey || opp.id || '').toUpperCase();
+    setText('resultStageTag', `STAGE ${stageNo} — ${enName}`);
+  }
+  // ランク判子の色帯：S/SS/A=金（デフォルト）、B=銀、C=銅
+  {
+    const rankEl = document.querySelector('[data-bind="rankValue"]');
+    const emblemWrap = document.querySelector('.rank-emblem-wrap');
+    if (rankEl) {
+      rankEl.classList.remove('rank-tier-silver', 'rank-tier-bronze');
+      if (rank === 'B') rankEl.classList.add('rank-tier-silver');
+      else if (rank === 'C') rankEl.classList.add('rank-tier-bronze');
+    }
+    if (emblemWrap) {
+      emblemWrap.classList.remove('tier-silver', 'tier-bronze');
+      if (rank === 'B') emblemWrap.classList.add('tier-silver');
+      else if (rank === 'C') emblemWrap.classList.add('tier-bronze');
+    }
+  }
+  // コイン内訳チップ：state.rewards（既存の報酬計算そのまま）を短いラベルに整形するだけ
+  const chipsEl = document.querySelector('[data-bind="rewardChips"]');
+  if (chipsEl) {
+    const chipHtml = (state.rewards || []).map(str => {
+      const m = str.match(/^(.*?)[：:](.+)$/);
+      if (m) {
+        const label = m[1].replace(/報酬$/, '');
+        return `<span class="v2-chip v2-chip-gold"><span class="reward-chip-label">${label}</span><span class="reward-chip-value">${m[2]}</span></span>`;
+      }
+      return `<span class="v2-chip v2-chip-gold">${str}</span>`;
+    }).join('');
+    chipsEl.innerHTML = chipHtml;
+  }
   const r = document.querySelector('[data-bind="resultReason"]');
   if (r) {
     r.innerHTML = '<strong>スコア内訳：</strong><br>' +
@@ -12725,6 +12763,36 @@ function endBattle() {
     goalLine.className = 'result-next-goal';
     goalLine.textContent = nextGoalText();
     statsBox.insertAdjacentElement('afterend', goalLine);
+  }
+
+  // 主ボタン：次に挑戦できるステージが解放されていればそのステージへ直行、無ければロビーへ
+  // （ヴェルベット勝利時は直後の分岐でエンディングボタンに上書きされる）
+  {
+    const curIdx = STAGE_ORDER.indexOf(state.opponentId);
+    const after = STAGE_ORDER.slice(curIdx + 1);
+    const pickFrom = (list) => list.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
+    const nextId = pickFrom(after) || pickFrom(STAGE_ORDER) || null;
+    const btns = document.querySelector('[data-bind="resultButtons"]');
+    if (btns) {
+      if (nextId) {
+        const nOpp = OPPONENTS[nextId];
+        btns.innerHTML = `
+          <button class="btn btn-primary result-main-btn" data-action="battle-start" data-opponent="${nextId}"><span>${nOpp.name}に挑戦</span><span>→</span></button>
+          <div class="result-sub-buttons">
+            <button class="btn btn-secondary" data-action="rematch">再戦</button>
+            <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+          </div>
+        `;
+      } else {
+        btns.innerHTML = `
+          <button class="btn btn-primary result-main-btn" data-action="back-lobby"><span>ロビーへ</span></button>
+          <div class="result-sub-buttons">
+            <button class="btn btn-secondary" data-action="rematch">再戦</button>
+          </div>
+        `;
+      }
+      btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
+    }
   }
 
   // ヴェルベット勝利 → エンディングへ進むボタン追加 + 闘札大逆転演出 + 降伏セリフ
@@ -12749,8 +12817,10 @@ function endBattle() {
     const btns = document.querySelector('[data-bind="resultButtons"]');
     if (btns) {
       btns.innerHTML = `
-        <button class="btn btn-primary big" data-action="go-ending">✨ エンディングへ ✨</button>
-        <button class="btn btn-secondary big" data-action="back-lobby">ロビーへ</button>
+        <button class="btn btn-primary result-main-btn" data-action="go-ending"><span>✨ エンディングへ ✨</span></button>
+        <div class="result-sub-buttons">
+          <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+        </div>
       `;
       // 動的に追加したボタンを再バインド
       btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
@@ -12791,8 +12861,12 @@ function startResultFx() {
   const revealTargets = [];
   const titleEl = root.querySelector('[data-bind="resultTitle"]');
   const rankBox = root.querySelector('.rank-display');
+  const coinsBox = root.querySelector('.coins-block');
+  const stageTagEl = root.querySelector('.result-stage-tag');
+  if (stageTagEl) revealTargets.push(stageTagEl);
   if (titleEl) revealTargets.push(titleEl);
   if (rankBox) revealTargets.push(rankBox);
+  if (coinsBox) revealTargets.push(coinsBox);
   root.querySelectorAll('.result-stats > div').forEach(row => revealTargets.push(row));
   const nextGoalEl = root.querySelector('.result-next-goal');
   if (nextGoalEl) revealTargets.push(nextGoalEl);
