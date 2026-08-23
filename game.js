@@ -10368,7 +10368,7 @@ function showIntroHandWinScreen() {
 
 // 体験ハンド中は「中断」等を隠して没入を優先
 function applyIntroHandUI() {
-  const pauseBtn = document.querySelector('.battle-screen .top-hud [data-action="back-lobby"]');
+  const pauseBtn = document.querySelector('.battle-screen .top-hud [data-action="back-lobby"], .battle-screen .v2-pause');
   if (pauseBtn) pauseBtn.style.display = 'none';
   // 体験ハンドはリコ先輩自身が対戦相手なので、左の「先輩立ち絵」を二重に出さない
   const scr = document.querySelector('.battle-screen');
