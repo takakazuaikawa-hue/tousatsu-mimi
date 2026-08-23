@@ -477,6 +477,23 @@ window.assetFallback = function(imgEl, key) {
   frame.setAttribute('data-fallback', CHAR_FALLBACK[key] || '[画像なし]');
 };
 
+// 心理バトルv2：舞台演出の相手ビジュアル。
+// 1) 顔アップカットイン（${key}_cutin_panic.webp）を優先表示
+// 2) 未生成キャラは全身立ち絵（${key}_default.png）にフォールバックし、表示モードも切替
+// 3) それも無ければ通常の assetFallback（枠内プレースホルダ）に委ねる
+window.psychStageFallback = function(imgEl, key) {
+  const stage = imgEl.closest('.v2p-opponent-stage');
+  if (!imgEl.dataset.psychStage2) {
+    imgEl.dataset.psychStage2 = '1';
+    if (stage) stage.classList.replace('v2p-mode-cutin', 'v2p-mode-standee');
+    imgEl.onerror = () => window.psychStageFallback(imgEl, key);
+    imgEl.src = `assets/characters/${key}_default.png`;
+  } else {
+    imgEl.onerror = null;
+    window.assetFallback(imgEl, key);
+  }
+};
+
 // P1-3: バトル中のミミ表情差分。画像が届いていない場合は mimi_default.png に、
 // それすら無ければ assetFallback の枠内表示に自然にフォールバックする。
 // 表情: default / win / sad / shock / think
@@ -11065,16 +11082,19 @@ function triggerPsychBattle(qid) {
   // モーダルタイプによってヘッダー差し替え（講義 / 心理 / 論理）
   const isLogic = q.type === 'logic';
   const isLecture = !!state.lectureMode;
+  // v2舞台演出は「心理／論理バトル」時のみ。講義モードは従来レイアウトのまま
+  // （既存の講義UI・演出との衝突を避けるため）。
+  root.classList.toggle('v2psych', !isLecture);
   const titleEl = root.querySelector('.psych-title');
   if (titleEl) {
     if (isLecture) {
       // 講義モード：内容は講義なのに「心理バトル」と出る不一致を解消
       const chapterSub = q.chapterTitle || '— ポーカーの基礎を学ぶ —';
       titleEl.innerHTML = `📚 リコ先輩の講義<small class="battle-subtitle">${chapterSub}</small>`;
+    } else if (isLogic) {
+      titleEl.innerHTML = '<span class="v2p-title-en v2-disp">LOGIC BATTLE</span><span class="v2p-title-jp">論理バトル</span>';
     } else {
-      titleEl.innerHTML = isLogic
-        ? '🧮 論理バトル<small class="battle-subtitle">— ポーカーの数学を覚える —</small>'
-        : '🧠 心理バトル<small class="battle-subtitle">— 相手の本心を読む —</small>';
+      titleEl.innerHTML = '<span class="v2p-title-en v2-disp">PSYCH BATTLE</span><span class="v2p-title-jp">心理バトル</span>';
     }
     titleEl.classList.toggle('logic-mode', isLogic && !isLecture);
     titleEl.classList.toggle('lecture-mode', isLecture);
@@ -11125,6 +11145,41 @@ function triggerPsychBattle(qid) {
     speechEl.classList.remove('with-portrait');
   }
   root.querySelector('[data-bind="zazazoHint"]').textContent = q.zazazoHint;
+
+  // v2：右上ミミミゲージ（読み切り進捗を3セグメントで表示。講義モードでは非表示のまま）
+  const gaugeBox = root.querySelector('[data-bind="zazazoGaugeBox"]');
+  if (gaugeBox) {
+    if (isLecture) {
+      gaugeBox.style.display = 'none';
+    } else {
+      const zMax = state.zazazoMax || 3;
+      const revealed = !!state.opponentPersonalityRevealed;
+      const zCur = revealed ? zMax : Math.min(zMax, state.zazazo || 0);
+      let segs = '';
+      for (let i = 0; i < zMax; i++) segs += `<span class="v2p-gauge-seg${i < zCur ? ' is-filled' : ''}"></span>`;
+      gaugeBox.innerHTML = `
+        <span class="v2p-gauge-label v2-disp">ミミミ</span>
+        <span class="v2p-gauge-segs">${segs}</span>
+        <span class="v2p-gauge-num v2-disp">${revealed ? '読切' : `${state.zazazo || 0}/${zMax}`}</span>
+      `;
+      gaugeBox.style.display = '';
+      gaugeBox.classList.toggle('is-revealed', revealed);
+    }
+  }
+
+  // v2：相手の舞台演出（顔アップカットイン優先／無ければ全身立ち絵にフォールバック）
+  const stageEl = root.querySelector('[data-bind="psychOpponentStage"]');
+  if (stageEl) {
+    if (isLecture) {
+      stageEl.style.display = 'none';
+    } else {
+      const imgKey = state.opponentImgKey || 'polka';
+      const oppName = state.opponentName || '相手';
+      stageEl.style.display = '';
+      stageEl.className = 'v2p-opponent-stage character-frame v2p-mode-cutin';
+      stageEl.innerHTML = `<img class="v2p-stage-img" src="assets/characters/${imgKey}_cutin_panic.webp" alt="${oppName}" onerror="window.psychStageFallback(this,'${imgKey}')">`;
+    }
+  }
 
   const choicesEl = root.querySelector('[data-bind="psychChoices"]');
   shuffled.forEach((c, i) => {
