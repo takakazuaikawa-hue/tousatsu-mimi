@@ -227,6 +227,9 @@ function defaultSave() {
     // ── ミニポーカー（mpEnsureSaveで初期化される） ──
     minipoker: null,
 
+    // ── デイリーログインボーナス ──
+    loginBonus: { lastDate: '', streak: 0 },
+
     // ── ログ ──
     logs: { actions: [], bets: [], reactions: [], psych: [] },
 
@@ -254,6 +257,9 @@ function normalizeSave(s) {
   if (!s.panyuSkills || typeof s.panyuSkills !== 'object') s.panyuSkills = { senseLevel: 1, rangeLevel: 1, breakLevel: 0 };
   if (!s.logs || typeof s.logs !== 'object') s.logs = { actions: [], bets: [], reactions: [], psych: [] };
   if (!s.achievements || typeof s.achievements !== 'object') s.achievements = {};
+  if (!s.loginBonus || typeof s.loginBonus !== 'object') s.loginBonus = { lastDate: '', streak: 0 };
+  if (typeof s.loginBonus.lastDate !== 'string') s.loginBonus.lastDate = '';
+  if (typeof s.loginBonus.streak !== 'number' || isNaN(s.loginBonus.streak) || s.loginBonus.streak < 0) s.loginBonus.streak = 0;
   // 数値の正常範囲
   if (typeof s.coins !== 'number' || isNaN(s.coins)) s.coins = 0;
   if (s.coins < 0) s.coins = 0;
@@ -494,6 +500,13 @@ function setMimiExpression(expr) {
         goPlainDefault();
       }
     };
+    // v2 バトル画面：バストアップ差分（think / shock / win）を優先。無ければ従来PNGへ
+    if (img.closest('.battle-screen.v2')) {
+      const bust = { default: 'think', think: 'think', shock: 'shock', win: 'win', sad: 'think', blush: 'win' }[expr || 'default'] || 'think';
+      img.onerror = () => { img.onerror = goDefault; img.src = `assets/characters/mimi_${expr && expr !== 'default' ? expr : 'default'}.png`; };
+      img.src = `assets/characters/mimi_bust_${bust}.webp`;
+      return;
+    }
     if (!expr || expr === 'default') { goDefault(); return; }
     img.onerror = goDefault;
     img.src = `assets/characters/mimi_${expr}.png`;
@@ -1060,6 +1073,179 @@ function opponentReactToPlayerFold() {
     default: return '……';
   }
 }
+
+// プレイヤー（ミミ）の攻め（ベット/レイズ/オールイン）への即時反応セリフ
+// kind: 'bet_small'（pot 1/2以下）| 'bet_big'（2/3〜pot）| 'raise' | 'allin'
+function opponentReactToPlayerAggression(kind, amount) {
+  if (state.opponentId === 'rico_tutorial' && state.seriousRicoMode) {
+    switch (kind) {
+      case 'bet_small': return pick([
+        'その程度、揺らがないわ',
+        'ふぅん、小さく刻んできたのね',
+        '様子見ね。悪くないわ',
+        '慎重ね。でも、まだ足りない',
+      ]);
+      case 'bet_big': return pick([
+        '……本気になってきたじゃない',
+        'そのサイズ、意味はわかってるの？',
+        '来たわね。受けて立つわ',
+        'ふぅん、強気に出たわね',
+      ]);
+      case 'raise': return pick([
+        'レイズ……いい度胸ね',
+        'ミミ、本当に来るとは思わなかった',
+        '面白い。受けましょう',
+        'その手、本気で通すつもり？',
+      ]);
+      case 'allin': return pick([
+        'オールイン……本気なのね、ミミ',
+        '全部……いいわ、受けて立つ',
+        '弟子が師匠に挑む顔ね、それ',
+        'その覚悟、見せてもらうわ',
+      ]);
+      default: return '……';
+    }
+  }
+  switch (state.opponentId) {
+    case 'rico_tutorial': switch (kind) {
+      case 'bet_small': return pick([
+        'お、来たね〜。それくらいなら余裕だよ',
+        'ふふ、ミミも慣れてきたじゃん',
+        'そのサイズかー、ちゃんと見せてもらうよ',
+        'いいね、その調子っ',
+      ]);
+      case 'bet_big': return pick([
+        'えっ、そこそこ来たね……ちょっと考えるよ',
+        'おおっ、強気じゃん。ふーむ……',
+        'ミミ、本気出してきた？ちょっと待って〜',
+        'あちゃー、そのサイズは効くなぁ',
+      ]);
+      case 'raise': return pick([
+        'レイズ！？ちょっとちょっと、待って〜',
+        'お、やるじゃん。よし、考えるよ',
+        'ミミがレイズしてくるとはねぇ……',
+        'うわ、成長したね……ちょっと悩むわ',
+      ]);
+      case 'allin': return pick([
+        'えっ、オールイン！？ま、まじで！？',
+        'ちょ、待って！本当に全部乗せた！？',
+        'ミミ、それ本気の顔してる……どうしよ',
+        'うわぁ、これは……教え子が怖いよ',
+      ]);
+      default: return '……';
+    }
+    case 'polka': switch (kind) {
+      case 'bet_small': return pick([
+        'お、来たね！でもその程度じゃボクには効かないよ〜',
+        'ふーん、まあその額なら見てあげる',
+        'そんなんじゃボク倒せないよー？',
+        'その程度、想定内だし〜',
+      ]);
+      case 'bet_big': return pick([
+        'うわっ、急に大きくない！？ちょっと待ってよ〜',
+        'え、ええ！？そのサイズはズルいって〜',
+        'ボ、ボク別に怖くないし……ちょっとだけ考える',
+        'なっ……そんなに来る！？',
+      ]);
+      case 'raise': return pick([
+        'レイズ！？え、待って待って〜',
+        'う、うわー、ミミちゃん強気すぎ〜！',
+        'そ、そんな……ボクの計画が……！',
+        'ちょっとタンマ！考えさせてー！',
+      ]);
+      case 'allin': return pick([
+        'ええーっ！？オールイン！？う、嘘でしょ〜！？',
+        'ちょ、ま、待って！心の準備が〜！',
+        'ボ、ボクの人生終わった……（涙目）',
+        'えぇぇ！？そこまでやる！？',
+      ]);
+      default: return '……';
+    }
+    case 'selina': switch (kind) {
+      case 'bet_small': return pick([
+        '標準的なサイズですね。想定内です。',
+        'その額なら、判断は容易です。',
+        '様子見ですね。受け止めます。',
+        '妥当な一手です。',
+      ]);
+      case 'bet_big': return pick([
+        '……大きいサイズですね。意図を読ませてください。',
+        'そのサイズ、軽視はできません。',
+        '強気ですね。少し、時間をください。',
+        '想定より重いですね。考えます。',
+      ]);
+      case 'raise': return pick([
+        'レイズ……レンジを絞らせてください。',
+        'なるほど、そう来ましたか。考えます。',
+        '想定より強い一手ですね。',
+        '……見直す必要がありそうです。',
+      ]);
+      case 'allin': return pick([
+        'オールイン……予想以上です。少し、驚きました。',
+        'そこまでの覚悟とは。慎重に判断します。',
+        '全て、ですか。……興味深いです。',
+        '……想定外です。じっくり読ませてください。',
+      ]);
+      default: return '……';
+    }
+    case 'grano': switch (kind) {
+      case 'bet_small': return pick([
+        'ふむ、手頃な値札ですな。',
+        'なるほど、様子見の投資ですか。',
+        'その額なら、じっくり吟味できますね。',
+        '妥当な商談ですね。',
+      ]);
+      case 'bet_big': return pick([
+        'おや、大きな買い物に出ましたね……値踏みさせてください。',
+        'ほう、強気な商談ですな。',
+        'これは……少々値が張りますね。考えましょう。',
+        'なかなかの一手ですね、お嬢さん。',
+      ]);
+      case 'raise': return pick([
+        'レイズとは、大胆な取引ですな。',
+        'ふむ、値を吊り上げてきましたか。',
+        'お嬢さん、本気の商談のようですね。',
+        'これは考えものですね。',
+      ]);
+      case 'allin': return pick([
+        'オールイン……全財産を賭けるとは、大した度胸ですな。',
+        'これは大きな取引になりましたね……検討します。',
+        'まさか、そこまでの覚悟とは。驚きました。',
+        'ふむ……これは商談の域を超えていますね。',
+      ]);
+      default: return '……';
+    }
+    case 'velvet': switch (kind) {
+      case 'bet_small': return pick([
+        'あら、可愛いサイズね。',
+        'ふふ、様子見？いいわ、受けてあげる。',
+        'その程度で、私が揺らぐと思った？',
+        'まだ本気じゃないのね。',
+      ]);
+      case 'bet_big': return pick([
+        'あら、少しはやる気になったのね。面白いわ。',
+        'ふふん、いいサイズじゃない。楽しませて。',
+        'その圧、悪くないわよ、新人。',
+        'あら……ちょっとは骨があるじゃない。',
+      ]);
+      case 'raise': return pick([
+        'レイズ……あら、牙を剥いてきたわね。',
+        'いいわ、そういうの好きよ。',
+        'ふふ、ようやく本気になったの？',
+        'あら素敵。もっと見せて？',
+      ]);
+      case 'allin': return pick([
+        'オールイン……あら、素敵。全部賭ける覚悟、気に入ったわ。',
+        'ふふふ、いいわ。そこまでするなら、受けて立つ。',
+        '震えるどころか、笑えてきたわ。楽しませてくれるじゃない。',
+        'あら、あらあら。新人にしては上出来よ。',
+      ]);
+      default: return '……';
+    }
+    default: return '……';
+  }
+}
+
 function polkaSpeech(action) {
   if (action.intent === 'bluff' || action.intent === 'forced_bluff') {
     return pick([
@@ -2287,6 +2473,11 @@ function renderCardsText(cards) {
 // 6. ゲーム状態
 //=============================================================
 let state = null;
+// ピンチ演出（心音）のインターバルID。
+// state は state = defaultState() で丸ごと差し替えられる箇所が複数あるため、
+// state 側のプロパティにしか保持しないと差し替え時にタイマーが孤立して鳴り続ける
+// 「ゾンビタイマー」になる。state を跨いで確実に止められるようモジュール変数で持つ。
+let __dangerTimer = null;
 function defaultState() {
   return {
     screen: 'title',
@@ -2347,19 +2538,71 @@ function render() {
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); if (isBgmOn()) playSceneBgm('title'); break;
     case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); tryStartLobbyBgm(); break;
-    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI(); break;
+    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI();
+      // v2 拍④「決断」：ミミの手番は卓と相手を落として札と選択肢に視線を集める
+      { const scr = document.querySelector('.battle-screen.v2'); if (scr) scr.classList.toggle('is-deciding', !!(state.isPlayerTurn && state.handPhase !== 'idle' && state.handPhase !== 'showdown' && !state.psychPending)); }
+      break;
     case 'result':      renderTemplate('tpl-result'); applyBindings(); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
     case 'ending':      renderTemplate('tpl-ending'); stopSceneBgm(); _stopNonSceneBgm(); showEndingMusicPrompt(); break;
   }
   bindActions();
   injectAudioBars();
+  // ピンチ演出：battle 以外の画面（case 'battle' 以外・switch に該当が無い場合も含む）では必ず解除する
+  updateDangerState();
+  // ロビー専用モーダル（ログインボーナス）が他画面に残らないよう掃除
+  if (state.screen !== 'lobby') document.querySelectorAll('.login-bonus-overlay').forEach(e => e.remove());
 }
 
 function renderTemplate(id) {
   const tpl = document.getElementById(id);
   app.innerHTML = '';
   app.appendChild(tpl.content.cloneNode(true));
+}
+
+//=============================================================
+// 7.1 ピンチ演出（チップ危機）状態管理
+// バトル中、プレイヤーのチップが対戦開始時の30%以下（かつ0より大きい）になったら
+// 「ピンチ状態」として画面に赤いビネット＋心音、瀕死ラインを割った瞬間にミミの表情変化を出す。
+// チップ計算・勝敗・AIロジックには一切触れない、演出のみの機能。
+//=============================================================
+function battleInitialChips() {
+  if (state && typeof state.__initialChips === 'number' && state.__initialChips > 0) return state.__initialChips;
+  const opp = state && OPPONENTS[state.opponentId];
+  return (opp && opp.chips) || 1000;
+}
+
+function stopDangerHeartbeat() {
+  if (__dangerTimer) { clearInterval(__dangerTimer); __dangerTimer = null; }
+}
+
+function startDangerHeartbeat() {
+  if (__dangerTimer) return; // 既に鳴動中なら二重起動しない
+  const beat = () => {
+    if (!isSfxOn()) return; // 消音時は鳴らさない（毎拍チェック＝設定変更に即追従）
+    mpTone(55, 0.12, 'sine', 0.09);
+    mpTone(50, 0.10, 'sine', 0.07, 0.005, 0.06, 180);
+  };
+  beat();
+  __dangerTimer = setInterval(beat, 1100);
+}
+
+function updateDangerState() {
+  const isDanger = !!(state && state.screen === 'battle' && !state.introHandMode && !state.tutorialMode
+    && state.playerChips > 0 && state.playerChips <= battleInitialChips() * 0.3);
+  const wasDanger = document.body.classList.contains('is-danger');
+  if (isDanger) {
+    document.body.classList.add('is-danger');
+    startDangerHeartbeat();
+    if (!wasDanger) {
+      // 非danger → danger に切り替わった瞬間だけ演出（表情・心の声）
+      setMimiExpression('shock');
+      state.mimiThought = '「チップが……！　ここからが勝負……！」';
+    }
+  } else {
+    document.body.classList.remove('is-danger');
+    stopDangerHeartbeat();
+  }
 }
 
 /* ===== ゲーム紹介モーダル（タイトルから） ===== */
@@ -2592,7 +2835,22 @@ function applyBindings() {
         break;
       }
       case 'ricoAdvice': el.innerHTML = state.ricoAdvice; break;
-      case 'opponentSpeech': el.textContent = state.opponentSpeech; break;
+      case 'opponentSpeech': {
+        if (state.opponentThinking) {
+          el.innerHTML = `<span class="think-dots" aria-label="考え中"><i></i><i></i><i></i></span>`;
+          el.classList.add('is-thinking');
+          break;
+        }
+        el.classList.remove('is-thinking');
+        el.textContent = state.opponentSpeech;
+        if (state.opponentSpeech && state.opponentSpeech !== state.__lastSpeechShown) {
+          el.classList.remove('speech-pop');
+          void el.offsetWidth; // reflow でアニメを再起動
+          el.classList.add('speech-pop');
+        }
+        state.__lastSpeechShown = state.opponentSpeech;
+        break;
+      }
       case 'opponentBet': el.innerHTML = renderOpponentBet(); break;
       case 'currentHandName': el.innerHTML = renderCurrentHandName(); break;
       case 'currentHandKicker': el.innerHTML = renderCurrentHandKicker(); break;
@@ -2611,8 +2869,9 @@ function applyBindings() {
         if (side) side.classList.toggle('empty', v === 0);
         break;
       }
-      case 'communityCards': renderCardsInto(el, state.community, 5); break;
-      case 'playerHand': renderCardsInto(el, state.playerHand, 2); break;
+      case 'communityCards': renderCardsInto(el, state.community, 5, 'community'); break;
+      case 'playerHand': renderCardsInto(el, state.playerHand, 2, 'player'); break;
+      case 'opponentHand': renderOpponentHand(el); break;
       case 'psychLog': renderPsychLog(el); break;
       case 'psychStats': el.innerHTML = renderPsychStats(); break;
       case 'actionArea': renderActionArea(el); break;
@@ -2707,6 +2966,15 @@ function applyBindings() {
         break;
       case 'shopItems': el.innerHTML = renderShopItems('panyu'); break;
       case 'ricoShopComment': /* default initial */ break;
+      // ===== v2 バトル画面（舞台演出レイアウト）用バインド =====
+      case 'handNo2': el.textContent = String(state.handNo || 1).padStart(2, '0'); break;
+      case 'handMax2': el.textContent = state.maxHands >= 999 ? '' : '/ ' + String(state.maxHands || 0).padStart(2, '0'); break;
+      case 'streetList': el.innerHTML = renderStreetList(); break;
+      case 'opponentNameLatin': el.textContent = opponentLatinName(); break;
+      case 'potBlock': el.innerHTML = renderPotBlock(); break;
+      case 'tellTags': el.innerHTML = renderTellTags(); break;
+      case 'winrateSeal': el.innerHTML = renderWinrateSeal(); break;
+      case 'dangerBar': el.innerHTML = renderDangerBar(); break;
       case 'opponentImg':
         el.onerror = function() { window.assetFallback(this, state.opponentImgKey); };
         el.src = `assets/characters/${state.opponentImgKey}_default.png`;
@@ -4663,6 +4931,63 @@ function renderSessionStats() {
 }
 
 // 現在のストリート進行表示
+// ===== v2 レンダラ群 =====
+const OPP_LATIN = { polka: 'POLKA', selina: 'SELINA', grano: 'GRANO', velvet: 'VELVET', rico_tutorial: 'RICO' };
+function opponentLatinName() { return OPP_LATIN[state.opponentId] || (state.opponentName || '').toUpperCase(); }
+function renderStreetList() {
+  const order = ['preflop', 'flop', 'turn', 'river', 'showdown'];
+  const labels = { preflop: 'PREFLOP', flop: 'FLOP', turn: 'TURN', river: 'RIVER', showdown: 'SHOWDOWN' };
+  let cur = state.handPhase || 'preflop';
+  if (cur === 'turnRiver') cur = 'river';
+  if (cur === 'idle') cur = state.handNo ? 'showdown' : 'preflop';
+  const curIdx = order.indexOf(cur);
+  return order.filter(s => (state.fullHand || s !== 'turn') && (s !== 'showdown' || cur === 'showdown')).map(s => {
+    const i = order.indexOf(s);
+    const cls = i < curIdx ? 'v2-st-done' : i === curIdx ? 'v2-st-cur' : 'v2-st-future';
+    return `<span class="v2-disp v2-st ${cls}">${labels[s]}${i < curIdx ? ' ✓' : ''}</span>`;
+  }).join('');
+}
+function renderPotBlock() {
+  const opp = state.currentBetOpponent || 0;
+  const oppName = (state.opponentName || '相手').replace(/（.*）/, '');
+  const sizeTag = (() => {
+    const base = state.pot - opp; if (opp <= 0 || base <= 0) return '';
+    const r = opp / base; if (r >= 0.95) return 'ポット'; if (r >= 0.6) return '2/3ポット'; if (r >= 0.4) return '1/2ポット'; return '小ベット';
+  })();
+  return `
+    <div class="v2-disp v2-pot-label">POT</div>
+    <div class="v2-disp v2-pot-num bu-pot-physical">${state.pot || 0}</div>
+    <div class="v2-pot-sub">
+      ${opp > 0 ? `<span class="v2-chip v2-chip-red">${oppName} +${opp} <em>${sizeTag}</em></span>` : ''}
+      <span class="v2-chip v2-chip-dark">残り ${state.opponentChips}</span>
+    </div>`;
+}
+function renderTellTags() {
+  const tags = state.tellTags || [];
+  return tags.slice(-2).map((t, i) => `<div class="v2-tag ${i === 1 ? 'v2-tag-b' : ''}">${t}</div>`).join('');
+}
+function renderWinrateSeal() {
+  if (state.handPhase === 'idle' || !state.playerHand || state.playerHand.length < 2) return '';
+  if (state.winrateRevealed || state.tutorialMode || state.introHandMode) {
+    const all = [...state.playerHand, ...(state.community || [])];
+    const eq = state.community.length >= 3 ? realisticEquity01(all) : opponentPreflopStrength(state.playerHand);
+    const pct = Math.round(Math.max(0, Math.min(1, eq)) * 100);
+    return `<div class="v2-seal-open"><div class="v2-disp v2-seal-pct">${pct}%</div><div class="v2-seal-cap">勝率</div></div>`;
+  }
+  return `<div class="v2-seal-closed" data-action="toggle-v2-detail" title="詳細データを開く"><div class="v2-disp v2-seal-q">?</div><div class="v2-seal-cap">勝率 封印中</div></div>`;
+}
+function renderDangerBar() {
+  if (!state.community || state.community.length < 3) return '';
+  const d = evaluateBoardDanger(state.community);
+  const parts = [];
+  if (d.flushAlert) parts.push('フラッシュ気配');
+  if (d.straightAlert) parts.push('ストレート気配');
+  if (d.pairBoard) parts.push('ペアボード');
+  const pct = Math.min(100, parts.length * 34 + (state.community.length - 3) * 8);
+  const label = parts.join('・');
+  if (!label) return '';
+  return `<div class="v2-danger-track"><div class="v2-danger-fill" style="width:${pct}%"></div></div><div class="v2-danger-label">${label}</div>`;
+}
 function renderStreetTracker() {
   const order = ['preflop', 'flop', 'turn', 'river', 'showdown'];
   const labels = { preflop: 'プリフロップ', flop: 'フロップ', turn: 'ターン', river: 'リバー', showdown: 'ショー' };
@@ -4978,22 +5303,135 @@ function getOpponentPersonality(id) {
   return OPPONENT_PERSONALITY[id] || { icon: '?', title: '???', traits: ['不明'], exploit: '不明' };
 }
 
-function renderCardsInto(el, cards, slotCount) {
+function cardKey(c) { return c ? `${c.suit}${c.rank}` : ''; }
+// key: 'community' | 'player' | 'opp' — 既に表示済みの枚数を記憶し、新しく出た札だけ配布アニメを付ける
+function renderCardsInto(el, cards, slotCount, key) {
   el.innerHTML = '';
+  if (!state.__dealSeen) state.__dealSeen = {};
+  const seen = key ? (state.__dealSeen[key] || 0) : cards.length;
+  const hl = state.sdHighlight;
   for (let i = 0; i < slotCount; i++) {
     const c = cards[i];
     if (!c) {
       el.insertAdjacentHTML('beforeend', '<div class="card empty"></div>');
     } else {
       const isRed = c.suit === '♥' || c.suit === '♦';
+      const isNew = i >= seen;
+      let cls = 'card';
+      if (isRed) cls += ' red';
+      if (isNew) cls += (key === 'opp' ? ' card-flip' : ' card-deal');
+      if (hl) cls += hl.has(cardKey(c)) ? ' highlight sd-win' : ' card-dim';
       el.insertAdjacentHTML('beforeend', `
-        <div class="card ${isRed ? 'red' : ''}">
+        <div class="${cls}" style="--di:${isNew ? i - seen : 0}">
           <span class="rank">${c.label}</span>
           <span class="suit">${c.suit}</span>
           <span class="center-suit">${c.suit}</span>
         </div>`);
     }
   }
+  if (key) state.__dealSeen[key] = cards.length;
+}
+
+// 相手の手札：通常は裏向き、ショーダウンで表向き（めくりアニメ付き）
+function renderOpponentHand(el) {
+  if (state.opponentRevealed && state.opponentHand && state.opponentHand.length === 2) {
+    renderCardsInto(el, state.opponentHand, 2, 'opp');
+    el.classList.add('revealed');
+  } else {
+    el.classList.remove('revealed');
+    el.innerHTML = '<div class="card card-back"></div><div class="card card-back"></div>';
+  }
+}
+
+//=============================================================
+// ゲームフィール（演出）ヘルパ：チップ飛行・浮遊数字・ショーダウン吹き出し
+//=============================================================
+function juiceScale() {
+  const st = document.getElementById('stage');
+  return st ? Math.max(0.35, st.getBoundingClientRect().width / 1280) : 1;
+}
+function juiceRect(sel) {
+  const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  if (!r.width && !r.height) return null;
+  return r;
+}
+function chipColorClass(amount) {
+  if (amount >= 1000) return 'fc-black';
+  if (amount >= 500) return 'fc-purple';
+  if (amount >= 200) return 'fc-green';
+  if (amount >= 100) return 'fc-blue';
+  return 'fc-red';
+}
+// fromSel → toSel へチップが数枚飛ぶ。amount が大きいほど枚数が増える
+function flyChips(fromSel, toSel, amount, opts = {}) {
+  if (!amount || amount <= 0) return;
+  const a = juiceRect(fromSel), b = juiceRect(toSel);
+  if (!a || !b) return;
+  const sc = juiceScale();
+  const n = Math.max(3, Math.min(14, Math.round(Math.sqrt(amount / 20))));
+  const size = Math.round(22 * sc);
+  const ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+  const bx = b.left + b.width / 2, by = b.top + b.height / 2;
+  const color = chipColorClass(amount / n);
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    el.className = `fly-chip ${color}`;
+    const jx = (rand() - 0.5) * 50 * sc, jy = (rand() - 0.5) * 30 * sc;
+    const tx = (rand() - 0.5) * 36 * sc, ty = (rand() - 0.5) * 18 * sc;
+    el.style.cssText = `left:${ax + jx - size / 2}px;top:${ay + jy - size / 2}px;width:${size}px;height:${size}px;`;
+    document.body.appendChild(el);
+    const dx = (bx + tx) - (ax + jx), dy = (by + ty) - (ay + jy);
+    const lift = -60 * sc - rand() * 40 * sc;
+    const anim = el.animate([
+      { transform: 'translate(0,0) scale(0.9)', opacity: 0.95 },
+      { transform: `translate(${dx * 0.5}px,${dy * 0.5 + lift}px) scale(1.25)`, opacity: 1, offset: 0.5 },
+      { transform: `translate(${dx}px,${dy}px) scale(0.85)`, opacity: 0.9 }
+    ], { duration: 420 + rand() * 160, delay: i * 38 + (opts.delay || 0), easing: 'cubic-bezier(.25,.7,.3,1)', fill: 'forwards' });
+    anim.onfinish = () => el.remove();
+  }
+  // チップの着地音（SFX ON時のみ、少量）
+  if (isSfxOn()) {
+    _mpSfxScale = sfxVolFloat();
+    for (let i = 0; i < Math.min(n, 6); i++) mpTone(1800 + rand() * 700, 0.03, 'square', 0.02, 0.001, 0.02, (opts.delay || 0) + 380 + i * 55);
+  }
+}
+// 要素の上に浮かぶ数字（+350 など）
+function floatText(sel, text, cls = '') {
+  const r = juiceRect(sel); if (!r) return;
+  const sc = juiceScale();
+  const el = document.createElement('div');
+  el.className = `float-text ${cls}`;
+  el.textContent = text;
+  el.style.cssText = `left:${r.left + r.width / 2}px;top:${r.top + r.height * 0.3}px;font-size:${Math.round(30 * sc)}px;`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+// ショーダウンの勝敗コール（卓の中央に一瞬出る）
+function showShowdownCallout(winner, pEv, oEv) {
+  document.querySelectorAll('.sd-callout').forEach(e => e.remove());
+  const host = document.querySelector('.center-table') || document.getElementById('stage');
+  if (!host) return;
+  const el = document.createElement('div');
+  const cls = winner === 'player' ? 'sd-win' : winner === 'opponent' ? 'sd-lose' : 'sd-split';
+  const title = winner === 'player' ? 'ミミの勝ち！' : winner === 'opponent' ? `${state.opponentName || '相手'}の勝ち` : '引き分け';
+  const sub = winner === 'player' ? pEv.name : winner === 'opponent' ? oEv.name : `${pEv.name} ＝ ${oEv.name}`;
+  el.className = `sd-callout ${cls}`;
+  el.innerHTML = `<div class="sd-callout-title">${title}</div><div class="sd-callout-sub">${sub}</div>`;
+  host.appendChild(el);
+  setTimeout(() => el.classList.add('out'), 1500);
+  setTimeout(() => el.remove(), 1900);
+}
+// ハンド開始時に演出状態をリセット
+function resetHandJuice() {
+  state.__dealSeen = { community: 0, player: 0, opp: 0 };
+  state.tellTags = [];
+  state.winrateRevealed = false;
+  state.opponentRevealed = false;
+  state.sdHighlight = null;
+  state.opponentThinking = false;
+  document.querySelectorAll('.sd-callout').forEach(e => e.remove());
 }
 
 function renderPsychStats() {
@@ -5020,6 +5458,10 @@ function renderActionArea(el) {
   }
   if (state.psychPending) {
     el.innerHTML = `<div class="status-note">心理バトル中……</div>`;
+    return;
+  }
+  if (state.handPhase === 'showdown') {
+    el.innerHTML = `<div class="status-note sd-note">ショーダウン！</div>`;
     return;
   }
   if (!state.isPlayerTurn) {
@@ -5103,7 +5545,7 @@ function renderActionArea(el) {
   // P2: 体験ハンドは「大きく行く」2択だけに絞る（没入・迷いのない導線）
   if (state.introHandMode) {
     slots = slots.map(s => {
-      if (s.kind === 'lg')    return { ...s, label: '大レイズ', subText: 'すごい手だ、大きく行こう！' };
+      if (s.kind === 'lg')    return { ...s, label: '大レイズ', subText: '大きく行こう！' };
       if (s.kind === 'allin') return s;
       return { ...s, enabled: false };
     });
@@ -5356,6 +5798,11 @@ function onAction(e) {
     case 'play-ending':   state.screen = 'ending'; render(); break;
     case 'play-ending-theme': toggleEndingThemePreview(); break;
     case 'play-minipoker': showMiniPokerGame(); break;
+    case 'toggle-v2-detail': {
+      const panel = document.querySelector('.v2-detail');
+      if (panel) panel.classList.toggle('open');
+      break;
+    }
     case 'toggle-backdoor':
       save.backdoorOn = !save.backdoorOn;
       saveProgress();
@@ -6162,12 +6609,14 @@ function spawnEndingSparkle(parent) {
 function goLobby() {
   if (typeof stopBattleBgmSkin === 'function') stopBattleBgmSkin(); // バトル専用BGMスキンを止めてロビーへ戻す
   document.body.dataset.oppBg = ''; // 相手別テーブル背景を解除
+  document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
   state.screen = 'lobby';
   // 入室時にリコの衣装を抽選し直す
   state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
   state.lobbyRicoChangedAt = 'lobby';
   render();
   tryStartLobbyBgm();
+  maybeShowLoginBonus();
 }
 
 function stopEndingBgm() {
@@ -7437,6 +7886,106 @@ function mpDailyLuckyRank() {
   const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
   // ラッキー対象：1〜7（ロイヤル/ストフラは除外＝既に夢役）
   return 1 + (seed % 7);
+}
+
+/* =============================================================
+   デイリーログインボーナス
+   - 7日サイクル：Day1 50 / Day2 60 / Day3 80 / Day4 100 / Day5 120 / Day6 150 / Day7 300
+   - 連続判定：前回受取が「昨日」なら streak+1、それ以外は streak=1 にリセット
+   - 日付キーは mpTodayKey()（'YYYYMMDD' 形式）を再利用
+   ============================================================= */
+const LOGIN_BONUS_TABLE = [50, 60, 80, 100, 120, 150, 300]; // index 0 = Day1
+
+// day（1〜7）に対応する受取コイン数
+function loginBonusRewardForDay(day) {
+  const idx = ((Math.max(1, day) - 1) % 7 + 7) % 7;
+  return LOGIN_BONUS_TABLE[idx];
+}
+
+// 'YYYYMMDD' キーの「前日」の 'YYYYMMDD' キーを返す（DOM非依存の純関数）
+function loginBonusPrevDateKey(key) {
+  const y = parseInt(key.slice(0, 4), 10);
+  const m = parseInt(key.slice(4, 6), 10) - 1;
+  const d = parseInt(key.slice(6, 8), 10);
+  const dt = new Date(y, m, d);
+  dt.setDate(dt.getDate() - 1);
+  return `${dt.getFullYear()}${(dt.getMonth() + 1).toString().padStart(2, '0')}${dt.getDate().toString().padStart(2, '0')}`;
+}
+
+// 純関数：前回受取日・streak・今日のキーから「今日受け取れる内容」を算出する
+// 戻り値: { alreadyClaimedToday, day(1-7), reward, newStreak }
+function loginBonusCompute(lastDate, streak, todayKey) {
+  streak = (typeof streak === 'number' && !isNaN(streak) && streak > 0) ? streak : 0;
+  if (lastDate === todayKey) {
+    // 同日2回目：既に受取済みなので現在のstreakのまま返す（呼び出し側はalreadyClaimedTodayを見て何もしない）
+    const day = ((Math.max(1, streak) - 1) % 7) + 1;
+    return { alreadyClaimedToday: true, day, reward: loginBonusRewardForDay(day), newStreak: streak };
+  }
+  let newStreak;
+  if (!lastDate) {
+    newStreak = 1; // 初回
+  } else {
+    const yesterdayKey = loginBonusPrevDateKey(todayKey);
+    newStreak = (lastDate === yesterdayKey) ? streak + 1 : 1; // 連続なら+1、空いたらリセット
+  }
+  const day = ((newStreak - 1) % 7) + 1;
+  return { alreadyClaimedToday: false, day, reward: loginBonusRewardForDay(day), newStreak };
+}
+
+// ロビー入室時に1日1回だけ判定して表示する（初回導線を邪魔しないよう introPlayed 済みのみ）
+function maybeShowLoginBonus() {
+  if (!save || save.introPlayed !== true) return;
+  const todayKey = mpTodayKey();
+  const lb = save.loginBonus || { lastDate: '', streak: 0 };
+  const plan = loginBonusCompute(lb.lastDate, lb.streak, todayKey);
+  if (plan.alreadyClaimedToday) return;
+  showLoginBonusModal(plan, todayKey);
+}
+
+function showLoginBonusModal(plan, todayKey) {
+  const days = [];
+  for (let i = 1; i <= 7; i++) {
+    let status = 'future';
+    if (i < plan.day) status = 'claimed';
+    else if (i === plan.day) status = 'today';
+    days.push({ day: i, reward: loginBonusRewardForDay(i), status });
+  }
+  const daysHtml = days.map(d => {
+    const tag = d.status === 'claimed' ? '<div class="login-bonus-check">✓</div>'
+              : d.status === 'today'   ? '<div class="login-bonus-tag">TODAY</div>'
+              : (d.day === plan.day + 1) ? '<div class="login-bonus-tag login-bonus-tag-next">明日</div>' : '';
+    return `
+      <div class="login-bonus-day login-bonus-day-${d.status}">
+        ${tag}
+        <div class="login-bonus-day-label">Day${d.day}</div>
+        <div class="login-bonus-coin">🪙</div>
+        <div class="login-bonus-amount">${d.reward}</div>
+      </div>
+    `;
+  }).join('');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'login-bonus-overlay';
+  overlay.innerHTML = `
+    <div class="login-bonus-modal">
+      <div class="login-bonus-modal-title">🎁 ログインボーナス Day${plan.day}</div>
+      <div class="login-bonus-modal-sub">+${plan.reward} コイン</div>
+      <div class="login-bonus-calendar">${daysHtml}</div>
+      <button class="login-bonus-claim-btn">受け取る</button>
+    </div>
+  `;
+  document.getElementById('stage').appendChild(overlay);
+
+  overlay.querySelector('.login-bonus-claim-btn').addEventListener('click', () => {
+    // 再帰的な二重表示を防ぐため、先にセーブへ書き込んでから演出・表示更新を行う
+    save.loginBonus = { lastDate: todayKey, streak: plan.newStreak };
+    save.coins = (save.coins || 0) + plan.reward;
+    saveProgress();
+    mpSfx('milestone');
+    document.querySelectorAll('[data-bind="saveCoins"]').forEach(el => { el.textContent = save.coins; });
+    overlay.remove();
+    toast(`🎁 ログインボーナス Day${plan.day}：+${plan.reward} コイン！`);
+  });
 }
 
 function showMiniPokerGame() {
@@ -9626,6 +10175,7 @@ function startBattleInternal(opponentId) {
     state.playerChips   = seriousRico ? 2000 : opp.chips;
     state.opponentChips = seriousRico ? 2000 : opp.chips;
   }
+  state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
   state.tutorialMode = seriousRico ? false : opp.tutorial;
   state.fullHand = seriousRico ? true : !!opp.fullHand;
   state.isBoss = seriousRico ? true : !!opp.isBoss; // 心理バトル全ストリート発動
@@ -9704,6 +10254,7 @@ function beginIntroHand() {
   state.maxHands = 1;
   state.playerChips = 500;
   state.opponentChips = 500;
+  state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
   state.tutorialMode = false;   // 講義（全8章）ではなく1ハンドの体験なのでOFF
   state.fullHand = false;
   state.isBoss = false;
@@ -9722,6 +10273,8 @@ function beginIntroHand() {
 function dealIntroHand() {
   if (state.screen !== 'battle' || !state.introHandMode) return;
   state.handNo = 1;
+  resetHandJuice();
+  mpSfx('deal');
   const ante = 50;
   state.playerChips -= ante; state.opponentChips -= ante;
   state.pot = ante * 2;
@@ -9751,15 +10304,44 @@ function dealIntroHand() {
 function introHandShowdown() {
   const playerAll = [...state.playerHand, ...state.community];
   const pEv = evaluateHand(playerAll);
-  state.opponentSpeech = '「……お見事。初日でその度胸は上等だよ」';
-  state.playerChips += state.pot;
-  state.mimiThought = `「やった！${pEv.name}で勝った！」`;
-  state.ricoAdvice = '「ね、楽しいでしょ。これがポーカーだよ」';
-  setMimiExpression('win');
-  setOpponentExpression('defeat'); // リコ先輩が笑って負けを認める表情に
-  state.pot = 0; resetPotChips();
+  const oEv = evaluateHand([...state.opponentHand, ...state.community]);
+  const pot = state.pot;
+  // 本編と同じ段階演出：めくり → 勝ち札ハイライト → チップが飛んでくる
+  state.handPhase = 'showdown';
+  state.isPlayerTurn = false;
+  state.opponentSpeech = '「……ショーダウン。見せてごらん」';
+  state.mimiThought = '「……勝負！」';
   render();
-  setTimeout(showIntroHandWinScreen, 1800);
+  setTimeout(() => {
+    if (state.screen !== 'battle') return;
+    state.opponentRevealed = true;
+    state.__dealSeen.opp = 0;
+    state.opponentSpeech = `相手の役：${oEv.name}`;
+    mpSfx('flip');
+    render();
+  }, 550);
+  setTimeout(() => {
+    if (state.screen !== 'battle') return;
+    state.sdHighlight = new Set((pEv.bestFive || []).map(cardKey));
+    state.opponentSpeech = '「……お見事。初日でその度胸は上等だよ」';
+    state.mimiThought = `「${pEv.name}……勝った！」`;
+    setMimiExpression('win');
+    setOpponentExpression('defeat'); // リコ先輩が笑って負けを認める表情に
+    render();
+    showShowdownCallout('player', pEv, oEv);
+    mpSfx('bigwin');
+  }, 1500);
+  setTimeout(() => {
+    if (state.screen !== 'battle') return;
+    state.playerChips += pot;
+    state.pot = 0; resetPotChips();
+    state.mimiThought = `「やった！${pEv.name}で勝った！」`;
+    state.ricoAdvice = '「ね、楽しいでしょ。これがポーカーだよ」';
+    render();
+    flyChips('.bu-pot-physical', '.char-mimi', pot);
+    floatText('.char-mimi', `+${pot}`, 'ft-gain');
+  }, 2600);
+  setTimeout(() => { if (state.screen === 'battle') showIntroHandWinScreen(); }, 3900);
 }
 
 function showIntroHandWinScreen() {
@@ -9786,8 +10368,11 @@ function showIntroHandWinScreen() {
 
 // 体験ハンド中は「中断」等を隠して没入を優先
 function applyIntroHandUI() {
-  const pauseBtn = document.querySelector('.battle-screen .top-hud [data-action="back-lobby"]');
+  const pauseBtn = document.querySelector('.battle-screen .top-hud [data-action="back-lobby"], .battle-screen .v2-pause');
   if (pauseBtn) pauseBtn.style.display = 'none';
+  // 体験ハンドはリコ先輩自身が対戦相手なので、左の「先輩立ち絵」を二重に出さない
+  const scr = document.querySelector('.battle-screen');
+  if (scr) scr.classList.add('intro-hand-mode');
   const backdoorBtn = document.querySelector('.backdoor-toggle');
   if (backdoorBtn) backdoorBtn.style.display = 'none';
 }
@@ -9801,6 +10386,7 @@ function startHand() {
   if (state.handNo > state.maxHands) { return endBattle(); }
   setOpponentExpression('default'); // 新ハンドは平常表情から
   setMimiExpression('default');
+  resetHandJuice();
   mpSfx('deal'); // 配布音（equippedSePack設定を反映）
 
   // ブラインド簡略化（v4: 各50チップアンティ）
@@ -9925,10 +10511,12 @@ function playerFold() {
   state.opponentSpeech = opponentReactToPlayerFold();
   log('actions', { actor: 'player', type: 'fold' });
   state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'fold', pot: state.pot, by: '降伏' });
+  const potWon = state.pot;
   state.opponentChips += state.pot;
   state.pot = 0; resetPotChips();
+  flyChips('.bu-pot-physical', '.char-opponent', potWon);
   render();
-  setTimeout(endHand, 1000);
+  setTimeout(endHand, 1100);
 }
 function playerCall() {
   mpSfx('call');
@@ -9941,6 +10529,7 @@ function playerCall() {
   state.isPlayerTurn = false;
   state.mimiThought = '「コールした。次の場札を見よう」';
   render();
+  flyChips('.char-mimi', '.bu-pot-physical', pay);
   setTimeout(advanceAfterCall, 700);
 }
 function playerCheckCall() {
@@ -9963,7 +10552,12 @@ function playerRaise(bb) {
   log('bets', { actor: 'player', type: 'raise', amount });
   state.isPlayerTurn = false;
   state.mimiThought = `「${bb}BBレイズ！」`;
+  state.opponentSpeech = opponentReactToPlayerAggression('raise', amount);
+  if (!state.introHandMode && !state.tutorialMode) {
+    setOpponentExpression(state.opponentId === 'velvet' ? 'pleased' : 'rattled');
+  }
   render();
+  flyChips('.char-mimi', '.bu-pot-physical', amount);
   setTimeout(opponentTurn, 700);
 }
 function playerBet(size) {
@@ -9975,7 +10569,14 @@ function playerBet(size) {
   log('bets', { actor: 'player', type: 'bet', size, amount });
   state.isPlayerTurn = false;
   state.mimiThought = `「${amount}ベット」`;
+  // pot 1/2以下は 'bet_small'、2/3〜pot は 'bet_big'
+  const aggroKind = (size === 'pot_2_3' || size === 'pot_1') ? 'bet_big' : 'bet_small';
+  state.opponentSpeech = opponentReactToPlayerAggression(aggroKind, amount);
+  if (!state.introHandMode && !state.tutorialMode && aggroKind === 'bet_big') {
+    setOpponentExpression(state.opponentId === 'velvet' ? 'pleased' : 'rattled');
+  }
   render();
+  flyChips('.char-mimi', '.bu-pot-physical', amount);
   setTimeout(opponentTurn, 700);
 }
 function playerAllIn() {
@@ -9987,7 +10588,12 @@ function playerAllIn() {
   log('bets', { actor: 'player', type: 'allin', amount });
   state.isPlayerTurn = false;
   state.mimiThought = '「オールイン！」';
+  state.opponentSpeech = opponentReactToPlayerAggression('allin', amount);
+  if (!state.introHandMode && !state.tutorialMode) {
+    setOpponentExpression(state.opponentId === 'velvet' ? 'pleased' : 'rattled');
+  }
   render();
+  flyChips('.char-mimi', '.bu-pot-physical', amount);
   showAllInCutIn('player', amount);
   setTimeout(opponentTurn, 1800);
 }
@@ -10026,6 +10632,9 @@ function showAllInCutIn(side, amount) {
   }
   setTimeout(() => overlay.classList.add('out'), 1500);
   setTimeout(() => overlay.remove(), 2100);
+  // オールイン対決の「一撃の重さ」演出：卓を一瞬暗転＋わずかにズーム
+  document.body.classList.add('allin-tension');
+  setTimeout(() => document.body.classList.remove('allin-tension'), 1200);
 }
 function spawnAllInSpark(parent) {
   const s = document.createElement('div');
@@ -10043,7 +10652,22 @@ function spawnAllInSpark(parent) {
 //=============================================================
 // 13. 相手アクション
 //=============================================================
+// 相手の「考える間」：即答ではなく、状況が重いほど長く迷ってから決める（読み合いの手触り）
 function opponentTurn() {
+  if (state.screen !== 'battle' || state.handPhase === 'idle' || state.handPhase === 'showdown') return;
+  if (state.introHandMode || state.opponentChips <= 0) return opponentTurnDecide();
+  const need = state.currentBetPlayer - state.currentBetOpponent;
+  const heavy = need > 0 && need >= Math.max(100, state.pot * 0.35);
+  const delay = heavy ? 900 + rand() * 800 : 380 + rand() * 320;
+  state.opponentThinking = true;
+  render();
+  setTimeout(() => {
+    state.opponentThinking = false;
+    if (state.screen !== 'battle') return;
+    opponentTurnDecide();
+  }, delay);
+}
+function opponentTurnDecide() {
   // 画面遷移後のゾンビ実行ガード
   if (state.screen !== 'battle' || state.handPhase === 'idle' || state.handPhase === 'showdown') return;
   // 既にオールイン済み（チップ0）なら追加アクション不可：自動チェック扱いで次に進める
@@ -10076,6 +10700,7 @@ function opponentTurn() {
     state.pot += pay; pushPotChips(pay);
     state.opponentSpeech = pay > 0 ? 'う……いいよ、コール' : 'チェックで';
     render();
+    if (pay > 0) flyChips('.char-opponent', '.bu-pot-physical', pay);
     setTimeout(advanceAfterCall, 900);
     return;
   }
@@ -10109,10 +10734,14 @@ function opponentTurn() {
     state.opponentSpeech = opponentSpeech(action);
     log('actions', { actor: 'opponent', type: 'fold' });
     state.handResults.push({ hand: state.handNo, winner: 'player', reason: 'opponentFold', pot: state.pot, by: '相手降伏' });
+    const potWon = state.pot;
     state.playerChips += state.pot;
     state.pot = 0; resetPotChips();
+    flyChips('.bu-pot-physical', '.char-mimi', potWon);
+    setOpponentExpression('defeat');
     render();
-    setTimeout(endHand, 1000);
+    floatText('.char-mimi', `+${potWon}`, 'ft-gain');
+    setTimeout(endHand, 1300);
     return;
   }
   // チェック/コール
@@ -10125,7 +10754,9 @@ function opponentTurn() {
     log('actions', { actor: 'opponent', type: pay > 0 ? 'call' : 'check', amount: pay });
     // 今ストリートで相手がチェックした事実を記録（次のレイズで check-raise 検出に使う）
     if (pay === 0) state.opponentCheckedThisStreet = true;
+    mpSfx(pay > 0 ? 'call' : 'check');
     render();
+    if (pay > 0) flyChips('.char-opponent', '.bu-pot-physical', pay);
     if (pay > 0) {
       // 相手がコール → ベットマッチ → 次ストリートへ
       setTimeout(advanceAfterCall, 900);
@@ -10157,7 +10788,9 @@ function opponentTurn() {
       state.pot += pay; pushPotChips(pay);
       state.opponentSpeech = opponentSpeech({ type: 'check_call', intent: 'reluctant_call' });
       log('actions', { actor: 'opponent', type: 'call_fallback', amount: pay });
+      mpSfx('call');
       render();
+      flyChips('.char-opponent', '.bu-pot-physical', pay);
       setTimeout(advanceAfterCall, 900);
       return;
     }
@@ -10172,6 +10805,8 @@ function opponentTurn() {
   state.opponentSpeech = opponentSpeech(action);
   log('bets', { actor: 'opponent', type: 'bet', size: action.size, amount, intent: action.intent });
   log('reactions', { intent: action.intent, speech: state.opponentSpeech });
+  mpSfx(action.size === 'allin' ? 'battle-allin' : 'battle-bet');
+  flyChips('.char-opponent', '.bu-pot-physical', amount);
   // オールイン特別演出：実際にチップが動き、かつ残スタックが0になった瞬間のみ
   if (amount > 0 && (action.size === 'allin' || state.opponentChips === 0)) {
     setOpponentExpression('pressure'); // 相手を強気表情に
@@ -10381,6 +11016,9 @@ function advanceAfterCall() {
 function triggerPsychBattle(qid) {
   // 多重起動・画面遷移ガード
   if (state.psychRoot && state.psychRoot.isConnected) return;
+  // 相手のカットインが残っていると心理バトルの選択肢を覆い隠すので先に畳む
+  if (typeof dismissCutIn === 'function') dismissCutIn();
+  document.querySelectorAll('.opp-cutin, .opponent-cutin, .cutin-overlay').forEach(e => e.remove());
   if (state.screen !== 'battle' && !state.lectureMode) return;
   if (!qid || !PSYCH_QUESTIONS[qid]) {
     console.warn('Psych battle: invalid qid', qid);
@@ -10417,6 +11055,13 @@ function triggerPsychBattle(qid) {
       <div class="portrait-name">${oppName}</div>
     `;
   }
+  // 上段ポートレート：立ち絵を丸窓アバターに（額だけ写る帯クロップの解消）
+  root.querySelectorAll('.battle-portrait > img').forEach(img => {
+    const wrap = document.createElement('span');
+    wrap.className = 'bp-avatar';
+    img.replaceWith(wrap);
+    wrap.appendChild(img);
+  });
   // モーダルタイプによってヘッダー差し替え（講義 / 心理 / 論理）
   const isLogic = q.type === 'logic';
   const isLecture = !!state.lectureMode;
@@ -10530,6 +11175,7 @@ function usePanyuSense(qid, isFree) {
   if (!state.psychRoot) return;
   const cost = isFree ? 0 : 25;
   if (!isFree && state.panyu < 25) return;
+  state.winrateRevealed = true; // v2：このハンドの勝率封印を解く
   // 即時にコスト消費・ボタン無効化（取り消し不可なコミット）
   state.panyu -= cost;
   if (isFree) {
@@ -10971,6 +11617,19 @@ function resolvePsych(qid, choice, btn) {
       document.body.appendChild(sp);
     }
     setTimeout(() => { st.remove(); if (sp) sp.remove(); }, 1400);
+  } else {
+    // バトル中の心理バトル：正誤を音・スタンプ・相手の表情で即座に返す（読み合いの快感）
+    const st = document.createElement('div');
+    st.className = 'lecture-stamp psych-stamp ' + (isCorrect ? 'stamp-correct' : 'stamp-wrong');
+    document.body.appendChild(st);
+    setTimeout(() => st.remove(), 1200);
+    mpSfx(isCorrect ? 'win' : 'lose');
+    setOpponentExpression(isCorrect ? 'rattled' : 'pleased');
+    if (navigator.vibrate) navigator.vibrate(isCorrect ? [40, 30, 60] : 120);
+    if (!isCorrect && state.psychRoot) {
+      state.psychRoot.classList.add('psych-shake');
+      setTimeout(() => state.psychRoot && state.psychRoot.classList.remove('psych-shake'), 450);
+    }
   }
 
   if (isCorrect) {
@@ -10992,6 +11651,10 @@ function resolvePsych(qid, choice, btn) {
       setTimeout(() => showPersonalityRevealBanner(), 600);
     }
     state.mimiThought = `「読めた……！${eff.hint}」`;
+    // v2：読み取った「テル」を卓上の付箋として残す
+    if (!state.tellTags) state.tellTags = [];
+    const tellText = (q.tell || (eff.hint || '').replace(/[「」。]/g, '')).slice(0, 14);
+    if (tellText) state.tellTags.push(tellText);
     state.ricoAdvice = `「${eff.rico}」`;
     // note_range_lv2/3：心理バトル成功時に相手レンジのヒントを追加表示
     const rangeLv = save.panyuSkills?.rangeLevel || 1;
@@ -11263,43 +11926,133 @@ function showdown() {
   else if (pEv.score < oEv.score) winner = 'opponent';
   else winner = 'split';
 
-  state.opponentSpeech = `相手の役：${oEv.name}`;
-
-  if (winner === 'player') {
-    state.playerChips += state.pot;
-    state.mimiThought = `「やった！${pEv.name}で勝った！」`;
-    state.handResults.push({ hand: state.handNo, winner: 'player', reason: 'showdown', pot: state.pot, pEv, oEv });
-  } else if (winner === 'opponent') {
-    state.opponentChips += state.pot;
-    state.mimiThought = `「うう……${oEv.name}には勝てなかった……」`;
-    state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'showdown', pot: state.pot, pEv, oEv });
-  } else {
-    state.playerChips += Math.floor(state.pot / 2);
-    state.opponentChips += Math.ceil(state.pot / 2);
-    state.mimiThought = '「引き分けだ……」';
-    state.handResults.push({ hand: state.handNo, winner: 'split', reason: 'showdown', pot: state.pot, pEv, oEv });
-  }
-  state.pot = 0; resetPotChips();
+  // ── 段階演出：①相手の手札めくり → ②勝ち札ハイライト＋勝敗コール → ③チップ移動 → 結果モーダル ──
+  if (typeof dismissCutIn === 'function') dismissCutIn();
+  const pot = state.pot;
+  const handNoAtStart = state.handNo;
+  const alive = () => state.screen === 'battle' && state.handPhase === 'showdown' && state.handNo === handNoAtStart;
+  state.handPhase = 'showdown';
+  state.isPlayerTurn = false;
+  state.opponentSpeech = pick(['「……ショーダウンだね」', '「さあ、見せ合おうか」', '「……オープン」']);
+  state.mimiThought = '「……勝負！」';
   render();
-  setTimeout(endHand, 2200);
+
+  setTimeout(() => {
+    if (!alive()) return;
+    state.opponentRevealed = true;
+    state.__dealSeen.opp = 0;
+    state.opponentSpeech = `相手の役：${oEv.name}`;
+    mpSfx('flip');
+    render();
+  }, 550);
+
+  setTimeout(() => {
+    if (!alive()) return;
+    const win5 = winner === 'player' ? pEv.bestFive : winner === 'opponent' ? oEv.bestFive : [...pEv.bestFive, ...oEv.bestFive];
+    state.sdHighlight = new Set((win5 || []).map(cardKey));
+    if (winner === 'player') state.mimiThought = `「${pEv.name}……勝った！」`;
+    else if (winner === 'opponent') state.mimiThought = `「${oEv.name}……負けた……」`;
+    else state.mimiThought = '「引き分けか……」';
+    setMimiExpression(winner === 'player' ? 'win' : winner === 'opponent' ? 'sad' : 'default');
+    setOpponentExpression(winner === 'opponent' ? 'pleased' : winner === 'player' ? 'defeat' : 'default');
+    render();
+    showShowdownCallout(winner, pEv, oEv);
+    if (winner === 'player') mpSfx(pot >= 800 ? 'bigwin' : 'hand-win');
+    else if (winner === 'opponent') mpSfx('hand-lose');
+    else mpSfx('tie');
+  }, 1500);
+
+  setTimeout(() => {
+    if (!alive()) return;
+    if (winner === 'player') {
+      state.playerChips += pot;
+      state.mimiThought = `「やった！${pEv.name}で勝った！」`;
+      state.handResults.push({ hand: state.handNo, winner: 'player', reason: 'showdown', pot, pEv, oEv });
+      flyChips('.bu-pot-physical', '.char-mimi', pot);
+      floatText('.char-mimi', `+${pot}`, 'ft-gain');
+    } else if (winner === 'opponent') {
+      state.opponentChips += pot;
+      state.mimiThought = `「うう……${oEv.name}には勝てなかった……」`;
+      state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'showdown', pot, pEv, oEv });
+      flyChips('.bu-pot-physical', '.char-opponent', pot);
+      floatText('.char-opponent', `+${pot}`, 'ft-loss');
+    } else {
+      state.playerChips += Math.floor(pot / 2);
+      state.opponentChips += Math.ceil(pot / 2);
+      state.mimiThought = '「引き分けだ……」';
+      state.handResults.push({ hand: state.handNo, winner: 'split', reason: 'showdown', pot, pEv, oEv });
+      flyChips('.bu-pot-physical', '.char-mimi', Math.floor(pot / 2));
+      flyChips('.bu-pot-physical', '.char-opponent', Math.ceil(pot / 2));
+    }
+    state.pot = 0; resetPotChips();
+    render();
+  }, 2600);
+
+  setTimeout(() => { if (alive()) endHand(); }, 3600);
+}
+
+// === 連勝モメンタム演出 ===
+// 連勝数に応じた卓上バッジのテキスト/演出tierを決める（2連勝から表示、3連勝以上は派手化）
+function streakMomentumInfo(n) {
+  if (n >= 5) return { tier: 'big',  text: `🔥✨ ${n}連勝！！！ ✨🔥` };
+  if (n >= 3) return { tier: 'fire', text: `🔥 ${n}連勝！！ 🔥` };
+  if (n >= 2) return { tier: 'normal', text: `${n}連勝！` };
+  return null;
+}
+// ミミの立ち絵（.char-mimi）付近にポップする連勝バッジ。#stage の再生成に巻き込まれないよう
+// document.body に直接 append し、setTimeout で自前削除する。
+function showStreakBadge(text, tier) {
+  try {
+    const anchor = document.querySelector('.char-mimi');
+    const el = document.createElement('div');
+    el.className = 'streak-badge streak-badge-' + tier;
+    el.textContent = text;
+    if (typeof juiceScale === 'function') el.style.fontSize = Math.round((tier === 'big' ? 34 : tier === 'fire' ? 28 : 22) * juiceScale()) + 'px';
+    if (anchor) {
+      const r = anchor.getBoundingClientRect();
+      el.style.left = (r.left + r.width / 2) + 'px';
+      el.style.top = r.top + 'px';
+    } else {
+      el.style.left = '50%';
+      el.style.top = '28%';
+    }
+    document.body.appendChild(el);
+    setTimeout(() => { el.remove(); }, 1650);
+  } catch (e) { /* 演出失敗はゲーム進行に影響させない */ }
 }
 
 function endHand() {
   if (state.screen !== 'battle') return;
+  if (typeof dismissCutIn === 'function') dismissCutIn();
   state.handPhase = 'idle';
   state.opponentSpeech = '';
   // 連勝カウンタ更新
   const last = state.handResults[state.handResults.length - 1];
   if (last) {
-    if (last.winner === 'player') state.consecutiveWins = (state.consecutiveWins || 0) + 1;
-    else if (last.winner === 'opponent') state.consecutiveWins = 0;
+    if (last.winner === 'player') {
+      state.consecutiveWins = (state.consecutiveWins || 0) + 1;
+      // 連勝モメンタム演出：2連勝目から卓上バッジを表示
+      const momentum = streakMomentumInfo(state.consecutiveWins);
+      if (momentum) {
+        showStreakBadge(momentum.text, momentum.tier);
+        if (state.consecutiveWins >= 5) mpSfx('bigwin');
+        else if (state.consecutiveWins >= 3) mpSfx('milestone');
+      }
+    } else if (last.winner === 'opponent') {
+      const brokenStreak = state.consecutiveWins || 0;
+      state.consecutiveWins = 0;
+      // 3連勝以上が途切れた時だけ、控えめに「連勝ストップ」を知らせる
+      if (brokenStreak >= 3) showStreakBadge('連勝ストップ…', 'stop');
+    }
     // P1-3: ハンドの勝敗でミミの表情を切り替え
     setMimiExpression(last.winner === 'player' ? 'win' : last.winner === 'opponent' ? 'sad' : 'default');
     // 相手の表情：相手が勝てば余裕顔、負ければ敗北顔（差分のあるキャラのみ変化）
     setOpponentExpression(last.winner === 'opponent' ? 'pleased' : last.winner === 'player' ? 'defeat' : 'default');
-    // ハンド勝敗SFX
-    if (last.winner === 'player') mpSfx('hand-win');
-    else if (last.winner === 'opponent') mpSfx('hand-lose');
+    // ハンド勝敗SFX（ショーダウンは演出内で再生済み）
+    if (last.reason !== 'showdown') {
+      if (last.winner === 'player') mpSfx('hand-win');
+      else if (last.winner === 'opponent') mpSfx('hand-lose');
+    }
   }
   // 結果バナー表示
   showHandResultBanner();
@@ -11520,6 +12273,11 @@ function showHandResultBanner(snapshot) {
     ? `<div class="hr-strong-badge">✨ ${last.pEv.name} ✨</div>`
     : '';
 
+  // 連勝中バッジ（ライブ表示のみ・1行小さめ）
+  const streakBadgeHtml = (!isReplay && last.winner === 'player' && (state.consecutiveWins || 0) >= 2)
+    ? `<div class="hr-streak-badge">🔥 ${state.consecutiveWins}連勝中</div>`
+    : '';
+
   // ポット獲得量と残チップ表記
   const potDelta = last.pot;
   const playerChipDeltaText = last.winner === 'player' ? `+${potDelta}` : last.winner === 'opponent' ? `-?` : `+${Math.floor(potDelta/2)}`;
@@ -11532,7 +12290,12 @@ function showHandResultBanner(snapshot) {
       </div>
       ${strongBadge}
       <div class="hr-title">${winnerText}</div>
-      <div class="hr-pot">ポット <b>${potDelta}</b> 獲得 ${last.winner === 'player' ? `(<span class="hr-pot-plus">+${potDelta}</span>)` : ''}</div>
+      ${streakBadgeHtml}
+      <div class="hr-pot">${
+        last.winner === 'player' ? `ポット <b>${potDelta}</b> 獲得 (<span class="hr-pot-plus">+${potDelta}</span>)`
+        : last.winner === 'opponent' ? `${opponentName}がポット <b>${potDelta}</b> を獲得 (<span class="hr-pot-minus">−${potDelta}</span>)`
+        : `ポット <b>${potDelta}</b> を折半`
+      }</div>
       ${verdict ? `<div class="hr-verdict-desc">${verdict.desc}</div>` : ''}
       ${showdownHtml}
       ${equityTimelineHtml}
@@ -11800,6 +12563,7 @@ const RANK_THRESHOLDS = [
 ];
 
 function endBattle() {
+  document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
   // セーブ反映：ぱにゅぱにゅ初回無料を消費したか
   if (state.panyuSenseFreeUsed) save.panyuSenseFreeUsed = true;
 
@@ -11915,6 +12679,7 @@ function endBattle() {
   state.resultWon = won;
   state.rank = rank;
   state.scoreReasons = reasons;
+  state.__resultFxDone = false; // リザルト演出：この対戦分は未実行に戻す
   render();
 
   // 結果反映
@@ -11923,6 +12688,24 @@ function endBattle() {
     t.textContent = won ? '勝利' : '敗北';
     if (!won) t.classList.add('lose');
   }
+  // リザルトの立ち絵：勝てばミミが笑い相手がうなだれる／負ければ逆（差分が無いキャラは default）
+  const rs = document.querySelector('.result-screen');
+  if (rs) {
+    rs.classList.add(won ? 'result-won' : 'result-lost');
+    rs.setAttribute('data-rank-watermark', rank); // 背面の巨大ランク透かし文字（CSS attr()で参照）
+  }
+  const mimiImg = document.querySelector('[data-result-mimi]');
+  if (mimiImg) {
+    mimiImg.src = `assets/characters/${won ? 'mimi_win' : 'mimi_sad'}.png`;
+    mimiImg.onerror = () => { mimiImg.onerror = null; mimiImg.src = 'assets/characters/mimi_default.png'; };
+  }
+  const oppImg = document.querySelector('[data-result-opp]');
+  if (oppImg && state.opponentImgKey) {
+    const key = state.opponentImgKey;
+    const mood = (OPPONENT_EXPRESSIONS[key] || {})[won ? 'defeat' : 'pleased'];
+    oppImg.onerror = () => { oppImg.onerror = null; oppImg.src = `assets/characters/${key}_default.png`; };
+    oppImg.src = `assets/characters/${key}_${mood || 'default'}.png`;
+  }
   const setText = (k, v) => { const el = document.querySelector(`[data-bind="${k}"]`); if (el) el.textContent = v; };
   setText('rankValue', rank);
   setText('earnedCoins', state.coinsEarned);
@@ -11930,12 +12713,85 @@ function endBattle() {
   setText('psychSuccess', state.psychSuccessCount);
   setText('bestHand', state.bestHandName);
   setText('bluffBreak', state.bluffBreakHappened ? 'あり' : 'なし');
+  // ステージ帯（縦書きタイトルの脇）：STAGE 0N — 相手名（英字表記）
+  {
+    const stageIdx = STAGE_ORDER.indexOf(state.opponentId);
+    const stageNo = stageIdx >= 0 ? String(stageIdx + 1).padStart(2, '0') : '01';
+    const enName = (state.opponentImgKey || opp.id || '').toUpperCase();
+    setText('resultStageTag', `STAGE ${stageNo} — ${enName}`);
+  }
+  // ランク判子の色帯：S/SS/A=金（デフォルト）、B=銀、C=銅
+  {
+    const rankEl = document.querySelector('[data-bind="rankValue"]');
+    const emblemWrap = document.querySelector('.rank-emblem-wrap');
+    if (rankEl) {
+      rankEl.classList.remove('rank-tier-silver', 'rank-tier-bronze');
+      if (rank === 'B') rankEl.classList.add('rank-tier-silver');
+      else if (rank === 'C') rankEl.classList.add('rank-tier-bronze');
+    }
+    if (emblemWrap) {
+      emblemWrap.classList.remove('tier-silver', 'tier-bronze');
+      if (rank === 'B') emblemWrap.classList.add('tier-silver');
+      else if (rank === 'C') emblemWrap.classList.add('tier-bronze');
+    }
+  }
+  // コイン内訳チップ：state.rewards（既存の報酬計算そのまま）を短いラベルに整形するだけ
+  const chipsEl = document.querySelector('[data-bind="rewardChips"]');
+  if (chipsEl) {
+    const chipHtml = (state.rewards || []).map(str => {
+      const m = str.match(/^(.*?)[：:](.+)$/);
+      if (m) {
+        const label = m[1].replace(/報酬$/, '');
+        return `<span class="v2-chip v2-chip-gold"><span class="reward-chip-label">${label}</span><span class="reward-chip-value">${m[2]}</span></span>`;
+      }
+      return `<span class="v2-chip v2-chip-gold">${str}</span>`;
+    }).join('');
+    chipsEl.innerHTML = chipHtml;
+  }
   const r = document.querySelector('[data-bind="resultReason"]');
   if (r) {
     r.innerHTML = '<strong>スコア内訳：</strong><br>' +
       (reasons.length ? reasons.join(' / ') : '加点なし') +
       '<br><br><strong>獲得報酬：</strong><br>' +
       (state.rewards && state.rewards.length ? state.rewards.join('<br>') : 'なし');
+  }
+  // 次の目標（統計の下に1行）：既存の解放ルール・クリア記録をそのまま読むだけ
+  const statsBox = document.querySelector('.result-stats');
+  if (statsBox) {
+    const goalLine = document.createElement('div');
+    goalLine.className = 'result-next-goal';
+    goalLine.textContent = nextGoalText();
+    statsBox.insertAdjacentElement('afterend', goalLine);
+  }
+
+  // 主ボタン：次に挑戦できるステージが解放されていればそのステージへ直行、無ければロビーへ
+  // （ヴェルベット勝利時は直後の分岐でエンディングボタンに上書きされる）
+  {
+    const curIdx = STAGE_ORDER.indexOf(state.opponentId);
+    const after = STAGE_ORDER.slice(curIdx + 1);
+    const pickFrom = (list) => list.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
+    const nextId = pickFrom(after) || pickFrom(STAGE_ORDER) || null;
+    const btns = document.querySelector('[data-bind="resultButtons"]');
+    if (btns) {
+      if (nextId) {
+        const nOpp = OPPONENTS[nextId];
+        btns.innerHTML = `
+          <button class="btn btn-primary result-main-btn" data-action="battle-start" data-opponent="${nextId}"><span>${nOpp.name}に挑戦</span><span>→</span></button>
+          <div class="result-sub-buttons">
+            <button class="btn btn-secondary" data-action="rematch">再戦</button>
+            <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+          </div>
+        `;
+      } else {
+        btns.innerHTML = `
+          <button class="btn btn-primary result-main-btn" data-action="back-lobby"><span>ロビーへ</span></button>
+          <div class="result-sub-buttons">
+            <button class="btn btn-secondary" data-action="rematch">再戦</button>
+          </div>
+        `;
+      }
+      btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
+    }
   }
 
   // ヴェルベット勝利 → エンディングへ進むボタン追加 + 闘札大逆転演出 + 降伏セリフ
@@ -11960,13 +12816,124 @@ function endBattle() {
     const btns = document.querySelector('[data-bind="resultButtons"]');
     if (btns) {
       btns.innerHTML = `
-        <button class="btn btn-primary big" data-action="go-ending">✨ エンディングへ ✨</button>
-        <button class="btn btn-secondary big" data-action="back-lobby">ロビーへ</button>
+        <button class="btn btn-primary result-main-btn" data-action="go-ending"><span>✨ エンディングへ ✨</span></button>
+        <div class="result-sub-buttons">
+          <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+        </div>
       `;
       // 動的に追加したボタンを再バインド
       btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
     }
   }
+
+  // リザルト演出（段階表示・コインカウントアップ・ランクスタンプ）
+  // → 全ての表示内容（ヴェルベット特殊分岐含む）が確定した最後にだけ起動する
+  startResultFx();
+}
+
+// 次に挑戦すべきステージ名を1行で返す（解放ルール／クリア記録は既存関数をそのまま読むだけ）
+function nextGoalText() {
+  // 今の相手より「先」の未クリアを優先（ポルカに勝った直後に「リコ先輩に挑戦」と出ないように）
+  const curIdx = STAGE_ORDER.indexOf(state.opponentId);
+  const after = STAGE_ORDER.slice(curIdx + 1);
+  const pickFrom = (list) => list.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
+  const nextId = pickFrom(after) || pickFrom(STAGE_ORDER);
+  if (nextId) {
+    const opp = OPPONENTS[nextId];
+    return `次の目標：${opp.name}に挑戦`;
+  }
+  return '全ステージ制覇！再戦でSランクを狙おう';
+}
+
+// リザルト画面の「ご褒美感」演出をまとめて起動する。
+// render() は他の画面遷移からも呼ばれるため、state.__resultFxDone フラグで
+// 「result 画面になった直後の1回」だけ実行されるようにガードする
+// （フラグ自体は endBattle() が新しい対戦結果ごとに false へ戻す）。
+function startResultFx() {
+  if (state.__resultFxDone) return;
+  state.__resultFxDone = true;
+  const root = document.querySelector('.result-screen');
+  if (!root) return;
+  const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  // 1) 段階表示：タイトル→ランク→統計行→次の目標→報酬理由→ボタンの順にフェード/スライドイン
+  const revealTargets = [];
+  const titleEl = root.querySelector('[data-bind="resultTitle"]');
+  const rankBox = root.querySelector('.rank-display');
+  const coinsBox = root.querySelector('.coins-block');
+  const stageTagEl = root.querySelector('.result-stage-tag');
+  if (stageTagEl) revealTargets.push(stageTagEl);
+  if (titleEl) revealTargets.push(titleEl);
+  if (rankBox) revealTargets.push(rankBox);
+  if (coinsBox) revealTargets.push(coinsBox);
+  root.querySelectorAll('.result-stats > div').forEach(row => revealTargets.push(row));
+  const nextGoalEl = root.querySelector('.result-next-goal');
+  if (nextGoalEl) revealTargets.push(nextGoalEl);
+  const reasonEl = root.querySelector('[data-bind="resultReason"]');
+  if (reasonEl) revealTargets.push(reasonEl);
+  const btnsEl = root.querySelector('[data-bind="resultButtons"]');
+  if (btnsEl) revealTargets.push(btnsEl);
+  const rankBoxIndex = rankBox ? revealTargets.indexOf(rankBox) : -1;
+  revealTargets.forEach((el, i) => {
+    el.style.setProperty('--i', i);
+    el.classList.add('result-reveal');
+  });
+
+  // 2) ランクのスタンプ演出＋結果SFX（rankValue が表示される瞬間に判子のように着地）
+  const rankEl = root.querySelector('[data-bind="rankValue"]');
+  if (rankEl) {
+    const rankText = (rankEl.textContent || '').trim();
+    const isTopRank = rankText === 'S' || rankText === 'SS';
+    rankEl.style.setProperty('--i', rankBoxIndex >= 0 ? rankBoxIndex : 1);
+    rankEl.classList.add('rank-stamp');
+    if (isTopRank) rankEl.classList.add('rank-stamp-gold');
+    const sfxDelay = reduceMotion ? 0 : (rankBoxIndex >= 0 ? rankBoxIndex : 1) * 120 + 260;
+    setTimeout(() => {
+      if (state.resultWon) {
+        mpSfx(isTopRank ? 'royal' : 'bigwin');
+      } else {
+        mpSfx('lose');
+      }
+    }, sfxDelay);
+  }
+
+  // 3) 獲得コインのカウントアップ（約0.8秒でイーズアウト、途中で最大6回タップ音）
+  const coinEl = root.querySelector('[data-bind="earnedCoins"]');
+  if (coinEl) {
+    const target = Math.max(0, Math.round(state.coinsEarned || 0));
+    if (reduceMotion || target === 0) {
+      coinEl.textContent = target;
+    } else {
+      coinEl.textContent = '0';
+      animateCoinCountUp(coinEl, target);
+    }
+  }
+}
+
+// requestAnimationFrame でイーズアウトしながら 0→target をカウントアップし、
+// 節目ごとに mpSfx('tap') を（最大6回まで）鳴らす
+function animateCoinCountUp(el, target) {
+  const duration = 800;
+  const maxTicks = 6;
+  let ticksPlayed = 0;
+  const startTime = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - startTime) / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const val = Math.round(target * eased);
+    el.textContent = val;
+    const expectedTicks = Math.min(maxTicks, Math.floor(eased * maxTicks));
+    if (expectedTicks > ticksPlayed) {
+      ticksPlayed = expectedTicks;
+      mpSfx('tap');
+    }
+    if (t < 1) {
+      requestAnimationFrame(tick);
+    } else {
+      el.textContent = target;
+    }
+  }
+  requestAnimationFrame(tick);
 }
 
 // ヴェルベット撃破時の勝利演出（「逆転」表現を排除：ポーカーは累積で勝つゲーム）
@@ -12488,6 +13455,32 @@ function showOpponentCutIn(text, betSize) {
   if (betSize === 'allin' || betSize === 'pot_1') setMimiExpression('shock');
   const cut = document.createElement('div');
   cut.className = `rico-cutin opponent-cutin ${intensity}`;
+  // v2：画面全体を暗転させ、相手の顔アップ・セリフ帯・額だけを浴びせるカットイン
+  if (document.querySelector('.battle-screen.v2')) {
+    const amt = state.currentBetOpponent || 0;
+    const sizeTag = betSize === 'allin' ? 'ALL IN' : betSize === 'pot_1' ? 'POT' : betSize === 'pot_2_3' ? '2/3 POT' : 'BET';
+    const latin = (typeof opponentLatinName === 'function') ? opponentLatinName() : oppName;
+    cut.className += ' v2-cutin';
+    cut.innerHTML = `
+      <div class="v2c-dim"></div>
+      <div class="v2c-slash"></div>
+      <div class="v2c-art"><img src="assets/characters/${imgKey}_cutin_smug.webp" alt="${oppName}" onerror="this.onerror=null;this.src='assets/characters/${imgKey}_default.png';this.classList.add('v2c-fallback')"></div>
+      <div class="v2c-band"><div class="v2c-name v2-disp">${latin}</div><div class="v2c-line">「${text}」</div></div>
+      <div class="v2c-amount"><div class="v2-disp v2c-amount-num">${sizeTag} +${amt}</div><div class="v2c-amount-sub">タップで閉じる</div></div>
+    `;
+    document.body.appendChild(cut);
+    let dismissed = false;
+    const dismiss = () => {
+      if (dismissed) return; dismissed = true; activeCutInDismiss = null;
+      clearTimeout(autoT); cut.classList.add('cutin-out');
+      if (betSize === 'allin' || betSize === 'pot_1') setMimiExpression('default');
+      setTimeout(() => cut.remove(), 450);
+    };
+    const autoT = setTimeout(dismiss, (betSize === 'allin' || betSize === 'pot_1') ? 3200 : 2600);
+    cut.addEventListener('click', dismiss);
+    activeCutInDismiss = dismiss;
+    return;
+  }
   // 強度別パーティクル数（allin=多、pot=中、strong=少）
   const sparkles = (betSize === 'allin') ? 8 : (betSize === 'pot_1') ? 5 : 0;
   const sparkleHtml = Array.from({ length: sparkles }, (_, i) =>
@@ -12496,7 +13489,7 @@ function showOpponentCutIn(text, betSize) {
   cut.innerHTML = `
     <div class="cutin-flash"></div>
     <div class="cutin-portrait">
-      <img src="assets/characters/${imgKey}_default.png" alt="${oppName}" onerror="window.assetFallback(this,'${imgKey}')">
+      <img src="assets/characters/${imgKey}_cutin_smug.webp" alt="${oppName}" onerror="this.onerror=null;this.classList.add('no-cutin-art');this.src='assets/characters/${imgKey}_default.png'">
       ${sparkleHtml}
     </div>
     <div class="cutin-text">
