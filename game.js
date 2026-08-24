@@ -3946,6 +3946,19 @@ function markShopItemsSeen() {
   saveProgress();
 }
 
+// カテゴリごとの商品アイコン（絵文字は使わず inline SVG／線画・24pxグリッドで統一）
+const SHOP_CAT_ICONS = {
+  panyu:  '<path d="M8 3c-1 3-1 6 0 8"/><path d="M16 3c1 3 1 6 0 8"/><circle cx="12" cy="14" r="6"/><circle cx="9.6" cy="13.2" r=".7" fill="currentColor" stroke="none"/><circle cx="14.4" cy="13.2" r=".7" fill="currentColor" stroke="none"/><path d="M10 16.2c1 .8 3 .8 4 0"/>',
+  note:   '<path d="M6 4.5h9.5A2 2 0 0 1 17.5 6.5V19.5H8.5A2 2 0 0 1 6.5 17.5V4.5z"/><path d="M9 9h6M9 13h6M9 17h3.5"/>',
+  skin:   '<path d="M12 3a9 8 0 1 0 0 16c1.5 0 2-1 2-2s-.5-1.5-.5-2.5S14 13 15 13h2a4 4 0 0 0 4-4c0-3.3-4-6-9-6z"/><circle cx="8" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="9.5" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="8.5" r="1" fill="currentColor" stroke="none"/>',
+  stack:  '<ellipse cx="12" cy="18" rx="7" ry="2.3"/><ellipse cx="12" cy="14" rx="7" ry="2.3"/><ellipse cx="12" cy="10" rx="7" ry="2.3"/><path d="M5 10v8M19 10v8"/>',
+  memory: '<path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/>',
+};
+function shopCatIconSvg(cat) {
+  const path = SHOP_CAT_ICONS[cat] || SHOP_CAT_ICONS.memory;
+  return `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+}
+
 function renderShopItems(cat) {
   // 段階開放：未解放商品はそもそも表示しない
   const items = SHOP_ITEMS.filter(i => i.cat === cat && isShopItemUnlocked(i.id));
@@ -3965,11 +3978,14 @@ function renderShopItems(cat) {
                       : (i.id === 'memory_minipoker') ? 'play-minipoker'
                       : null;
     return `<div class="shop-item ${owned ? 'owned' : ''} ${lockedReason ? 'locked' : ''} ${isNew ? 'is-new' : ''}" data-item="${i.id}">
-      ${isNew ? '<span class="shop-item-newtag">🆕 新着</span>' : ''}
-      <div class="shop-item-name">${i.name}</div>
-      <div class="shop-item-desc">${i.desc}</div>
+      ${isNew ? '<span class="shop-item-newtag">NEW</span>' : ''}
+      <div class="shop-item-icon shop-item-icon-${i.cat}">${shopCatIconSvg(i.cat)}</div>
+      <div class="shop-item-body">
+        <div class="shop-item-name">${i.name}</div>
+        <div class="shop-item-desc">${i.desc}</div>
+      </div>
       <div class="shop-item-footer">
-        <span class="shop-item-price">${i.price}コイン</span>
+        <span class="shop-item-price">${i.price}<small>コイン</small></span>
         ${lockedReason
           ? `<span class="shop-item-locked">${lockedReason}</span>`
           : owned
@@ -4025,13 +4041,16 @@ function buyItem(itemId) {
   if (!item) return;
   if (save.ownedItems.includes(itemId)) return;
   if (save.coins < item.price) return;
+  // 演出は「再描画で壊れる前」に、購入直前の実DOM要素を掴んでおく
+  const boughtItemEl = document.querySelector(`.shop-item[data-item="${itemId}"]`);
   save.coins -= item.price;
   save.ownedItems.push(itemId);
   // 効果適用
   applyItemEffect(itemId);
   applyEquippedStyles();
   saveProgress();
-  toast(`✓ ${item.name} を購入！`);
+  // トーストは演出関数側（playShopBuyFx）で一本化して表示する（二重トーストの重なり防止）
+  playShopBuyFx(boughtItemEl, item);
   // 再レンダリング
   const activeCat = document.querySelector('.shop-cat-btn.active')?.dataset.cat || 'panyu';
   const itemsEl = document.querySelector('[data-bind="shopItems"]');
@@ -4040,6 +4059,40 @@ function buyItem(itemId) {
   if (coinsEl) coinsEl.textContent = save.coins;
   bindActions();
   bindShopItems();
+}
+
+// 購入成功時の演出：①押した商品スラブが金色に発光して0.5秒だけ横回転
+//                    ②コイン表示から商品スラブへチップが数枚飛ぶ（既存の flyChips を再利用）
+//                    ③toast（呼び出し元で既に表示済み）／SEは mpSfx を再利用
+// render() による再描画で商品スラブの実要素はすぐ入れ替わるため、
+// 見た目用のクローンを document.body に重ねて自前アニメ→自前削除する（購入判定・所持品には一切触れない）
+function playShopBuyFx(itemEl, item) {
+  const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if (typeof mpSfx === 'function') mpSfx('milestone');
+  // ① コインがスラブへ飛ぶ（fromSel=コイン表示、toSel=商品スラブ要素）。3〜5枚程度に見えるよう固定値を渡す
+  if (typeof flyChips === 'function') {
+    const fromEl = document.querySelector('[data-bind="saveCoins"]');
+    if (fromEl && itemEl) flyChips(fromEl, itemEl, reduceMotion ? 60 : 300);
+  }
+  // ② 押した商品スラブのクローンを重ねて金色発光＋一度だけ横回転（perspective 用に外側 wrap を用意）
+  if (itemEl) {
+    const rect = itemEl.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      const wrap = document.createElement('div');
+      wrap.className = 'shop-buy-fx-wrap';
+      wrap.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;`;
+      const clone = itemEl.cloneNode(true);
+      clone.removeAttribute('data-item');
+      clone.className = 'shop-item shop-buy-fx-clone';
+      wrap.appendChild(clone);
+      document.body.appendChild(wrap);
+      requestAnimationFrame(() => clone.classList.add(reduceMotion ? 'shop-buy-fx-spin-reduced' : 'shop-buy-fx-spin'));
+      const life = reduceMotion ? 260 : 560;
+      setTimeout(() => wrap.remove(), life);
+    }
+  }
+  // ③ 小さなトースト（アイテム入手の告知。購入成功メッセージとは別に一言添える）
+  if (typeof toast === 'function') toast(`${item.name} を手に入れた！`);
 }
 
 function pickLogicQuestion() {

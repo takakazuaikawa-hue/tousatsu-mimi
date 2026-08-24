@@ -14055,3 +14055,165 @@ body.is-danger .battle-screen.v2::after { box-shadow: inset 0 0 120px rgba(200,3
 /* v2 字幕帯：旧吹き出しの「しっぽ」三角（::before/::after）は出さない。左上の謎の棒の正体 */
 .battle-screen.v2 .opponent-speech.v2-band-text::before,
 .battle-screen.v2 .opponent-speech.v2-band-text::after { content: none !important; display: none !important; }
+
+/* =====================================================================
+   交換所 v2：店主レイアウトと購入演出
+   docs/design-ref/shop-design.png / shop-design.html 準拠。
+   黒 #0b0510 × 深紅 #c8253a × 金 #f5d77a、斜めスラブ skewX(-12deg)、
+   Bebas Neue の巨大英字（バトル v2 と同じ視覚言語）。1280×800 固定キャンバス前提。
+   data-action / data-item / data-cat / .shop-cat-btn / .shop-item 等の
+   クラス・属性は JS 側の querySelector 対象のため維持し、見た目だけ上書きする。
+   ===================================================================== */
+.shop-screen.v2 { display: block; position: relative; padding: 0; overflow: hidden; background: #0b0510; }
+.shop-screen.v2 .bg-shop { filter: brightness(.62) saturate(.9); }
+.shop-v2-scrim {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(90deg, rgba(11,5,16,.2) 0%, rgba(11,5,16,.75) 44%, rgba(11,5,16,.92) 100%);
+}
+.shop-screen.v2 > .bg-layer, .shop-screen.v2 > .shop-v2-scrim { z-index: 1; }
+
+.shop-v2-disp { font-family: "Bebas Neue", "Noto Sans JP", Impact, sans-serif; letter-spacing: .06em; font-weight: 400; }
+
+/* 見出し */
+.shop-v2-head { position: absolute; left: 36px; top: 14px; z-index: 3; }
+.shop-v2-brand { font-size: 20px; color: #c4b89a; letter-spacing: .4em; }
+.shop-v2-title { font-size: 40px; font-weight: 900; letter-spacing: .1em; line-height: 1.1; color: var(--c-text); text-shadow: 0 4px 0 rgba(0,0,0,.5); margin-top: 2px; }
+
+/* コイン表示 */
+.shop-v2-coins { position: absolute; right: 40px; top: 14px; text-align: right; z-index: 3; }
+.shop-v2-coins-label { font-size: 16px; color: #c4b89a; letter-spacing: .3em; }
+.shop-v2-coins-num { font-size: 64px; line-height: .9; color: #f5d77a; text-shadow: 0 0 30px rgba(245,215,122,.5); }
+
+/* 戻るボタン */
+.shop-screen.v2 .shop-v2-back { position: absolute; right: 40px; top: 108px; height: 26px; padding: 0 14px; font-size: 11px; min-height: 0; z-index: 3; opacity: .78; }
+.shop-screen.v2 .shop-v2-back:hover { opacity: 1; }
+
+/* カテゴリタブ */
+.shop-v2-tabs { position: absolute; left: 480px; right: 48px; top: 150px; display: flex; flex-wrap: wrap; gap: 8px; z-index: 3; }
+.shop-screen.v2 .shop-cat-btn {
+  height: 42px; padding: 0 18px; border: 0; border-radius: 0; margin: 0;
+  font-family: inherit; font-weight: 900; font-size: 13.5px; letter-spacing: .04em; cursor: pointer;
+  transform: skewX(-12deg); background: rgba(0,0,0,.5); color: #c4b89a;
+  box-shadow: inset 0 0 0 1px rgba(217,179,90,.35);
+  transition: box-shadow .15s ease, background .15s ease, color .15s ease;
+}
+.shop-screen.v2 .shop-cat-btn span { display: inline-block; transform: skewX(12deg); }
+.shop-screen.v2 .shop-cat-btn:hover { box-shadow: inset 0 0 0 1px rgba(245,215,122,.7); color: var(--c-text); }
+.shop-screen.v2 .shop-cat-btn.active { background: linear-gradient(90deg, #f5d77a, #d9b35a); color: #14081d; box-shadow: 0 0 22px rgba(245,215,122,.4); }
+
+/* 商品リスト：斜めスラブの縦積み（スクロール可） */
+.shop-screen.v2 .shop-items {
+  position: absolute; left: 480px; right: 48px; top: 210px; bottom: 26px;
+  display: flex; flex-direction: column; gap: 12px;
+  overflow-y: auto; overflow-x: hidden; z-index: 3; padding-right: 4px;
+}
+.shop-screen.v2 .shop-item,
+.shop-buy-fx-wrap .shop-item {
+  position: relative; flex: 0 0 auto; display: flex; align-items: center; gap: 16px;
+  height: 84px; min-height: 84px; padding: 0 20px; border: 0; border-radius: 0;
+  background: rgba(20,8,29,.88);
+  box-shadow: inset 0 0 0 1px rgba(245,215,122,.3), 0 10px 22px rgba(0,0,0,.5);
+  transform: skewX(-6deg); transition: box-shadow .15s ease; cursor: pointer;
+}
+.shop-screen.v2 .shop-item > *,
+.shop-buy-fx-wrap .shop-item > * { transform: skewX(6deg); }
+.shop-screen.v2 .shop-item:hover { box-shadow: inset 0 0 0 1px rgba(245,215,122,.55), 0 12px 26px rgba(0,0,0,.6); }
+.shop-screen.v2 .shop-item.selected { box-shadow: inset 0 0 0 2px #f5d77a, 0 0 24px rgba(245,215,122,.35), 0 10px 22px rgba(0,0,0,.5); }
+.shop-screen.v2 .shop-item.owned { opacity: .68; filter: none; background: linear-gradient(90deg, rgba(40,60,30,.55) 0%, rgba(20,8,29,.88) 40%); }
+.shop-screen.v2 .shop-item.owned::before {
+  content: '✓ 所持中'; position: absolute; top: -9px; right: 14px; transform: skewX(6deg);
+  background: linear-gradient(180deg, #8aff9a 0%, #2e7d3a 100%); color: #0a1a10;
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: .1em;
+}
+.shop-screen.v2 .shop-item.locked { opacity: .55; filter: grayscale(.5); }
+
+/* アイコン：カテゴリ別 inline SVG（絵文字は使わない） */
+.shop-screen.v2 .shop-item-icon,
+.shop-buy-fx-wrap .shop-item-icon {
+  width: 52px; height: 52px; flex: 0 0 auto; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.25), rgba(255,255,255,0) 45%), #5a2a8a;
+  box-shadow: inset 0 0 0 2px rgba(245,215,122,.5);
+  display: flex; align-items: center; justify-content: center;
+}
+.shop-screen.v2 .shop-item-icon-panyu,  .shop-buy-fx-wrap .shop-item-icon-panyu  { color: #ffc1d8; }
+.shop-screen.v2 .shop-item-icon-note,   .shop-buy-fx-wrap .shop-item-icon-note   { color: #f5d77a; }
+.shop-screen.v2 .shop-item-icon-skin,   .shop-buy-fx-wrap .shop-item-icon-skin   { color: #8a4cc4; }
+.shop-screen.v2 .shop-item-icon-stack,  .shop-buy-fx-wrap .shop-item-icon-stack  { color: #7fe0a0; }
+.shop-screen.v2 .shop-item-icon-memory, .shop-buy-fx-wrap .shop-item-icon-memory { color: #7ec8ff; }
+
+/* 本文：名前＋説明 */
+.shop-screen.v2 .shop-item-body, .shop-buy-fx-wrap .shop-item-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.shop-screen.v2 .shop-item-name, .shop-buy-fx-wrap .shop-item-name { font-size: 17px; font-weight: 900; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shop-screen.v2 .shop-item-desc, .shop-buy-fx-wrap .shop-item-desc { font-size: 12px; color: var(--c-text-dim); font-weight: 600; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 価格＋購入ボタン */
+.shop-screen.v2 .shop-item-footer, .shop-buy-fx-wrap .shop-item-footer { flex: 0 0 auto; margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.shop-screen.v2 .shop-item-price, .shop-buy-fx-wrap .shop-item-price { font-family: "Bebas Neue", Impact, sans-serif; font-size: 26px; color: #f5d77a; line-height: 1; text-align: right; white-space: nowrap; }
+.shop-screen.v2 .shop-item-price small, .shop-buy-fx-wrap .shop-item-price small { display: block; font-family: inherit; font-size: 10px; letter-spacing: .1em; color: #c4b89a; font-weight: 600; }
+.shop-screen.v2 .shop-item .btn.btn-primary,
+.shop-buy-fx-wrap .shop-item .btn.btn-primary {
+  height: 40px; padding: 0 18px; border: 0; border-radius: 0; min-height: 0;
+  background: linear-gradient(90deg, #f5d77a, #d9b35a); color: #14081d;
+  font-weight: 900; font-family: inherit; font-size: 14px; white-space: nowrap;
+}
+.shop-screen.v2 .shop-item .btn.btn-primary:disabled,
+.shop-buy-fx-wrap .shop-item .btn.btn-primary:disabled {
+  background: rgba(0,0,0,.5); color: #c4b89a; box-shadow: inset 0 0 0 1px rgba(217,179,90,.4); opacity: 1;
+}
+.shop-screen.v2 .shop-item-owned { color: #8aff9a; font-size: 12px; font-weight: 900; letter-spacing: .08em; white-space: nowrap; }
+.shop-screen.v2 .shop-item-locked { color: #c4b89a; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-align: right; max-width: 150px; white-space: normal; line-height: 1.3; }
+.shop-screen.v2 .shop-item-newtag {
+  position: absolute; top: -9px; left: 14px; transform: skewX(6deg);
+  background: linear-gradient(135deg, #d93232 0%, #f5d77a 100%); color: #fff;
+  font-size: 10px; font-weight: 900; padding: 2px 9px; border-radius: 999px; letter-spacing: .08em;
+  box-shadow: 0 2px 6px rgba(0,0,0,.5); z-index: 3;
+}
+.shop-screen.v2 .shop-item.is-new { box-shadow: inset 0 0 0 1px rgba(245,215,122,.6), 0 0 16px rgba(245,215,122,.35), 0 10px 22px rgba(0,0,0,.5); animation: shopV2NewPulse 2.2s ease-in-out infinite; }
+@keyframes shopV2NewPulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(245,215,122,.6), 0 0 12px rgba(245,215,122,.3), 0 10px 22px rgba(0,0,0,.5); }
+  50%      { box-shadow: inset 0 0 0 1px rgba(245,215,122,.8), 0 0 20px rgba(245,215,122,.55), 0 10px 22px rgba(0,0,0,.5); }
+}
+.shop-screen.v2 .shop-empty { margin: 0; transform: none; background: rgba(0,0,0,.4); border: 1px dashed rgba(245,215,122,.35); border-radius: 0; }
+
+/* グラーノ：左に大きく、枠なし */
+.shop-screen.v2 .shop-v2-owner {
+  position: absolute; left: -30px; bottom: -30px; top: auto; right: auto; width: 480px; height: 740px; z-index: 2;
+  display: flex; align-items: flex-end; justify-content: center;
+  background: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; pointer-events: none;
+}
+.shop-screen.v2 .shop-v2-owner img {
+  height: 100%; width: auto; max-width: none; object-fit: contain; object-position: bottom center;
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,.85));
+}
+.shop-screen.v2 .shop-v2-bubble {
+  position: absolute; left: 60px; right: auto; top: auto; bottom: 40px; z-index: 3; max-width: 320px;
+  padding: 12px 16px; background: rgba(255,253,243,.96); color: #14081d;
+  font-size: 14px; font-weight: 700; line-height: 1.5; border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.5);
+}
+.shop-screen.v2 .shop-v2-bubble::before,
+.shop-screen.v2 .shop-v2-bubble::after { content: none !important; display: none !important; }
+
+/* 購入演出：コインが吸い込まれた後、押したスラブが金色発光しつつ一度だけ横回転
+   render() の再描画で本物の要素が消えても止まらないよう、クローンを body 直下に重ねて自前アニメ→自前削除する */
+.shop-buy-fx-wrap { position: fixed; z-index: 9000; pointer-events: none; perspective: 900px; }
+.shop-buy-fx-wrap .shop-buy-fx-clone {
+  position: absolute; inset: 0; margin: 0; width: 100%; height: 100%;
+  transform-style: preserve-3d; transform-origin: 50% 50%; cursor: default;
+}
+.shop-buy-fx-wrap .shop-buy-fx-clone.shop-buy-fx-spin { animation: shopBuyFxSpin .5s cubic-bezier(.25,.7,.3,1) both; }
+.shop-buy-fx-wrap .shop-buy-fx-clone.shop-buy-fx-spin-reduced { animation: shopBuyFxGlowOnly .26s ease-out both; }
+@keyframes shopBuyFxSpin {
+  0%   { transform: skewX(-6deg) rotateY(0deg);   box-shadow: inset 0 0 0 1px rgba(245,215,122,.3), 0 10px 22px rgba(0,0,0,.5); filter: brightness(1); }
+  45%  { box-shadow: inset 0 0 0 2px #f5d77a, 0 0 40px rgba(245,215,122,.9), 0 10px 22px rgba(0,0,0,.5); filter: brightness(1.35); }
+  50%  { transform: skewX(-6deg) rotateY(180deg); box-shadow: inset 0 0 0 2px #f5d77a, 0 0 46px rgba(245,215,122,1), 0 10px 22px rgba(0,0,0,.5); filter: brightness(1.4); }
+  100% { transform: skewX(-6deg) rotateY(360deg); box-shadow: inset 0 0 0 1px rgba(245,215,122,.3), 0 10px 22px rgba(0,0,0,.5); filter: brightness(1); }
+}
+@keyframes shopBuyFxGlowOnly {
+  0%   { box-shadow: inset 0 0 0 1px rgba(245,215,122,.3), 0 10px 22px rgba(0,0,0,.5); filter: brightness(1); }
+  50%  { box-shadow: inset 0 0 0 2px #f5d77a, 0 0 30px rgba(245,215,122,.85), 0 10px 22px rgba(0,0,0,.5); filter: brightness(1.25); }
+  100% { box-shadow: inset 0 0 0 1px rgba(245,215,122,.3), 0 10px 22px rgba(0,0,0,.5); filter: brightness(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shop-buy-fx-wrap .shop-buy-fx-clone.shop-buy-fx-spin { animation: shopBuyFxGlowOnly .26s ease-out both; }
+}
