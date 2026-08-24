@@ -12825,6 +12825,7 @@ const RANK_THRESHOLDS = [
 
 function endBattle() {
   document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
+  cancelTease(); // 溜め演出も必ず解除
   // セーブ反映：ぱにゅぱにゅ初回無料を消費したか
   if (state.panyuSenseFreeUsed) save.panyuSenseFreeUsed = true;
 
