@@ -5332,6 +5332,26 @@ let _teaseTimer = null;
 let _teaseSkip = null;
 let _teaseBeat = null;
 
+// 「本物のドロー」のアウツ数：役のカテゴリがスリーカード(3)以上に上がる残り札を数える。
+// ワンペア／ツーペア止まりの改善はドローとみなさない（待たせる価値がないため）
+function strongOuts(community) {
+  const all = [...state.playerHand, ...community];
+  if (all.length < 5) return 0;
+  const cur = evaluateHand(all);
+  const known = new Set(all.map(c => c.suit + c.rank));
+  const SUITS = ['♠','♥','♦','♣'];
+  const LABELS = {2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A'};
+  let n = 0;
+  for (let r = 2; r <= 14; r++) {
+    for (const suit of SUITS) {
+      if (known.has(suit + r)) continue;
+      const ev = evaluateHand([...all, { rank: r, suit, label: LABELS[r] }]);
+      if (ev.rank > cur.rank && ev.rank >= 3) n++;
+    }
+  }
+  return n;
+}
+
 // 次に開く札がどれだけ「アツい」か。'normal' | 'reach' | 'hot'
 function computeRevealTier(nextCards) {
   try {
@@ -5353,12 +5373,16 @@ function computeRevealTier(nextCards) {
       const oAfter  = evaluateHand([...state.opponentHand, ...after]);
       flips = (pBefore.score > oBefore.score) !== (pAfter.score > oAfter.score);
     }
-    // ドローの太さ（アウツ数）
-    const dr = analyzeDraws();
-    const outs = (dr && dr.draws && dr.draws.length) ? dr.draws[0].outs : 0;
+    // ドローの太さ：ただのペア成立は数えず、ストレート／フラッシュ／スリーカード以上に
+    // 届くアウツだけを「本物のドロー」として数える（analyzeDraws はペアも拾うため自前で集計）
+    const outs = strongOuts(before);
+    // 溜めるのは「本物のドローがある時」だけ。ただのペア成立では待たせない
+    const pot = state.pot || 0;
+    const bigPot = pot / Math.max(1, state.playerChips + pot) >= 0.25;
     let tier = 'normal';
-    if (flips || (improved && outs >= 12)) tier = 'hot';
-    else if (outs >= 8 || improved) tier = 'reach';
+    if (flips && (outs >= 6 || bigPot)) tier = 'hot';   // 勝敗が入れ替わる1枚＋太いドロー or 大きな山
+    else if (outs >= 4) tier = 'reach';                  // ガットショット以上の本物のドロー
+    else if (improved && bigPot) tier = 'reach';
     // 同じティアが続いたら1段階短縮（飽き防止）
     if (tier !== 'normal' && tier === state.lastRevealTier) {
       tier = tier === 'hot' ? 'reach' : 'normal';
