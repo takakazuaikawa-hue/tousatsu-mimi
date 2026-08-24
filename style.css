@@ -360,7 +360,7 @@ html, body {
     /* 下方ワインレッドの暗み */
     radial-gradient(ellipse 90% 50% at 50% 100%, rgba(120,20,40,0.45) 0%, rgba(20,8,29,0) 70%),
     /* 本体画像（無くてもエラーにならず透けて以下のグラデが見える） */
-    url('assets/backgrounds/shop.png') center / cover no-repeat,
+    url('assets/backgrounds/bg_shop_bazaar.jpg') center 45% / cover no-repeat,
     /* 画像が無いときのフォールバック：濃い赤紫グラデ＋市松床っぽい暗線 */
     linear-gradient(180deg, #2a1238 0%, #4a1828 60%, #1a0820 100%);
   background-color: var(--c-bg-dark);
@@ -912,7 +912,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   position: absolute; inset: 0; z-index: 0;
   background:
     linear-gradient(180deg, rgba(11,5,16,.55) 0%, rgba(11,5,16,.15) 40%, rgba(11,5,16,.92) 100%),
-    url('assets/backgrounds/lobby.png') center 30% / cover no-repeat,
+    url('assets/backgrounds/bg_lobby_hall.jpg') center 42% / cover no-repeat,
     linear-gradient(180deg, #1a0e2a 0%, #2a1238 40%, #4a1828 100%);
   background-blend-mode: normal, luminosity, normal;
   filter: brightness(.85) saturate(.9);

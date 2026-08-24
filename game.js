@@ -3412,10 +3412,11 @@ function pickLobbyRico() {
       return found;
     }
   }
-  // クリア前・未装備なら制服固定
+  // クリア前・未装備なら「案内ポーズ」（ロビー専用の新規立ち絵）
   const cleared = save.clearedStages && save.clearedStages.includes('velvet');
   if (!cleared) {
     state.lobbyRicoIndex = 0;
+    return { file: 'rico_greet.webp', label: '案内', lines: RICO_OUTFITS[0].lines };
     return RICO_OUTFITS[0];
   }
   // クリア後・未装備ならセッションごとにランダム着せ替え（お楽しみ要素）
