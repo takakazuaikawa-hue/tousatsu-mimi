@@ -13967,3 +13967,7 @@ body.is-tease-hot .card.tease-card::after {
 .lobby-door-next .lobby-door-clear, .lobby-door-boss .lobby-door-clear { top: 30px; }
 /* 扉は下端をそろえる（高さの違いは上に伸ばす） */
 .lobby-doors, .lobby-stage-list { align-items: flex-end; }
+.lb-bgm-toggle .ui-ic, .lb-sfx-toggle .ui-ic, .lb-settings-btn .ui-ic { width: 17px; height: 17px; }
+.lobby-rico-outfit .ui-ic { width: 12px; height: 12px; }
+/* 衣装チップ：リコの足元へ寄せる（画面左端に浮くのを回避） */
+.lobby-screen .lobby-rico-outfit { top: auto; bottom: 22px; left: 26px; display: inline-flex; align-items: center; gap: 5px; }

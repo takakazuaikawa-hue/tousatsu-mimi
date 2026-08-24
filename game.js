@@ -2958,7 +2958,7 @@ function applyBindings() {
           el.classList.remove('locked');
           el.title = 'リコ先輩を眺める';
         } else {
-          el.textContent = '🔒 衣装ロック中';
+          el.innerHTML = UI_ICON.lock + ' 衣装ロック中';
           el.classList.add('locked');
           el.title = 'ヴェルベット撃破後に解放';
         }
@@ -3197,6 +3197,11 @@ const UI_ICON = {
   bolt:   _svg('<path d="M13 3L5 14h6l-1 7 8-11h-6z"></path>'),
   scroll: _svg('<path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6z"></path><path d="M10 8h6M10 12h6"></path>'),
   lock:   _svg('<rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path>'),
+  sound:  _svg('<path d="M4 9h3l5-4v14l-5-4H4z"></path><path d="M16 9a4 4 0 0 1 0 6"></path>'),
+  mute:   _svg('<path d="M4 9h3l5-4v14l-5-4H4z"></path><path d="M16 9l5 6M21 9l-5 6"></path>'),
+  bell:   _svg('<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"></path><path d="M10 21h4"></path>'),
+  bellOff:_svg('<path d="M6 16V11a6 6 0 0 1 9-5"></path><path d="M18 12v4l2 2H4"></path><path d="M4 4l16 16"></path>'),
+  gear:   _svg('<circle cx="12" cy="12" r="3"></circle><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"></path>'),
 };
 
 function renderStageList() {
@@ -3489,12 +3494,12 @@ function renderLobbyBottomPanel() {
   const songLabel = bgmOn ? '♪ Lounge Jazz' : '♪ —（停止中）';
   return `
     <div class="lb-row lb-music-row">
-      <button class="lb-bgm-toggle" data-action="toggle-bgm" title="BGM ON/OFF">${bgmOn ? '🔊' : '🔇'}</button>
+      <button class="lb-bgm-toggle" data-action="toggle-bgm" title="BGM ON/OFF">${bgmOn ? UI_ICON.sound : UI_ICON.mute}</button>
       <input class="lb-vol" type="range" min="0" max="100" value="${bgmVol}" data-vol="bgm" title="BGM 音量">
-      <button class="lb-settings-btn" data-action="open-settings" title="ゲーム設定">⚙</button>
+      <button class="lb-settings-btn" data-action="open-settings" title="ゲーム設定">${UI_ICON.gear}</button>
     </div>
     <div class="lb-row lb-sfx-row">
-      <button class="lb-sfx-toggle" data-action="toggle-sfx" title="SFX ON/OFF">${sfxOn ? '🔔' : '🔕'}</button>
+      <button class="lb-sfx-toggle" data-action="toggle-sfx" title="SFX ON/OFF">${sfxOn ? UI_ICON.bell : UI_ICON.bellOff}</button>
       <input class="lb-vol lb-vol-sfx" type="range" min="0" max="100" value="${sfxVol}" data-vol="sfx" title="効果音 音量">
       <span class="lb-sfx-label">SFX</span>
     </div>
