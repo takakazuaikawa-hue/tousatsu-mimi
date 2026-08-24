@@ -3187,7 +3187,20 @@ function isStageUnlocked(stageId) {
   return false;
 }
 
+// UI アイコン：絵文字を使わず線画SVGで統一（16pxグリッド・currentColor で色が乗る）
+const _svg = (d, extra) => `<svg class="ui-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const UI_ICON = {
+  coin:   _svg('<circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3.5"></circle>'),
+  chip:   _svg('<circle cx="12" cy="12" r="8"></circle><path d="M12 4v3M12 17v3M4 12h3M17 12h3"></path>'),
+  check:  _svg('<path d="M4 12.5l5 5L20 6.5"></path>'),
+  skip:   _svg('<path d="M5 5l8 7-8 7z"></path><path d="M18 5v14"></path>'),
+  bolt:   _svg('<path d="M13 3L5 14h6l-1 7 8-11h-6z"></path>'),
+  scroll: _svg('<path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6z"></path><path d="M10 8h6M10 12h6"></path>'),
+  lock:   _svg('<rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path>'),
+};
+
 function renderStageList() {
+  // UI アイコン：絵文字は使わず線画SVGで統一する（16pxグリッド・currentColor）
   // 卓の扉：未クリア＆解放済みの最初の1枚＝次に挑む卓（金縁＋NEXT TABLE帯）
   const nextStageId = STAGE_ORDER.find(id => isStageUnlocked(id) && !save.clearedStages.includes(id));
   return STAGE_ORDER.map((sid, i) => {
@@ -3208,9 +3221,9 @@ function renderStageList() {
           <img src="assets/characters/${opp.imgKey}_default.png" alt="???" onerror="window.assetFallback(this,'${opp.imgKey}')">
         </div>
         <div class="lobby-door-foot">
-          <div class="lobby-door-name">??? ${opp.isBoss ? '🔱' : ''}</div>
+          <div class="lobby-door-name">???</div>
           <div class="lobby-door-tag">${prevOpp ? `${prevOpp.name}に勝つと解放` : '前のステージをクリアで解放'}</div>
-          <div class="lobby-door-lock">🔒 施錠中</div>
+          <div class="lobby-door-lock">${UI_ICON.lock} 施錠中</div>
         </div>
       </div>`;
     }
@@ -3226,11 +3239,11 @@ function renderStageList() {
     const showChipRow = !isRicoLecture;
     // 報酬：未クリアなら初回報酬、クリア済なら再戦報酬を主表示
     const rewardLine = cleared
-      ? `<div class="lobby-door-reward lobby-door-reward-rematch">再戦 ${rematchPreview(sid)}🪙 <small>（初回済）</small></div>`
-      : `<div class="lobby-door-reward">報酬 ${opp.rewardFirst}🪙</div>`;
+      ? `<div class="lobby-door-reward lobby-door-reward-rematch">再戦 ${rematchPreview(sid)}${UI_ICON.coin} <small>（初回済）</small></div>`
+      : `<div class="lobby-door-reward">報酬 ${opp.rewardFirst}${UI_ICON.coin}</div>`;
     const mainAction = isRicoClearChoice ? 'rico-mode-chooser' : 'battle-start';
     const mainLabel = sid === 'rico_tutorial'
-      ? (cleared ? '対戦／受講' : '📚 受講')
+      ? (cleared ? '対戦／受講' : '受講する')
       : (cleared ? '再戦' : 'この卓につく');
     let band = '';
     if (opp.isBoss) band = '<div class="lobby-door-band lobby-door-band-boss">VIP ROOM</div>';
@@ -3238,25 +3251,25 @@ function renderStageList() {
     return `<div class="lobby-door ${isNextDoor ? 'lobby-door-next' : ''} ${cleared ? 'lobby-door-cleared' : ''} ${opp.isBoss ? 'lobby-door-boss' : ''}">
       ${band}
       <div class="lobby-door-no">${doorNo}</div>
-      ${cleared ? `<div class="lobby-door-clear" title="ベストランク">✓ ${bestRank || ''}</div>` : ''}
+      ${cleared ? `<div class="lobby-door-clear" title="ベストランク">${UI_ICON.check} ${bestRank || ''}</div>` : ''}
       <div class="lobby-door-portrait" data-action="char-profile" data-char="${sid}" title="${opp.name}のプロフィールを見る">
         <img src="assets/characters/${opp.imgKey}_default.png" alt="${opp.name}" onerror="window.assetFallback(this,'${opp.imgKey}')">
-        <span class="lobby-door-portrait-hint">👤 プロフィール</span>
+        <span class="lobby-door-portrait-hint">プロフィール</span>
       </div>
       <div class="lobby-door-foot">
         <div class="lobby-door-name" data-action="${mainAction}" data-opponent="${sid}" title="${opp.name} ${isRicoClearChoice ? 'モード選択' : 'と対戦開始'}">${opp.name}</div>
         <div class="lobby-door-tag">${opp.theme}</div>
         ${rewardLine}
         ${!showChipRow ? '' : `<div class="lobby-door-chips">
-          <span class="lobby-door-chips-label">💰${sid === 'rico_tutorial' ? '🔥' : ''}</span>
+          <span class="lobby-door-chips-label">${UI_ICON.chip}</span>
           <span class="lobby-door-chips-value" data-chip-display="${sid}">${curChip}</span>
           ${showSlider ? `<input class="lobby-door-chips-slider" type="range" min="${baseChips}" max="${maxChips}" step="100" value="${curChip}" data-chip-slider="${sid}">` : ''}
         </div>`}
         <div class="lobby-door-actions">
           <button class="lobby-door-cta" data-action="${mainAction}" data-opponent="${sid}"><span>${mainLabel}</span></button>
-          ${(sid === 'rico_tutorial' && !cleared) ? `<button class="lobby-door-subbtn" data-action="rico-skip-tutorial" title="講義をスキップしていきなりリコ先輩と対戦">🎲</button>` : ''}
-          ${(sid !== 'rico_tutorial' && !cleared) ? `<button class="lobby-door-subbtn" data-action="skip-stage" data-opponent="${sid}" title="${skipStageCost(opp)}コインでスキップしてクリア扱い">⏭${skipStageCost(opp)}</button>` : ''}
-          ${cleared && EPISODES[sid] ? `<button class="lobby-door-subbtn" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">📜</button>` : ''}
+          ${(sid === 'rico_tutorial' && !cleared) ? `<button class="lobby-door-subbtn" data-action="rico-skip-tutorial" title="講義をスキップしていきなりリコ先輩と対戦">${UI_ICON.bolt}</button>` : ''}
+          ${(sid !== 'rico_tutorial' && !cleared) ? `<button class="lobby-door-subbtn" data-action="skip-stage" data-opponent="${sid}" title="${skipStageCost(opp)}コインでスキップしてクリア扱い">${UI_ICON.skip}<b>${skipStageCost(opp)}</b></button>` : ''}
+          ${cleared && EPISODES[sid] ? `<button class="lobby-door-subbtn" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">${UI_ICON.scroll}</button>` : ''}
         </div>
       </div>
     </div>`;
