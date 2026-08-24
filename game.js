@@ -4348,7 +4348,7 @@ function renderSituationAnalysis() {
   const hsPct = Math.round(hs * 100);
 
   // ボード危険度
-  const danger = evaluateBoardDanger(state.community || []);
+  const danger = evaluateBoardDanger(visibleCommunity() || []);
   const dangerFlags = [];
   if (danger.flushAlert)    dangerFlags.push('🌊フラッシュ');
   if (danger.straightAlert) dangerFlags.push('🪜ストレート');
@@ -4519,7 +4519,7 @@ function renderBackdoorPanel() {
     else if (hsPct >= 30) hsLabel = '😅 微妙';
     else hsLabel = '💧 弱い';
   } catch(e) {}
-  const danger = evaluateBoardDanger(state.community || []);
+  const danger = evaluateBoardDanger(visibleCommunity() || []);
   const dangerLabels = [];
   if (danger.flushAlert)    dangerLabels.push('🌊フラッシュ警戒');
   if (danger.straightAlert) dangerLabels.push('🪜ストレート警戒');
@@ -4987,21 +4987,23 @@ function renderTellTags() {
 function renderWinrateSeal() {
   if (state.handPhase === 'idle' || !state.playerHand || state.playerHand.length < 2) return '';
   if (state.winrateRevealed || state.tutorialMode || state.introHandMode) {
-    const all = [...state.playerHand, ...(state.community || [])];
-    const eq = state.community.length >= 3 ? realisticEquity01(all) : opponentPreflopStrength(state.playerHand);
+    const vc = visibleCommunity();
+    const all = [...state.playerHand, ...vc];
+    const eq = vc.length >= 3 ? realisticEquity01(all) : opponentPreflopStrength(state.playerHand);
     const pct = Math.round(Math.max(0, Math.min(1, eq)) * 100);
     return `<div class="v2-seal-open"><div class="v2-disp v2-seal-pct">${pct}%</div><div class="v2-seal-cap">勝率</div></div>`;
   }
   return `<div class="v2-seal-closed" data-action="toggle-v2-detail" title="詳細データを開く"><div class="v2-disp v2-seal-q">?</div><div class="v2-seal-cap">勝率 封印中</div></div>`;
 }
 function renderDangerBar() {
-  if (!state.community || state.community.length < 3) return '';
-  const d = evaluateBoardDanger(state.community);
+  const vc = visibleCommunity();
+  if (!vc || vc.length < 3) return '';
+  const d = evaluateBoardDanger(vc);
   const parts = [];
   if (d.flushAlert) parts.push('フラッシュ気配');
   if (d.straightAlert) parts.push('ストレート気配');
   if (d.pairBoard) parts.push('ペアボード');
-  const pct = Math.min(100, parts.length * 34 + (state.community.length - 3) * 8);
+  const pct = Math.min(100, parts.length * 34 + (vc.length - 3) * 8);
   const label = parts.join('・');
   if (!label) return '';
   return `<div class="v2-danger-track"><div class="v2-danger-fill" style="width:${pct}%"></div></div><div class="v2-danger-label">${label}</div>`;
@@ -5095,7 +5097,7 @@ function kickerStrengthLabel(maxRank) {
 
 function renderCurrentHandName() {
   if (state.playerHand.length < 2) return '—';
-  const all = [...state.playerHand, ...state.community];
+  const all = [...state.playerHand, ...visibleCommunity()];
   const h = state.playerHand;
 
   if (all.length < 5) {
@@ -5149,7 +5151,7 @@ function renderCurrentHandName() {
 // 役名の下に表示するキッカー詳細＋強さラベル
 function renderCurrentHandKicker() {
   if (state.playerHand.length < 2) return '';
-  const all = [...state.playerHand, ...state.community];
+  const all = [...state.playerHand, ...visibleCommunity()];
   if (all.length < 5) return ''; // プリフロップは出さない
   const ev = evaluateHand(all);
   if (!ev.bestFive) return '';
@@ -5321,6 +5323,150 @@ function getOpponentPersonality(id) {
   return OPPONENT_PERSONALITY[id] || { icon: '?', title: '???', traits: ['不明'], exploit: '不明' };
 }
 
+//=============================================================
+// 演出テンポ（射幸性）：「溜め」の3段階
+// 原則：通常は今のまま速く流し、期待が乗る1枚だけ引き延ばす。
+//       操作へのレスポンスは常に即時、演出はタップでスキップ可。
+//=============================================================
+let _teaseTimer = null;
+let _teaseSkip = null;
+let _teaseBeat = null;
+
+// 次に開く札がどれだけ「アツい」か。'normal' | 'reach' | 'hot'
+function computeRevealTier(nextCards) {
+  try {
+    if (!nextCards || !nextCards.length) return 'normal';
+    if (state.introHandMode || state.tutorialMode) return 'normal';
+    if (save && save.tensionFx === false) return 'normal';
+    const community = state.community || [];
+    if (community.length < 3) return 'normal';            // フロップまでは溜めない
+    if ((state.hotRevealCount || 0) >= 2) return 'reach'; // 激アツは1バトル2回まで
+    const before = [...community];
+    const after = [...community, ...nextCards];
+    const pBefore = evaluateHand([...state.playerHand, ...before]);
+    const pAfter  = evaluateHand([...state.playerHand, ...after]);
+    const improved = pAfter.rank > pBefore.rank;
+    // 勝敗が入れ替わる札か（相手の手は内部的に既知）
+    let flips = false;
+    if (state.opponentHand && state.opponentHand.length === 2 && before.length + 2 >= 5) {
+      const oBefore = evaluateHand([...state.opponentHand, ...before]);
+      const oAfter  = evaluateHand([...state.opponentHand, ...after]);
+      flips = (pBefore.score > oBefore.score) !== (pAfter.score > oAfter.score);
+    }
+    // ドローの太さ（アウツ数）
+    const dr = analyzeDraws();
+    const outs = (dr && dr.draws && dr.draws.length) ? dr.draws[0].outs : 0;
+    let tier = 'normal';
+    if (flips || (improved && outs >= 12)) tier = 'hot';
+    else if (outs >= 8 || improved) tier = 'reach';
+    // 同じティアが続いたら1段階短縮（飽き防止）
+    if (tier !== 'normal' && tier === state.lastRevealTier) {
+      tier = tier === 'hot' ? 'reach' : 'normal';
+    }
+    state.lastRevealTier = tier;
+    if (tier === 'hot') state.hotRevealCount = (state.hotRevealCount || 0) + 1;
+    return tier;
+  } catch (e) {
+    return 'normal'; // 演出判定の失敗はゲーム進行に影響させない
+  }
+}
+
+// ms 待つ。画面タップで即座にスキップできる（結果は変わらない）
+function waitOrSkip(ms) {
+  return new Promise(resolve => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(_teaseTimer); _teaseTimer = null;
+      document.removeEventListener('pointerdown', finish, true);
+      _teaseSkip = null;
+      resolve();
+    };
+    _teaseSkip = finish;
+    _teaseTimer = setTimeout(finish, ms);
+    document.addEventListener('pointerdown', finish, true);
+  });
+}
+function cancelTease() {
+  if (_teaseSkip) _teaseSkip();
+  stopTeaseHeartbeat();
+  document.body.classList.remove('is-tease-reach', 'is-tease-hot');
+}
+
+// 溜め中の心音：ティアが上なら速く・強く
+function startTeaseHeartbeat(tier) {
+  stopTeaseHeartbeat();
+  if (!isSfxOn()) return;
+  const interval = tier === 'hot' ? 420 : 620;
+  const beat = () => {
+    if (!isSfxOn()) return;
+    _mpSfxScale = sfxVolFloat();
+    mpTone(tier === 'hot' ? 62 : 55, 0.11, 'sine', tier === 'hot' ? 0.12 : 0.08);
+    mpTone(tier === 'hot' ? 56 : 50, 0.09, 'sine', tier === 'hot' ? 0.09 : 0.06, 0.005, 0.05, 150);
+  };
+  beat();
+  _teaseBeat = setInterval(beat, interval);
+}
+function stopTeaseHeartbeat() {
+  if (_teaseBeat) { clearInterval(_teaseBeat); _teaseBeat = null; }
+}
+
+// 場札を公開する。アツい札だけ「裏のまま溜めて」からめくる
+function revealCommunity(cards, opts) {
+  const o = opts || {};
+  const tier = computeRevealTier(cards);
+  const from = state.community.length;
+  state.community.push(...cards);
+  const applyText = () => {
+    if (o.thought) state.mimiThought = o.thought();
+    if (o.rico) state.ricoAdvice = o.rico;
+  };
+  if (tier === 'normal') {
+    state.pendingRevealFrom = -1;
+    applyText();
+    render();
+    setTimeout(o.done, 900);
+    return;
+  }
+  // 溜め：札は裏のまま、卓を落として期待だけを画面に残す
+  state.pendingRevealFrom = from;
+  state.mimiThought = tier === 'hot' ? '「……この1枚で、決まる……！」' : '「……来て……！」';
+  state.ricoAdvice = '';
+  document.body.classList.add(tier === 'hot' ? 'is-tease-hot' : 'is-tease-reach');
+  render();
+  startTeaseHeartbeat(tier);
+  if (navigator.vibrate) navigator.vibrate(tier === 'hot' ? [40, 90, 40, 90, 60] : [30, 120, 30]);
+  waitOrSkip(tier === 'hot' ? 2400 : 1100).then(() => {
+    stopTeaseHeartbeat();
+    document.body.classList.remove('is-tease-hot', 'is-tease-reach');
+    if (state.screen !== 'battle') return;
+    state.pendingRevealFrom = -1;
+    if (state.__dealSeen) state.__dealSeen.community = from; // めくりアニメを出す
+    applyText();
+    mpSfx('flip');
+    if (tier === 'hot') { mpSfx('reach'); showRevealBurst(); }
+    render();
+    setTimeout(o.done, tier === 'hot' ? 1100 : 800);
+  });
+}
+
+// 激アツ開放の一瞬の閃光
+function showRevealBurst() {
+  const host = document.querySelector('.battle-screen') || document.body;
+  const el = document.createElement('div');
+  el.className = 'reveal-burst';
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 700);
+}
+
+// 溜め中に裏で伏せている札を除いた「プレイヤーが見えている場札」。
+// 役名・危険度・勝率など表示系はすべてこれを使う（先読みネタバレ防止）
+function visibleCommunity() {
+  const c = state.community || [];
+  return (state.pendingRevealFrom >= 0) ? c.slice(0, state.pendingRevealFrom) : c;
+}
+
 function cardKey(c) { return c ? `${c.suit}${c.rank}` : ''; }
 // key: 'community' | 'player' | 'opp' — 既に表示済みの枚数を記憶し、新しく出た札だけ配布アニメを付ける
 function renderCardsInto(el, cards, slotCount, key) {
@@ -5335,6 +5481,11 @@ function renderCardsInto(el, cards, slotCount, key) {
     } else {
       const isRed = c.suit === '♥' || c.suit === '♦';
       const isNew = i >= seen;
+      // 溜め中：まだ開けていない場札は裏のまま光らせる
+      if (key === 'community' && state.pendingRevealFrom >= 0 && i >= state.pendingRevealFrom) {
+        el.insertAdjacentHTML('beforeend', '<div class="card card-back tease-card"></div>');
+        continue;
+      }
       let cls = 'card';
       if (isRed) cls += ' red';
       if (isNew) cls += (key === 'opp' ? ' card-flip' : ' card-deal');
@@ -5446,6 +5597,9 @@ function resetHandJuice() {
   state.__dealSeen = { community: 0, player: 0, opp: 0 };
   state.tellTags = [];
   state.winrateRevealed = false;
+  state.pendingRevealFrom = -1;
+  state.lastRevealTier = null;
+  cancelTease();
   state.opponentRevealed = false;
   state.sdHighlight = null;
   state.opponentThinking = false;
@@ -10983,46 +11137,51 @@ function advanceAfterCall() {
   } else if (state.handPhase === 'flop') {
     if (state.fullHand) {
       // フルハンド：ターンのみ公開
-      state.community.push(state.deck.pop());
       state.handPhase = 'turn';
-      recordEquitySnapshot('ターン');
-      state.mimiThought = `「ターン公開：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`;
-      state.ricoAdvice = '「ターンで場が変わったかもね。相手のベットの変化、見逃さないで」';
       state.isPlayerTurn = false;
       state.psychResolved = false;  // 各ストリートで心理バトル再発生可能に
       state.logicResolvedStreet = false;
-      log('actions', { phase: 'turn', cards: state.community.map(c=>c.label+c.suit) });
-      render();
-      setTimeout(opponentTurn, 1000);
+      revealCommunity([state.deck.pop()], {
+        thought: () => `「ターン公開：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`,
+        rico: '「ターンで場が変わったかもね。相手のベットの変化、見逃さないで」',
+        done: () => {
+          recordEquitySnapshot('ターン');
+          log('actions', { phase: 'turn', cards: state.community.map(c=>c.label+c.suit) });
+          opponentTurn();
+        },
+      });
     } else {
       // ライトハンド：ターン＆リバーまとめ
-      if (state.scriptedTurnRiver) {
-        state.community.push(...state.scriptedTurnRiver.map(c => ({...c})));
-      } else {
-        state.community.push(state.deck.pop(), state.deck.pop());
-      }
+      const cards = state.scriptedTurnRiver
+        ? state.scriptedTurnRiver.map(c => ({...c}))
+        : [state.deck.pop(), state.deck.pop()];
       state.handPhase = 'turnRiver';
-      recordEquitySnapshot('ターン＆リバー');
-      state.mimiThought = `「ターン＆リバー：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`;
-      state.ricoAdvice = '「全部の場札出たね〜。最終判断、いい？」';
       state.isPlayerTurn = false;
-      log('actions', { phase: 'turn_river', cards: state.community.map(c=>c.label+c.suit) });
-      render();
-      setTimeout(opponentTurn, 1000);
+      revealCommunity(cards, {
+        thought: () => `「ターン＆リバー：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`,
+        rico: '「全部の場札出たね〜。最終判断、いい？」',
+        done: () => {
+          recordEquitySnapshot('ターン＆リバー');
+          log('actions', { phase: 'turn_river', cards: state.community.map(c=>c.label+c.suit) });
+          opponentTurn();
+        },
+      });
     }
   } else if (state.handPhase === 'turn') {
     // フルハンド：リバー公開
-    state.community.push(state.deck.pop());
     state.handPhase = 'river';
-    recordEquitySnapshot('リバー');
-    state.mimiThought = `「リバー公開：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`;
-    state.ricoAdvice = '「リバーまで出揃ったよ。ここから最終判断ね」';
     state.isPlayerTurn = false;
     state.psychResolved = false;
     state.logicResolvedStreet = false;
-    log('actions', { phase: 'river', cards: state.community.map(c=>c.label+c.suit) });
-    render();
-    setTimeout(opponentTurn, 1000);
+    revealCommunity([state.deck.pop()], {
+      thought: () => `「リバー公開：${renderCardsText(state.community)}」\n${mimiAssess([...state.playerHand, ...state.community], state.community, 0, state.pot)}`,
+      rico: '「リバーまで出揃ったよ。ここから最終判断ね」',
+      done: () => {
+        recordEquitySnapshot('リバー');
+        log('actions', { phase: 'river', cards: state.community.map(c=>c.label+c.suit) });
+        opponentTurn();
+      },
+    });
   } else if (state.handPhase === 'turnRiver' || state.handPhase === 'river') {
     return showdown();
   }
@@ -11674,18 +11833,38 @@ function resolvePsych(qid, choice, btn) {
     }
     setTimeout(() => { st.remove(); if (sp) sp.remove(); }, 1400);
   } else {
-    // バトル中の心理バトル：正誤を音・スタンプ・相手の表情で即座に返す（読み合いの快感）
-    const st = document.createElement('div');
-    st.className = 'lecture-stamp psych-stamp ' + (isCorrect ? 'stamp-correct' : 'stamp-wrong');
-    document.body.appendChild(st);
-    setTimeout(() => st.remove(), 1200);
-    mpSfx(isCorrect ? 'win' : 'lose');
-    setOpponentExpression(isCorrect ? 'rattled' : 'pleased');
-    if (navigator.vibrate) navigator.vibrate(isCorrect ? [40, 30, 60] : 120);
-    if (!isCorrect && state.psychRoot) {
-      state.psychRoot.classList.add('psych-shake');
-      setTimeout(() => state.psychRoot && state.psychRoot.classList.remove('psych-shake'), 450);
+    // バトル中の心理バトル：判定を即出しせず「カタ…カタ…」と溜めてから発表する
+    // （ボール揺れの文法。読み切りが決まる瞬間を作る）
+    const face = state.psychRoot && state.psychRoot.querySelector('.v2p-opponent-stage, .bp-avatar');
+    // 既に読み切っている（＝手応えがある）ときは揺れを1回に短縮してテンポを保つ
+    const shakes = (state.psychSuccessCount || 0) >= 2 ? 1 : 2;
+    const shakeMs = 560;
+    state.__psychRevealDelay = shakes * shakeMs;
+    for (let i = 0; i < shakes; i++) {
+      setTimeout(() => {
+        if (face) {
+          face.classList.remove('psych-tilt');
+          void face.offsetWidth;
+          face.classList.add('psych-tilt');
+        }
+        if (isSfxOn()) { _mpSfxScale = sfxVolFloat(); mpTone(180, 0.07, 'square', 0.05); mpTone(150, 0.06, 'square', 0.04, 0.004, 0.03, 90); }
+        if (navigator.vibrate) navigator.vibrate(35);
+      }, i * shakeMs);
     }
+    setTimeout(() => {
+      if (face) face.classList.remove('psych-tilt');
+      const st = document.createElement('div');
+      st.className = 'lecture-stamp psych-stamp ' + (isCorrect ? 'stamp-correct' : 'stamp-wrong');
+      document.body.appendChild(st);
+      setTimeout(() => st.remove(), 1200);
+      mpSfx(isCorrect ? 'win' : 'lose');
+      setOpponentExpression(isCorrect ? 'rattled' : 'pleased');
+      if (navigator.vibrate) navigator.vibrate(isCorrect ? [40, 30, 60] : 120);
+      if (!isCorrect && state.psychRoot) {
+        state.psychRoot.classList.add('psych-shake');
+        setTimeout(() => state.psychRoot && state.psychRoot.classList.remove('psych-shake'), 450);
+      }
+    }, state.__psychRevealDelay);
   }
 
   if (isCorrect) {
@@ -11761,6 +11940,7 @@ function resolvePsych(qid, choice, btn) {
       state.psychRoot = null;
     }
     setMimiExpression('default'); // P1-3: 心理バトル解決後は表情を戻す
+    state.__psychRevealDelay = 0;
     // 講義モード：正解数カウント＋コンボ＆コイン報酬＋次の問題へ（ゲーム化）
     if (state.lectureMode) {
       let rewardMsg = '';
@@ -11798,7 +11978,7 @@ function resolvePsych(qid, choice, btn) {
           '私はもう手を引くから、安心していいよ。')
       : null;
     showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, onCutInClose);
-  }, 700);
+  }, 700 + (state.__psychRevealDelay || 0));
 }
 
 // === ハンドヒストリー モーダル ===
@@ -11988,6 +12168,8 @@ function showdown() {
   const pot = state.pot;
   const handNoAtStart = state.handNo;
   const alive = () => state.screen === 'battle' && state.handPhase === 'showdown' && state.handNo === handNoAtStart;
+  // 接戦（役が近い＋大きなポット）だけ引き延ばす。決着済みのハンドは速く流す
+  const T = showdownTiming(pEv, oEv, pot);
   state.handPhase = 'showdown';
   state.isPlayerTurn = false;
   state.opponentSpeech = pick(['「……ショーダウンだね」', '「さあ、見せ合おうか」', '「……オープン」']);
@@ -12001,10 +12183,13 @@ function showdown() {
     state.opponentSpeech = `相手の役：${oEv.name}`;
     mpSfx('flip');
     render();
-  }, 550);
+    if (T.tense) { document.body.classList.add('is-tease-reach'); startTeaseHeartbeat('reach'); }
+  }, T.flip);
 
   setTimeout(() => {
     if (!alive()) return;
+    stopTeaseHeartbeat();
+    document.body.classList.remove('is-tease-reach');
     const win5 = winner === 'player' ? pEv.bestFive : winner === 'opponent' ? oEv.bestFive : [...pEv.bestFive, ...oEv.bestFive];
     state.sdHighlight = new Set((win5 || []).map(cardKey));
     if (winner === 'player') state.mimiThought = `「${pEv.name}……勝った！」`;
@@ -12017,7 +12202,8 @@ function showdown() {
     if (winner === 'player') mpSfx(pot >= 800 ? 'bigwin' : 'hand-win');
     else if (winner === 'opponent') mpSfx('hand-lose');
     else mpSfx('tie');
-  }, 1500);
+    if (T.tense && winner === 'player') showRevealBurst();
+  }, T.call);
 
   setTimeout(() => {
     if (!alive()) return;
@@ -12043,9 +12229,27 @@ function showdown() {
     }
     state.pot = 0; resetPotChips();
     render();
-  }, 2600);
+  }, T.chips);
 
-  setTimeout(() => { if (alive()) endHand(); }, 3600);
+  setTimeout(() => { if (alive()) endHand(); }, T.end);
+}
+
+// ショーダウンの尺：接戦は長く、決着済みは短く（待たせるのは結果の直前だけ）
+function showdownTiming(pEv, oEv, pot) {
+  const NORMAL = { flip: 550, call: 1500, chips: 2600, end: 3600, tense: false };
+  try {
+    if (state.introHandMode || state.tutorialMode) return NORMAL;
+    if (save && save.tensionFx === false) return NORMAL;
+    const rankGap = Math.abs((pEv.rank || 0) - (oEv.rank || 0));
+    const atRisk = pot / Math.max(1, state.playerChips + pot); // このハンドで動く資金の比率
+    if ((rankGap <= 1 && atRisk >= 0.25) || atRisk >= 0.5) {
+      return { flip: 700, call: 2700, chips: 3800, end: 5000, tense: true };
+    }
+    if (rankGap >= 3 && atRisk < 0.2) {
+      return { flip: 400, call: 1100, chips: 1900, end: 2700, tense: false };
+    }
+  } catch (e) { /* 演出判定の失敗はゲーム進行に影響させない */ }
+  return NORMAL;
 }
 
 // === 連勝モメンタム演出 ===
