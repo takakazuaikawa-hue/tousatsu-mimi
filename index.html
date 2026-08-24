@@ -187,29 +187,35 @@
 </template>
 
 <template id="tpl-shop">
-  <div class="screen shop-screen">
+  <div class="screen shop-screen v2">
     <div class="bg-layer bg-shop"></div>
-    <header class="top-hud">
-      <button class="btn btn-ghost" data-action="back-lobby">← ロビーへ</button>
-      <h2>🛍 交換所</h2>
-      <span class="coin-display">所持コイン：<span data-bind="saveCoins">0</span></span>
+    <div class="shop-v2-scrim"></div>
+
+    <div class="shop-v2-owner character-frame char-grano-shop">
+      <img src="assets/characters/grano_recommend.png" alt="グラーノ" onerror="this.onerror=function(){window.assetFallback(this,'grano')};this.src='assets/characters/grano_default.png';">
+    </div>
+    <div class="shop-v2-bubble grano-shop-bubble" data-bind="ricoShopComment">「おや、いらっしゃい。今日の掘り出し物は……ふふ、良い目をお持ちだ」</div>
+
+    <button class="btn btn-ghost shop-v2-back" data-action="back-lobby">← ロビーへ</button>
+
+    <header class="shop-v2-head">
+      <div class="shop-v2-disp shop-v2-brand">GRANO TRADING CO.</div>
+      <div class="shop-v2-title">交換所</div>
     </header>
-    <nav class="shop-tabs">
-      <button class="shop-cat-btn active" data-cat="panyu">🐰 ぱにゅ強化</button>
-      <button class="shop-cat-btn" data-cat="note">📓 戦術ノート</button>
-      <button class="shop-cat-btn" data-cat="skin">🎨 見た目</button>
-      <button class="shop-cat-btn" data-cat="stack">💰 チップ拡張</button>
-      <button class="shop-cat-btn" data-cat="memory">💫 メモリ</button>
+    <div class="shop-v2-coins">
+      <div class="shop-v2-disp shop-v2-coins-label">COINS</div>
+      <div class="shop-v2-disp shop-v2-coins-num" data-bind="saveCoins">0</div>
+    </div>
+
+    <nav class="shop-v2-tabs">
+      <button class="shop-cat-btn active" data-cat="panyu"><span>ぱにゅ強化</span></button>
+      <button class="shop-cat-btn" data-cat="note"><span>戦術ノート</span></button>
+      <button class="shop-cat-btn" data-cat="skin"><span>見た目</span></button>
+      <button class="shop-cat-btn" data-cat="stack"><span>チップ拡張</span></button>
+      <button class="shop-cat-btn" data-cat="memory"><span>メモリ</span></button>
     </nav>
-    <main class="shop-main">
-      <section class="shop-items" data-bind="shopItems"></section>
-      <aside class="shop-comment">
-        <div class="character-frame char-grano-shop">
-          <img src="assets/characters/grano_default.png" alt="グラーノ" onerror="window.assetFallback(this,'grano')">
-        </div>
-        <div class="rico-bubble grano-shop-bubble" data-bind="ricoShopComment">「お嬢さん、ようこそ。ふむ……まずはぱにゅぱにゅLv2あたりが、お買い得ですよ」</div>
-      </aside>
-    </main>
+
+    <section class="shop-items" data-bind="shopItems"></section>
   </div>
 </template>
 
