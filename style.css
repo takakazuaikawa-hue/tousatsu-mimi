@@ -13333,6 +13333,15 @@ body.is-danger .battle-screen.v2::after { box-shadow: inset 0 0 120px rgba(200,3
 .battle-screen.v2.intro-hand-mode .rico-bubble::before { content: none; }
 .battle-screen.v2.intro-hand-mode .v2-rico-face { display: block; }
 .battle-screen.v2.intro-hand-mode .left-panel { background: none; }
+/* P2: 3ハンドの初日研修：右上に小さく「研修をスキップ」。確認なしで終了画面へ */
+.intro-skip-btn {
+  position: absolute; right: 14px; top: 14px; z-index: 40;
+  padding: 5px 12px; font-size: 11px; letter-spacing: .04em;
+  color: #c4b89a; background: rgba(0,0,0,.45);
+  border: 1px solid rgba(217,179,90,.4); border-radius: 3px;
+  cursor: pointer; opacity: .7; transition: opacity .15s ease;
+}
+.intro-skip-btn:hover { opacity: 1; }
 /* リザルト v2 では称号トーストを左下に逃がす（COINS と重ならない） */
 #stage:has(.result-screen) .achievement-toast, .result-screen ~ .achievement-toast { top: auto; bottom: 24px; }
 /* 敗北時：勝者（相手）を左の主役枠に、ミミを右奥の小枠に（パネルと重ねない） */
