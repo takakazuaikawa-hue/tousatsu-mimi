@@ -5835,13 +5835,21 @@ function renderActionArea(el) {
     ];
   }
 
-  // P2: 体験ハンドは「大きく行く」2択だけに絞る（没入・迷いのない導線）
+  // P2: 3ハンドの初日研修は、ハンドごとに選べる行動を絞る（没入・迷いのない導線）
   if (state.introHandMode) {
-    slots = slots.map(s => {
-      if (s.kind === 'lg')    return { ...s, label: '大レイズ', subText: '大きく行こう！' };
-      if (s.kind === 'allin') return s;
-      return { ...s, enabled: false };
-    });
+    if (state.introHandNo === 2) {
+      // Hand2「引き際」：フォールドだけが有効。降りるのも勝ちと教える
+      slots = slots.map(s => s.kind === 'fold'
+        ? { ...s, enabled: true, subText: '降りるのも勝ち' }
+        : { ...s, enabled: false });
+    } else {
+      // Hand1「そろえる」：大きく行く2択だけに絞る（Hand3は心理バトル経由で自動進行するため未使用）
+      slots = slots.map(s => {
+        if (s.kind === 'lg')    return { ...s, label: '大レイズ', subText: '大きく行こう！' };
+        if (s.kind === 'allin') return s;
+        return { ...s, enabled: false };
+      });
+    }
   }
 
   el.innerHTML = `<div class="action-grid">${slots.map(s => {
@@ -6039,7 +6047,8 @@ function onAction(e) {
       break;
     }
     case 'start-hand':    startHand(); break;
-    case 'player-fold':   playerFold(); break;
+    case 'intro-skip':    introHandSkip(); break;
+    case 'player-fold':   if (state.introHandMode) introHandFold(); else playerFold(); break;
     case 'player-call':   playerCall(); break;
     case 'player-checkcall': playerCheckCall(); break;
     case 'player-raise':  playerRaise(+data.size); break;
@@ -10524,10 +10533,55 @@ function startBattleInternal(opponentId) {
 }
 
 //=============================================================
-// P2: 体験ハンド（初回導線ファネル）
-// 固定シナリオ：ミミ A♠A♥、フロップ A♦7♣2♠（セット確定）で必ず勝つ。
-// 相手は必ずコール、選択肢は大きく行く2択のみ。戦績・実績にはカウントしない。
+// P2: 体験ハンド（初回導線ファネル）＝「3ハンドの初日研修」
+// スクリプトテーブル駆動：INTRO_HANDS[0..2] にハンドごとの固定シナリオを定義。
+//   Hand1「そろえる」：役ができると勝てる／ベットで取り分が増える（大きく行く2択のみ）
+//   Hand2「引き際」　：フォールドは負けじゃない（フォールドのみ有効）
+//   Hand3「読む」　　：セリフから本心を読む（心理バトル固定出題→勝利）
+// 3ハンドとも戦績・実績・レース記録にはカウントしない（introHandMode）。
 //=============================================================
+const INTRO_HANDS = [
+  {
+    no: 1,
+    title: 'そろえる',
+    playerHand: [{ suit: '♠', rank: 14, label: 'A' }, { suit: '♥', rank: 14, label: 'A' }],
+    flop: [{ suit: '♦', rank: 14, label: 'A' }, { suit: '♣', rank: 7, label: '7' }, { suit: '♠', rank: 2, label: '2' }],
+    usedCards: ['♠-14', '♥-14', '♦-14', '♣-7', '♠-2'],
+    dealOpp: '「さ、配ったよ。手札はあなただけのもの」',
+    dealMimi: '「……このカード、セット完成してる……！」',
+    dealRico: '「すごい手が来てる。大きく行こ！」',
+    winNextRico: 'ね、楽しいでしょ。次はちょっと苦手な手も見てもらうよ',
+  },
+  {
+    no: 2,
+    title: '引き際',
+    playerHand: [{ suit: '♥', rank: 7, label: '7' }, { suit: '♣', rank: 2, label: '2' }],
+    flop: [{ suit: '♠', rank: 13, label: 'K' }, { suit: '♦', rank: 13, label: 'K' }, { suit: '♠', rank: 9, label: '9' }],
+    usedCards: ['♥-7', '♣-2', '♠-13', '♦-13', '♠-9'],
+    dealOpp: '「じゃ、次いくよ」',
+    dealMimi: '「うっ……ぜんぜん弱い手が来ちゃった……」',
+    dealRico: '「これは様子見でいこっか」',
+    betAmount: 100,
+    betOppSpeech: '「+100。……さ、どうする？」',
+    betMimi: '「Kのペア……相手強そう……」',
+    betRico: '「弱い手で付き合う必要はないよ。降りるのも勝ち」',
+    foldRico: 'えらい！　損切りできる子は強くなるよ',
+  },
+  {
+    no: 3,
+    title: '読む',
+    playerHand: [{ suit: '♥', rank: 12, label: 'Q' }, { suit: '♥', rank: 11, label: 'J' }],
+    flop: [{ suit: '♠', rank: 12, label: 'Q' }, { suit: '♦', rank: 8, label: '8' }, { suit: '♣', rank: 3, label: '3' }],
+    usedCards: ['♥-12', '♥-11', '♠-12', '♦-8', '♣-3'],
+    dealOpp: '「さ、最後のハンドだよ」',
+    dealMimi: '「Qのペア……悪くない、けど……」',
+    dealRico: '「相手のセリフ、よく聞いてね」',
+    betOppSpeech: '「……これは、勝ったかも」',
+    psychQid: 'rico_tutorial_flop',
+    winNextRico: 'セリフの奥、ちゃんと読めてる。今日の研修はここまで！',
+  },
+];
+
 // ★物語順どおりに始める：まず第1話（更衣室でリコ先輩に連行される回）を見せてから、
 //   その第1話の相手であるリコ先輩と初めての卓につく。
 //   （以前はいきなり第2話の相手ポルカと対戦が始まり、話の順序が逆だった）
@@ -10544,28 +10598,38 @@ function beginIntroHand() {
   state.opponentName = opp.name;
   state.opponentProfile = opp.profile;
   state.opponentImgKey = opp.imgKey;
-  state.maxHands = 1;
+  state.maxHands = INTRO_HANDS.length; // P2: 3ハンドの初日研修
   state.playerChips = 500;
   state.opponentChips = 500;
   state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
-  state.tutorialMode = false;   // 講義（全8章）ではなく1ハンドの体験なのでOFF
+  state.tutorialMode = false;   // 講義（全8章）ではなく3ハンドの実地研修なのでOFF
   state.fullHand = false;
   state.isBoss = false;
   state.introHandMode = true; // 体験ハンド：戦績非カウント・行動制限・相手は必ずコール
+  state.introHandNo = 0;
   state.screen = 'battle';
   state.handPhase = 'idle';
   state.handNo = 0;
   state.panyuMax = save.panyuGaugeMax || 100;
   state.mimiThought = '「い、いきなり卓……！？　やるしかない……！」';
-  state.ricoAdvice = '「まずは1ハンドだけ、私が相手するよ。習うより慣れろ〜」';
+  state.ricoAdvice = '「今日は3ハンドだけ、私が相手するよ。習うより慣れろ〜」';
   state.opponentSpeech = '「そんな固くならないの。ほら、座った座った」';
   render();
   setTimeout(dealIntroHand, 900);
 }
 
+// Hand1（そろえる）の入口。以後の進行は introHandAdvance() が dealIntroHandByNo() を呼んで繋ぐ
 function dealIntroHand() {
+  dealIntroHandByNo(1);
+}
+
+// テーブル駆動のハンド配布：INTRO_HANDS[no-1] を元に手札・場札・アンティを組む
+function dealIntroHandByNo(no) {
   if (state.screen !== 'battle' || !state.introHandMode) return;
-  state.handNo = 1;
+  const cfg = INTRO_HANDS[no - 1];
+  if (!cfg) return;
+  state.introHandNo = no;
+  state.handNo = no;
   resetHandJuice();
   mpSfx('deal');
   const ante = 50;
@@ -10575,30 +10639,120 @@ function dealIntroHand() {
   state.currentBetPlayer = 0;
   state.currentBetOpponent = 0;
   // 固定シナリオ：使用済みカードを除いた残りデッキ（オポーネントの2枚・演出上の重複防止のみ）
-  const used = new Set(['♠-14', '♥-14', '♦-14', '♣-7', '♠-2']);
+  const used = new Set(cfg.usedCards);
   state.deck = newDeck().filter(c => !used.has(`${c.suit}-${c.rank}`));
-  state.playerHand = [{ suit: '♠', rank: 14, label: 'A' }, { suit: '♥', rank: 14, label: 'A' }];
+  state.playerHand = cfg.playerHand.map(c => ({ ...c }));
   state.opponentHand = [state.deck.pop(), state.deck.pop()];
-  state.community = [{ suit: '♦', rank: 14, label: 'A' }, { suit: '♣', rank: 7, label: '7' }, { suit: '♠', rank: 2, label: '2' }];
+  state.community = cfg.flop.map(c => ({ ...c }));
   state.equityHistory = [];
-  state.psychResolved = true;       // 体験ハンドでは心理バトルを出さない
-  state.logicResolvedStreet = true; // 論理バトルも封印
+  state.psychResolved = (no !== 3);  // Hand3のみ心理バトルを発生させる
+  state.logicResolvedStreet = true;  // 論理バトルは研修中は封印
   state.psychPending = false;
   state.handPhase = 'flop';
-  state.isPlayerTurn = true;
-  state.opponentSpeech = '「さ、配ったよ。手札はあなただけのもの」';
-  state.mimiThought = '「……このカード、セット完成してる……！」';
-  state.ricoAdvice = '「すごい手が来てる。大きく行こ！」';
-  log('actions', { phase: 'intro_flop_start' });
-  render();
+  state.opponentSpeech = cfg.dealOpp;
+  state.mimiThought = cfg.dealMimi;
+  state.ricoAdvice = cfg.dealRico;
+  log('actions', { phase: 'intro_flop_start', hand: no });
+  if (no === 1) {
+    // Hand1：ミミが先に「大きく行く」を選ぶ（現行どおり）
+    state.isPlayerTurn = true;
+    render();
+  } else {
+    // Hand2/3：リコ先輩が先にベットしてくる → ミミは反応するだけ
+    state.isPlayerTurn = false;
+    render();
+    setTimeout(() => introHandOpponentOpenBet(no), 900);
+  }
 }
 
-// 体験ハンド専用のショーダウン：ランダム要素に左右されず必ずミミの勝利にする
+// Hand2/3共通：リコ先輩の先制ベット。Hand2は固定額、Hand3は2/3ポット＋心理バトル固定出題へ
+function introHandOpponentOpenBet(no) {
+  if (state.screen !== 'battle' || !state.introHandMode) return;
+  const cfg = INTRO_HANDS[no - 1];
+  const amount = no === 2
+    ? Math.min(cfg.betAmount, state.opponentChips)
+    : Math.min(Math.max(50, Math.floor(state.pot * 2 / 3)), state.opponentChips);
+  state.opponentChips -= amount;
+  state.currentBetOpponent += amount;
+  state.pot += amount; pushPotChips(amount);
+  state.opponentSpeech = cfg.betOppSpeech;
+  state.lastOpponentIntent = 'intro_open_bet';
+  mpSfx('battle-bet');
+  setOpponentExpression('pressure');
+  render();
+  flyChips('.char-opponent', '.bu-pot-physical', amount);
+  if (no === 2) {
+    state.mimiThought = cfg.betMimi;
+    state.ricoAdvice = cfg.betRico;
+    state.isPlayerTurn = true;
+    setTimeout(() => { if (state.screen === 'battle') render(); }, 600);
+  } else {
+    // Hand3：心理バトルを固定出題（qidは実在確認済みの初心者向け問題）
+    setTimeout(() => triggerPsychBattle(cfg.psychQid), 900);
+  }
+}
+
+// Hand2専用：フォールド処理（通常の playerFold/endHand は使わず、リコの一言だけで軽く進める）
+function introHandFold() {
+  const cfg = INTRO_HANDS[(state.introHandNo || 1) - 1];
+  mpSfx('fold');
+  const potWon = state.pot;
+  state.opponentChips += state.pot;
+  state.pot = 0; resetPotChips();
+  state.mimiThought = '「……降りた。悔しいけど、これでいい」';
+  setOpponentExpression('pleased');
+  render();
+  flyChips('.bu-pot-physical', '.char-opponent', potWon);
+  setTimeout(() => {
+    if (state.screen !== 'battle') return;
+    showRicoCutIn((cfg && cfg.foldRico) || 'えらい！　損切りできる子は強くなるよ', true, () => introHandAdvance());
+  }, 1200);
+}
+
+// Hand3専用：心理バトル解決後、ミミが自動でコールしてショーダウンへ（正解でも不正解でも進行する）
+function introHandAfterPsych() {
+  if (state.screen !== 'battle' || !state.introHandMode) return;
+  mpSfx('call');
+  const need = Math.max(0, state.currentBetOpponent - state.currentBetPlayer);
+  const pay = Math.max(0, Math.min(need, state.playerChips));
+  state.playerChips -= pay;
+  state.currentBetPlayer += pay;
+  state.pot += pay; pushPotChips(pay);
+  state.mimiThought = '「……乗った。コール」';
+  state.opponentSpeech = '「来い」';
+  state.isPlayerTurn = false;
+  render();
+  flyChips('.char-mimi', '.bu-pot-physical', pay);
+  setTimeout(() => { if (state.screen === 'battle') introHandShowdown(); }, 900);
+}
+
+// ハンド間の進行役：3ハンド目まで dealIntroHandByNo() を繋ぎ、それ以降は研修完了画面へ
+function introHandAdvance() {
+  if (state.screen !== 'battle' || !state.introHandMode) return;
+  const no = state.introHandNo || 1;
+  if (no < INTRO_HANDS.length) {
+    setTimeout(() => dealIntroHandByNo(no + 1), 300);
+  } else {
+    setTimeout(showIntroHandWinScreen, 300);
+  }
+}
+
+// 研修スキップ：確認なしで即・終了画面へ（報酬は最後まで進めた場合と同額）
+function introHandSkip() {
+  if (!state.introHandMode) return;
+  if (typeof dismissCutIn === 'function') dismissCutIn();
+  if (state.psychRoot) { state.psychRoot.remove(); state.psychRoot = null; }
+  state.psychPending = false;
+  showIntroHandWinScreen();
+}
+
+// 体験ハンド専用のショーダウン：ランダム要素に左右されず必ずミミの勝利にする（Hand1/Hand3共通）
 function introHandShowdown() {
   const playerAll = [...state.playerHand, ...state.community];
   const pEv = evaluateHand(playerAll);
   const oEv = evaluateHand([...state.opponentHand, ...state.community]);
   const pot = state.pot;
+  const cfg = INTRO_HANDS[(state.introHandNo || 1) - 1];
   // 本編と同じ段階演出：めくり → 勝ち札ハイライト → チップが飛んでくる
   state.handPhase = 'showdown';
   state.isPlayerTurn = false;
@@ -10616,7 +10770,7 @@ function introHandShowdown() {
   setTimeout(() => {
     if (state.screen !== 'battle') return;
     state.sdHighlight = new Set((pEv.bestFive || []).map(cardKey));
-    state.opponentSpeech = '「……お見事。初日でその度胸は上等だよ」';
+    state.opponentSpeech = '「……お見事。上等だよ」';
     state.mimiThought = `「${pEv.name}……勝った！」`;
     setMimiExpression('win');
     setOpponentExpression('defeat'); // リコ先輩が笑って負けを認める表情に
@@ -10629,26 +10783,29 @@ function introHandShowdown() {
     state.playerChips += pot;
     state.pot = 0; resetPotChips();
     state.mimiThought = `「やった！${pEv.name}で勝った！」`;
-    state.ricoAdvice = '「ね、楽しいでしょ。これがポーカーだよ」';
     render();
     flyChips('.bu-pot-physical', '.char-mimi', pot);
     floatText('.char-mimi', `+${pot}`, 'ft-gain');
   }, 2600);
-  setTimeout(() => { if (state.screen === 'battle') showIntroHandWinScreen(); }, 3900);
+  setTimeout(() => {
+    if (state.screen !== 'battle') return;
+    const line = (cfg && cfg.winNextRico) || 'ね、いい調子。次いこ！';
+    showRicoCutIn(line, true, () => introHandAdvance());
+  }, 3900);
 }
 
 function showIntroHandWinScreen() {
-  save.coins = (save.coins || 0) + 200;
+  save.coins = (save.coins || 0) + 300;
   save.introPlayed = true;
   saveProgress();
   const overlay = document.createElement('div');
   overlay.className = 'intro-win-overlay';
   overlay.innerHTML = `
     <div class="intro-win-modal">
-      <div class="intro-win-badge">🏆 勝利！</div>
-      <div class="intro-win-title">大きく勝てた！</div>
-      <div class="intro-win-coins">💰 +200 コイン獲得</div>
-      <div class="intro-win-question">ポーカー、もっと知りたい？</div>
+      <div class="intro-win-badge">🏆 研修完了！</div>
+      <div class="intro-win-title">初日の3ハンド、乗り切った！</div>
+      <div class="intro-win-coins">💰 +300 コイン獲得</div>
+      <div class="intro-win-question">もっと理屈を知りたい？</div>
       <div class="intro-win-buttons">
         <button class="btn btn-primary" data-action="intro-to-lecture">📚 リコの講義へ</button>
         <button class="btn btn-secondary" data-action="intro-to-lobby">🎮 このままロビーへ</button>
@@ -10668,6 +10825,16 @@ function applyIntroHandUI() {
   if (scr) scr.classList.add('intro-hand-mode');
   const backdoorBtn = document.querySelector('.backdoor-toggle');
   if (backdoorBtn) backdoorBtn.style.display = 'none';
+  // 研修スキップ：右上に小さく。確認なしで終了画面へ（報酬は同額）
+  if (scr && !scr.querySelector('.intro-skip-btn')) {
+    const skipBtn = document.createElement('button');
+    skipBtn.type = 'button';
+    skipBtn.className = 'intro-skip-btn';
+    skipBtn.dataset.action = 'intro-skip';
+    skipBtn.textContent = '研修をスキップ';
+    skipBtn.addEventListener('click', onAction);
+    scr.appendChild(skipBtn);
+  }
 }
 
 //=============================================================
@@ -11494,7 +11661,7 @@ function triggerPsychBattle(qid) {
     btn.innerHTML = `<span class="choice-label">${labels[i]}</span><span class="choice-text">${c.text}</span><span class="choice-arm-hint">もう一度タップで<b>この読みに賭ける</b></span>`;
     // 重みのある選択：1タップ目で構え（他の選択肢が沈む）、2タップ目で確定
     btn.addEventListener('click', () => {
-      if (state.lectureMode) return resolvePsych(qid, c, btn); // 講義はテンポ優先で即決
+      if (state.lectureMode || state.introHandMode) return resolvePsych(qid, c, btn); // 講義／研修中はテンポ優先で即決
       if (!btn.classList.contains('armed')) {
         choicesEl.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('armed'));
         btn.classList.add('armed');
@@ -12106,6 +12273,15 @@ function resolvePsych(qid, choice, btn) {
     }
     setMimiExpression('default'); // P1-3: 心理バトル解決後は表情を戻す
     state.__psychRevealDelay = 0;
+    // P2: 3ハンドの初日研修（Hand3「読む」）：正解でも不正解でも進行し、
+    // リコの一言のあと自動でコール→ショーダウンへ（プレイヤー操作は挟まない）
+    if (state.introHandMode) {
+      state.isPlayerTurn = false;
+      render();
+      const resultPrefix = isCorrect ? '✓ 正解！　' : '✗ 残念……　';
+      showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, () => introHandAfterPsych());
+      return;
+    }
     // 講義モード：正解数カウント＋コンボ＆コイン報酬＋次の問題へ（ゲーム化）
     if (state.lectureMode) {
       let rewardMsg = '';
