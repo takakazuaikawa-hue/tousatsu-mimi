@@ -14420,3 +14420,34 @@ body.is-tease-hot .card.tease-card::after {
   .hand-guide-overlay { animation: none !important; }
   .intro-street-label { animation: none !important; opacity: 1 !important; }
 }
+
+/* ============================================================
+   ロビー：ミミの立ち絵（右奥・くつろぎポーズ）。リコと対で舞台を挟む。
+   frame自体は pointer-events:none、img のみ auto（誤タップ防止の作法に合わせる）
+   ============================================================ */
+/* 扉列と施設行を右へ232px分縮め、右端をミミの定位置にする */
+.lobby-screen .lobby-content { right: 232px; }
+.lobby-screen .lobby-facilities { right: 232px; }
+.lobby-screen .lobby-bottom-panel { z-index: 3; }
+.lobby-mimi-standing {
+  position: absolute; right: -14px; bottom: -8px; z-index: 1;
+  width: 250px; height: 84%;
+  display: flex; align-items: flex-end; justify-content: center;
+  pointer-events: none;
+}
+.lobby-mimi-standing img {
+  height: 100%; width: auto; max-width: none; object-fit: contain;
+  pointer-events: auto; cursor: pointer;
+  filter: drop-shadow(0 18px 36px rgba(0,0,0,.85)) drop-shadow(0 0 22px rgba(200,37,58,.16));
+  animation: lobbyMimiBreath 4.6s ease-in-out infinite;
+  transition: filter .2s ease;
+}
+@keyframes lobbyMimiBreath { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+.lobby-mimi-standing img:hover {
+  filter: drop-shadow(0 18px 36px rgba(0,0,0,.85)) drop-shadow(0 0 30px rgba(245,215,122,.35));
+}
+
+/* 扉が狭くなった分、CTAの文字を縮小（「この卓につく」の見切れ防止） */
+.lobby-door-cta { font-size: 10px; padding: 0 2px; }
+.lobby-door-cta > span { letter-spacing: 0; transform: skewX(12deg) scaleX(.88); }
+.lobby-door-subbtn { font-size: 9px; min-width: 24px; padding: 0 3px; }

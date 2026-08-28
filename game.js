@@ -521,7 +521,7 @@ function setMimiExpression(expr) {
     };
     // v2 バトル画面：バストアップ差分（think / shock / win）を優先。無ければ従来PNGへ
     if (img.closest('.battle-screen.v2')) {
-      const bust = { default: 'think', think: 'think', shock: 'shock', win: 'win', sad: 'think', blush: 'win' }[expr || 'default'] || 'think';
+      const bust = { default: 'think', think: 'think', shock: 'shock', win: 'win', sad: 'sad', blush: 'win', smug: 'smug' }[expr || 'default'] || 'think';
       img.onerror = () => { img.onerror = goDefault; img.src = `assets/characters/mimi_${expr && expr !== 'default' ? expr : 'default'}.png`; };
       img.src = `assets/characters/mimi_bust_${bust}.webp`;
       return;
@@ -11457,6 +11457,7 @@ function playerRaise(bb) {
   if (!state.introHandMode && !state.tutorialMode) {
     setOpponentExpression(state.opponentId === 'velvet' ? 'pleased' : 'rattled');
   }
+  setMimiExpression('smug'); // 攻めに出るミミは不敵な笑みに
   render();
   flyChips('.char-mimi', '.bu-pot-physical', amount);
   setTimeout(opponentTurn, 700);
@@ -11476,6 +11477,7 @@ function playerBet(size) {
   if (!state.introHandMode && !state.tutorialMode && aggroKind === 'bet_big') {
     setOpponentExpression(state.opponentId === 'velvet' ? 'pleased' : 'rattled');
   }
+  if (aggroKind === 'bet_big') setMimiExpression('smug');
   render();
   flyChips('.char-mimi', '.bu-pot-physical', amount);
   setTimeout(opponentTurn, 700);
@@ -11493,6 +11495,7 @@ function playerAllIn() {
   if (!state.introHandMode && !state.tutorialMode) {
     setOpponentExpression(state.opponentId === 'velvet' ? 'pleased' : 'rattled');
   }
+  setMimiExpression('smug');
   render();
   flyChips('.char-mimi', '.bu-pot-physical', amount);
   showAllInCutIn('player', amount);

@@ -34,7 +34,7 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
-<link rel="stylesheet" href="style.css?v=20260825a">
+<link rel="stylesheet" href="style.css?v=20260829a">
 </head>
 <body>
 <div id="preload-overlay">
@@ -157,6 +157,12 @@
         <button class="lobby-rico-outfit" data-bind="lobbyRicoOutfit" data-action="open-rico-viewer" title="リコ先輩を眺める"></button>
       </div>
       <div class="lobby-rico-bubble" data-bind="lobbyRicoLine">「ようこそロビーへ。次の卓、選んじゃって」</div>
+
+      <!-- ミミ：右奥でくつろぐ主人公。タップでプロフィール -->
+      <div class="lobby-mimi-standing">
+        <img src="assets/characters/mimi_lobby_relax.webp" alt="ミミ" data-action="char-profile" data-char="mimi" title="ミミのプロフィールを見る"
+             onerror="this.onerror=function(){window.assetFallback(this,'mimi')};this.src='assets/characters/mimi_default.png';">
+      </div>
 
       <!-- 卓の扉：5枚、進行は左→右 -->
       <section class="lobby-content">
@@ -449,6 +455,6 @@
   </div>
 </template>
 
-<script src="game.js?v=20260825a"></script>
+<script src="game.js?v=20260829a"></script>
 </body>
 </html>
