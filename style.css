@@ -13971,3 +13971,69 @@ body.is-tease-hot .card.tease-card::after {
 .lobby-rico-outfit .ui-ic { width: 12px; height: 12px; }
 /* 衣装チップ：リコの足元へ寄せる（画面左端に浮くのを回避） */
 .lobby-screen .lobby-rico-outfit { top: auto; bottom: 22px; left: 26px; display: inline-flex; align-items: center; gap: 5px; }
+
+/* ===== フィードバック対応 2026-08-24（第2弾） ===== */
+/* 中断ボタンの誤タップ：相手立ち絵の透明部分がクリックを奪わないように */
+.battle-screen.v2 .v2-opp .char-opponent { pointer-events: none; }
+.battle-screen.v2 .v2-opp .char-opponent img { pointer-events: auto; }
+.v2-pause { height: 44px; padding: 0 16px; font-size: 13px; opacity: .8; }
+
+/* 心理バトル：セリフ帯が斜めにならないバグの修正（transform を確実に効かせる） */
+.battle-modal-overlay.v2psych .psych-speech { transform: skewY(-2.3deg) !important; }
+.battle-modal-overlay.v2psych .psych-speech > * { transform: skewY(2.3deg) !important; }
+
+/* セリフ溢れ：長文は帯内で自動縮小＋2行折返し */
+.battle-screen.v2 .opponent-speech.v2-band-text.speech-long { white-space: normal; font-size: 18px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; align-items: center; }
+.battle-screen.v2 .rico-bubble.v2-com-text { -webkit-line-clamp: 4; max-height: 76px; }
+.battle-screen.v2 .mimi-thought-bubble.v2-com-text { -webkit-line-clamp: 4; max-height: 78px; }
+.battle-modal-overlay.v2psych .psych-opponent-quote.quote-long { font-size: 21px !important; }
+
+/* 選択の重み：1タップ目で構える（他が沈む）、2タップ目で確定 */
+.battle-modal-overlay.v2psych [data-bind="psychChoices"].has-armed .choice-btn:not(.armed) { opacity: .38; filter: saturate(.5); }
+.battle-modal-overlay.v2psych .choice-btn { transition: transform .15s ease, opacity .2s ease, filter .2s ease, box-shadow .2s ease; }
+.battle-modal-overlay.v2psych .choice-btn .choice-arm-hint { display: none; margin-left: auto; font-size: 12px; color: #ffe27a; font-weight: 900; letter-spacing: .06em; animation: armHintPulse .7s ease-in-out infinite alternate; }
+.battle-modal-overlay.v2psych .choice-btn.armed { transform: skewX(-12deg) translateX(10px) scale(1.02); box-shadow: 0 0 0 3px #f5d77a, 0 0 30px rgba(245,215,122,.5), 0 12px 28px rgba(0,0,0,.6) !important; }
+.battle-modal-overlay.v2psych .choice-btn.armed .choice-arm-hint { display: inline-block; }
+@keyframes armHintPulse { from { opacity: .55; } to { opacity: 1; } }
+
+/* いま起きたこと＋掛け金（選択肢の直前） */
+.battle-modal-overlay.v2psych .v2p-context { position: absolute; z-index: 5; right: 56px; top: 574px; display: flex; justify-content: flex-end; font-size: 12.5px; color: #c4b89a; font-weight: 700; }
+.v2p-context b { color: #f7eecf; }
+.v2p-ctx-stakes { flex: 0 0 auto; }
+.v2p-ctx-stakes .v2p-gain { color: #ffe27a; }
+.v2p-ctx-stakes .v2p-loss { color: #ff9a9a; }
+
+/* ブラフブレイクのため（チャージ） */
+.bluff-break-charge { position: fixed; inset: 0; z-index: 11900; pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, rgba(138,76,196,.0) 30%, rgba(11,5,16,.75) 100%);
+  animation: bbCharge 1.2s ease-in forwards; }
+.bluff-break-charge::after { content: ''; position: absolute; inset: 0;
+  background: repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,193,216,.16) 0deg 4deg, rgba(0,0,0,0) 4deg 14deg);
+  animation: teaseSpin 1.2s linear infinite; }
+@keyframes bbCharge { from { opacity: 0; } to { opacity: 1; } }
+
+/* ミミの息づかい（静止画感の解消）＋落ち込み */
+.battle-screen.v2 .v2-mimi-frame img { animation: mimiBreath 3.2s ease-in-out infinite; }
+@keyframes mimiBreath { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(4px); } }
+.v2-mimi-frame img.mimi-down { filter: brightness(.72) saturate(.7) drop-shadow(0 20px 40px rgba(0,0,0,.8)) !important; transition: filter .4s; }
+
+/* WIN爆発：紙吹雪＋一瞬ズーム */
+.battle-screen.win-zoom { animation: winZoom .7s cubic-bezier(.2,.8,.3,1); }
+@keyframes winZoom { 0% { transform: scale(1); } 25% { transform: scale(1.025); } 100% { transform: scale(1); } }
+.confetti { position: absolute; top: -20px; width: 12px; height: 18px; z-index: 45; pointer-events: none;
+  animation-name: confettiFall; animation-timing-function: cubic-bezier(.3,.4,.6,1); animation-fill-mode: forwards; }
+.confetti.cf-gold  { background: linear-gradient(135deg, #f5d77a, #d9b35a); }
+.confetti.cf-red   { background: linear-gradient(135deg, #ff3d57, #c8253a); }
+.confetti.cf-white { background: #fffdf3; }
+.confetti.cf-pink  { background: linear-gradient(135deg, #ffc1d8, #ff8fb8); }
+@keyframes confettiFall {
+  0%   { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+  8%   { opacity: 1; }
+  100% { opacity: .9; transform: translate(var(--drift, 0px), 860px) rotate(var(--spin, 360deg)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .battle-screen.v2 .v2-mimi-frame img { animation: none; }
+  .confetti { display: none; }
+  .battle-screen.win-zoom { animation: none; }
+  .bluff-break-charge { animation-duration: .2s; }
+}

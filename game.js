@@ -2860,6 +2860,7 @@ function applyBindings() {
         }
         el.classList.remove('is-thinking');
         el.textContent = state.opponentSpeech;
+        el.classList.toggle('speech-long', (state.opponentSpeech || '').length > 18);
         if (state.opponentSpeech && state.opponentSpeech !== state.__lastSpeechShown) {
           el.classList.remove('speech-pop');
           void el.offsetWidth; // reflow でアニメを再起動
@@ -4126,7 +4127,7 @@ function pickLogicQuestion() {
     'logic_pot_odds_basic', 'logic_flush_outs', 'logic_hand_compare', 'logic_position',
     'logic_spr', 'logic_bluff_catcher', 'logic_implied_odds', 'logic_cbet_dry',
   ];
-  const seen = state.seenQuestions || new Set();
+  const seen = new Set([...(state.seenQuestions || []), ...((save && save.recentQids) || [])]);
   // 状況にマッチする候補を計算
   const need = state.currentBetOpponent - state.currentBetPlayer;
   const potBefore = state.pot - need;
@@ -4162,7 +4163,8 @@ function pickLogicQuestion() {
 function pickPsychQuestion() {
   // 対戦相手に応じて問題プールを切り替える＋出題済みは避ける
   const id = state.opponentId;
-  const seen = state.seenQuestions || new Set();
+  // 今バトルの出題済み ＋ 過去バトルの直近出題（セーブ）を合わせて避ける
+  const seen = new Set([...(state.seenQuestions || []), ...((save && save.recentQids) || [])]);
   // 履歴（直近の出題順、新しいほど後ろ）
   if (!state.psychHistory) state.psychHistory = [];
   // 出題済みを避けて選ぶ：未出題優先、無ければ「最も古く出した問題」を選ぶ
@@ -5536,6 +5538,7 @@ function revealCommunity(cards, opts) {
   state.mimiThought = tier === 'hot' ? '「……この1枚で、決まる……！」' : '「……来て……！」';
   state.ricoAdvice = '';
   document.body.classList.add(tier === 'hot' ? 'is-tease-hot' : 'is-tease-reach');
+  if (tier === 'hot') state.mimiExpr = 'shock';
   render();
   startTeaseHeartbeat(tier);
   if (navigator.vibrate) navigator.vibrate(tier === 'hot' ? [40, 90, 40, 90, 60] : [30, 120, 30]);
@@ -5551,6 +5554,22 @@ function revealCommunity(cards, opts) {
     render();
     setTimeout(o.done, tier === 'hot' ? 1100 : 800);
   });
+}
+
+// 勝利の爆発：紙吹雪＋画面が一瞬ズーム（大勝ち・激アツ的中で発動）
+function showWinBurst(big) {
+  const host = document.querySelector('.battle-screen') || document.body;
+  host.classList.add('win-zoom');
+  setTimeout(() => host.classList.remove('win-zoom'), 700);
+  const n = big ? 44 : 26;
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti ' + pick(['cf-gold', 'cf-red', 'cf-white', 'cf-pink']);
+    const x = 15 + rand() * 70;
+    c.style.cssText = 'left:' + x + '%;animation-delay:' + (rand() * 0.5) + 's;animation-duration:' + (1.1 + rand() * 1.1) + 's;--drift:' + ((rand() - 0.5) * 160) + 'px;--spin:' + ((rand() - 0.5) * 720) + 'deg;';
+    host.appendChild(c);
+    setTimeout(() => c.remove(), 2800);
+  }
 }
 
 // 激アツ開放の一瞬の閃光
@@ -11308,6 +11327,12 @@ function triggerPsychBattle(qid) {
   // 出題履歴に追加
   if (!state.seenQuestions) state.seenQuestions = new Set();
   state.seenQuestions.add(qid);
+  // バトルをまたいだ再出題も避ける：直近12問をセーブに記録し、次回の抽選候補から除外
+  if (!save.recentQids) save.recentQids = [];
+  save.recentQids = save.recentQids.filter(q => q !== qid);
+  save.recentQids.push(qid);
+  if (save.recentQids.length > 12) save.recentQids = save.recentQids.slice(-12);
+  saveProgress();
   // 直近履歴：最大10件まで
   if (!state.psychHistory) state.psychHistory = [];
   state.psychHistory.push(qid);
@@ -11408,6 +11433,24 @@ function triggerPsychBattle(qid) {
   }
   root.querySelector('[data-bind="zazazoHint"]').textContent = q.zazazoHint;
 
+  // v2.1：初心者向けの「いま起きたこと」1行＋この読みの掛け金（重み）を選択肢の直前に出す
+  if (!isLecture) {
+    root.querySelector('.v2p-context')?.remove();
+    const need = Math.max(0, state.currentBetOpponent - state.currentBetPlayer);
+    const oppShort = (state.opponentName || '相手').replace(/（.*）/, '');
+    const happened = isLogic
+      ? `コールには <b>${need}</b> 必要（ポット ${state.pot}）。数字で判断できる場面`
+      : `${oppShort}が <b>+${state.currentBetOpponent || 0}</b> ベット（ポット ${state.pot}）。この言葉が本心か、読む`;
+    const gain = (q.onSuccess && q.onSuccess.panyu) || 0;
+    const loss = (q.onFail && q.onFail.panyu) || 0;
+    const ctx = document.createElement('div');
+    ctx.className = 'v2p-context';
+    // 「いま起きたこと」は状況整理テキストが既に語っているので、掛け金だけを右端に出す
+    void happened;
+    ctx.innerHTML = `<span class="v2p-ctx-stakes">この読みの賭け金 — 成功：<b class="v2p-gain">ぱにゅ +${gain}／ミミミ +1</b>　失敗：<b class="v2p-loss">ぱにゅ ${loss}</b></span>`;
+    root.querySelector('.psych-modal')?.appendChild(ctx); // 選択肢の直上に絶対配置（CSS側で位置決め）
+  }
+
   // v2：右上ミミミゲージ（読み切り進捗を3セグメントで表示。講義モードでは非表示のまま）
   const gaugeBox = root.querySelector('[data-bind="zazazoGaugeBox"]');
   if (gaugeBox) {
@@ -11448,8 +11491,20 @@ function triggerPsychBattle(qid) {
     const btn = document.createElement('button');
     btn.className = 'choice-btn';
     btn.dataset.choiceId = c.id;
-    btn.innerHTML = `<span class="choice-label">${labels[i]}</span>${c.text}`;
-    btn.addEventListener('click', () => resolvePsych(qid, c, btn));
+    btn.innerHTML = `<span class="choice-label">${labels[i]}</span><span class="choice-text">${c.text}</span><span class="choice-arm-hint">もう一度タップで<b>この読みに賭ける</b></span>`;
+    // 重みのある選択：1タップ目で構え（他の選択肢が沈む）、2タップ目で確定
+    btn.addEventListener('click', () => {
+      if (state.lectureMode) return resolvePsych(qid, c, btn); // 講義はテンポ優先で即決
+      if (!btn.classList.contains('armed')) {
+        choicesEl.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('armed'));
+        btn.classList.add('armed');
+        choicesEl.classList.add('has-armed');
+        mpSfx('tap');
+        return;
+      }
+      choicesEl.classList.remove('has-armed');
+      resolvePsych(qid, c, btn);
+    });
     choicesEl.appendChild(btn);
   });
 
@@ -11961,6 +12016,14 @@ function resolvePsych(qid, choice, btn) {
       setTimeout(() => st.remove(), 1200);
       mpSfx(isCorrect ? 'win' : 'lose');
       setOpponentExpression(isCorrect ? 'rattled' : 'pleased');
+      setMimiExpression(isCorrect ? 'win' : 'sad');
+      const mimiEl = document.querySelector('.v2-mimi-frame img');
+      if (!isCorrect && mimiEl) mimiEl.classList.add('mimi-down');
+      setTimeout(() => {
+        const el2 = document.querySelector('.v2-mimi-frame img');
+        if (el2) el2.classList.remove('mimi-down');
+        if (state.screen === 'battle' && !state.psychPending) setMimiExpression('default');
+      }, 2600);
       if (navigator.vibrate) navigator.vibrate(isCorrect ? [40, 30, 60] : 120);
       if (!isCorrect && state.psychRoot) {
         state.psychRoot.classList.add('psych-shake');
@@ -12234,14 +12297,25 @@ function triggerBluffBreak() {
   state.bluffBreakHappened = true;
   // v4 A3: 発生後ゲージは0にリセット
   state.zazazo = 0;
-  const eff = document.createElement('div');
-  eff.className = 'bluff-break-effect';
-  eff.innerHTML = '<div class="text">ブラフブレイク！</div>';
-  document.body.appendChild(eff);
-  setTimeout(() => eff.remove(), 1800);
-  // 相手の虚勢が崩れた表情に（差分があるキャラのみ変化・他はdefaultのまま）
-  setOpponentExpression('rattled');
-  toast(`${state.opponentName || '相手'}の勝負空気が崩れた！`);
+  // ため（チャージ）→ 一閃 → 断言、の3拍。必殺技はいきなり出さない
+  const charge = document.createElement('div');
+  charge.className = 'bluff-break-charge';
+  document.body.appendChild(charge);
+  if (isSfxOn()) { _mpSfxScale = sfxVolFloat(); mpSweep(120, 900, 1.1, 'sawtooth', 0.05); }
+  if (navigator.vibrate) navigator.vibrate([50, 80, 50, 80, 120]);
+  setTimeout(() => {
+    charge.remove();
+    if (typeof showRevealBurst === 'function') showRevealBurst();
+    const eff = document.createElement('div');
+    eff.className = 'bluff-break-effect';
+    eff.innerHTML = '<div class="text">ブラフブレイク！</div>';
+    document.body.appendChild(eff);
+    mpSfx('bigwin');
+    setTimeout(() => eff.remove(), 1800);
+    // 相手の虚勢が崩れた表情に（差分があるキャラのみ変化・他はdefaultのまま）
+    setOpponentExpression('rattled');
+    toast(`${state.opponentName || '相手'}の勝負空気が崩れた！`);
+  }, 1200);
 }
 
 //=============================================================
@@ -12304,7 +12378,8 @@ function showdown() {
     if (winner === 'player') mpSfx(pot >= 800 ? 'bigwin' : 'hand-win');
     else if (winner === 'opponent') mpSfx('hand-lose');
     else mpSfx('tie');
-    if (T.tense && winner === 'player') showRevealBurst();
+    if (winner === 'player' && (T.tense || pot >= 600)) { showRevealBurst(); showWinBurst(pot >= 1000); }
+    else if (winner === 'player') showWinBurst(false);
   }, T.call);
 
   setTimeout(() => {
