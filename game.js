@@ -187,6 +187,7 @@ function defaultSave() {
     firstClearRewardClaimed: [],
     rematchWins: {},
     chipChoice: {},
+    rewardCgSeen: [],             // 🆕幕間で開放したご褒美CGの相手ID一覧
 
     // ── 解放系フラグ（normalizeSaveで自動派生される。手動編集不要） ──
     endingUnlocked: false,        // = clearedStages.includes('velvet')
@@ -250,6 +251,7 @@ function normalizeSave(s) {
   if (!Array.isArray(s.ownedItems)) s.ownedItems = [];
   if (!Array.isArray(s.shopSeenItems)) s.shopSeenItems = [];
   if (!Array.isArray(s.firstClearRewardClaimed)) s.firstClearRewardClaimed = [];
+  if (!Array.isArray(s.rewardCgSeen)) s.rewardCgSeen = [];
   if (!s.bestRanks || typeof s.bestRanks !== 'object') s.bestRanks = {};
   if (!s.bestScores || typeof s.bestScores !== 'object') s.bestScores = {};
   if (!s.chipChoice || typeof s.chipChoice !== 'object') s.chipChoice = {};
@@ -3175,6 +3177,209 @@ function showEpisodeTitle(key, onContinue) {
 }
 
 //=============================================================
+// 幕間（インターミッション）
+// 各ステージ「初回クリア」の勝利リザルト後に1画面はさむ、短い会話→ご褒美CG開放。
+// speaker: 'rico' | 'mimi' | 相手ID。3〜5行、最後の1行で次の相手を予告する。
+// cg: 会話後に開放される「ご褒美CG」の想定パス（無ければ assets/episodes/<相手ID>.png にフォールバック）。
+//=============================================================
+const INTERMISSIONS = {
+  rico_tutorial: {
+    lines: [
+      { speaker: 'rico',  text: 'はい、講義おしまい。……ミミ、思ったよりちゃんと聞いてたじゃん' },
+      { speaker: 'mimi',  text: '聞かないと即クビにされそうな圧を感じたので……いえ、ちゃんと面白かったです' },
+      { speaker: 'rico',  text: '上出来。じゃ、次はいよいよ実戦。Stage2の卓に座ってもらうよ' },
+      { speaker: 'rico',  text: '相手はポルカ。声がでかい時ほど手が弱いタイプだから、ビビらず耳を澄ませてね' },
+      { speaker: 'mimi',  text: '（声がでかい人ほど弱いって、前の職場の上司と同じ理論だ……）よし、行ってきます！' },
+    ],
+    cg: 'assets/backgrounds/reward_cg_rico_tutorial.jpg',
+  },
+  polka: {
+    lines: [
+      { speaker: 'polka', text: 'うわー、新人に負けるとはなー……でも今日のミミちゃん、ちゃんとボクの指先見てたでしょ' },
+      { speaker: 'mimi',  text: '正直かなり分かりやすかったです……あ、責めてるわけじゃなくて！' },
+      { speaker: 'rico',  text: 'ふふ、初勝利おめでとう。でも、これで満足しないでよね？' },
+      { speaker: 'rico',  text: '次はセリナ。声も態度も崩さない、理屈で殴ってくるタイプ。ベット額の"意味"に耳を澄ませな' },
+      { speaker: 'mimi',  text: '声がでかい人の次は静かな人……次から次へと、個性豊かな職場です' },
+    ],
+    cg: 'assets/backgrounds/reward_cg_polka.jpg',
+  },
+  selina: {
+    lines: [
+      { speaker: 'selina', text: '……お見事です。ボードの危険度、あの短時間でよく仕上げましたね' },
+      { speaker: 'mimi',   text: 'セリナさんが理由をちゃんと説明してくれたので……それ、褒めてくれてますよね？' },
+      { speaker: 'rico',   text: 'うんうん、成長したね。場の危なさが分かるようになったのは大きいよ' },
+      { speaker: 'rico',   text: '次はグラーノ。商人気質で、何でも値段で誘ってくる。安く見えても払う価値があるかは自分で計算するんだよ' },
+      { speaker: 'mimi',   text: '計算……ポットオッズ……電卓は無いけど、頭の中にはあります、多分' },
+    ],
+    cg: 'assets/backgrounds/reward_cg_selina.jpg',
+  },
+  grano: {
+    lines: [
+      { speaker: 'grano', text: 'いや実に見事な商談でした、お嬢さん。今回は私の負け……そういうことにしておきましょう' },
+      { speaker: 'mimi',  text: '「安いですよ」攻撃、途中から怖くなってきました……でも計算したら見合ってなかったので、勝ちです！' },
+      { speaker: 'rico',  text: 'その調子。……ミミ、次でいよいよ最後の卓だよ' },
+      { speaker: 'rico',  text: 'VIPルームのヴェルベット。言葉と圧で先に心を折りにくるタイプ。でも、あんたはもう全部の武器を持ってる' },
+      { speaker: 'mimi',  text: '（ブラフも、場札も、ポットオッズも……ここまで来たら、あとは根性です）……行きます、リコ先輩' },
+    ],
+    cg: 'assets/backgrounds/reward_cg_grano.jpg',
+  },
+  velvet: {
+    // ※ヴェルベット撃破時は既存の「エンディングへ」動線を最優先するため、
+    //   通常フロー（endBattle）からは呼ばれない。コレクション表示・将来の拡張用にデータのみ保持。
+    lines: [
+      { speaker: 'velvet', text: '……ふふ、まさか新人に膝をつかされるなんてね。今夜は返り討ちに遭う夜みたい' },
+      { speaker: 'mimi',   text: 'ヴェルベットさんの圧、最後まで怖かったです……勝てたの、正直まだ信じられません' },
+      { speaker: 'rico',   text: 'よく頑張ったね、ミミ。……本当に、ここまでよく来た' },
+      { speaker: 'rico',   text: 'このあとはご褒美の時間。今日までの全部、ちゃんと見てたから' },
+      { speaker: 'mimi',   text: '（社畜だった頃には想像もしてなかった夜だ……）リコ先輩、ありがとうございます' },
+    ],
+    cg: 'assets/backgrounds/reward_cg_velvet.jpg',
+  },
+};
+
+// 幕間画面を表示する。render() は使わず #stage に overlay を直接 append/remove する
+// （showEpisodeTitle と同じ作法）。背景・立ち絵・CG はすべて生成中の前提で onerror フォールバック必須。
+function showIntermission(opponentId, onDone) {
+  const data = INTERMISSIONS[opponentId];
+  if (!data || !data.lines || !data.lines.length) { if (onDone) onDone(); return; }
+  const opp = OPPONENTS[opponentId] || {};
+  const oppImgKey = opp.imgKey || opponentId;
+  const oppName = opp.name || '相手';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'intermission-overlay';
+  overlay.innerHTML = `
+    <div class="ims-bg">
+      <img class="ims-bg-img" alt=""
+           src="assets/backgrounds/bg_intermission.jpg"
+           onerror="this.onerror=null;this.src='assets/backgrounds/lobby.png';">
+    </div>
+    <div class="ims-stage">
+      <div class="ims-char ims-char-mimi character-frame" data-ims-side="mimi">
+        <img alt="ミミ" src="assets/characters/mimi_intermission.webp"
+             onerror="this.onerror=null;this.src='assets/characters/mimi_default.png';">
+      </div>
+      <div class="ims-char ims-char-opp character-frame" data-ims-side="opp">
+        <img alt="${oppName}" src="assets/characters/${oppImgKey}_default.png"
+             onerror="window.assetFallback(this,'${oppImgKey}')">
+      </div>
+    </div>
+    <button type="button" class="ims-skip-btn">スキップ ▶▶</button>
+    <div class="ims-dialogue">
+      <div class="ims-dlg-face"><img alt=""></div>
+      <div class="ims-dlg-body">
+        <div class="ims-dlg-name"></div>
+        <div class="ims-dlg-text"></div>
+      </div>
+      <div class="ims-dlg-next">▼</div>
+    </div>
+    <div class="ims-cg" hidden>
+      <img class="ims-cg-img" alt="">
+      <div class="ims-cg-fallback">
+        <div class="ims-cg-fallback-name">${oppName}</div>
+        <div class="ims-cg-fallback-label">ご褒美CG 開放！</div>
+      </div>
+      <div class="ims-cg-hint">タップして進む</div>
+    </div>
+  `;
+  const stage = document.getElementById('stage');
+  (stage || document.body).appendChild(overlay);
+
+  const mimiChar = overlay.querySelector('.ims-char-mimi');
+  const oppChar = overlay.querySelector('.ims-char-opp');
+  const dialogueBox = overlay.querySelector('.ims-dialogue');
+  const dlgFaceImg = overlay.querySelector('.ims-dlg-face img');
+  const dlgName = overlay.querySelector('.ims-dlg-name');
+  const dlgText = overlay.querySelector('.ims-dlg-text');
+  const skipBtn = overlay.querySelector('.ims-skip-btn');
+  const cgLayer = overlay.querySelector('.ims-cg');
+  const cgImg = overlay.querySelector('.ims-cg-img');
+
+  let idx = 0;
+  let phase = 'dialogue'; // 'dialogue' | 'cg'
+
+  function speakerMeta(speaker) {
+    if (speaker === 'mimi') return { name: 'ミミ', img: 'assets/characters/mimi_default.png', side: 'mimi' };
+    if (speaker === 'rico') return { name: 'リコ先輩', img: 'assets/characters/rico_default.png', side: 'rico' };
+    const o = OPPONENTS[speaker];
+    const key = (o && o.imgKey) || speaker;
+    return { name: o ? o.name : oppName, img: `assets/characters/${key}_default.png`, side: 'opp' };
+  }
+
+  function renderLine() {
+    const line = data.lines[idx];
+    if (!line) { showCg(); return; }
+    const meta = speakerMeta(line.speaker);
+    dlgName.textContent = meta.name;
+    dlgText.textContent = line.text;
+    dlgFaceImg.onerror = () => { dlgFaceImg.onerror = null; dlgFaceImg.src = 'assets/characters/mimi_default.png'; };
+    dlgFaceImg.src = meta.img;
+    dialogueBox.classList.remove('ims-speaker-mimi', 'ims-speaker-rico', 'ims-speaker-opp');
+    dialogueBox.classList.add('ims-speaker-' + meta.side);
+    mimiChar.classList.toggle('ims-active', meta.side === 'mimi');
+    oppChar.classList.toggle('ims-active', meta.side === 'opp');
+  }
+
+  function advance() {
+    idx++;
+    if (idx >= data.lines.length) { showCg(); return; }
+    renderLine();
+  }
+
+  function showCg() {
+    if (phase === 'cg') return;
+    phase = 'cg';
+    dialogueBox.classList.add('ims-hide');
+    skipBtn.classList.add('ims-hide');
+    // ご褒美CG開放記録（コレクションの「ご褒美CG」で閲覧できるようになる）
+    if (!Array.isArray(save.rewardCgSeen)) save.rewardCgSeen = [];
+    if (!save.rewardCgSeen.includes(opponentId)) {
+      save.rewardCgSeen.push(opponentId);
+      saveProgress();
+    }
+    const cgPath = data.cg || `assets/backgrounds/reward_cg_${opponentId}.jpg`;
+    cgImg.onerror = () => {
+      cgImg.onerror = () => { cgImg.onerror = null; cgImg.style.display = 'none'; cgLayer.classList.add('ims-cg-noimg'); };
+      cgImg.src = `assets/episodes/${opponentId}.png`;
+    };
+    cgImg.src = cgPath;
+    cgLayer.hidden = false;
+    requestAnimationFrame(() => cgLayer.classList.add('show'));
+  }
+
+  function finish() {
+    overlay.classList.add('out');
+    setTimeout(() => { overlay.remove(); if (onDone) onDone(); }, 400);
+  }
+
+  skipBtn.addEventListener('click', (e) => { e.stopPropagation(); showCg(); });
+  overlay.addEventListener('click', (e) => {
+    if (e.target.closest('.ims-skip-btn')) return;
+    if (phase === 'cg') { finish(); } else { advance(); }
+  });
+
+  renderLine();
+}
+
+// コレクションの「ご褒美CG」サムネイルから開く全画面ビューア。タップで閉じる。
+function showRewardCgViewer(id) {
+  const opp = OPPONENTS[id] || {};
+  const overlay = document.createElement('div');
+  overlay.className = 'reward-cg-viewer-overlay';
+  overlay.innerHTML = `
+    <div class="reward-cg-viewer-body">
+      <img class="reward-cg-viewer-img" alt="${opp.name || ''}"
+           src="assets/backgrounds/reward_cg_${id}.jpg"
+           onerror="this.onerror=function(){this.onerror=null;this.style.display='none';this.closest('.reward-cg-viewer-body').classList.add('noimg');};this.src='assets/episodes/${id}.png';">
+      <div class="reward-cg-viewer-hint">タップして閉じる</div>
+    </div>
+  `;
+  const stage = document.getElementById('stage');
+  (stage || document.body).appendChild(overlay);
+  overlay.addEventListener('click', () => overlay.remove());
+}
+
+//=============================================================
 // ステージ・ショップ
 //=============================================================
 const STAGE_ORDER = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
@@ -6058,6 +6263,17 @@ function onAction(e) {
     case 'recall-episode':
       showEpisodeTitle(data.episode, null);
       break;
+    case 'go-intermission': {
+      // リザルトの主ボタン「幕間へ」→会話→ご褒美CG開放。終わったら通常の勝利ボタン群を組み立て直す
+      const oid = data.opponent || state.opponentId;
+      showIntermission(oid, () => { renderWonResultButtons(); });
+      break;
+    }
+    case 'view-reward-cg': {
+      const cgId = e.currentTarget?.dataset?.cgId;
+      if (cgId) showRewardCgViewer(cgId);
+      break;
+    }
     case 'use-panyu-sense': usePanyuSense(); break;
     case 'panyu-free': {
       // 連打で裏モード解放（クリア後限定）
@@ -9941,6 +10157,25 @@ function showCollectionModal() {
     </div>
   `).join('');
 
+  // ご褒美CG：幕間を見た（save.rewardCgSeen に相手IDがある）ステージだけサムネイル表示。未見はロックカード
+  const rewardCgSeen = save.rewardCgSeen || [];
+  const rewardCgHtml = stageOrder.map(id => {
+    const opp = OPPONENTS[id];
+    if (!opp) return '';
+    if (rewardCgSeen.includes(id)) {
+      return `<button class="coll-cg-card on" data-action="view-reward-cg" data-cg-id="${id}" title="${opp.name}のご褒美CGを見る">
+        <img src="assets/backgrounds/reward_cg_${id}.jpg" alt="${opp.name}"
+             onerror="this.onerror=function(){this.onerror=null;this.style.display='none';this.parentElement.classList.add('noimg');};this.src='assets/episodes/${id}.png';">
+        <div class="coll-cg-label">${opp.name}</div>
+      </button>`;
+    }
+    return `<div class="coll-cg-card off" title="未開放">
+      <div class="coll-cg-locked">🔒</div>
+      <div class="coll-cg-label">？？？<br><small>（${opp.name}に初勝利で開放）</small></div>
+    </div>`;
+  }).join('');
+  const rewardCgCount = stageOrder.filter(id => rewardCgSeen.includes(id)).length;
+
   const achHtml = achievements.map(a => `
     <div class="coll-ach ${a.achieved ? 'on' : 'off'}">
       <div class="coll-ach-icon">${a.achieved ? '🏆' : '🔒'}</div>
@@ -9988,6 +10223,10 @@ function showCollectionModal() {
         <section class="coll-section">
           <h3 class="coll-section-title">対戦相手 <span class="coll-section-count">${stageCleared}/${stages.length}</span></h3>
           <div class="coll-stages">${stagesHtml}</div>
+        </section>
+        <section class="coll-section">
+          <h3 class="coll-section-title">ご褒美CG <span class="coll-section-count">${rewardCgCount}/${stageOrder.length}</span></h3>
+          <div class="coll-cgs">${rewardCgHtml}</div>
         </section>
         <section class="coll-section">
           <h3 class="coll-section-title">物語の達成 <span class="coll-section-count">${achievements.filter(a => a.achieved).length}/${achievements.length}</span></h3>
@@ -13015,9 +13254,10 @@ function endBattle() {
     }
     if (!save.clearedStages.includes('rico_tutorial')) save.clearedStages.push('rico_tutorial');
     saveProgress();
-    return endTutorial();
+    return endTutorial(isFirstTime);
   }
   const won = state.playerChips > state.opponentChips;
+  let firstClearForIntermission = false; // 幕間を出すかどうか（勝利かつ初回クリアの時だけ true）
   let score = 0;
   const reasons = [];
   if (won) { score += SCORE_TABLE.win; reasons.push(`勝利 +${SCORE_TABLE.win}`); }
@@ -13045,6 +13285,7 @@ function endBattle() {
   const rewards = [];
   if (won) {
     const firstClear = !save.firstClearRewardClaimed.includes(state.opponentId);
+    firstClearForIntermission = firstClear;
     if (firstClear) {
       earned += opp.rewardFirst;
       rewards.push(`初回クリア報酬：+${opp.rewardFirst}`);
@@ -13205,11 +13446,8 @@ function endBattle() {
 
   // 主ボタン：次に挑戦できるステージが解放されていればそのステージへ直行、無ければロビーへ
   // （ヴェルベット勝利時は直後の分岐でエンディングボタンに上書きされる）
+  // 勝利かつ初回クリアの時だけ、主ボタンを「幕間へ」に差し替える（2回目以降は通常どおり即座に組み立てる）
   {
-    const curIdx = STAGE_ORDER.indexOf(state.opponentId);
-    const after = STAGE_ORDER.slice(curIdx + 1);
-    const pickFrom = (list) => list.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
-    const nextId = pickFrom(after) || pickFrom(STAGE_ORDER) || null;
     const btns = document.querySelector('[data-bind="resultButtons"]');
     if (btns && !won && state.opponentId !== 'rico_tutorial') {
       // 敗北：主ボタンは「同じ相手に再挑戦」。悔しさをそのまま次の一手に繋ぐ
@@ -13221,24 +13459,16 @@ function endBattle() {
         `;
       btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
     } else if (btns) {
-      if (nextId) {
-        const nOpp = OPPONENTS[nextId];
+      const showIntermissionBtn = won && firstClearForIntermission &&
+        state.opponentId !== 'velvet' && !!INTERMISSIONS[state.opponentId];
+      if (showIntermissionBtn) {
         btns.innerHTML = `
-          <button class="btn btn-primary result-main-btn" data-action="battle-start" data-opponent="${nextId}"><span>${nOpp.name}に挑戦</span><span>→</span></button>
-          <div class="result-sub-buttons">
-            <button class="btn btn-secondary" data-action="rematch">再戦</button>
-            <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
-          </div>
+          <button class="btn btn-primary result-main-btn" data-action="go-intermission" data-opponent="${state.opponentId}"><span>幕間へ</span><span>→</span></button>
         `;
+        btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
       } else {
-        btns.innerHTML = `
-          <button class="btn btn-primary result-main-btn" data-action="back-lobby"><span>ロビーへ</span></button>
-          <div class="result-sub-buttons">
-            <button class="btn btn-secondary" data-action="rematch">再戦</button>
-          </div>
-        `;
+        renderWonResultButtons();
       }
-      btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
     }
   }
 
@@ -13277,6 +13507,38 @@ function endBattle() {
   // リザルト演出（段階表示・コインカウントアップ・ランクスタンプ）
   // → 全ての表示内容（ヴェルベット特殊分岐含む）が確定した最後にだけ起動する
   startResultFx();
+}
+
+// 勝利リザルトの主ボタン群（次ステージ／再戦／ロビー）のHTMLを組み立てる。
+// 幕間から戻った直後にも使うため、endBattle() 本体から独立させてある（ロジックは元のまま）。
+function wonResultButtonsHtml(opponentId) {
+  const curIdx = STAGE_ORDER.indexOf(opponentId);
+  const after = STAGE_ORDER.slice(curIdx + 1);
+  const pickFrom = (list) => list.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
+  const nextId = pickFrom(after) || pickFrom(STAGE_ORDER) || null;
+  if (nextId) {
+    const nOpp = OPPONENTS[nextId];
+    return `
+      <button class="btn btn-primary result-main-btn" data-action="battle-start" data-opponent="${nextId}"><span>${nOpp.name}に挑戦</span><span>→</span></button>
+      <div class="result-sub-buttons">
+        <button class="btn btn-secondary" data-action="rematch">再戦</button>
+        <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+      </div>
+    `;
+  }
+  return `
+    <button class="btn btn-primary result-main-btn" data-action="back-lobby"><span>ロビーへ</span></button>
+    <div class="result-sub-buttons">
+      <button class="btn btn-secondary" data-action="rematch">再戦</button>
+    </div>
+  `;
+}
+// [data-bind="resultButtons"] に通常の勝利ボタン群を描画し、data-action を再バインドする
+function renderWonResultButtons() {
+  const btns = document.querySelector('[data-bind="resultButtons"]');
+  if (!btns) return;
+  btns.innerHTML = wonResultButtonsHtml(state.opponentId);
+  btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
 }
 
 // 次に挑戦すべきステージ名を1行で返す（解放ルール／クリア記録は既存関数をそのまま読むだけ）
@@ -13807,7 +14069,9 @@ function finishLecture(skipped) {
   });
 }
 
-function endTutorial() {
+// isFirstClear: rico_tutorial の初回クリアかどうか（endBattle 側の isFirstTime をそのまま受け取る）。
+// 初回のみ「次へ」の後に幕間（ポルカへの予告）→ご褒美CG開放を挟んでからロビーへ戻す。再受講時は従来どおり即ロビー。
+function endTutorial(isFirstClear) {
   showTutorial('ending',
     '<b>チュートリアル完了！</b><br>' +
     '心理バトルの基本、つかめたかな？<br>' +
@@ -13816,11 +14080,18 @@ function endTutorial() {
     '・<b>選択肢シャッフル</b>：心理バトルは毎回順番が変わるから、暗記は通じない<br>' +
     '次は<b>Stage 2「ポルカ」</b>で本番だよ。チップが尽きるまで勝負！',
     () => {
-      // リザルト画面風に表示（簡易：ステージ選択へ戻す）
-      state.screen = 'lobby';
-      state.coinsEarned = (state.coinsEarned || 0) + 200;
-      render();
-      toast('チュートリアル報酬：200コイン獲得！');
+      const goLobbyWithReward = () => {
+        // リザルト画面風に表示（簡易：ステージ選択へ戻す）
+        state.screen = 'lobby';
+        state.coinsEarned = (state.coinsEarned || 0) + 200;
+        render();
+        toast('チュートリアル報酬：200コイン獲得！');
+      };
+      if (isFirstClear && INTERMISSIONS.rico_tutorial) {
+        showIntermission('rico_tutorial', goLobbyWithReward);
+      } else {
+        goLobbyWithReward();
+      }
     }
   );
 }
