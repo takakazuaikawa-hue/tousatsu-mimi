@@ -14187,3 +14187,236 @@ body.is-tease-hot .card.tease-card::after {
   .ims-char { transition: none; }
   .reward-cg-viewer-overlay { animation: none !important; }
 }
+
+/* =====================================================================
+   ルール入門（3ステップ）＋役の早見表ヘルプ
+   バトル画面v2と同じ舞台衣装（黒 #0b0510 × 深紅 #c8253a × 金 #f5d77a、
+   斜めスラブ skewX(-12deg)、Bebas Neue）。1280×800 固定キャンバス前提。
+   ===================================================================== */
+
+/* ---- ルール入門：全画面オーバーレイ ---- */
+.rule-primer-overlay {
+  position: absolute; inset: 0; z-index: 220;
+  display: flex; align-items: center; justify-content: center;
+  background: #0b0510; overflow: hidden;
+  animation: episodeFadeIn .4s ease-out;
+}
+.rule-primer-overlay.out { animation: episodeFadeOut .35s ease-in forwards; }
+
+.rp-card {
+  position: relative; z-index: 2;
+  width: 960px; max-width: calc(100% - 64px);
+  max-height: calc(100% - 56px);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 16px;
+  padding: 26px 44px 30px;
+  background: linear-gradient(180deg, rgba(42,15,61,.55) 0%, rgba(11,5,16,.95) 65%);
+  border: 2px solid var(--c-gold-bright);
+  border-radius: 6px;
+  box-shadow: 0 0 60px rgba(245,215,122,.22), 0 24px 60px rgba(0,0,0,.7);
+  overflow: hidden;
+}
+
+.rp-dots { display: flex; gap: 9px; }
+.rp-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(217,179,90,.32); }
+.rp-dot.on { background: var(--c-gold-bright); box-shadow: 0 0 8px rgba(245,215,122,.75); }
+
+.rp-skip-btn {
+  position: absolute; top: 14px; right: 16px; z-index: 3;
+  padding: 5px 12px; font-size: 11px; letter-spacing: .04em;
+  color: #c4b89a; background: rgba(0,0,0,.45);
+  border: 1px solid rgba(217,179,90,.4); border-radius: 3px;
+  cursor: pointer; opacity: .75; transition: opacity .15s ease;
+}
+.rp-skip-btn:hover { opacity: 1; }
+
+.rp-visual {
+  width: 100%; flex: 1 1 auto; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden auto; padding: 6px 0;
+}
+
+.rp-rico { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 700px; flex-shrink: 0; }
+.rp-rico-face {
+  width: 52px; height: 52px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  border: 2px solid var(--c-gold-bright); background: rgba(0,0,0,.4);
+}
+.rp-rico-face img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.rp-rico-bubble {
+  position: relative; flex: 1 1 auto;
+  background: #fffdf3; color: #1a1020; border-radius: 10px;
+  padding: 11px 18px; font-size: 15px; line-height: 1.55; font-weight: 700;
+}
+.rp-rico-bubble::before {
+  content: ''; position: absolute; left: -8px; top: 18px;
+  border-width: 8px 10px 8px 0; border-style: solid;
+  border-color: transparent #fffdf3 transparent transparent;
+}
+
+.rp-next-btn {
+  width: 100%; max-width: 420px; height: 54px; flex-shrink: 0;
+  transform: skewX(-12deg);
+  font-size: 17px; letter-spacing: .05em;
+}
+
+/* ---- Step1「そろえる」：手札＋場札の一覧図 ---- */
+.rp-step1-table { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.rp-step1-row { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.rp-step1-label { font-size: 12px; color: var(--c-text-dim); letter-spacing: .12em; }
+.rp-step1-cards { display: flex; gap: 9px; }
+.rp-step1-note { font-size: 12px; color: var(--c-gold-bright); margin-top: 2px; letter-spacing: .02em; }
+.rp-mini-card { width: 58px; height: 82px; border-radius: 6px; padding: 4px 6px; }
+.rp-mini-card .rank { font-size: 15px; }
+.rp-mini-card .suit { font-size: 13px; }
+.rp-mini-card .center-suit { font-size: 27px; }
+.rp-mini-card.rp-dim { opacity: .38; filter: saturate(.5) brightness(.85); }
+
+/* ---- Step2「役の強さ」／役の早見表：共有はしご図 ---- */
+.rp-ladder { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 620px; }
+.rp-ladder-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 6px 16px; border-radius: 4px;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(217,179,90,.16);
+}
+.rp-ladder-name {
+  font-family: "Bebas Neue", "Noto Sans JP", Impact, sans-serif;
+  letter-spacing: .04em; color: #f7eecf; line-height: 1;
+}
+.rp-tier-big { padding: 10px 16px; border-color: rgba(245,215,122,.5); background: rgba(245,215,122,.08); }
+.rp-tier-big .rp-ladder-name { font-size: 25px; color: var(--c-gold-bright); }
+.rp-tier-mid { padding: 7px 16px; }
+.rp-tier-mid .rp-ladder-name { font-size: 18px; }
+.rp-tier-small { padding: 4px 15px; opacity: .78; }
+.rp-tier-small .rp-ladder-name { font-size: 13px; color: var(--c-text-dim); }
+
+/* 役の早見表ヘルプ側：一行説明＋実例カードを追加した行レイアウト */
+.rp-ladder-help .rp-ladder-row { display: grid; grid-template-columns: 168px 1fr auto; align-items: center; gap: 14px; }
+.rp-ladder-help .rp-ladder-name { font-size: 17px !important; color: #f7eecf; }
+.rp-ladder-help .rp-tier-big .rp-ladder-name { color: var(--c-gold-bright); }
+.rp-ladder-desc { font-size: 12px; color: var(--c-text-dim); line-height: 1.4; }
+.rp-ladder-cards { display: flex; gap: 4px; justify-content: flex-end; }
+.rp-ladder-cards .card { width: 32px; height: 46px; padding: 2px 3px; border-radius: 4px; }
+.rp-ladder-cards .card .rank { font-size: 10px; }
+.rp-ladder-cards .card .suit { font-size: 9px; }
+.rp-ladder-cards .card .center-suit { font-size: 15px; }
+
+/* ---- Step3「賭け合う」：ポットにチップが集まる図 ---- */
+.rp-pot-diagram { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; padding: 10px 0; }
+.rp-pot-side { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 96px; flex-shrink: 0; }
+.rp-pot-face {
+  width: 74px; height: 74px; border-radius: 50%; overflow: hidden;
+  border: 2px solid var(--c-gold-bright); background: rgba(0,0,0,.4);
+}
+.rp-pot-face img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.rp-pot-name { font-size: 12px; color: var(--c-text-dim); letter-spacing: .08em; }
+.rp-pot-center { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+.rp-pot-stack { display: flex; flex-direction: column-reverse; align-items: center; }
+.rp-pot-stack span {
+  width: 46px; height: 12px; border-radius: 50%;
+  background: linear-gradient(180deg, var(--c-gold-bright), var(--c-gold));
+  border: 2px solid #7a5a1a; margin-top: -6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.5);
+}
+.rp-pot-label {
+  font-family: "Bebas Neue", "Noto Sans JP", Impact, sans-serif;
+  font-size: 16px; color: var(--c-gold-bright); letter-spacing: .1em;
+}
+.rp-pot-arrow { position: relative; width: 90px; height: 14px; flex-shrink: 0; }
+.rp-pot-arrow::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 50%;
+  height: 2px; background: rgba(245,215,122,.5); transform: translateY(-50%);
+}
+.rp-pot-arrow-left::after {
+  content: ''; position: absolute; right: -2px; top: 50%; transform: translateY(-50%);
+  width: 0; height: 0; border-style: solid;
+  border-width: 5px 0 5px 8px; border-color: transparent transparent transparent rgba(245,215,122,.85);
+}
+.rp-pot-arrow-right::after {
+  content: ''; position: absolute; left: -2px; top: 50%; transform: translateY(-50%);
+  width: 0; height: 0; border-style: solid;
+  border-width: 5px 8px 5px 0; border-color: transparent rgba(245,215,122,.85) transparent transparent;
+}
+.rp-pot-chip {
+  position: absolute; top: 50%; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--c-gold-bright); box-shadow: 0 0 6px rgba(245,215,122,.85);
+  transform: translateY(-50%); opacity: 0;
+}
+.rp-pot-arrow-left .rp-pot-chip:nth-child(1) { animation: rpChipToCenter 1.6s ease-in-out infinite; }
+.rp-pot-arrow-left .rp-pot-chip:nth-child(2) { animation: rpChipToCenter 1.6s ease-in-out .5s infinite; }
+.rp-pot-arrow-right .rp-pot-chip:nth-child(1) { animation: rpChipToCenterR 1.6s ease-in-out infinite; }
+.rp-pot-arrow-right .rp-pot-chip:nth-child(2) { animation: rpChipToCenterR 1.6s ease-in-out .5s infinite; }
+@keyframes rpChipToCenter {
+  0% { left: 2px; opacity: 0; }
+  15% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { left: calc(100% - 12px); opacity: 0; }
+}
+@keyframes rpChipToCenterR {
+  0% { right: 2px; opacity: 0; }
+  15% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { right: calc(100% - 12px); opacity: 0; }
+}
+
+/* ---- 役の早見表：常設ヘルプボタン（バトル画面v2 左下） ---- */
+.battle-screen.v2 .v2-help-btn {
+  position: absolute; left: 12px; bottom: 14px; z-index: 6;
+  height: 32px; padding: 0 14px; font-size: 12px; letter-spacing: .03em;
+  border-radius: 16px; opacity: .82;
+}
+.battle-screen.v2 .v2-help-btn:hover { opacity: 1; }
+
+/* ---- 役の早見表モーダル ---- */
+.hand-guide-overlay {
+  position: absolute; inset: 0; z-index: 230;
+  background: rgba(2,1,6,.88);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; cursor: pointer;
+  animation: episodeFadeIn .25s ease-out;
+}
+.hand-guide-panel {
+  position: relative; width: 860px; max-width: 100%; max-height: 100%;
+  background: linear-gradient(180deg, rgba(42,15,61,.55) 0%, rgba(11,5,16,.96) 65%);
+  border: 2px solid var(--c-gold-bright); border-radius: 6px;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 0 60px rgba(245,215,122,.22);
+  cursor: default;
+}
+.hand-guide-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 22px 10px; border-bottom: 1px dashed rgba(217,179,90,.35); flex-shrink: 0;
+}
+.hand-guide-title { font-size: 28px; color: var(--c-gold-bright); letter-spacing: .05em; }
+.hand-guide-close {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid rgba(217,179,90,.5); background: rgba(0,0,0,.4);
+  color: #f7eecf; font-size: 14px; cursor: pointer;
+}
+.hand-guide-body { padding: 12px 22px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+.hand-guide-hint {
+  text-align: center; font-size: 12px; color: var(--c-text-dim);
+  padding: 8px 0 14px; letter-spacing: .1em; flex-shrink: 0;
+}
+
+/* ---- 研修Hand1限定：ストリートの意味を場札の上に一言 ---- */
+.intro-street-label {
+  position: absolute; left: 50%; top: -34px; transform: translateX(-50%);
+  padding: 5px 14px; background: rgba(11,5,16,.85);
+  border: 1px solid rgba(245,215,122,.5); border-radius: 4px;
+  font-size: 12px; color: var(--c-gold-bright); letter-spacing: .06em;
+  white-space: nowrap; z-index: 6; pointer-events: none;
+  animation: introStreetLabelFade 1.5s ease-in-out both;
+}
+@keyframes introStreetLabelFade {
+  0%   { opacity: 0; transform: translate(-50%, 6px); }
+  12%  { opacity: 1; transform: translate(-50%, 0); }
+  82%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rule-primer-overlay, .rule-primer-overlay.out { animation: none !important; }
+  .rp-pot-chip { animation: none !important; opacity: .7 !important; }
+  .hand-guide-overlay { animation: none !important; }
+  .intro-street-label { animation: none !important; opacity: 1 !important; }
+}

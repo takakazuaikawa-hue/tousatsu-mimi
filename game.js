@@ -6253,6 +6253,7 @@ function onAction(e) {
     }
     case 'start-hand':    startHand(); break;
     case 'intro-skip':    introHandSkip(); break;
+    case 'show-hand-guide': showHandGuide(); break;
     case 'player-fold':   if (state.introHandMode) introHandFold(); else playerFold(); break;
     case 'player-call':   playerCall(); break;
     case 'player-checkcall': playerCheckCall(); break;
@@ -10772,6 +10773,191 @@ function startBattleInternal(opponentId) {
 }
 
 //=============================================================
+// P1: ルール入門（3ハンド研修の直前に挟む3ステップ）＋役の早見表ヘルプ
+// 「ルールも分からないうちからどうやってプレイするの？」への回答として追加。
+// 図解主体・DOM+CSSのみで描く（画像生成物は使わない）。#stage に overlay を
+// append/remove する作法は showEpisodeTitle / showIntermission に合わせる。
+//=============================================================
+
+// 役の強さ表（弱→強）。ルール入門Step2と役の早見表ヘルプで共有する。
+const HAND_LADDER = [
+  { name: 'ハイカード',       desc: '役なし。いちばん強い1枚で勝負', cards: [['♠','A'],['♥','K'],['♦','9'],['♣','5'],['♠','2']] },
+  { name: 'ワンペア',         desc: '同じ数字が2枚',                 cards: [['♠','8'],['♥','8'],['♦','K'],['♣','5'],['♠','2']] },
+  { name: 'ツーペア',         desc: 'ペアが2組',                     cards: [['♠','J'],['♥','J'],['♦','6'],['♣','6'],['♠','A']] },
+  { name: 'スリーカード',     desc: '同じ数字が3枚',                 cards: [['♠','5'],['♥','5'],['♦','5'],['♣','Q'],['♠','2']] },
+  { name: 'ストレート',       desc: '数字が5つ連続',                 cards: [['♠','5'],['♥','6'],['♦','7'],['♣','8'],['♠','9']] },
+  { name: 'フラッシュ',       desc: '同じマークが5枚',               cards: [['♥','2'],['♥','6'],['♥','9'],['♥','J'],['♥','K']] },
+  { name: 'フルハウス',       desc: '3枚＋2枚のセット',              cards: [['♠','9'],['♥','9'],['♦','9'],['♣','4'],['♠','4']] },
+  { name: 'フォーカード',     desc: '同じ数字が4枚',                 cards: [['♠','7'],['♥','7'],['♦','7'],['♣','7'],['♠','K']] },
+  { name: 'ストレートフラッシュ', desc: '同マークで5つ連続。ほぼ出ない激レア', cards: [['♠','5'],['♠','6'],['♠','7'],['♠','8'],['♠','9']] },
+];
+
+// [suit, rank] のミニカードHTML（rp-mini-card：rank/suit/center-suitは既存.cardマークアップを流用）
+// extraClass / style は演出用の追加クラス・インラインstyle（配布アニメの--di等）
+function rpMiniCardHTML(suit, rank, extraClass, style) {
+  const isRed = suit === '♥' || suit === '♦';
+  const cls = `card rp-mini-card${isRed ? ' red' : ''}${extraClass ? ' ' + extraClass : ''}`;
+  const styleAttr = style ? ` style="${style}"` : '';
+  return `<div class="${cls}"${styleAttr}>
+    <span class="rank">${rank}</span>
+    <span class="suit">${suit}</span>
+    <span class="center-suit">${suit}</span>
+  </div>`;
+}
+
+// はしご図（縦積み）。mode:'primer' は名前のみ（サイズだけで強弱を表現）、
+// mode:'help' は一行説明＋実例カードも添える。強い役ほど上・大きく、下3つ（弱い役）は小さく。
+function renderHandLadderHTML(mode) {
+  const strongFirst = [...HAND_LADDER].reverse();
+  return strongFirst.map((h, i) => {
+    const tier = i < 3 ? 'big' : (i < 6 ? 'mid' : 'small');
+    const detail = mode === 'help'
+      ? `<div class="rp-ladder-desc">${h.desc}</div><div class="rp-ladder-cards">${h.cards.map(([s, r]) => rpMiniCardHTML(s, r)).join('')}</div>`
+      : '';
+    return `
+      <div class="rp-ladder-row rp-tier-${tier}">
+        <div class="rp-ladder-name">${h.name}</div>
+        ${detail}
+      </div>`;
+  }).join('');
+}
+
+// 役の早見表（ヘルプモーダル）：常設「❓ 役」ボタンから開く。研修中・本編中どちらでも開ける。
+function showHandGuide() {
+  if (document.querySelector('.hand-guide-overlay')) return; // 多重起動防止
+  const overlay = document.createElement('div');
+  overlay.className = 'hand-guide-overlay';
+  overlay.innerHTML = `
+    <div class="hand-guide-panel">
+      <div class="hand-guide-head">
+        <div class="hand-guide-title v2-disp">役の早見表</div>
+        <button type="button" class="hand-guide-close" title="閉じる">✕</button>
+      </div>
+      <div class="hand-guide-body">
+        <div class="rp-ladder rp-ladder-help">${renderHandLadderHTML('help')}</div>
+      </div>
+      <div class="hand-guide-hint">タップして閉じる</div>
+    </div>
+  `;
+  const stage = document.getElementById('stage');
+  (stage || document.body).appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.querySelector('.hand-guide-close').addEventListener('click', (e) => { e.stopPropagation(); close(); });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
+// ルール入門：3ステップ、各1タップ、計60秒以内。「そろえる／強さ順／賭ける」の最小限だけ教える。
+// #stage に overlay を append する方式（showEpisodeTitle と同じ作法）。onDone は beginIntroHand を渡す想定。
+const RULE_PRIMER_STEPS = [
+  {
+    key: 'assemble',
+    rico: 'まず基本。手札2枚と場札5枚、合わせて7枚から一番強い5枚を選ぶだけだよ',
+  },
+  {
+    key: 'ranking',
+    rico: '役の強さはこの順。ぜんぶ覚えなくてOK。困ったら左下の❓でいつでも見られるよ',
+  },
+  {
+    key: 'betting',
+    rico: 'チップを賭け合って、勝てばポット総取り。自信がないときは降りてもいい。それも作戦だよ',
+  },
+];
+
+function showRulePrimer(onDone) {
+  let idx = 0;
+  const overlay = document.createElement('div');
+  overlay.className = 'rule-primer-overlay';
+  const stage = document.getElementById('stage');
+  (stage || document.body).appendChild(overlay);
+
+  function finish() {
+    overlay.classList.add('out');
+    setTimeout(() => { overlay.remove(); if (onDone) onDone(); }, 350);
+  }
+
+  function renderStep() {
+    const cfg = RULE_PRIMER_STEPS[idx];
+    const isLast = idx === RULE_PRIMER_STEPS.length - 1;
+    overlay.innerHTML = `
+      <div class="rp-card">
+        <div class="rp-dots">
+          ${RULE_PRIMER_STEPS.map((_, i) => `<span class="rp-dot${i === idx ? ' on' : ''}"></span>`).join('')}
+        </div>
+        <button type="button" class="rp-skip-btn">スキップ ▶▶</button>
+        <div class="rp-visual rp-visual-${cfg.key}">${renderPrimerVisual(cfg.key)}</div>
+        <div class="rp-rico">
+          <div class="rp-rico-face"><img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')"></div>
+          <div class="rp-rico-bubble">${cfg.rico}</div>
+        </div>
+        <button type="button" class="btn btn-primary rp-next-btn">${isLast ? '研修へ ▶' : '次へ ▶'}</button>
+      </div>
+    `;
+    overlay.querySelector('.rp-skip-btn').addEventListener('click', (e) => { e.stopPropagation(); finish(); });
+    overlay.querySelector('.rp-next-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (idx < RULE_PRIMER_STEPS.length - 1) { idx++; renderStep(); } else { finish(); }
+    });
+  }
+
+  renderStep();
+}
+
+// Step1「そろえる」：手札2枚（伏せ→表）＋場札5枚。ベスト5枚（手札2＋場札3）を金色ハイライト。
+// Step2「役の強さ」：共有はしご図。Step3「賭け合う」：ポットにチップが集まる図。
+function renderPrimerVisual(key) {
+  if (key === 'assemble') {
+    return `
+      <div class="rp-step1-table">
+        <div class="rp-step1-row">
+          <div class="rp-step1-label">ミミの手札</div>
+          <div class="rp-step1-cards rp-deal-hand">
+            <div class="card rp-mini-card highlight red card-flip">
+              <span class="rank">A</span><span class="suit">♥</span><span class="center-suit">♥</span>
+            </div>
+            <div class="card rp-mini-card highlight card-flip" style="--di:1">
+              <span class="rank">A</span><span class="suit">♠</span><span class="center-suit">♠</span>
+            </div>
+          </div>
+        </div>
+        <div class="rp-step1-row">
+          <div class="rp-step1-label">場札</div>
+          <div class="rp-step1-cards">
+            ${rpMiniCardHTML('♦', 'A', 'highlight card-deal', '--di:2')}
+            ${rpMiniCardHTML('♣', 'A', 'highlight card-deal', '--di:3')}
+            ${rpMiniCardHTML('♠', 'K', 'highlight card-deal', '--di:4')}
+            ${rpMiniCardHTML('♥', '7', 'rp-dim card-deal', '--di:5')}
+            ${rpMiniCardHTML('♦', '2', 'rp-dim card-deal', '--di:6')}
+          </div>
+        </div>
+        <div class="rp-step1-note">金色＝いちばん強い5枚（この例はフォーカード）</div>
+      </div>
+    `;
+  }
+  if (key === 'ranking') {
+    return `<div class="rp-ladder rp-ladder-primer">${renderHandLadderHTML('primer')}</div>`;
+  }
+  // 'betting'
+  return `
+    <div class="rp-pot-diagram">
+      <div class="rp-pot-side rp-pot-side-mimi">
+        <div class="rp-pot-face"><img src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')"></div>
+        <div class="rp-pot-name">ミミ</div>
+      </div>
+      <div class="rp-pot-arrow rp-pot-arrow-left"><span class="rp-pot-chip"></span><span class="rp-pot-chip"></span></div>
+      <div class="rp-pot-center">
+        <div class="rp-pot-stack"><span></span><span></span><span></span></div>
+        <div class="rp-pot-label">POT</div>
+      </div>
+      <div class="rp-pot-arrow rp-pot-arrow-right"><span class="rp-pot-chip"></span><span class="rp-pot-chip"></span></div>
+      <div class="rp-pot-side rp-pot-side-opp">
+        <div class="rp-pot-face"><img src="assets/characters/rico_default.png" alt="相手" onerror="window.assetFallback(this,'rico')"></div>
+        <div class="rp-pot-name">相手</div>
+      </div>
+    </div>
+  `;
+}
+
+//=============================================================
 // P2: 体験ハンド（初回導線ファネル）＝「3ハンドの初日研修」
 // スクリプトテーブル駆動：INTRO_HANDS[0..2] にハンドごとの固定シナリオを定義。
 //   Hand1「そろえる」：役ができると勝てる／ベットで取り分が増える（大きく行く2択のみ）
@@ -10827,7 +11013,9 @@ const INTRO_HANDS = [
 function startIntroHand() {
   save.introEpisodeShown = true;   // 後で講義に入るとき第1話を二度出さないための記録
   saveProgress();
-  showEpisodeTitle('rico_tutorial', beginIntroHand);
+  // 第1話タイトルカードの直後、3ハンド研修に入る前に「ルール入門」3ステップを挟む
+  // （「ルールも分からないうちからどうやってプレイするの？」への対応）
+  showEpisodeTitle('rico_tutorial', () => showRulePrimer(beginIntroHand));
 }
 
 function beginIntroHand() {
@@ -10896,12 +11084,26 @@ function dealIntroHandByNo(no) {
     // Hand1：ミミが先に「大きく行く」を選ぶ（現行どおり）
     state.isPlayerTurn = true;
     render();
+    // 研修Hand1限定：フロップが最初から開いていることを一言添える（本編には出さない）
+    showIntroStreetLabel('フロップ＝場札3枚オープン');
   } else {
     // Hand2/3：リコ先輩が先にベットしてくる → ミミは反応するだけ
     state.isPlayerTurn = false;
     render();
     setTimeout(() => introHandOpponentOpenBet(no), 900);
   }
+}
+
+// 研修Hand1限定：ストリートの意味を場札の上に1.5秒だけ小さく表示する（本編バトルには出さない）
+function showIntroStreetLabel(text) {
+  if (document.querySelector('.intro-street-label')) return;
+  const table = document.querySelector('.battle-screen .center-table');
+  if (!table) return;
+  const el = document.createElement('div');
+  el.className = 'intro-street-label';
+  el.textContent = text;
+  table.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
 }
 
 // Hand2/3共通：リコ先輩の先制ベット。Hand2は固定額、Hand3は2/3ポット＋心理バトル固定出題へ
@@ -11690,6 +11892,8 @@ function advanceAfterCall() {
         done: () => {
           recordEquitySnapshot('ターン＆リバー');
           log('actions', { phase: 'turn_river', cards: state.community.map(c=>c.label+c.suit) });
+          // 研修Hand1限定：ターン＆リバーの意味を場札の上に一言添える（本編には出さない）
+          if (state.introHandMode && state.introHandNo === 1) showIntroStreetLabel('ターン＆リバー＝残り2枚');
           opponentTurn();
         },
       });
