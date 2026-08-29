@@ -14995,7 +14995,7 @@ function showRicoCutIn(text, isSuccess, onClose) {
   cut.className = 'rico-cutin ' + (isSuccess ? 'cutin-success' : 'cutin-fail');
   cut.innerHTML = `
     <div class="cutin-portrait">
-      <img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+      <img src="assets/ui/face_rico.webp" alt="リコ先輩" onerror="this.onerror=function(){window.assetFallback(this,'rico')};this.src='assets/characters/rico_default.png';">
     </div>
     <div class="cutin-text">
       <div class="cutin-name">リコ先輩</div>
