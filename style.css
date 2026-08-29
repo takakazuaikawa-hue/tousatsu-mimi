@@ -14565,3 +14565,14 @@ body.is-tease-hot .card.tease-card::after {
   .lobby-stage-list .lobby-door { animation: none !important; }
   .lobby-door, .lobby-door-portrait img { transition: none !important; }
 }
+
+/* ============================================================
+   2026-08-29 操作性修正：中断／❓役ボタンが相手・ミミ立ち絵の
+   透明ピクセル（img の矩形当たり判定）にタップを奪われる問題。
+   ボタンを立ち絵より上のレイヤーへ引き上げて確実に押せるようにする
+   ============================================================ */
+.battle-screen.v2 .v2-pause { position: relative; z-index: 40; }
+.battle-screen.v2 .v2-help-btn { position: relative; z-index: 40; }
+.battle-screen.v2 header.top-hud { position: relative; z-index: 35; }
+/* .v2-hand は後段ルールで z:2 に落ち、同 z の相手立ち絵（DOM順で後）に敗けていた。ヘッダーごと引き上げる */
+.battle-screen.v2 .v2-hand { z-index: 36; }
