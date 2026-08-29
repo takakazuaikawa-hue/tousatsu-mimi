@@ -34,7 +34,7 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
-<link rel="stylesheet" href="style.css?v=20260829d">
+<link rel="stylesheet" href="style.css?v=20260829e">
 </head>
 <body>
 <div id="preload-overlay">
@@ -136,58 +136,82 @@
 </template>
 
 <template id="tpl-lobby">
-  <div class="screen lobby-screen">
+  <div class="screen lobby-screen v3">
     <div class="bg-layer bg-lobby"></div>
-    <div class="v2-slash v2-slash-red"></div>
-    <div class="v2-slash v2-slash-gold"></div>
+
     <header class="top-hud lobby-hud">
       <button class="btn btn-ghost" data-action="back-title">← タイトルへ</button>
       <h2 class="lobby-title"><span class="v2-disp lobby-title-eyebrow">VIP CASINO LOUNGE</span><span class="lobby-title-main">ロビー</span></h2>
       <div class="hud-right">
         <div class="lobby-coins">
-          <div class="v2-disp lobby-coins-label">COINS</div>
-          <div class="v2-disp lobby-coins-num"><img class="coin-display-icon" src="assets/ui/coin_icon.png" alt="" onerror="this.remove()"><span data-bind="saveCoins">0</span></div>
+          <div class="lb3-chip-tray" aria-hidden="true"><i class="lb3-chip lb3-chip-r"></i><i class="lb3-chip lb3-chip-r"></i><i class="lb3-chip lb3-chip-r"></i><i class="lb3-chip lb3-chip-g"></i><i class="lb3-chip lb3-chip-g"></i></div>
+          <div>
+            <div class="v2-disp lobby-coins-label">COINS</div>
+            <div class="v2-disp lobby-coins-num"><span data-bind="saveCoins">0</span></div>
+          </div>
         </div>
       </div>
     </header>
+
     <main class="lobby-main">
-      <!-- リコ：コンシェルジュとして左に大きく、枠なし -->
-      <div class="lobby-rico-standing">
-        <img data-bind="lobbyRicoImg" src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
-        <button class="lobby-rico-outfit" data-bind="lobbyRicoOutfit" data-action="open-rico-viewer" title="リコ先輩を眺める"></button>
-      </div>
-      <div class="lobby-rico-bubble" data-bind="lobbyRicoLine">「ようこそロビーへ。次の卓、選んじゃって」</div>
+      <!-- ツアーレール：5人の道のり -->
+      <div class="lb3-rail" data-bind="lb3Rail"></div>
 
-      <!-- ミミ：右奥でくつろぐ主人公。タップでプロフィール -->
-      <div class="lobby-mimi-standing">
-        <img src="assets/characters/mimi_lobby_relax.webp" alt="ミミ" data-action="char-profile" data-char="mimi" title="ミミのプロフィールを見る"
-             onerror="this.onerror=function(){window.assetFallback(this,'mimi')};this.src='assets/characters/mimi_default.png';">
+      <!-- 中央ステージ：今夜の相手 -->
+      <div class="lb3-stage">
+        <div class="v2-disp lb3-typo" data-bind="lb3Typo"></div>
+        <div class="lb3-cone"></div>
+        <div class="lb3-dais"></div>
+        <div class="lb3-foots"><i></i><i></i><i></i><i></i></div>
+        <img class="lb3-hero-img" data-bind="lb3HeroImg" src="assets/characters/polka_default.png" alt="">
+        <div class="lb3-taunt" data-bind="lb3Taunt"></div>
       </div>
 
-      <!-- 卓の扉：5枚、進行は左→右 -->
-      <section class="lobby-content">
-        <div class="lobby-stage-list" data-bind="stageList"></div>
+      <!-- 左：プレゼンター（リコの推薦→相手→テル→報酬→CTA） -->
+      <section class="lb3-present">
+        <div class="lb3-rico-row">
+          <button class="lb3-rico-face" data-action="open-rico-viewer" title="リコ先輩"><img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')"></button>
+          <div class="lb3-rico-bubble" data-bind="lb3RicoLine"></div>
+        </div>
+        <div class="v2-disp lb3-eyebrow" data-bind="lb3Eyebrow">TONIGHT'S TABLE</div>
+        <div class="lb3-name-row">
+          <span class="lb3-name" data-bind="lb3Name"></span>
+          <span class="v2-disp lb3-stageno" data-bind="lb3StageNo"></span>
+        </div>
+        <div class="lb3-theme" data-bind="lb3Theme"></div>
+        <div class="lb3-tells" data-bind="lb3Tells"></div>
+        <div class="lb3-prize-row" data-bind="lb3Prize"></div>
+        <button class="lb3-cta" data-bind="lb3Cta" data-action="battle-start"><span data-bind="lb3CtaLabel">この卓につく ▶</span></button>
+        <div class="lb3-sub" data-bind="lb3Sub"></div>
       </section>
 
-      <!-- 施設：既存の導線のみ（交換所／コレクション／ぱにゅぱにゅ） -->
-      <div class="lobby-facilities">
-        <button class="lobby-shop-btn lobby-fac-btn lobby-fac-shop" data-action="open-shop" data-bind="lobbyShopBtn">
-          <span class="lobby-fac-name">交換所</span>
-          <span class="lobby-fac-sub">グラーノの店</span>
+      <!-- 右下：見守るミミ -->
+      <img class="lb3-mimi" src="assets/characters/mimi_lobby_relax.webp" alt="ミミ" data-action="char-profile" data-char="mimi" title="ミミのプロフィールを見る"
+           onerror="this.onerror=function(){window.assetFallback(this,'mimi')};this.src='assets/characters/mimi_default.png';">
+      <div class="lb3-mimi-thought" data-bind="lb3MimiThought"></div>
+
+      <!-- 左下：帰ってくる理由（ログボ／CGコレクション） -->
+      <div class="lb3-hooks" data-bind="lb3Hooks"></div>
+
+      <!-- 下部オペレーションバー -->
+      <nav class="lb3-bar">
+        <button class="lb3-bar-btn lb3-bar-shop" data-action="open-shop">
+          <span class="lb3-bar-name">交換所</span><span class="lb3-bar-sub">グラーノの店</span>
           <span class="lobby-shop-newbadge" data-bind="lobbyShopNewBadge" style="display:none"></span>
         </button>
-        <button class="lobby-fac-btn lobby-fac-collection" data-action="open-collection">
-          <span class="lobby-fac-name">コレクション</span>
-          <span class="lobby-fac-sub">称号・実績帳</span>
+        <button class="lb3-bar-btn lb3-bar-coll" data-action="open-collection">
+          <span class="lb3-bar-name">コレクション</span><span class="lb3-bar-sub">称号・ご褒美CG</span>
         </button>
-        <button class="lobby-fac-btn lobby-fac-panyu" data-action="panyu-free" title="ぱにゅぱにゅで遊ぶ（バトル効果なし）">
-          <span class="lobby-fac-name">ぱにゅぱにゅ</span>
-          <span class="lobby-fac-sub">ぷにぷにして遊ぶ</span>
+        <button class="lb3-bar-btn lb3-bar-panyu" data-action="panyu-free" title="ぱにゅぱにゅで遊ぶ（バトル効果なし）">
+          <span class="lb3-bar-name">ぱにゅぱにゅ</span><span class="lb3-bar-sub">ぷにぷにして遊ぶ</span>
         </button>
-      </div>
+        <button class="lb3-bar-btn lb3-bar-audio" data-action="lb3-toggle-audio" title="音量・設定">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path></svg>
+        </button>
+      </nav>
 
-      <!-- 音楽コントロール＋設定ボタン -->
-      <div class="lobby-bottom-panel" data-bind="lobbyBottomPanel"></div>
+      <!-- 音量パネル（バーの♪でトグル） -->
+      <div class="lobby-bottom-panel lb3-audio-panel" data-bind="lobbyBottomPanel" style="display:none"></div>
     </main>
   </div>
 </template>
@@ -455,6 +479,6 @@
   </div>
 </template>
 
-<script src="game.js?v=20260829d"></script>
+<script src="game.js?v=20260829e"></script>
 </body>
 </html>

@@ -2582,7 +2582,7 @@ const app = document.getElementById('app');
 function render() {
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); if (isBgmOn()) playSceneBgm('title'); break;
-    case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); tryStartLobbyBgm(); break;
+    case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); renderLobbyV3(); tryStartLobbyBgm(); break;
     case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI();
       // v2 拍④「決断」：ミミの手番は卓と相手を落として札と選択肢に視線を集める
       { const scr = document.querySelector('.battle-screen.v2'); if (scr) scr.classList.toggle('is-deciding', !!(state.isPlayerTurn && state.handPhase !== 'idle' && state.handPhase !== 'showdown' && !state.psychPending)); }
@@ -3511,6 +3511,149 @@ function renderStageList() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ===== ロビー v3「ヒーローステージ」 =====
+// リサーチ反映（2026-08-29 承認・案D）：扉5枚の等価な並びをやめ、今夜の相手1人を舞台の主役にする。
+// 上＝進行レール（顔アイコン）／中央＝相手のステージ＋左に「リコの推薦→名前→テル→報酬→CTA」の意思決定列／
+// 下＝定位置のオペレーションバー。帰ってくる理由（ログボ・CG進捗）は左下に常設。
+const LOBBY_PRESENT = {
+  rico_tutorial: {
+    rico: '「まずはアタシが基礎から叩き込む。安心してかかってきな」',
+    taunt: '「講義、始めよっか」',
+    tells: [['基礎24問の講義', '#c8253a'], ['実戦テスト付き', '#8a4cc4']],
+  },
+  polka: {
+    rico: '「今夜の相手はポルカ。声がでかい時ほど、手は弱い。耳を澄ませな」',
+    taunt: '「ボクに勝てるかな？」',
+    tells: [['大声＝弱気', '#c8253a'], ['指先が雑＝ブラフ', '#8a4cc4']],
+  },
+  selina: {
+    rico: '「セリナは理詰めの女。ベット額の"意味"を読みな」',
+    taunt: '「……数字は嘘をつきません」',
+    tells: [['沈黙＝自信', '#c8253a'], ['額には意味がある', '#8a4cc4']],
+  },
+  grano: {
+    rico: '「グラーノは何でも値段で誘ってくる。払う価値は自分で計算しな」',
+    taunt: '「お安くしておきますよ？」',
+    tells: [['安売り＝罠', '#c8253a'], ['オッズで殴り返せ', '#8a4cc4']],
+  },
+  velvet: {
+    rico: '「ヴェルベットは言葉と圧で心を折りに来る。あんたはもう全部の武器を持ってる」',
+    taunt: '「今夜は眠らせないわよ」',
+    tells: [['圧＝演出', '#c8253a'], ['飲まれたら負け', '#8a4cc4']],
+  },
+};
+const LB3_MIMI_THOUGHTS = ['（よし……今夜もやるぞ）', '（深呼吸、深呼吸……）', '（ぱにゅぱにゅ、今日も頼むね）', '（勝ったらご褒美CG……！）', '（負けたら罰ゲームとかないよね……？）'];
+
+function lobbyNextStageId() {
+  return STAGE_ORDER.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid)) || null;
+}
+
+function renderLobbyV3() {
+  const q = sel => document.querySelector(sel);
+  const nextId = lobbyNextStageId();
+  const heroId = nextId || 'velvet'; // 全クリア後はヴェルベット再戦が今夜の演目
+  const opp = OPPONENTS[heroId];
+  if (!opp) return;
+  const cleared = save.clearedStages.includes(heroId);
+  const pre = LOBBY_PRESENT[heroId] || {};
+  const stageIdx = Math.max(0, STAGE_ORDER.indexOf(heroId));
+
+  // 進行レール：5人の顔と道のり
+  const rail = q('[data-bind="lb3Rail"]');
+  if (rail) {
+    rail.innerHTML = STAGE_ORDER.map((sid, i) => {
+      const o = OPPONENTS[sid];
+      const done = save.clearedStages.includes(sid);
+      const unlocked = isStageUnlocked(sid);
+      const isHero = sid === heroId;
+      const cls = ['lb3-rail-node', isHero ? 'is-current' : '', done ? 'is-cleared' : '', (!unlocked && !done) ? 'is-locked' : '', sid === 'velvet' ? 'is-vip' : ''].filter(Boolean).join(' ');
+      const act = !unlocked ? '' : (sid === 'rico_tutorial' && done ? 'rico-mode-chooser' : 'battle-start');
+      const tip = !unlocked ? '施錠中' : done ? `${o.name}と再戦` : `${o.name}に挑戦`;
+      return `${i > 0 ? `<span class="lb3-rail-seg${(done || isHero) ? ' is-lit' : ''}"></span>` : ''}
+        <button class="${cls}" ${act ? `data-action="${act}" data-opponent="${sid}"` : 'disabled'} title="${tip}">
+          <img src="assets/characters/${o.imgKey}_default.png" alt="${o.name}" onerror="window.assetFallback(this,'${o.imgKey}')">
+          ${done ? '<b class="lb3-rail-check">✓</b>' : ''}
+          ${sid === 'velvet' ? '<b class="lb3-rail-vip v2-disp">VIP</b>' : ''}
+        </button>`;
+    }).join('');
+  }
+
+  // 中央ステージ
+  const typo = q('[data-bind="lb3Typo"]'); if (typo) typo.textContent = OPP_LATIN[heroId] || '';
+  const heroImg = q('[data-bind="lb3HeroImg"]');
+  if (heroImg) {
+    heroImg.src = `assets/characters/${opp.imgKey}_default.png`;
+    heroImg.alt = opp.name;
+    heroImg.onerror = function() { this.onerror = null; window.assetFallback(this, opp.imgKey); };
+    heroImg.dataset.action = 'char-profile';
+    heroImg.dataset.char = heroId;
+    heroImg.title = `${opp.name}のプロフィールを見る`;
+  }
+  const taunt = q('[data-bind="lb3Taunt"]'); if (taunt) taunt.textContent = pre.taunt || '';
+
+  // プレゼンター（意思決定列）
+  const ricoLine = q('[data-bind="lb3RicoLine"]'); if (ricoLine) ricoLine.textContent = pre.rico || '「次の卓、開けてあげる」';
+  const eyebrow = q('[data-bind="lb3Eyebrow"]'); if (eyebrow) eyebrow.textContent = nextId ? "TONIGHT'S TABLE" : 'CHAMPION NIGHT';
+  const nameEl = q('[data-bind="lb3Name"]');
+  if (nameEl) { nameEl.textContent = opp.name; nameEl.style.fontSize = opp.name.length >= 5 ? '40px' : ''; }
+  const noEl = q('[data-bind="lb3StageNo"]'); if (noEl) noEl.textContent = `STAGE 0${stageIdx}`;
+  const themeEl = q('[data-bind="lb3Theme"]'); if (themeEl) themeEl.textContent = `─ ${opp.theme || ''} ─`;
+  const tellsEl = q('[data-bind="lb3Tells"]');
+  if (tellsEl) tellsEl.innerHTML = (pre.tells || []).map(([t, c], i) =>
+    `<span class="lb3-tell" style="border-left-color:${c}; transform:rotate(${i % 2 ? 2 : -3}deg)">${t}</span>`).join('');
+  const prizeEl = q('[data-bind="lb3Prize"]');
+  if (prizeEl) {
+    const amount = cleared ? (opp.rewardRematch || 50) : (opp.rewardFirst || 500);
+    prizeEl.innerHTML = `<span class="v2-disp lb3-prize-label">PRIZE</span><span class="v2-disp lb3-prize-num">${amount}</span><span class="lb3-prize-extra">${cleared ? '再戦報酬' : '＋ご褒美CG開放'}</span>`;
+  }
+  const cta = q('[data-bind="lb3Cta"]');
+  const ctaLabel = q('[data-bind="lb3CtaLabel"]');
+  if (cta) {
+    cta.dataset.opponent = heroId;
+    if (heroId === 'rico_tutorial') {
+      cta.dataset.action = cleared ? 'rico-mode-chooser' : 'battle-start';
+      if (ctaLabel) ctaLabel.textContent = cleared ? '対戦／受講 ▶' : '受講する ▶';
+    } else {
+      cta.dataset.action = 'battle-start';
+      if (ctaLabel) ctaLabel.textContent = cleared ? 'もう一度あの夜を ▶' : 'この卓につく ▶';
+    }
+  }
+  const sub = q('[data-bind="lb3Sub"]');
+  if (sub) {
+    const parts = [];
+    if (nextId && heroId !== 'rico_tutorial' && !cleared) {
+      parts.push(`<button class="lb3-sub-link" data-action="skip-stage" data-opponent="${heroId}" title="コインで勝利扱いにする">スキップ（${skipStageCost(opp)}コイン）</button>`);
+    }
+    const prevCleared = [...STAGE_ORDER].reverse().find(sid => sid !== heroId && save.clearedStages.includes(sid));
+    if (prevCleared) {
+      const po = OPPONENTS[prevCleared];
+      const act = prevCleared === 'rico_tutorial' ? 'rico-mode-chooser' : 'battle-start';
+      parts.push(`<button class="lb3-sub-link" data-action="${act}" data-opponent="${prevCleared}">${po.name}と再戦</button>`);
+    }
+    sub.innerHTML = parts.join('');
+  }
+
+  // ミミのひとりごと＋帰ってくる理由
+  const th = q('[data-bind="lb3MimiThought"]'); if (th) th.textContent = pick(LB3_MIMI_THOUGHTS);
+  const hooks = q('[data-bind="lb3Hooks"]');
+  if (hooks) {
+    const cg = (save.rewardCgSeen || []).length;
+    const lb = save.loginBonus || { lastDate: '', streak: 0 };
+    const claimed = lb.lastDate === mpTodayKey();
+    hooks.innerHTML = `
+      <div class="lb3-hook${claimed ? '' : ' is-hot'}">
+        <i class="lb3-hook-coin"></i>
+        <div class="lb3-hook-body"><b>ログインボーナス</b><small>${claimed ? `${lb.streak}日目 受取済み` : '本日分 受取OK！'}</small></div>
+      </div>
+      <button class="lb3-hook lb3-hook-cg" data-action="open-collection" title="ご褒美CGコレクションを見る">
+        <div class="lb3-hook-body"><b>ご褒美CG</b>
+          <span class="lb3-hook-meter"><i style="width:${Math.round(cg / 5 * 100)}%"></i></span>
+        </div>
+        <span class="v2-disp lb3-hook-count">${cg}/5</span>
+      </button>`;
+  }
 }
 
 // ロビー：リコ先輩の衣装バリエーション（assetsに置いた分だけ抽選対象になる）
@@ -6315,6 +6458,12 @@ function onAction(e) {
     case 'view-reward-cg': {
       const cgId = e.currentTarget?.dataset?.cgId;
       if (cgId) showRewardCgViewer(cgId);
+      break;
+    }
+    case 'lb3-toggle-audio': {
+      // ロビーv3：♪ボタンで音量パネルをポップオーバー表示
+      const p = document.querySelector('.lb3-audio-panel');
+      if (p) p.style.display = (p.style.display === 'none') ? '' : 'none';
       break;
     }
     case 'use-panyu-sense': usePanyuSense(); break;
