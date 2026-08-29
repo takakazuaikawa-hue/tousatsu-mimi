@@ -12036,7 +12036,7 @@ function triggerPsychBattle(qid) {
       </div>
       <div class="psych-opponent-line">
         <div class="psych-opponent-name">${state.opponentName}</div>
-        <div class="psych-opponent-quote">「${q.speech}」</div>
+        <div class="psych-opponent-quote${q.speech.length > 34 ? ' quote-long' : ''}">「${q.speech}」</div>
       </div>
     `;
     speechEl.classList.add('with-portrait');
@@ -12275,8 +12275,8 @@ function showPanyuClicker(totalTaps, onComplete) {
   ).join('');
   overlay.innerHTML = `
     <div class="panyu-bg-picker">${bgPicker}</div>
-    <img class="panyu-bg-char" src="assets/characters/panyu.png" alt=""
-         onerror="this.style.display='none'">
+    <img class="panyu-bg-char" src="assets/characters/panyu_reach.webp" alt=""
+         onerror="this.onerror=function(){this.style.display='none'};this.src='assets/characters/panyu.png';">
     <div class="panyu-clicker-label-top">タップ or ぐりぐり！ <small>両手でOK</small></div>
     <div class="panyu-clicker-pair">
       ${blobTemplate('panyu-blob-l')}
@@ -12291,6 +12291,22 @@ function showPanyuClicker(totalTaps, onComplete) {
   const comboEl = overlay.querySelector('.panyu-combo');
   let completed = false;
 
+  // 進行でミミの表情が変わる（差し出し→とろけ顔→ご満悦）。画像が無ければ何もしない
+  const PANYU_FACES = {
+    reach:  'assets/characters/panyu_reach.webp',
+    blush:  'assets/characters/panyu_blush.webp',
+    finish: 'assets/characters/panyu_finish.webp',
+  };
+  const panyuFaceOk = {};
+  Object.entries(PANYU_FACES).forEach(([k, src]) => { const im = new Image(); im.onload = () => { panyuFaceOk[k] = true; }; im.src = src; });
+  const setPanyuFace = (k) => {
+    const el = overlay.querySelector('.panyu-bg-char');
+    if (!el || !panyuFaceOk[k] || el.dataset.face === k) return;
+    el.dataset.face = k;
+    el.style.opacity = '0';
+    setTimeout(() => { el.src = PANYU_FACES[k]; el.style.opacity = ''; }, 200);
+  };
+
   const updateColor = () => {
     const ratio = tapped / totalTaps;
     // ピンク→赤→ゴールドへ変化
@@ -12299,6 +12315,7 @@ function showPanyuClicker(totalTaps, onComplete) {
     // プログレスリング更新
     const offset = 289 * (1 - ratio);
     ringFills.forEach(r => r.style.strokeDashoffset = offset);
+    if (ratio >= 0.5) setPanyuFace('blush');
   };
 
   const showCombo = (n) => {
@@ -12389,12 +12406,13 @@ function showPanyuClicker(totalTaps, onComplete) {
       blobs.forEach(b => b.classList.add('panyu-complete'));
       if (navigator.vibrate) navigator.vibrate([60, 30, 80, 30, 120]);
       for (let i = 0; i < 16; i++) spawnPanyuParticle(overlay);
+      setPanyuFace('finish'); // ご満悦の顔でフィニッシュ
       const label = overlay.querySelector('.panyu-clicker-label-top');
       if (label) label.innerHTML = '<span class="panyu-burst-text">✨ ぱにゅぱにゅ発動！ ✨</span>';
       setTimeout(() => {
         overlay.remove();
         if (onComplete) onComplete();
-      }, 900);
+      }, panyuFaceOk.finish ? 1400 : 900);
     }
   };
   // 外部（drag）からも呼べるよう公開
