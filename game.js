@@ -12332,9 +12332,9 @@ function showPanyuClicker(totalTaps, onComplete) {
   //   座標系：画像ピクセル [中心x, 中心y, 直径]。finish は玉を役目終了でフェードアウト。
   // 座標は配信アセット（1400x788 webp）のピクセル空間。構図は左右対称（中心x=700）
   const PANYU_CUPS = {
-    reach:  { l: [653, 497, 150], r: [745, 497, 150] },
-    blush:  { l: [653, 497, 150], r: [745, 497, 150] },
-    finish: null,
+    reach:  { l: [607, 645, 260], r: [795, 645, 260] },
+    blush:  { l: [607, 645, 260], r: [795, 645, 260] },
+    finish: { l: [607, 645, 260], r: [795, 645, 260] }, // 同構図なので完走演出中も胸に乗せたまま
   };
   const pairEl = overlay.querySelector('.panyu-clicker-pair');
   const alignPanyuBalls = () => {
