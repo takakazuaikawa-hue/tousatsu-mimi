@@ -532,25 +532,30 @@ function setMimiExpression(expr) {
   });
 }
 
-// 勝負所：ミミの表情が目まぐるしく入れ替わる「どっちだ…！」ルーレット。
-// パチスロのリールのように希望（smug/win）と不安（shock/sad）を行き来して結果を焦らす。
-// 結果確定側が setMimiExpression で上書きする前に必ず stopMimiFaceRoulette() を呼ぶこと。
-let _mimiRouletteTimer = null;
-function startMimiFaceRoulette(durationMs) {
-  stopMimiFaceRoulette();
-  const seq = ['shock', 'smug', 'sad', 'think', 'shock', 'win', 'sad', 'smug'];
-  const endAt = performance.now() + (durationMs || 1600);
-  let i = Math.floor(Math.random() * seq.length);
-  const tick = () => {
-    const remain = endAt - performance.now();
-    if (remain <= 0) { _mimiRouletteTimer = null; return; }
-    setMimiExpression(seq[i++ % seq.length]);
-    _mimiRouletteTimer = setTimeout(tick, remain > 800 ? 190 : 110); // 終盤ほど速く
+// 勝負どころ専用カットイン：接戦ショーダウンで「どっちだ…！」の専用一枚絵を帯で差し込む。
+// 表情ルーレットは安っぽいため廃止し、専用絵（mimi_clutch.webp）の演出に置き換えた。
+// 専用絵がまだ無い環境では img.onload が発火せず、静かに何も出ない（安全側）。
+let _clutchShownAt = 0;
+function showClutchCutIn(durationMs) {
+  const now = performance.now();
+  if (now - _clutchShownAt < 3000) return; // 連発防止
+  _clutchShownAt = now;
+  document.querySelectorAll('.clutch-cutin').forEach(e => e.remove());
+  const probe = new Image();
+  probe.onload = () => {
+    const ov = document.createElement('div');
+    ov.className = 'clutch-cutin';
+    ov.innerHTML = `
+      <div class="clutch-band">
+        <img src="assets/characters/mimi_clutch.webp" alt="">
+        <div class="clutch-text"><span class="v2-disp clutch-en">SHOWDOWN</span><span class="clutch-jp">勝負……！</span></div>
+      </div>`;
+    document.body.appendChild(ov);
+    mpSfx('reach');
+    if (navigator.vibrate) navigator.vibrate([30, 60, 30, 60, 90]);
+    setTimeout(() => { ov.classList.add('out'); setTimeout(() => ov.remove(), 350); }, durationMs || 1300);
   };
-  tick();
-}
-function stopMimiFaceRoulette() {
-  if (_mimiRouletteTimer) { clearTimeout(_mimiRouletteTimer); _mimiRouletteTimer = null; }
+  probe.src = 'assets/characters/mimi_clutch.webp';
 }
 
 // ── 相手キャラの表情差分システム（フォルダに実在する差分だけを結線）──
@@ -5767,15 +5772,11 @@ function revealCommunity(cards, opts) {
   if (tier === 'hot') state.mimiExpr = 'shock';
   render();
   startTeaseHeartbeat(tier);
-  // 激アツの溜め中はミミの表情ルーレット（この1枚で天国か地獄か）
-  if (tier === 'hot') startMimiFaceRoulette(2400);
   if (navigator.vibrate) navigator.vibrate(tier === 'hot' ? [40, 90, 40, 90, 60] : [30, 120, 30]);
   waitOrSkip(tier === 'hot' ? 2400 : 1100).then(() => {
     stopTeaseHeartbeat();
-    stopMimiFaceRoulette();
     document.body.classList.remove('is-tease-hot', 'is-tease-reach');
     if (state.screen !== 'battle') return;
-    if (tier === 'hot') state.mimiExpr = 'shock'; // めくれる瞬間は息をのむ顔で固定
     state.pendingRevealFrom = -1;
     if (state.__dealSeen) state.__dealSeen.community = from; // めくりアニメを出す
     applyText();
@@ -11550,7 +11551,8 @@ function showAllInCutIn(side, amount) {
     <div class="allin-streak allin-streak-2"></div>
     <div class="allin-burst"></div>
     <div class="allin-portrait">
-      <img src="assets/characters/${imgKey}_default.png" alt="${name}" onerror="window.assetFallback(this,'${imgKey}')">
+      <img src="assets/characters/${isPlayer ? 'mimi_allin.webp' : imgKey + '_default.png'}" alt="${name}"
+           onerror="this.onerror=function(){window.assetFallback(this,'${imgKey}')};this.src='assets/characters/${imgKey}_default.png';">
     </div>
     <div class="allin-text-wrap">
       <div class="allin-kanji">全</div>
@@ -12323,6 +12325,62 @@ function showPanyuClicker(totalTaps, onComplete) {
   const comboEl = overlay.querySelector('.panyu-combo');
   let completed = false;
 
+  // ★仕様：玉＝ミミの左右の胸。背景（左右対称の真正面構図）の表示矩形から
+  //   画像内の胸座標をスクリーン座標へ写像して玉を配置し、玉のテクスチャも
+  //   同じ画像から同倍率で切り出す（背景と地続きのぷにぷに）。
+  //   リサイズ・表情差し替えのたびに再計算するので常にズレない。
+  //   座標系：画像ピクセル [中心x, 中心y, 直径]。finish は玉を役目終了でフェードアウト。
+  // 座標は配信アセット（1400x788 webp）のピクセル空間。構図は左右対称（中心x=700）
+  const PANYU_CUPS = {
+    reach:  { l: [653, 497, 150], r: [745, 497, 150] },
+    blush:  { l: [653, 497, 150], r: [745, 497, 150] },
+    finish: null,
+  };
+  const pairEl = overlay.querySelector('.panyu-clicker-pair');
+  const alignPanyuBalls = () => {
+    const img = overlay.querySelector('.panyu-bg-char');
+    if (!img || !img.naturalWidth) return;
+    const cups = PANYU_CUPS[img.dataset.face || 'reach'];
+    if (!cups) { blobs.forEach(b => b.style.opacity = '0'); return; }
+    blobs.forEach(b => b.style.opacity = '');
+    if (pairEl) Object.assign(pairEl.style, { position: 'absolute', inset: '0', pointerEvents: 'none' });
+    const box = img.getBoundingClientRect();
+    const ov = overlay.getBoundingClientRect();
+    const s = Math.min(box.width / img.naturalWidth, box.height / img.naturalHeight);
+    const ox = box.left - ov.left + (box.width - img.naturalWidth * s) / 2;
+    const oy = box.top - ov.top + (box.height - img.naturalHeight * s) / 2;
+    [['l', blobs[0]], ['r', blobs[1]]].forEach(([k, blob]) => {
+      if (!blob || !cups[k]) return;
+      const [cx, cy, dImg] = cups[k];
+      const d = Math.max(90, dImg * s);
+      Object.assign(blob.style, {
+        position: 'absolute', margin: '0',
+        minWidth: '0', minHeight: '0', maxWidth: 'none', maxHeight: 'none',
+        width: d + 'px', height: d + 'px',
+        left: (ox + cx * s - d / 2) + 'px',
+        top: (oy + cy * s - d / 2) + 'px',
+        pointerEvents: 'auto',
+      });
+      // 中の数字・ラベルも玉の大きさに合わせて縮小
+      const cnt = blob.querySelector('.panyu-clicker-count');
+      if (cnt) cnt.style.fontSize = Math.round(d * 0.38) + 'px';
+      const sub = blob.querySelector('.panyu-clicker-sublabel');
+      if (sub) sub.style.fontSize = Math.round(d * 0.11) + 'px';
+      try {
+        const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
+        cv.getContext('2d').drawImage(img, cx - dImg / 2, cy - dImg / 2, dImg, dImg, 0, 0, 256, 256);
+        blob.style.background = `url(${cv.toDataURL()}) center/cover no-repeat`;
+      } catch (_) { /* 切り出せない環境では既定のCSSテクスチャのまま */ }
+    });
+  };
+  const panyuBgImg = overlay.querySelector('.panyu-bg-char');
+  if (panyuBgImg) {
+    if (panyuBgImg.complete && panyuBgImg.naturalWidth) alignPanyuBalls();
+    panyuBgImg.addEventListener('load', alignPanyuBalls);
+  }
+  const onPanyuResize = () => alignPanyuBalls();
+  window.addEventListener('resize', onPanyuResize);
+
   // 進行でミミの表情が変わる（差し出し→とろけ顔→ご満悦）。画像が無ければ何もしない
   const PANYU_FACES = {
     reach:  'assets/characters/panyu_reach.webp',
@@ -12442,6 +12500,7 @@ function showPanyuClicker(totalTaps, onComplete) {
       const label = overlay.querySelector('.panyu-clicker-label-top');
       if (label) label.innerHTML = '<span class="panyu-burst-text">✨ ぱにゅぱにゅ発動！ ✨</span>';
       setTimeout(() => {
+        window.removeEventListener('resize', onPanyuResize);
         overlay.remove();
         if (onComplete) onComplete();
       }, panyuFaceOk.finish ? 1400 : 900);
@@ -13032,9 +13091,12 @@ function showdown() {
     mpSfx('flip');
     render();
     if (T.tense) { document.body.classList.add('is-tease-reach'); startTeaseHeartbeat('reach'); }
-    // 接戦 or オールイン：結果が出るまでミミの表情ルーレット（勝つか負けるかわからない顔）
+    // 接戦 or オールイン：息をのむ顔で固定し、専用の勝負カットインを差し込む
     const isAllInShowdown = state.playerChips === 0 || state.opponentChips === 0;
-    if (T.tense || isAllInShowdown) startMimiFaceRoulette(Math.max(600, T.call - T.flip - 120));
+    if (T.tense || isAllInShowdown) {
+      setMimiExpression('shock');
+      showClutchCutIn(Math.max(900, T.call - T.flip - 250));
+    }
   }, T.flip);
 
   setTimeout(() => {
@@ -13046,7 +13108,7 @@ function showdown() {
     if (winner === 'player') state.mimiThought = `「${pEv.name}……勝った！」`;
     else if (winner === 'opponent') state.mimiThought = `「${oEv.name}……負けた……」`;
     else state.mimiThought = '「引き分けか……」';
-    stopMimiFaceRoulette();
+    document.querySelectorAll('.clutch-cutin').forEach(e => e.remove()); // 結果が出たら勝負帯は畳む
     setMimiExpression(winner === 'player' ? 'win' : winner === 'opponent' ? 'sad' : 'default');
     setOpponentExpression(winner === 'opponent' ? 'pleased' : winner === 'player' ? 'defeat' : 'default');
     render();
@@ -13679,7 +13741,7 @@ const RANK_THRESHOLDS = [
 function endBattle() {
   document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
   cancelTease(); // 溜め演出も必ず解除
-  stopMimiFaceRoulette(); // 表情ルーレットも画面離脱で必ず解除
+  document.querySelectorAll('.clutch-cutin').forEach(e => e.remove()); // 勝負帯も画面離脱で必ず解除
   // セーブ反映：ぱにゅぱにゅ初回無料を消費したか
   if (state.panyuSenseFreeUsed) save.panyuSenseFreeUsed = true;
 

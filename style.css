@@ -14576,3 +14576,26 @@ body.is-tease-hot .card.tease-card::after {
 .battle-screen.v2 header.top-hud { position: relative; z-index: 35; }
 /* .v2-hand は後段ルールで z:2 に落ち、同 z の相手立ち絵（DOM順で後）に敗けていた。ヘッダーごと引き上げる */
 .battle-screen.v2 .v2-hand { z-index: 36; }
+
+/* ============================================================
+   勝負カットイン（clutch）：接戦ショーダウンで専用一枚絵の帯が滑り込む。
+   表情ルーレットの置き換え。鼓動する金縁の斜め帯＋SHOWDOWNタイポ
+   ============================================================ */
+.clutch-cutin { position: fixed; inset: 0; z-index: 60; pointer-events: none; display: flex; align-items: center; background: rgba(4,1,6,.45); animation: clutchDim .25s ease; }
+.clutch-band {
+  position: relative; width: 110%; height: 240px; margin-left: -5%;
+  transform: skewY(-2.3deg); overflow: hidden; background: #14060a;
+  border-top: 3px solid #f5d77a; border-bottom: 3px solid #f5d77a;
+  box-shadow: 0 20px 60px rgba(0,0,0,.7), 0 0 44px rgba(200,37,58,.5);
+  animation: clutchIn .32s cubic-bezier(.2,.9,.3,1), clutchBeat 1s ease-in-out .32s infinite;
+}
+.clutch-band img { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; }
+.clutch-text { position: absolute; right: 64px; bottom: 16px; text-align: right; }
+.clutch-en { display: block; font-size: 56px; line-height: 1; color: #f5d77a; letter-spacing: .18em; text-shadow: 0 0 26px rgba(245,215,122,.65), 0 4px 10px rgba(0,0,0,.8); }
+.clutch-jp { display: block; margin-top: 4px; font-size: 19px; color: #fff; font-weight: 900; letter-spacing: .34em; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+.clutch-cutin.out { animation: clutchOut .35s ease forwards; }
+@keyframes clutchDim { from { opacity: 0; } }
+@keyframes clutchIn { from { transform: translateX(55%) skewY(-2.3deg); opacity: 0; } }
+@keyframes clutchOut { to { opacity: 0; } }
+@keyframes clutchBeat { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.14); } }
+@media (prefers-reduced-motion: reduce) { .clutch-band { animation: none; } }
