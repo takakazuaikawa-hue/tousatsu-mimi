@@ -14832,7 +14832,7 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
 .lobby-screen.v5 .lb4-rico-bubble { left: 262px; top: 78px; max-width: 240px; }
 
 .lb5-cards { position: absolute; left: 352px; right: 20px; top: 44px; bottom: 78px; display: flex; align-items: flex-end; justify-content: center; gap: 13px; z-index: 2; }
-.lb5-card { position: relative; flex: 1 1 0; min-width: 0; max-width: 178px; height: 430px; background: linear-gradient(180deg, rgba(52,20,28,.82) 0%, rgba(24,9,14,.9) 100%); box-shadow: inset 0 0 0 1px rgba(245,215,122,.4), 0 22px 40px rgba(0,0,0,.65); overflow: hidden; transition: transform .2s ease, box-shadow .25s ease, filter .25s ease; }
+.lb5-card { position: relative; flex: 1 1 0; min-width: 0; max-width: 178px; height: 430px; background: linear-gradient(180deg, rgba(86,36,44,.78) 0%, rgba(42,18,24,.88) 100%); box-shadow: inset 0 0 0 1px rgba(245,215,122,.4), 0 22px 40px rgba(0,0,0,.65); overflow: hidden; transition: transform .2s ease, box-shadow .25s ease, filter .25s ease; }
 .lb5-card::before { content: ''; position: absolute; inset: 5px; border: 1px solid rgba(245,215,122,.22); pointer-events: none; z-index: 4; }
 .lb5-card:hover { transform: translateY(-10px); box-shadow: inset 0 0 0 1px rgba(245,215,122,.7), 0 30px 50px rgba(0,0,0,.75), 0 0 26px rgba(245,215,122,.25); }
 .lb5-card.is-next { max-width: 196px; height: 468px; box-shadow: inset 0 0 0 2px #f5d77a, 0 0 26px rgba(245,215,122,.4), 0 26px 46px rgba(0,0,0,.7); animation: doorBeckon 2.6s ease-in-out infinite; }
@@ -14851,9 +14851,9 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
 .lb5-card-portrait:disabled { cursor: default; }
 .lb5-card-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: top center; transition: transform .3s cubic-bezier(.2,.8,.3,1); }
 .lb5-card:hover .lb5-card-portrait img { transform: scale(1.05); }
-.lb5-card.is-locked .lb5-card-portrait img { filter: brightness(.3) saturate(.45); }
+.lb5-card.is-locked .lb5-card-portrait img { filter: brightness(.46) saturate(.55); }
 
-.lb5-card-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 30px 10px 10px; background: linear-gradient(180deg, rgba(20,8,12,0) 0%, rgba(20,8,12,.9) 32%); display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
+.lb5-card-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 30px 10px 10px; background: linear-gradient(180deg, rgba(28,12,16,0) 0%, rgba(28,12,16,.88) 32%); display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
 .lb5-card-foot button { pointer-events: auto; }
 .lb5-card-title { display: flex; align-items: baseline; gap: 7px; }
 .lb5-card-no { font-size: 19px; color: rgba(245,215,122,.65); }
@@ -14881,11 +14881,11 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
 /* v5背景：新規生成の「グランドクロック・カジノシアター」ロビー（生成絵をそのまま主役に） */
 .lobby-screen.v5 .bg-lobby {
   background:
-    linear-gradient(180deg, rgba(11,5,16,.22) 0%, rgba(11,5,16,.02) 34%, rgba(11,5,16,.55) 100%),
+    linear-gradient(180deg, rgba(11,5,16,.5) 0%, rgba(11,5,16,.1) 16%, rgba(11,5,16,0) 42%, rgba(11,5,16,.42) 100%),
     url('assets/backgrounds/bg_lobby_clock.jpg') center 24% / cover no-repeat,
     #14060a;
   background-blend-mode: normal;
   filter: none;
 }
-.lobby-screen.v5 .bg-lobby { filter: brightness(1.14) saturate(1.06); }
+.lobby-screen.v5 .bg-lobby { filter: none; }
 .lobby-screen.v5 .bg-lobby::after { display: none; }
