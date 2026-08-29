@@ -532,6 +532,27 @@ function setMimiExpression(expr) {
   });
 }
 
+// 勝負所：ミミの表情が目まぐるしく入れ替わる「どっちだ…！」ルーレット。
+// パチスロのリールのように希望（smug/win）と不安（shock/sad）を行き来して結果を焦らす。
+// 結果確定側が setMimiExpression で上書きする前に必ず stopMimiFaceRoulette() を呼ぶこと。
+let _mimiRouletteTimer = null;
+function startMimiFaceRoulette(durationMs) {
+  stopMimiFaceRoulette();
+  const seq = ['shock', 'smug', 'sad', 'think', 'shock', 'win', 'sad', 'smug'];
+  const endAt = performance.now() + (durationMs || 1600);
+  let i = Math.floor(Math.random() * seq.length);
+  const tick = () => {
+    const remain = endAt - performance.now();
+    if (remain <= 0) { _mimiRouletteTimer = null; return; }
+    setMimiExpression(seq[i++ % seq.length]);
+    _mimiRouletteTimer = setTimeout(tick, remain > 800 ? 190 : 110); // 終盤ほど速く
+  };
+  tick();
+}
+function stopMimiFaceRoulette() {
+  if (_mimiRouletteTimer) { clearTimeout(_mimiRouletteTimer); _mimiRouletteTimer = null; }
+}
+
 // ── 相手キャラの表情差分システム（フォルダに実在する差分だけを結線）──
 // 抽象ムード → キャラ別の実ファイル名。存在しない組み合わせは default にフォールバック。
 //   polka  : blush（照れ/羞恥）, panic（動揺）
@@ -5746,11 +5767,15 @@ function revealCommunity(cards, opts) {
   if (tier === 'hot') state.mimiExpr = 'shock';
   render();
   startTeaseHeartbeat(tier);
+  // 激アツの溜め中はミミの表情ルーレット（この1枚で天国か地獄か）
+  if (tier === 'hot') startMimiFaceRoulette(2400);
   if (navigator.vibrate) navigator.vibrate(tier === 'hot' ? [40, 90, 40, 90, 60] : [30, 120, 30]);
   waitOrSkip(tier === 'hot' ? 2400 : 1100).then(() => {
     stopTeaseHeartbeat();
+    stopMimiFaceRoulette();
     document.body.classList.remove('is-tease-hot', 'is-tease-reach');
     if (state.screen !== 'battle') return;
+    if (tier === 'hot') state.mimiExpr = 'shock'; // めくれる瞬間は息をのむ顔で固定
     state.pendingRevealFrom = -1;
     if (state.__dealSeen) state.__dealSeen.community = from; // めくりアニメを出す
     applyText();
@@ -6274,9 +6299,16 @@ function onAction(e) {
       showEpisodeTitle(data.episode, null);
       break;
     case 'go-intermission': {
-      // リザルトの主ボタン「幕間へ」→会話→ご褒美CG開放。終わったら通常の勝利ボタン群を組み立て直す
+      // リザルトの主ボタン「幕間へ」→会話→ご褒美CG開放。終わったら通常の勝利ボタン群を組み立て直す。
+      // ヴェルベットだけは幕間の流れ（「このあとはご褒美の時間」）のままエンディングへ直行する
       const oid = data.opponent || state.opponentId;
-      showIntermission(oid, () => { renderWonResultButtons(); });
+      showIntermission(oid, () => {
+        if (oid === 'velvet') {
+          showEpisodeTitle('ending', () => { state.screen = 'ending'; render(); });
+        } else {
+          renderWonResultButtons();
+        }
+      });
       break;
     }
     case 'view-reward-cg': {
@@ -13000,6 +13032,9 @@ function showdown() {
     mpSfx('flip');
     render();
     if (T.tense) { document.body.classList.add('is-tease-reach'); startTeaseHeartbeat('reach'); }
+    // 接戦 or オールイン：結果が出るまでミミの表情ルーレット（勝つか負けるかわからない顔）
+    const isAllInShowdown = state.playerChips === 0 || state.opponentChips === 0;
+    if (T.tense || isAllInShowdown) startMimiFaceRoulette(Math.max(600, T.call - T.flip - 120));
   }, T.flip);
 
   setTimeout(() => {
@@ -13011,6 +13046,7 @@ function showdown() {
     if (winner === 'player') state.mimiThought = `「${pEv.name}……勝った！」`;
     else if (winner === 'opponent') state.mimiThought = `「${oEv.name}……負けた……」`;
     else state.mimiThought = '「引き分けか……」';
+    stopMimiFaceRoulette();
     setMimiExpression(winner === 'player' ? 'win' : winner === 'opponent' ? 'sad' : 'default');
     setOpponentExpression(winner === 'opponent' ? 'pleased' : winner === 'player' ? 'defeat' : 'default');
     render();
@@ -13643,6 +13679,7 @@ const RANK_THRESHOLDS = [
 function endBattle() {
   document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
   cancelTease(); // 溜め演出も必ず解除
+  stopMimiFaceRoulette(); // 表情ルーレットも画面離脱で必ず解除
   // セーブ反映：ぱにゅぱにゅ初回無料を消費したか
   if (state.panyuSenseFreeUsed) save.panyuSenseFreeUsed = true;
 
@@ -13860,7 +13897,9 @@ function endBattle() {
         `;
       btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
     } else if (btns) {
-      const showIntermissionBtn = won && firstClearForIntermission &&
+      // 初回クリア時に加え、幕間を見ないままクリア済みになった古いセーブでも再戦勝利で見られるようにする
+      const intermissionUnseen = !(save.rewardCgSeen || []).includes(state.opponentId);
+      const showIntermissionBtn = won && (firstClearForIntermission || intermissionUnseen) &&
         state.opponentId !== 'velvet' && !!INTERMISSIONS[state.opponentId];
       if (showIntermissionBtn) {
         btns.innerHTML = `
@@ -13894,7 +13933,11 @@ function endBattle() {
     triggerVelvetVictoryEffect();
     const btns = document.querySelector('[data-bind="resultButtons"]');
     if (btns) {
-      btns.innerHTML = `
+      // 初回クリア（または幕間未見の古いセーブ）はまず幕間（ヴェルベットの敗北の美学）→ その足でエンディングへ。
+      // 幕間を見たあとの勝利は従来どおり即エンディングボタン。
+      btns.innerHTML = (firstClearForIntermission || !(save.rewardCgSeen || []).includes('velvet')) ? `
+        <button class="btn btn-primary result-main-btn" data-action="go-intermission" data-opponent="velvet"><span>幕間へ</span><span>→</span></button>
+      ` : `
         <button class="btn btn-primary result-main-btn" data-action="go-ending"><span>✨ エンディングへ ✨</span></button>
         <div class="result-sub-buttons">
           <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
