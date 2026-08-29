@@ -14715,3 +14715,110 @@ button.lb3-hook { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) {
   .lb3-hero-img, .lb3-cone, .lb3-cta::after, .lb3-rail-node.is-current { animation: none !important; }
 }
+
+/* ============================================================
+   ロビー v4「卓のカルーセル」2026-08-29
+   左＝リコ先輩フルサイズ（衣装復活）／中央＝卓の向こうに選択中の相手／
+   ◀▶と顔ドットで切替／手前にミミの後ろ姿／色は黒×金に統一（深紅は要所のみ）
+   ============================================================ */
+/* リコ先輩：v2の立ち位置を復活しつつバーの上に載せる */
+.lobby-screen.v4 .lobby-rico-standing { left: -14px; bottom: 56px; width: 400px; height: 92%; z-index: 3; }
+.lb4-rico-bubble { position: absolute; left: 302px; top: 92px; max-width: 260px; z-index: 5; background: rgba(255,253,243,.97); color: #14081d; font-size: 12.5px; font-weight: 700; line-height: 1.6; padding: 10px 14px; border-radius: 2px 14px 14px 14px; box-shadow: 0 10px 24px rgba(0,0,0,.5); }
+
+/* シーン（卓カルーセル） */
+.lb4-scene { position: absolute; left: 380px; right: 0; top: 0; bottom: 64px; z-index: 2; }
+.lb4-dots { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; z-index: 7; }
+.lb4-dot { position: relative; width: 44px; height: 44px; padding: 0; border: 1px solid rgba(245,215,122,.35); border-radius: 50%; overflow: hidden; background: #120508; cursor: pointer; flex-shrink: 0; transition: transform .15s ease, border-color .2s ease, box-shadow .2s ease; -webkit-tap-highlight-color: transparent; }
+.lb4-dot img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.lb4-dot:hover { transform: translateY(-2px); border-color: rgba(245,215,122,.7); }
+.lb4-dot.is-cleared img { filter: saturate(.7) brightness(.75); }
+.lb4-dot.is-locked img { filter: brightness(.16) saturate(.3); }
+.lb4-dot.is-sel { width: 56px; height: 56px; border: 2px solid #f5d77a; box-shadow: 0 0 16px rgba(245,215,122,.5); }
+.lb4-dot.is-next { animation: lb4DotNext 2.2s ease-in-out infinite; }
+@keyframes lb4DotNext { 0%, 100% { border-color: rgba(245,215,122,.5); box-shadow: 0 0 0 rgba(245,215,122,0); } 50% { border-color: #ffe9a8; box-shadow: 0 0 14px rgba(245,215,122,.7); } }
+.lb4-dot-check { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; border-radius: 50%; background: #d9a93a; color: #14081d; font-size: 10px; font-style: normal; display: flex; align-items: center; justify-content: center; }
+
+.lb4-typo { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); font-size: 120px; line-height: 1; letter-spacing: .08em; color: rgba(245,215,122,.1); white-space: nowrap; pointer-events: none; }
+
+.lb4-opp { position: absolute; left: 50%; bottom: 236px; transform: translateX(-50%); height: 424px; width: auto; max-width: none; z-index: 2; cursor: pointer; filter: drop-shadow(0 20px 36px rgba(0,0,0,.85)); animation: lb4Breathe 4.8s ease-in-out infinite; }
+.lb4-opp.is-locked { filter: brightness(.14) saturate(.35) drop-shadow(0 20px 36px rgba(0,0,0,.85)); cursor: default; }
+@keyframes lb4Breathe { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(4px); } }
+.lb4-opp-shadow { position: absolute; left: 50%; bottom: 250px; transform: translateX(-50%); width: 300px; height: 34px; border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,.55), transparent 70%); z-index: 1; }
+
+/* 卓：木縁＋深紅フェルト */
+.lb4-table { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); width: 600px; height: 188px; z-index: 3; }
+.lb4-table-felt { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(ellipse at 50% 32%, #56101e 0%, #3a0a14 55%, #26060d 100%); box-shadow: inset 0 0 0 3px rgba(245,215,122,.5), inset 0 0 0 6px rgba(20,8,6,.9), inset 0 14px 30px rgba(0,0,0,.5), 0 0 0 10px #1e0c08, 0 0 0 12px rgba(245,215,122,.32), 0 30px 48px rgba(0,0,0,.75); }
+.lb4-table-felt::after { content: ''; position: absolute; left: 10%; right: 10%; top: 6%; height: 34%; border-radius: 50%; background: linear-gradient(180deg, rgba(255,240,210,.08), transparent); }
+.lb4-table-cards { position: absolute; left: 33%; top: 44%; display: flex; gap: 6px; }
+.lb4-table-cards i { width: 30px; height: 42px; border-radius: 4px; background: linear-gradient(135deg, #6b1020 0%, #4a0b14 100%); box-shadow: inset 0 0 0 1px rgba(245,215,122,.5), inset 0 0 0 3px rgba(255,253,243,.85), 0 3px 6px rgba(0,0,0,.5); }
+.lb4-table-cards i:first-child { transform: rotate(-9deg); }
+.lb4-table-cards i:last-child { transform: rotate(7deg) translateY(-3px); }
+.lb4-table-chips { position: absolute; right: 26%; top: 40%; display: flex; gap: 5px; align-items: flex-end; }
+.lb4-table-chips i { width: 22px; border-radius: 3px; background: repeating-linear-gradient(180deg, #b8892e 0 3px, #8a6222 3px 6px); box-shadow: inset 0 0 0 1px rgba(255,233,168,.4), 0 3px 6px rgba(0,0,0,.5); }
+.lb4-table-chips i:nth-child(1) { height: 18px; }
+.lb4-table-chips i:nth-child(2) { height: 26px; background: repeating-linear-gradient(180deg, #a81c30 0 3px, #7a1220 3px 6px); }
+.lb4-table-chips i:nth-child(3) { height: 14px; }
+
+/* 真鍮プレート */
+.lb4-plate { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; padding: 8px 18px; background: linear-gradient(180deg, rgba(26,12,8,.96), rgba(14,6,5,.96)); border: 1px solid rgba(245,215,122,.55); box-shadow: inset 0 1px 0 rgba(255,233,168,.25), 0 10px 22px rgba(0,0,0,.6); white-space: nowrap; }
+.lb4-plate-no { font-size: 26px; line-height: 1; color: rgba(245,215,122,.65); }
+.lb4-plate-main { display: flex; flex-direction: column; }
+.lb4-plate-name { font-size: 17px; font-weight: 900; color: #f7eecf; }
+.lb4-plate-name.is-dim { color: #8a7c6a; }
+.lb4-plate-theme { font-size: 10px; color: #c4b89a; }
+.lb4-plate-prize { display: flex; align-items: baseline; gap: 6px; padding-left: 14px; border-left: 1px solid rgba(245,215,122,.3); }
+.lb4-plate-prize i { font-size: 10px; letter-spacing: .3em; color: #c4b89a; font-style: normal; }
+.lb4-plate-prize b { font-size: 24px; line-height: 1; color: #ffe9a8; text-shadow: 0 0 14px rgba(245,215,122,.6); }
+.lb4-plate-prize small { font-size: 9px; color: #c4b89a; }
+.lb4-plate-lock { color: #8a7c6a; display: flex; align-items: center; }
+
+.lb4-taunt { position: absolute; left: calc(50% + 128px); top: 148px; z-index: 4; background: rgba(255,253,243,.97); color: #14081d; font-size: 12.5px; font-weight: 900; padding: 8px 13px; border-radius: 14px 14px 14px 2px; box-shadow: 0 8px 20px rgba(0,0,0,.5); transform: rotate(1.5deg); }
+.lb4-taunt:empty { display: none; }
+
+/* ◀▶ 矢印 */
+.lb4-arrow { position: absolute; top: 44%; width: 56px; height: 56px; border-radius: 50%; border: 1px solid rgba(245,215,122,.5); background: rgba(14,5,9,.72); color: #f5d77a; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 9; transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease; -webkit-tap-highlight-color: transparent; }
+.lb4-arrow:hover { border-color: #ffe9a8; box-shadow: 0 0 18px rgba(245,215,122,.4); transform: scale(1.06); }
+.lb4-arrow:active { transform: scale(.96); }
+.lb4-arrow-l { left: 36px; }
+.lb4-arrow-r { right: 36px; }
+
+/* CTA（金はここに集中させる） */
+.lb4-cta { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%) skewX(-10deg); width: 320px; height: 56px; border: 0; background: linear-gradient(90deg, #f5d77a, #ffdf9a, #d9b35a); box-shadow: 0 0 26px rgba(245,215,122,.45), 0 5px 0 rgba(0,0,0,.4); overflow: hidden; cursor: pointer; font-family: inherit; z-index: 6; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.lb4-cta > span { display: inline-block; font-size: 20px; font-weight: 900; letter-spacing: .26em; color: #14081d; transform: skewX(10deg); }
+.lb4-cta::after { content: ''; position: absolute; top: 0; bottom: 0; width: 60px; background: rgba(255,255,255,.5); transform: translateX(-140%) skewX(-18deg); animation: lb3CtaShine 3s ease-in-out infinite; }
+.lb4-cta:active { filter: brightness(.92); }
+.lb4-cta.is-disabled { background: rgba(30,14,18,.9); box-shadow: inset 0 0 0 1px rgba(200,37,58,.5); cursor: default; }
+.lb4-cta.is-disabled > span { color: #8a6a70; }
+.lb4-cta.is-disabled::after { display: none; }
+.lb4-sub { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); z-index: 6; }
+
+/* ミミの後ろ姿（肩越し） */
+.lb4-mimi-back { position: absolute; right: -24px; bottom: 42px; height: 370px; width: auto; max-width: none; z-index: 8; pointer-events: none; filter: brightness(.92) drop-shadow(0 16px 30px rgba(0,0,0,.9)); }
+
+/* 帰ってくる理由：右上に控えめ */
+.lb4-hooks { position: absolute; right: 18px; top: 8px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; z-index: 7; }
+.lb4-hook { display: flex; align-items: center; gap: 7px; background: rgba(14,5,9,.82); border: 1px solid rgba(245,215,122,.35); border-radius: 3px; padding: 5px 10px; color: #c4b89a; font-size: 11px; font-weight: 700; font-family: inherit; cursor: default; -webkit-tap-highlight-color: transparent; }
+button.lb4-hook { cursor: pointer; }
+button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
+.lb4-hook.is-hot { border-color: rgba(255,233,168,.8); color: #ffe9a8; box-shadow: 0 0 12px rgba(245,215,122,.3); }
+.lb4-hook .lb3-hook-coin { width: 16px; height: 16px; }
+.lb4-hook-meter { width: 74px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; }
+.lb4-hook-meter i { display: block; height: 100%; background: linear-gradient(90deg, #d9a93a, #ffe9a8); }
+.lb4-hook b { font-size: 13px; color: #ffe9a8; }
+
+/* バー：黒×金に統一。色は下辺2pxのアクセントだけ */
+.lb4-bar .lb4-bar-btn { width: 200px; background: rgba(22,9,13,.92); box-shadow: inset 0 0 0 1px rgba(245,215,122,.32); color: #f0e2b8; position: relative; }
+.lb4-bar .lb4-bar-btn .lb3-bar-sub { color: #9a8c78; }
+.lb4-bar .lb4-bar-btn::after { content: ''; position: absolute; left: 10%; right: 10%; bottom: 4px; height: 2px; border-radius: 1px; }
+.lb4-ac-red::after { background: rgba(200,37,58,.85); }
+.lb4-ac-gold::after { background: rgba(217,169,58,.85); }
+.lb4-ac-pink::after { background: rgba(255,158,194,.7); }
+.lb4-bar .lb4-bar-audio { width: 46px; color: #c4b89a; }
+.lb4-bar .lb4-bar-audio::after { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lb4-opp, .lb4-dot.is-next, .lb4-cta::after { animation: none !important; }
+}
+
+/* 幕間の顔窓：全身絵時代の2.1倍ズームを廃止（顔クロップ assets/ui/face_* をそのまま表示） */
+.ims-dlg-face img { transform: none !important; object-position: center !important; }

@@ -3325,11 +3325,12 @@ function showIntermission(opponentId, onDone) {
   let phase = 'dialogue'; // 'dialogue' | 'cg'
 
   function speakerMeta(speaker) {
-    if (speaker === 'mimi') return { name: 'ミミ', img: 'assets/characters/mimi_default.png', side: 'mimi' };
-    if (speaker === 'rico') return { name: 'リコ先輩', img: 'assets/characters/rico_default.png', side: 'rico' };
+    // 顔窓は小さい丸なので、全身絵ではなく顔クロップ（assets/ui/face_*）を使う
+    if (speaker === 'mimi') return { name: 'ミミ', img: 'assets/ui/face_mimi.webp', side: 'mimi' };
+    if (speaker === 'rico') return { name: 'リコ先輩', img: 'assets/ui/face_rico.webp', side: 'rico' };
     const o = OPPONENTS[speaker];
     const key = (o && o.imgKey) || speaker;
-    return { name: o ? o.name : oppName, img: `assets/characters/${key}_default.png`, side: 'opp' };
+    return { name: o ? o.name : oppName, img: `assets/ui/face_${key}.webp`, side: 'opp' };
   }
 
   function renderLine() {
@@ -3550,7 +3551,7 @@ function lobbyNextStageId() {
   return STAGE_ORDER.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid)) || null;
 }
 
-function renderLobbyV3() {
+function renderLobbyV3__unused() { // 旧v3（ヒーローステージ）。v4カルーセルに置換済み・参照なし
   const q = sel => document.querySelector(sel);
   const nextId = lobbyNextStageId();
   const heroId = nextId || 'velvet'; // 全クリア後はヴェルベット再戦が今夜の演目
@@ -3653,6 +3654,120 @@ function renderLobbyV3() {
         </div>
         <span class="v2-disp lb3-hook-count">${cg}/5</span>
       </button>`;
+  }
+}
+
+// ===== ロビー v4「卓のカルーセル」 =====
+// v3への指摘（比率が悪い／切替が直感的でない／没入感がない／色が多すぎ／リコの衣装が消えた）を全て反映：
+// 左＝リコ先輩フルサイズ（衣装ランダム＋衣装ビューア導線を復活）／中央＝本物の卓の向こうに選択中の相手／
+// 切替は◀▶矢印＋上部の顔ドット（施錠中も覗ける＝予告）／手前にミミの後ろ姿（肩越し視点）／色は黒×金に統一。
+const LB4_LOCK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
+
+function renderLobbyV3() {
+  const q = sel => document.querySelector(sel);
+  const nextId = lobbyNextStageId();
+  if (!state.lobbySel || !STAGE_ORDER.includes(state.lobbySel)) state.lobbySel = nextId || 'velvet';
+  const heroId = state.lobbySel;
+  const opp = OPPONENTS[heroId];
+  if (!opp) return;
+  const cleared = save.clearedStages.includes(heroId);
+  const unlocked = isStageUnlocked(heroId);
+  const pre = LOBBY_PRESENT[heroId] || {};
+  const idx = STAGE_ORDER.indexOf(heroId);
+  const prevOpp = OPPONENTS[STAGE_ORDER[idx - 1]];
+
+  // 顔ドット（進行＋直接ジャンプ）
+  const dots = q('[data-bind="lb4Dots"]');
+  if (dots) {
+    dots.innerHTML = STAGE_ORDER.map(sid => {
+      const o = OPPONENTS[sid];
+      const done = save.clearedStages.includes(sid);
+      const unl = isStageUnlocked(sid);
+      const cls = ['lb4-dot', sid === heroId ? 'is-sel' : '', done ? 'is-cleared' : '', !unl ? 'is-locked' : '', (sid === nextId && sid !== heroId) ? 'is-next' : ''].filter(Boolean).join(' ');
+      // 丸アイコンに全身絵は不可（潰れて見えない）。専用の顔クロップを使う
+      return `<button class="${cls}" data-action="lb4-select" data-opponent="${sid}" title="${unl ? o.name : '？？？'}">
+        <img src="assets/ui/face_${o.imgKey}.webp" alt="" onerror="this.onerror=function(){window.assetFallback(this,'${o.imgKey}')};this.src='assets/characters/${o.imgKey}_default.png';">
+        ${done ? '<b class="lb4-dot-check">✓</b>' : ''}
+      </button>`;
+    }).join('');
+  }
+
+  // 立ち絵・巨大ラテン名・挑発
+  const typo = q('[data-bind="lb4Typo"]'); if (typo) typo.textContent = unlocked ? (OPP_LATIN[heroId] || '') : '？？？';
+  const img = q('[data-bind="lb4OppImg"]');
+  if (img) {
+    img.src = `assets/characters/${opp.imgKey}_default.png`;
+    img.alt = unlocked ? opp.name : '？？？';
+    img.onerror = function() { this.onerror = null; window.assetFallback(this, opp.imgKey); };
+    img.classList.toggle('is-locked', !unlocked);
+    if (unlocked) { img.dataset.action = 'char-profile'; img.dataset.char = heroId; img.title = `${opp.name}のプロフィールを見る`; }
+    else { delete img.dataset.action; delete img.dataset.char; img.title = '施錠中'; }
+  }
+  const taunt = q('[data-bind="lb4Taunt"]');
+  if (taunt) taunt.textContent = unlocked ? (pre.taunt || '') : '「…………」';
+
+  // 卓上の真鍮プレート
+  const plate = q('[data-bind="lb4Plate"]');
+  if (plate) {
+    const no = String(idx).padStart(2, '0');
+    if (unlocked) {
+      const amount = cleared ? (opp.rewardRematch || 50) : (opp.rewardFirst || 500);
+      plate.innerHTML = `
+        <span class="lb4-plate-no v2-disp">${no}</span>
+        <span class="lb4-plate-main"><b class="lb4-plate-name">${opp.name}</b><small class="lb4-plate-theme">${opp.theme || ''}</small></span>
+        <span class="lb4-plate-prize"><i class="v2-disp">PRIZE</i><b class="v2-disp">${amount}</b>${cleared ? '' : '<small>＋CG</small>'}</span>`;
+    } else {
+      plate.innerHTML = `
+        <span class="lb4-plate-no v2-disp">${no}</span>
+        <span class="lb4-plate-main"><b class="lb4-plate-name is-dim">？？？</b><small class="lb4-plate-theme">${prevOpp ? prevOpp.name + 'に勝つと解放' : ''}</small></span>
+        <span class="lb4-plate-lock">${LB4_LOCK_SVG}</span>`;
+    }
+  }
+
+  // リコの案内（選択中の相手について）
+  const ricoLine = q('[data-bind="lb4RicoLine"]');
+  if (ricoLine) {
+    ricoLine.textContent = !unlocked
+      ? `「その卓はまだ早いよ。まずは${prevOpp ? prevOpp.name : '前の相手'}からだ」`
+      : (pre.rico || '「ようこそ。今夜の卓、案内するよ」');
+  }
+
+  // CTA
+  const cta = q('[data-bind="lb4Cta"]');
+  const ctaLabel = q('[data-bind="lb4CtaLabel"]');
+  if (cta) {
+    cta.classList.toggle('is-disabled', !unlocked);
+    cta.disabled = !unlocked;
+    if (!unlocked) {
+      delete cta.dataset.action;
+      if (ctaLabel) ctaLabel.textContent = '施錠中';
+    } else {
+      cta.dataset.opponent = heroId;
+      if (heroId === 'rico_tutorial') {
+        cta.dataset.action = cleared ? 'rico-mode-chooser' : 'battle-start';
+        if (ctaLabel) ctaLabel.textContent = cleared ? '対戦／受講 ▶' : '受講する ▶';
+      } else {
+        cta.dataset.action = 'battle-start';
+        if (ctaLabel) ctaLabel.textContent = cleared ? '再戦する ▶' : 'この卓につく ▶';
+      }
+    }
+  }
+  const sub = q('[data-bind="lb4Sub"]');
+  if (sub) {
+    sub.innerHTML = (unlocked && !cleared && heroId !== 'rico_tutorial')
+      ? `<button class="lb3-sub-link" data-action="skip-stage" data-opponent="${heroId}" title="コインで勝利扱いにする">スキップ（${skipStageCost(opp)}コイン）</button>`
+      : '';
+  }
+
+  // 帰ってくる理由（右上・控えめ）
+  const hooks = q('[data-bind="lb4Hooks"]');
+  if (hooks) {
+    const cg = (save.rewardCgSeen || []).length;
+    const lb = save.loginBonus || { lastDate: '', streak: 0 };
+    const claimed = lb.lastDate === mpTodayKey();
+    hooks.innerHTML = `
+      <div class="lb4-hook${claimed ? '' : ' is-hot'}"><i class="lb3-hook-coin"></i><span>${claimed ? `ログボ ${lb.streak}日目` : 'ログボ 受取OK'}</span></div>
+      <button class="lb4-hook" data-action="open-collection" title="ご褒美CGコレクション"><span>ご褒美CG</span><span class="lb4-hook-meter"><i style="width:${Math.round(cg / 5 * 100)}%"></i></span><b class="v2-disp">${cg}/5</b></button>`;
   }
 }
 
@@ -6458,6 +6573,23 @@ function onAction(e) {
     case 'view-reward-cg': {
       const cgId = e.currentTarget?.dataset?.cgId;
       if (cgId) showRewardCgViewer(cgId);
+      break;
+    }
+    case 'lb4-prev':
+    case 'lb4-next': {
+      const dir = action === 'lb4-next' ? 1 : -1;
+      const cur = STAGE_ORDER.indexOf(state.lobbySel || lobbyNextStageId() || 'velvet');
+      state.lobbySel = STAGE_ORDER[(cur + dir + STAGE_ORDER.length) % STAGE_ORDER.length];
+      mpSfx('tap');
+      render();
+      break;
+    }
+    case 'lb4-select': {
+      if (data.opponent && STAGE_ORDER.includes(data.opponent)) {
+        state.lobbySel = data.opponent;
+        mpSfx('tap');
+        render();
+      }
       break;
     }
     case 'lb3-toggle-audio': {

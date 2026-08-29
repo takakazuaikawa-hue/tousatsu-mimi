@@ -34,7 +34,7 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
-<link rel="stylesheet" href="style.css?v=20260829e">
+<link rel="stylesheet" href="style.css?v=20260829f">
 </head>
 <body>
 <div id="preload-overlay">
@@ -136,7 +136,7 @@
 </template>
 
 <template id="tpl-lobby">
-  <div class="screen lobby-screen v3">
+  <div class="screen lobby-screen v3 v4">
     <div class="bg-layer bg-lobby"></div>
 
     <header class="top-hud lobby-hud">
@@ -154,58 +154,52 @@
     </header>
 
     <main class="lobby-main">
-      <!-- ツアーレール：5人の道のり -->
-      <div class="lb3-rail" data-bind="lb3Rail"></div>
+      <!-- リコ先輩：左に等身大のコンシェルジュ（衣装ランダム＋衣装ビューア導線） -->
+      <div class="lobby-rico-standing lb4-rico">
+        <img data-bind="lobbyRicoImg" src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+        <button class="lobby-rico-outfit" data-bind="lobbyRicoOutfit" data-action="open-rico-viewer" title="リコ先輩を眺める"></button>
+      </div>
+      <div class="lb4-rico-bubble" data-bind="lb4RicoLine">「ようこそ。今夜の卓、案内するよ」</div>
 
-      <!-- 中央ステージ：今夜の相手 -->
-      <div class="lb3-stage">
-        <div class="v2-disp lb3-typo" data-bind="lb3Typo"></div>
-        <div class="lb3-cone"></div>
-        <div class="lb3-dais"></div>
-        <div class="lb3-foots"><i></i><i></i><i></i><i></i></div>
-        <img class="lb3-hero-img" data-bind="lb3HeroImg" src="assets/characters/polka_default.png" alt="">
-        <div class="lb3-taunt" data-bind="lb3Taunt"></div>
+      <!-- 中央：卓のカルーセル（選んだ相手が卓の向こうに立つ） -->
+      <div class="lb4-scene">
+        <div class="lb4-dots" data-bind="lb4Dots"></div>
+        <div class="v2-disp lb4-typo" data-bind="lb4Typo"></div>
+        <img class="lb4-opp" data-bind="lb4OppImg" src="assets/characters/polka_default.png" alt="">
+        <div class="lb4-opp-shadow"></div>
+        <div class="lb4-table">
+          <div class="lb4-table-felt"></div>
+          <div class="lb4-table-cards" aria-hidden="true"><i></i><i></i></div>
+          <div class="lb4-table-chips" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="lb4-plate" data-bind="lb4Plate"></div>
+        </div>
+        <div class="lb4-taunt" data-bind="lb4Taunt"></div>
+        <button class="lb4-arrow lb4-arrow-l" data-action="lb4-prev" title="前の卓へ"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+        <button class="lb4-arrow lb4-arrow-r" data-action="lb4-next" title="次の卓へ"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
+        <button class="lb4-cta" data-bind="lb4Cta" data-action="battle-start"><span data-bind="lb4CtaLabel">この卓につく ▶</span></button>
+        <div class="lb4-sub" data-bind="lb4Sub"></div>
       </div>
 
-      <!-- 左：プレゼンター（リコの推薦→相手→テル→報酬→CTA） -->
-      <section class="lb3-present">
-        <div class="lb3-rico-row">
-          <button class="lb3-rico-face" data-action="open-rico-viewer" title="リコ先輩"><img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')"></button>
-          <div class="lb3-rico-bubble" data-bind="lb3RicoLine"></div>
-        </div>
-        <div class="v2-disp lb3-eyebrow" data-bind="lb3Eyebrow">TONIGHT'S TABLE</div>
-        <div class="lb3-name-row">
-          <span class="lb3-name" data-bind="lb3Name"></span>
-          <span class="v2-disp lb3-stageno" data-bind="lb3StageNo"></span>
-        </div>
-        <div class="lb3-theme" data-bind="lb3Theme"></div>
-        <div class="lb3-tells" data-bind="lb3Tells"></div>
-        <div class="lb3-prize-row" data-bind="lb3Prize"></div>
-        <button class="lb3-cta" data-bind="lb3Cta" data-action="battle-start"><span data-bind="lb3CtaLabel">この卓につく ▶</span></button>
-        <div class="lb3-sub" data-bind="lb3Sub"></div>
-      </section>
+      <!-- 手前右下：ミミの後ろ姿（肩越し視点） -->
+      <img class="lb4-mimi-back" data-bind="lb4MimiBack" src="assets/characters/mimi_back.webp" alt="ミミ"
+           onerror="this.style.display='none';">
 
-      <!-- 右下：見守るミミ -->
-      <img class="lb3-mimi" src="assets/characters/mimi_lobby_relax.webp" alt="ミミ" data-action="char-profile" data-char="mimi" title="ミミのプロフィールを見る"
-           onerror="this.onerror=function(){window.assetFallback(this,'mimi')};this.src='assets/characters/mimi_default.png';">
-      <div class="lb3-mimi-thought" data-bind="lb3MimiThought"></div>
+      <!-- 右上：帰ってくる理由（ログボ／CG進捗・控えめ） -->
+      <div class="lb4-hooks" data-bind="lb4Hooks"></div>
 
-      <!-- 左下：帰ってくる理由（ログボ／CGコレクション） -->
-      <div class="lb3-hooks" data-bind="lb3Hooks"></div>
-
-      <!-- 下部オペレーションバー -->
-      <nav class="lb3-bar">
-        <button class="lb3-bar-btn lb3-bar-shop" data-action="open-shop">
+      <!-- 下部オペレーションバー（黒×金で統一） -->
+      <nav class="lb3-bar lb4-bar">
+        <button class="lb3-bar-btn lb4-bar-btn lb4-ac-red" data-action="open-shop">
           <span class="lb3-bar-name">交換所</span><span class="lb3-bar-sub">グラーノの店</span>
           <span class="lobby-shop-newbadge" data-bind="lobbyShopNewBadge" style="display:none"></span>
         </button>
-        <button class="lb3-bar-btn lb3-bar-coll" data-action="open-collection">
+        <button class="lb3-bar-btn lb4-bar-btn lb4-ac-gold" data-action="open-collection">
           <span class="lb3-bar-name">コレクション</span><span class="lb3-bar-sub">称号・ご褒美CG</span>
         </button>
-        <button class="lb3-bar-btn lb3-bar-panyu" data-action="panyu-free" title="ぱにゅぱにゅで遊ぶ（バトル効果なし）">
+        <button class="lb3-bar-btn lb4-bar-btn lb4-ac-pink" data-action="panyu-free" title="ぱにゅぱにゅで遊ぶ（バトル効果なし）">
           <span class="lb3-bar-name">ぱにゅぱにゅ</span><span class="lb3-bar-sub">ぷにぷにして遊ぶ</span>
         </button>
-        <button class="lb3-bar-btn lb3-bar-audio" data-action="lb3-toggle-audio" title="音量・設定">
+        <button class="lb3-bar-btn lb4-bar-btn lb4-bar-audio" data-action="lb3-toggle-audio" title="音量・設定">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path></svg>
         </button>
       </nav>
@@ -479,6 +473,6 @@
   </div>
 </template>
 
-<script src="game.js?v=20260829e"></script>
+<script src="game.js?v=20260829f"></script>
 </body>
 </html>
