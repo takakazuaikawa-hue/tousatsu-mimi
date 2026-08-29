@@ -34,7 +34,7 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
-<link rel="stylesheet" href="style.css?v=20260829f">
+<link rel="stylesheet" href="style.css?v=20260829g">
 </head>
 <body>
 <div id="preload-overlay">
@@ -136,7 +136,7 @@
 </template>
 
 <template id="tpl-lobby">
-  <div class="screen lobby-screen v3 v4">
+  <div class="screen lobby-screen v3 v4 v5">
     <div class="bg-layer bg-lobby"></div>
 
     <header class="top-hud lobby-hud">
@@ -161,28 +161,8 @@
       </div>
       <div class="lb4-rico-bubble" data-bind="lb4RicoLine">「ようこそ。今夜の卓、案内するよ」</div>
 
-      <!-- 中央：卓のカルーセル（選んだ相手が卓の向こうに立つ） -->
-      <div class="lb4-scene">
-        <div class="lb4-dots" data-bind="lb4Dots"></div>
-        <div class="v2-disp lb4-typo" data-bind="lb4Typo"></div>
-        <img class="lb4-opp" data-bind="lb4OppImg" src="assets/characters/polka_default.png" alt="">
-        <div class="lb4-opp-shadow"></div>
-        <div class="lb4-table">
-          <div class="lb4-table-felt"></div>
-          <div class="lb4-table-cards" aria-hidden="true"><i></i><i></i></div>
-          <div class="lb4-table-chips" aria-hidden="true"><i></i><i></i><i></i></div>
-          <div class="lb4-plate" data-bind="lb4Plate"></div>
-        </div>
-        <div class="lb4-taunt" data-bind="lb4Taunt"></div>
-        <button class="lb4-arrow lb4-arrow-l" data-action="lb4-prev" title="前の卓へ"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
-        <button class="lb4-arrow lb4-arrow-r" data-action="lb4-next" title="次の卓へ"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
-        <button class="lb4-cta" data-bind="lb4Cta" data-action="battle-start"><span data-bind="lb4CtaLabel">この卓につく ▶</span></button>
-        <div class="lb4-sub" data-bind="lb4Sub"></div>
-      </div>
-
-      <!-- 手前右下：ミミの後ろ姿（肩越し視点） -->
-      <img class="lb4-mimi-back" data-bind="lb4MimiBack" src="assets/characters/mimi_back.webp" alt="ミミ"
-           onerror="this.style.display='none';">
+      <!-- 相手カードの一覧：どの卓につくか悩む美しさで並べる -->
+      <section class="lb5-cards" data-bind="lb5Cards"></section>
 
       <!-- 右上：帰ってくる理由（ログボ／CG進捗・控えめ） -->
       <div class="lb4-hooks" data-bind="lb4Hooks"></div>
@@ -473,6 +453,6 @@
   </div>
 </template>
 
-<script src="game.js?v=20260829f"></script>
+<script src="game.js?v=20260829g"></script>
 </body>
 </html>

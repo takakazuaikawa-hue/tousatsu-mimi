@@ -3663,7 +3663,75 @@ function renderLobbyV3__unused() { // 旧v3（ヒーローステージ）。v4�
 // 切替は◀▶矢印＋上部の顔ドット（施錠中も覗ける＝予告）／手前にミミの後ろ姿（肩越し視点）／色は黒×金に統一。
 const LB4_LOCK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
 
+// ===== ロビー v5「グランドロビーのカード一覧」（最終形） =====
+// 指針：相手カードが美しく並び「どの卓につくか悩む」一覧性／新背景＝大時計のカジノシアター／
+// ミミは非表示・リコ先輩（衣装）は左に維持／UIは定位置・プレイヤーファースト。
 function renderLobbyV3() {
+  const q = sel => document.querySelector(sel);
+  const nextId = lobbyNextStageId();
+  const pre = LOBBY_PRESENT[nextId] || {};
+
+  // リコの案内：次の相手の攻略ヒント（全クリア後は労い）
+  const ricoLine = q('[data-bind="lb4RicoLine"]');
+  if (ricoLine) ricoLine.textContent = nextId ? (pre.rico || '「どの卓にする？今夜も付き合うよ」') : '「全部の卓を制覇したね。今夜はどの子と遊ぶ？」';
+
+  // カード列
+  const host = q('[data-bind="lb5Cards"]');
+  if (host) {
+    host.innerHTML = STAGE_ORDER.map((sid, i) => {
+      const o = OPPONENTS[sid];
+      const done = save.clearedStages.includes(sid);
+      const unl = isStageUnlocked(sid);
+      const isNext = sid === nextId;
+      const no = String(i).padStart(2, '0');
+      const mainAction = sid === 'rico_tutorial' ? (done ? 'rico-mode-chooser' : 'battle-start') : 'battle-start';
+      const ctaLabel = sid === 'rico_tutorial' ? (done ? '対戦／受講' : '受講する') : (done ? '再戦する' : 'この卓につく');
+      const cls = ['lb5-card', isNext ? 'is-next' : '', done ? 'is-cleared' : '', !unl ? 'is-locked' : '', o.isBoss ? 'is-vip' : ''].filter(Boolean).join(' ');
+      const band = isNext
+        ? '<div class="lb5-band lb5-band-next v2-disp">NEXT TABLE</div>'
+        : (o.isBoss ? '<div class="lb5-band lb5-band-vip v2-disp">VIP ROOM</div>' : '');
+      const prevName = i > 0 ? (OPPONENTS[STAGE_ORDER[i - 1]] || {}).name : '';
+      const footInfo = !unl
+        ? `<div class="lb5-card-need">${LB4_LOCK_SVG}<span>${prevName}に勝つと解放</span></div>`
+        : done
+          ? `<div class="lb5-card-reward">再戦報酬 <b class="v2-disp">${o.rewardRematch || 50}</b></div>`
+          : `<div class="lb5-card-reward">PRIZE <b class="v2-disp">${o.rewardFirst || 500}</b><small>＋ご褒美CG</small></div>`;
+      const cta = unl
+        ? `<button class="lb5-card-cta${isNext ? ' is-gold' : ''}" data-action="${mainAction}" data-opponent="${sid}"><span>${ctaLabel}</span></button>`
+        : '';
+      const skip = (unl && !done && sid !== 'rico_tutorial')
+        ? `<button class="lb5-card-skip" data-action="skip-stage" data-opponent="${sid}" title="コインで勝利扱いにする">スキップ ${skipStageCost(o)}</button>`
+        : '';
+      return `<div class="${cls}">
+        ${band}
+        ${done ? '<div class="lb5-seal v2-disp">CLEAR</div>' : ''}
+        <button class="lb5-card-portrait" ${unl ? `data-action="char-profile" data-char="${sid}" title="${o.name}のプロフィールを見る"` : 'disabled title="施錠中"'}>
+          <img src="assets/characters/${o.imgKey}_default.png" alt="${unl ? o.name : '？？？'}" onerror="window.assetFallback(this,'${o.imgKey}')">
+        </button>
+        <div class="lb5-card-foot">
+          <div class="lb5-card-title"><span class="lb5-card-no v2-disp">${no}</span><b class="lb5-card-name">${unl ? o.name : '？？？'}</b></div>
+          <small class="lb5-card-theme">${unl ? (o.theme || '') : '？？？'}</small>
+          ${footInfo}
+          ${cta}
+          ${skip}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // 帰ってくる理由（右上・控えめ）
+  const hooks = q('[data-bind="lb4Hooks"]');
+  if (hooks) {
+    const cg = (save.rewardCgSeen || []).length;
+    const lb = save.loginBonus || { lastDate: '', streak: 0 };
+    const claimed = lb.lastDate === mpTodayKey();
+    hooks.innerHTML = `
+      <div class="lb4-hook${claimed ? '' : ' is-hot'}"><i class="lb3-hook-coin"></i><span>${claimed ? `ログボ ${lb.streak}日目` : 'ログボ 受取OK'}</span></div>
+      <button class="lb4-hook" data-action="open-collection" title="ご褒美CGコレクション"><span>ご褒美CG</span><span class="lb4-hook-meter"><i style="width:${Math.round(cg / 5 * 100)}%"></i></span><b class="v2-disp">${cg}/5</b></button>`;
+  }
+}
+
+function renderLobbyV4__unused() { // 旧v4カルーセル。v5カード一覧に置換済み・参照なし
   const q = sel => document.querySelector(sel);
   const nextId = lobbyNextStageId();
   if (!state.lobbySel || !STAGE_ORDER.includes(state.lobbySel)) state.lobbySel = nextId || 'velvet';
