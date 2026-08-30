@@ -14241,7 +14241,7 @@ body.is-tease-hot .card.tease-card::after {
   width: 52px; height: 52px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
   border: 2px solid var(--c-gold-bright); background: rgba(0,0,0,.4);
 }
-.rp-rico-face img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.rp-rico-face img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .rp-rico-bubble {
   position: relative; flex: 1 1 auto;
   background: #fffdf3; color: #1a1020; border-radius: 10px;
@@ -14307,7 +14307,7 @@ body.is-tease-hot .card.tease-card::after {
   width: 74px; height: 74px; border-radius: 50%; overflow: hidden;
   border: 2px solid var(--c-gold-bright); background: rgba(0,0,0,.4);
 }
-.rp-pot-face img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.rp-pot-face img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .rp-pot-name { font-size: 12px; color: var(--c-text-dim); letter-spacing: .08em; }
 .rp-pot-center { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
 .rp-pot-stack { display: flex; flex-direction: column-reverse; align-items: center; }
@@ -15076,3 +15076,14 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
   color: #e0556a; background: #1a0810; border-radius: 50%; padding: 2px;
   box-shadow: 0 0 0 1px rgba(224,85,106,.5);
 }
+
+/* ============================================================
+   顔アイコンの可読性 2026-08-31
+   34〜36pxでは誰の顔か判別できない。会話の話者が一目で分かる大きさへ。
+   立ち絵の縮小ではなく専用の顔クロップ（assets/ui/face_*.webp）を使う。
+   ============================================================ */
+.battle-screen.v2 .v2-com-face { width: 54px; height: 54px; border-width: 2px; }
+.battle-screen.v2 .v2-comments.left-panel { width: 330px; gap: 10px; }
+.battle-screen.v2 .v2-com { gap: 10px; align-items: center; }
+.battle-screen.v2 .v2-com-text { font-size: 12.5px; line-height: 1.5; }
+.rp-rico-face { width: 66px; height: 66px; }

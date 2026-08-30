@@ -3815,7 +3815,14 @@ function applyBattleRicoOutfit() {
     ? RICO_OUTFITS.find(o => outfitIdFor(o.file) === equipped)
     : null;
   const file = found ? found.file : 'rico_default.webp';
-  if (!img.src.endsWith(file)) img.src = `assets/characters/${file}`;
+  // ★小さな丸枠に全身立ち絵を入れると顔が潰れて誰か分からない。
+  //   衣装ごとに用意した顔クロップ（assets/ui/face_rico_*.webp）を使い、
+  //   衣装の見分け（帽子・髪飾り等）と視認性を両立する。
+  const faceFile = 'face_' + file.slice(0, -5) + '.webp';
+  if (!img.src.endsWith(faceFile)) {
+    img.onerror = function () { this.onerror = null; this.src = 'assets/characters/' + file; };
+    img.src = 'assets/ui/' + faceFile;
+  }
 }
 // ファイル名 → 装備ID 変換（rico_kimono.png → 'kimono'）
 function outfitIdFor(file) {
@@ -10998,7 +11005,7 @@ function showRulePrimer(onDone) {
         <button type="button" class="rp-skip-btn">スキップ ▶▶</button>
         <div class="rp-visual rp-visual-${cfg.key}">${renderPrimerVisual(cfg.key)}</div>
         <div class="rp-rico">
-          <div class="rp-rico-face"><img src="assets/characters/rico_default.webp" alt="リコ先輩" onerror="window.assetFallback(this,'rico')"></div>
+          <div class="rp-rico-face"><img src="assets/ui/face_rico.webp" alt="リコ先輩" onerror="this.onerror=function(){window.assetFallback(this,'rico')};this.src='assets/characters/rico_default.webp';"></div>
           <div class="rp-rico-bubble">${cfg.rico}</div>
         </div>
         <button type="button" class="btn btn-primary rp-next-btn">${isLast ? '研修へ ▶' : '次へ ▶'}</button>
@@ -11052,7 +11059,7 @@ function renderPrimerVisual(key) {
   return `
     <div class="rp-pot-diagram">
       <div class="rp-pot-side rp-pot-side-mimi">
-        <div class="rp-pot-face"><img src="assets/characters/mimi_default.webp" alt="ミミ" onerror="window.assetFallback(this,'mimi')"></div>
+        <div class="rp-pot-face"><img src="assets/ui/face_mimi.webp" alt="ミミ" onerror="this.onerror=function(){window.assetFallback(this,'mimi')};this.src='assets/characters/mimi_default.webp';"></div>
         <div class="rp-pot-name">ミミ</div>
       </div>
       <div class="rp-pot-arrow rp-pot-arrow-left"><span class="rp-pot-chip"></span><span class="rp-pot-chip"></span></div>
@@ -11062,7 +11069,7 @@ function renderPrimerVisual(key) {
       </div>
       <div class="rp-pot-arrow rp-pot-arrow-right"><span class="rp-pot-chip"></span><span class="rp-pot-chip"></span></div>
       <div class="rp-pot-side rp-pot-side-opp">
-        <div class="rp-pot-face"><img src="assets/characters/rico_default.webp" alt="相手" onerror="window.assetFallback(this,'rico')"></div>
+        <div class="rp-pot-face"><img src="assets/ui/face_rico.webp" alt="相手" onerror="this.onerror=function(){window.assetFallback(this,'rico')};this.src='assets/characters/rico_default.webp';"></div>
         <div class="rp-pot-name">相手</div>
       </div>
     </div>
