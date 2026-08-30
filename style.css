@@ -15087,3 +15087,24 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
 .battle-screen.v2 .v2-com { gap: 10px; align-items: center; }
 .battle-screen.v2 .v2-com-text { font-size: 12.5px; line-height: 1.5; }
 .rp-rico-face { width: 66px; height: 66px; }
+
+/* ============================================================
+   セリフ帯の文字が上に寄って小さい問題 2026-08-31
+   原因：長文用ルールの display:-webkit-box が display:flex を上書きし、
+   align-items:center が効かず文字が帯の上端に張り付いていた。
+   さらに font-size が3箇所で上書きされ 16.5px まで下がっていた。
+   ============================================================ */
+.battle-screen.v2 .opponent-speech.v2-band-text.speech-long {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start;
+  white-space: normal;
+  font-size: 18.5px !important;
+  line-height: 1.3;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* 帯の右端が勝率シール（右上の封印）に衝突するため、右に余白を確保して2行に流す */
+.battle-screen.v2 .opponent-speech.v2-band-text { right: 268px !important; }
+.battle-screen.v2 .opponent-speech.v2-band-text.speech-long { text-align: left; }

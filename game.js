@@ -2885,7 +2885,7 @@ function applyBindings() {
         }
         el.classList.remove('is-thinking');
         el.textContent = state.opponentSpeech;
-        el.classList.toggle('speech-long', (state.opponentSpeech || '').length > 18);
+        el.classList.toggle('speech-long', (state.opponentSpeech || '').length > 26);
         if (state.opponentSpeech && state.opponentSpeech !== state.__lastSpeechShown) {
           el.classList.remove('speech-pop');
           void el.offsetWidth; // reflow でアニメを再起動
