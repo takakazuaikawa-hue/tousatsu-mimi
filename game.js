@@ -3176,8 +3176,10 @@ function showEpisodeTitle(key, onContinue) {
   overlay.innerHTML = `
     <div class="episode-card episode-card-bottom">
       <div class="episode-no">${ep.no}　<small class="episode-hint">（背景をクリックで絵だけ表示）</small></div>
+      <div class="episode-scroll">
       <h1 class="episode-title">${ep.title.replace(/\n/g, '<br>')}</h1>
-      <button class="btn btn-primary big episode-continue">▶ 開始</button>
+      </div>
+      <div class="episode-foot"><button class="btn btn-primary big episode-continue">▶ 開始</button></div>
     </div>
   `;
   // ステージ内に挿入（1280×800の最大背景にフィット）
