@@ -15065,3 +15065,14 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
 .panyu-clicker-overlay .panyu-clicker-label-top {
   text-shadow: 0 2px 10px rgba(0,0,0,.85), 0 0 18px rgba(0,0,0,.7);
 }
+
+/* コレクション：未達成の実績も「何の実績か」が分かるよう、固有アイコンを薄く残して鍵を重ねる */
+.coll-ach-icon { position: relative; display: inline-flex; align-items: center; justify-content: center; font-size: 30px; line-height: 1; }
+.coll-ach-icon .ui-ic { width: 30px; height: 30px; }
+/* 未達成でも「何の実績か」が分かるよう、固有アイコンを残し鍵を小さく重ねる */
+.coll-ach-ghost { display: inline-flex; opacity: .5; color: #9a8878; }
+.coll-ach.off .coll-ach-icon > .ui-ic {
+  position: absolute; right: -7px; bottom: -5px; width: 16px; height: 16px;
+  color: #e0556a; background: #1a0810; border-radius: 50%; padding: 2px;
+  box-shadow: 0 0 0 1px rgba(224,85,106,.5);
+}

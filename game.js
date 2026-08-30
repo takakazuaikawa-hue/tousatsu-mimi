@@ -2654,7 +2654,7 @@ function showAboutModal() {
   overlay.innerHTML = `
     <div class="memory-viewer">
       <button class="memory-viewer-close" title="閉じる">×</button>
-      <div class="memory-viewer-title">📖 ミミのテキサスホールデムポーカー について</div>
+      <div class="memory-viewer-title">${UI_ICON.book} ミミのテキサスホールデムポーカー について</div>
       <div class="memory-viewer-body">
         <p style="font-size:16px; text-align:center; color:var(--c-gold-bright); margin-bottom:16px;">
           夜霧のカジノ、伝説の闘札。<br>直感の少女が、絶対王者に挑む。
@@ -2853,7 +2853,7 @@ function applyBindings() {
           // P3: ミミミゲージ0（講義前の初心者）は情報過多を避けて1行に折りたたむ
           el.innerHTML = `
             <div class="opp-personality-card opp-p-collapsed">
-              <div class="opp-p-collapsed-line">👁 相手をよく観察しよう</div>
+              <div class="opp-p-collapsed-line">${UI_ICON.eye} 相手をよく観察しよう</div>
             </div>
           `;
         } else {
@@ -3434,6 +3434,18 @@ const UI_ICON = {
   bell:   _svg('<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"></path><path d="M10 21h4"></path>'),
   bellOff:_svg('<path d="M6 16V11a6 6 0 0 1 9-5"></path><path d="M18 12v4l2 2H4"></path><path d="M4 4l16 16"></path>'),
   gear:   _svg('<circle cx="12" cy="12" r="3"></circle><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"></path>'),
+  // 製品化フェーズ4：UI装飾の絵文字を置き換える線画アイコン（16pxグリッド・currentColor）
+  book:   _svg('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"></path><path d="M8 7h7M8 11h7"></path>'),
+  note:   _svg('<rect x="6" y="3" width="13" height="18" rx="2"></rect><path d="M3 7h4M3 12h4M3 17h4M10 8h6M10 12h6"></path>'),
+  trophy: _svg('<path d="M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"></path><path d="M12 14v4M9 20h6"></path>'),
+  dress:  _svg('<path d="M9 3l3 2 3-2 2 4-2 2 2 10H8l2-10-2-2z"></path>'),
+  card:   _svg('<rect x="4" y="3" width="12" height="17" rx="2"></rect><path d="M18 6h1a1 1 0 0 1 1 1v11a2 2 0 0 1-2 2H8"></path>'),
+  wrench: _svg('<path d="M20 5a5 5 0 0 1-6.5 6.4L6 19a2.1 2.1 0 0 1-3-3l7.6-7.5A5 5 0 0 1 17 2z"></path>'),
+  gift:   _svg('<rect x="3" y="9" width="18" height="11" rx="1"></rect><path d="M3 9V7h18v2M12 9v11"></path><path d="M12 9S9 3 7 5s5 4 5 4M12 9s3-6 5-4-5 4-5 4"></path>'),
+  target: _svg('<circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="4"></circle><circle cx="12" cy="12" r="1"></circle>'),
+  medal:  _svg('<circle cx="12" cy="15" r="5"></circle><path d="M8.5 10.5L6 3h12l-2.5 7.5"></path>'),
+  refresh:_svg('<path d="M20 11a8 8 0 1 0-1 5"></path><path d="M20 5v6h-6"></path>'),
+  eye:    _svg('<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"></path><circle cx="12" cy="12" r="3"></circle>'),
 };
 
 function renderStageList() {
@@ -3791,7 +3803,7 @@ function applyNoteTellHint() {
   if (tags.length === 0) return;
   const hint = document.createElement('div');
   hint.className = 'note-tell-hint';
-  hint.innerHTML = `<span class="ntt-label">📓 相手の傾向</span>${tags.map(t => `<span class="ntt-tag">${t}</span>`).join('')}`;
+  hint.innerHTML = `<span class="ntt-label">${UI_ICON.note} 相手の傾向</span>${tags.map(t => `<span class="ntt-tag">${t}</span>`).join('')}`;
   container.appendChild(hint);
 }
 // バトル画面の左パネル（リコ助言役）にも装備中の衣装を反映
@@ -3861,7 +3873,7 @@ function showSettingsModal() {
   const log = save.logicEnabled !== false;
   overlay.innerHTML = `
     <div class="settings-modal">
-      <div class="settings-modal-title">⚙ ゲーム設定</div>
+      <div class="settings-modal-title">${UI_ICON.gear} ゲーム設定</div>
       <div class="settings-modal-row">
         <span class="settings-modal-label">心理バトル</span>
         <button class="settings-modal-toggle ${psy ? 'on' : 'off'}" data-toggle="psych">
@@ -3887,16 +3899,16 @@ function showSettingsModal() {
       </div>
       <div class="settings-modal-note">※OFF（既定）＝iPhoneの消音スイッチに従います<br>ONにすると消音中でも音が鳴ります</div>
       <div class="settings-modal-divider"></div>
-      <button class="btn btn-secondary settings-modal-trophy" data-action="open-collection">🏆 トロフィー手帳を開く</button>
-      <button class="btn btn-secondary settings-modal-trophy" data-action="open-glossary">📖 ポーカー辞典を開く</button>
-      <button class="btn btn-secondary settings-modal-trophy" data-action="equip-change">👗 装備変更</button>
+      <button class="btn btn-secondary settings-modal-trophy" data-action="open-collection">${UI_ICON.trophy} トロフィー手帳を開く</button>
+      <button class="btn btn-secondary settings-modal-trophy" data-action="open-glossary">${UI_ICON.book} ポーカー辞典を開く</button>
+      <button class="btn btn-secondary settings-modal-trophy" data-action="equip-change">${UI_ICON.dress} 装備変更</button>
       ${(save.ownedItems || []).includes('memory_minipoker') ? `
-        <button class="btn btn-secondary settings-modal-trophy" data-action="play-minipoker">🎴 ファイブポーカー</button>
+        <button class="btn btn-secondary settings-modal-trophy" data-action="play-minipoker">${UI_ICON.card} ファイブポーカー</button>
       ` : ''}
       ${save.backdoorUnlocked ? `
         <div class="settings-modal-divider"></div>
         <div class="settings-modal-debug">
-          <span class="settings-modal-debug-label">🔧 デバッグ：覗き見モード</span>
+          <span class="settings-modal-debug-label">${UI_ICON.wrench} デバッグ：覗き見モード</span>
           <button class="settings-modal-toggle ${save.backdoorOn ? 'on' : 'off'}" data-toggle="backdoor">
             <span class="stm-knob"></span>
             <span class="stm-status">${save.backdoorOn ? 'ON' : 'OFF'}</span>
@@ -3947,7 +3959,7 @@ function renderLobbySettings() {
   const psy = save.psychEnabled !== false;
   const log = save.logicEnabled !== false;
   return `
-    <div class="settings-title">⚙ 設定 <span class="settings-note-inline">※講義モードは設定を無視して常時ON</span></div>
+    <div class="settings-title">${UI_ICON.gear} 設定 <span class="settings-note-inline">※講義モードは設定を無視して常時ON</span></div>
     <div class="settings-grid">
       <div class="settings-row">
         <span class="settings-label">心理</span>
@@ -5337,7 +5349,7 @@ function renderSessionStats() {
       <div class="ss-row"><span class="ss-k">相手 AF</span><span class="ss-v">${oppAF} <small>${afLabel(oppAF)}</small></span></div>
     </div>
     <div class="ss-note">AF = (ベット+レイズ) ÷ コール。高いほど攻撃的</div>
-    <button class="btn btn-ghost ss-history-btn" data-action="open-history">📜 ハンドごとの詳細を見る</button>
+    <button class="btn btn-ghost ss-history-btn" data-action="open-history">${UI_ICON.scroll} ハンドごとの詳細を見る</button>
   </details>`;
 }
 
@@ -6477,7 +6489,7 @@ function showEndingMusicPrompt() {
       </div>
       <div class="ending-prompt-actions">
         <button class="btn btn-primary" id="ending-with-music">▶ 流す</button>
-        <button class="btn btn-secondary" id="ending-without-music">🔇 流さない</button>
+        <button class="btn btn-secondary" id="ending-without-music">${UI_ICON.mute} 流さない</button>
       </div>
     </div>
   `;
@@ -7359,7 +7371,7 @@ function audioBarHTML() {
   const vol = save.bgmVolume != null ? save.bgmVolume : 35;
   return `
     <div class="audio-bar">
-      <button class="audio-bar-toggle" data-action="toggle-audio-all" title="音（BGM・効果音）ON/OFF">${on ? '🔊' : '🔇'}</button>
+      <button class="audio-bar-toggle" data-action="toggle-audio-all" title="音（BGM・効果音）ON/OFF">${on ? UI_ICON.sound : UI_ICON.mute}</button>
       <input class="audio-bar-volume" type="range" min="0" max="100" value="${vol}" title="BGM 音量">
     </div>
   `;
@@ -7600,7 +7612,7 @@ function showCharacterProfile(charId) {
 
   // リコは衣装ギャラリーへの導線を追加（解放済みのみ）
   const ricoGalleryBtn = (charId === 'rico_tutorial' && typeof isRicoViewerUnlocked === 'function' && isRicoViewerUnlocked())
-    ? '<button class="btn btn-secondary cp-gallery-btn" data-action="open-rico-viewer">👗 衣装ギャラリーへ</button>' : '';
+    ? '<button class="btn btn-secondary cp-gallery-btn" data-action="open-rico-viewer">${UI_ICON.dress} 衣装ギャラリーへ</button>' : '';
 
   const overlay = document.createElement('div');
   overlay.className = 'char-profile-overlay';
@@ -7915,7 +7927,7 @@ function showEquipModal() {
       const isActive = current === c.id;
       return `<button class="equip-chip ${isActive ? 'active' : ''} ${!isOwned ? 'locked' : ''}"
         data-cat-key="${cat.key}" data-choice-id="${c.id}" ${!isOwned ? 'disabled' : ''}
-        title="${isOwned ? '' : '未購入'}">${isOwned ? '' : '🔒 '}${c.label}</button>`;
+        title="${isOwned ? '' : '未購入'}">${isOwned ? '' : UI_ICON.lock + ' '}${c.label}</button>`;
     }).join('');
     return `
       <div class="equip-row">
@@ -7930,7 +7942,7 @@ function showEquipModal() {
   overlay.innerHTML = `
     <div class="equip-modal">
       <button class="equip-modal-close" title="閉じる">×</button>
-      <div class="equip-modal-title">👗 装備変更</div>
+      <div class="equip-modal-title">${UI_ICON.dress} 装備変更</div>
       <div class="equip-modal-body">
         ${rows}
       </div>
@@ -8587,7 +8599,7 @@ function showLoginBonusModal(plan, todayKey) {
   overlay.className = 'login-bonus-overlay';
   overlay.innerHTML = `
     <div class="login-bonus-modal">
-      <div class="login-bonus-modal-title">🎁 ログインボーナス Day${plan.day}</div>
+      <div class="login-bonus-modal-title">${UI_ICON.gift} ログインボーナス Day${plan.day}</div>
       <div class="login-bonus-modal-sub">+${plan.reward} コイン</div>
       <div class="login-bonus-calendar">${daysHtml}</div>
       <button class="login-bonus-claim-btn">受け取る</button>
@@ -8713,10 +8725,10 @@ function showMiniPokerGame() {
             <span class="mp-stat mp-stat-session" data-mpb="sessionStat">💹 ±0</span>
             <span class="mp-stat">🔥 連勝 <span data-mpb="streak">0</span><span data-mpb="shields"></span></span>
             <span class="mp-stat">🏆 ${p.bestStreak}</span>
-            <button class="mp-history-btn" data-mp="missions" title="今日のミッション">🎯</button>
-            <button class="mp-history-btn" data-mp="history" title="履歴">📜</button>
-            <button class="mp-ach-btn" data-mp="achievements" title="達成">🏅</button>
-            <button class="mp-ach-btn" data-mp="mute" title="音">${save.minipoker.muted ? '🔇' : '🔊'}</button>
+            <button class="mp-history-btn" data-mp="missions" title="今日のミッション">${UI_ICON.target}</button>
+            <button class="mp-history-btn" data-mp="history" title="履歴">${UI_ICON.scroll}</button>
+            <button class="mp-ach-btn" data-mp="achievements" title="達成">${UI_ICON.medal}</button>
+            <button class="mp-ach-btn" data-mp="mute" title="音">${save.minipoker.muted ? UI_ICON.mute : UI_ICON.sound}</button>
           </div>
         </div>
 
@@ -8804,7 +8816,7 @@ function showMiniPokerGame() {
         center.innerHTML = `
           <div class="mp-status">操作してください</div>
           <div class="mp-actions">
-            <button class="mp-btn mp-btn-primary" data-mp="draw">🔄 引く</button>
+            <button class="mp-btn mp-btn-primary" data-mp="draw">${UI_ICON.refresh} 引く</button>
             <button class="mp-btn mp-btn-ghost" data-mp="hold-all">⏸ 全部キープ</button>
           </div>`;
       } else if (ph === 'result') {
@@ -8821,7 +8833,7 @@ function showMiniPokerGame() {
             ${MP_BET_LEVELS.map(b => `<button class="mp-bet-chip" data-mp-bet="${b}">${b}</button>`).join('')}
           </div>
           <div class="mp-actions">
-            <button class="mp-btn mp-btn-primary" data-mp="deal">🎴 DEAL</button>
+            <button class="mp-btn mp-btn-primary" data-mp="deal">${UI_ICON.card} DEAL</button>
           </div>`;
       }
     }
@@ -10240,12 +10252,12 @@ function showCollectionModal() {
 
   // 達成項目
   const achievements = [
-    { id: 'first_clear', name: '初勝利', desc: 'ポルカ撃破', achieved: save.clearedStages.includes('polka') },
-    { id: 'reader',      name: 'ボード読み', desc: 'セリナ撃破', achieved: save.clearedStages.includes('selina') },
-    { id: 'math',        name: '算数の徒', desc: 'グラーノ撃破', achieved: save.clearedStages.includes('grano') },
-    { id: 'champion',    name: '圧倒の継承者', desc: 'ヴェルベット撃破', achieved: save.clearedStages.includes('velvet') },
-    { id: 'ending',      name: 'エンディング', desc: '物語を見届けた', achieved: isEndingUnlocked() },
-    { id: 'backdoor',    name: '裏モード解放', desc: '7タップの秘密', achieved: !!save.backdoorUnlocked },
+    { id: 'first_clear', name: '初勝利', desc: 'ポルカ撃破', ic: 'trophy', achieved: save.clearedStages.includes('polka') },
+    { id: 'reader',      name: 'ボード読み', desc: 'セリナ撃破', ic: 'eye', achieved: save.clearedStages.includes('selina') },
+    { id: 'math',        name: '算数の徒', desc: 'グラーノ撃破', ic: 'target', achieved: save.clearedStages.includes('grano') },
+    { id: 'champion',    name: '圧倒の継承者', desc: 'ヴェルベット撃破', ic: 'medal', achieved: save.clearedStages.includes('velvet') },
+    { id: 'ending',      name: 'エンディング', desc: '物語を見届けた', ic: 'book', achieved: isEndingUnlocked() },
+    { id: 'backdoor',    name: '裏モード解放', desc: '7タップの秘密', ic: 'wrench', achieved: !!save.backdoorUnlocked },
   ];
 
   // 完成度（全体％）
@@ -10288,7 +10300,7 @@ function showCollectionModal() {
 
   const achHtml = achievements.map(a => `
     <div class="coll-ach ${a.achieved ? 'on' : 'off'}">
-      <div class="coll-ach-icon">${a.achieved ? '🏆' : '🔒'}</div>
+      <div class="coll-ach-icon">${a.achieved ? UI_ICON[a.ic] : `<span class="coll-ach-ghost">${UI_ICON[a.ic]}</span>` + UI_ICON.lock}</div>
       <div class="coll-ach-name">${a.name}</div>
       <div class="coll-ach-desc">${a.desc}</div>
     </div>
