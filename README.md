@@ -8,14 +8,14 @@
 
 GitHub Pages で公開されている場合：
 
-👉 https://USERNAME.github.io/REPONAME/
+👉 https://takakazuaikawa-hue.github.io/tousatsu-mimi/
 
 ローカルで遊ぶ場合：
 
 ```bash
 # このリポジトリをクローン
-git clone https://github.com/USERNAME/REPONAME.git
-cd REPONAME
+git clone https://github.com/takakazuaikawa-hue/tousatsu-mimi.git
+cd tousatsu-mimi
 
 # シンプルなHTTPサーバーで起動（Python 3 の場合）
 python -m http.server 8000
