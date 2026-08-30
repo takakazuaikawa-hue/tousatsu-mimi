@@ -489,7 +489,7 @@ window.psychStageFallback = function(imgEl, key) {
     imgEl.dataset.psychStage2 = '1';
     if (stage) stage.classList.replace('v2p-mode-cutin', 'v2p-mode-standee');
     imgEl.onerror = () => window.psychStageFallback(imgEl, key);
-    imgEl.src = `assets/characters/${key}_default.png`;
+    imgEl.src = `assets/characters/${key}_default.webp`;
   } else {
     imgEl.onerror = null;
     window.assetFallback(imgEl, key);
@@ -509,12 +509,12 @@ function setMimiExpression(expr) {
       ? save.equippedMimiSkin : null;
     const goPlainDefault = () => {
       img.onerror = () => { img.onerror = null; window.assetFallback(img, 'mimi'); };
-      img.src = 'assets/characters/mimi_default.png';
+      img.src = 'assets/characters/mimi_default.webp';
     };
     const goDefault = () => {
       if (skin) {
         img.onerror = goPlainDefault; // スキン画像が無ければ通常ミミへ
-        img.src = `assets/characters/mimi_${skin}.png`;
+        img.src = `assets/characters/mimi_${skin}.webp`;
       } else {
         goPlainDefault();
       }
@@ -528,7 +528,7 @@ function setMimiExpression(expr) {
     }
     if (!expr || expr === 'default') { goDefault(); return; }
     img.onerror = goDefault;
-    img.src = `assets/characters/mimi_${expr}.png`;
+    img.src = `assets/characters/mimi_${expr}.webp`;
   });
 }
 
@@ -585,11 +585,11 @@ function setOpponentExpression(mood) {
   targets.forEach(img => {
     const goDefault = () => {
       img.onerror = () => { img.onerror = null; window.assetFallback(img, key); };
-      img.src = `assets/characters/${key}_default.png`;
+      img.src = `assets/characters/${key}_default.webp`;
     };
     if (!expr) { goDefault(); return; }
     img.onerror = goDefault; // 差分ファイルが無ければ default へ
-    img.src = `assets/characters/${key}_${expr}.png`;
+    img.src = `assets/characters/${key}_${expr}.webp`;
   });
 }
 
@@ -2975,7 +2975,7 @@ function applyBindings() {
         el.onerror = function() {
           // バリエーション画像が無ければ default にフォールバック
           this.onerror = function() { window.assetFallback(this, 'rico'); };
-          this.src = 'assets/characters/rico_default.png';
+          this.src = 'assets/characters/rico_default.webp';
         };
         el.src = `assets/characters/${o.file}`;
         break;
@@ -3023,7 +3023,7 @@ function applyBindings() {
       case 'dangerBar': el.innerHTML = renderDangerBar(); break;
       case 'opponentImg':
         el.onerror = function() { window.assetFallback(this, state.opponentImgKey); };
-        el.src = `assets/characters/${state.opponentImgKey}_default.png`;
+        el.src = `assets/characters/${state.opponentImgKey}_default.webp`;
         // 現在の表情ムードがあれば再適用（render後も表情を維持）
         if (state.opponentExpr && state.opponentExpr !== 'default') {
           setTimeout(() => setOpponentExpression(state.opponentExpr), 0);
@@ -3169,7 +3169,7 @@ function showEpisodeTitle(key, onContinue) {
   if (!ep) { if (onContinue) onContinue(); return; }
   const overlay = document.createElement('div');
   overlay.className = `episode-overlay ep-bg-${ep.bg}`;
-  const imgPath = `assets/episodes/${key}.png`;
+  const imgPath = `assets/episodes/${key}.webp`;
   const probe = new Image();
   probe.onload = () => {
     overlay.style.backgroundImage = `url('${imgPath}')`;
@@ -3206,7 +3206,7 @@ function showEpisodeTitle(key, onContinue) {
 // 幕間（インターミッション）
 // 各ステージ「初回クリア」の勝利リザルト後に1画面はさむ、短い会話→ご褒美CG開放。
 // speaker: 'rico' | 'mimi' | 相手ID。3〜5行、最後の1行で次の相手を予告する。
-// cg: 会話後に開放される「ご褒美CG」の想定パス（無ければ assets/episodes/<相手ID>.png にフォールバック）。
+// cg: 会話後に開放される「ご褒美CG」の想定パス（無ければ assets/episodes/<相手ID>.webp にフォールバック）。
 //=============================================================
 const INTERMISSIONS = {
   rico_tutorial: {
@@ -3278,15 +3278,15 @@ function showIntermission(opponentId, onDone) {
     <div class="ims-bg">
       <img class="ims-bg-img" alt=""
            src="assets/backgrounds/bg_intermission.jpg"
-           onerror="this.onerror=null;this.src='assets/backgrounds/lobby.png';">
+           onerror="this.onerror=null;this.src='assets/backgrounds/lobby.webp';">
     </div>
     <div class="ims-stage">
       <div class="ims-char ims-char-mimi character-frame" data-ims-side="mimi">
         <img alt="ミミ" src="assets/characters/mimi_intermission.webp"
-             onerror="this.onerror=null;this.src='assets/characters/mimi_default.png';">
+             onerror="this.onerror=null;this.src='assets/characters/mimi_default.webp';">
       </div>
       <div class="ims-char ims-char-opp character-frame" data-ims-side="opp">
-        <img alt="${oppName}" src="assets/characters/${oppImgKey}_default.png"
+        <img alt="${oppName}" src="assets/characters/${oppImgKey}_default.webp"
              onerror="window.assetFallback(this,'${oppImgKey}')">
       </div>
     </div>
@@ -3339,7 +3339,7 @@ function showIntermission(opponentId, onDone) {
     const meta = speakerMeta(line.speaker);
     dlgName.textContent = meta.name;
     dlgText.textContent = line.text;
-    dlgFaceImg.onerror = () => { dlgFaceImg.onerror = null; dlgFaceImg.src = 'assets/characters/mimi_default.png'; };
+    dlgFaceImg.onerror = () => { dlgFaceImg.onerror = null; dlgFaceImg.src = 'assets/characters/mimi_default.webp'; };
     dlgFaceImg.src = meta.img;
     dialogueBox.classList.remove('ims-speaker-mimi', 'ims-speaker-rico', 'ims-speaker-opp');
     dialogueBox.classList.add('ims-speaker-' + meta.side);
@@ -3367,7 +3367,7 @@ function showIntermission(opponentId, onDone) {
     const cgPath = data.cg || `assets/backgrounds/reward_cg_${opponentId}.jpg`;
     cgImg.onerror = () => {
       cgImg.onerror = () => { cgImg.onerror = null; cgImg.style.display = 'none'; cgLayer.classList.add('ims-cg-noimg'); };
-      cgImg.src = `assets/episodes/${opponentId}.png`;
+      cgImg.src = `assets/episodes/${opponentId}.webp`;
     };
     cgImg.src = cgPath;
     cgLayer.hidden = false;
@@ -3397,7 +3397,7 @@ function showRewardCgViewer(id) {
     <div class="reward-cg-viewer-body">
       <img class="reward-cg-viewer-img" alt="${opp.name || ''}"
            src="assets/backgrounds/reward_cg_${id}.jpg"
-           onerror="this.onerror=function(){this.onerror=null;this.style.display='none';this.closest('.reward-cg-viewer-body').classList.add('noimg');};this.src='assets/episodes/${id}.png';">
+           onerror="this.onerror=function(){this.onerror=null;this.style.display='none';this.closest('.reward-cg-viewer-body').classList.add('noimg');};this.src='assets/episodes/${id}.webp';">
       <div class="reward-cg-viewer-hint">タップして閉じる</div>
     </div>
   `;
@@ -3456,7 +3456,7 @@ function renderStageList() {
         ${opp.isBoss ? '<div class="lobby-door-band lobby-door-band-boss">VIP ROOM</div>' : ''}
         <div class="lobby-door-no">${doorNo}</div>
         <div class="lobby-door-portrait">
-          <img src="assets/characters/${opp.imgKey}_default.png" alt="???" onerror="window.assetFallback(this,'${opp.imgKey}')">
+          <img src="assets/characters/${opp.imgKey}_default.webp" alt="???" onerror="window.assetFallback(this,'${opp.imgKey}')">
         </div>
         <div class="lobby-door-foot">
           <div class="lobby-door-name">???</div>
@@ -3491,7 +3491,7 @@ function renderStageList() {
       <div class="lobby-door-no">${doorNo}</div>
       ${cleared ? `<div class="lobby-door-clear" title="ベストランク">${UI_ICON.check} ${bestRank || ''}</div>` : ''}
       <div class="lobby-door-portrait" data-action="char-profile" data-char="${sid}" title="${opp.name}のプロフィールを見る">
-        <img src="assets/characters/${opp.imgKey}_default.png" alt="${opp.name}" onerror="window.assetFallback(this,'${opp.imgKey}')">
+        <img src="assets/characters/${opp.imgKey}_default.webp" alt="${opp.name}" onerror="window.assetFallback(this,'${opp.imgKey}')">
         <span class="lobby-door-portrait-hint">プロフィール</span>
       </div>
       <div class="lobby-door-foot">
@@ -3574,7 +3574,7 @@ function renderLobbyV3__unused() { // 旧v3（ヒーローステージ）。v4�
       const tip = !unlocked ? '施錠中' : done ? `${o.name}と再戦` : `${o.name}に挑戦`;
       return `${i > 0 ? `<span class="lb3-rail-seg${(done || isHero) ? ' is-lit' : ''}"></span>` : ''}
         <button class="${cls}" ${act ? `data-action="${act}" data-opponent="${sid}"` : 'disabled'} title="${tip}">
-          <img src="assets/characters/${o.imgKey}_default.png" alt="${o.name}" onerror="window.assetFallback(this,'${o.imgKey}')">
+          <img src="assets/characters/${o.imgKey}_default.webp" alt="${o.name}" onerror="window.assetFallback(this,'${o.imgKey}')">
           ${done ? '<b class="lb3-rail-check">✓</b>' : ''}
           ${sid === 'velvet' ? '<b class="lb3-rail-vip v2-disp">VIP</b>' : ''}
         </button>`;
@@ -3585,7 +3585,7 @@ function renderLobbyV3__unused() { // 旧v3（ヒーローステージ）。v4�
   const typo = q('[data-bind="lb3Typo"]'); if (typo) typo.textContent = OPP_LATIN[heroId] || '';
   const heroImg = q('[data-bind="lb3HeroImg"]');
   if (heroImg) {
-    heroImg.src = `assets/characters/${opp.imgKey}_default.png`;
+    heroImg.src = `assets/characters/${opp.imgKey}_default.webp`;
     heroImg.alt = opp.name;
     heroImg.onerror = function() { this.onerror = null; window.assetFallback(this, opp.imgKey); };
     heroImg.dataset.action = 'char-profile';
@@ -3706,7 +3706,7 @@ function renderLobbyV3() {
         ${band}
         ${done ? '<div class="lb5-seal v2-disp">CLEAR</div>' : ''}
         <button class="lb5-card-portrait" ${unl ? `data-action="char-profile" data-char="${sid}" title="${o.name}のプロフィールを見る"` : 'disabled title="施錠中"'}>
-          <img src="assets/characters/${o.imgKey}_default.png" alt="${unl ? o.name : '？？？'}" onerror="window.assetFallback(this,'${o.imgKey}')">
+          <img src="assets/characters/${o.imgKey}_default.webp" alt="${unl ? o.name : '？？？'}" onerror="window.assetFallback(this,'${o.imgKey}')">
         </button>
         <div class="lb5-card-foot">
           <div class="lb5-card-title"><span class="lb5-card-no v2-disp">${no}</span><b class="lb5-card-name">${unl ? o.name : '？？？'}</b></div>
@@ -3754,7 +3754,7 @@ function renderLobbyV4__unused() { // 旧v4カルーセル。v5カード一覧�
       const cls = ['lb4-dot', sid === heroId ? 'is-sel' : '', done ? 'is-cleared' : '', !unl ? 'is-locked' : '', (sid === nextId && sid !== heroId) ? 'is-next' : ''].filter(Boolean).join(' ');
       // 丸アイコンに全身絵は不可（潰れて見えない）。専用の顔クロップを使う
       return `<button class="${cls}" data-action="lb4-select" data-opponent="${sid}" title="${unl ? o.name : '？？？'}">
-        <img src="assets/ui/face_${o.imgKey}.webp" alt="" onerror="this.onerror=function(){window.assetFallback(this,'${o.imgKey}')};this.src='assets/characters/${o.imgKey}_default.png';">
+        <img src="assets/ui/face_${o.imgKey}.webp" alt="" onerror="this.onerror=function(){window.assetFallback(this,'${o.imgKey}')};this.src='assets/characters/${o.imgKey}_default.webp';">
         ${done ? '<b class="lb4-dot-check">✓</b>' : ''}
       </button>`;
     }).join('');
@@ -3764,7 +3764,7 @@ function renderLobbyV4__unused() { // 旧v4カルーセル。v5カード一覧�
   const typo = q('[data-bind="lb4Typo"]'); if (typo) typo.textContent = unlocked ? (OPP_LATIN[heroId] || '') : '？？？';
   const img = q('[data-bind="lb4OppImg"]');
   if (img) {
-    img.src = `assets/characters/${opp.imgKey}_default.png`;
+    img.src = `assets/characters/${opp.imgKey}_default.webp`;
     img.alt = unlocked ? opp.name : '？？？';
     img.onerror = function() { this.onerror = null; window.assetFallback(this, opp.imgKey); };
     img.classList.toggle('is-locked', !unlocked);
@@ -5613,7 +5613,7 @@ function renderPotBlock() {
     <div class="v2-disp v2-pot-num bu-pot-physical">${state.pot || 0}</div>
     <div class="v2-pot-sub">
       ${opp > 0 ? `<span class="v2-chip v2-chip-red">${oppName} +${opp} <em>${sizeTag}</em></span>` : ''}
-      <span class="v2-chip v2-chip-dark"><img class="v2-chip-icon" src="assets/ui/chip_red.png" alt="">残り ${state.opponentChips}</span>
+      <span class="v2-chip v2-chip-dark"><img class="v2-chip-icon" src="assets/ui/chip_red.webp" alt="">残り ${state.opponentChips}</span>
     </div>
     <div class="v2-stackbar v2-stackbar-opp"><i style="width:${chipBarPct(state.opponentChips)}%"></i></div>`;
 }
@@ -6910,7 +6910,7 @@ function startEndingShow(playMusic) {
       wrap.dataset.img = a.img;
       wrap.innerHTML = `
         <div class="ek-img-frame">
-          <img class="ek-img" src="assets/episodes/${a.img}.png" alt=""
+          <img class="ek-img" src="assets/episodes/${a.img}.webp" alt=""
                onerror="this.style.display='none'; this.parentElement.classList.add('ek-fallback');">
         </div>
         <div class="ek-vignette"></div>
@@ -6970,9 +6970,9 @@ function startEndingShow(playMusic) {
       wrap.className = `ending-portrait-scene portrait-${a.img}`;
       wrap.dataset.img = a.img;
       const imgPath = a.type === 'speaker'
-        ? `assets/characters/${a.img}_default.png`
-        : `assets/characters/${a.img}.png`;
-      const fallbackPath = a.fallback ? `assets/characters/${a.fallback}.png` : '';
+        ? `assets/characters/${a.img}_default.webp`
+        : `assets/characters/${a.img}.webp`;
+      const fallbackPath = a.fallback ? `assets/characters/${a.fallback}.webp` : '';
       // onerror で fallback に切り替え、それでも駄目なら assetFallback で絵文字
       const fallbackInline = a.fallback
         ? `this.onerror=function(){this.onerror=null;window.assetFallback(this,this.src.split('/').pop().replace('.png','').split('_')[0])};this.src='${fallbackPath}';`
@@ -7269,7 +7269,7 @@ function startCreditsRoll(stage) {
     const movingRight = (m.dir === 'lr');
     const needFlip = (naturalRight !== movingRight);
     img.className = `cr-mini-img mini-pers-${m.personality}${needFlip ? ' cr-flip' : ''}`;
-    img.src = `assets/characters/${m.key}_mini.png`;
+    img.src = `assets/characters/${m.key}_mini.webp`;
     // 1ショット系（jump/trip）だけ：ラッパーの登場と同期するため delay と尺を合わせる。
     // infinite 系（skip/normal/pauses）は CSS の固定サイクル(0.32s/0.5s/0.8s)に任せ、
     // インラインで delay を付けると greeting 後に再開しなくなるため触らない。
@@ -7280,7 +7280,7 @@ function startCreditsRoll(stage) {
     img.onerror = () => {
       if (img.src.endsWith('_mini.png')) {
         img.onerror = () => { img.style.display = 'none'; };
-        img.src = `assets/characters/${m.key}_default.png`;
+        img.src = `assets/characters/${m.key}_default.webp`;
       } else { img.style.display = 'none'; }
     };
     wrap.appendChild(img);
@@ -7415,11 +7415,11 @@ function startCreditsRoll(stage) {
       const wantsRight = (m.side === 'L');
       const isNatRight = !!natRight[m.key];
       if (wantsRight !== isNatRight) img.classList.add('cr-flip');
-      img.src = `assets/characters/${m.key}_mini.png`;
+      img.src = `assets/characters/${m.key}_mini.webp`;
       img.onerror = () => {
         if (img.src.endsWith('_mini.png')) {
           img.onerror = () => { img.style.display = 'none'; };
-          img.src = `assets/characters/${m.key}_default.png`;
+          img.src = `assets/characters/${m.key}_default.webp`;
         } else { img.style.display = 'none'; }
       };
       slot.appendChild(img);
@@ -7467,7 +7467,7 @@ function showEndingFinalButtons(stage) {
   epilogue.className = 'ending-epilogue';
   epilogue.innerHTML = `
     <div class="ep-img-wrap">
-      <img class="ep-img" src="assets/episodes/ending.png" alt=""
+      <img class="ep-img" src="assets/episodes/ending.webp" alt=""
            onerror="this.style.display='none'; this.parentElement.classList.add('ep-fallback');">
       <div class="ep-vignette"></div>
     </div>
@@ -9132,8 +9132,8 @@ function showMiniPokerGame() {
     return `
       <div class="mp-char ${rotateClass}">
         ${moodBadge}
-        <img class="mp-char-img" src="assets/characters/${charInfo.key}_mini.png"
-             onerror="this.onerror=null;this.src='assets/characters/${charInfo.key}_default.png';this.onerror=function(){this.style.display='none'};">
+        <img class="mp-char-img" src="assets/characters/${charInfo.key}_mini.webp"
+             onerror="this.onerror=null;this.src='assets/characters/${charInfo.key}_default.webp';this.onerror=function(){this.style.display='none'};">
         <div class="mp-char-name">${charInfo.name}</div>
       </div>
       ${cardsHtml}
@@ -10078,7 +10078,7 @@ function showMiniPokerGame() {
 
   function jumboCharCelebrate(side) {
     // 勝利キャラが画面中央に jumbo で飛び出す（1.5s）
-    const src = side === 'player' ? 'assets/characters/mimi_mini.png' : `assets/characters/${ctx.opp.key}_mini.png`;
+    const src = side === 'player' ? 'assets/characters/mimi_mini.webp' : `assets/characters/${ctx.opp.key}_mini.webp`;
     const fx = overlay.querySelector('[data-mpb="fx"]');
     const jumbo = document.createElement('div');
     jumbo.className = 'mp-jumbo-char';
@@ -10557,7 +10557,7 @@ function showCollectionModal() {
     if (rewardCgSeen.includes(id)) {
       return `<button class="coll-cg-card on" data-action="view-reward-cg" data-cg-id="${id}" title="${opp.name}のご褒美CGを見る">
         <img src="assets/backgrounds/reward_cg_${id}.jpg" alt="${opp.name}"
-             onerror="this.onerror=function(){this.onerror=null;this.style.display='none';this.parentElement.classList.add('noimg');};this.src='assets/episodes/${id}.png';">
+             onerror="this.onerror=function(){this.onerror=null;this.style.display='none';this.parentElement.classList.add('noimg');};this.src='assets/episodes/${id}.webp';">
         <div class="coll-cg-label">${opp.name}</div>
       </button>`;
     }
@@ -11268,7 +11268,7 @@ function showRulePrimer(onDone) {
         <button type="button" class="rp-skip-btn">スキップ ▶▶</button>
         <div class="rp-visual rp-visual-${cfg.key}">${renderPrimerVisual(cfg.key)}</div>
         <div class="rp-rico">
-          <div class="rp-rico-face"><img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')"></div>
+          <div class="rp-rico-face"><img src="assets/characters/rico_default.webp" alt="リコ先輩" onerror="window.assetFallback(this,'rico')"></div>
           <div class="rp-rico-bubble">${cfg.rico}</div>
         </div>
         <button type="button" class="btn btn-primary rp-next-btn">${isLast ? '研修へ ▶' : '次へ ▶'}</button>
@@ -11322,7 +11322,7 @@ function renderPrimerVisual(key) {
   return `
     <div class="rp-pot-diagram">
       <div class="rp-pot-side rp-pot-side-mimi">
-        <div class="rp-pot-face"><img src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')"></div>
+        <div class="rp-pot-face"><img src="assets/characters/mimi_default.webp" alt="ミミ" onerror="window.assetFallback(this,'mimi')"></div>
         <div class="rp-pot-name">ミミ</div>
       </div>
       <div class="rp-pot-arrow rp-pot-arrow-left"><span class="rp-pot-chip"></span><span class="rp-pot-chip"></span></div>
@@ -11332,7 +11332,7 @@ function renderPrimerVisual(key) {
       </div>
       <div class="rp-pot-arrow rp-pot-arrow-right"><span class="rp-pot-chip"></span><span class="rp-pot-chip"></span></div>
       <div class="rp-pot-side rp-pot-side-opp">
-        <div class="rp-pot-face"><img src="assets/characters/rico_default.png" alt="相手" onerror="window.assetFallback(this,'rico')"></div>
+        <div class="rp-pot-face"><img src="assets/characters/rico_default.webp" alt="相手" onerror="window.assetFallback(this,'rico')"></div>
         <div class="rp-pot-name">相手</div>
       </div>
     </div>
@@ -11901,7 +11901,7 @@ function showAllInCutIn(side, amount) {
     <div class="allin-burst"></div>
     <div class="allin-portrait">
       <img src="assets/characters/${isPlayer ? 'mimi_allin.webp' : imgKey + '_default.png'}" alt="${name}"
-           onerror="this.onerror=function(){window.assetFallback(this,'${imgKey}')};this.src='assets/characters/${imgKey}_default.png';">
+           onerror="this.onerror=function(){window.assetFallback(this,'${imgKey}')};this.src='assets/characters/${imgKey}_default.webp';">
     </div>
     <div class="allin-text-wrap">
       <div class="allin-kanji">全</div>
@@ -12351,7 +12351,7 @@ function triggerPsychBattle(qid) {
     const imgKey = state.opponentImgKey || 'polka';
     const oppName = state.opponentName || '相手';
     oppCharEl.innerHTML = `
-      <img data-opp-face src="assets/characters/${imgKey}_default.png" alt="${oppName}" onerror="window.assetFallback(this,'${imgKey}')">
+      <img data-opp-face src="assets/characters/${imgKey}_default.webp" alt="${oppName}" onerror="window.assetFallback(this,'${imgKey}')">
       <div class="portrait-name">${oppName}</div>
     `;
   }
@@ -12415,7 +12415,7 @@ function triggerPsychBattle(qid) {
   if (!isLogic && state.opponentImgKey && qid !== 'velvet_opening') {
     speechEl.innerHTML = `
       <div class="psych-opponent-face">
-        <img data-opp-face src="assets/characters/${state.opponentImgKey}_default.png" alt="${state.opponentName}" onerror="window.assetFallback(this,'${state.opponentImgKey}')">
+        <img data-opp-face src="assets/characters/${state.opponentImgKey}_default.webp" alt="${state.opponentName}" onerror="window.assetFallback(this,'${state.opponentImgKey}')">
       </div>
       <div class="psych-opponent-line">
         <div class="psych-opponent-name">${state.opponentName}</div>
@@ -12659,7 +12659,7 @@ function showPanyuClicker(totalTaps, onComplete) {
   overlay.innerHTML = `
     <div class="panyu-bg-picker">${bgPicker}</div>
     <img class="panyu-bg-char" src="assets/characters/panyu_reach.webp" alt=""
-         onerror="this.onerror=function(){this.style.display='none'};this.src='assets/characters/panyu.png';">
+         onerror="this.onerror=function(){this.style.display='none'};this.src='assets/characters/panyu.webp';">
     <div class="panyu-clicker-label-top">タップ or ぐりぐり！ <small>両手でOK</small></div>
     <div class="panyu-clicker-pair">
       ${blobTemplate('panyu-blob-l')}
@@ -14226,13 +14226,13 @@ function endBattle() {
   const mimiImg = document.querySelector('[data-result-mimi]');
   if (mimiImg) {
     mimiImg.src = `assets/characters/${won ? 'mimi_win' : 'mimi_sad'}.png`;
-    mimiImg.onerror = () => { mimiImg.onerror = null; mimiImg.src = 'assets/characters/mimi_default.png'; };
+    mimiImg.onerror = () => { mimiImg.onerror = null; mimiImg.src = 'assets/characters/mimi_default.webp'; };
   }
   const oppImg = document.querySelector('[data-result-opp]');
   if (oppImg && state.opponentImgKey) {
     const key = state.opponentImgKey;
     const mood = (OPPONENT_EXPRESSIONS[key] || {})[won ? 'defeat' : 'pleased'];
-    oppImg.onerror = () => { oppImg.onerror = null; oppImg.src = `assets/characters/${key}_default.png`; };
+    oppImg.onerror = () => { oppImg.onerror = null; oppImg.src = `assets/characters/${key}_default.webp`; };
     oppImg.src = `assets/characters/${key}_${mood || 'default'}.png`;
   }
   const setText = (k, v) => { const el = document.querySelector(`[data-bind="${k}"]`); if (el) el.textContent = v; };
@@ -14995,7 +14995,7 @@ function showRicoCutIn(text, isSuccess, onClose) {
   cut.className = 'rico-cutin ' + (isSuccess ? 'cutin-success' : 'cutin-fail');
   cut.innerHTML = `
     <div class="cutin-portrait">
-      <img src="assets/ui/face_rico.webp" alt="リコ先輩" onerror="this.onerror=function(){window.assetFallback(this,'rico')};this.src='assets/characters/rico_default.png';">
+      <img src="assets/ui/face_rico.webp" alt="リコ先輩" onerror="this.onerror=function(){window.assetFallback(this,'rico')};this.src='assets/characters/rico_default.webp';">
     </div>
     <div class="cutin-text">
       <div class="cutin-name">リコ先輩</div>
@@ -15041,7 +15041,7 @@ function showOpponentCutIn(text, betSize) {
     cut.innerHTML = `
       <div class="v2c-dim"></div>
       <div class="v2c-slash"></div>
-      <div class="v2c-art"><img src="assets/characters/${imgKey}_cutin_smug.webp" alt="${oppName}" onerror="this.onerror=null;this.src='assets/characters/${imgKey}_default.png';this.classList.add('v2c-fallback')"></div>
+      <div class="v2c-art"><img src="assets/characters/${imgKey}_cutin_smug.webp" alt="${oppName}" onerror="this.onerror=null;this.src='assets/characters/${imgKey}_default.webp';this.classList.add('v2c-fallback')"></div>
       <div class="v2c-band"><div class="v2c-name v2-disp">${latin}</div><div class="v2c-line">「${text}」</div></div>
       <div class="v2c-amount"><div class="v2-disp v2c-amount-num">${sizeTag} +${amt}</div><div class="v2c-amount-sub">タップで閉じる</div></div>
     `;
@@ -15066,7 +15066,7 @@ function showOpponentCutIn(text, betSize) {
   cut.innerHTML = `
     <div class="cutin-flash"></div>
     <div class="cutin-portrait">
-      <img src="assets/characters/${imgKey}_cutin_smug.webp" alt="${oppName}" onerror="this.onerror=null;this.classList.add('no-cutin-art');this.src='assets/characters/${imgKey}_default.png'">
+      <img src="assets/characters/${imgKey}_cutin_smug.webp" alt="${oppName}" onerror="this.onerror=null;this.classList.add('no-cutin-art');this.src='assets/characters/${imgKey}_default.webp'">
       ${sparkleHtml}
     </div>
     <div class="cutin-text">
@@ -15112,7 +15112,7 @@ function showMimiCutIn(text, narration) {
   cut.className = 'rico-cutin mimi-cutin';
   cut.innerHTML = `
     <div class="cutin-portrait">
-      <img src="assets/characters/mimi_blush.png" alt="ミミ" onerror="this.src='assets/characters/mimi_default.png';window.assetFallback(this,'mimi')">
+      <img src="assets/characters/mimi_blush.webp" alt="ミミ" onerror="this.src='assets/characters/mimi_default.webp';window.assetFallback(this,'mimi')">
     </div>
     <div class="cutin-text">
       <div class="cutin-name">ミミ</div>
@@ -15298,25 +15298,21 @@ setTimeout(updateFullscreenBtn, 200);
 //=============================================================
 const PRELOAD_ASSETS = [
   // キャラ立ち絵（全身）
-  'assets/characters/rico_default.png',
-  'assets/characters/polka_default.png',
-  'assets/characters/selina_default.png',
-  'assets/characters/grano_default.png',
-  'assets/characters/velvet_default.png',
-  'assets/characters/mimi_default.png',
+  'assets/characters/rico_default.webp',
+  'assets/characters/polka_default.webp',
+  'assets/characters/selina_default.webp',
+  'assets/characters/grano_default.webp',
+  'assets/characters/velvet_default.webp',
+  'assets/characters/mimi_default.webp',
   // UI
-  'assets/ui/pot.png',
-  'assets/ui/chip_white.png',
-  'assets/ui/chip_red.png',
-  'assets/ui/chip_blue.png',
-  'assets/ui/chip_gold.png',
-  // エピソード一枚絵
-  'assets/episodes/rico_tutorial.png',
-  'assets/episodes/polka.png',
-  'assets/episodes/selina.png',
-  'assets/episodes/grano.png',
-  'assets/episodes/velvet.png',
-  'assets/episodes/ending.png',
+  'assets/ui/pot.webp',
+  'assets/ui/chip_white.webp',
+  'assets/ui/chip_red.webp',
+  'assets/ui/chip_blue.webp',
+  'assets/ui/chip_gold.webp',
+  // エピソード一枚絵：初回プレイヤーが最初に見る1枚だけ先読み。
+  // 残りは表示直前に読み込む（各300KB前後・起動待ちを約2秒短縮）
+  'assets/episodes/rico_tutorial.webp',
 ];
 const PRELOAD_AUDIO = [
   'assets/bgm/ending.m4a',
@@ -15446,7 +15442,7 @@ reapplyAllOwnedEffects();
   img.onerror = (e) => {
     console.warn('[atlas] load failed:', img.src, e);
   };
-  img.src = 'assets/ui/shop_atlas.png';
+  img.src = 'assets/ui/shop_atlas.webp';
 })();
 
 startPreload().then(() => {

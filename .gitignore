@@ -19,3 +19,12 @@ desktop.ini
 # ローカル一時ファイル
 .tmp/
 *.bak
+
+# Windows同期の衝突コピー・ロールバック退避（配信物ではない）
+*-WIN-*.js
+*-WIN-*.css
+*-WIN-*.html
+*.rollback-bak
+
+# 生成元データ（配信しない：元PNGは巨大）
+assets/_source_png/

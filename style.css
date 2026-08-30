@@ -334,7 +334,7 @@ html, body {
   background:
     radial-gradient(ellipse at 50% 30%, rgba(217,179,90,0.25), transparent 60%),
     linear-gradient(160deg, var(--c-purple) 0%, var(--c-bg-dark) 60%, #000 100%),
-    url('assets/backgrounds/title_bg.png') center/cover no-repeat;
+    url('assets/backgrounds/title_bg.webp') center/cover no-repeat;
   background-blend-mode: multiply, normal, normal;
 }
 /* HTML側で <img class="title-bg-img"> を使う場合の安全表示 */
@@ -351,7 +351,7 @@ html, body {
     linear-gradient(180deg, var(--c-bg-mid) 0%, var(--c-bg-dark) 100%);
 }
 
-/* ショップ専用背景：assets/backgrounds/shop.png があれば最優先で表示。
+/* ショップ専用背景：assets/backgrounds/shop.webp があれば最優先で表示。
    無ければ下のグラデにフォールバック。さらに上下に光・影オーバーレイ。 */
 .bg-shop {
   background:
@@ -376,7 +376,7 @@ html, body {
 .bg-poker {
   background-image:
     radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%),
-    url('assets/backgrounds/poker_table_bg.png');
+    url('assets/backgrounds/poker_table_bg.webp');
   background-size: cover, cover;
   background-position: center, center;
   background-repeat: no-repeat, no-repeat;
@@ -393,10 +393,10 @@ body[data-opp-bg="velvet"] .bg-poker {
   background-position: center, center, center;
   background-repeat: no-repeat, no-repeat, no-repeat;
 }
-body[data-opp-bg="polka"]  .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_polka.png'),  url('assets/backgrounds/poker_table_bg.png'); }
-body[data-opp-bg="selina"] .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_selina.png'), url('assets/backgrounds/poker_table_bg.png'); }
-body[data-opp-bg="grano"]  .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_grano.png'),  url('assets/backgrounds/poker_table_bg.png'); }
-body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_velvet.png'), url('assets/backgrounds/poker_table_bg.png'); }
+body[data-opp-bg="polka"]  .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_polka.webp'),  url('assets/backgrounds/poker_table_bg.webp'); }
+body[data-opp-bg="selina"] .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_selina.webp'), url('assets/backgrounds/poker_table_bg.webp'); }
+body[data-opp-bg="grano"]  .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_grano.webp'),  url('assets/backgrounds/poker_table_bg.webp'); }
+body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_velvet.webp'), url('assets/backgrounds/poker_table_bg.webp'); }
 .bg-result {
   background:
     radial-gradient(ellipse at 50% 30%, rgba(245,215,122,0.25), transparent 60%),
@@ -907,7 +907,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 /* ========== ロビー v2：卓の扉レイアウト（黒×深紅×金、斜めスラブ、バトルv2と同じ視覚言語） ========== */
 .lobby-screen { grid-template-rows: 92px 1fr; overflow: hidden; background: #0b0510; }
 
-/* 背景：assets/backgrounds/lobby.png（差し替え予定）を1箇所に集約 */
+/* 背景：assets/backgrounds/lobby.webp（差し替え予定）を1箇所に集約 */
 .bg-lobby {
   position: absolute; inset: 0; z-index: 0;
   background:
@@ -1023,7 +1023,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   max-height: 100%;
   background: linear-gradient(180deg, rgba(46, 12, 19,0.97) 0%, rgba(26, 6, 10,0.99) 100%);
   border: 16px solid rgba(245,215,122,0.5);
-  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 16px stretch;
   border-radius: 0;
   box-shadow: 0 12px 36px rgba(0,0,0,0.7), inset 0 0 32px rgba(245,215,122,0.06);
   display: flex; flex-direction: column;
@@ -1200,7 +1200,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
     radial-gradient(ellipse at 50% 0%, rgba(196, 76, 98,0.18) 0%, transparent 60%),
     linear-gradient(180deg, rgba(42, 12, 19,0.97) 0%, rgba(22, 5, 8,0.98) 100%);
   border: 16px solid rgba(245,215,122,0.5);
-  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 16px stretch;
   padding: 14px 18px;
   animation: cpPop 0.32s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
@@ -1818,7 +1818,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .ending-prompt-modal {
   background: linear-gradient(180deg, rgba(80, 20, 34,0.97) 0%, rgba(29, 8, 14,0.98) 100%);
   border: 14px solid rgba(245,215,122,0.5);
-  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 14px stretch;
   border-radius: 0;
   padding: 20px 26px;
   box-shadow: 0 0 40px rgba(245,215,122,0.6), 0 12px 40px rgba(0,0,0,0.8);
@@ -2188,7 +2188,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .settings-modal {
   background: linear-gradient(180deg, rgba(80, 20, 34,0.97) 0%, rgba(29, 8, 14,0.98) 100%);
   border: 14px solid rgba(245,215,122,0.5);
-  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 14px stretch;
   border-radius: 0;
   padding: 16px 20px;
   min-width: 380px;
@@ -2373,7 +2373,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   max-height: 100%;
   background: linear-gradient(180deg, rgba(46, 12, 19,0.97) 0%, rgba(26, 6, 10,0.99) 100%);
   border: 16px solid rgba(245,215,122,0.5);
-  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 16px stretch;
   border-radius: 0;
   box-shadow: 0 12px 36px rgba(0,0,0,0.7);
   display: flex; flex-direction: column;
@@ -2907,7 +2907,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .rico-mode-modal {
   background: linear-gradient(180deg, rgba(80, 20, 34,0.97) 0%, rgba(29, 8, 14,0.98) 100%);
   border: 14px solid rgba(245,215,122,0.5);
-  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 14px stretch;
   border-radius: 0;
   padding: 16px 22px;
   min-width: 460px;
@@ -2957,7 +2957,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .newgame-modal {
   background: linear-gradient(180deg, rgba(80, 20, 34,0.97) 0%, rgba(29, 8, 14,0.98) 100%);
   border: 14px solid rgba(245,215,122,0.5);
-  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 14px stretch;
   border-radius: 0;
   padding: 16px 20px;
   box-shadow: 0 0 30px rgba(245,215,122,0.5), 0 12px 36px rgba(0,0,0,0.7);
@@ -3343,7 +3343,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   padding: 24px 28px 20px;
   /* CODEX納品の金フレーム（404時は枠なし＝従来の角丸パネルのまま） */
   border: 18px solid transparent;
-  border-image: url('assets/ui/frame_gold.png') 96 / 18px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 18px stretch;
   border-radius: 18px;
   width: min(780px, 94vw);
   max-height: 86vh;
@@ -4024,10 +4024,10 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   background-position: center;
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5));
 }
-.chip-pic.chip-white { background-image: url('assets/ui/chip_white.png'); }
-.chip-pic.chip-red   { background-image: url('assets/ui/chip_red.png');   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)) drop-shadow(0 0 3px rgba(200,37,58,0.4)); }
-.chip-pic.chip-blue  { background-image: url('assets/ui/chip_blue.png');  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)) drop-shadow(0 0 3px rgba(50,100,255,0.4)); }
-.chip-pic.chip-gold  { background-image: url('assets/ui/chip_gold.png');  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)) drop-shadow(0 0 5px rgba(245,215,122,0.5)); }
+.chip-pic.chip-white { background-image: url('assets/ui/chip_white.webp'); }
+.chip-pic.chip-red   { background-image: url('assets/ui/chip_red.webp');   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)) drop-shadow(0 0 3px rgba(200,37,58,0.4)); }
+.chip-pic.chip-blue  { background-image: url('assets/ui/chip_blue.webp');  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)) drop-shadow(0 0 3px rgba(50,100,255,0.4)); }
+.chip-pic.chip-gold  { background-image: url('assets/ui/chip_gold.webp');  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)) drop-shadow(0 0 5px rgba(245,215,122,0.5)); }
 .chip-pic:first-child { margin-top: 0; }
 .chip-more {
   font-size: 9px;
@@ -5133,7 +5133,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   background: linear-gradient(180deg, rgba(46, 12, 19,0.97) 0%, rgba(26, 6, 10,0.99) 100%);
   /* 講義パートと同じ教室フレーム。実践演習の識別色(緑)はフォールバック時の枠色として残す */
   border: 14px solid #6dd96d;
-  border-image: url('assets/ui/frame_lecture.png') 96 / 14px stretch;
+  border-image: url('assets/ui/frame_lecture.webp') 96 / 14px stretch;
   border-radius: 0;
   box-shadow: 0 12px 36px rgba(0,0,0,0.7), 0 0 32px rgba(109,217,109,0.3);
   padding: 16px 20px;
@@ -5308,7 +5308,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   max-height: 100%;
   background: linear-gradient(180deg, rgba(46, 12, 19,0.97) 0%, rgba(26, 6, 10,0.99) 100%);
   border: 14px solid rgba(245,215,122,0.5);
-  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 14px stretch;
   border-radius: 0;
   box-shadow: 0 12px 36px rgba(0,0,0,0.7);
   position: relative;
@@ -5897,7 +5897,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 }
 .card.card-back {
   background:
-    url('assets/ui/card_back_default.png') center/cover no-repeat,
+    url('assets/ui/card_back_default.webp') center/cover no-repeat,
     repeating-linear-gradient(45deg, var(--c-purple) 0 8px, var(--c-bg-mid) 8px 16px);
   border: 2px solid var(--c-gold);
   box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 0 1px rgba(217,179,90,0.3) inset;
@@ -6072,7 +6072,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   z-index: 0;
   background:
     radial-gradient(ellipse at 50% 40%, rgba(200,37,58,0.5) 0%, rgba(40,10,20,0.7) 50%, var(--c-bg-dark) 100%),
-    url('assets/backgrounds/poker_table_bg.png') center/cover no-repeat;
+    url('assets/backgrounds/poker_table_bg.webp') center/cover no-repeat;
   background-blend-mode: multiply, normal;
   filter: blur(2px) saturate(0.8);
 }
@@ -6390,7 +6390,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   /* ★CODEX納品フレーム（9スライス）。画像404時は下の色付きborderがそのまま
      フォールバック枠として機能する（border-image失敗時の標準挙動） */
   border: 14px solid rgba(170, 60, 84,0.55);
-  border-image: url('assets/ui/frame_psych.png') 96 / 14px stretch;
+  border-image: url('assets/ui/frame_psych.webp') 96 / 14px stretch;
   border-radius: 0; /* border-image使用時 radius は効かないため明示的に無効化 */
   padding: 5px 12px 6px;
   gap: 6px;
@@ -6402,24 +6402,24 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 /* 論理バトル：青銀フレーム＋電脳グリッドテクスチャ */
 .battle-modal-overlay .psych-modal.logic-mode {
   border-color: rgba(80,140,220,0.55);
-  border-image: url('assets/ui/frame_logic.png') 96 / 14px stretch;
+  border-image: url('assets/ui/frame_logic.webp') 96 / 14px stretch;
   background:
     radial-gradient(ellipse at 50% 0%, rgba(80,180,255,0.16) 0%, transparent 60%),
     linear-gradient(180deg, rgba(8,18,40,0.94) 0%, rgba(4,10,26,0.96) 100%),
-    url('assets/ui/tex_grid_blue.png');
+    url('assets/ui/tex_grid_blue.webp');
   background-size: auto, auto, 256px 256px;
 }
 /* 講義：教室フレーム */
 .battle-modal-overlay .psych-modal.lecture-mode {
   border-color: rgba(200,120,40,0.55);
-  border-image: url('assets/ui/frame_lecture.png') 96 / 14px stretch;
+  border-image: url('assets/ui/frame_lecture.webp') 96 / 14px stretch;
 }
 /* 心理バトル：紫ダマスク織テクスチャを地に敷く */
 .battle-modal-overlay .psych-modal:not(.logic-mode):not(.lecture-mode) {
   background:
     radial-gradient(ellipse at 50% 0%, rgba(196, 76, 98,0.16) 0%, transparent 60%),
     linear-gradient(180deg, rgba(42, 12, 19,0.94) 0%, rgba(24, 6, 10,0.96) 100%),
-    url('assets/ui/tex_damask_purple.png');
+    url('assets/ui/tex_damask_purple.webp');
   background-size: auto, auto, 256px 256px;
 }
 
@@ -6428,12 +6428,12 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .battle-modal-overlay .battle-vignette {
   background:
     radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 90%),
-    url('assets/ui/fx_aura_psych.png') center bottom / cover no-repeat;
+    url('assets/ui/fx_aura_psych.webp') center bottom / cover no-repeat;
 }
 .battle-modal-overlay:has(.psych-modal.logic-mode) .battle-vignette {
   background:
     radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 90%),
-    url('assets/ui/fx_aura_logic.png') center bottom / cover no-repeat;
+    url('assets/ui/fx_aura_logic.webp') center bottom / cover no-repeat;
 }
 .battle-modal-overlay:has(.psych-modal.lecture-mode) .battle-vignette {
   /* 講義は落ち着いた既定ビネットのみ（オーラなし） */
@@ -6446,7 +6446,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   content: '';
   position: absolute;
   inset: 0;
-  background: url('assets/ui/fx_speedlines.png') center / cover no-repeat;
+  background: url('assets/ui/fx_speedlines.webp') center / cover no-repeat;
   opacity: 0.55;
   pointer-events: none;
   z-index: 0;
@@ -6456,7 +6456,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   content: '';
   position: absolute;
   inset: 0;
-  background: url('assets/ui/fx_flash_gold.png') center / cover no-repeat;
+  background: url('assets/ui/fx_flash_gold.webp') center / cover no-repeat;
   opacity: 0;
   pointer-events: none;
   z-index: 1;
@@ -6471,7 +6471,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 
 /* ===== CODEX 章バナー：講義リボン ===== */
 .chapter-banner .chapter-title {
-  background: url('assets/ui/lecture_ribbon.png') center / 100% 100% no-repeat;
+  background: url('assets/ui/lecture_ribbon.webp') center / 100% 100% no-repeat;
   padding: 18px 60px;
 }
 
@@ -6490,10 +6490,10 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   z-index: 12000;
   animation: stampSlam 0.85s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
 }
-.lecture-stamp.stamp-correct { background-image: url('assets/ui/stamp_correct.png'); }
-.lecture-stamp.stamp-wrong   { background-image: url('assets/ui/stamp_wrong.png'); }
+.lecture-stamp.stamp-correct { background-image: url('assets/ui/stamp_correct.webp'); }
+.lecture-stamp.stamp-wrong   { background-image: url('assets/ui/stamp_wrong.webp'); }
 .lecture-stamp.stamp-speed   {
-  background-image: url('assets/ui/stamp_speed.png');
+  background-image: url('assets/ui/stamp_speed.webp');
   width: 110px; height: 110px; margin-left: 40px; top: 32%;
   animation-delay: 0.15s;
 }
@@ -6513,7 +6513,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .stage-main-btn,
 .mp-btn-deal {
   border: 4px solid transparent;
-  border-image: url('assets/ui/btn_gold_large.png') 48 fill / 14px / 4px stretch;
+  border-image: url('assets/ui/btn_gold_large.webp') 48 fill / 14px / 4px stretch;
   text-shadow: 0 2px 4px rgba(0,0,0,0.85), 0 0 10px rgba(0,0,0,0.5);
 }
 /* 主CTA(.btn-primary.big)の隣に並ぶ副CTAが素の .btn-secondary のままだと
@@ -6521,7 +6521,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
    同じ理由で紫の大型ボタン素材を副CTA側にも適用する */
 .btn-secondary.big {
   border: 4px solid transparent;
-  border-image: url('assets/ui/btn_purple_large.png') 48 fill / 14px / 4px stretch;
+  border-image: url('assets/ui/btn_purple_large.webp') 48 fill / 14px / 4px stretch;
   text-shadow: 0 2px 4px rgba(0,0,0,0.85), 0 0 10px rgba(0,0,0,0.5);
 }
 /* ★重要：子要素の flex 圧縮を禁止（圧縮されるとテキスト下端が切れて読めなくなる）
@@ -8118,7 +8118,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   width: min(900px, 96vw);
   background: linear-gradient(180deg, var(--c-bg-mid) 0%, var(--c-bg-dark) 100%);
   border: 16px solid var(--c-gold-bright);
-  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 16px stretch;
   border-radius: 0;
   padding: 18px 24px;
   text-align: center;
@@ -8372,8 +8372,8 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   margin-right: calc(28vmin * -0.1);
   /* 左玉用画像（あれば共通画像を上書き、無ければ共通画像のまま） */
   background:
-    url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
-    url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
+    url('assets/ui/panyu_ball_l.webp') center/cover no-repeat,
+    url('assets/ui/panyu_ball_l.webp') center/cover no-repeat,
     transparent;
 }
 /* 右の玉：左側を平らに押しつぶす */
@@ -8381,8 +8381,8 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   clip-path: inset(0 0 0 5% round 30% 50% 50% 30%);
   /* 右玉用画像（あれば共通画像を上書き、無ければ共通画像のまま） */
   background:
-    url('assets/ui/panyu_ball_r.png') center/cover no-repeat,
-    url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
+    url('assets/ui/panyu_ball_r.webp') center/cover no-repeat,
+    url('assets/ui/panyu_ball_l.webp') center/cover no-repeat,
     transparent;
 }
 .panyu-clicker-blob {
@@ -8396,7 +8396,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   max-height: 360px;
   /* デフォルトは共通画像（あれば）／無ければ透明 */
   background:
-    url('assets/ui/panyu_ball_l.png') center/cover no-repeat,
+    url('assets/ui/panyu_ball_l.webp') center/cover no-repeat,
     transparent;
   border-radius: 50%;
   border: 6px solid #fff;
@@ -9100,7 +9100,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   width: min(480px, calc(100% - 40px));
   background: linear-gradient(180deg, #38121d 0%, #1a0820 100%);
   border: 14px solid var(--c-gold-bright);
-  border-image: url('assets/ui/frame_gold.png') 96 / 14px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 14px stretch;
   border-radius: 0;
   padding: 20px 22px;
   text-align: center;
@@ -9156,7 +9156,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   overflow-x: hidden;
   background: linear-gradient(180deg, #38121d 0%, #1a0820 100%);
   border: 16px solid var(--c-gold-bright);
-  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 16px stretch;
   border-radius: 0;
   padding: 18px 22px;
   color: #fbeec8;
@@ -9237,7 +9237,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   flex-direction: column;
   background: linear-gradient(180deg, #38121d 0%, #1a0820 100%);
   border: 16px solid var(--c-gold-bright);
-  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 16px stretch;
   border-radius: 0;
   color: #fbeec8;
   box-shadow: 0 12px 40px rgba(0,0,0,0.7);
@@ -9392,12 +9392,12 @@ body[data-cutin-skin="neon"] .cutin-portrait { box-shadow: 0 0 24px 6px rgba(255
 body[data-cutin-skin="neon"] .cutin-flash { background: radial-gradient(ellipse at 80% 50%, rgba(255, 80, 130,0.55) 0%, transparent 65%) !important; }
 
 /* ===== ショップUIアトラス（1536×512 単一PNG） =====
-   ファイル配置: assets/ui/shop_atlas.png
+   ファイル配置: assets/ui/shop_atlas.webp
    JS で読込検知後に body.has-shop-atlas を付与 → ここの規則が活性化。
    画像未配置時は何も追加されず、既存の絵文字UIがそのまま動く。 */
 
 :root {
-  --atlas-shop: url('assets/ui/shop_atlas.png');
+  --atlas-shop: url('assets/ui/shop_atlas.webp');
   /* セル基準：上段は 256×256、下段は 512×256。表示は 1/4 縮小（base=384×128） */
 }
 
@@ -10102,7 +10102,7 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
     radial-gradient(ellipse 80% 50% at 50% 35%, rgba(245,215,122,0.10) 0%, transparent 65%),
     radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%),
     /* 中層：背景画像（あれば優先） */
-    url('assets/backgrounds/ending_room.png') center / cover no-repeat,
+    url('assets/backgrounds/ending_room.webp') center / cover no-repeat,
     /* 最背面：漆黒 */
     #000;
 }
@@ -10321,7 +10321,7 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   /* staffroll.png を背景、上下に暗み・両端から中央へ明るみ */
   background:
     linear-gradient(180deg, rgba(10,4,18,0.85) 0%, rgba(10,4,18,0.55) 30%, rgba(10,4,18,0.55) 70%, rgba(10,4,18,0.85) 100%),
-    url('assets/backgrounds/staffroll.png') center / cover no-repeat,
+    url('assets/backgrounds/staffroll.webp') center / cover no-repeat,
     /* 画像がない時のフォールバック */
     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(140,50,90,0.4) 0%, transparent 60%),
     radial-gradient(ellipse 80% 60% at 50% 100%, rgba(140, 40, 62,0.4) 0%, transparent 60%),
@@ -10720,7 +10720,7 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
     linear-gradient(180deg, #260a12 0%, #0a0612 60%, #1e040d 100%);
   /* CODEX納品の金フレーム（404時は色付きborderにフォールバック） */
   border: 20px solid rgba(245,215,122,0.45);
-  border-image: url('assets/ui/frame_gold.png') 96 / 20px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 20px stretch;
   border-radius: 0;
   box-shadow: 0 20px 60px rgba(0,0,0,0.85), inset 0 0 60px rgba(245,215,122,0.06);
   padding: 10px 16px 10px;
@@ -12527,7 +12527,7 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   align-items: center;
   background: linear-gradient(180deg, #38121d 0%, #1a0820 100%);
   border: 16px solid var(--c-gold-bright);
-  border-image: url('assets/ui/frame_gold.png') 96 / 16px stretch;
+  border-image: url('assets/ui/frame_gold.webp') 96 / 16px stretch;
   color: #fbeec8;
   box-shadow: 0 12px 40px rgba(0,0,0,0.7);
   overflow: hidden;
@@ -13089,7 +13089,7 @@ body.is-danger .bu-remain-num {
 .battle-screen.intro-hand-mode .left-panel {
   background:
     radial-gradient(ellipse at 50% 30%, rgba(255,193,216,0.18), transparent 60%),
-    url('assets/characters/mimi_mini.png') center 30% / 92% auto no-repeat,
+    url('assets/characters/mimi_mini.webp') center 30% / 92% auto no-repeat,
     rgba(0,0,0,0.35);
 }
 .battle-screen.intro-hand-mode .rico-bubble { position: absolute; left: 8px; right: 8px; bottom: 12px; }
