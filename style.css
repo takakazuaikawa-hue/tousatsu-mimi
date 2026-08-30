@@ -15023,3 +15023,12 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
 /* ⑩リコのカットイン：紫の下地と「全身絵を2.4倍ズーム」の禁止パターンを解消 */
 .cutin-portrait { background: linear-gradient(180deg, #2a0a12 0%, #10040a 100%); }
 .cutin-portrait img { transform: none !important; object-position: center !important; }
+
+/* toast の強調版：解放通知など「見逃してほしくない」一度きりの知らせ用 */
+.toast.toast-big {
+  font-size: 16px; font-weight: 900; letter-spacing: .04em;
+  padding: 16px 26px; max-width: 620px; line-height: 1.5;
+  background: linear-gradient(180deg, rgba(40,14,20,.97), rgba(20,6,10,.98));
+  box-shadow: inset 0 0 0 2px rgba(245,215,122,.8), 0 0 30px rgba(245,215,122,.32), 0 16px 34px rgba(0,0,0,.65);
+  color: #ffe9a8;
+}

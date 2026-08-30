@@ -315,9 +315,6 @@ function sfxVolFloat() {
 
 // 解放フラグの一元ヘルパ
 function isEndingUnlocked() { return !!(save && save.endingUnlocked); }
-function isStageCleared(stageId) {
-  return !!(save && Array.isArray(save.clearedStages) && save.clearedStages.includes(stageId));
-}
 // ステージクリア時に呼ぶ（派生フラグも一緒に更新）
 function markStageCleared(stageId) {
   if (!save.clearedStages.includes(stageId)) save.clearedStages.push(stageId);
@@ -522,7 +519,7 @@ function setMimiExpression(expr) {
     // v2 バトル画面：バストアップ差分（think / shock / win）を優先。無ければ従来PNGへ
     if (img.closest('.battle-screen.v2')) {
       const bust = { default: 'think', think: 'think', shock: 'shock', win: 'win', sad: 'sad', blush: 'win', smug: 'smug' }[expr || 'default'] || 'think';
-      img.onerror = () => { img.onerror = goDefault; img.src = `assets/characters/mimi_${expr && expr !== 'default' ? expr : 'default'}.png`; };
+      img.onerror = () => { img.onerror = goDefault; img.src = `assets/characters/mimi_${expr && expr !== 'default' ? expr : 'default'}.webp`; };
       img.src = `assets/characters/mimi_bust_${bust}.webp`;
       return;
     }
@@ -3551,111 +3548,6 @@ function lobbyNextStageId() {
   return STAGE_ORDER.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid)) || null;
 }
 
-function renderLobbyV3__unused() { // 旧v3（ヒーローステージ）。v4カルーセルに置換済み・参照なし
-  const q = sel => document.querySelector(sel);
-  const nextId = lobbyNextStageId();
-  const heroId = nextId || 'velvet'; // 全クリア後はヴェルベット再戦が今夜の演目
-  const opp = OPPONENTS[heroId];
-  if (!opp) return;
-  const cleared = save.clearedStages.includes(heroId);
-  const pre = LOBBY_PRESENT[heroId] || {};
-  const stageIdx = Math.max(0, STAGE_ORDER.indexOf(heroId));
-
-  // 進行レール：5人の顔と道のり
-  const rail = q('[data-bind="lb3Rail"]');
-  if (rail) {
-    rail.innerHTML = STAGE_ORDER.map((sid, i) => {
-      const o = OPPONENTS[sid];
-      const done = save.clearedStages.includes(sid);
-      const unlocked = isStageUnlocked(sid);
-      const isHero = sid === heroId;
-      const cls = ['lb3-rail-node', isHero ? 'is-current' : '', done ? 'is-cleared' : '', (!unlocked && !done) ? 'is-locked' : '', sid === 'velvet' ? 'is-vip' : ''].filter(Boolean).join(' ');
-      const act = !unlocked ? '' : (sid === 'rico_tutorial' && done ? 'rico-mode-chooser' : 'battle-start');
-      const tip = !unlocked ? '施錠中' : done ? `${o.name}と再戦` : `${o.name}に挑戦`;
-      return `${i > 0 ? `<span class="lb3-rail-seg${(done || isHero) ? ' is-lit' : ''}"></span>` : ''}
-        <button class="${cls}" ${act ? `data-action="${act}" data-opponent="${sid}"` : 'disabled'} title="${tip}">
-          <img src="assets/characters/${o.imgKey}_default.webp" alt="${o.name}" onerror="window.assetFallback(this,'${o.imgKey}')">
-          ${done ? '<b class="lb3-rail-check">✓</b>' : ''}
-          ${sid === 'velvet' ? '<b class="lb3-rail-vip v2-disp">VIP</b>' : ''}
-        </button>`;
-    }).join('');
-  }
-
-  // 中央ステージ
-  const typo = q('[data-bind="lb3Typo"]'); if (typo) typo.textContent = OPP_LATIN[heroId] || '';
-  const heroImg = q('[data-bind="lb3HeroImg"]');
-  if (heroImg) {
-    heroImg.src = `assets/characters/${opp.imgKey}_default.webp`;
-    heroImg.alt = opp.name;
-    heroImg.onerror = function() { this.onerror = null; window.assetFallback(this, opp.imgKey); };
-    heroImg.dataset.action = 'char-profile';
-    heroImg.dataset.char = heroId;
-    heroImg.title = `${opp.name}のプロフィールを見る`;
-  }
-  const taunt = q('[data-bind="lb3Taunt"]'); if (taunt) taunt.textContent = pre.taunt || '';
-
-  // プレゼンター（意思決定列）
-  const ricoLine = q('[data-bind="lb3RicoLine"]'); if (ricoLine) ricoLine.textContent = pre.rico || '「次の卓、開けてあげる」';
-  const eyebrow = q('[data-bind="lb3Eyebrow"]'); if (eyebrow) eyebrow.textContent = nextId ? "TONIGHT'S TABLE" : 'CHAMPION NIGHT';
-  const nameEl = q('[data-bind="lb3Name"]');
-  if (nameEl) { nameEl.textContent = opp.name; nameEl.style.fontSize = opp.name.length >= 5 ? '40px' : ''; }
-  const noEl = q('[data-bind="lb3StageNo"]'); if (noEl) noEl.textContent = `STAGE 0${stageIdx}`;
-  const themeEl = q('[data-bind="lb3Theme"]'); if (themeEl) themeEl.textContent = `─ ${opp.theme || ''} ─`;
-  const tellsEl = q('[data-bind="lb3Tells"]');
-  if (tellsEl) tellsEl.innerHTML = (pre.tells || []).map(([t, c], i) =>
-    `<span class="lb3-tell" style="border-left-color:${c}; transform:rotate(${i % 2 ? 2 : -3}deg)">${t}</span>`).join('');
-  const prizeEl = q('[data-bind="lb3Prize"]');
-  if (prizeEl) {
-    const amount = cleared ? (opp.rewardRematch || 50) : (opp.rewardFirst || 500);
-    prizeEl.innerHTML = `<span class="v2-disp lb3-prize-label">PRIZE</span><span class="v2-disp lb3-prize-num">${amount}</span><span class="lb3-prize-extra">${cleared ? '再戦報酬' : '＋ご褒美CG開放'}</span>`;
-  }
-  const cta = q('[data-bind="lb3Cta"]');
-  const ctaLabel = q('[data-bind="lb3CtaLabel"]');
-  if (cta) {
-    cta.dataset.opponent = heroId;
-    if (heroId === 'rico_tutorial') {
-      cta.dataset.action = cleared ? 'rico-mode-chooser' : 'battle-start';
-      if (ctaLabel) ctaLabel.textContent = cleared ? '対戦／受講 ▶' : '受講する ▶';
-    } else {
-      cta.dataset.action = 'battle-start';
-      if (ctaLabel) ctaLabel.textContent = cleared ? 'もう一度あの夜を ▶' : 'この卓につく ▶';
-    }
-  }
-  const sub = q('[data-bind="lb3Sub"]');
-  if (sub) {
-    const parts = [];
-    if (nextId && heroId !== 'rico_tutorial' && !cleared) {
-      parts.push(`<button class="lb3-sub-link" data-action="skip-stage" data-opponent="${heroId}" title="コインで勝利扱いにする">スキップ（${skipStageCost(opp)}コイン）</button>`);
-    }
-    const prevCleared = [...STAGE_ORDER].reverse().find(sid => sid !== heroId && save.clearedStages.includes(sid));
-    if (prevCleared) {
-      const po = OPPONENTS[prevCleared];
-      const act = prevCleared === 'rico_tutorial' ? 'rico-mode-chooser' : 'battle-start';
-      parts.push(`<button class="lb3-sub-link" data-action="${act}" data-opponent="${prevCleared}">${po.name}と再戦</button>`);
-    }
-    sub.innerHTML = parts.join('');
-  }
-
-  // ミミのひとりごと＋帰ってくる理由
-  const th = q('[data-bind="lb3MimiThought"]'); if (th) th.textContent = pick(LB3_MIMI_THOUGHTS);
-  const hooks = q('[data-bind="lb3Hooks"]');
-  if (hooks) {
-    const cg = (save.rewardCgSeen || []).length;
-    const lb = save.loginBonus || { lastDate: '', streak: 0 };
-    const claimed = lb.lastDate === mpTodayKey();
-    hooks.innerHTML = `
-      <div class="lb3-hook${claimed ? '' : ' is-hot'}">
-        <i class="lb3-hook-coin"></i>
-        <div class="lb3-hook-body"><b>ログインボーナス</b><small>${claimed ? `${lb.streak}日目 受取済み` : '本日分 受取OK！'}</small></div>
-      </div>
-      <button class="lb3-hook lb3-hook-cg" data-action="open-collection" title="ご褒美CGコレクションを見る">
-        <div class="lb3-hook-body"><b>ご褒美CG</b>
-          <span class="lb3-hook-meter"><i style="width:${Math.round(cg / 5 * 100)}%"></i></span>
-        </div>
-        <span class="v2-disp lb3-hook-count">${cg}/5</span>
-      </button>`;
-  }
-}
 
 // ===== ロビー v4「卓のカルーセル」 =====
 // v3への指摘（比率が悪い／切替が直感的でない／没入感がない／色が多すぎ／リコの衣装が消えた）を全て反映：
@@ -3731,132 +3623,25 @@ function renderLobbyV3() {
   }
 }
 
-function renderLobbyV4__unused() { // 旧v4カルーセル。v5カード一覧に置換済み・参照なし
-  const q = sel => document.querySelector(sel);
-  const nextId = lobbyNextStageId();
-  if (!state.lobbySel || !STAGE_ORDER.includes(state.lobbySel)) state.lobbySel = nextId || 'velvet';
-  const heroId = state.lobbySel;
-  const opp = OPPONENTS[heroId];
-  if (!opp) return;
-  const cleared = save.clearedStages.includes(heroId);
-  const unlocked = isStageUnlocked(heroId);
-  const pre = LOBBY_PRESENT[heroId] || {};
-  const idx = STAGE_ORDER.indexOf(heroId);
-  const prevOpp = OPPONENTS[STAGE_ORDER[idx - 1]];
-
-  // 顔ドット（進行＋直接ジャンプ）
-  const dots = q('[data-bind="lb4Dots"]');
-  if (dots) {
-    dots.innerHTML = STAGE_ORDER.map(sid => {
-      const o = OPPONENTS[sid];
-      const done = save.clearedStages.includes(sid);
-      const unl = isStageUnlocked(sid);
-      const cls = ['lb4-dot', sid === heroId ? 'is-sel' : '', done ? 'is-cleared' : '', !unl ? 'is-locked' : '', (sid === nextId && sid !== heroId) ? 'is-next' : ''].filter(Boolean).join(' ');
-      // 丸アイコンに全身絵は不可（潰れて見えない）。専用の顔クロップを使う
-      return `<button class="${cls}" data-action="lb4-select" data-opponent="${sid}" title="${unl ? o.name : '？？？'}">
-        <img src="assets/ui/face_${o.imgKey}.webp" alt="" onerror="this.onerror=function(){window.assetFallback(this,'${o.imgKey}')};this.src='assets/characters/${o.imgKey}_default.webp';">
-        ${done ? '<b class="lb4-dot-check">✓</b>' : ''}
-      </button>`;
-    }).join('');
-  }
-
-  // 立ち絵・巨大ラテン名・挑発
-  const typo = q('[data-bind="lb4Typo"]'); if (typo) typo.textContent = unlocked ? (OPP_LATIN[heroId] || '') : '？？？';
-  const img = q('[data-bind="lb4OppImg"]');
-  if (img) {
-    img.src = `assets/characters/${opp.imgKey}_default.webp`;
-    img.alt = unlocked ? opp.name : '？？？';
-    img.onerror = function() { this.onerror = null; window.assetFallback(this, opp.imgKey); };
-    img.classList.toggle('is-locked', !unlocked);
-    if (unlocked) { img.dataset.action = 'char-profile'; img.dataset.char = heroId; img.title = `${opp.name}のプロフィールを見る`; }
-    else { delete img.dataset.action; delete img.dataset.char; img.title = '施錠中'; }
-  }
-  const taunt = q('[data-bind="lb4Taunt"]');
-  if (taunt) taunt.textContent = unlocked ? (pre.taunt || '') : '「…………」';
-
-  // 卓上の真鍮プレート
-  const plate = q('[data-bind="lb4Plate"]');
-  if (plate) {
-    const no = String(idx).padStart(2, '0');
-    if (unlocked) {
-      const amount = cleared ? (opp.rewardRematch || 50) : (opp.rewardFirst || 500);
-      plate.innerHTML = `
-        <span class="lb4-plate-no v2-disp">${no}</span>
-        <span class="lb4-plate-main"><b class="lb4-plate-name">${opp.name}</b><small class="lb4-plate-theme">${opp.theme || ''}</small></span>
-        <span class="lb4-plate-prize"><i class="v2-disp">PRIZE</i><b class="v2-disp">${amount}</b>${cleared ? '' : '<small>＋CG</small>'}</span>`;
-    } else {
-      plate.innerHTML = `
-        <span class="lb4-plate-no v2-disp">${no}</span>
-        <span class="lb4-plate-main"><b class="lb4-plate-name is-dim">？？？</b><small class="lb4-plate-theme">${prevOpp ? prevOpp.name + 'に勝つと解放' : ''}</small></span>
-        <span class="lb4-plate-lock">${LB4_LOCK_SVG}</span>`;
-    }
-  }
-
-  // リコの案内（選択中の相手について）
-  const ricoLine = q('[data-bind="lb4RicoLine"]');
-  if (ricoLine) {
-    ricoLine.textContent = !unlocked
-      ? `「その卓はまだ早いよ。まずは${prevOpp ? prevOpp.name : '前の相手'}からだ」`
-      : (pre.rico || '「ようこそ。今夜の卓、案内するよ」');
-  }
-
-  // CTA
-  const cta = q('[data-bind="lb4Cta"]');
-  const ctaLabel = q('[data-bind="lb4CtaLabel"]');
-  if (cta) {
-    cta.classList.toggle('is-disabled', !unlocked);
-    cta.disabled = !unlocked;
-    if (!unlocked) {
-      delete cta.dataset.action;
-      if (ctaLabel) ctaLabel.textContent = '施錠中';
-    } else {
-      cta.dataset.opponent = heroId;
-      if (heroId === 'rico_tutorial') {
-        cta.dataset.action = cleared ? 'rico-mode-chooser' : 'battle-start';
-        if (ctaLabel) ctaLabel.textContent = cleared ? '対戦／受講 ▶' : '受講する ▶';
-      } else {
-        cta.dataset.action = 'battle-start';
-        if (ctaLabel) ctaLabel.textContent = cleared ? '再戦する ▶' : 'この卓につく ▶';
-      }
-    }
-  }
-  const sub = q('[data-bind="lb4Sub"]');
-  if (sub) {
-    sub.innerHTML = (unlocked && !cleared && heroId !== 'rico_tutorial')
-      ? `<button class="lb3-sub-link" data-action="skip-stage" data-opponent="${heroId}" title="コインで勝利扱いにする">スキップ（${skipStageCost(opp)}コイン）</button>`
-      : '';
-  }
-
-  // 帰ってくる理由（右上・控えめ）
-  const hooks = q('[data-bind="lb4Hooks"]');
-  if (hooks) {
-    const cg = (save.rewardCgSeen || []).length;
-    const lb = save.loginBonus || { lastDate: '', streak: 0 };
-    const claimed = lb.lastDate === mpTodayKey();
-    hooks.innerHTML = `
-      <div class="lb4-hook${claimed ? '' : ' is-hot'}"><i class="lb3-hook-coin"></i><span>${claimed ? `ログボ ${lb.streak}日目` : 'ログボ 受取OK'}</span></div>
-      <button class="lb4-hook" data-action="open-collection" title="ご褒美CGコレクション"><span>ご褒美CG</span><span class="lb4-hook-meter"><i style="width:${Math.round(cg / 5 * 100)}%"></i></span><b class="v2-disp">${cg}/5</b></button>`;
-  }
-}
 
 // ロビー：リコ先輩の衣装バリエーション（assetsに置いた分だけ抽選対象になる）
 const RICO_OUTFITS = [
-  { file: 'rico_default.png',  label: '制服',         lines: ['「次の卓、選んじゃって」', '「今日も頑張ろ」'] },
-  { file: 'rico_pajama.png',   label: 'パジャマ',     lines: ['「ふぁ……まだ眠いんだけど」', '「夜更かしは禁物よ……」', '「布団恋しい……」'] },
-  { file: 'rico_bunny.png',    label: 'バニー',       lines: ['「お仕事モード、入りまーす」', '「お客様、卓へどうぞ」', '「ぴょん、ぴょん」'] },
-  { file: 'rico_casual.png',   label: '私服',         lines: ['「オフの私もよろしくね」', '「これ、新しく買ったの」', '「街、ぶらつかない？」'] },
-  { file: 'rico_dress.png',    label: 'ドレス',       lines: ['「今夜は……特別ね」', '「VIPルーム、覚悟は？」', '「アタシ、決めるときは決めるの」'] },
-  { file: 'rico_kimono.png',   label: '和装',         lines: ['「たまには、しっとりと」', '「お抹茶、いる？」'] },
-  { file: 'rico_swimsuit.png', label: '水着',         lines: ['「夏ね、夏」', '「日焼け止め塗った？」'] },
-  { file: 'rico_gym.png',      label: 'ジム服',       lines: ['「鍛えてる、最近」', '「メンタルも筋肉よ」'] },
-  { file: 'rico_school.png',   label: '制服（学生風）', lines: ['「先輩感、出てる？」', '「放課後、寄ってく？」'] },
-  { file: 'rico_witch.png',    label: '魔女',         lines: ['「ハロウィン気分」', '「呪い、かけちゃおっか？」'] },
-  { file: 'rico_santa.png',    label: 'サンタ',       lines: ['「メリクリ、ミミ」', '「プレゼント、何が欲しい？」'] },
+  { file: 'rico_default.webp',  label: '制服',         lines: ['「次の卓、選んじゃって」', '「今日も頑張ろ」'] },
+  { file: 'rico_pajama.webp',   label: 'パジャマ',     lines: ['「ふぁ……まだ眠いんだけど」', '「夜更かしは禁物よ……」', '「布団恋しい……」'] },
+  { file: 'rico_bunny.webp',    label: 'バニー',       lines: ['「お仕事モード、入りまーす」', '「お客様、卓へどうぞ」', '「ぴょん、ぴょん」'] },
+  { file: 'rico_casual.webp',   label: '私服',         lines: ['「オフの私もよろしくね」', '「これ、新しく買ったの」', '「街、ぶらつかない？」'] },
+  { file: 'rico_dress.webp',    label: 'ドレス',       lines: ['「今夜は……特別ね」', '「VIPルーム、覚悟は？」', '「アタシ、決めるときは決めるの」'] },
+  { file: 'rico_kimono.webp',   label: '和装',         lines: ['「たまには、しっとりと」', '「お抹茶、いる？」'] },
+  { file: 'rico_swimsuit.webp', label: '水着',         lines: ['「夏ね、夏」', '「日焼け止め塗った？」'] },
+  { file: 'rico_gym.webp',      label: 'ジム服',       lines: ['「鍛えてる、最近」', '「メンタルも筋肉よ」'] },
+  { file: 'rico_school.webp',   label: '制服（学生風）', lines: ['「先輩感、出てる？」', '「放課後、寄ってく？」'] },
+  { file: 'rico_witch.webp',    label: '魔女',         lines: ['「ハロウィン気分」', '「呪い、かけちゃおっか？」'] },
+  { file: 'rico_santa.webp',    label: 'サンタ',       lines: ['「メリクリ、ミミ」', '「プレゼント、何が欲しい？」'] },
 ];
 
 // 衣装ごとのトリビア（私生活／豆知識／戦術／こぼれ話）— 各カードは読みごたえ重視
 const RICO_TRIVIA = {
-  'rico_default.png': {
+  'rico_default.webp': {
     title: '制服のリコ先輩',
     cards: [
       { tag: '私生活', text: 'ボタンの裏に♠を自分で彫った。新人時代の覚悟の印。' },
@@ -3865,7 +3650,7 @@ const RICO_TRIVIA = {
       { tag: 'こぼれ話', text: 'ロッカーには塩飴と推理小説3冊。冷めた頭を戻す道具。' },
     ],
   },
-  'rico_pajama.png': {
+  'rico_pajama.webp': {
     title: 'パジャマのリコ先輩',
     cards: [
       { tag: '私生活', text: '枕は3つ抱えて寝る。「四方が空いてると不安なのよ」。' },
@@ -3874,7 +3659,7 @@ const RICO_TRIVIA = {
       { tag: 'こぼれ話', text: '朝はホットミルクに蜂蜜とシナモン。冬はジンジャー追加。' },
     ],
   },
-  'rico_bunny.png': {
+  'rico_bunny.webp': {
     title: 'バニーのリコ先輩',
     cards: [
       { tag: '私生活', text: '耳は3種使い分け。本気の夜はサテン、客がなぜか緊張する。' },
@@ -3883,7 +3668,7 @@ const RICO_TRIVIA = {
       { tag: 'こぼれ話', text: 'チップの音だけで額を当てる。誤差5枚以内、10年の耳。' },
     ],
   },
-  'rico_casual.png': {
+  'rico_casual.webp': {
     title: '私服のリコ先輩',
     cards: [
       { tag: '私生活', text: '休日は古本屋3軒巡り。買うのは心理学とミステリーばかり。' },
@@ -3892,7 +3677,7 @@ const RICO_TRIVIA = {
       { tag: 'こぼれ話', text: '行きつけのカフェでは無言でアールグレイが出てくる。' },
     ],
   },
-  'rico_dress.png': {
+  'rico_dress.webp': {
     title: 'ドレスのリコ先輩',
     cards: [
       { tag: '私生活', text: '初給料で買った勝負服。半月分の家賃と同額。' },
@@ -3901,7 +3686,7 @@ const RICO_TRIVIA = {
       { tag: 'こぼれ話', text: 'ヒールの中に祖母の硬貨。誰にも見せたことがない。' },
     ],
   },
-  'rico_kimono.png': {
+  'rico_kimono.webp': {
     title: '和装のリコ先輩',
     cards: [
       { tag: '私生活', text: '帯は自分で結ぶ。「1cmの締まりで立ち居振る舞いが変わる」。' },
@@ -3910,7 +3695,7 @@ const RICO_TRIVIA = {
       { tag: 'こぼれ話', text: '茶筅の音で集中スイッチ。茶碗は祖母譲りの金継ぎ。' },
     ],
   },
-  'rico_swimsuit.png': {
+  'rico_swimsuit.webp': {
     title: '水着のリコ先輩',
     cards: [
       { tag: '私生活', text: '泳ぎは平泳ぎ専門。「クロールはバレるじゃない」。何が？' },
@@ -3919,7 +3704,7 @@ const RICO_TRIVIA = {
       { tag: 'こぼれ話', text: '砂にチップ模様を描いて練習する。完全な職業病。' },
     ],
   },
-  'rico_gym.png': {
+  'rico_gym.webp': {
     title: 'ジム服のリコ先輩',
     cards: [
       { tag: '私生活', text: '週3、4年継続。「下半身が安定すると表情も安定するの」。' },
@@ -3928,7 +3713,7 @@ const RICO_TRIVIA = {
       { tag: 'こぼれ話', text: 'プロテインはバニラ一択。「結婚相手と同じ、無難で長く付き合える」。' },
     ],
   },
-  'rico_school.png': {
+  'rico_school.webp': {
     title: '学生風のリコ先輩',
     cards: [
       { tag: '私生活', text: '数学だけ得意。確率の問題を解く時間が一番好きだった。' },
@@ -3937,7 +3722,7 @@ const RICO_TRIVIA = {
       { tag: 'こぼれ話', text: '屋上で初めてカードを教わった。相手は「内緒」、今も年に一度卓を挟む。' },
     ],
   },
-  'rico_witch.png': {
+  'rico_witch.webp': {
     title: '魔女のリコ先輩',
     cards: [
       { tag: '私生活', text: '仮装は1ヶ月前から準備。今年は「闇のカジノ女将」。' },
@@ -3946,7 +3731,7 @@ const RICO_TRIVIA = {
       { tag: 'こぼれ話', text: '黒猫の名は「フロップ」。雨の日に裏口で拾った家族。' },
     ],
   },
-  'rico_santa.png': {
+  'rico_santa.webp': {
     title: 'サンタのリコ先輩',
     cards: [
       { tag: '私生活', text: '仕事納め後、一人でケーキ。「年に一度の贅沢」。3年連続予約の店。' },
@@ -4015,12 +3800,12 @@ function applyBattleRicoOutfit() {
   const found = equipped && equipped !== 'default'
     ? RICO_OUTFITS.find(o => outfitIdFor(o.file) === equipped)
     : null;
-  const file = found ? found.file : 'rico_default.png';
+  const file = found ? found.file : 'rico_default.webp';
   if (!img.src.endsWith(file)) img.src = `assets/characters/${file}`;
 }
 // ファイル名 → 装備ID 変換（rico_kimono.png → 'kimono'）
 function outfitIdFor(file) {
-  return file.replace(/^rico_/, '').replace(/\.png$/, '');
+  return file.replace(/^rico_/, '').replace(/\.webp$/, '');
 }
 function isRicoViewerUnlocked() {
   return save.clearedStages && save.clearedStages.includes('velvet');
@@ -5226,36 +5011,6 @@ function pushPotChips(amount) {
 function resetPotChips() { state.potChips = []; state.__lastPotCalc = null; }
 
 // 縦積みチップ列：単位種ごとに 1 列、最大表示枚数で省略
-function buildVerticalChipColumns(amount, opts = {}) {
-  const maxPerCol = opts.maxPerCol || 6;
-  const numClass  = opts.numClass  || 'bu-vc-num';
-  const chipClass = opts.chipClass || 'bu-vc-chip';
-  if (!amount || amount <= 0) {
-    return `<div class="bu-vcols"><span class="${numClass}">0</span></div>`;
-  }
-  const tiers = [
-    { cls: 'chip-orange', val: 1000 },
-    { cls: 'chip-purple', val: 500 },
-    { cls: 'chip-black',  val: 100 },
-    { cls: 'chip-green',  val: 25 },
-  ];
-  let rem = amount;
-  const cols = [];
-  for (const t of tiers) {
-    const c = Math.floor(rem / t.val);
-    if (c > 0) cols.push({ cls: t.cls, count: c });
-    rem -= c * t.val;
-  }
-  const colsHtml = cols.map(co => {
-    const visible = Math.min(co.count, maxPerCol);
-    const extra = co.count - visible;
-    const chipsHtml = Array.from({ length: visible }, () =>
-      `<span class="${chipClass} ${co.cls}"></span>`
-    ).join('');
-    return `<span class="bu-vc-col">${chipsHtml}${extra > 0 ? `<span class="bu-vc-more">×${co.count}</span>` : ''}</span>`;
-  }).join('');
-  return `<div class="bu-vcols">${colsHtml}<span class="${numClass}">${amount}</span></div>`;
-}
 
 // 与えられたチップ配列をそのまま縦積み列で表示（再分解しない）
 function buildVerticalChipsFromArray(chipsArr, opts = {}) {
@@ -5704,25 +5459,6 @@ function getPreflopNickname(h) {
 }
 
 // ポストフロップ：自分が持っているブロッカー情報
-function getBlockerHint(h, board) {
-  if (board.length < 3) return '';
-  const hints = [];
-  // フラッシュドローブロッカー：盤面に同スート3枚 + 自分がそのスートのAやK持ち
-  const boardSuits = {};
-  board.forEach(c => boardSuits[c.suit] = (boardSuits[c.suit] || 0) + 1);
-  for (const suit in boardSuits) {
-    if (boardSuits[suit] >= 3) {
-      const myHigh = h.find(c => c.suit === suit && c.rank >= 13);
-      if (myHigh) hints.push(`♦ナッツ${suit}を阻害`);
-    }
-  }
-  // ストレートトップブロッカー：自分がAやKでハイストレート遮断
-  const allRanks = [...h.map(c => c.rank), ...board.map(c => c.rank)].sort((a,b) => b-a);
-  if (h.some(c => c.rank === 14) && allRanks.includes(13) && allRanks.includes(12)) {
-    hints.push('🎯 ハイストレート阻害');
-  }
-  return hints.length ? hints.join(' / ') : '';
-}
 
 // キッカー強さラベル（最大ランク値から判定）
 function kickerStrengthLabel(maxRank) {
@@ -6515,7 +6251,7 @@ function onAction(e) {
     case 'rico-mode-chooser': showRicoModeChooser(); break;
     case 'open-rico-viewer':
       if (!isRicoViewerUnlocked()) {
-        alert('🔒 リコ先輩鑑賞モードは、ヴェルベット撃破後（エンディング達成後）に解放されます。');
+        toast('リコ先輩鑑賞モードは、ヴェルベット撃破後に解放されます');
         break;
       }
       showRicoViewer();
@@ -6674,7 +6410,7 @@ function onAction(e) {
         if (state.__panyuClickCount >= 7) {
           save.backdoorUnlocked = true;
           saveProgress();
-          alert('🐰✦ 裏モード解放！ ✦🐰\n\nバトル画面右上の ✦ ボタンで\n相手の手と心理を覗き見できます');
+          toast('裏モード解放！ バトル画面右上の ✦ で相手の手と心理を覗けます', 'big');
         }
       }
       // ぷにぷに完走でコイン報酬（panyu_combo_x2 購入時は2倍）
@@ -6975,8 +6711,8 @@ function startEndingShow(playMusic) {
       const fallbackPath = a.fallback ? `assets/characters/${a.fallback}.webp` : '';
       // onerror で fallback に切り替え、それでも駄目なら assetFallback で絵文字
       const fallbackInline = a.fallback
-        ? `this.onerror=function(){this.onerror=null;window.assetFallback(this,this.src.split('/').pop().replace('.png','').split('_')[0])};this.src='${fallbackPath}';`
-        : `this.onerror=null;window.assetFallback(this,this.src.split('/').pop().replace('.png','').split('_')[0])`;
+        ? `this.onerror=function(){this.onerror=null;window.assetFallback(this,this.src.split('/').pop().replace('.webp','').split('_')[0])};this.src='${fallbackPath}';`
+        : `this.onerror=null;window.assetFallback(this,this.src.split('/').pop().replace('.webp','').split('_')[0])`;
       wrap.innerHTML = `
         <div class="eps-portrait-frame">
           <img class="eps-portrait" src="${imgPath}" alt="${a.name || ''}"
@@ -7278,7 +7014,7 @@ function startCreditsRoll(stage) {
       img.style.animationDuration = m.dur + 's';
     }
     img.onerror = () => {
-      if (img.src.endsWith('_mini.png')) {
+      if (img.src.endsWith('_mini.webp')) {
         img.onerror = () => { img.style.display = 'none'; };
         img.src = `assets/characters/${m.key}_default.webp`;
       } else { img.style.display = 'none'; }
@@ -7417,7 +7153,7 @@ function startCreditsRoll(stage) {
       if (wantsRight !== isNatRight) img.classList.add('cr-flip');
       img.src = `assets/characters/${m.key}_mini.webp`;
       img.onerror = () => {
-        if (img.src.endsWith('_mini.png')) {
+        if (img.src.endsWith('_mini.webp')) {
           img.onerror = () => { img.style.display = 'none'; };
           img.src = `assets/characters/${m.key}_default.webp`;
         } else { img.style.display = 'none'; }
@@ -7492,20 +7228,6 @@ function showEndingFinalButtons(stage) {
   setTimeout(() => stale.forEach(el => el.remove()), 1200);
 }
 
-function spawnEndingSparkle(parent) {
-  const s = document.createElement('div');
-  s.className = 'ending-sparkle';
-  s.textContent = pick(['✨', '🌟', '💫', '⭐', '🎉', '🎊', '💖']);
-  const angle = rand() * Math.PI * 2;
-  const dist = 150 + rand() * 250;
-  s.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
-  s.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
-  s.style.left = '50%';
-  s.style.top  = '50%';
-  s.style.fontSize = (24 + rand() * 22) + 'px';
-  parent.appendChild(s);
-  setTimeout(() => s.remove(), 1600);
-}
 
 function goLobby() {
   if (typeof stopBattleBgmSkin === 'function') stopBattleBgmSkin(); // バトル専用BGMスキンを止めてロビーへ戻す
@@ -7527,7 +7249,7 @@ function stopEndingBgm() {
 
 function toggleEndingThemePreview() {
   const a = document.getElementById('ending-bgm-audio');
-  if (!a) { alert('audio要素が見つかりません'); return; }
+  if (!a) { toast('音源プレイヤーを初期化できませんでした'); return; }
   if (a.paused) {
     const lobbyA = document.getElementById('lobby-bgm-audio');
     if (lobbyA) lobbyA.pause();
@@ -7541,7 +7263,7 @@ function toggleEndingThemePreview() {
       p.then(() => setBtnLabel('⏹ 停止'))
        .catch((err) => {
          setBtnLabel('▶ 視聴');
-         alert('再生失敗：' + (err && err.message || err) + '\nファイル: ' + (a.currentSrc || '(未設定)'));
+         toast('再生できませんでした：' + (err && err.message || err));
        });
     } else {
       setBtnLabel('⏹ 停止');
@@ -7549,7 +7271,7 @@ function toggleEndingThemePreview() {
     a.onended = () => setBtnLabel('▶ 視聴');
     a.onerror = () => {
       setBtnLabel('▶ 視聴');
-      alert('音源読込エラー：' + (a.currentSrc || 'パス不明') + '\nコード: ' + (a.error && a.error.code));
+      toast('音源を読み込めませんでした');
     };
   } else {
     a.pause();
@@ -7757,7 +7479,6 @@ function toggleSfx() {
 }
 
 // SFX 音量を反映（mpSfx は呼び出し時に sfxVolFloat() を読むので即座反映済み）
-function applySfxVolume() { /* no-op：実体は mpSfx 内で都度読み */ }
 
 //=============================================================
 // 10. バトル開始
@@ -7811,14 +7532,14 @@ const MIMI_PROFILE = {
 function profileArtFile(charId) {
   if (charId === 'mimi') {
     const skin = save && save.equippedMimiSkin;
-    return (skin && skin !== 'default') ? `mimi_${skin}.png` : 'mimi_default.png';
+    return (skin && skin !== 'default') ? `mimi_${skin}.webp` : 'mimi_default.webp';
   }
   if (charId === 'rico_tutorial') {
     const o = typeof pickLobbyRico === 'function' ? pickLobbyRico() : null;
-    return o ? o.file : 'rico_default.png';
+    return o ? o.file : 'rico_default.webp';
   }
   const opp = OPPONENTS[charId];
-  return opp ? `${opp.imgKey}_default.png` : 'mimi_default.png';
+  return opp ? `${opp.imgKey}_default.webp` : 'mimi_default.webp';
 }
 
 function showCharacterProfile(charId) {
@@ -8439,11 +8160,6 @@ function applyAudioSession() {
     }
   } catch (e) {}
   return false;
-}
-function audioSessionInfo() {
-  let sup = false, t = null;
-  try { sup = !!(navigator.audioSession && 'type' in navigator.audioSession); if (sup) t = navigator.audioSession.type; } catch (e) {}
-  return { supported: sup, type: t, forceSound: isForceSound() };
 }
 function _isIOS() {
   try {
@@ -10082,7 +9798,7 @@ function showMiniPokerGame() {
     const fx = overlay.querySelector('[data-mpb="fx"]');
     const jumbo = document.createElement('div');
     jumbo.className = 'mp-jumbo-char';
-    jumbo.innerHTML = `<img src="${src}" onerror="this.onerror=null;this.src='${src.replace('_mini.png','_default.png')}';this.onerror=function(){this.style.display='none'}"/>`;
+    jumbo.innerHTML = `<img src="${src}" onerror="this.onerror=null;this.src='${src.replace('_mini.webp','_default.webp')}';this.onerror=function(){this.style.display='none'}"/>`;
     fx.appendChild(jumbo);
     setTimeout(() => jumbo.remove(), 1800);
   }
@@ -11005,7 +10721,7 @@ function skipStageWithCoins(opponentId) {
   if (!opp) return;
   if (save.clearedStages.includes(opponentId)) return;
   const cost = skipStageCost(opp);
-  if (save.coins < cost) { alert(`コイン不足：${cost}コイン必要`); return; }
+  if (save.coins < cost) { toast(`コインが足りません（${cost}コイン必要）`); return; }
   if (!confirm(`${cost}コインを払って ${opp.name} 戦をスキップしますか？\n（クリア扱いだが報酬・ランクは無し。次のステージが解放）`)) return;
   save.coins -= cost;
   // markStageCleared：clearedStages 追加＋velvet なら endingUnlocked も同時に立てる（派生フラグの一貫性）
@@ -11900,7 +11616,7 @@ function showAllInCutIn(side, amount) {
     <div class="allin-streak allin-streak-2"></div>
     <div class="allin-burst"></div>
     <div class="allin-portrait">
-      <img src="assets/characters/${isPlayer ? 'mimi_allin.webp' : imgKey + '_default.png'}" alt="${name}"
+      <img src="assets/characters/${isPlayer ? 'mimi_allin.webp' : imgKey + '_default.webp'}" alt="${name}"
            onerror="this.onerror=function(){window.assetFallback(this,'${imgKey}')};this.src='assets/characters/${imgKey}_default.webp';">
     </div>
     <div class="allin-text-wrap">
@@ -13293,54 +13009,6 @@ function skipPsychBattle() {
 }
 
 // （旧）性格読み切り後の論理バトル：タイトルを見てスキップ／挑むを選べる - 廃止
-function showLogicSkipPrompt(qid) {
-  const q = PSYCH_QUESTIONS[qid];
-  if (!q) {
-    // 念のためのフォールバック：プロンプトを出さずに普通に進行
-    state.isPlayerTurn = true;
-    state.mimiThought = '「次は……ミミのターン」';
-    render();
-    return;
-  }
-  const overlay = document.createElement('div');
-  overlay.className = 'logic-skip-overlay';
-  const titleText = (q.speech || '').replace(/^【.*?】/, '') || '論理バトル';
-  const ruleText = q.rule || '';
-  overlay.innerHTML = `
-    <div class="ls-modal">
-      <div class="ls-tag">📘 論理バトル</div>
-      <div class="ls-title">${titleText}</div>
-      ${ruleText ? `<div class="ls-rule">テーマ：${ruleText}</div>` : ''}
-      <div class="ls-note">性格を読み切ったので、論理バトルは任意にできます</div>
-      <div class="ls-buttons">
-        <button class="btn btn-ghost ls-btn-skip">スキップ</button>
-        <button class="btn btn-primary ls-btn-play">挑む</button>
-      </div>
-    </div>
-  `;
-  (document.getElementById('stage') || document.body).appendChild(overlay);
-  const dismiss = () => { overlay.remove(); };
-  overlay.querySelector('.ls-btn-skip').addEventListener('click', () => {
-    dismiss();
-    // スキップしてプレイヤーのターンへ
-    state.isPlayerTurn = true;
-    state.mimiThought = '「論理バトルはスキップ。自分で考えよう」';
-    render();
-  });
-  overlay.querySelector('.ls-btn-play').addEventListener('click', () => {
-    dismiss();
-    triggerPsychBattle(qid);
-  });
-  // 背景クリックでスキップ
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) {
-      dismiss();
-      state.isPlayerTurn = true;
-      state.mimiThought = '「論理バトルはスキップ。自分で考えよう」';
-      render();
-    }
-  });
-}
 
 // ミミミMAX：性格読み切りバナー（クリックで閉じる）
 function showPersonalityRevealBanner() {
@@ -14225,7 +13893,7 @@ function endBattle() {
   }
   const mimiImg = document.querySelector('[data-result-mimi]');
   if (mimiImg) {
-    mimiImg.src = `assets/characters/${won ? 'mimi_win' : 'mimi_sad'}.png`;
+    mimiImg.src = `assets/characters/${won ? 'mimi_win' : 'mimi_sad'}.webp`;
     mimiImg.onerror = () => { mimiImg.onerror = null; mimiImg.src = 'assets/characters/mimi_default.webp'; };
   }
   const oppImg = document.querySelector('[data-result-opp]');
@@ -14233,7 +13901,7 @@ function endBattle() {
     const key = state.opponentImgKey;
     const mood = (OPPONENT_EXPRESSIONS[key] || {})[won ? 'defeat' : 'pleased'];
     oppImg.onerror = () => { oppImg.onerror = null; oppImg.src = `assets/characters/${key}_default.webp`; };
-    oppImg.src = `assets/characters/${key}_${mood || 'default'}.png`;
+    oppImg.src = `assets/characters/${key}_${mood || 'default'}.webp`;
   }
   const setText = (k, v) => { const el = document.querySelector(`[data-bind="${k}"]`); if (el) el.textContent = v; };
   setText('rankValue', rank);
@@ -15136,12 +14804,12 @@ function showMimiCutIn(text, narration) {
   activeCutInDismiss = dismiss;
 }
 
-function toast(msg) {
+function toast(msg, variant) {
   const t = document.createElement('div');
-  t.className = 'toast';
+  t.className = 'toast' + (variant ? ' toast-' + variant : '');
   t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2000);
+  setTimeout(() => t.remove(), variant === 'big' ? 4200 : 2000);
 }
 
 //=============================================================
@@ -15190,7 +14858,7 @@ function isFullscreen() {
 async function requestGameFullscreen() {
   const el = document.documentElement;
   const fn = el.requestFullscreen || el.webkitRequestFullscreen;
-  console.log('[FS] support:', !!fn, 'isFS:', isFullscreen(), 'UA:', UA.slice(0,60));
+  // [dev] console.log('[FS] support:', !!fn, 'isFS:', isFullscreen(), 'UA:', UA.slice(0,60));
   if (!fn) {
     showIosFullscreenHelp();
     return false;
@@ -15198,7 +14866,7 @@ async function requestGameFullscreen() {
   try {
     const p = fn.call(el);
     if (p && p.then) await p;
-    console.log('[FS] after request:', isFullscreen());
+    // [dev] console.log('[FS] after request:', isFullscreen());
   } catch (e) {
     console.warn('[FS] Fullscreen request failed', e);
     return false;
@@ -15206,7 +14874,7 @@ async function requestGameFullscreen() {
   if (screen.orientation && screen.orientation.lock) {
     try {
       await screen.orientation.lock('landscape');
-      console.log('[FS] orientation locked');
+      // [dev] console.log('[FS] orientation locked');
     } catch (e) {
       console.warn('[FS] orientation lock failed', e);
     }
@@ -15214,10 +14882,6 @@ async function requestGameFullscreen() {
   return isFullscreen();
 }
 
-function dismissFullscreenBtn() {
-  const btn = document.getElementById('fullscreen-btn');
-  if (btn) btn.hidden = true;
-}
 
 function showIosFullscreenHelp() {
   // 既存があれば再表示しない
@@ -15423,10 +15087,10 @@ reapplyAllOwnedEffects();
 (function detectShopAtlas() {
   const img = new Image();
   img.onload = () => {
-    console.log('[atlas] loaded', img.naturalWidth, 'x', img.naturalHeight);
+    // [dev] console.log('[atlas] loaded', img.naturalWidth, 'x', img.naturalHeight);
     if (img.naturalWidth >= 256 && img.naturalHeight >= 128) {
       document.body.classList.add('has-shop-atlas');
-      console.log('[atlas] body.has-shop-atlas added ✓');
+      // [dev] console.log('[atlas] body.has-shop-atlas added ✓');
       // JSで直接styleタグを注入：CSSキャッシュ問題を完全回避
       const url = img.src;
       const style = document.createElement('style');
@@ -15434,7 +15098,7 @@ reapplyAllOwnedEffects();
       // 旧アトラスのタブアイコン挿入は撤去。新アトラス（装飾枠）は別途定義。
       style.textContent = `/* shop_atlas.png 検知済 — 装飾枠は新仕様で別途読込 */`;
       document.head.appendChild(style);
-      console.log('[atlas] style injected ✓');
+      // [dev] console.log('[atlas] style injected ✓');
     } else {
       console.warn('[atlas] image too small, skipping');
     }
