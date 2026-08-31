@@ -518,8 +518,18 @@ function setMimiExpression(expr) {
     };
     // v2 バトル画面：バストアップ差分（think / shock / win）を優先。無ければ従来PNGへ
     if (img.closest('.battle-screen.v2')) {
-      const bust = { default: 'think', think: 'think', shock: 'shock', win: 'win', sad: 'sad', blush: 'win', smug: 'smug' }[expr || 'default'] || 'think';
-      img.onerror = () => { img.onerror = goDefault; img.src = `assets/characters/mimi_${expr && expr !== 'default' ? expr : 'default'}.webp`; };
+      // ★主人公の表情が「悩み顔」で固定される問題への対処。
+      //   従来は default→think 固定だったため、ほぼ全編ずっと悩んでいる絵になっていた。
+      //   平常時は落ち着いた顔（calm、未納品なら think にフォールバック）、
+      //   自分の手番で考えている時だけ think を出す。
+      const deciding = !!(state && state.isPlayerTurn && state.handPhase && state.handPhase !== 'idle' && state.handPhase !== 'showdown');
+      const map = { default: deciding ? 'think' : 'calm', think: 'think', calm: 'calm', shock: 'shock', win: 'win', sad: 'sad', blush: 'win', smug: 'smug' };
+      const bust = map[expr || 'default'] || 'calm';
+      img.onerror = () => {
+        // calm が無ければ think、それも無ければ従来PNGへ段階的に落とす
+        img.onerror = () => { img.onerror = goDefault; img.src = `assets/characters/mimi_${expr && expr !== 'default' ? expr : 'default'}.webp`; };
+        img.src = 'assets/characters/mimi_bust_think.webp';
+      };
       img.src = `assets/characters/mimi_bust_${bust}.webp`;
       return;
     }
@@ -3017,6 +3027,8 @@ function applyBindings() {
       case 'potBlock': el.innerHTML = renderPotBlock(); break;
       case 'tellTags': el.innerHTML = renderTellTags(); break;
       case 'winrateSeal': el.innerHTML = renderWinrateSeal(); break;
+      case 'oppStackGauge':  el.innerHTML = renderStackGauge('opp');  break;
+      case 'mimiStackGauge': el.innerHTML = renderStackGauge('mimi'); break;
       case 'dangerBar': el.innerHTML = renderDangerBar(); break;
       case 'opponentImg':
         el.onerror = function() { window.assetFallback(this, state.opponentImgKey); };
@@ -5364,6 +5376,22 @@ function renderSessionStats() {
 // ===== v2 レンダラ群 =====
 const OPP_LATIN = { polka: 'POLKA', selina: 'SELINA', grano: 'GRANO', velvet: 'VELVET', rico_tutorial: 'RICO' };
 function opponentLatinName() { return OPP_LATIN[state.opponentId] || (state.opponentName || '').toUpperCase(); }
+// チップ残量ゲージ：開始スタックに対する残量を、キャラの前面にバーで見せる。
+// 数字だけだと「あとどれくらい戦えるか」が掴めないため、量そのものを可視化する。
+function renderStackGauge(side) {
+  const opp = OPPONENTS[state.opponentId] || {};
+  const base = battleInitialChips();
+  const oppBase = opp.chips || base;
+  const cur = side === "mimi" ? state.playerChips : state.opponentChips;
+  const max = side === "mimi" ? base : oppBase;
+  if (typeof cur !== "number" || !max) return "";
+  const pct = Math.max(0, Math.min(100, Math.round(cur / max * 100)));
+  const name = side === "mimi" ? "ミミ" : (state.opponentName || "相手").replace(/（.*）/, "");
+  const host = document.querySelector(side === "mimi" ? ".v2-stack-gauge.is-mimi" : ".v2-stack-gauge.is-opp");
+  if (host) host.classList.toggle("is-low", pct <= 30 && cur > 0);
+  return `<div class="v2-sg-head"><span class="v2-sg-name">${name}</span><span class="v2-sg-num">${cur}</span></div>` +
+         `<div class="v2-sg-bar"><i class="v2-sg-fill" style="width:calc(${pct}% - 2px)"></i></div>`;
+}
 function renderStreetList() {
   const order = ['preflop', 'flop', 'turn', 'river', 'showdown'];
   const labels = { preflop: 'PREFLOP', flop: 'FLOP', turn: 'TURN', river: 'RIVER', showdown: 'SHOWDOWN' };
@@ -6458,7 +6486,19 @@ function onAction(e) {
     case 'play-minipoker': showMiniPokerGame(); break;
     case 'toggle-v2-detail': {
       const panel = document.querySelector('.v2-detail');
-      if (panel) panel.classList.toggle('open');
+      if (!panel) break;
+      const willOpen = !panel.classList.contains('open');
+      panel.classList.toggle('open', willOpen);
+      // 開いたら閉じる手段を必ず用意する（従来は出しっぱなしになっていた）
+      if (willOpen && !panel.querySelector('.v2-detail-close')) {
+        const x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'v2-detail-close';
+        x.title = '閉じる';
+        x.textContent = '✕';
+        x.addEventListener('click', (ev) => { ev.stopPropagation(); panel.classList.remove('open'); });
+        panel.appendChild(x);
+      }
       break;
     }
     case 'toggle-backdoor':
@@ -14999,6 +15039,38 @@ const PRELOAD_ASSETS = [
   // 残りは表示直前に読み込む（各300KB前後・起動待ちを約2秒短縮）
   'assets/episodes/rico_tutorial.webp',
 ];
+
+// 起動後にそっと読み込む「次に必要になる画像」。
+// 起動待ちを増やさずに、エピソードや幕間で画像がパッと出ないのを防ぐ。
+// requestIdleCallback で本体の処理を邪魔しない優先度で流す。
+const DEFERRED_ASSETS = [
+  'assets/episodes/polka.webp', 'assets/episodes/selina.webp', 'assets/episodes/grano.webp',
+  'assets/episodes/velvet.webp', 'assets/episodes/ending.webp',
+  'assets/backgrounds/bg_bunny_locker_room.webp', 'assets/backgrounds/bg_beginner_poker_table.webp',
+  'assets/backgrounds/bg_calm_poker_table.webp', 'assets/backgrounds/bg_merchant_poker_table.webp',
+  'assets/backgrounds/bg_vip_room.webp', 'assets/backgrounds/bg_resort_terrace.webp',
+  'assets/backgrounds/bg_intermission.jpg', 'assets/backgrounds/bg_psych_stage.jpg',
+  'assets/backgrounds/bg_result_stage.jpg',
+  'assets/characters/mimi_bust_think.webp', 'assets/characters/mimi_bust_shock.webp',
+  'assets/characters/mimi_bust_win.webp', 'assets/characters/mimi_bust_sad.webp',
+  'assets/characters/mimi_bust_smug.webp', 'assets/characters/mimi_clutch.webp',
+  'assets/characters/mimi_allin.webp',
+];
+function startDeferredPrefetch() {
+  const run = () => {
+    let k = 0;
+    const next = () => {
+      if (k >= DEFERRED_ASSETS.length) return;
+      const url = DEFERRED_ASSETS[k++];
+      const im = new Image();
+      im.onload = im.onerror = () => setTimeout(next, 60); // 1枚ずつ・間隔をあけて帯域を占有しない
+      im.src = url;
+    };
+    next();
+  };
+  if (window.requestIdleCallback) requestIdleCallback(run, { timeout: 3000 });
+  else setTimeout(run, 1500);
+}
 const PRELOAD_AUDIO = [
   'assets/bgm/ending.m4a',
 ];
@@ -15093,6 +15165,7 @@ async function startPreload() {
     fill.style.width = (loaded / all.length * 100) + '%';
   })));
   clearInterval(tipInterval);
+  startDeferredPrefetch(); // 起動完了後、残りの画像を裏で温めておく
   // フェードアウト
   if (overlay) {
     overlay.classList.add('out');

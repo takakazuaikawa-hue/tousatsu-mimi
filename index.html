@@ -35,7 +35,7 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
-<link rel="stylesheet" href="style.css?v=20260831g">
+<link rel="stylesheet" href="style.css?v=20260831h">
 </head>
 <body>
 <div id="preload-overlay">
@@ -237,8 +237,10 @@
         <span class="v2-disp v2-hand-max" data-bind="handMax2">/ 05</span>
       </div>
       <div class="v2-streets" data-bind="streetList"></div>
-      <button class="btn btn-ghost v2-pause" data-action="back-lobby">中断</button>
     </header>
+
+    <!-- 右上：中断／役の早見表（画面直下に置く。ヘッダー内だと右寄せが効かない） -->
+    <button class="btn btn-ghost v2-pause" data-action="back-lobby">中断</button>
 
     <!-- 左下：役の早見表（常設・研修中も開ける） -->
     <button class="btn btn-ghost v2-help-btn" data-action="show-hand-guide" type="button" title="役の早見表を見る">❓ 役</button>
@@ -276,6 +278,10 @@
       </div>
       <div class="v2-danger" data-bind="dangerBar"></div>
     </section>
+
+    <!-- チップ残量ゲージ：数字だけでなくキャラの前面で量が見える -->
+    <div class="v2-stack-gauge is-opp" data-bind="oppStackGauge"></div>
+    <div class="v2-stack-gauge is-mimi" data-bind="mimiStackGauge"></div>
 
     <!-- 右中：勝率の封印（ぱにゅぱにゅで開封）＋詳細データ -->
     <div class="v2-seal-row">
@@ -453,6 +459,6 @@
   </div>
 </template>
 
-<script src="game.js?v=20260831g"></script>
+<script src="game.js?v=20260831h"></script>
 </body>
 </html>

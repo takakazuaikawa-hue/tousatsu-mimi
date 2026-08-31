@@ -15108,3 +15108,102 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
 /* 帯の右端が勝率シール（右上の封印）に衝突するため、右に余白を確保して2行に流す */
 .battle-screen.v2 .opponent-speech.v2-band-text { right: 268px !important; }
 .battle-screen.v2 .opponent-speech.v2-band-text.speech-long { text-align: left; }
+
+/* ============================================================
+   バトル画面：隠れ・切れの解消＋操作性 2026-08-31
+   全要素の当たり判定を機械的に走査して見つかった問題への対処。
+   ============================================================ */
+
+/* ①場の危険度が操作ボタンの下に潜り込んでいた → 場札の真下の空き帯へ */
+.battle-screen.v2 .v2-danger {
+  left: 392px !important; right: auto !important; top: 148px !important;
+  width: 268px; max-width: 268px; height: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.battle-screen.v2 .v2-danger-label {
+  font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0,0,0,.9);
+}
+
+/* ②場札の透明ラッパーが「ミミの役」パネルの手前に乗り、当たり判定を奪っていた */
+.battle-screen.v2 .center-table.v2-table { pointer-events: none; }
+.battle-screen.v2 .center-table.v2-table .card { pointer-events: auto; }
+
+/* ③詳細データ：小さすぎ／立ち絵の裏／閉じる手段が無い、の3点を解消 */
+.battle-screen.v2 .right-panel.v2-detail {
+  right: 20px; top: 96px; width: 420px; max-height: 560px;
+  z-index: 30; padding: 14px 16px 16px;
+  background: linear-gradient(180deg, rgba(30,12,18,.97), rgba(14,5,9,.98));
+  border: 1px solid rgba(245,215,122,.6);
+  box-shadow: 0 22px 46px rgba(0,0,0,.72), 0 0 26px rgba(245,215,122,.14);
+  font-size: 14px; line-height: 1.6;
+}
+.battle-screen.v2 .right-panel.v2-detail .sit-advice { font-size: 15px; padding: 10px 12px; }
+.battle-screen.v2 .right-panel.v2-detail .sit-odds,
+.battle-screen.v2 .right-panel.v2-detail .sit-danger,
+.battle-screen.v2 .right-panel.v2-detail .sit-draw-line,
+.battle-screen.v2 .right-panel.v2-detail .sit-intent { font-size: 13.5px; }
+.battle-screen.v2 .right-panel.v2-detail summary { font-size: 13.5px; padding: 6px 0; cursor: pointer; }
+.battle-screen.v2 .right-panel.v2-detail .sit-stat-val { font-size: 15px; }
+.v2-detail-close {
+  position: absolute; right: 8px; top: 8px; width: 30px; height: 30px;
+  border: 1px solid rgba(245,215,122,.5); border-radius: 50%;
+  background: rgba(20,7,12,.9); color: #f0e2b8; font-size: 17px; line-height: 1;
+  cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center;
+  z-index: 2; -webkit-tap-highlight-color: transparent;
+}
+.v2-detail-close:hover { background: rgba(200,37,58,.85); color: #fff; border-color: #ffe9a8; }
+
+/* ④ロビーの「← タイトルへ」が枠に詰まって切れていた */
+.lobby-screen .top-hud .btn-ghost { padding: 0 16px; line-height: 1.2; height: auto; min-height: 38px; white-space: nowrap; }
+
+/* ⑤中断／役ヘルプを右上にまとめ、押しやすい大きさに */
+.battle-screen.v2 .v2-pause,
+.battle-screen.v2 .v2-help-btn {
+  position: absolute; top: 18px; height: 42px; padding: 0 20px;
+  font-size: 14px; font-weight: 900; letter-spacing: .12em; z-index: 40;
+  background: rgba(20,7,12,.86); color: #f0e2b8; border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(245,215,122,.5), 0 6px 16px rgba(0,0,0,.5);
+  display: flex; align-items: center; justify-content: center;
+}
+.battle-screen.v2 .v2-help-btn { left: auto; right: 262px; }
+.battle-screen.v2 .v2-pause { left: auto; right: 368px; }
+.battle-screen.v2 .v2-pause:hover,
+.battle-screen.v2 .v2-help-btn:hover { color: #ffe9a8; box-shadow: inset 0 0 0 1px rgba(245,215,122,.9), 0 6px 16px rgba(0,0,0,.5); }
+.battle-screen.v2 .v2-pot { top: 74px; }
+
+/* ============================================================
+   ⑥残りチップ：数字だけでは戦況が掴めない。
+   キャラの前面に台座付きのゲージを出し、量そのものを見せる。
+   ============================================================ */
+.v2-stack-gauge {
+  position: absolute; z-index: 14; width: 232px; pointer-events: none;
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 8px 12px 10px; border-radius: 6px;
+  background: linear-gradient(180deg, rgba(18,6,10,.9), rgba(10,3,6,.94));
+  box-shadow: inset 0 0 0 1px rgba(245,215,122,.4), 0 10px 24px rgba(0,0,0,.7);
+}
+.v2-stack-gauge.is-opp { left: 50%; transform: translateX(-50%); top: 208px; }
+.v2-stack-gauge.is-mimi { right: 22px; bottom: 100px; }
+.v2-sg-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.v2-sg-name { font-size: 11px; font-weight: 900; letter-spacing: .16em; color: #c4b89a; white-space: nowrap; }
+.v2-sg-num { font-family: "Bebas Neue", Impact, sans-serif; font-size: 26px; line-height: 1; color: #ffe9a8; text-shadow: 0 0 12px rgba(245,215,122,.55); }
+.v2-sg-bar {
+  position: relative; height: 13px; border-radius: 7px; overflow: hidden;
+  background: rgba(0,0,0,.66); box-shadow: inset 0 0 0 1px rgba(245,215,122,.35);
+}
+.v2-sg-fill { position: absolute; top: 1px; bottom: 1px; left: 1px; border-radius: 6px; transition: width .5s cubic-bezier(.2,.8,.3,1); }
+.v2-stack-gauge.is-mimi .v2-sg-fill { background: linear-gradient(90deg, #d9a93a, #ffe9a8); box-shadow: 0 0 10px rgba(245,215,122,.55); }
+.v2-stack-gauge.is-opp .v2-sg-fill { background: linear-gradient(90deg, #8c1626, #e34b60); box-shadow: 0 0 10px rgba(200,37,58,.5); }
+.v2-stack-gauge.is-low .v2-sg-fill { animation: sgLow 1s ease-in-out infinite; }
+.v2-stack-gauge.is-low .v2-sg-num { color: #ff8fa8; }
+.v2-stack-gauge.is-low { box-shadow: inset 0 0 0 1px rgba(224,85,106,.8), 0 0 18px rgba(200,37,58,.35), 0 10px 24px rgba(0,0,0,.7); }
+@keyframes sgLow { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.5); } }
+@media (prefers-reduced-motion: reduce) { .v2-stack-gauge.is-low .v2-sg-fill { animation: none; } }
+
+/* ★注意：.battle-screen.v2 > * { z-index: 2 } が全直下要素に効いているため、
+   バトル画面直下に置く要素は同等以上の詳細度で z-index を指定しないと必ず 2 になる。 */
+.battle-screen.v2 > .v2-stack-gauge { z-index: 14; }
+.battle-screen.v2 > .v2-pause,
+.battle-screen.v2 > .v2-help-btn { z-index: 40; }
+.battle-screen.v2 > .right-panel.v2-detail { z-index: 30; }
