@@ -15326,3 +15326,36 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
   background: linear-gradient(180deg, rgba(245,215,122,.75), rgba(200,37,58,.7));
   border: 1px solid rgba(0,0,0,.4);
 }
+
+/* 結果画面の立ち絵は JS が src を後から入れる。何らかの理由で入らなかったとき、
+   src 無しの <img> は「画像切れアイコン＋alt文字」を出してしまうので伏せておく。 */
+.result-char img:not([src]),
+.result-char img[src=""] { display: none; }
+
+/* 知識ノート：件数だけの表示をやめ、名前と効能の一覧にした */
+.coll-notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.coll-note {
+  border: 1px solid rgba(245,215,122,.22); background: rgba(0,0,0,.28);
+  padding: 10px 12px; border-left-width: 3px;
+}
+.coll-note.on { border-left-color: #f5d77a; background: rgba(245,215,122,.08); }
+.coll-note.off { border-left-color: rgba(245,215,122,.18); opacity: .55; }
+.coll-note-name { font-size: 14px; font-weight: 900; color: #f5d77a; margin-bottom: 4px; }
+.coll-note.off .coll-note-name { color: #9b8f76; }
+.coll-note-desc { font-size: 12px; line-height: 1.5; color: #cbbfa6; }
+
+/* ⑬操作ボタンの角が切れていた。
+   .bottom-bar は非v2レイアウトの角丸のため overflow:hidden を持つが、
+   v2 の決断スラブは skewX(-12deg) で箱（56-486）の外（49-493）まで描画されるので、
+   傾いた角が真っ直ぐ削ぎ落とされていた。v2では帯自体が透明なので clip は不要。 */
+.battle-screen.v2 .bottom-bar.v2-actions { overflow: visible; }
+
+/* ⑭交換所の一覧も overflow-x:hidden で、傾いた行の左角を4px削っていた。
+   位置を変えずに削られない余白を確保する。スクロールバーも見えるようにする。 */
+.shop-screen.v2 .shop-items { left: 472px; padding-left: 8px; }
+.shop-items::-webkit-scrollbar { width: 10px; }
+.shop-items::-webkit-scrollbar-track { background: rgba(0,0,0,.35); }
+.shop-items::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(245,215,122,.75), rgba(200,37,58,.7));
+  border: 1px solid rgba(0,0,0,.4);
+}

@@ -4021,6 +4021,17 @@ function renderLobbyStats() {
   `;
 }
 
+// 戦術ノート（save.unlockedNotes に入る ID）の表示名。
+// これが無かったため、結果画面に「戦術ノート解放：board_danger」と内部IDが漏れていた。
+const TACTIC_NOTES = {
+  bluff_basic:  { name: 'ブラフの基本',           desc: '弱い手でも「強い手に見えるベット」が通る条件' },
+  board_danger: { name: 'ボード危険度の読み方',   desc: 'フラッシュ・ストレート・場ペアの警戒サインを場札から判断する' },
+  pot_odds:     { name: 'ポットオッズの計算',     desc: 'コール額とポットを比べ、必要勝率で降りるか続けるかを決める' },
+  range_basic:  { name: 'レンジの考え方',         desc: '相手の1手ではなく「ありうる手札の束」で考える' },
+  tell:         { name: '相手の癖メモ',           desc: '対戦相手の傾向（攻撃的／受け身／ブラフ多）を事前に把握する' },
+};
+function tacticNoteName(id) { return (TACTIC_NOTES[id] && TACTIC_NOTES[id].name) || id; }
+
 const SHOP_ITEMS = [
   { id: 'panyu_sense_lv2',     cat: 'panyu', name: 'ぱにゅぱにゅLv2',         price: 300, desc: '心理バトルのハズレ選択肢を1つグレーアウトして選べなくする' },
   { id: 'panyu_range_lv2',     cat: 'panyu', name: 'ぱにゅレンジLv2',         price: 500, desc: '心理バトル成功後の相手レンジ表示が詳しくなる' },
@@ -10426,8 +10437,8 @@ function showCollectionModal() {
           <div class="coll-items">${itemsHtml}</div>
         </section>
         <section class="coll-section">
-          <h3 class="coll-section-title">知識ノート <span class="coll-section-count">${notesCount}件解放</span></h3>
-          <div class="coll-notes-hint">対戦相手撃破やショップ購入で増えます</div>
+          <h3 class="coll-section-title">知識ノート <span class="coll-section-count">${notesCount}/${Object.keys(TACTIC_NOTES).length}</span></h3>
+          <div class="coll-notes">${Object.keys(TACTIC_NOTES).map(function(id){var n=TACTIC_NOTES[id];var got=(save.unlockedNotes||[]).indexOf(id)>=0;return `<div class="coll-note ${got?"on":"off"}"><div class="coll-note-name">${got?n.name:"？？？"}</div><div class="coll-note-desc">${got?n.desc:"対戦相手撃破やショップ購入で解放"}</div></div>`;}).join("")}</div>
         </section>
         <section class="coll-section">
           <h3 class="coll-section-title">リコ衣装ギャラリー <span class="coll-section-count">${outfitUnlocked}/${outfits.length}</span></h3>
@@ -11561,7 +11572,11 @@ function mimiAssess(allCards, community, opponentBet, pot, callNeed) {
   // ポットオッズ（ノート所持時のみ） — コールに必要な額が基準
   let oddsStr = '';
   const _callNeed = (typeof callNeed === 'number' ? callNeed : opponentBet);
-  if (_callNeed > 0 && save.ownedItems && save.ownedItems.includes('note_pot_odds')) {
+  // ★購入（ownedItems: 'note_pot_odds'）とグラーノ撃破報酬（unlockedNotes: 'pot_odds'）は
+  //   別のフラグに入る。ここが購入側しか見ておらず、撃破報酬が完全に無効だった。
+  const hasPotOddsNote = (save.ownedItems && save.ownedItems.includes('note_pot_odds'))
+    || (save.unlockedNotes && save.unlockedNotes.includes('pot_odds'));
+  if (_callNeed > 0 && hasPotOddsNote) {
     // 現ポット（相手のベット込み）+ ミミのコール = コール後の総ポット
     // 必要勝率 = コール額 / コール後の総ポット
     const fullPotIncludingBet = pot + opponentBet; // = state.pot
@@ -13915,7 +13930,7 @@ function endBattle() {
       const noteId = opp.unlockNoteOnClear;
       if (!save.unlockedNotes.includes(noteId)) {
         save.unlockedNotes.push(noteId);
-        rewards.push(`戦術ノート解放：${noteId}`);
+        rewards.push(`戦術ノート解放：${tacticNoteName(noteId)}`);
       } else {
         // 既に購入済み → コイン補填+100
         earned += 100;
@@ -15072,9 +15087,8 @@ const PRELOAD_ASSETS = [
 const DEFERRED_ASSETS = [
   'assets/episodes/polka.webp', 'assets/episodes/selina.webp', 'assets/episodes/grano.webp',
   'assets/episodes/velvet.webp', 'assets/episodes/ending.webp',
-  'assets/backgrounds/bg_bunny_locker_room.webp', 'assets/backgrounds/bg_beginner_poker_table.webp',
-  'assets/backgrounds/bg_calm_poker_table.webp', 'assets/backgrounds/bg_merchant_poker_table.webp',
-  'assets/backgrounds/bg_vip_room.webp', 'assets/backgrounds/bg_resort_terrace.webp',
+  // ※ EPISODES の bg: は assets の画像名ではなく CSS クラス名（.ep-bg-*）。
+  //   ここに並べると毎回404を6件出すだけなので入れないこと。
   'assets/backgrounds/bg_intermission.jpg', 'assets/backgrounds/bg_psych_stage.jpg',
   'assets/backgrounds/bg_result_stage.jpg',
   'assets/characters/mimi_bust_think.webp', 'assets/characters/mimi_bust_shock.webp',
