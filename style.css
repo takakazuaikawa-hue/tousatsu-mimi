@@ -15680,3 +15680,16 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
 .emote-cutin .ec-face.em-shatter,
 .emote-cutin .ec-face.em-flail,
 .emote-cutin .ec-face.em-tremble { transform-origin: 50% 80%; }
+
+/* 全画面ボタンの帯が、横持ちスマホで手札の上に重なっていた問題の是正。
+   ・1280x800 を画面にフィットさせると必ず左右（または上下）に余白（レターボックス）ができる。
+     右下は手札とチップゲージの真上なので、余白側の左下へ逃がす。
+   ・そもそも対戦中に出す必要がないので、卓に着いている間は引っ込める。
+     全画面にするなら対戦前で十分で、手札を隠してまで出す価値はない。 */
+#fullscreen-btn-group { right: auto; left: 10px; bottom: 10px; }
+#stage:has(.battle-screen) ~ #fullscreen-btn-group,
+body:has(.battle-screen) #fullscreen-btn-group { display: none !important; }
+@media (max-height: 480px) {
+  #fullscreen-btn { padding: 8px 12px; font-size: 12px; letter-spacing: .04em; }
+  #fullscreen-dismiss-btn { width: 28px; font-size: 15px; }
+}
