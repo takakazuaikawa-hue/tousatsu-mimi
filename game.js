@@ -73,7 +73,18 @@ function unlockAchievement(id) {
   return true;
 }
 
+// 称号トーストは全部 top:60px / right:16px の同じ場所に出るので、1ハンドで2つ解除すると
+// 完全に重なって両方読めなくなっていた（ストレート勝利＋ホイール使い等）。1枚ずつ順番に出す。
+const achievementToastQueue = [];
+let achievementToastBusy = false;
 function showAchievementToast(ach) {
+  achievementToastQueue.push(ach);
+  if (!achievementToastBusy) drainAchievementToasts();
+}
+function drainAchievementToasts() {
+  const ach = achievementToastQueue.shift();
+  if (!ach) { achievementToastBusy = false; return; }
+  achievementToastBusy = true;
   const t = document.createElement('div');
   t.className = 'achievement-toast';
   t.innerHTML = `
@@ -86,8 +97,8 @@ function showAchievementToast(ach) {
   `;
   (document.getElementById('stage') || document.body).appendChild(t);
   setTimeout(() => t.classList.add('show'), 30);
-  setTimeout(() => t.classList.add('out'), 3500);
-  setTimeout(() => t.remove(), 4200);
+  setTimeout(() => t.classList.add('out'), 3200);
+  setTimeout(() => { t.remove(); drainAchievementToasts(); }, 3900);
 }
 
 // ハンド終了時の達成判定
@@ -3026,10 +3037,14 @@ function applyBindings() {
       case 'opponentNameLatin': el.textContent = opponentLatinName(); break;
       case 'potBlock': el.innerHTML = renderPotBlock(); break;
       case 'tellTags': el.innerHTML = renderTellTags(); break;
+      case 'noteRangeBand': el.innerHTML = renderNoteRangeBand(); break;
       case 'winrateSeal': el.innerHTML = renderWinrateSeal(); break;
       case 'oppStackGauge':  el.innerHTML = renderStackGauge('opp');  break;
       case 'mimiStackGauge': el.innerHTML = renderStackGauge('mimi'); break;
-      case 'dangerBar': el.innerHTML = renderDangerBar(); break;
+      case 'dangerBar':
+        el.innerHTML = renderDangerBar();
+        el.classList.toggle('has-note', hasNote('board_danger') && el.innerHTML !== '');
+        break;
       case 'opponentImg':
         el.onerror = function() { window.assetFallback(this, state.opponentImgKey); };
         el.src = `assets/characters/${state.opponentImgKey}_default.webp`;
@@ -3056,6 +3071,8 @@ const EPISODES = {
   rico_tutorial: {
     id: 'episode_001_title',
     no: '第1話',
+    // 初回導線で全画面を止めずに出す1行。長いタイトル全文は研修完了画面から任意で読ませる。
+    short: '第1話 ─ 初日、いきなりポーカー卓',
     bg: 'bg_bunny_locker_room',
     title:
       'デスマーチ明けにトラック転生した私が、\n' +
@@ -4031,6 +4048,86 @@ const TACTIC_NOTES = {
   tell:         { name: '相手の癖メモ',           desc: '対戦相手の傾向（攻撃的／受け身／ブラフ多）を事前に把握する' },
 };
 function tacticNoteName(id) { return (TACTIC_NOTES[id] && TACTIC_NOTES[id].name) || id; }
+
+// 戦術ノートの本文。解放しても「読む場所」が無かったため、コレクションの知識ノートから開く。
+// 各ノートは「何の話か → 実戦での見方 → このゲームでの現れ方」の3節に固定。
+// effect は「解放すると対戦画面で何が増えるか」。効果の無いノートを作らないための対応表でもある。
+const NOTE_ARTICLES = {
+  bluff_basic: {
+    effect: 'ベット／レイズのボタンに「通る見込み（高・中・低）」が出る',
+    body: [
+      { h: 'ブラフは「嘘」ではなく「条件」', p: 'ブラフは強い手のフリをすることではなく、<b>相手が降りる理由を作ること</b>です。相手に降りる理由が無い場面では、どんなに大きく賭けても通りません。逆に理由さえ揃えば、こちらの手札が何であっても関係なく通ります。' },
+      { h: '通る条件は3つ', p: '① <b>場札が相手に刺さっていない</b>（バラバラの低い札＝相手も何も持っていない）。② <b>相手が降りられる性格</b>（勝負手以外は手放すタイプ）。③ <b>それまでの自分の賭け方と矛盾しない</b>（急に大きくすると嘘がバレる）。3つ揃うほど成功率が上がります。' },
+      { h: 'このゲームでは', p: 'ノート解放後、自分から賭けられる場面でベット／レイズの各ボタンに<b>「通る見込み」</b>が出ます。<b>場札の乾き具合・相手が降りやすい性格・その額の大きさ</b>だけから出した目安で、手札は一切見ていません（見てしまうと読み合いでなく答えの表示になるため）。<b>「高」なら弱い手でも押していい</b>合図。「低」の時に弱い手で押すのは、ただチップを捨てるのと同じです。' },
+    ],
+  },
+  board_danger: {
+    effect: '場札の危険度バーに「3段階の判定」と「根拠になった札」が出る',
+    body: [
+      { h: '危ないのは自分の役ではなく場札', p: 'ワンペアやツーペアの強さは、<b>場札がどれだけ危ないか</b>で意味が変わります。同じツーペアでも、バラバラの場札なら勝ち手、フラッシュが完成しうる場札なら「負けているのに降りられない罠」になります。' },
+      { h: '3つの警戒サイン', p: '<b>同じマークが2枚以上</b>＝フラッシュ気配。<b>数字が近い札が並ぶ</b>＝ストレート気配。<b>場札にペアがある</b>＝相手がスリーカード以上を作れる（さらに自分の役は場札で作れてしまうので価値が下がる）。危険な場札ほど<b>ポットを小さく保つ</b>のが基本です。' },
+      { h: 'このゲームでは', p: '場札の下の危険度バーが、ノート解放後は<b>「安全／注意／危険」の判定と、その根拠になった札</b>まで表示します（例：危険 ♠3枚・9-10-J連番）。相手が大きく賭けてきた時、この判定が「危険」なら、こちらの役が中くらいでも降りる判断が正解になりやすくなります。' },
+    ],
+  },
+  pot_odds: {
+    effect: 'コール判断時に「必要◯%」（勝つのに最低限いる勝率）が出る',
+    body: [
+      { h: '「安いか高いか」だけの計算', p: 'コールするかどうかは、手の強さではなく<b>値段</b>で決められます。払う額に対してもらえるポットが大きいほど、弱い手でも続ける価値が出ます。' },
+      { h: '必要勝率の出し方', p: '<b>必要勝率 ＝ コール額 ÷（コール後の総ポット）</b>。ポット300に相手が100賭けてきたなら、100 ÷（400+100）= 20%。<b>20%以上勝てそうなら、コールは長い目で見て得</b>です。逆に必要勝率が40%を超えるような高い要求は、よほど自信がなければ降りるのが正解。' },
+      { h: 'このゲームでは', p: 'グラーノ撃破（または交換所の「ポットオッズ入門」購入）で解放。ミミの思考欄に<b>「（必要◯%）」</b>が出ます。ここに出るのは<b>必要な勝率だけ</b>で、実際の勝率は出ません。実際の勝率は、場札の危険度と相手のレンジから自分で見積もる——そのための2冊が [[board_danger]] と [[range_basic]] です。' },
+    ],
+  },
+  range_basic: {
+    effect: '相手の「ありうる手札の帯（強め／五分／弱め）」が常時表示になる',
+    body: [
+      { h: '相手の手札は1つに決めない', p: '「相手はAを持っている」と決め打つと、外れた時に何も残りません。強い人は<b>「ありうる手札の束」</b>で考えます。束のうち何割が自分より強いか——それが実質の勝率です。' },
+      { h: '束は行動で絞られる', p: 'プリフロップで降りなかった時点で弱い札は消え、フロップで大きく賭けた時点で「中途半端な手」も減ります。<b>相手の行動1つごとに束が細くなる</b>ので、リバーで残っている束を見れば、相手が本当に強いのか、それとも押し切ろうとしているだけかが見えます。' },
+      { h: 'このゲームでは', p: 'ヴェルベット撃破で解放。相手側に<b>レンジ帯（強め寄り／五分／弱め寄り）とブラフ候補の割合</b>が常時表示されるようになります。従来は心理バトルに成功した時だけ、しかも「ぱにゅレンジLv2」以上でしか見られなかった情報です。2周目以降、同じ相手の同じ手を「今度は読み切って勝つ」ための装備です。' },
+    ],
+  },
+  tell: {
+    effect: '対戦開始時に相手の傾向タグ（攻撃的／ブラフ多め など）が出る',
+    body: [
+      { h: '癖は「その人固有の偏り」', p: '同じ場面でも、人によって選ぶ行動は違います。とにかく攻めるタイプ、勝負手以外はすぐ降りるタイプ、弱い時ほど大きく賭けるタイプ。<b>相手ごとの偏りが分かれば、同じ状況でも読みの精度が変わります。</b>' },
+      { h: '3つの軸で見る', p: '<b>攻撃的か受け身か</b>（賭ける頻度）、<b>ブラフ寄りかバリュー寄りか</b>（弱い手で押すか、強い手でだけ押すか）、<b>降りやすいか粘るか</b>。この3軸が分かれば、ブラフを仕掛けていい相手か、待って強い手で仕留める相手かが決まります。' },
+      { h: 'このゲームでは', p: '交換所で購入すると、対戦相手の情報欄に傾向タグが出ます。「🧊 降りやすい」相手には [[bluff_basic]] が効き、「🔥 粘り強い」相手にブラフを打っても通りません。癖と場札を組み合わせて考えるのが、このゲームの読み合いの本体です。' },
+    ],
+  },
+};
+
+// 知識ノートの本文モーダル。コレクションの各ノートをタップして開く。
+function showNoteArticle(id) {
+  const meta = TACTIC_NOTES[id];
+  const art = NOTE_ARTICLES[id];
+  if (!meta || !art) return;
+  const owned = (save.unlockedNotes || []).indexOf(id) >= 0;
+  if (document.querySelector('.note-article-overlay')) return;
+  // 本文内の [[id]] は他ノートへの言及。読める形（ノート名）に置換する。
+  const linkify = (s) => s.replace(/\[\[(\w+)\]\]/g, (m, k) => `<b class="na-ref">『${tacticNoteName(k)}』</b>`);
+  const overlay = document.createElement('div');
+  overlay.className = 'note-article-overlay';
+  overlay.innerHTML = `
+    <div class="note-article-panel">
+      <div class="na-head">
+        <div class="na-kicker">知識ノート</div>
+        <div class="na-title">${meta.name}</div>
+        <button type="button" class="na-close" title="閉じる">✕</button>
+      </div>
+      <div class="na-body">
+        <div class="na-effect ${owned ? 'on' : 'off'}">
+          <span class="na-effect-label">${owned ? '解放済みの効果' : '解放すると'}</span>
+          <span class="na-effect-text">${art.effect}</span>
+        </div>
+        ${art.body.map(sec => `<section class="na-sec"><h4 class="na-h">${sec.h}</h4><p class="na-p">${linkify(sec.p)}</p></section>`).join('')}
+      </div>
+    </div>
+  `;
+  const stage = document.getElementById('stage');
+  (stage || document.body).appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.querySelector('.na-close').addEventListener('click', (e) => { e.stopPropagation(); close(); });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
 
 const SHOP_ITEMS = [
   { id: 'panyu_sense_lv2',     cat: 'panyu', name: 'ぱにゅぱにゅLv2',         price: 300, desc: '心理バトルのハズレ選択肢を1つグレーアウトして選べなくする' },
@@ -5455,6 +5552,47 @@ function renderTellTags() {
   const tags = state.tellTags || [];
   return tags.slice(-2).map((t, i) => `<div class="v2-tag ${i === 1 ? 'v2-tag-b' : ''}">${t}</div>`).join('');
 }
+// 【レンジの考え方】相手の「ありうる手札の束」を、公開情報（賭け方・進んだストリート・性格）だけで帯にする。
+// 相手の実際の手札は一切見ない。見てしまうと読み合いではなく答えの表示になるため。
+function renderNoteRangeBand() {
+  if (!hasNote('range_basic')) return '';
+  if (state.screen !== 'battle') return '';
+  if (state.handPhase === 'idle' || state.handPhase === 'showdown') return '';
+  if (state.tutorialMode || state.introHandMode) return '';
+  const p = state.opponentProfile;
+  if (!p) return '';
+
+  const streetIdx = { preflop: 0, flop: 1, turn: 2, turnRiver: 3, river: 3 }[state.handPhase] ?? 0;
+  const bet = state.currentBetOpponent || 0;
+  const potBefore = Math.max(1, state.pot - bet);
+  const sizeRatio = bet > 0 ? bet / potBefore : 0;
+
+  // 相手のこの手での積極度：賭けたサイズ＋ここまで降りずに来た事実
+  let aggr = streetIdx * 0.35;
+  if (bet > 0) aggr += sizeRatio >= 0.9 ? 2.0 : sizeRatio >= 0.5 ? 1.4 : 0.8;
+  else if (streetIdx > 0) aggr -= 0.5; // チェックで回してきた
+
+  const band = aggr >= 1.8 ? 'strong' : aggr >= 0.9 ? 'even' : 'weak';
+  const bandLabel = band === 'strong' ? '強め寄り' : band === 'even' ? '五分' : '弱め寄り';
+  const bandNote = band === 'strong'
+    ? '完成役・強いドローが束の中心'
+    : band === 'even'
+      ? '中くらいの役とドローが半々'
+      : '様子見。中途半端な手か、まだ何もない';
+
+  // ブラフ候補の割合：性格 × 賭けの大きさ（大きく賭けるほどブラフも混ざる）
+  const bluffShare = Math.max(0.05, Math.min(0.85,
+    (p.bluffTendency ?? 0.4) * (0.65 + 0.65 * Math.min(1.2, sizeRatio))));
+  const bluffPct = Math.round(bluffShare * 100);
+
+  return `<div class="rb-inner rb-${band}">`
+       + `<span class="rb-label">相手のレンジ</span>`
+       + `<span class="rb-band">${bandLabel}</span>`
+       + `<span class="rb-note">${bandNote}</span>`
+       + `<span class="rb-bluff">ブラフ候補 約${bluffPct}%</span>`
+       + `</div>`;
+}
+
 function renderWinrateSeal() {
   if (state.handPhase === 'idle' || !state.playerHand || state.playerHand.length < 2) return '';
   if (state.winrateRevealed || state.tutorialMode || state.introHandMode) {
@@ -5466,6 +5604,33 @@ function renderWinrateSeal() {
   }
   return `<div class="v2-seal-closed" data-action="toggle-v2-detail" title="詳細データを開く"><div class="v2-disp v2-seal-q">?</div><div class="v2-seal-cap">勝率 封印中</div></div>`;
 }
+// 【ボード危険度の読み方】の根拠となる「どの札のせいで危ないか」を短語で返す。
+function boardDangerEvidence(vc) {
+  const ev = [];
+  // 同じマークが何枚あるか
+  const suitCount = {};
+  vc.forEach(c => { suitCount[c.suit] = (suitCount[c.suit] || 0) + 1; });
+  // 枚数が並んだときにストリートごとに表示が入れ替わらないよう、マーク順で決着させる
+  const SUIT_ORDER = ['♠', '♥', '♦', '♣'];
+  const topSuit = Object.keys(suitCount)
+    .sort((a, b) => (suitCount[b] - suitCount[a]) || (SUIT_ORDER.indexOf(a) - SUIT_ORDER.indexOf(b)))[0];
+  if (topSuit && suitCount[topSuit] >= 2) ev.push(`${topSuit}${suitCount[topSuit]}枚`);
+  // 数字が近い並び（隣り合う2枚の差が2以内）
+  const uniq = [...new Set(vc.map(c => c.rank))].sort((a, b) => a - b);
+  for (let i = 0; i < uniq.length - 1; i++) {
+    if (uniq[i + 1] - uniq[i] <= 2) {
+      ev.push(`${RANK_NAMES[uniq[i] - 2]}-${RANK_NAMES[uniq[i + 1] - 2]}の並び`);
+      break;
+    }
+  }
+  // 場のペア
+  const dup = uniq.length < vc.length
+    ? vc.map(c => c.rank).find((r, i, a) => a.indexOf(r) !== i)
+    : null;
+  if (dup) ev.push(`場に${RANK_NAMES[dup - 2]}のペア`);
+  return ev;
+}
+
 function renderDangerBar() {
   const vc = visibleCommunity();
   if (!vc || vc.length < 3) return '';
@@ -5476,8 +5641,24 @@ function renderDangerBar() {
   if (d.pairBoard) parts.push('ペアボード');
   const pct = Math.min(100, parts.length * 34 + (vc.length - 3) * 8);
   const label = parts.join('・');
-  if (!label) return '';
-  return `<div class="v2-danger-track"><div class="v2-danger-fill" style="width:${pct}%"></div></div><div class="v2-danger-label">${label}</div>`;
+  if (!label) {
+    // ノート所持時は「安全」も明示する。何も出ないと「見落としたのか」が分からないため。
+    if (!hasNote('board_danger')) return '';
+    return `<div class="v2-danger-track is-safe"><div class="v2-danger-fill" style="width:8%"></div></div>`
+         + `<div class="v2-danger-label"><span class="dg-verdict dg-safe">安全</span>`
+         + `<span class="dg-why">刺さる並びなし</span></div>`;
+  }
+  if (!hasNote('board_danger')) {
+    return `<div class="v2-danger-track"><div class="v2-danger-fill" style="width:${pct}%"></div></div><div class="v2-danger-label">${label}</div>`;
+  }
+  // ノート解放：3段階の判定＋「どの札のせいで危ないか」。帯は1行しか無いので、
+  // 曖昧な「フラッシュ気配」ではなく具体的な根拠札の方を出す（同じことを2度書かない）。
+  const level = d.flushMade || parts.length >= 2 ? 'danger' : 'caution';
+  const verdict = level === 'danger' ? '危険' : '注意';
+  const why = boardDangerEvidence(vc).join('・');
+  return `<div class="v2-danger-track is-${level}"><div class="v2-danger-fill" style="width:${pct}%"></div></div>`
+       + `<div class="v2-danger-label"><span class="dg-verdict dg-${level}">${verdict}</span>`
+       + `<span class="dg-why">${why || label}</span></div>`;
 }
 function renderStreetTracker() {
   const order = ['preflop', 'flop', 'turn', 'river', 'showdown'];
@@ -5683,6 +5864,10 @@ function renderCurrentHandKicker() {
     }
   }
 
+  // 研修中はキッカー行を出さない。初回のHand1は「スリーカード」なのに
+  // その真下に「キッカー：7 2（弱め）」と出て、リコの「かなり強いよ」と真逆に読める。
+  // キッカーの概念は研修の範囲外なので、いちばん最初の画面からは外す。
+  if (state && state.introHandMode) return '';
   // mainInfo（内訳ランク）は役名に含めるので、ここではキッカー詳細のみ表示
   if (!kickerLine) return '';
   return `<span class="hk-kicker">${kickerLine}${strength ? `<span class="hk-strength">${strength}</span>` : ''}</span>`;
@@ -6114,9 +6299,52 @@ function renderPsychLog(el) {
   ).join('');
 }
 
+// 戦術ノートを持っているか（購入フラグ ownedItems と撃破報酬 unlockedNotes の両方を見る）
+function hasNote(id) {
+  if (save.unlockedNotes && save.unlockedNotes.includes(id)) return true;
+  // 交換所で買った場合のアイテムID対応（note_pot_odds / note_tell / note_bankroll）
+  return !!(save.ownedItems && save.ownedItems.includes('note_' + id));
+}
+
+// 【ブラフの基本】ベットが「通る見込み」＝相手が降りる見込み。
+// 公開情報（相手の性格・場札の乾き具合・賭ける額）だけから出す。自分や相手の手札は使わない。
+function bluffFoldEquity(betAmount) {
+  const p = state.opponentProfile;
+  if (!p) return null;
+  const vc = visibleCommunity() || [];
+  // 場札の「乾き具合」：ドローが無いほどブラフは通る
+  let wet = 0;
+  if (vc.length >= 3) {
+    const d = evaluateBoardDanger(vc);
+    if (d.flushAlert) wet += 0.34;
+    if (d.straightAlert) wet += 0.33;
+    if (d.pairBoard) wet += 0.20; // 場ペアは相手も降りやすい面があるので軽め
+  } else {
+    wet = 0.35; // プリフロップは中庸
+  }
+  const dryness = Math.max(0, 1 - wet);
+  // 賭ける額がポットに対して大きいほど降ろせる
+  const potNow = Math.max(1, state.pot);
+  const ratio = Math.min(1.5, (betAmount || 0) / potNow);
+  const sizeBonus = Math.min(0.14, ratio * 0.12);
+  const score = 0.48 * (p.foldDiscipline ?? 0.5)
+              + 0.24 * (1 - (p.aggression ?? 0.5))
+              + 0.28 * dryness
+              + sizeBonus;
+  const tier = score >= 0.60 ? 'high' : score >= 0.44 ? 'mid' : 'low';
+  const label = tier === 'high' ? '高' : tier === 'mid' ? '中' : '低';
+  return { tier, label };
+}
+
 function renderActionArea(el) {
   el.innerHTML = '';
   if (state.handPhase === 'idle') {
+    // ★研修は台本が自分で配る。ここに「対戦開始」を出すと、配布待ちの一瞬に押された時に
+    //   通常の startHand() が走ってランダムな手札が配られ、研修が台本から外れてしまう。
+    if (state.introHandMode) {
+      el.innerHTML = `<div class="status-note dim">配っています……</div>`;
+      return;
+    }
     const label = state.handNo === 0 ? '対戦開始' : '次のハンドへ';
     el.innerHTML = `<button class="btn btn-primary big" data-action="start-hand">${label}</button>`;
     return;
@@ -6224,11 +6452,24 @@ function renderActionArea(el) {
     }
   }
 
+  // 【ブラフの基本】自分から賭けられる枠に「通る見込み」を添える（体験ハンド中は出さない）
+  if (hasNote('bluff_basic') && !state.introHandMode && !state.tutorialMode) {
+    slots = slots.map(s => {
+      if (!s.enabled) return s;
+      if (!['sm', 'md', 'lg', 'allin'].includes(s.kind)) return s;
+      const fe = bluffFoldEquity(s.chipAmount);
+      return fe ? { ...s, noteHint: fe } : s;
+    });
+  }
+
   el.innerHTML = `<div class="action-grid">${slots.map(s => {
     const chipHtml = (s.chipAmount && s.chipAmount > 0)
       ? `<span class="slot-chips">${buildHorizontalChips(s.chipAmount, 'small', 'slot-chip-num', 'bu-rchip-tiny')}</span>`
       : '';
     const subHtml = s.subText ? `<small class="slot-sub">${s.subText}</small>` : '';
+    const hintHtml = s.noteHint
+      ? `<small class="slot-note-hint fe-${s.noteHint.tier}" title="戦術ノート『ブラフの基本』：相手が降りる見込みの目安">通る見込み ${s.noteHint.label}</small>`
+      : '';
     return `
       <button
         class="btn action-slot slot-${s.kind} ${s.primary ? 'btn-primary primary-action' : s.ghost ? 'btn-ghost' : 'btn-secondary'}"
@@ -6236,6 +6477,7 @@ function renderActionArea(el) {
         ${s.dataSize ? `data-size="${s.dataSize}"` : ''}>
         <span class="slot-label">${s.label}</span>
         ${subHtml}
+        ${hintHtml}
         ${chipHtml}
       </button>
     `;
@@ -6268,6 +6510,12 @@ function onAction(e) {
     case 'intro-to-lecture':
       document.querySelector('.intro-win-overlay')?.remove();
       startBattle('rico_tutorial');
+      break;
+    case 'intro-read-episode':
+      // 長い第1話タイトルは「読みたい人だけ」。実際に見せた時だけ既読フラグを立てる。
+      save.introEpisodeShown = true;
+      saveProgress();
+      showEpisodeTitle('rico_tutorial', null);
       break;
     case 'intro-to-lobby':
       document.querySelector('.intro-win-overlay')?.remove();
@@ -6367,6 +6615,7 @@ function onAction(e) {
       const ov = document.querySelector('.collection-overlay'); if (ov) ov.remove();
       break;
     }
+    case 'open-note': showNoteArticle(data.note); break;
     case 'rico-viewer-close': {
       const ov = document.querySelector('.rico-viewer-overlay'); if (ov) ov.remove();
       break;
@@ -10438,7 +10687,7 @@ function showCollectionModal() {
         </section>
         <section class="coll-section">
           <h3 class="coll-section-title">知識ノート <span class="coll-section-count">${notesCount}/${Object.keys(TACTIC_NOTES).length}</span></h3>
-          <div class="coll-notes">${Object.keys(TACTIC_NOTES).map(function(id){var n=TACTIC_NOTES[id];var got=(save.unlockedNotes||[]).indexOf(id)>=0;return `<div class="coll-note ${got?"on":"off"}"><div class="coll-note-name">${got?n.name:"？？？"}</div><div class="coll-note-desc">${got?n.desc:"対戦相手撃破やショップ購入で解放"}</div></div>`;}).join("")}</div>
+          <div class="coll-notes">${Object.keys(TACTIC_NOTES).map(function(id){var n=TACTIC_NOTES[id];var got=(save.unlockedNotes||[]).indexOf(id)>=0;var eff=(NOTE_ARTICLES[id]||{}).effect||'';return `<div class="coll-note ${got?"on":"off"}" data-action="open-note" data-note="${id}" role="button" tabindex="0"><div class="coll-note-name">${got?n.name:"？？？"}</div><div class="coll-note-desc">${got?n.desc:"対戦相手撃破やショップ購入で解放"}</div>${got&&eff?`<div class="coll-note-effect">対戦中の効果：${eff}</div>`:''}<div class="coll-note-read">${got?'▸ 本文を読む':'▸ 内容を見る（未解放）'}</div></div>`;}).join("")}</div>
         </section>
         <section class="coll-section">
           <h3 class="coll-section-title">リコ衣装ギャラリー <span class="coll-section-count">${outfitUnlocked}/${outfits.length}</span></h3>
@@ -11161,10 +11410,17 @@ const INTRO_HANDS = [
     title: 'そろえる',
     playerHand: [{ suit: '♠', rank: 14, label: 'A' }, { suit: '♥', rank: 14, label: 'A' }],
     flop: [{ suit: '♦', rank: 14, label: 'A' }, { suit: '♣', rank: 7, label: '7' }, { suit: '♠', rank: 2, label: '2' }],
-    usedCards: ['♠-14', '♥-14', '♦-14', '♣-7', '♠-2'],
+    // ★相手の2枚とターン・リバーも固定する。以前は残りデッキから引いていたのに
+    //   introHandShowdown() が無条件で「ミミの勝ち」と宣言していたため、
+    //   実際には負けている盤面で「勝った！」と表示することがあった。
+    opponentHand: [{ suit: '♣', rank: 13, label: 'K' }, { suit: '♦', rank: 12, label: 'Q' }],
+    turnRiver: [{ suit: '♥', rank: 5, label: '5' }, { suit: '♦', rank: 9, label: '9' }],
+    usedCards: ['♠-14', '♥-14', '♦-14', '♣-7', '♠-2', '♣-13', '♦-12', '♥-5', '♦-9'],
+    // 初手から「セット」「フロップ」という新語を出さない。見えているものだけで言う。
     dealOpp: '「さ、配ったよ。手札はあなただけのもの」',
-    dealMimi: '「……このカード、セット完成してる……！」',
-    dealRico: '「すごい手が来てる。大きく行こ！」',
+    dealMimi: '「Aが……3枚そろってる……！」',
+    dealRico: '「それがスリーカード。かなり強いよ。大きく賭けてみよう」',
+    streetLabel: '手札2枚＋場の3枚、いま見えている5枚で役を作る',
     winNextRico: 'ね、楽しいでしょ。次はちょっと苦手な手も見てもらうよ',
   },
   {
@@ -11185,11 +11441,17 @@ const INTRO_HANDS = [
   {
     no: 3,
     title: '読む',
-    playerHand: [{ suit: '♥', rank: 12, label: 'Q' }, { suit: '♥', rank: 11, label: 'J' }],
-    flop: [{ suit: '♠', rank: 12, label: 'Q' }, { suit: '♦', rank: 8, label: '8' }, { suit: '♣', rank: 3, label: '3' }],
-    usedCards: ['♥-12', '♥-11', '♠-12', '♦-8', '♣-3'],
+    // ★手札は「Aのペア」にする。ここで使う心理バトル問題 rico_tutorial_flop の選択肢が
+    //   「自分の役（Aペア）を信じてコール or レイズ」と書かれているのに、
+    //   以前の Q♥J♥ / Q♠8♦3♣ ではミミの役がQのペアで、問題文と盤面が食い違っていた。
+    playerHand: [{ suit: '♥', rank: 14, label: 'A' }, { suit: '♦', rank: 13, label: 'K' }],
+    flop: [{ suit: '♠', rank: 14, label: 'A' }, { suit: '♦', rank: 8, label: '8' }, { suit: '♣', rank: 3, label: '3' }],
+    // 相手は「勝ったかも」と言いながら実際はQハイのブラフ。読み切れば必ず勝てる盤面に固定する。
+    opponentHand: [{ suit: '♦', rank: 12, label: 'Q' }, { suit: '♣', rank: 9, label: '9' }],
+    turnRiver: [{ suit: '♦', rank: 2, label: '2' }, { suit: '♣', rank: 7, label: '7' }],
+    usedCards: ['♥-14', '♦-13', '♠-14', '♦-8', '♣-3', '♦-12', '♣-9', '♦-2', '♣-7'],
     dealOpp: '「さ、最後のハンドだよ」',
-    dealMimi: '「Qのペア……悪くない、けど……」',
+    dealMimi: '「Aのペア……悪くない、けど……」',
     dealRico: '「相手のセリフ、よく聞いてね」',
     betOppSpeech: '「……これは、勝ったかも」',
     psychQid: 'rico_tutorial_flop',
@@ -11197,15 +11459,34 @@ const INTRO_HANDS = [
   },
 ];
 
-// ★物語順どおりに始める：まず第1話（更衣室でリコ先輩に連行される回）を見せてから、
-//   その第1話の相手であるリコ先輩と初めての卓につく。
-//   （以前はいきなり第2話の相手ポルカと対戦が始まり、話の順序が逆だった）
+// 初回起動の入口。
+// ★以前はここで「第1話タイトルカード（228字・全画面・要タップ）」→「ルール入門3ステップ（366字）」
+//   を通してから卓に着いていた。実測で、1枚もカードを見ないうちに 626字・約38秒を読まされ、
+//   最初のポーカー的な判断まで45.9秒、心理バトルまで121秒かかっていた。
+//   説明を先に置くのをやめ、いきなり Hand1 の卓から始める。
+//   必要な説明は Hand1 の卓上の一言（dealRico / streetLabel）に寄せ、
+//   長い第1話タイトルは研修完了画面から「読みたい人だけ」読めるようにした。
+//   introEpisodeShown は「実際に全文を見せた」ときだけ立てる（見せていないのに
+//   立ててしまうと、講義に入ったときに第1話が永久に出なくなる）。
 function startIntroHand() {
-  save.introEpisodeShown = true;   // 後で講義に入るとき第1話を二度出さないための記録
-  saveProgress();
-  // 第1話タイトルカードの直後、3ハンド研修に入る前に「ルール入門」3ステップを挟む
-  // （「ルールも分からないうちからどうやってプレイするの？」への対応）
-  showEpisodeTitle('rico_tutorial', () => showRulePrimer(beginIntroHand));
+  showEpisodeChip(EPISODES.rico_tutorial && EPISODES.rico_tutorial.short);
+  beginIntroHand();
+}
+
+// 進行を止めない話数チップ。卓の上に数秒だけ重ねて自動で消える。
+function showEpisodeChip(text) {
+  if (!text) return;
+  const el = document.createElement('div');
+  el.className = 'episode-chip';
+  el.textContent = text;
+  // render() が #app の中身を作り直すので、その外（body）に置かないと1秒で消える。
+  // カットイン（.rico-cutin）と同じく position:fixed で画面に重ねる。
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 600);
+  }, 3200);
 }
 
 function beginIntroHand() {
@@ -11250,16 +11531,25 @@ function dealIntroHandByNo(no) {
   resetHandJuice();
   mpSfx('deal');
   const ante = 50;
+  // ★リコのスタックは毎ハンド戻す。Hand1で「オールイン」を押されると彼女のチップが0になり、
+  //   Hand2開始のアンテで −50 になったうえ、教材である「+100」のベットが0に潰れて
+  //   「存在しないベットに降りる」授業になっていた。研修のチップは記録に残らないので戻して良い。
+  state.opponentChips = 500;
   state.playerChips -= ante; state.opponentChips -= ante;
   state.pot = ante * 2;
   resetPotChips(); pushPotChips(ante * 2);
   state.currentBetPlayer = 0;
   state.currentBetOpponent = 0;
-  // 固定シナリオ：使用済みカードを除いた残りデッキ（オポーネントの2枚・演出上の重複防止のみ）
+  // 固定シナリオ：使用済みカードを除いた残りデッキ（演出上の重複防止のみ）
   const used = new Set(cfg.usedCards);
   state.deck = newDeck().filter(c => !used.has(`${c.suit}-${c.rank}`));
   state.playerHand = cfg.playerHand.map(c => ({ ...c }));
-  state.opponentHand = [state.deck.pop(), state.deck.pop()];
+  // 相手の2枚も台本どおりに固定する（ランダムだと「必ず勝つ」演出が嘘になる）
+  state.opponentHand = cfg.opponentHand
+    ? cfg.opponentHand.map(c => ({ ...c }))
+    : [state.deck.pop(), state.deck.pop()];
+  // ターン・リバーも台本があるならそれを使う
+  state.scriptedTurnRiver = cfg.turnRiver ? cfg.turnRiver.map(c => ({ ...c })) : null;
   state.community = cfg.flop.map(c => ({ ...c }));
   state.equityHistory = [];
   state.psychResolved = (no !== 3);  // Hand3のみ心理バトルを発生させる
@@ -11274,8 +11564,8 @@ function dealIntroHandByNo(no) {
     // Hand1：ミミが先に「大きく行く」を選ぶ（現行どおり）
     state.isPlayerTurn = true;
     render();
-    // 研修Hand1限定：フロップが最初から開いていることを一言添える（本編には出さない）
-    showIntroStreetLabel('フロップ＝場札3枚オープン');
+    // 研修Hand1限定：いま見えているものだけを説明する（「フロップ」という新語は使わない）
+    showIntroStreetLabel(cfg.streetLabel || '手札2枚＋場の3枚、いま見えている5枚で役を作る');
   } else {
     // Hand2/3：リコ先輩が先にベットしてくる → ミミは反応するだけ
     state.isPlayerTurn = false;
@@ -11325,6 +11615,11 @@ function introHandOpponentOpenBet(no) {
 
 // Hand2専用：フォールド処理（通常の playerFold/endHand は使わず、リコの一言だけで軽く進める）
 function introHandFold() {
+  // ★連打ガード。以前は降りたあともフォールドボタンが生きたままで、
+  //   焦って2回押すと introHandAdvance() が余分に走り、研修の核心である
+  //   Hand3「読む」が丸ごと飛ばされて研修完了画面に出てしまっていた。
+  if (!state.isPlayerTurn) return;
+  state.isPlayerTurn = false;
   const cfg = INTRO_HANDS[(state.introHandNo || 1) - 1];
   mpSfx('fold');
   const potWon = state.pot;
@@ -11336,7 +11631,7 @@ function introHandFold() {
   flyChips('.bu-pot-physical', '.char-opponent', potWon);
   setTimeout(() => {
     if (state.screen !== 'battle') return;
-    showRicoCutIn((cfg && cfg.foldRico) || 'えらい！　損切りできる子は強くなるよ', true, () => introHandAdvance());
+    showRicoCutIn((cfg && cfg.foldRico) || 'えらい！　損切りできる子は強くなるよ', true, () => introHandAdvance(), CUTIN_ADVANCE);
   }, 1200);
 }
 
@@ -11354,13 +11649,30 @@ function introHandAfterPsych() {
   state.isPlayerTurn = false;
   render();
   flyChips('.char-mimi', '.bu-pot-physical', pay);
-  setTimeout(() => { if (state.screen === 'battle') introHandShowdown(); }, 900);
+  // ★以前はここから直接ショーダウンへ飛んでいたため、場札3枚のまま
+  //   ストリート表示だけ「RIVER ✓」になり、空きスロット2枚を残して勝負が終わっていた。
+  //   最後まで場札を開いてから見せる。
+  setTimeout(() => {
+    if (state.screen !== 'battle' || !state.introHandMode) return;
+    const cfg = INTRO_HANDS[(state.introHandNo || 3) - 1];
+    const rest = (cfg && cfg.turnRiver) ? cfg.turnRiver.map(c => ({ ...c })) : null;
+    if (!rest || state.community.length >= 5) { introHandShowdown(); return; }
+    state.handPhase = 'turnRiver';
+    revealCommunity(rest, {
+      thought: () => `「ターン＆リバー：${renderCardsText(state.community)}」`,
+      rico: '「全部の場札が出たよ。さあ、答え合わせ」',
+      done: () => { if (state.screen === 'battle') introHandShowdown(); },
+    });
+  }, 900);
 }
 
 // ハンド間の進行役：3ハンド目まで dealIntroHandByNo() を繋ぎ、それ以降は研修完了画面へ
 function introHandAdvance() {
   if (state.screen !== 'battle' || !state.introHandMode) return;
   const no = state.introHandNo || 1;
+  // 同じハンドから二重に進まない（カットインの多重発火・連打対策）
+  if (state.__introAdvancedFrom === no) return;
+  state.__introAdvancedFrom = no;
   if (no < INTRO_HANDS.length) {
     setTimeout(() => dealIntroHandByNo(no + 1), 300);
   } else {
@@ -11377,10 +11689,22 @@ function introHandSkip() {
   showIntroHandWinScreen();
 }
 
-// 体験ハンド専用のショーダウン：ランダム要素に左右されず必ずミミの勝利にする（Hand1/Hand3共通）
+// 体験ハンド専用のショーダウン（Hand1/Hand3共通）。
+// ★以前は札を見ずに無条件で「ミミの勝ち」と宣言していた。相手の2枚が残りデッキからの
+//   ランダムだったため、実測で約5.7%（1081通り中62通り）は実際には負け／引き分けなのに
+//   「勝った！」と表示してポットを渡していた。いまは相手の札もターン・リバーも台本で
+//   固定してあるので必ずミミが勝つが、将来また札をいじったときに静かに嘘をつかないよう、
+//   ここで実際に比較して食い違ったらコンソールに出す。
 function introHandShowdown() {
   const playerAll = [...state.playerHand, ...state.community];
   const pEv = evaluateHand(playerAll);
+  {
+    const oEvCheck = evaluateHand([...state.opponentHand, ...state.community]);
+    if (oEvCheck.score >= pEv.score) {
+      console.error('[研修] 台本では勝つはずのハンドで、実際には勝っていない',
+        { hand: state.introHandNo, player: pEv.name, opponent: oEvCheck.name });
+    }
+  }
   const oEv = evaluateHand([...state.opponentHand, ...state.community]);
   const pot = state.pot;
   const cfg = INTRO_HANDS[(state.introHandNo || 1) - 1];
@@ -11421,7 +11745,7 @@ function introHandShowdown() {
   setTimeout(() => {
     if (state.screen !== 'battle') return;
     const line = (cfg && cfg.winNextRico) || 'ね、いい調子。次いこ！';
-    showRicoCutIn(line, true, () => introHandAdvance());
+    showRicoCutIn(line, true, () => introHandAdvance(), CUTIN_ADVANCE);
   }, 3900);
 }
 
@@ -11436,11 +11760,12 @@ function showIntroHandWinScreen() {
       <div class="intro-win-badge">🏆 研修完了！</div>
       <div class="intro-win-title">初日の3ハンド、乗り切った！</div>
       <div class="intro-win-coins">💰 +300 コイン獲得</div>
-      <div class="intro-win-question">もっと理屈を知りたい？</div>
+      <div class="intro-win-question">このまま遊びに行く？</div>
       <div class="intro-win-buttons">
-        <button class="btn btn-primary" data-action="intro-to-lecture">📚 リコの講義へ</button>
-        <button class="btn btn-secondary" data-action="intro-to-lobby">🎮 このままロビーへ</button>
+        <button class="btn btn-primary" data-action="intro-to-lobby">🎮 ロビーへ行く</button>
+        <button class="btn btn-secondary" data-action="intro-to-lecture">📚 もっと理屈を知る（講義）</button>
       </div>
+      <button class="btn btn-ghost intro-win-episode" data-action="intro-read-episode">📖 第1話のタイトルを読む</button>
     </div>
   `;
   document.getElementById('stage').appendChild(overlay);
@@ -11472,6 +11797,8 @@ function applyIntroHandUI() {
 // 11. ハンド進行
 //=============================================================
 function startHand() {
+  // 研修中は dealIntroHandByNo() が台本どおりに配る。ここから配ると台本が壊れる。
+  if (state.introHandMode) return;
   if (state.playerChips <= 0 || state.opponentChips <= 0) { return endBattle(); }
   state.handNo++;
   if (state.handNo > state.maxHands) { return endBattle(); }
@@ -12318,6 +12645,21 @@ function triggerPsychBattle(qid) {
     choicesEl.appendChild(btn);
   });
 
+  // 研修Hand3の再挑戦：外した回数だけハズレを潰しておく（答えは教えない）。
+  // 潰し切ると残るのは正解だけになるので、必ず「読めた」状態で先へ進める。
+  if (state.introHandMode && (state.__introPsychGrey || 0) > 0) {
+    let toGrey = state.__introPsychGrey;
+    for (const b of choicesEl.querySelectorAll('.choice-btn')) {
+      if (toGrey <= 0) break;
+      const c = q.choices.find(x => x.id === b.dataset.choiceId);
+      if (c && !c.correct) {
+        b.classList.add('disabled-by-sense');
+        b.disabled = true;
+        toGrey--;
+      }
+    }
+  }
+
   // ぱにゅぱにゅボタン
   const senseBtn = root.querySelector('[data-bind="panyuSenseBtn"]');
   // v4 B4: 初回はゲーム全体で1回無料 ／ panyu_chrono購入時は1バトル1回追加無料
@@ -12862,6 +13204,17 @@ function resolvePsych(qid, choice, btn) {
     }
   }
   btn.style.borderColor = isCorrect ? 'var(--c-gold-bright)' : 'var(--c-red-bright)';
+
+  // ★研修Hand3「読む」：以前は正解でも不正解でも同じ introHandAfterPsych() に流れて必ず勝っていた。
+  //   看板機能の心理バトルが「何を答えても勝つ」ので、体験が空虚だった。
+  //   外したらハズレを1つ潰してもう一度読ませる。ハズレを潰し切れば残るのは正解だけなので
+  //   詰むことはなく、「読めたから勝った」という因果だけが必ず通る。
+  const introWrongCount = state.introHandMode
+    ? q.choices.filter(c => !c.correct).length
+    : 0;
+  const introWillRetry = state.introHandMode && !isCorrect
+    && (state.__introPsychGrey || 0) < introWrongCount;
+
   // 講義モード：正誤スタンプ演出（CODEX素材。⚡スピード達成時は稲妻スタンプも追加）
   if (state.lectureMode) {
     const st = document.createElement('div');
@@ -12966,7 +13319,9 @@ function resolvePsych(qid, choice, btn) {
       }
       return !!c.correct;
     });
-    if (correctChoice && state.psychRoot && state.psychRoot.isConnected) {
+    // 研修Hand3だけは、外しても答えを教えずにもう一度読ませる（後述の introWillRetry）。
+    // ここで正解を光らせて「正解は〜だったよ」と言ってしまうと、再挑戦の意味が消える。
+    if (!introWillRetry && correctChoice && state.psychRoot && state.psychRoot.isConnected) {
       state.psychRoot.querySelectorAll('.choice-btn').forEach(b => {
         if (b.dataset.choiceId === correctChoice.id) {
           b.style.borderColor = 'var(--c-gold-bright)';
@@ -12975,8 +13330,13 @@ function resolvePsych(qid, choice, btn) {
         }
       });
     }
-    state.mimiThought = `「${eff.mimi}」`;
-    state.ricoAdvice = `「${eff.rico}　正解は「${correctChoice ? correctChoice.text : ''}」だったよ」`;
+    if (introWillRetry) {
+      state.mimiThought = '「……ちがった？」';
+      state.ricoAdvice = '「あわてないで。言ってることと、賭けた額。噛み合ってる？」';
+    } else {
+      state.mimiThought = `「${eff.mimi}」`;
+      state.ricoAdvice = `「${eff.rico}　正解は「${correctChoice ? correctChoice.text : ''}」だったよ」`;
+    }
     log('psych', { qid, choice: choice.id, success: false });
   }
 
@@ -12991,13 +13351,23 @@ function resolvePsych(qid, choice, btn) {
     }
     setMimiExpression('default'); // P1-3: 心理バトル解決後は表情を戻す
     state.__psychRevealDelay = 0;
-    // P2: 3ハンドの初日研修（Hand3「読む」）：正解でも不正解でも進行し、
-    // リコの一言のあと自動でコール→ショーダウンへ（プレイヤー操作は挟まない）
+    // P2: 3ハンドの初日研修（Hand3「読む」）。
+    // 正解したときだけ先へ進む＝コール→相手の弱い手が公開→勝利、という因果を通す。
+    // 外したときは答えを教えず、ハズレを1つ潰して同じ問いをもう一度出す。
     if (state.introHandMode) {
       state.isPlayerTurn = false;
       render();
+      if (introWillRetry) {
+        state.__introPsychGrey = (state.__introPsychGrey || 0) + 1;
+        showRicoCutIn(state.ricoAdvice.replace(/^「|」$/g, ''), false, () => {
+          state.psychResolved = false;
+          state.psychResolving = false;
+          triggerPsychBattle(qid);
+        }, { autoCloseMs: 5000, hint: 'タップでもう一度読む' });
+        return;
+      }
       const resultPrefix = isCorrect ? '✓ 正解！　' : '✗ 残念……　';
-      showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, () => introHandAfterPsych());
+      showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, () => introHandAfterPsych(), CUTIN_ADVANCE);
       return;
     }
     // 講義モード：正解数カウント＋コンボ＆コイン報酬＋次の問題へ（ゲーム化）
@@ -13024,7 +13394,7 @@ function resolvePsych(qid, choice, btn) {
       const resultPrefix = isCorrect ? '✓ 正解！' + rewardMsg + '　' : '✗ 残念……　';
       showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, () => {
         triggerLectureQuestion();
-      });
+      }, CUTIN_LECTURE);
       return;
     }
     state.isPlayerTurn = true;
@@ -14754,9 +15124,15 @@ function showTutorial(step, htmlContent, onNext) {
 }
 
 let activeCutInDismiss = null;
-function showRicoCutIn(text, isSuccess, onClose) {
+// opts.autoCloseMs：この時間で勝手に閉じる。opts.hint：「タップで進む」等の操作指示を出す。
+// ★このカットインはクリックでしか閉じず、しかも onClose に進行が繋がっている呼び出しがある
+//   （研修 introHandAdvance／講義 triggerLectureQuestion）。指示も出していなかったので、
+//   押さずに待ったプレイヤーはそこで永久に止まっていた。進行を握る呼び出しには必ず
+//   autoCloseMs と hint を渡すこと。
+function showRicoCutIn(text, isSuccess, onClose, opts) {
   // 既存があれば即dismiss
   if (activeCutInDismiss) activeCutInDismiss();
+  const o = opts || {};
   const cut = document.createElement('div');
   cut.className = 'rico-cutin ' + (isSuccess ? 'cutin-success' : 'cutin-fail');
   cut.innerHTML = `
@@ -14766,13 +15142,16 @@ function showRicoCutIn(text, isSuccess, onClose) {
     <div class="cutin-text">
       <div class="cutin-name">リコ先輩</div>
       <div class="cutin-line">「${text}」</div>
+      ${o.hint ? `<div class="cutin-hint">${o.hint}</div>` : ''}
     </div>
   `;
   document.body.appendChild(cut);
   let dismissed = false;
+  let autoTimer = null;
   const dismiss = () => {
     if (dismissed) return;
     dismissed = true;
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
     activeCutInDismiss = null;
     cut.classList.add('cutin-out');
     setTimeout(() => {
@@ -14781,8 +15160,12 @@ function showRicoCutIn(text, isSuccess, onClose) {
     }, 500);
   };
   cut.addEventListener('click', dismiss);
+  if (o.autoCloseMs > 0) autoTimer = setTimeout(dismiss, o.autoCloseMs);
   activeCutInDismiss = dismiss;
 }
+// 進行を握るカットイン（研修・講義）の共通オプション
+const CUTIN_ADVANCE = { autoCloseMs: 4500, hint: 'タップで進む' };
+const CUTIN_LECTURE = { autoCloseMs: 6000, hint: 'タップで次の問題へ' };
 function dismissCutIn() {
   if (activeCutInDismiss) activeCutInDismiss();
 }

@@ -15359,3 +15359,193 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
   background: linear-gradient(180deg, rgba(245,215,122,.75), rgba(200,37,58,.7));
   border: 1px solid rgba(0,0,0,.4);
 }
+
+/* ===== 知識ノート：本文モーダル（コレクションのノートをタップして開く） ===== */
+.coll-note { cursor: pointer; transition: transform .12s ease, box-shadow .12s ease, background .12s ease; }
+.coll-note:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.45); }
+.coll-note.on:hover { background: rgba(245,215,122,.14); }
+.coll-note-effect {
+  margin-top: 6px; font-size: 11px; line-height: 1.45; color: #8fd6a8;
+  border-left: 2px solid rgba(143,214,168,.55); padding-left: 7px;
+}
+.coll-note-read { margin-top: 6px; font-size: 11px; font-weight: 800; color: #f5d77a; opacity: .85; }
+.coll-note.off .coll-note-read { color: #9b8f76; }
+
+.note-article-overlay {
+  position: absolute; inset: 0; z-index: 260;
+  background: rgba(6,3,8,.82); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 28px;
+  animation: naFadeIn .18s ease-out;
+}
+@keyframes naFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.note-article-panel {
+  width: min(760px, 100%); max-height: 100%;
+  display: flex; flex-direction: column; min-height: 0;
+  background: linear-gradient(180deg, #221420 0%, #170f18 100%);
+  border: 1px solid rgba(245,215,122,.4);
+  border-radius: 14px; box-shadow: 0 24px 70px rgba(0,0,0,.7);
+  overflow: hidden;
+}
+.na-head {
+  position: relative; flex: 0 0 auto;
+  padding: 16px 56px 14px 22px;
+  border-bottom: 1px solid rgba(245,215,122,.22);
+  background: linear-gradient(180deg, rgba(245,215,122,.12), rgba(245,215,122,0));
+}
+.na-kicker { font-size: 11px; letter-spacing: .22em; color: #b9a77e; font-weight: 800; }
+.na-title { font-size: 22px; font-weight: 900; color: #f5d77a; margin-top: 3px; }
+.na-close {
+  position: absolute; top: 12px; right: 14px;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(0,0,0,.45); border: 1px solid rgba(245,215,122,.45);
+  color: #f5d77a; font-size: 15px; cursor: pointer; line-height: 1;
+}
+.na-close:hover { background: rgba(200,37,58,.55); }
+.na-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 18px 22px 24px; }
+.na-effect {
+  display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+  padding: 10px 13px; border-radius: 9px; margin-bottom: 16px;
+  border: 1px solid rgba(143,214,168,.4); background: rgba(143,214,168,.09);
+}
+.na-effect.off { border-color: rgba(155,143,118,.4); background: rgba(155,143,118,.09); }
+.na-effect-label { flex: 0 0 auto; font-size: 11px; font-weight: 900; letter-spacing: .1em; color: #8fd6a8; }
+.na-effect.off .na-effect-label { color: #9b8f76; }
+.na-effect-text { font-size: 13px; line-height: 1.5; color: #e6dcc6; }
+.na-sec + .na-sec { margin-top: 15px; }
+.na-h {
+  font-size: 14px; font-weight: 900; color: #f5d77a; margin: 0 0 5px;
+  padding-left: 10px; border-left: 3px solid rgba(200,37,58,.85);
+}
+.na-p { font-size: 13.5px; line-height: 1.85; color: #ddd2bb; margin: 0; }
+.na-p b { color: #f5d77a; font-weight: 800; }
+.na-p .na-ref { color: #8fd6a8; }
+.na-body::-webkit-scrollbar { width: 10px; }
+.na-body::-webkit-scrollbar-track { background: rgba(0,0,0,.35); }
+.na-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(245,215,122,.7), rgba(200,37,58,.65));
+  border: 1px solid rgba(0,0,0,.4);
+}
+
+/* ===== 戦術ノートの対戦中効果 ===== */
+
+/* 【ブラフの基本】ベット枠に「通る見込み」。絶対配置だとラベルに被るので、
+   レイズ枠（縦積み）は3行目、オールイン枠（横並び）は中央の要素として流し込む。 */
+.battle-screen.v2 .action-slot .slot-note-hint {
+  font-size: 9px; font-weight: 900; letter-spacing: .01em;
+  line-height: 1; padding: 2px 5px; border-radius: 3px;
+  background: rgba(0,0,0,.5); white-space: nowrap; flex: 0 0 auto;
+}
+.battle-screen.v2 .slot-sm .slot-note-hint,
+.battle-screen.v2 .slot-md .slot-note-hint,
+.battle-screen.v2 .slot-lg .slot-note-hint { margin-top: 1px; }
+.battle-screen.v2 .action-slot .slot-note-hint.fe-high { color: #8fd6a8; box-shadow: inset 0 0 0 1px rgba(143,214,168,.5); }
+.battle-screen.v2 .action-slot .slot-note-hint.fe-mid  { color: #f5d77a; box-shadow: inset 0 0 0 1px rgba(245,215,122,.45); }
+.battle-screen.v2 .action-slot .slot-note-hint.fe-low  { color: #e08f9c; box-shadow: inset 0 0 0 1px rgba(224,143,156,.4); }
+/* レイズ枠は3行になるぶん、数字を1pt詰めて54px内に収める */
+.battle-screen.v2 .slot-sm:has(.slot-note-hint) .slot-chip-num,
+.battle-screen.v2 .slot-md:has(.slot-note-hint) .slot-chip-num,
+.battle-screen.v2 .slot-lg:has(.slot-note-hint) .slot-chip-num { font-size: 16px; }
+
+/* 【ボード危険度】判定チップ＋根拠札。帯は1行のままにして高さを増やさない
+   （上は場札、下は決断ボタン列で、縦に伸ばすと必ずどちらかを割る）。 */
+.v2-danger-label .dg-verdict {
+  flex: 0 0 auto; font-size: 11.5px; font-weight: 900; letter-spacing: .06em;
+  padding: 1px 6px; border-radius: 3px; color: #1d080e;
+}
+.v2-danger-label .dg-verdict.dg-safe    { background: #8fd6a8; }
+.v2-danger-label .dg-verdict.dg-caution { background: #f5d77a; }
+.v2-danger-label .dg-verdict.dg-danger  { background: #ff6b7e; color: #fff; }
+.v2-danger-label .dg-why {
+  font-size: 12px; font-weight: 800; color: #f0dcc0;
+  overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.battle-screen.v2 .v2-danger.has-note .v2-danger-label {
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
+}
+.battle-screen.v2 .v2-danger.has-note .v2-danger-track { width: 84px; flex: 0 0 auto; }
+.battle-screen.v2 .v2-danger-track.is-safe .v2-danger-fill { background: linear-gradient(90deg, #6fbf8c, #8fd6a8); }
+
+/* 【レンジの考え方】相手側に常時出るレンジ帯。
+   ★相手の癖メモ（.opponent-info）は元々 x616-896 に置かれていて相手の残チップゲージ
+     （x524-756）と重なっていた。レンジ帯を足すついでに、両方を右の空き列
+     （x848-1034 / 字幕帯 y272 の手前まで）へ縦に積み直す。 */
+.battle-screen.v2 .v2-range-band { position: absolute; left: 800px; top: 90px; width: 200px; z-index: 3; }
+.battle-screen.v2 .v2-range-band:empty { display: none; }
+.battle-screen.v2 .opponent-info { position: absolute; left: 800px; top: 170px; width: 200px; z-index: 3; }
+.v2-range-band .rb-inner {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 1px 6px;
+  padding: 5px 8px; border-radius: 4px; line-height: 1.3;
+  background: linear-gradient(90deg, rgba(20,10,18,.94), rgba(20,10,18,.62));
+  border-left: 3px solid rgba(245,215,122,.7);
+  box-shadow: 0 6px 16px rgba(0,0,0,.5);
+}
+.v2-range-band .rb-label { font-size: 9px; font-weight: 900; letter-spacing: .1em; color: #b9a77e; }
+.v2-range-band .rb-band  { font-size: 12.5px; font-weight: 900; }
+.v2-range-band .rb-inner.rb-strong .rb-band { color: #ff8f9f; }
+.v2-range-band .rb-inner.rb-even   .rb-band { color: #f5d77a; }
+.v2-range-band .rb-inner.rb-weak   .rb-band { color: #8fd6a8; }
+.v2-range-band .rb-note  { flex: 1 0 100%; font-size: 10px; font-weight: 700; color: #cbbfa6; }
+.v2-range-band .rb-bluff { flex: 1 0 100%; font-size: 10px; font-weight: 800; color: #9fd0e0; }
+
+/* 称号トーストは top:60px/right:16px 固定で、対戦画面ではポット額（x1088-1240 / y74-205）を
+   まるごと隠していた。対戦中だけ、飾りのミミ立ち絵の上（y396-）へ下げる。 */
+.battle-screen.v2 ~ .achievement-toast,
+#stage:has(.battle-screen) .achievement-toast { top: 396px; }
+
+/* 心理バトル：状況整理（.psych-situation x500-1224 / y552-591・2行）と、賭け金の行
+   （.v2p-context right:56 / top:574）が同じ帯に置かれていて、状況が2行になると
+   「ポット：100に対し、…」と「この読みの賭け金 — …」が完全に重なって両方読めなかった。
+   賭け金は場札行の上の空き帯（y436-455 / 右寄せ）へ逃がす。
+   論理バトルは場札行を畳んで状況文をそこまで伸ばしているので、そちらは触らない。 */
+.psych-modal:not(.logic-mode) .v2p-context { top: 436px !important; }
+
+/* テルの付箋（.v2-tells）は横に伸び放題で、長い読み（「場札に同じスートが2枚以上…」）だと
+   右のレンジ帯（x800〜）まで届いて文字が重なっていた。幅を止めて折り返させ、
+   折り返しで縦に伸びるぶん開始位置を上げて、相手の残チップゲージ（y208〜）も踏まない。 */
+.battle-screen.v2 .v2-tells { left: 320px; top: 80px; max-width: 236px; }
+.battle-screen.v2 .v2-tag { max-width: 100%; white-space: normal; line-height: 1.35; }
+
+/* エピローグの「ロビーへ戻る」が画面右端に貼り付いて枠が切れていた。
+   .ending-final-buttons の基本形は position:absolute + left:50% + translateX(-50%) の中央寄せだが、
+   エピローグ側で position:relative に上書きしたため left:50% だけが「相対位置を右へ640px」として
+   生き残り、中央寄せの意図と逆に右端まで飛んでいた。相対配置では座標指定を全部戻す。 */
+.ending-epilogue .ending-final-buttons,
+.ending-epilogue .ending-final-buttons.show {
+  left: auto; right: auto; top: auto; bottom: auto;
+  transform: none;
+}
+
+/* ノート未所持の危険度帯は、3つの警告が全部揃うと文字幅263pxに対し枠が251pxしかなく、
+   「ペアボード」が…に丸められて消えていた。ゲージを詰めて文字に幅を渡す。 */
+.battle-screen.v2 .v2-danger:not(.has-note) .v2-danger-track { width: 84px; }
+
+/* ===== 初回導線：進行を止めない話数チップ ===== */
+/* 第1話の長文タイトル（228字・全画面・要タップ）を初手に置くのをやめ、
+   卓の上に1行だけ数秒重ねる。全文は研修完了画面から任意で読める。 */
+.episode-chip {
+  position: fixed; left: 50%; top: 24px; transform: translate(-50%, -8px);
+  z-index: 4000; pointer-events: none;
+  padding: 9px 22px; border-radius: 999px;
+  background: linear-gradient(180deg, rgba(28,8,14,.92), rgba(12,4,8,.92));
+  border: 1px solid rgba(245,215,122,.55);
+  box-shadow: 0 10px 30px rgba(0,0,0,.6);
+  color: #f5d77a; font-size: 15px; font-weight: 900; letter-spacing: .06em;
+  white-space: nowrap;
+  opacity: 0; transition: opacity .5s ease, transform .5s ease;
+}
+.episode-chip.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* 研修完了画面：長文タイトルへの任意導線 */
+.intro-win-episode {
+  margin-top: 12px; font-size: 13px; padding: 8px 18px;
+  color: #c4b89a; border: 1px solid rgba(245,215,122,.3); background: rgba(0,0,0,.3);
+}
+.intro-win-episode:hover { color: #f5d77a; border-color: rgba(245,215,122,.6); }
+
+/* カットインの操作指示（これが無いせいで、押さずに待った人は研修が止まっていた） */
+.rico-cutin .cutin-hint {
+  margin-top: 6px; font-size: 11px; font-weight: 800; letter-spacing: .08em;
+  color: #f5d77a; opacity: .85;
+  animation: cutinHintPulse 1.1s ease-in-out infinite alternate;
+}
+@keyframes cutinHintPulse { from { opacity: .45; } to { opacity: .95; } }
