@@ -15289,3 +15289,40 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
    .battle-screen.v2 > * { z-index: 2 } で卓が z2 に固定されるため、
    後続の兄弟（操作パネル等）に隠される。出ている間だけ卓を持ち上げる。 */
 .battle-screen.v2 > .center-table.v2-table:has(.sd-callout) { z-index: 45; }
+
+/* ⑪心理バトルの台詞帯：帯は right:-40px で画面外へ抜ける装飾だが、
+   台詞テキストの右パディングが34pxしかなく、長い台詞の1行目が画面の外（x>1280）まで流れていた。
+   帯の抜けはそのままに、文字だけ画面内で折り返させる。 */
+.battle-modal-overlay.v2psych .psych-opponent-quote { padding-right: 80px !important; }
+.battle-modal-overlay.v2psych .psych-speech:not(.with-portrait) { padding-right: 78px !important; }
+
+/* ⑫スクロール領域が flex の min-height:auto で潰れ、内容が切れて到達不能になっていた。
+   コレクションでは「交換所アイテム 0/57」以下（57項目）が完全に見えない状態だった。
+   flex アイテムは min-height:0 を明示しないと overflow-y:auto が効かない。 */
+.collection-body,
+.glossary-body,
+.psych-log,
+.hh-list { min-height: 0; }
+
+/* スクロールできることが見えないと「そこで終わり」に見えるので、金の細いバーを出す */
+.collection-body::-webkit-scrollbar,
+.glossary-body::-webkit-scrollbar,
+.psych-log::-webkit-scrollbar,
+.hh-list::-webkit-scrollbar,
+.episode-scroll::-webkit-scrollbar,
+.right-panel.v2-detail::-webkit-scrollbar { width: 10px; }
+.collection-body::-webkit-scrollbar-track,
+.glossary-body::-webkit-scrollbar-track,
+.psych-log::-webkit-scrollbar-track,
+.hh-list::-webkit-scrollbar-track,
+.episode-scroll::-webkit-scrollbar-track,
+.right-panel.v2-detail::-webkit-scrollbar-track { background: rgba(0,0,0,.35); }
+.collection-body::-webkit-scrollbar-thumb,
+.glossary-body::-webkit-scrollbar-thumb,
+.psych-log::-webkit-scrollbar-thumb,
+.hh-list::-webkit-scrollbar-thumb,
+.episode-scroll::-webkit-scrollbar-thumb,
+.right-panel.v2-detail::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(245,215,122,.75), rgba(200,37,58,.7));
+  border: 1px solid rgba(0,0,0,.4);
+}
