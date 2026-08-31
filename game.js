@@ -5009,6 +5009,26 @@ function intentLabel(intent) {
   }[intent] || intent;
 }
 
+// 詳細データは中央モーダル扱い：暗幕クリック／Escでも閉じられるようにする
+function closeV2Detail() {
+  const panel = document.querySelector('.v2-detail');
+  if (panel) panel.classList.remove('open');
+  document.querySelectorAll('.v2-detail-scrim').forEach(e => e.remove());
+  if (closeV2Detail._esc) { document.removeEventListener('keydown', closeV2Detail._esc); closeV2Detail._esc = null; }
+}
+
+function openV2DetailScrim(panel) {
+  const screen = panel.closest('.battle-screen') || document.getElementById('stage');
+  if (!screen) return;
+  document.querySelectorAll('.v2-detail-scrim').forEach(e => e.remove());
+  const scrim = document.createElement('div');
+  scrim.className = 'v2-detail-scrim';
+  scrim.addEventListener('click', closeV2Detail);
+  screen.insertBefore(scrim, panel);
+  closeV2Detail._esc = (ev) => { if (ev.key === 'Escape') closeV2Detail(); };
+  document.addEventListener('keydown', closeV2Detail._esc);
+}
+
 function updateBackdoorPanel() {
   const btn = document.querySelector('[data-bind="backdoorBtn"]');
   if (btn) btn.classList.toggle('on', !!save.backdoorOn);
@@ -5417,9 +5437,8 @@ function renderPotBlock() {
     <div class="v2-disp v2-pot-num bu-pot-physical">${state.pot || 0}</div>
     <div class="v2-pot-sub">
       ${opp > 0 ? `<span class="v2-chip v2-chip-red">${oppName} +${opp} <em>${sizeTag}</em></span>` : ''}
-      <span class="v2-chip v2-chip-dark"><img class="v2-chip-icon" src="assets/ui/chip_red.webp" alt="">残り ${state.opponentChips}</span>
-    </div>
-    <div class="v2-stackbar v2-stackbar-opp"><i style="width:${chipBarPct(state.opponentChips)}%"></i></div>`;
+    </div>`;
+  // 「残り」チップとスタックバーは廃止。立ち絵前面の .v2-stack-gauge に一本化した（二重表示だった）。
 }
 function renderTellTags() {
   const tags = state.tellTags || [];
@@ -6496,9 +6515,10 @@ function onAction(e) {
         x.className = 'v2-detail-close';
         x.title = '閉じる';
         x.textContent = '✕';
-        x.addEventListener('click', (ev) => { ev.stopPropagation(); panel.classList.remove('open'); });
+        x.addEventListener('click', (ev) => { ev.stopPropagation(); closeV2Detail(); });
         panel.appendChild(x);
       }
+      if (willOpen) openV2DetailScrim(panel); else closeV2Detail();
       break;
     }
     case 'toggle-backdoor':
@@ -11513,7 +11533,7 @@ function mimiAssess(allCards, community, opponentBet, pot, callNeed) {
   if (!allCards || allCards.length < 5) return '';
   const ev = evaluateHand(allCards);
   const danger = evaluateBoardDanger(community);
-  const street = community.length === 3 ? 'フロップ' : community.length === 4 ? 'ターン' : 'リバー';
+  // street ラベルは呼び出し側の「フロップ：…」で出しているのでここでは使わない
   // 役の強度ラベル
   let strengthLabel = '';
   let lean = ''; // 推奨ライン
@@ -11529,13 +11549,14 @@ function mimiAssess(allCards, community, opponentBet, pot, callNeed) {
   }
   else                   { strengthLabel = '【弱い】';       lean = '無理せず、勝負しない方が安い'; }
 
-  // ボード警告
+  // ボード警告（吹き出しは4行しか入らないので短語で。両ドローは1語にまとめる）
   const warnings = [];
-  if (danger.flushMade && ev.rank < 5) warnings.push('場にフラッシュ完成あり');
-  else if (danger.flushAlert) warnings.push('フラッシュ気配');
-  if (danger.straightAlert) warnings.push('ストレート気配');
-  if (danger.pairBoard && ev.rank < 6) warnings.push('場ペア＝フルハウス警戒');
-  const warnStr = warnings.length ? `／⚠ ${warnings.join('・')}` : '';
+  if (danger.flushMade && ev.rank < 5) warnings.push('フラッシュ完成');
+  else if (danger.flushAlert && danger.straightAlert) warnings.push('ドロー多い');
+  else if (danger.flushAlert) warnings.push('フラッシュ');
+  else if (danger.straightAlert) warnings.push('ストレート');
+  if (danger.pairBoard && ev.rank < 6) warnings.push('場ペア');
+  const warnStr = warnings.length ? ` ⚠${warnings.join('・')}` : '';
 
   // ポットオッズ（ノート所持時のみ） — コールに必要な額が基準
   let oddsStr = '';
@@ -11546,21 +11567,22 @@ function mimiAssess(allCards, community, opponentBet, pot, callNeed) {
     const fullPotIncludingBet = pot + opponentBet; // = state.pot
     const totalAfterCall = fullPotIncludingBet + _callNeed;
     const reqWinRate = Math.round((_callNeed / totalAfterCall) * 100);
-    oddsStr = `／ポットオッズ：${reqWinRate}%以上勝てればコール＋EV`;
+    oddsStr = `（必要${reqWinRate}%）`;
   }
 
-  // 相手アクションへの一言
+  // 相手アクションへの一言。ベット額は呼び出し側の「◯◯が50まで……」で既に出ているので、
+  // ここではサイズ感だけを短く添える（4行に収めないと結論の「→」が切れて消えるため）。
   let actionLine = '';
   if (opponentBet > 0) {
     const ratio = opponentBet / Math.max(1, pot);
-    if (ratio >= 0.9)      actionLine = `相手の${opponentBet}は重いベット。`;
-    else if (ratio >= 0.5) actionLine = `相手の${opponentBet}は強気のサイズ。`;
-    else                   actionLine = `相手の${opponentBet}は様子見サイズ。`;
+    if (ratio >= 0.9)      actionLine = '重いベット';
+    else if (ratio >= 0.5) actionLine = '強気のサイズ';
+    else                   actionLine = '様子見サイズ';
   } else {
-    actionLine = `相手はチェック。情報は薄い。`;
+    actionLine = '相手はチェック';
   }
 
-  return `${street}：${ev.name} ${strengthLabel}${warnStr}\n${actionLine}${oddsStr}\n→ ${lean}`;
+  return `${ev.name}${strengthLabel}${warnStr}\n${actionLine}${oddsStr}\n→ ${lean}`;
 }
 
 //=============================================================
