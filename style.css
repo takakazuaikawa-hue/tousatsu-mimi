@@ -15693,3 +15693,58 @@ body:has(.battle-screen) #fullscreen-btn-group { display: none !important; }
   #fullscreen-btn { padding: 8px 12px; font-size: 12px; letter-spacing: .04em; }
   #fullscreen-dismiss-btn { width: 28px; font-size: 15px; }
 }
+
+/* =====================================================================
+   煽りメーター：盛り上がりが最高潮になったら、落差も最高潮になる
+   上がっている最中が見えていないと落差は成立しないので、
+   相手の立ち絵の縁光を段階的に強くして「今この人が乗っている」を見せる。
+   ===================================================================== */
+.battle-screen.v2 .char-opponent img { transition: filter .5s ease, transform .5s ease; }
+body.taunt-1 .battle-screen.v2 .char-opponent img {
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,.8)) drop-shadow(0 0 14px rgba(255,120,160,.35));
+}
+body.taunt-2 .battle-screen.v2 .char-opponent img {
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,.8)) drop-shadow(0 0 26px rgba(255,90,140,.55)) saturate(1.1);
+  transform: scale(1.015);
+}
+body.taunt-3 .battle-screen.v2 .char-opponent img {
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,.85)) drop-shadow(0 0 42px rgba(255,60,120,.8)) saturate(1.2) contrast(1.06);
+  transform: scale(1.03);
+  animation: tauntPulse 1.6s ease-in-out infinite;
+}
+@keyframes tauntPulse {
+  0%,100% { filter: drop-shadow(0 20px 40px rgba(0,0,0,.85)) drop-shadow(0 0 36px rgba(255,60,120,.7)) saturate(1.2); }
+  50%     { filter: drop-shadow(0 20px 40px rgba(0,0,0,.85)) drop-shadow(0 0 58px rgba(255,60,120,.95)) saturate(1.3); }
+}
+/* 卓全体もほんのり温度が上がる */
+body.taunt-2 .battle-screen.v2::before,
+body.taunt-3 .battle-screen.v2::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(ellipse at 42% 22%, rgba(255,60,120,.10), transparent 62%);
+}
+body.taunt-3 .battle-screen.v2::before { background: radial-gradient(ellipse at 42% 22%, rgba(255,40,110,.18), transparent 66%); }
+
+/* --- 最高潮からの崩壊：①溜め（時間が止まる） --- */
+body.collapse-freeze .battle-screen.v2 {
+  filter: brightness(.42) saturate(.35) contrast(1.15);
+  transition: filter .18s ease;
+}
+body.collapse-freeze .battle-screen.v2 .char-opponent img {
+  animation: none;
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,.9)) brightness(1.6) saturate(0);
+  transform: scale(1.05);
+}
+
+/* --- ②崩壊：白閃 → 顔を叩きつける --- */
+body.collapse-max .emote-cutin.heavy .ec-face-wrap { width: 780px; top: 10px; }
+body.collapse-max .emote-cutin.heavy .ec-scrim {
+  background: radial-gradient(ellipse at 50% 52%, rgba(0,0,0,.05), rgba(0,0,0,.86) 74%);
+}
+body.collapse-max .battle-screen.v2 { animation: collapseSlam .5s cubic-bezier(.2,.9,.3,1) both; }
+@keyframes collapseSlam {
+  0%   { filter: brightness(3.2) saturate(0); transform: scale(1.035); }
+  14%  { filter: brightness(1.35) saturate(.6); transform: scale(1.012); }
+  100% { filter: none; transform: none; }
+}
+/* 崩壊の顔は、ふつうより一段大きく・長く見せる */
+body.collapse-max .emote-cutin.heavy .ec-face { animation-duration: 2.6s !important; }

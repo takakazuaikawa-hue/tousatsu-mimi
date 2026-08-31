@@ -11157,6 +11157,7 @@ function startBattleInternal(opponentId) {
     state.opponentChips = seriousRico ? 2000 : opp.chips;
   }
   state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
+  state.tauntLevel = 0; applyTauntAura();
   state.tutorialMode = seriousRico ? false : opp.tutorial;
   state.fullHand = seriousRico ? true : !!opp.fullHand;
   state.isBoss = seriousRico ? true : !!opp.isBoss; // 心理バトル全ストリート発動
@@ -13546,7 +13547,7 @@ function triggerBluffBreak() {
     mpSfx('bigwin');
     setTimeout(() => eff.remove(), 1800);
     // ★ウソがばれた瞬間。ここが表情のいちばんの見せ場なので、集中線つきの全力演出を当てる。
-    playEmote('opponent', 'busted', { force: true, holdMs: 2600 });
+    playCollapse('opponent', 'busted');
     toast(`${state.opponentName || '相手'}の勝負空気が崩れた！`);
   }, 1200);
 }
@@ -13734,12 +13735,12 @@ function endHand() {
         // 大きいポットを取ったら、ミミが調子に乗る
         if (bigPot) setTimeout(() => playEmote('mimi', 'tellStrong', { force: true }), 500);
         // 相手は撃沈。チップが尽きたら大泣きして暴れる
-        if (state.opponentChips <= 0) setTimeout(() => playEmote('opponent', 'defeat', { force: true, holdMs: 2800 }), 900);
-        else if (bigPot)             setTimeout(() => playEmote('opponent', 'tellBluff', { force: true }), 1100);
+        if (state.opponentChips <= 0) setTimeout(() => playCollapse('opponent', 'defeat'), 900);
+        else if (bigPot)             { bumpTaunt(-1); setTimeout(() => playEmote('opponent', 'tellBluff', { force: true }), 1100); }
       } else if (last.winner === 'opponent') {
         if (state.playerChips <= 0) setTimeout(() => playEmote('mimi', 'defeat', { force: true, holdMs: 2800 }), 900);
         else if (bigPot)            setTimeout(() => playEmote('mimi', 'tellBluff', { force: true }), 700);
-        if (bigPot) setTimeout(() => playEmote('opponent', 'tellStrong', { force: true }), 500);
+        if (bigPot) { bumpTaunt(1); setTimeout(() => playEmote('opponent', tauntLevel() >= 2 && charEmote('opponent','tellStrongMax') ? 'tellStrongMax' : 'tellStrong', { force: true }), 500); }
       }
     }
     // ハンド勝敗SFX（ショーダウンは演出内で再生済み）
@@ -15286,7 +15287,7 @@ function playEmote(who, event, opts) {
   }
 
   // 表情の顔アップ（透過1000x563の決め絵）を出す。これが主役。
-  const card = buildEmoteFaceCard(who, cfg, heavy);
+  const card = buildEmoteFaceCard(who, cfg, heavy, o);
   if (!card) return;
   document.body.appendChild(card);
   requestAnimationFrame(() => card.classList.add('on'));
@@ -15298,8 +15299,8 @@ function playEmote(who, event, opts) {
 }
 
 // 顔アップのカード。軽い時（テル）は小さく素早く、重い時（決め所）は大きく暗幕つき。
-function buildEmoteFaceCard(who, cfg, heavy) {
-  const src = emoteFaceSrc(who, cfg.expr);
+function buildEmoteFaceCard(who, cfg, heavy, opts) {
+  const src = emoteFaceSrc(who, cfg.expr, opts && opts.max);
   if (!src) return null;
   const el = document.createElement('div');
   el.className = 'emote-cutin ' + (who === 'mimi' ? 'from-right' : 'from-left') + (heavy ? ' heavy' : ' light');
@@ -15334,9 +15335,10 @@ function buildEmoteFaceCard(who, cfg, heavy) {
 }
 
 // 表情ごとの画像候補（前から順に試す）
-function emoteFaceSrc(who, expr) {
+function emoteFaceSrc(who, expr, useMax) {
   if (who === 'mimi') {
     return [
+      ...(useMax ? ['assets/characters/mimi_cutin_' + expr + '_max.webp'] : []),
       `assets/characters/mimi_cutin_${expr}.webp`,
       `assets/characters/mimi_bust_${MIMI_EMOTE_FALLBACK[expr] || 'win'}.webp`,
       'assets/characters/mimi_bust_win.webp',
@@ -15345,6 +15347,8 @@ function emoteFaceSrc(who, expr) {
   const key = state && state.opponentImgKey;
   if (!key) return null;
   return [
+    // 最高潮からの崩壊だけは、あれば専用の「振り切った」絵を使う
+    ...(useMax ? [`assets/characters/${key}_cutin_${expr}_max.webp`] : []),
     `assets/characters/${key}_cutin_${expr}.webp`,
     `assets/characters/${key}_cutin_${OPP_CUTIN_FALLBACK[expr] || 'panic'}.webp`,
     `assets/characters/${key}_default.webp`,
@@ -15376,6 +15380,32 @@ function applyEmoteScreenFx(kind, life) {
   }
 }
 
+//-------------------------------------------------------------
+// 煽りメーター（盛り上がりが最高潮になったら、落差も最高潮にする）
+// 相手が得意顔を出す／大きなポットを取るたびに上がり、崩された瞬間に落ちる。
+// この値が高いほど、①煽りの演出が派手になり ②崩れた時の演出が長く・強くなる。
+// 「さっきまであれだけ見下していたのに」という対比を作るのが目的。
+//-------------------------------------------------------------
+function tauntLevel() { return Math.max(0, Math.min(3, (state && state.tauntLevel) || 0)); }
+function bumpTaunt(n) {
+  if (!state) return;
+  state.tauntLevel = Math.max(0, Math.min(3, (state.tauntLevel || 0) + (n || 1)));
+  applyTauntAura();
+}
+function resetTaunt() {
+  if (!state) return;
+  state.tauntLevel = 0;
+  applyTauntAura();
+}
+// 盛り上がりを画面にも出す：相手の立ち絵の縁が段階的に強く光る。
+// 落差を感じさせるには、上がっている最中が見えている必要がある。
+function applyTauntAura() {
+  const b = document.body;
+  b.classList.remove('taunt-1', 'taunt-2', 'taunt-3');
+  const lv = tauntLevel();
+  if (lv > 0) b.classList.add('taunt-' + lv);
+}
+
 // 相手のテル：ベットした瞬間、キャラごとの「顔に出やすさ」で本心が漏れる。
 // 強い手なら得意顔、ブラフなら焦り顔。ポルカはほぼ毎回漏れ、ヴェルベットはめったに漏れない。
 function maybeOpponentTell(isBluff) {
@@ -15386,11 +15416,46 @@ function maybeOpponentTell(isBluff) {
   if (state.__tellShownStreet === state.handPhase) return;   // 1ストリート1回まで
   if (rand() > leak) return;
   state.__tellShownStreet = state.handPhase;
-  // 強い手＋大きく賭けた時だけ、最上級の得意顔（ヴェルベットなら「ざぁこ♡」）に上がる
+  if (isBluff) { playEmote('opponent', 'tellBluff'); return; }
+
+  // 得意顔が出るたびに煽りメーターが上がる。上がるほど演出が派手になり、
+  // そのぶん崩された時の落差が大きくなる（後述の collapseTier）。
+  bumpTaunt(1);
   const potBefore = Math.max(1, state.pot - state.currentBetOpponent);
   const bigBet = state.currentBetOpponent / potBefore >= 0.85;
-  const ev = isBluff ? 'tellBluff' : (bigBet && charEmote('opponent', 'tellStrongMax') ? 'tellStrongMax' : 'tellStrong');
-  playEmote('opponent', ev);
+  // 大きく賭けた時、または煽りが乗ってきた時に最上級の得意顔へ上がる
+  const goMax = (bigBet || tauntLevel() >= 2) && charEmote('opponent', 'tellStrongMax');
+  playEmote('opponent', goMax ? 'tellStrongMax' : 'tellStrong');
+}
+
+// 崩れ演出の段階を、直前までの煽りメーターから決める。
+// 0-1＝ふつうに崩れる／2＝大きく崩れる／3＝最高潮からの完全崩壊（溜め＋長回し）
+function collapseTier() {
+  const lv = tauntLevel();
+  return lv >= 3 ? 3 : lv >= 2 ? 2 : 1;
+}
+
+// 最高潮から落ちる時だけの「溜め」。画面を一瞬止めて暗転させ、そのあと顔を叩きつける。
+// 間を置かずに崩れ顔を出すと、落差が「起きたこと」として伝わらない。
+function playCollapse(who, event) {
+  const tier = collapseTier();
+  const hold = tier >= 3 ? 3400 : tier >= 2 ? 2700 : 2100;
+  if (tier < 3) {
+    playEmote(who, event, { force: true, holdMs: hold });
+    resetTaunt();
+    return;
+  }
+  // tier3：溜め → 一閃 → 崩壊
+  document.body.classList.add('collapse-freeze');
+  if (typeof mpSfx === 'function') mpSfx('milestone');
+  setTimeout(() => {
+    document.body.classList.remove('collapse-freeze');
+    document.body.classList.add('collapse-max');
+    playEmote(who, event, { force: true, holdMs: hold, max: true });
+    if (typeof mpSfx === 'function') mpSfx('bigwin');
+    setTimeout(() => document.body.classList.remove('collapse-max'), hold);
+    resetTaunt();
+  }, 620);
 }
 
 // opts.autoCloseMs：この時間で勝手に閉じる。opts.hint：「タップで進む」等の操作指示を出す。
