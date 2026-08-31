@@ -15057,6 +15057,10 @@ const PRELOAD_ASSETS = [
   'assets/ui/chip_red.webp',
   'assets/ui/chip_blue.webp',
   'assets/ui/chip_gold.webp',
+  // 会話UIの顔グラ（各30KB前後）。バトル開始と同時に必ず出るので先読みする。
+  'assets/ui/face_mimi.webp', 'assets/ui/face_rico.webp', 'assets/ui/face_polka.webp',
+  'assets/ui/face_selina.webp', 'assets/ui/face_grano.webp', 'assets/ui/face_velvet.webp',
+  'assets/ui/face_rico_default.webp',
   // エピソード一枚絵：初回プレイヤーが最初に見る1枚だけ先読み。
   // 残りは表示直前に読み込む（各300KB前後・起動待ちを約2秒短縮）
   'assets/episodes/rico_tutorial.webp',
@@ -15077,6 +15081,11 @@ const DEFERRED_ASSETS = [
   'assets/characters/mimi_bust_win.webp', 'assets/characters/mimi_bust_sad.webp',
   'assets/characters/mimi_bust_smug.webp', 'assets/characters/mimi_clutch.webp',
   'assets/characters/mimi_allin.webp',
+  'assets/characters/mimi_bust_calm.webp',
+  // 卓の背景：バトル画面が開いた瞬間に読み始めるとパッと出ない（実測 160KB+94KB）
+  'assets/backgrounds/poker_table_bg.webp',
+  'assets/backgrounds/table_polka.webp', 'assets/backgrounds/table_selina.webp',
+  'assets/backgrounds/table_grano.webp', 'assets/backgrounds/table_velvet.webp',
 ];
 function startDeferredPrefetch() {
   const run = () => {
