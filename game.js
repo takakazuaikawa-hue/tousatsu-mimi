@@ -11845,6 +11845,16 @@ function startHand() {
   log('actions', { phase: 'preflop_start', playerHand: state.playerHand.map(c => c.label + c.suit) });
   render();
 
+  // ★後がない側はウルウルの懇願顔になる。盤面を見なくても「誰が追い詰められているか」が顔で分かる。
+  if (!state.tutorialMode) {
+    const base = OPPONENTS[state.opponentId]?.chips || 1000;
+    if (state.opponentChips > 0 && state.opponentChips <= base * 0.18) {
+      setTimeout(() => playEmote('opponent', 'desperate'), 800);
+    } else if (state.playerChips > 0 && state.playerChips <= (state.__initialChips || base) * 0.18) {
+      setTimeout(() => playEmote('mimi', 'desperate'), 800);
+    }
+  }
+
   if (state.tutorialMode) {
     setTimeout(() => showTutorial('preflop',
       'ミミの手札は<b>A♠ K♠</b>！スーテッドのトップハンド、最強クラスだよ。<br>' +
@@ -12247,6 +12257,13 @@ function opponentTurnDecide() {
       triggerBetShake(action.size);
       setTimeout(() => showOpponentCutIn(state.opponentSpeech, action.size), 300);
     }
+  }
+  // ★テル：賭けた直後、本心が顔に出ることがある。
+  //   強い手なら得意顔（ふふーん♪）、ブラフなら焦り顔（あわわ……）。
+  //   出るかどうかはキャラの TELL_LEAK 次第。ポルカはほぼ毎回出て、ヴェルベットはめったに出ない。
+  //   中途半端な強さ（0.42〜0.62）では出さない＝「顔に出た時は情報」という約束を守る。
+  if (hs < 0.42 || hs >= 0.62) {
+    setTimeout(() => maybeOpponentTell(hs < 0.42), 700);
   }
 
   const bigEnough = (action.size === 'pot_2_3' || action.size === 'pot_1' || action.size === 'allin');
@@ -13528,8 +13545,8 @@ function triggerBluffBreak() {
     document.body.appendChild(eff);
     mpSfx('bigwin');
     setTimeout(() => eff.remove(), 1800);
-    // 相手の虚勢が崩れた表情に（差分があるキャラのみ変化・他はdefaultのまま）
-    setOpponentExpression('rattled');
+    // ★ウソがばれた瞬間。ここが表情のいちばんの見せ場なので、集中線つきの全力演出を当てる。
+    playEmote('opponent', 'busted', { force: true, holdMs: 2600 });
     toast(`${state.opponentName || '相手'}の勝負空気が崩れた！`);
   }, 1200);
 }
@@ -13709,6 +13726,22 @@ function endHand() {
     setMimiExpression(last.winner === 'player' ? 'win' : last.winner === 'opponent' ? 'sad' : 'default');
     // 相手の表情：相手が勝てば余裕顔、負ければ敗北顔（差分のあるキャラのみ変化）
     setOpponentExpression(last.winner === 'opponent' ? 'pleased' : last.winner === 'player' ? 'defeat' : 'default');
+    // ★勝敗の感情を漫符で乗せる。差分絵の無いキャラ（セリナ・ヴェルベット）でもここで表情が付く。
+    if (!state.introHandMode && !state.tutorialMode) {
+      const potSize = last.pot || 0;
+      const bigPot = potSize >= (OPPONENTS[state.opponentId]?.chips || 1000) * 0.35;
+      if (last.winner === 'player') {
+        // 大きいポットを取ったら、ミミが調子に乗る
+        if (bigPot) setTimeout(() => playEmote('mimi', 'tellStrong', { force: true }), 500);
+        // 相手は撃沈。チップが尽きたら大泣きして暴れる
+        if (state.opponentChips <= 0) setTimeout(() => playEmote('opponent', 'defeat', { force: true, holdMs: 2800 }), 900);
+        else if (bigPot)             setTimeout(() => playEmote('opponent', 'tellBluff', { force: true }), 1100);
+      } else if (last.winner === 'opponent') {
+        if (state.playerChips <= 0) setTimeout(() => playEmote('mimi', 'defeat', { force: true, holdMs: 2800 }), 900);
+        else if (bigPot)            setTimeout(() => playEmote('mimi', 'tellBluff', { force: true }), 700);
+        if (bigPot) setTimeout(() => playEmote('opponent', 'tellStrong', { force: true }), 500);
+      }
+    }
     // ハンド勝敗SFX（ショーダウンは演出内で再生済み）
     if (last.reason !== 'showdown') {
       if (last.winner === 'player') mpSfx('hand-win');
@@ -15124,6 +15157,242 @@ function showTutorial(step, htmlContent, onNext) {
 }
 
 let activeCutInDismiss = null;
+//=============================================================
+// 感情演出（漫符レイヤー）
+// 表情はポーカーの中心要素なので、飾りではなく「読めるテル」として動かす。
+// 漫符の語彙は漫画の記号表現に合わせた：
+//   汗＝焦り／縦線（垂れ線）＝青ざめ・沈鬱／青筋＝怒り／湯気＝激昂／
+//   照れ線＝恥じらい／気付き線＝ハッとした瞬間／笑み線＝上機嫌
+//   目のハイライトは「多い＝興奮・可愛い／消える＝絶望」、白目＝驚愕。
+// 立ち絵の差分が無いキャラ（セリナ・ヴェルベット）でも、この層だけで表情が付く。
+//=============================================================
+// ★見せ場は「表情そのもの」。記号を貼って賑やかす方向は取りやめ、
+//   キャラごとの専用の顔（差分絵）を切り替えて、そこに動きを添えるだけにする。
+//   expr: assets/characters/<キャラ>_<expr>.webp を探す。無ければ default に落ちる。
+const ALL_EMOTE_MOTIONS = ['em-swagger','em-jitter','em-shatter','em-flail','em-tremble'];
+// キャラごとの「顔に出やすさ」。表情を読む価値をキャラ差として持たせる。
+// ポルカは全部顔に出る／ヴェルベットはほぼ出ない（出た時は本物）。
+const TELL_LEAK = {
+  polka:  0.85,
+  rico:   0.60,
+  grano:  0.45,
+  selina: 0.30,
+  velvet: 0.12,
+};
+
+//-------------------------------------------------------------
+// 性格別の表情台帳
+// 同じ出来事でも、キャラによって出る顔はまったく違う。
+//   ポルカ  … 全部顔に出る。勝てば全開のドヤ、負ければ号泣して暴れる。
+//   セリナ  … 崩れないのが持ち味。崩れた時の一瞬だけが読みどころ。
+//   グラーノ… 商人。感情ではなく損得で顔が動く。負けたら平謝り。
+//   リコ先輩… 面倒見のいい先輩。負けても笑って認める。泣かない。
+//   ヴェルベット … メスガキ女王。見下し嘲笑がウリで、それが剥がれる落差が最大の見せ場。
+//   ミミ    … 主人公。素直に出る。
+// intensity: 'l'（小さく速い顔バッジ）/ 'h'（大きな決めカットイン）
+//-------------------------------------------------------------
+const CHAR_EMOTES = {
+  velvet: {
+    // ★メスガキ女王。得意側に段階を持たせ、崩れた時の落差を最大化する。
+    tellStrong:  { expr: 'smug',       motion: 'em-swagger', screen: 'gold',  i: 'l' },
+    tellStrongMax:{ expr: 'smug_max',  motion: 'em-swagger', screen: 'gold',  i: 'h' }, // 大ベット時の「ざぁこ♡」
+    tellBluff:   { expr: 'smirk_hide', motion: 'em-tremble', screen: null,    i: 'l' }, // 焦りを嘲笑で隠す
+    busted:      { expr: 'busted',     motion: 'em-shatter', screen: 'focus', i: 'h' }, // 余裕が剥がれた素の顔
+    defeat:      { expr: 'bawl',       motion: 'em-flail',   screen: 'shake', i: 'h' }, // 女王の号泣＝最終決着
+    desperate:   { expr: 'defiant',    motion: 'em-tremble', screen: 'soft',  i: 'l' }, // 強がりながら涙目
+  },
+  polka: {
+    tellStrong:  { expr: 'smug',   motion: 'em-swagger', screen: 'gold',  i: 'l' },
+    tellBluff:   { expr: 'panic',  motion: 'em-jitter',  screen: 'pale',  i: 'l' },
+    busted:      { expr: 'busted', motion: 'em-shatter', screen: 'focus', i: 'h' },
+    defeat:      { expr: 'bawl',   motion: 'em-flail',   screen: 'shake', i: 'h' },
+    desperate:   { expr: 'plead',  motion: 'em-tremble', screen: 'soft',  i: 'l' },
+  },
+  selina: {
+    // 崩れない人。得意も焦りも小さく、崩れた時だけ大きく。
+    tellStrong:  { expr: 'smug',    motion: null,         screen: null,    i: 'l' },
+    tellBluff:   { expr: 'compose', motion: null,         screen: null,    i: 'l' }, // 平静を装う
+    busted:      { expr: 'busted',  motion: 'em-shatter', screen: 'focus', i: 'h' },
+    defeat:      { expr: 'bitter',  motion: 'em-tremble', screen: 'pale',  i: 'h' }, // 唇を噛む。泣き喚かない
+    desperate:   { expr: 'compose', motion: 'em-tremble', screen: null,    i: 'l' },
+  },
+  grano: {
+    tellStrong:  { expr: 'smug',    motion: 'em-swagger', screen: 'gold',  i: 'l' },
+    tellBluff:   { expr: 'panic',   motion: 'em-jitter',  screen: 'pale',  i: 'l' },
+    busted:      { expr: 'busted',  motion: 'em-shatter', screen: 'focus', i: 'h' },
+    defeat:      { expr: 'grovel',  motion: 'em-flail',   screen: 'shake', i: 'h' }, // 平謝り
+    desperate:   { expr: 'haggle',  motion: 'em-tremble', screen: 'soft',  i: 'l' }, // 必死の値引き交渉
+  },
+  rico: {
+    // 先輩は動じない。負けても笑ってあっぱれ。泣かせない。
+    tellStrong:  { expr: 'smug',    motion: 'em-swagger', screen: 'gold',  i: 'l' },
+    tellBluff:   { expr: 'panic',   motion: null,         screen: null,    i: 'l' },
+    busted:      { expr: 'busted',  motion: 'em-shatter', screen: 'focus', i: 'h' },
+    defeat:      { expr: 'applaud', motion: 'em-swagger', screen: 'gold',  i: 'h' }, // 「やるじゃん」
+    desperate:   { expr: 'panic',   motion: 'em-tremble', screen: null,    i: 'l' },
+  },
+  mimi: {
+    tellStrong:  { expr: 'smug',   motion: 'em-swagger', screen: 'gold',  i: 'l' },
+    tellBluff:   { expr: 'panic',  motion: 'em-jitter',  screen: 'pale',  i: 'l' },
+    busted:      { expr: 'panic',  motion: 'em-jitter',  screen: 'pale',  i: 'l' },
+    defeat:      { expr: 'bawl',   motion: 'em-flail',   screen: 'shake', i: 'h' },
+    desperate:   { expr: 'plead',  motion: 'em-tremble', screen: 'soft',  i: 'l' },
+  },
+};
+
+// 出来事 → そのキャラの表情を引く。キャラ固有が無ければ汎用にフォールバック。
+function charEmote(who, event) {
+  const key = who === 'mimi' ? 'mimi' : (state && state.opponentImgKey);
+  const table = CHAR_EMOTES[key] || {};
+  return table[event] || CHAR_EMOTES.polka[event] || null;
+}
+
+// 演出の出しすぎを防ぐ：同じ側は1.6秒に1回まで
+const __emoteLast = { mimi: 0, opponent: 0 };
+
+function emoteTargetEl(who) {
+  return who === 'mimi'
+    ? document.querySelector('.battle-screen .char-mimi')
+    : document.querySelector('.battle-screen .char-opponent');
+}
+
+// who: 'mimi' | 'opponent' ／ emotion: EMOTES のキー
+// who: 'mimi' | 'opponent' ／ event: tellStrong / tellStrongMax / tellBluff / busted / defeat / desperate
+function playEmote(who, event, opts) {
+  const cfg = charEmote(who, event);
+  if (!cfg) return;
+  if (state && (state.screen !== 'battle')) return;
+  const o = opts || {};
+  const now = Date.now();
+  if (!o.force && now - (__emoteLast[who] || 0) < 1600) return;
+  __emoteLast[who] = now;
+
+  const heavy = cfg.i === 'h';
+  const life = o.holdMs || (heavy ? 2400 : 1500);
+
+  // ミミは画面右に大きく写っているので、軽い時は立ち絵そのものを差し替えて動かす。
+  if (who === 'mimi' && !heavy) {
+    setMimiExpression(MIMI_EMOTE_FALLBACK[cfg.expr] || 'default');
+    const mimiImg = document.querySelector('.battle-screen .char-mimi img');
+    if (mimiImg && cfg.motion) {
+      mimiImg.classList.remove(...ALL_EMOTE_MOTIONS);
+      void mimiImg.offsetWidth;
+      mimiImg.classList.add(cfg.motion);
+      setTimeout(() => mimiImg.classList.remove(cfg.motion), life);
+    }
+    applyEmoteScreenFx(cfg.screen, life);
+    setTimeout(() => { if (state && state.screen === 'battle') setMimiExpression('default'); }, life + 300);
+    return;
+  }
+
+  // 表情の顔アップ（透過1000x563の決め絵）を出す。これが主役。
+  const card = buildEmoteFaceCard(who, cfg, heavy);
+  if (!card) return;
+  document.body.appendChild(card);
+  requestAnimationFrame(() => card.classList.add('on'));
+  setTimeout(() => card.classList.add('out'), life - 420);
+  setTimeout(() => card.remove(), life);
+
+  // 画面側の色味を薄く添える（金・青ざめ・ピンク・ゆれ・集中線）
+  applyEmoteScreenFx(cfg.screen, life);
+}
+
+// 顔アップのカード。軽い時（テル）は小さく素早く、重い時（決め所）は大きく暗幕つき。
+function buildEmoteFaceCard(who, cfg, heavy) {
+  const src = emoteFaceSrc(who, cfg.expr);
+  if (!src) return null;
+  const el = document.createElement('div');
+  el.className = 'emote-cutin ' + (who === 'mimi' ? 'from-right' : 'from-left') + (heavy ? ' heavy' : ' light');
+  el.innerHTML = `${heavy ? '<div class="ec-scrim"></div>' : ''}
+    <div class="ec-face-wrap"><img class="ec-face ${cfg.motion || ''}" alt=""></div>`;
+  // 軽い方（テル・懇願）は顔のバッジを、相手の頭の横にぴょこっと出す。
+  // 相手の立ち絵は遠くて表情が読めないので、顔を大きく見せる必要がある。
+  // ミミは元から画面右に大きく写っているのでバッジは邪魔なだけ。彼女は立ち絵側を差し替える。
+  if (!heavy) {
+    const frame = emoteTargetEl(who);
+    const wrap = el.querySelector('.ec-face-wrap');
+    if (!frame || !wrap) return null;
+    const r = frame.getBoundingClientRect();
+    const size = 156;
+    wrap.style.width = size + 'px';
+    wrap.style.left = Math.round(Math.max(6, r.left + 74)) + 'px';
+    wrap.style.top = Math.round(Math.max(6, r.top + r.height * 0.02)) + 'px';
+    wrap.style.right = 'auto';
+    wrap.style.bottom = 'auto';
+  }
+  const img = el.querySelector('.ec-face');
+  // 専用差分が未納品なら、同じキャラの既存の顔アップへ順に落とす
+  const chain = src.slice();
+  const tryNext = () => {
+    const next = chain.shift();
+    if (!next) { el.remove(); return; }
+    img.onerror = tryNext;
+    img.src = next;
+  };
+  tryNext();
+  return el;
+}
+
+// 表情ごとの画像候補（前から順に試す）
+function emoteFaceSrc(who, expr) {
+  if (who === 'mimi') {
+    return [
+      `assets/characters/mimi_cutin_${expr}.webp`,
+      `assets/characters/mimi_bust_${MIMI_EMOTE_FALLBACK[expr] || 'win'}.webp`,
+      'assets/characters/mimi_bust_win.webp',
+    ];
+  }
+  const key = state && state.opponentImgKey;
+  if (!key) return null;
+  return [
+    `assets/characters/${key}_cutin_${expr}.webp`,
+    `assets/characters/${key}_cutin_${OPP_CUTIN_FALLBACK[expr] || 'panic'}.webp`,
+    `assets/characters/${key}_default.webp`,
+  ];
+}
+
+// 専用差分が届くまでの逃げ道（既存の絵で一番近いもの）
+const MIMI_EMOTE_FALLBACK = { smug: 'smug', panic: 'shock', busted: 'shock', bawl: 'sad', plead: 'sad' };
+// 専用差分が届くまでは、いちばん近い既存の顔アップ（smug / panic）へ落とす
+const OPP_CUTIN_FALLBACK = {
+  smug: 'smug', smug_max: 'smug', smirk_hide: 'smug', applaud: 'smug',
+  panic: 'panic', busted: 'panic', bawl: 'panic', plead: 'panic',
+  defiant: 'panic', compose: 'smug', bitter: 'panic', grovel: 'panic', haggle: 'panic',
+};
+
+
+function applyEmoteScreenFx(kind, life) {
+  if (!kind) return;
+  const body = document.body;
+  const cls = 'emofx-' + kind;
+  body.classList.add(cls);
+  setTimeout(() => body.classList.remove(cls), life);
+  if (kind === 'focus') {
+    // 集中線：いちばん強い一発だけに使う
+    const f = document.createElement('div');
+    f.className = 'emote-focus-lines';
+    body.appendChild(f);
+    setTimeout(() => f.remove(), 900);
+  }
+}
+
+// 相手のテル：ベットした瞬間、キャラごとの「顔に出やすさ」で本心が漏れる。
+// 強い手なら得意顔、ブラフなら焦り顔。ポルカはほぼ毎回漏れ、ヴェルベットはめったに漏れない。
+function maybeOpponentTell(isBluff) {
+  if (!state || state.introHandMode || state.tutorialMode) return;
+  const key = state.opponentImgKey;
+  const leak = TELL_LEAK[key];
+  if (leak == null) return;
+  if (state.__tellShownStreet === state.handPhase) return;   // 1ストリート1回まで
+  if (rand() > leak) return;
+  state.__tellShownStreet = state.handPhase;
+  // 強い手＋大きく賭けた時だけ、最上級の得意顔（ヴェルベットなら「ざぁこ♡」）に上がる
+  const potBefore = Math.max(1, state.pot - state.currentBetOpponent);
+  const bigBet = state.currentBetOpponent / potBefore >= 0.85;
+  const ev = isBluff ? 'tellBluff' : (bigBet && charEmote('opponent', 'tellStrongMax') ? 'tellStrongMax' : 'tellStrong');
+  playEmote('opponent', ev);
+}
+
 // opts.autoCloseMs：この時間で勝手に閉じる。opts.hint：「タップで進む」等の操作指示を出す。
 // ★このカットインはクリックでしか閉じず、しかも onClose に進行が繋がっている呼び出しがある
 //   （研修 introHandAdvance／講義 triggerLectureQuestion）。指示も出していなかったので、
