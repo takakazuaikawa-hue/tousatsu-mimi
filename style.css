@@ -15280,3 +15280,12 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
 .battle-screen.v2 .rico-bubble.v2-com-text { max-height: 68px; }
 /* コメント欄は bottom:306px の下端固定なので、伸びると上の字幕帯に食い込む。
    リコ側は3行までに抑えて列全体の高さを 164px 以内に保つ。 */
+
+/* ⑨場の危険度：警告が無いハンドでは renderDangerBar() が空文字を返すのに、
+   ⑦で足した ::before の「場」だけが卓に残っていた。中身が無いときは帯ごと伏せる。 */
+.battle-screen.v2 .v2-danger:empty { display: none !important; }
+
+/* ⑩ショーダウンの勝敗コールアウトは .center-table の中に生成されるが、
+   .battle-screen.v2 > * { z-index: 2 } で卓が z2 に固定されるため、
+   後続の兄弟（操作パネル等）に隠される。出ている間だけ卓を持ち上げる。 */
+.battle-screen.v2 > .center-table.v2-table:has(.sd-callout) { z-index: 45; }
