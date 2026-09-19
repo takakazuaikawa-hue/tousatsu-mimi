@@ -15445,17 +15445,62 @@ function playCollapse(who, event) {
     resetTaunt();
     return;
   }
-  // tier3：溜め → 一閃 → 崩壊
+  // tier3：ヒットストップ → 一閃 → 叩きつけ → 保持
+  // ★間の取り方が演出の質を決める。入りは「即」、抜けは「ゆっくり」。
+  //   だらだら遷移させると家庭用ゲームの決め所ではなく、ただのWebアニメに見える。
+  showCinemaBars(true);                       // シネスコの黒帯を落とす＝「ここは演出です」の合図
   document.body.classList.add('collapse-freeze');
   if (typeof mpSfx === 'function') mpSfx('milestone');
+
   setTimeout(() => {
     document.body.classList.remove('collapse-freeze');
     document.body.classList.add('collapse-max');
+    flashImpact();                            // 加算の白閃（画面全体のbrightnessを上げるのとは別物）
+    shakeImpact();                            // 減衰する一撃（等間隔の横揺れではない）
     playEmote(who, event, { force: true, holdMs: hold, max: true });
     if (typeof mpSfx === 'function') mpSfx('bigwin');
-    setTimeout(() => document.body.classList.remove('collapse-max'), hold);
+    setTimeout(() => {
+      document.body.classList.remove('collapse-max');
+      showCinemaBars(false);
+    }, hold);
     resetTaunt();
-  }, 620);
+  }, 550);
+}
+
+// シネスコの黒帯。決め所の間だけ画面を映画の比率に落とす。
+function showCinemaBars(on) {
+  let el = document.querySelector('.cinema-bars');
+  if (on) {
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'cinema-bars';
+      el.innerHTML = '<i class="cb-top"></i><i class="cb-bottom"></i>';
+      document.body.appendChild(el);
+    }
+    requestAnimationFrame(() => el.classList.add('on'));
+  } else if (el) {
+    el.classList.remove('on');
+    setTimeout(() => el.remove(), 420);
+  }
+}
+
+// 加算の白閃。90msで立ち上げ、そこから落とす。画面のフィルタを上げると文字まで飛ぶので別レイヤーにする。
+function flashImpact() {
+  const f = document.createElement('div');
+  f.className = 'impact-flash';
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 140);
+}
+
+// 一撃の揺れ。等振幅で往復させると安っぽくなるので、大きく入って指数的に減衰させる。
+// 縦を主にして横は控えめ、わずかに回転を混ぜる。
+function shakeImpact() {
+  const el = document.querySelector('.battle-screen');
+  if (!el) return;
+  el.classList.remove('impact-shake');
+  void el.offsetWidth;
+  el.classList.add('impact-shake');
+  setTimeout(() => el.classList.remove('impact-shake'), 460);
 }
 
 // opts.autoCloseMs：この時間で勝手に閉じる。opts.hint：「タップで進む」等の操作指示を出す。

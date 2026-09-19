@@ -15748,3 +15748,114 @@ body.collapse-max .battle-screen.v2 { animation: collapseSlam .5s cubic-bezier(.
 }
 /* 崩壊の顔は、ふつうより一段大きく・長く見せる */
 body.collapse-max .emote-cutin.heavy .ec-face { animation-duration: 2.6s !important; }
+
+/* =====================================================================
+   決め所の演出を、家庭用ゲームの作法に寄せる
+   直したのは5点：
+   ①等振幅の横揺れ → 大きく入って指数的に減衰する一撃（縦主体＋微回転）
+   ②画面全体の brightness を上げる白閃 → 加算の別レイヤー（UIの文字が飛ばない）
+   ③ただ滑り込むだけの顔 → 行き過ぎて戻る（オーバーシュート）＋一瞬の色ズレ
+   ④演出の合図が無い → シネスコの黒帯を落とす
+   ⑤入りも抜けも同じ速さ → 入りは即（120-180ms）、抜けはゆっくり（260-420ms）
+   ===================================================================== */
+
+/* ---------- ①一撃の揺れ：減衰する ---------- */
+.battle-screen.impact-shake { animation: impactShake .42s cubic-bezier(.16,.8,.32,1) both; }
+@keyframes impactShake {
+  0%   { transform: translate3d(0, -13px, 0) rotate(-.55deg); }
+  12%  { transform: translate3d(4px, 9px, 0) rotate(.4deg); }
+  24%  { transform: translate3d(-3px, -6px, 0) rotate(-.28deg); }
+  38%  { transform: translate3d(2px, 4px, 0) rotate(.18deg); }
+  54%  { transform: translate3d(-2px, -2.5px, 0) rotate(-.1deg); }
+  72%  { transform: translate3d(1px, 1.4px, 0) rotate(.05deg); }
+  100% { transform: none; }
+}
+
+/* ---------- ②加算の白閃 ---------- */
+.impact-flash {
+  position: fixed; inset: 0; z-index: 6200; pointer-events: none;
+  background: radial-gradient(ellipse 44% 50% at 42% 46%, #fff 0%, rgba(255,242,246,.95) 20%, rgba(255,120,165,.3) 40%, transparent 58%);
+  mix-blend-mode: screen;
+  animation: impactFlash .12s cubic-bezier(.05,.9,.15,1) both;
+}
+@keyframes impactFlash {
+  0%   { opacity: 0; transform: scale(1.1); }
+  14%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.02); }
+}
+
+/* ---------- ④シネスコの黒帯 ---------- */
+.cinema-bars { position: fixed; inset: 0; z-index: 6100; pointer-events: none; }
+.cinema-bars i {
+  position: absolute; left: 0; right: 0; height: 6.5%;
+  background: #000;
+  transform: scaleY(0); transform-origin: top center;
+  transition: transform .26s cubic-bezier(.2,.85,.25,1);
+  box-shadow: 0 2px 18px rgba(0,0,0,.8);
+}
+.cinema-bars .cb-bottom { top: auto; bottom: 0; transform-origin: bottom center; }
+.cinema-bars.on i { transform: scaleY(1); }
+/* 抜けはゆっくり */
+.cinema-bars:not(.on) i { transition: transform .42s cubic-bezier(.4,0,.6,1); }
+
+/* ---------- ①' ヒットストップ：即座に止める（遷移させない） ---------- */
+body.collapse-freeze .battle-screen.v2 {
+  filter: brightness(.34) saturate(.18) contrast(1.22);
+  transition: none;                     /* ここをフェードさせると「止まった」感が消える */
+}
+body.collapse-freeze .battle-screen.v2 .char-opponent img {
+  animation: none !important;
+  filter: brightness(5.2) saturate(0) contrast(1.45);
+  transform: scale(1.05);
+  transition: none;
+}
+
+/* ---------- ③顔の入り：行き過ぎて戻る＋一瞬の色ズレ ---------- */
+.emote-cutin .ec-face-wrap {
+  position: absolute; bottom: 0;
+  filter: drop-shadow(0 18px 40px rgba(0,0,0,.75));
+  opacity: 0;
+  transition: opacity .12s linear, transform .18s cubic-bezier(.12,1.5,.3,1);
+}
+.emote-cutin.from-left  .ec-face-wrap { left: -24px;  transform: translate3d(-120px,0,0) scale(.9); }
+.emote-cutin.from-right .ec-face-wrap { right: -24px; transform: translate3d(120px,0,0) scale(.9); }
+.emote-cutin.on .ec-face-wrap  { opacity: 1; transform: translate3d(0,0,0) scale(1); }
+/* 抜けはゆっくり引く */
+.emote-cutin.out .ec-face-wrap { opacity: 0; transition: opacity .26s ease, transform .3s cubic-bezier(.4,0,.7,1); }
+.emote-cutin.out.from-left  .ec-face-wrap { transform: translate3d(-46px,0,0) scale(.99); }
+.emote-cutin.out.from-right .ec-face-wrap { transform: translate3d(46px,0,0) scale(.99); }
+
+/* 決め所の顔は、入った瞬間だけ色がずれて、そのあとゆっくり寄る（止め絵にしない） */
+body.collapse-max .emote-cutin.heavy .ec-face { animation: slamFace 2.9s cubic-bezier(.1,.8,.2,1) both; }
+@keyframes slamFace {
+  0%   { transform: scale(1.14); filter: drop-shadow(-7px 0 0 rgba(255,60,90,.85)) drop-shadow(7px 0 0 rgba(60,200,255,.85)) brightness(1.5); }
+  5%   { transform: scale(1.02); filter: drop-shadow(-3px 0 0 rgba(255,60,90,.5)) drop-shadow(3px 0 0 rgba(60,200,255,.5)) brightness(1.12); }
+  12%  { transform: scale(1); filter: none; }
+  100% { transform: scale(1.035); filter: none; }   /* 保持中もゆっくり寄せて死んだ絵にしない */
+}
+body.collapse-max .emote-cutin.heavy .ec-face-wrap { width: 760px; top: 22px; }
+body.collapse-max .emote-cutin.heavy .ec-scrim {
+  background: radial-gradient(ellipse at 46% 50%, rgba(0,0,0,.04), rgba(0,0,0,.88) 72%);
+}
+
+/* ---------- 軽い顔バッジも入りを速く（ぬるっと出さない） ---------- */
+.emote-cutin.light .ec-face-wrap { transition: opacity .1s linear, transform .16s cubic-bezier(.15,1.35,.35,1); }
+
+/* ---------- 集中線：一瞬で開いて素早く消す ---------- */
+.emote-focus-lines {
+  position: fixed; inset: 0; z-index: 5900; pointer-events: none;
+  background:
+    repeating-conic-gradient(from 0deg at 46% 46%,
+      rgba(0,0,0,.62) 0deg .9deg, transparent .9deg 3.4deg);
+  -webkit-mask-image: radial-gradient(ellipse at 46% 46%, transparent 24%, #000 58%);
+  mask-image: radial-gradient(ellipse at 46% 46%, transparent 24%, #000 58%);
+  animation: focusLines .55s cubic-bezier(.1,.9,.2,1) both;
+}
+@keyframes focusLines {
+  0%   { opacity: 0; transform: scale(1.5); }
+  8%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.04); }
+}
+
+/* ---------- 旧・等間隔の横揺れは使わない ---------- */
+.emofx-shake .battle-screen { animation: none; }
