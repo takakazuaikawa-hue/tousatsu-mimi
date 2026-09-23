@@ -16225,3 +16225,12 @@ video.motion-bg.on { opacity: 1; }
   content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background: linear-gradient(180deg, rgba(11,5,16,.5) 0%, rgba(11,5,16,.1) 16%, rgba(11,5,16,0) 42%, rgba(11,5,16,.42) 100%);
 }
+
+/* 大カットインの上端：髪が絵の上端まで描かれている顔は、そこで一直線に切れて見えた。
+   楕円のマスクに「上端 8% をふわっと消す」を重ねる */
+.emote-cutin.heavy .ec-face-wrap {
+  -webkit-mask-image: radial-gradient(ellipse 66% 72% at 46% 42%, #000 52%, transparent 92%), linear-gradient(180deg, transparent 0%, transparent 5%, #000 18%);
+  -webkit-mask-composite: source-in;
+  mask-image: radial-gradient(ellipse 66% 72% at 46% 42%, #000 52%, transparent 92%), linear-gradient(180deg, transparent 0%, transparent 5%, #000 18%);
+  mask-composite: intersect;
+}
