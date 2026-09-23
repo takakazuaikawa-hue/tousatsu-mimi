@@ -15913,3 +15913,290 @@ body.collapse-max .emote-cutin.heavy .ec-scrim {
 .rebuy-overlay .rb-go:active { transform: skewX(12deg) translateY(3px); box-shadow: 0 3px 0 #6a4a12; }
 @keyframes rbBreath { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.14); } }
 .rebuy-overlay .rb-note { margin-top: 12px; color: rgba(255,255,255,.62); font-size: 12px; }
+
+/* ============================================================
+   ロビー v6「劇場の照明」2026-09（AD講評 50点→90点化）
+   50点の原因は素材ではなく「全要素が同じ声量で喋っている」こと。
+   視線の順序を リコの顔→リコの助言→NEXT TABLE→未解放／VIP→周辺機能 に固定する：
+   ・カード群の背後だけ照度を落とす（背景全体は暗くしない＝リコの魅力は維持）
+   ・NEXTだけ 幅・持ち上げ・金スポット・CTAの呼吸（ループはここだけ）
+   ・CLEAR済みは後景へ／未解放は煙ったガラス越し／VIPは深紅の幕の奥
+   ・白い吹き出し・右上の小CTA群・下ナビを一段黙らせる
+   紫系は一切足さない（セリナの衣装色を枠や光に拾わない）
+   ============================================================ */
+.lobby-screen.v5 {
+  --lx-black: #080504;
+  --lx-panel: rgba(9,6,5,.91);
+  --lx-crimson: #8b1020;
+  --lx-red-hi: #c42a3d;
+  --lx-gold: #d8aa48;
+  --lx-gold-hi: #f1cf72;
+  --lx-ivory: #f5ecd9;
+  --lx-muted: #a89578;
+}
+
+/* ── 舞台：カード列（x346–1252／下端 y716） ── */
+.lobby-screen.v5 .lb5-cards.lb6-deck { left: 346px; right: 28px; top: 134px; bottom: 84px; gap: 12px; align-items: flex-end; justify-content: center; z-index: 2; }
+/* 背後の黒い舞台幕。矩形パネルに見えないよう四辺をぼかして溶かす */
+.lb6-deck::before {
+  content: ''; position: absolute; inset: -70px -58px -30px -62px; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 55%, rgba(0,0,0,.26) 0%, rgba(0,0,0,.46) 52%, rgba(0,0,0,.67) 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 56px, #000 calc(100% - 56px), transparent), linear-gradient(180deg, transparent, #000 66px, #000 calc(100% - 26px), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 56px, #000 calc(100% - 56px), transparent), linear-gradient(180deg, transparent, #000 66px, #000 calc(100% - 26px), transparent);
+  mask-composite: intersect;
+}
+
+/* カード（器）：持ち上げは translate、hover/押下は transform に分け、入場アニメと干渉させない */
+.lb6-card {
+  position: relative; flex: 0 0 164px; height: 430px; z-index: 1;
+  transition: transform .2s cubic-bezier(.2,.8,.3,1), filter .25s ease, opacity .25s ease;
+  animation: lb6Rise .18s ease-out backwards; animation-delay: calc(var(--i, 0) * 28ms);
+}
+.lb6-card.is-vip { flex-basis: 176px; }
+.lb6-card.is-next {
+  flex-basis: 190px; height: 454px; z-index: 5; translate: 0 -22px;
+  animation: lb6NextIn .42s cubic-bezier(.2,.8,.3,1) backwards; animation-delay: calc(var(--i, 0) * 28ms);
+}
+@keyframes lb6Rise { from { translate: 0 8px; opacity: 0; } }
+/* 前半180msで他と一緒に入り、後半240msでNEXTだけ22px持ち上がる＝入場のたびに「さて、次はここ」 */
+@keyframes lb6NextIn { 0% { translate: 0 8px; opacity: 0; } 43% { translate: 0 0; opacity: 1; } 100% { translate: 0 -22px; } }
+
+/* 背後の金スポット：光っているのはNEXTだけ */
+.lb6-card.is-next::before { content: ''; position: absolute; inset: -40px -46px; z-index: -1; pointer-events: none; background: radial-gradient(ellipse, rgba(236,190,82,.15), transparent 67%); }
+
+/* カードそのものがボタン（CTAだけを狙わせない） */
+.lb6-hit {
+  position: absolute; inset: 0; display: block; width: 100%; height: 100%; margin: 0; padding: 0; border: 0;
+  font-family: inherit; color: inherit; text-align: center; cursor: pointer;
+  background: linear-gradient(180deg, rgba(40,17,21,.9) 0%, rgba(13,7,8,.96) 100%);
+  box-shadow: inset 0 0 0 1px rgba(216,170,72,.42), 0 18px 34px rgba(0,0,0,.62);
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.lb6-hit::before { content: ''; position: absolute; inset: 5px; z-index: 4; border: 1px solid rgba(216,170,72,.15); pointer-events: none; }
+.lb6-hit:focus-visible { outline: 2px solid var(--lx-gold-hi); outline-offset: 3px; }
+
+.lb6-face { position: absolute; inset: 1px; z-index: 1; overflow: hidden; background: radial-gradient(ellipse 90% 50% at 50% 20%, rgba(216,170,72,.13), transparent 66%); }
+.lb6-face img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; transition: transform .35s cubic-bezier(.2,.8,.3,1), filter .25s ease; }
+.lb6-card:not(.is-locked):hover .lb6-face img { transform: scale(1.04); }
+
+/* 下段：名前→特徴1行→賞金→CTA */
+.lb6-foot {
+  position: absolute; left: 1px; right: 1px; bottom: 1px; z-index: 3;
+  display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 46px 10px 10px;
+  background: linear-gradient(180deg, rgba(12,6,7,0) 0%, rgba(12,6,7,.84) 30%, rgba(9,5,6,.96) 100%);
+}
+.lb6-title { display: flex; align-items: baseline; justify-content: center; gap: 7px; white-space: nowrap; }
+.lb6-no { font-size: 18px; line-height: 1; color: rgba(216,170,72,.72); }
+.lb6-name { font-size: 16px; font-weight: 900; letter-spacing: .04em; color: var(--lx-ivory); }
+.lb6-feat { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; color: #b9a784; }
+.lb6-prize { display: flex; align-items: baseline; justify-content: center; gap: 5px; margin-top: 1px; white-space: nowrap; }
+.lb6-prize i { font-style: normal; font-size: 12px; letter-spacing: .18em; color: var(--lx-muted); }
+.lb6-prize b { font-size: 21px; font-weight: 400; line-height: 1; color: var(--lx-gold-hi); }
+.lb6-prize small { font-size: 9.5px; color: var(--lx-muted); }
+.lb6-prize.is-rematch i { font-size: 10px; letter-spacing: .04em; }
+.lb6-cta {
+  align-self: stretch; display: flex; align-items: center; justify-content: center; height: 34px; margin-top: 6px;
+  background: rgba(10,6,5,.9); box-shadow: inset 0 0 0 1px rgba(216,170,72,.42);
+  color: #e8dcc7; font-size: 13px; font-weight: 800; letter-spacing: .16em; transform: skewX(-12deg);
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.lb6-cta > span { display: inline-block; transform: skewX(12deg); }
+.lb6-card:hover .lb6-cta { color: var(--lx-gold-hi); box-shadow: inset 0 0 0 1px rgba(241,207,114,.8); }
+
+/* hover／押下：押し込む70msで「押した結果が返ってきた」と手が感じる */
+.lb6-card:hover { transform: translateY(-6px); }
+.lb6-card:active { transform: translateY(-2px) scale(.99); transition-duration: 70ms; }
+
+/* ── CLEAR済み：遊べるが、今行くべき場所ではない ── */
+.lb6-card.is-cleared { filter: saturate(.72) brightness(.78); opacity: .88; }
+.lb6-card.is-cleared:hover { filter: saturate(.96) brightness(.96); opacity: 1; }
+.lb6-deck.is-allclear .lb6-card.is-cleared { filter: none; opacity: 1; } /* 全制覇後は「次」が無いので沈めない */
+.lb6-seal { position: absolute; top: 10px; right: 10px; z-index: 5; padding: 4px 8px 3px 10px; font-size: 12px; line-height: 1; letter-spacing: .16em; color: #e2bb5c; background: rgba(10,6,5,.78); box-shadow: inset 0 0 0 1px rgba(216,170,72,.6); }
+
+/* ── NEXT TABLE：位置・光・動きの3重指定 ── */
+.lb6-card.is-next .lb6-hit { background: linear-gradient(180deg, rgba(46,20,20,.92), rgba(14,8,7,.97)); box-shadow: inset 0 0 0 2px #e2bb5c, 0 0 24px rgba(236,190,82,.26), 0 26px 46px rgba(0,0,0,.72); }
+.lb6-card.is-next .lb6-hit::before { border-color: rgba(241,207,114,.26); }
+.lb6-card.is-next .lb6-face { inset: 2px; }
+.lb6-card.is-next .lb6-foot { left: 2px; right: 2px; bottom: 2px; gap: 4px; padding: 52px 11px 11px; }
+.lb6-card.is-next .lb6-no { font-size: 21px; color: var(--lx-gold); }
+.lb6-card.is-next .lb6-name { font-size: 19px; }
+.lb6-card.is-next .lb6-feat { font-size: 11.5px; color: #cdbb98; }
+.lb6-card.is-next .lb6-prize b { font-size: 26px; }
+.lb6-card.is-next .lb6-cta {
+  height: 48px; margin-top: 8px; color: #201608; font-size: 15px; font-weight: 800; letter-spacing: .2em;
+  background: linear-gradient(180deg, #e9c566 0%, var(--lx-gold) 55%, #c4923a 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,236,170,.55), 0 4px 0 rgba(0,0,0,.35), 0 0 18px rgba(236,190,82,.28);
+  animation: lb6Breath 3.6s ease-in-out infinite;
+}
+.lb6-card.is-next:hover .lb6-cta { color: #201608; background: linear-gradient(180deg, #f7dc86 0%, var(--lx-gold-hi) 55%, #d9a947 100%); box-shadow: inset 0 0 0 1px rgba(255,244,200,.7), 0 4px 0 rgba(0,0,0,.35), 0 0 22px rgba(236,190,82,.4); }
+.lb6-card.is-next:hover { transform: translateY(-6px) scale(1.045); }
+.lb6-card.is-next:active { transform: translateY(-1px) scale(1.015); transition-duration: 70ms; }
+/* ループはNEXTのCTAだけ：100%→少し明るく→100%（点滅させない） */
+@keyframes lb6Breath { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.13); } }
+
+/* 金ラベル：高さ30px・-12°の斜めスラブ。文字だけ逆傾斜で戻す。入場時に一度だけ光が横切る */
+.lb6-label {
+  position: absolute; left: 12px; right: 12px; top: -15px; height: 30px; z-index: 6; overflow: hidden; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(90deg, #b88427, #efd06b 48%, #b88427); color: #211607;
+  font-size: 19px; letter-spacing: .18em; transform: skewX(-12deg);
+  box-shadow: inset 0 0 0 1px rgba(255,240,190,.35), 0 6px 14px rgba(0,0,0,.45);
+}
+.lb6-label > span { display: inline-block; padding-left: .18em; line-height: 1; transform: skewX(12deg); }
+.lb6-label::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 44px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent); transform: translateX(-60px); animation: lb6Sheen .7s ease-out .46s 1 both; }
+@keyframes lb6Sheen { to { transform: translateX(230px); } }
+
+/* ── 未解放：暗くするのではなく「煙ったガラス越し」。グレースケールは禁止（色気まで消える） ── */
+.lb6-card.is-locked .lb6-hit { cursor: default; background: linear-gradient(180deg, rgba(30,14,16,.9), rgba(10,6,6,.96)); box-shadow: inset 0 0 0 1px rgba(216,170,72,.28), 0 18px 34px rgba(0,0,0,.6); }
+.lb6-card.is-locked .lb6-face img { filter: brightness(.58) saturate(.76) blur(.6px); }
+.lb6-card.is-locked .lb6-face::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(118deg, rgba(255,240,220,.07) 0 22%, transparent 22% 58%, rgba(255,240,220,.045) 58% 64%, transparent 64%),
+    linear-gradient(180deg, rgba(5,3,3,.15), rgba(5,3,3,.56));
+}
+.lb6-card.is-locked:hover { transform: translateY(-4px); }
+.lb6-card.is-locked:active { transform: translateY(-3px); }
+.lb6-card.is-locked:hover .lb6-face img { filter: brightness(.66) saturate(.8) blur(.6px); }
+.lb6-card.is-locked .lb6-name { color: #9c8b73; letter-spacing: .12em; }
+.lb6-prize.is-tease b { color: rgba(241,207,114,.8); }
+.lb6-lock { position: absolute; top: 10px; right: 10px; z-index: 5; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; color: var(--lx-gold-hi); background: radial-gradient(circle at 40% 35%, #a51a2c, #5e0a15); box-shadow: inset 0 0 0 1px rgba(216,170,72,.6), 0 3px 8px rgba(0,0,0,.5); }
+.lb6-lock svg { width: 13px; height: 13px; }
+.lb6-need {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; padding: 5px 9px; white-space: nowrap;
+  font-size: 10.5px; font-weight: 700; color: #cdbb98; background: rgba(8,5,5,.72); box-shadow: inset 0 0 0 1px rgba(196,42,61,.45);
+  transition: transform .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.lb6-need svg { flex-shrink: 0; width: 12px; height: 12px; color: var(--lx-red-hi); }
+/* hoverで解放条件が少しせり上がる */
+.lb6-card.is-locked:hover .lb6-need { transform: translateY(-3px); color: var(--lx-ivory); box-shadow: inset 0 0 0 1px rgba(196,42,61,.85); }
+/* 押すと鍵が80ms×3回だけ左右に震え、解放条件が灯る（開始はしない） */
+.lb6-card.is-denied .lb6-lock, .lb6-card.is-denied .lb6-need svg { animation: lb6Shake 80ms ease-in-out 3; }
+.lb6-card.is-denied .lb6-need { color: var(--lx-ivory); box-shadow: inset 0 0 0 1px var(--lx-red-hi), 0 0 14px rgba(196,42,61,.45); animation: lb6NeedPop .45s ease-out; }
+@keyframes lb6Shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px) rotate(-7deg); } 75% { transform: translateX(3px) rotate(7deg); } }
+@keyframes lb6NeedPop { 0% { transform: translateY(0); } 35% { transform: translateY(-6px); } 100% { transform: translateY(-3px); } }
+
+/* ── VIP ROOM：5番目の暗いカードにしない。黒＋深紅＋金を最も純粋に ── */
+.lb6-card.is-vip:not(.is-next) .lb6-hit { background: linear-gradient(180deg, rgba(48,8,14,.92), rgba(12,4,6,.97)); box-shadow: inset 0 0 0 1px rgba(216,170,72,.62), 0 18px 34px rgba(0,0,0,.62); }
+.lb6-card.is-vip:not(.is-next) .lb6-hit::before { border-color: rgba(216,170,72,.22); }
+.lb6-card.is-vip.is-locked .lb6-face img { filter: brightness(.6) saturate(.8) blur(.6px); }
+.lb6-card.is-vip.is-locked:hover .lb6-face img { filter: brightness(.68) saturate(.84) blur(.6px); }
+/* 深紅の幕の奥に人がいる */
+.lb6-card.is-vip.is-locked .lb6-face::after { background: linear-gradient(90deg, rgba(80,4,12,.48), rgba(7,4,4,.5) 48%, rgba(80,4,12,.48)), linear-gradient(180deg, rgba(7,4,4,0) 40%, rgba(7,4,4,.5)); }
+.lb6-label.is-vip { left: 16px; right: 16px; top: -13px; height: 26px; font-size: 16px; letter-spacing: .24em; color: var(--lx-ivory); background: linear-gradient(90deg, #5e0a15, #a51a2c 50%, #5e0a15); box-shadow: inset 0 0 0 1px rgba(216,170,72,.55), 0 6px 14px rgba(0,0,0,.45); }
+.lb6-label.is-vip::after { display: none; }
+.lb6-card.is-vip .lb6-lock, .lb6-card.is-vip .lb6-seal { top: 22px; }
+.lb6-tease { margin-top: 2px; font-size: 16px; line-height: 1; letter-spacing: .22em; color: #e2bb5c; }
+.lb6-tease-sub { margin-top: 3px; padding: 3px 8px 2px; font-size: 11px; line-height: 1; letter-spacing: .3em; color: var(--lx-muted); box-shadow: inset 0 0 0 1px rgba(216,170,72,.35); }
+/* 金縁だけに6〜8秒に一度、細い反射。NEXTより必ず暗く（今押したいのはNEXT、いつか押したいのはVIP） */
+@property --lb6-orbit { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.lb6-glint {
+  position: absolute; inset: 0; z-index: 4; padding: 2px; pointer-events: none; opacity: 0;
+  background: conic-gradient(from var(--lb6-orbit), transparent 0deg 312deg, rgba(255,236,170,.9) 338deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: lb6Glint 7s linear 1.4s infinite;
+}
+/* 7秒に一度、光の粒が枠を一周（約1.5秒）して消える */
+@keyframes lb6Glint { 0% { --lb6-orbit: 0deg; opacity: 0; } 3% { opacity: 1; } 19% { opacity: 1; } 22% { --lb6-orbit: 360deg; opacity: 0; } 100% { --lb6-orbit: 360deg; opacity: 0; } }
+/* VIPがNEXTになったら：金の札を優先し、深紅は内側の細帯へ */
+.lb6-vipstrip { position: absolute; left: 2px; right: 2px; top: 20px; z-index: 5; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; letter-spacing: .32em; color: var(--lx-ivory); background: linear-gradient(90deg, rgba(94,10,21,0), rgba(165,26,44,.92) 22%, rgba(165,26,44,.92) 78%, rgba(94,10,21,0)); }
+.lb6-card.is-next.is-vip .lb6-info { top: 46px; }
+
+/* プロフィール（旧：立ち絵クリック）。カード全体がボタンになったので小さな定位置へ */
+.lb6-info { position: absolute; top: 9px; left: 9px; z-index: 7; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; color: #cdbb98; background: rgba(10,6,5,.72); box-shadow: inset 0 0 0 1px rgba(216,170,72,.4); cursor: pointer; opacity: .62; transition: opacity .15s ease, color .15s ease, box-shadow .15s ease; -webkit-tap-highlight-color: transparent; }
+.lb6-info::before { content: ''; position: absolute; inset: -7px; }
+.lb6-card:hover .lb6-info { opacity: 1; }
+.lb6-info:hover { color: var(--lx-gold-hi); box-shadow: inset 0 0 0 1px rgba(241,207,114,.85); }
+.lb6-card.is-next .lb6-info, .lb6-card.is-vip .lb6-info { top: 22px; }
+/* スキップはNEXTの足元（持ち上げでできた22pxの隙間）に小さく。NEXT以外は右上の小札 */
+.lb6-skip { position: absolute; left: 50%; bottom: -21px; z-index: 7; transform: translateX(-50%); padding: 2px 4px 1px; border: 0; border-bottom: 1px solid rgba(168,149,120,.45); background: none; font-family: inherit; font-size: 10px; letter-spacing: .06em; color: var(--lx-muted); white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.lb6-skip:hover { color: var(--lx-gold-hi); border-bottom-color: rgba(241,207,114,.7); }
+.lb6-card:not(.is-next) .lb6-skip { left: auto; right: 9px; bottom: auto; top: 10px; transform: none; padding: 4px 7px 3px; border: 0; font-size: 9.5px; background: rgba(10,6,5,.72); box-shadow: inset 0 0 0 1px rgba(216,170,72,.3); }
+
+/* 押した瞬間：80ms沈み、NEXTの金が一瞬深紅へ（このあと深紅スラブのワイプ） */
+.lb6-deck .lb6-card.is-go { transform: translateY(5px) scale(.985); transition-duration: 80ms; }
+.lb6-deck .lb6-card.is-go .lb6-cta { color: var(--lx-ivory); background: linear-gradient(180deg, var(--lx-red-hi), var(--lx-crimson)); box-shadow: inset 0 0 0 1px rgba(241,207,114,.6), 0 2px 0 rgba(0,0,0,.35); animation: none; }
+.lb6-card.is-go .lb6-label:not(.is-vip) { color: var(--lx-ivory); background: linear-gradient(90deg, var(--lx-crimson), var(--lx-red-hi) 48%, var(--lx-crimson)); }
+.lb6-wipe { position: absolute; inset: 0; z-index: 400; overflow: hidden; }
+.lb6-wipe-slab { position: absolute; top: -10%; bottom: -10%; left: -24%; right: -24%; background: linear-gradient(90deg, #6a0b17, #8b1020 38%, #a51a2c); box-shadow: -3px 0 0 #d8aa48, -18px 0 36px rgba(0,0,0,.55); transform: translateX(115%) skewX(-12deg); animation: lb6WipeIn .22s cubic-bezier(.55,.05,.35,1) forwards; }
+@keyframes lb6WipeIn { to { transform: translateX(0) skewX(-12deg); } }
+.lb6-wipe.is-out { opacity: 0; transition: opacity .34s ease; }
+
+/* ── リコの助言：白い吹き出し→黒ガラス＋金1px＋深紅3px。リコが「次の卓を指すナビゲーター」になる ── */
+.lobby-screen.v5 .lb4-rico-bubble {
+  left: 252px; top: auto; bottom: 546px; width: 270px; max-width: none; min-height: 96px; /* 下端 y254 固定：長い助言は上へ伸ばし、差し出した手に被せない */ box-sizing: border-box; padding: 11px 16px 13px;
+  background: var(--lx-panel); color: var(--lx-ivory); border: 1px solid rgba(216,170,72,.58); border-top: 3px solid var(--lx-crimson); border-radius: 0;
+  font-size: 14px; font-weight: 500; line-height: 1.62; box-shadow: 0 12px 28px rgba(0,0,0,.35);
+}
+.lobby-screen.v5.lb6-next-first .lb4-rico-bubble { bottom: 606px; }
+.lobby-screen.v5 .lb4-rico-bubble::before { content: ''; position: absolute; left: -7px; top: 34px; width: 12px; height: 12px; background: #0b0706; border-left: 1px solid rgba(216,170,72,.58); border-bottom: 1px solid rgba(216,170,72,.58); transform: rotate(45deg); }
+.lb6-tip-kicker { display: block; margin-bottom: 6px; font-size: 13px; line-height: 1; letter-spacing: .26em; color: var(--lx-gold); }
+.lb6-tip-body { display: block; }
+.lb6-tip-key { font-weight: 800; color: var(--lx-gold-hi); }
+
+/* ── 右上：ステータスに徹する一枚パネル ── */
+.lobby-screen.v5 .lobby-hud { z-index: 4; } /* パネルがヘッダー下へ張り出すので本文より上に */
+.lobby-screen.v5 .lobby-title { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-shadow: 0 2px 6px rgba(0,0,0,.7); }
+/* 見出しは場所を示すだけ。白い発光文字はNEXTと張り合うので象牙色に落とす */
+.lobby-screen.v5 .lobby-title-main { font-size: 24px; color: #e8dcc7; }
+.lobby-screen.v5 .lobby-title-eyebrow { color: rgba(216,170,72,.75); }
+.lobby-screen.v5 .lobby-hud .hud-right { position: absolute; top: 10px; right: 16px; }
+.lobby-screen.v5 .lb4-hooks { display: none; }
+.lb6-status { box-sizing: border-box; width: 196px; padding: 9px 14px 10px; text-align: left; background: var(--lx-panel); border: 1px solid rgba(216,170,72,.42); box-shadow: 0 12px 28px rgba(0,0,0,.4); }
+.lb6-st-k { font-size: 11px; line-height: 1; letter-spacing: .32em; color: var(--lx-muted); }
+.lb6-st-num { margin-top: 4px; padding-bottom: 8px; font-size: 34px; line-height: 1; color: var(--lx-gold-hi); border-bottom: 1px solid rgba(216,170,72,.24); }
+.lb6-st-row { display: flex; align-items: center; gap: 7px; width: 100%; margin: 7px 0 0; padding: 0; border: 0; background: none; font-family: inherit; font-size: 11.5px; font-weight: 700; color: var(--lx-muted); text-align: left; }
+.lb6-st-dot { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(216,170,72,.6); }
+.lb6-st-row.is-hot { color: #e8dcc7; }
+.lb6-st-row.is-hot .lb6-st-dot { background: #e2bb5c; box-shadow: none; }
+.lb6-st-cg { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.lb6-st-cg:hover { color: var(--lx-gold-hi); }
+.lb6-st-meter { flex: 1; height: 4px; overflow: hidden; background: rgba(255,255,255,.1); }
+.lb6-st-meter i { display: block; height: 100%; background: linear-gradient(90deg, #b88427, #efd06b); }
+.lb6-st-cg b { font-size: 13px; font-weight: 400; color: #e2bb5c; }
+
+/* ── 下部ナビ：消さずに一段黙らせる（黒・細い金枠、金の下線はhoverだけ） ── */
+.lobby-screen.v5 .lb4-bar { height: 68px; padding: 0 28px 0 346px; gap: 12px; justify-content: center; background: linear-gradient(180deg, rgba(8,5,5,.86), rgba(6,4,4,.96)); border-top: 1px solid rgba(216,170,72,.2); }
+.lobby-screen.v5 .lb4-bar .lb4-bar-btn { width: 220px; height: 50px; color: #e8dcc7; background: rgba(8,5,5,.9); box-shadow: inset 0 0 0 1px rgba(216,170,72,.25); }
+.lobby-screen.v5 .lb4-bar .lb4-bar-btn .lb3-bar-name { font-size: 14px; font-weight: 800; letter-spacing: .2em; }
+.lobby-screen.v5 .lb4-bar .lb4-bar-btn .lb3-bar-sub { font-size: 9px; letter-spacing: .08em; color: #8f7f68; }
+.lobby-screen.v5 .lb4-bar .lb4-bar-btn::after { display: block; left: 18%; right: 18%; bottom: 5px; height: 1px; background: var(--lx-gold); transform: scaleX(0); transition: transform .18s ease; }
+.lobby-screen.v5 .lb4-bar .lb4-bar-btn:hover { filter: none; color: var(--lx-ivory); box-shadow: inset 0 0 0 1px rgba(216,170,72,.45); }
+.lobby-screen.v5 .lb4-bar .lb4-bar-btn:hover::after { transform: scaleX(1); }
+.lobby-screen.v5 .lb4-bar .lb4-bar-audio { width: 56px; color: var(--lx-muted); }
+/* 通知の数字は残すが常時発光させない（NEXT以外に常時アニメを置かない） */
+.lobby-screen.v5 .lb4-bar .lobby-shop-newbadge { top: -8px; right: -8px; min-width: 22px; height: 20px; padding: 0 6px; font-size: 11px; color: var(--lx-ivory); background: var(--lx-crimson); border: 1px solid rgba(216,170,72,.7); box-shadow: none; animation: none; }
+
+/* ── 衣装ボタン：見つけやすいが主役ではない（黒・金細枠・COSTUME小見出し） ── */
+.lobby-screen.v5 .lobby-rico-outfit {
+  top: auto; bottom: 22px; left: 40px; box-sizing: border-box; min-width: 118px; height: 32px; padding: 0 12px 0 11px;
+  display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px;
+  border-radius: 0; border: 1px solid rgba(216,170,72,.55); background: rgba(8,5,5,.88); backdrop-filter: none;
+  color: #e8dcc7; font-size: 11.5px; letter-spacing: .06em; box-shadow: 0 6px 16px rgba(0,0,0,.45);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.lobby-screen.v5 .lobby-rico-outfit::after { content: none; }
+.lobby-screen.v5 .lobby-rico-outfit:hover { transform: none; border-color: var(--lx-gold-hi); box-shadow: 0 0 0 1px rgba(241,207,114,.28), 0 6px 16px rgba(0,0,0,.45); }
+.lobby-screen.v5 .lobby-rico-outfit.locked { cursor: pointer; color: var(--lx-muted); background: rgba(8,5,5,.82); border-color: rgba(216,170,72,.32); }
+.lb6-cos-k { font-size: 10px; line-height: 1; letter-spacing: .26em; color: var(--lx-gold); white-space: nowrap; }
+.lb6-cos-k em { margin-left: 6px; font-family: "Noto Sans JP", "Yu Gothic", sans-serif; font-size: 9px; font-style: normal; letter-spacing: .04em; color: var(--lx-muted); }
+.lb6-cos-t { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
+.lb6-cos-t i { margin-left: 2px; font-style: normal; color: var(--lx-gold); }
+.lb6-cos-t .ui-ic { width: 11px; height: 11px; }
+/* 入室で衣装が抽選し直された時だけ、一度だけ金の反射（オーナーの楽しみを「イベント」に） */
+.lobby-screen.v5 .lobby-rico-outfit.is-fresh::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 38%, rgba(255,236,170,.55) 50%, transparent 62%) no-repeat; background-size: 260% 100%; background-position: 130% 0; animation: lb6CosSheen .9s ease-out .7s 1 both; }
+@keyframes lb6CosSheen { to { background-position: -30% 0; } }
+
+/* スマホ横持ち：キャンバスが約0.49倍に縮むので、小さい押し先だけ判定を広げる */
+@media (max-width: 920px) {
+  .lobby-screen.v5 .lobby-rico-outfit::before { content: ''; position: absolute; inset: -12px -10px; }
+  .lb6-info::before { inset: -12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb6-card, .lb6-card.is-next, .lb6-card.is-next .lb6-cta, .lb6-label::after, .lb6-glint,
+  .lobby-screen.v5 .lobby-rico-outfit.is-fresh::after { animation: none !important; }
+  .lb6-card, .lb6-face img { transition: none !important; }
+}
