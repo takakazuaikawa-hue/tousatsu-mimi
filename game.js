@@ -3671,34 +3671,35 @@ function renderStageList() {
 // 上＝進行レール（顔アイコン）／中央＝相手のステージ＋左に「リコの推薦→名前→テル→報酬→CTA」の意思決定列／
 // 下＝定位置のオペレーションバー。帰ってくる理由（ログボ・CG進捗）は左下に常設。
 // key＝リコの助言で金にする語（NEXTへの導線を一語に絞る）／feat＝カードの特徴1行（2行だとCTA直前で勢いが止まる）
+// skill＝v7の英字タグ（NEXTは2つ、未解放の予告は先頭の1つだけ）。日本語の説明文を読ませず「何が試される卓か」を一瞥で
 const LOBBY_PRESENT = {
   rico_tutorial: {
     rico: '「まずはアタシが基礎から叩き込む。安心してかかってきな」',
-    key: '基礎', feat: 'ポーカー基礎講義・全24問',
+    key: '基礎', feat: 'ポーカー基礎講義・全24問', skill: ['BASICS', '24 LESSONS'],
     taunt: '「講義、始めよっか」',
     tells: [['基礎24問の講義', '#c8253a'], ['実戦テスト付き', '#8a4cc4']],
   },
   polka: {
     rico: '「今夜の相手はポルカ。声がでかい時ほど、手は弱い。耳を澄ませな」',
-    key: '手は弱い', feat: 'ブラフ入門',
+    key: '手は弱い', feat: 'ブラフ入門', skill: ['BLUFF', 'TELLS'],
     taunt: '「ボクに勝てるかな？」',
     tells: [['大声＝弱気', '#c8253a'], ['指先が雑＝ブラフ', '#8a4cc4']],
   },
   selina: {
     rico: '「セリナは理詰めの女。ベット額の"意味"を読みな」',
-    key: 'ベット額', feat: 'ボード危険度・ベットサイズ',
+    key: 'ベット額', feat: 'ボード危険度・ベットサイズ', skill: ['BET SIZE', 'BOARD READING'],
     taunt: '「……数字は嘘をつきません」',
     tells: [['沈黙＝自信', '#c8253a'], ['額には意味がある', '#8a4cc4']],
   },
   grano: {
     rico: '「グラーノは何でも値段で誘ってくる。払う価値は自分で計算しな」',
-    key: '払う価値', feat: 'ポットオッズ・割に合う判断',
+    key: '払う価値', feat: 'ポットオッズ・割に合う判断', skill: ['POT ODDS', 'VALUE CALLS'],
     taunt: '「お安くしておきますよ？」',
     tells: [['安売り＝罠', '#c8253a'], ['オッズで殴り返せ', '#8a4cc4']],
   },
   velvet: {
     rico: '「ヴェルベットは言葉と圧で心を折りに来る。あんたはもう全部の武器を持ってる」',
-    key: '全部の武器', feat: 'レンジ読み・総合判断',
+    key: '全部の武器', feat: 'レンジ読み・総合判断', skill: ['RANGE READING', 'PRESSURE'],
     taunt: '「今夜は眠らせないわよ」',
     tells: [['圧＝演出', '#c8253a'], ['飲まれたら負け', '#8a4cc4']],
   },
@@ -3724,6 +3725,116 @@ const LB4_LOCK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none
 //   未解放は煙ったガラス越しに「一つだけ」予告（全部???は秘密ではなく情報不足）／VIPは深紅の幕の奥。
 //   カードそのものを押せるボタンにし、押下→沈む→深紅スラブのワイプ→既存の onAction 経路へ渡す。
 const LB6_PROFILE_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>';
+
+// ===== ロビー v7「固定の舞台＋左右の袖」（2026-09 AD講評 65点→） =====
+// 65点で止まった原因は装飾ではなく「進行度で主役の位置が動く5等分の列」：VIP戦では主役が右端へ逃げ、
+// 画面の8割を終わった4人が占めていた。5人は全員見せるが、NEXTは舞台の定位置（x720–960・y218–694）から
+// 一歩も動かさない。過去の卓は左の袖、未来の卓は右の袖へ重ねて畳む＝進むほど過去が左に積み上がる。
+//   CLEAR済み＝戦歴（番号・名前・CLEARだけ、詳細と再戦はhover/フォーカス）／未解放＝予告編（人物は見せ名前だけ伏せる）
+//   VIPは未解放の間だけ「赤い扉」／NEXTの情報は半分（英字タグ・賞金・大きなCTA、スキップは足元の小さなリンク）
+const LB7_FOCUS = { x: 720, y: 218, w: 240, h: 476 }; // NEXTの定位置（キャンバス座標）。CSS側と同じ値
+// 袖の寸法（NEXT寄り→奥）：[見えている幅, カード幅]。差の分だけ手前のカードの下に潜る。枚数ごとに手で決めた値
+const LB7_WINGS = {
+  1: [[138, 160]],
+  2: [[138, 160], [128, 150]],
+  3: [[118, 140], [104, 128], [96, 118]],
+  4: [[100, 122], [86, 112], [78, 104], [72, 98]],
+};
+// 奥ほど低く小さく、足元も少しずつ上がる（遠近）：[高さ, 下端y]
+const LB7_WING_H = [[410, 686], [394, 680], [380, 675], [368, 671]];
+const LB7_CG_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1"></rect><path d="M3 16l5-5 4 4 3-3 6 6"></path><circle cx="15.5" cy="9.5" r="1.4"></circle></svg>';
+
+// 袖のカードの位置を返す。左はリコの手の先（x356）まで、右は画面端（x1268）までに収まるよう、見えている幅だけを縮める
+function lb7WingBoxes(n, side) {
+  // 卓が増えて5枚以上畳む日が来ても落ちないよう、4枚の寸法の最後を繰り返して幅だけ縮める
+  const base = LB7_WINGS[Math.min(n, 4)] || [];
+  const spec = n > 4 ? base.concat(Array(n - 4).fill(base[base.length - 1])) : base;
+  const F = LB7_FOCUS;
+  const room = side < 0 ? F.x - 356 : 1268 - (F.x + F.w);
+  const sumE = spec.reduce((a, s) => a + s[0], 0) || 1;
+  const k = Math.min(1, room / sumE);
+  let edge = side < 0 ? F.x : F.x + F.w;
+  return spec.map(([e0, w0], d) => {
+    const e = Math.round(e0 * k);
+    const w = e + (w0 - e0); // 潜る量（重なり）は保つ
+    const [h, bottom] = LB7_WING_H[Math.min(d, LB7_WING_H.length - 1)];
+    let x;
+    if (side < 0) { x = edge - e; edge -= e; } else { x = edge + e - w; edge += e; }
+    return { x, y: bottom - h, w, h, e, z: 12 - d * 2, d };
+  });
+}
+
+// 1枚分のHTML。役割は NEXT（主役）／戦歴（CLEAR）／予告編（施錠）／赤い扉（施錠中のVIP）／空き卓（解放済み・未挑戦）
+function lb7CardHtml(sid, i, isFocus, box, allClear) {
+  const o = OPPONENTS[sid];
+  const p = LOBBY_PRESENT[sid] || {};
+  const done = save.clearedStages.includes(sid);
+  const unl = isStageUnlocked(sid);
+  const no = String(i).padStart(2, '0');
+  const isRico = sid === 'rico_tutorial';
+  const mainAction = (isRico && done) ? 'rico-mode-chooser' : 'battle-start';
+  const ctaLabel = isRico ? (done ? '対戦／受講' : '受講する') : (done ? '再戦する' : 'この卓につく');
+  const prevName = i > 0 ? (OPPONENTS[STAGE_ORDER[i - 1]] || {}).name : '';
+  const isDoor = !!o.isBoss && !unl;
+  const cls = ['lb7-card', isFocus ? 'is-focus' : `is-wing side-${box.side}`,
+    done ? 'is-cleared' : '', !unl ? 'is-locked' : '', (unl && !done && !isFocus) ? 'is-open' : '',
+    o.isBoss ? 'is-vip' : '', isDoor ? 'is-door' : ''].filter(Boolean).join(' ');
+  const style = isFocus ? `--i:${i}`
+    : `--x:${box.x}px;--y:${box.y}px;--w:${box.w}px;--h:${box.h}px;--e:${box.e}px;--z:${box.z};--d:${box.d};--dir:${box.side === 'l' ? -1 : 1}`;
+  const skills = p.skill || [];
+  const tags = n => `<span class="lb7-tags v2-disp" title="${p.feat || o.theme || ''}">${skills.slice(0, n).map(t => `<i>${t}</i>`).join('')}</span>`;
+  const title = `<span class="lb7-title"><span class="lb7-no v2-disp">${no}</span><b class="lb7-name">${unl ? o.name : '？？？'}</b></span>`;
+  const prizeFirst = (cg) => `<span class="lb7-prize"><i class="v2-disp">PRIZE</i><b class="v2-disp">${o.rewardFirst || 500}</b>${cg ? `<span class="lb7-cg" title="初回クリアでご褒美CG">${LB7_CG_SVG}<em class="v2-disp">CG</em></span>` : ''}</span>`;
+  const prizeRematch = `<span class="lb7-prize is-rematch"><i>再戦報酬</i><b class="v2-disp">${o.rewardRematch || 50}</b></span>`;
+  // 解放条件は細い袖で折り返すので「〇〇に／勝つと解放」の切れ目でだけ折る
+  const need = `<span class="lb7-need">${LB4_LOCK_SVG}<span class="lb7-need-t"><span>${prevName}に</span><span>勝つと解放</span></span></span>`;
+  let foot, over = '', label = '';
+  if (isFocus) {
+    // 名前→タグ→賞金→CTA の一本道。カード内で最も強いコントラストは必ずCTA
+    foot = `${title}${tags(2)}${done ? prizeRematch : prizeFirst(true)}<span class="lb7-cta"><span>${ctaLabel}</span></span>`;
+    // 金帯は一枚だけ。VIPは「FINAL TABLE」の下に小さく VIP ROOM（見出しを二段に積まない）
+    const head = allClear ? 'REMATCH' : (o.isBoss ? 'FINAL TABLE' : 'NEXT TABLE');
+    label = `<span class="lb7-label v2-disp"><span>${head}</span></span>`;
+    if (o.isBoss) over = '<span class="lb7-sublabel v2-disp">VIP ROOM</span>';
+  } else if (done) {
+    // 戦歴：普段は番号・名前・CLEARだけ。再戦の報酬と押し先はhover/フォーカスで出す（押せば常に再戦できる）
+    foot = `${title}<span class="lb7-clear v2-disp">CLEAR</span><span class="lb7-more"><span>${prizeRematch}<span class="lb7-cta"><span>${ctaLabel}</span></span></span></span>`;
+  } else if (!unl) {
+    // 予告編：人物は見せ、名前だけ伏せる。能力の一端（タグ1つ）と賞金、解放条件
+    foot = isDoor
+      ? `${title}<span class="lb7-tease v2-disp">PRIVATE TABLE</span>${need}`
+      : `${title}${tags(1)}${prizeFirst(false)}${need}`;
+    if (!isDoor) over = `<span class="lb7-lock">${LB4_LOCK_SVG}</span>`;
+  } else {
+    foot = `${title}${tags(1)}${prizeFirst(false)}<span class="lb7-more"><span><span class="lb7-cta"><span>${ctaLabel}</span></span></span></span>`;
+  }
+  // 赤い扉：深紅の扉越しに人物、扉の合わせ目の細い金線2本、7秒に一度だけ顔を横切る金の反射
+  if (isDoor) over += '<span class="lb7-door"></span><span class="lb7-gleam"></span>';
+  if (o.isBoss && !isFocus) over += '<span class="lb7-viplabel v2-disp"><span>VIP ROOM</span></span>';
+  // カード全体が押せる（CTAだけを狙わせない）。施錠カードも disabled にせず、押すと鍵が震えて条件を返す
+  const hitAttr = unl
+    ? `data-action="${mainAction}" data-opponent="${sid}" aria-label="${no} ${o.name}：${ctaLabel}"`
+    : `aria-disabled="true" aria-label="${no} 施錠中：${prevName}に勝つと解放"`;
+  const profile = unl
+    ? `<button class="lb7-info" type="button" data-action="char-profile" data-char="${sid}" title="${o.name}のプロフィールを見る" aria-label="${o.name}のプロフィール">${LB6_PROFILE_SVG}</button>`
+    : '';
+  // スキップはカード本体から外す：NEXTは足元の小さなテキストリンク、空き卓はhover時だけ
+  const skip = (unl && !done && !isRico)
+    ? `<button class="lb7-skip" type="button" data-action="skip-stage" data-opponent="${sid}" title="コインで勝利扱いにする">${isFocus ? '卓をスキップ' : 'スキップ'} <b class="v2-disp">${skipStageCost(o)}</b></button>`
+    : '';
+  return `<div class="${cls}" style="${style}">
+    <button class="lb7-hit" type="button" ${hitAttr}>
+      <span class="lb7-vis">
+        <span class="lb7-face"><img src="assets/characters/${o.imgKey}_default.webp" alt="${unl ? o.name : '？？？'}" onerror="window.assetFallback(this,'${o.imgKey}')"></span>
+        ${over}
+        <span class="lb7-foot">${foot}</span>
+      </span>
+      ${label}
+    </button>
+    ${profile}${skip}
+  </div>`;
+}
+
 function renderLobbyV3() {
   const q = sel => document.querySelector(sel);
   const nextId = lobbyNextStageId();
@@ -3739,72 +3850,26 @@ function renderLobbyV3() {
     ricoLine.innerHTML = `<span class="lb6-tip-kicker v2-disp">RICO'S TIP</span><span class="lb6-tip-body">${body}</span>`;
   }
 
-  // カード列：並び順の中で「次」だけが舞台中央に出る
+  // カード列 v7：NEXTは舞台の定位置から動かさず、過去の卓は左の袖・未来の卓は右の袖へ重ねて畳む
   const host = q('[data-bind="lb5Cards"]');
-  // NEXTが左端（初回＝リコの講義）の時は、助言パネルを一段上げて金ラベルとぶつけない
-  const scr = q('.lobby-screen.v5');
-  if (scr) scr.classList.toggle('lb6-next-first', nextId === STAGE_ORDER[0]);
   if (host) {
-    host.classList.add('lb6-deck');
-    host.classList.toggle('is-allclear', !nextId); // 全制覇後は「今行くべき場所」が無いので過去卓を沈めない
-    host.innerHTML = STAGE_ORDER.map((sid, i) => {
-      const o = OPPONENTS[sid];
-      const p = LOBBY_PRESENT[sid] || {};
-      const done = save.clearedStages.includes(sid);
-      const unl = isStageUnlocked(sid);
-      const isNext = sid === nextId;
-      const no = String(i).padStart(2, '0');
-      const mainAction = sid === 'rico_tutorial' ? (done ? 'rico-mode-chooser' : 'battle-start') : 'battle-start';
-      const ctaLabel = sid === 'rico_tutorial' ? (done ? '対戦／受講' : '受講する') : (done ? '再戦する' : 'この卓につく');
-      const cls = ['lb6-card', isNext ? 'is-next' : '', done ? 'is-cleared' : '', !unl ? 'is-locked' : '', o.isBoss ? 'is-vip' : ''].filter(Boolean).join(' ');
-      const prevName = i > 0 ? (OPPONENTS[STAGE_ORDER[i - 1]] || {}).name : '';
-      // 上端の札：NEXT＝金、VIP＝深紅。VIPがNEXTになったら金の札を優先し、深紅は内側の細帯へ
-      const label = isNext
-        ? '<span class="lb6-label v2-disp"><span>NEXT TABLE</span></span>'
-        : (o.isBoss ? '<span class="lb6-label is-vip v2-disp"><span>VIP ROOM</span></span>' : '');
-      const vipStrip = (isNext && o.isBoss) ? '<span class="lb6-vipstrip v2-disp">VIP ROOM</span>' : '';
-      // 下段は 名前→特徴1行→賞金→CTA の一本道（CTAの直前で勢いを止めない）
-      let info;
-      if (!unl) {
-        // 未解放は予告を一つだけ：通常卓は賞金、VIPは報酬の種類（何かすごい物がある、とだけ分かる）
-        info = (o.isBoss
-          ? '<span class="lb6-tease v2-disp">PRIVATE TABLE</span><span class="lb6-tease-sub v2-disp">SECRET CG</span>'
-          : `<span class="lb6-prize is-tease"><i class="v2-disp">PRIZE</i><b class="v2-disp">${o.rewardFirst || 500}</b></span>`)
-          + `<span class="lb6-need">${LB4_LOCK_SVG}<span>${prevName}に勝つと解放</span></span>`;
-      } else {
-        const prize = done
-          ? `<span class="lb6-prize is-rematch"><i>再戦報酬</i><b class="v2-disp">${o.rewardRematch || 50}</b></span>`
-          : `<span class="lb6-prize"><i class="v2-disp">PRIZE</i><b class="v2-disp">${o.rewardFirst || 500}</b><small>＋ご褒美CG</small></span>`;
-        info = `<span class="lb6-feat">${p.feat || o.theme || ''}</span>${prize}<span class="lb6-cta"><span>${ctaLabel}</span></span>`;
-      }
-      // カード全体が押せる（CTAだけを狙わせない）。施錠カードも disabled にせず、押すと鍵が震えて条件を返す
-      const hitAttr = unl
-        ? `data-action="${mainAction}" data-opponent="${sid}" aria-label="${no} ${o.name}：${ctaLabel}"`
-        : `aria-disabled="true" aria-label="${no} 施錠中：${prevName}に勝つと解放"`;
-      const profile = unl
-        ? `<button class="lb6-info" type="button" data-action="char-profile" data-char="${sid}" title="${o.name}のプロフィールを見る" aria-label="${o.name}のプロフィール">${LB6_PROFILE_SVG}</button>`
-        : '';
-      const skip = (unl && !done && sid !== 'rico_tutorial')
-        ? `<button class="lb6-skip" type="button" data-action="skip-stage" data-opponent="${sid}" title="コインで勝利扱いにする">スキップ ${skipStageCost(o)}</button>`
-        : '';
-      return `<div class="${cls}" style="--i:${i}">
-        <button class="lb6-hit" type="button" ${hitAttr}>
-          <span class="lb6-face"><img src="assets/characters/${o.imgKey}_default.webp" alt="${unl ? o.name : '？？？'}" onerror="window.assetFallback(this,'${o.imgKey}')"></span>
-          ${o.isBoss && !unl ? '<span class="lb6-glint"></span>' : ''}
-          ${vipStrip}
-          ${done ? '<span class="lb6-seal v2-disp">CLEAR</span>' : ''}
-          ${!unl ? `<span class="lb6-lock">${LB4_LOCK_SVG}</span>` : ''}
-          <span class="lb6-foot">
-            <span class="lb6-title"><span class="lb6-no v2-disp">${no}</span><b class="lb6-name">${unl ? o.name : '？？？'}</b></span>
-            ${info}
-          </span>
-          ${label}
-        </button>
-        ${profile}
-        ${skip}
-      </div>`;
-    }).join('');
-    lb6WireCards(host);
+    // 全制覇後は「次」が無い：最終卓（VIP）を再戦の主役として同じ定位置に立たせる
+    //   （最終戦の直前と同じ絵のまま＝勝った瞬間にロビーの構図が跳ばない。他の4卓は左の戦歴から選べる）
+    const focusId = nextId || STAGE_ORDER[STAGE_ORDER.length - 1];
+    const fi = STAGE_ORDER.indexOf(focusId);
+    const leftIds = STAGE_ORDER.slice(0, fi).reverse(); // 手前（NEXT寄り）→奥の順
+    const rightIds = STAGE_ORDER.slice(fi + 1);
+    const boxes = {};
+    lb7WingBoxes(leftIds.length, -1).forEach((b, k) => { boxes[leftIds[k]] = { ...b, side: 'l' }; });
+    lb7WingBoxes(rightIds.length, 1).forEach((b, k) => { boxes[rightIds[k]] = { ...b, side: 'r' }; });
+    host.className = 'lb5-cards lb7-deck' + (nextId ? '' : ' is-allclear');
+    // 過去の卓が無い（初回）時は左の袖が空く：リコの助言をNEXTの真横へ降ろして間を埋める
+    const scr = q('.lobby-screen.v5');
+    if (scr) scr.classList.toggle('lb7-nopast', leftIds.length === 0);
+    // 舞台セット：幕の暗がり→上から落ちる縦の照明→NEXT背後の金の楕円→床の照り返しと楕円影
+    const set = '<i class="lb7-dim" aria-hidden="true"></i><i class="lb7-beam" aria-hidden="true"></i><i class="lb7-spot" aria-hidden="true"></i><i class="lb7-floor" aria-hidden="true"></i>';
+    host.innerHTML = set + STAGE_ORDER.map((sid, i) => lb7CardHtml(sid, i, sid === focusId, boxes[sid], !nextId)).join('');
+    lb7WireCards(host);
   }
 
   renderLobbyStatus();
@@ -3856,10 +3921,10 @@ function lb6Wipe(go) {
   }, 230);
 }
 
-function lb6WireCards(host) {
+function lb7WireCards(host) {
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  host.querySelectorAll('.lb6-card').forEach(card => {
-    const hit = card.querySelector('.lb6-hit');
+  host.querySelectorAll('.lb7-card').forEach(card => {
+    const hit = card.querySelector('.lb7-hit');
     if (!hit) return;
     if (card.classList.contains('is-locked')) {
       // 施錠カードも「使えない物」にしない：押すと鍵が小さく震えて解放条件が返ってくる（開始はしない）
@@ -3873,7 +3938,7 @@ function lb6WireCards(host) {
     }
     if (hit.dataset.action !== 'battle-start' || reduce) return;
     card.addEventListener('click', (e) => {
-      if (!e.target.closest('.lb6-hit') || hit.dataset.wiped === '1') return;
+      if (!e.target.closest('.lb7-hit') || hit.dataset.wiped === '1') return;
       e.stopPropagation();
       e.preventDefault();
       if (lb6Wiping) return;
@@ -3888,7 +3953,7 @@ function lb6WireCards(host) {
     }, true);
   });
   // スキップ成立時はカード列を組み直す（skipStageWithCoins は applyBindings だけで、カード列が古いまま残っていた）
-  host.querySelectorAll('.lb6-skip').forEach(b => b.addEventListener('click', () => {
+  host.querySelectorAll('.lb7-skip').forEach(b => b.addEventListener('click', () => {
     const sid = b.dataset.opponent;
     setTimeout(() => { if (state.screen === 'lobby' && save.clearedStages.includes(sid)) render(); }, 0);
   }));
