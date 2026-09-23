@@ -15913,3 +15913,20 @@ body.collapse-max .emote-cutin.heavy .ec-scrim {
 .rebuy-overlay .rb-go:active { transform: skewX(12deg) translateY(3px); box-shadow: 0 3px 0 #6a4a12; }
 @keyframes rbBreath { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.14); } }
 .rebuy-overlay .rb-note { margin-top: 12px; color: rgba(255,255,255,.62); font-size: 12px; }
+
+/* =========================================================
+   動く一枚絵（Higgsfield で動画化した絵を静止画の上に重ねる）
+   再生が始まってから 0.6 秒で溶かし込む。静止画は下に残るので、
+   読み込み中も失敗時も絵が消えることはない。
+   ========================================================= */
+video.motion-layer {
+  position: absolute; margin: 0; max-width: none; max-height: none;
+  opacity: 0; transition: opacity .6s ease; pointer-events: none;
+}
+video.motion-layer.on { opacity: 1; }
+video.motion-bg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center; z-index: -1; /* 親の背景絵の上・中身の下 */
+  opacity: 0; transition: opacity .6s ease; pointer-events: none;
+}
+video.motion-bg.on { opacity: 1; }
