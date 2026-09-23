@@ -15859,3 +15859,57 @@ body.collapse-max .emote-cutin.heavy .ec-scrim {
 
 /* ---------- 旧・等間隔の横揺れは使わない ---------- */
 .emofx-shake .battle-screen { animation: none; }
+
+/* =========================================================
+   座り直し（リバイ）— 飛んだ直後の「もう一回」
+   相手の得意顔が左から覗き、右に深紅の斜めスラブ。
+   ========================================================= */
+.rebuy-overlay { position: absolute; inset: 0; z-index: 6200; pointer-events: auto; }
+.rebuy-overlay .rb-scrim {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 30% 50%, rgba(40,6,14,.55), rgba(6,2,4,.94) 70%);
+  opacity: 0; transition: opacity .18s linear;
+}
+.rebuy-overlay .rb-opp {
+  position: absolute; left: -40px; bottom: 60px; width: 720px;
+  -webkit-mask-image: radial-gradient(ellipse 64% 70% at 46% 44%, #000 55%, transparent 90%);
+  mask-image: radial-gradient(ellipse 64% 70% at 46% 44%, #000 55%, transparent 90%);
+  opacity: 0; transform: translate3d(-80px,0,0) scale(.96);
+  transition: opacity .16s linear, transform .38s cubic-bezier(.15,1.3,.35,1);
+}
+.rebuy-overlay .rb-opp img { display: block; width: 100%; height: auto; }
+.rebuy-overlay .rb-slab {
+  position: absolute; right: 70px; top: 150px; width: 520px; padding: 30px 40px 26px;
+  background: linear-gradient(180deg, #7a1424 0%, #3a0812 62%, #16040a 100%);
+  border: 2px solid #f5d77a; box-shadow: 0 24px 60px rgba(0,0,0,.7), inset 0 0 0 5px rgba(20,4,8,.6);
+  transform: skewX(-12deg) translate3d(120px,0,0); opacity: 0;
+  transition: opacity .14s linear, transform .34s cubic-bezier(.15,1.25,.35,1);
+}
+.rebuy-overlay .rb-slab > * { transform: skewX(12deg); }
+.rebuy-overlay.on .rb-scrim { opacity: 1; }
+.rebuy-overlay.on .rb-opp { opacity: 1; transform: translate3d(0,0,0) scale(1); }
+.rebuy-overlay.on .rb-slab { opacity: 1; transform: skewX(-12deg) translate3d(0,0,0); transition-delay: .08s; }
+.rebuy-overlay.out .rb-scrim, .rebuy-overlay.out .rb-opp, .rebuy-overlay.out .rb-slab { opacity: 0; transition-duration: .3s; }
+.rebuy-overlay .rb-kicker { color: #f5d77a; font-size: 22px; letter-spacing: .32em; opacity: .85; }
+.rebuy-overlay .rb-title {
+  font-size: 64px; font-weight: 900; line-height: 1.05; color: #fff; margin: 2px 0 14px;
+  text-shadow: 0 3px 0 #5a0c18, 0 0 22px rgba(245,215,122,.45);
+}
+.rebuy-overlay .rb-quote { color: #f3e6ea; font-size: 18px; line-height: 1.6; margin-bottom: 16px; }
+.rebuy-overlay .rb-name { display: block; color: #f5d77a; font-size: 14px; letter-spacing: .12em; margin-bottom: 2px; }
+.rebuy-overlay .rb-rico { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.rebuy-overlay .rb-rico img {
+  width: 58px; height: 58px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid #f5d77a; box-shadow: 0 0 0 3px rgba(20,4,8,.7);
+}
+.rebuy-overlay .rb-rico-line { color: #fff; font-size: 15px; line-height: 1.5; }
+.rebuy-overlay .rb-go {
+  display: block; width: 100%; padding: 14px 0; font-size: 21px; font-weight: 800; letter-spacing: .06em;
+  color: #2a0a10; background: linear-gradient(180deg, #fff1b8, #f5d77a 45%, #c99a36);
+  border: 0; border-radius: 4px; cursor: pointer;
+  box-shadow: 0 6px 0 #6a4a12, 0 10px 24px rgba(0,0,0,.5);
+  animation: rbBreath 1.8s ease-in-out infinite;
+}
+.rebuy-overlay .rb-go:active { transform: skewX(12deg) translateY(3px); box-shadow: 0 3px 0 #6a4a12; }
+@keyframes rbBreath { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.14); } }
+.rebuy-overlay .rb-note { margin-top: 12px; color: rgba(255,255,255,.62); font-size: 12px; }

@@ -11156,9 +11156,17 @@ function startBattleInternal(opponentId) {
     state.playerChips   = seriousRico ? 2000 : opp.chips;
     state.opponentChips = seriousRico ? 2000 : opp.chips;
   }
-  state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
-  state.tauntLevel = 0; applyTauntAura();
   state.tutorialMode = seriousRico ? false : opp.tutorial;
+  // ★新人が格上の卓に着く：相手はミミの2倍のチップを積んでいる。
+  //   同額スタートだと、1ハンド目にオールインを押すだけで約96%がその場で決着し、
+  //   コイン投げ2回分でステージを抜けられてしまっていた（実測）。
+  //   2倍なら一発では構造的に終わらず、その相手のテーマ（ブラフ・危険度・オッズ）を
+  //   何度も踏むことになる。代わりにミミは1回だけ座り直せる（運の一撃で即敗北もしない）。
+  if (!state.tutorialMode) state.opponentChips = state.playerChips * 2;
+  state.rebuysLeft = state.tutorialMode ? 0 : 1;
+  state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
+  state.__oppInitialChips = state.opponentChips;
+  state.tauntLevel = 0; applyTauntAura();
   state.fullHand = seriousRico ? true : !!opp.fullHand;
   state.isBoss = seriousRico ? true : !!opp.isBoss; // 心理バトル全ストリート発動
   state.seriousRicoMode = seriousRico;
@@ -11206,7 +11214,7 @@ function startBattleInternal(opponentId) {
         '<u>各ボタンにマウスを乗せると詳しい説明が出るよ。</u>')
     ), 600);
   } else {
-    state.mimiThought = '「さあ、第1ハンドだ。最初は相手をよく見よう」';
+    state.mimiThought = '「相手のチップは私の倍……一発勝負じゃ勝てない。まずは相手をよく見よう」';
     state.ricoAdvice = pickRicoOpeningAdvice(state.opponentId);
     render();
   }
@@ -11849,7 +11857,7 @@ function startHand() {
   // ★後がない側はウルウルの懇願顔になる。盤面を見なくても「誰が追い詰められているか」が顔で分かる。
   if (!state.tutorialMode) {
     const base = OPPONENTS[state.opponentId]?.chips || 1000;
-    if (state.opponentChips > 0 && state.opponentChips <= base * 0.18) {
+    if (state.opponentChips > 0 && state.opponentChips <= (state.__oppInitialChips || base) * 0.18) {
       setTimeout(() => playEmote('opponent', 'desperate'), 800);
     } else if (state.playerChips > 0 && state.playerChips <= (state.__initialChips || base) * 0.18) {
       setTimeout(() => playEmote('mimi', 'desperate'), 800);
@@ -12377,8 +12385,71 @@ function opponentPreflopStrength(hand) {
 //=============================================================
 // 14. ハンド進行（フロップ → ターン＆リバー → ショーダウン）
 //=============================================================
+//-------------------------------------------------------------
+// 座り直し（リバイ）：ミミは1戦に1回だけ、飛んでも同じ額で座り直せる。
+// 相手は2倍積んでいるので、ここで折れずに立て直すのが中盤の山場になる。
+//-------------------------------------------------------------
+function canRebuy() {
+  return !!state && state.playerChips <= 0 && state.opponentChips > 0 && (state.rebuysLeft || 0) > 0;
+}
+function showRebuy() {
+  if (document.querySelector('.rebuy-overlay')) return;
+  state.rebuysLeft = Math.max(0, (state.rebuysLeft || 0) - 1);
+  // 飛ばした側は調子に乗る：煽りメーターを積んでおくと、この後の逆転がそのまま最大の落差になる
+  bumpTaunt(1);
+  const oppKey = state.opponentImgKey || 'polka';
+  const oppName = state.opponentName || '相手';
+  const stack = state.__initialChips || OPPONENTS[state.opponentId]?.chips || 1000;
+  const taunt = {
+    velvet: 'あはっ、もう終わり？ ……いいわ、もう一回座らせてあげる。泣くまでね♡',
+    polka: 'やったー！ ……え、まだやるの？ いいよー、何回でもかかってきな！',
+    selina: '……想定どおりです。二度目も同じ結果になると思いますが',
+    grano: '損切りは早い方がいいのですが……追加の出資、ということで？',
+    rico: 'ほらほら、座り直しな。今のは授業料ってことで',
+  }[oppKey] || 'まだやる気？';
+  const el = document.createElement('div');
+  el.className = 'rebuy-overlay';
+  el.innerHTML = `
+    <div class="rb-scrim"></div>
+    <div class="rb-opp"><img src="assets/characters/${oppKey}_cutin_smug.webp" alt="" onerror="this.onerror=null;this.src='assets/characters/${oppKey}_default.webp'"></div>
+    <div class="rb-slab">
+      <div class="rb-kicker v2-disp">SECOND CHANCE</div>
+      <div class="rb-title">座り直し</div>
+      <div class="rb-quote"><span class="rb-name">${oppName}</span>「${taunt}」</div>
+      <div class="rb-rico">
+        <img src="assets/ui/face_rico.webp" alt="">
+        <div class="rb-rico-line">「まだ一回だけ座り直せる。負けた理由、ひとつだけ思い出してから行こ」</div>
+      </div>
+      <button type="button" class="rb-go">チップ ${stack} で座り直す</button>
+      <div class="rb-note">※ 座り直しは1戦に1回まで。次に飛んだら敗北です</div>
+    </div>`;
+  (document.getElementById('stage') || document.body).appendChild(el);
+  requestAnimationFrame(() => el.classList.add('on'));
+  if (typeof mpSfx === 'function') mpSfx('milestone');
+  el.querySelector('.rb-go').addEventListener('click', () => {
+    state.playerChips = stack;
+    state.mimiThought = '「……まだ終わってない。今度こそ読み切る」';
+    state.ricoAdvice = '「深呼吸。相手は調子に乗ってる。乗ってる時ほど、崩れる隙があるよ」';
+    el.classList.add('out');
+    setTimeout(() => { el.remove(); render(); }, 360);
+  }, { once: true });
+}
+
+// 同額に揃わなかった分（持ちチップが足りずに届かなかったコール）は、賭けた本人へ戻す。
+// これが無いと、多く積んでいる側が、相手が払っていないチップまで総取りしてしまう。
+function refundUncalledBet() {
+  const d = state.currentBetPlayer - state.currentBetOpponent;
+  if (d > 0 && state.opponentChips <= 0) {
+    state.playerChips += d; state.pot -= d; state.currentBetPlayer -= d;
+    floatText('.char-mimi', `+${d} 返却`, 'ft-gain');
+  } else if (d < 0 && state.playerChips <= 0) {
+    state.opponentChips -= d; state.pot += d; state.currentBetOpponent += d;
+  }
+}
+
 function advanceAfterCall() {
   if (state.screen !== 'battle') return;
+  refundUncalledBet();
   // ベットが揃った
   state.currentBetPlayer = 0;
   state.currentBetOpponent = 0;
@@ -14053,6 +14124,7 @@ function showHandResultBanner(snapshot) {
 }
 
 function continueButtonLabel() {
+  if (canRebuy()) return '座り直す（あと1回）';
   if (state.playerChips <= 0 || state.opponentChips <= 0 || state.handNo >= state.maxHands) {
     return '対戦結果を見る';
   }
@@ -14062,6 +14134,7 @@ function continueButtonLabel() {
 
 function continueAfterHand() {
   setMimiExpression('default'); // P1-3: 次のハンドへ進む際は表情をリセット
+  if (canRebuy()) return showRebuy();
   if (state.playerChips <= 0 || state.opponentChips <= 0 || state.handNo >= state.maxHands) {
     return endBattle();
   }
