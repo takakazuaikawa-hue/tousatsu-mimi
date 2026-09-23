@@ -3064,15 +3064,16 @@ function applyBindings() {
       }
       case 'lobbyRicoOutfit': {
         const cur = pickLobbyRico();
+        el.innerHTML = lobbyCostumeBtnHtml(cur);
         if (isRicoViewerUnlocked()) {
-          el.textContent = cur.label;
           el.classList.remove('locked');
           el.title = 'リコ先輩を眺める';
         } else {
-          el.innerHTML = UI_ICON.lock + ' 衣装ロック中';
           el.classList.add('locked');
           el.title = 'ヴェルベット撃破後に解放';
         }
+        // 入室ごとに衣装が抽選し直された時だけ、ボタンに金の反射を一度走らせる（装備固定中は抽選しないので出さない）
+        el.classList.toggle('is-fresh', isRicoViewerUnlocked() && !(save.equippedRicoOutfit && save.equippedRicoOutfit !== 'default'));
         break;
       }
       case 'lobbyBgmLabel': el.textContent = !save.bgmOn ? '♪ —（停止中）' : '♪ Lounge Jazz — Velvet Night'; break;
@@ -3630,29 +3631,35 @@ function renderStageList() {
 // リサーチ反映（2026-08-29 承認・案D）：扉5枚の等価な並びをやめ、今夜の相手1人を舞台の主役にする。
 // 上＝進行レール（顔アイコン）／中央＝相手のステージ＋左に「リコの推薦→名前→テル→報酬→CTA」の意思決定列／
 // 下＝定位置のオペレーションバー。帰ってくる理由（ログボ・CG進捗）は左下に常設。
+// key＝リコの助言で金にする語（NEXTへの導線を一語に絞る）／feat＝カードの特徴1行（2行だとCTA直前で勢いが止まる）
 const LOBBY_PRESENT = {
   rico_tutorial: {
     rico: '「まずはアタシが基礎から叩き込む。安心してかかってきな」',
+    key: '基礎', feat: 'ポーカー基礎講義・全24問',
     taunt: '「講義、始めよっか」',
     tells: [['基礎24問の講義', '#c8253a'], ['実戦テスト付き', '#8a4cc4']],
   },
   polka: {
     rico: '「今夜の相手はポルカ。声がでかい時ほど、手は弱い。耳を澄ませな」',
+    key: '手は弱い', feat: 'ブラフ入門',
     taunt: '「ボクに勝てるかな？」',
     tells: [['大声＝弱気', '#c8253a'], ['指先が雑＝ブラフ', '#8a4cc4']],
   },
   selina: {
     rico: '「セリナは理詰めの女。ベット額の"意味"を読みな」',
+    key: 'ベット額', feat: 'ボード危険度・ベットサイズ',
     taunt: '「……数字は嘘をつきません」',
     tells: [['沈黙＝自信', '#c8253a'], ['額には意味がある', '#8a4cc4']],
   },
   grano: {
     rico: '「グラーノは何でも値段で誘ってくる。払う価値は自分で計算しな」',
+    key: '払う価値', feat: 'ポットオッズ・割に合う判断',
     taunt: '「お安くしておきますよ？」',
     tells: [['安売り＝罠', '#c8253a'], ['オッズで殴り返せ', '#8a4cc4']],
   },
   velvet: {
     rico: '「ヴェルベットは言葉と圧で心を折りに来る。あんたはもう全部の武器を持ってる」',
+    key: '全部の武器', feat: 'レンジ読み・総合判断',
     taunt: '「今夜は眠らせないわよ」',
     tells: [['圧＝演出', '#c8253a'], ['飲まれたら負け', '#8a4cc4']],
   },
@@ -3673,69 +3680,179 @@ const LB4_LOCK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none
 // ===== ロビー v5「グランドロビーのカード一覧」（最終形） =====
 // 指針：相手カードが美しく並び「どの卓につくか悩む」一覧性／新背景＝大時計のカジノシアター／
 // ミミは非表示・リコ先輩（衣装）は左に維持／UIは定位置・プレイヤーファースト。
+// v6（2026-09 AD指摘の反映）：全要素が同じ声量で喋り「次の卓へ行く」が突出していなかった。
+//   照明はNEXTだけ（幅・持ち上げ・金スポット・CTAの呼吸＝ループはここだけ）／CLEAR済みは後景へ沈める／
+//   未解放は煙ったガラス越しに「一つだけ」予告（全部???は秘密ではなく情報不足）／VIPは深紅の幕の奥。
+//   カードそのものを押せるボタンにし、押下→沈む→深紅スラブのワイプ→既存の onAction 経路へ渡す。
+const LB6_PROFILE_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>';
 function renderLobbyV3() {
   const q = sel => document.querySelector(sel);
   const nextId = lobbyNextStageId();
   const pre = LOBBY_PRESENT[nextId] || {};
 
-  // リコの案内：次の相手の攻略ヒント（全クリア後は労い）
+  // リコの案内：黒ガラスの「RICO'S TIP」。白い吹き出しは画面で一番明るく、NEXTより目立っていた。
+  //   助言の要の一語だけ金にして、リコ→NEXTへの視線の橋にする（全クリア後は労い）
   const ricoLine = q('[data-bind="lb4RicoLine"]');
-  if (ricoLine) ricoLine.textContent = nextId ? (pre.rico || '「どの卓にする？今夜も付き合うよ」') : '「全部の卓を制覇したね。今夜はどの子と遊ぶ？」';
+  if (ricoLine) {
+    const line = nextId ? (pre.rico || '「どの卓にする？今夜も付き合うよ」') : '「全部の卓を制覇したね。今夜はどの子と遊ぶ？」';
+    const key = nextId ? pre.key : '制覇';
+    const body = key && line.includes(key) ? line.replace(key, `<b class="lb6-tip-key">${key}</b>`) : line;
+    ricoLine.innerHTML = `<span class="lb6-tip-kicker v2-disp">RICO'S TIP</span><span class="lb6-tip-body">${body}</span>`;
+  }
 
-  // カード列
+  // カード列：並び順の中で「次」だけが舞台中央に出る
   const host = q('[data-bind="lb5Cards"]');
+  // NEXTが左端（初回＝リコの講義）の時は、助言パネルを一段上げて金ラベルとぶつけない
+  const scr = q('.lobby-screen.v5');
+  if (scr) scr.classList.toggle('lb6-next-first', nextId === STAGE_ORDER[0]);
   if (host) {
+    host.classList.add('lb6-deck');
+    host.classList.toggle('is-allclear', !nextId); // 全制覇後は「今行くべき場所」が無いので過去卓を沈めない
     host.innerHTML = STAGE_ORDER.map((sid, i) => {
       const o = OPPONENTS[sid];
+      const p = LOBBY_PRESENT[sid] || {};
       const done = save.clearedStages.includes(sid);
       const unl = isStageUnlocked(sid);
       const isNext = sid === nextId;
       const no = String(i).padStart(2, '0');
       const mainAction = sid === 'rico_tutorial' ? (done ? 'rico-mode-chooser' : 'battle-start') : 'battle-start';
       const ctaLabel = sid === 'rico_tutorial' ? (done ? '対戦／受講' : '受講する') : (done ? '再戦する' : 'この卓につく');
-      const cls = ['lb5-card', isNext ? 'is-next' : '', done ? 'is-cleared' : '', !unl ? 'is-locked' : '', o.isBoss ? 'is-vip' : ''].filter(Boolean).join(' ');
-      const band = isNext
-        ? '<div class="lb5-band lb5-band-next v2-disp">NEXT TABLE</div>'
-        : (o.isBoss ? '<div class="lb5-band lb5-band-vip v2-disp">VIP ROOM</div>' : '');
+      const cls = ['lb6-card', isNext ? 'is-next' : '', done ? 'is-cleared' : '', !unl ? 'is-locked' : '', o.isBoss ? 'is-vip' : ''].filter(Boolean).join(' ');
       const prevName = i > 0 ? (OPPONENTS[STAGE_ORDER[i - 1]] || {}).name : '';
-      const footInfo = !unl
-        ? `<div class="lb5-card-need">${LB4_LOCK_SVG}<span>${prevName}に勝つと解放</span></div>`
-        : done
-          ? `<div class="lb5-card-reward">再戦報酬 <b class="v2-disp">${o.rewardRematch || 50}</b></div>`
-          : `<div class="lb5-card-reward">PRIZE <b class="v2-disp">${o.rewardFirst || 500}</b><small>＋ご褒美CG</small></div>`;
-      const cta = unl
-        ? `<button class="lb5-card-cta${isNext ? ' is-gold' : ''}" data-action="${mainAction}" data-opponent="${sid}"><span>${ctaLabel}</span></button>`
+      // 上端の札：NEXT＝金、VIP＝深紅。VIPがNEXTになったら金の札を優先し、深紅は内側の細帯へ
+      const label = isNext
+        ? '<span class="lb6-label v2-disp"><span>NEXT TABLE</span></span>'
+        : (o.isBoss ? '<span class="lb6-label is-vip v2-disp"><span>VIP ROOM</span></span>' : '');
+      const vipStrip = (isNext && o.isBoss) ? '<span class="lb6-vipstrip v2-disp">VIP ROOM</span>' : '';
+      // 下段は 名前→特徴1行→賞金→CTA の一本道（CTAの直前で勢いを止めない）
+      let info;
+      if (!unl) {
+        // 未解放は予告を一つだけ：通常卓は賞金、VIPは報酬の種類（何かすごい物がある、とだけ分かる）
+        info = (o.isBoss
+          ? '<span class="lb6-tease v2-disp">PRIVATE TABLE</span><span class="lb6-tease-sub v2-disp">SECRET CG</span>'
+          : `<span class="lb6-prize is-tease"><i class="v2-disp">PRIZE</i><b class="v2-disp">${o.rewardFirst || 500}</b></span>`)
+          + `<span class="lb6-need">${LB4_LOCK_SVG}<span>${prevName}に勝つと解放</span></span>`;
+      } else {
+        const prize = done
+          ? `<span class="lb6-prize is-rematch"><i>再戦報酬</i><b class="v2-disp">${o.rewardRematch || 50}</b></span>`
+          : `<span class="lb6-prize"><i class="v2-disp">PRIZE</i><b class="v2-disp">${o.rewardFirst || 500}</b><small>＋ご褒美CG</small></span>`;
+        info = `<span class="lb6-feat">${p.feat || o.theme || ''}</span>${prize}<span class="lb6-cta"><span>${ctaLabel}</span></span>`;
+      }
+      // カード全体が押せる（CTAだけを狙わせない）。施錠カードも disabled にせず、押すと鍵が震えて条件を返す
+      const hitAttr = unl
+        ? `data-action="${mainAction}" data-opponent="${sid}" aria-label="${no} ${o.name}：${ctaLabel}"`
+        : `aria-disabled="true" aria-label="${no} 施錠中：${prevName}に勝つと解放"`;
+      const profile = unl
+        ? `<button class="lb6-info" type="button" data-action="char-profile" data-char="${sid}" title="${o.name}のプロフィールを見る" aria-label="${o.name}のプロフィール">${LB6_PROFILE_SVG}</button>`
         : '';
       const skip = (unl && !done && sid !== 'rico_tutorial')
-        ? `<button class="lb5-card-skip" data-action="skip-stage" data-opponent="${sid}" title="コインで勝利扱いにする">スキップ ${skipStageCost(o)}</button>`
+        ? `<button class="lb6-skip" type="button" data-action="skip-stage" data-opponent="${sid}" title="コインで勝利扱いにする">スキップ ${skipStageCost(o)}</button>`
         : '';
-      return `<div class="${cls}">
-        ${band}
-        ${done ? '<div class="lb5-seal v2-disp">CLEAR</div>' : ''}
-        <button class="lb5-card-portrait" ${unl ? `data-action="char-profile" data-char="${sid}" title="${o.name}のプロフィールを見る"` : 'disabled title="施錠中"'}>
-          <img src="assets/characters/${o.imgKey}_default.webp" alt="${unl ? o.name : '？？？'}" onerror="window.assetFallback(this,'${o.imgKey}')">
+      return `<div class="${cls}" style="--i:${i}">
+        <button class="lb6-hit" type="button" ${hitAttr}>
+          <span class="lb6-face"><img src="assets/characters/${o.imgKey}_default.webp" alt="${unl ? o.name : '？？？'}" onerror="window.assetFallback(this,'${o.imgKey}')"></span>
+          ${o.isBoss && !unl ? '<span class="lb6-glint"></span>' : ''}
+          ${vipStrip}
+          ${done ? '<span class="lb6-seal v2-disp">CLEAR</span>' : ''}
+          ${!unl ? `<span class="lb6-lock">${LB4_LOCK_SVG}</span>` : ''}
+          <span class="lb6-foot">
+            <span class="lb6-title"><span class="lb6-no v2-disp">${no}</span><b class="lb6-name">${unl ? o.name : '？？？'}</b></span>
+            ${info}
+          </span>
+          ${label}
         </button>
-        <div class="lb5-card-foot">
-          <div class="lb5-card-title"><span class="lb5-card-no v2-disp">${no}</span><b class="lb5-card-name">${unl ? o.name : '？？？'}</b></div>
-          <small class="lb5-card-theme">${unl ? (o.theme || '') : '？？？'}</small>
-          ${footInfo}
-          ${cta}
-          ${skip}
-        </div>
+        ${profile}
+        ${skip}
       </div>`;
     }).join('');
+    lb6WireCards(host);
   }
 
-  // 帰ってくる理由（右上・控えめ）
-  const hooks = q('[data-bind="lb4Hooks"]');
-  if (hooks) {
-    const cg = (save.rewardCgSeen || []).length;
-    const lb = save.loginBonus || { lastDate: '', streak: 0 };
-    const claimed = lb.lastDate === mpTodayKey();
-    hooks.innerHTML = `
-      <div class="lb4-hook${claimed ? '' : ' is-hot'}"><i class="lb3-hook-coin"></i><span>${claimed ? `ログボ ${lb.streak}日目` : 'ログボ 受取OK'}</span></div>
-      <button class="lb4-hook" data-action="open-collection" title="ご褒美CGコレクション"><span>ご褒美CG</span><span class="lb4-hook-meter"><i style="width:${Math.round(cg / 5 * 100)}%"></i></span><b class="v2-disp">${cg}/5</b></button>`;
-  }
+  renderLobbyStatus();
+}
+
+// 右上：コイン／ログボ／ご褒美CG を一枚の縦パネルに集約。
+//   小さなCTAが3つ並ぶとNEXTと張り合うので「受け取れる」ことは伝えるが「今すぐ押せ」とは叫ばせない
+function renderLobbyStatus() {
+  const slot = document.querySelector('.lobby-screen.v5 .lobby-hud .hud-right');
+  if (!slot) return;
+  const cg = (save.rewardCgSeen || []).length;
+  const lb = save.loginBonus || { lastDate: '', streak: 0 };
+  const claimed = lb.lastDate === mpTodayKey();
+  slot.innerHTML = `<div class="lb6-status">
+      <div class="lb6-st-k v2-disp">COINS</div>
+      <div class="lb6-st-num v2-disp" data-bind="saveCoins">${save.coins}</div>
+      <div class="lb6-st-row${claimed ? '' : ' is-hot'}"><i class="lb6-st-dot"></i><span>${claimed ? `ログボ ${lb.streak}日目 受取済` : 'ログボ受取可'}</span></div>
+      <button class="lb6-st-row lb6-st-cg" type="button" data-action="open-collection" title="ご褒美CGコレクション"><span>ご褒美CG</span><span class="lb6-st-meter"><i style="width:${Math.round(cg / 5 * 100)}%"></i></span><b class="v2-disp">${cg}/5</b></button>
+    </div>`;
+  // ログボ受取直後など render() を経ずに呼ばれても押せるように（同一関数の二重登録はブラウザが無視する）
+  slot.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+}
+
+// 衣装ボタン：左下の定位置に「COSTUME／衣装を見る」。見つけやすいが主役ではない声量
+//   （リコの衣装ランダム＋ビューアはオーナー最大の楽しみ。今の衣装名も小さく添える）
+function lobbyCostumeBtnHtml(outfit) {
+  if (!isRicoViewerUnlocked()) return `<span class="lb6-cos-k v2-disp">COSTUME</span><span class="lb6-cos-t">${UI_ICON.lock}衣装ロック中</span>`;
+  const name = outfit && outfit.label ? `<em>${outfit.label}</em>` : '';
+  return `<span class="lb6-cos-k v2-disp">COSTUME${name}</span><span class="lb6-cos-t">衣装を見る<i>›</i></span>`;
+}
+
+// 卓につく瞬間の手応え：カードが沈む(80ms)→深紅の斜めスラブが右から覆う(220ms)→既存の battle-start へ。
+//   経路は onAction のまま（捕捉フェーズで一度だけ止め、演出後に同じボタンを押し直す）
+let lb6Wiping = false;
+function lb6Wipe(go) {
+  const stage = document.getElementById('stage') || document.body;
+  const w = document.createElement('div');
+  w.className = 'lb6-wipe';
+  w.innerHTML = '<i class="lb6-wipe-slab"></i>';
+  stage.appendChild(w);
+  mpSfx('flip');
+  setTimeout(() => {
+    try { go(); }
+    finally {
+      lb6Wiping = false;
+      // 次の画面（題字・講義・卓）が下で組み上がってから幕を上げる
+      setTimeout(() => { w.classList.add('is-out'); setTimeout(() => w.remove(), 380); }, 90);
+    }
+  }, 230);
+}
+
+function lb6WireCards(host) {
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  host.querySelectorAll('.lb6-card').forEach(card => {
+    const hit = card.querySelector('.lb6-hit');
+    if (!hit) return;
+    if (card.classList.contains('is-locked')) {
+      // 施錠カードも「使えない物」にしない：押すと鍵が小さく震えて解放条件が返ってくる（開始はしない）
+      hit.addEventListener('click', () => {
+        card.classList.remove('is-denied');
+        void card.offsetWidth; // 連打でも頭から震わせる
+        card.classList.add('is-denied');
+        mpSfx('check');
+      });
+      return;
+    }
+    if (hit.dataset.action !== 'battle-start' || reduce) return;
+    card.addEventListener('click', (e) => {
+      if (!e.target.closest('.lb6-hit') || hit.dataset.wiped === '1') return;
+      e.stopPropagation();
+      e.preventDefault();
+      if (lb6Wiping) return;
+      lb6Wiping = true;
+      card.classList.add('is-go');
+      setTimeout(() => lb6Wipe(() => {
+        hit.dataset.wiped = '1';
+        hit.click();
+        delete hit.dataset.wiped;
+        card.classList.remove('is-go');
+      }), 80);
+    }, true);
+  });
+  // スキップ成立時はカード列を組み直す（skipStageWithCoins は applyBindings だけで、カード列が古いまま残っていた）
+  host.querySelectorAll('.lb6-skip').forEach(b => b.addEventListener('click', () => {
+    const sid = b.dataset.opponent;
+    setTimeout(() => { if (state.screen === 'lobby' && save.clearedStages.includes(sid)) render(); }, 0);
+  }));
 }
 
 
@@ -6702,7 +6819,7 @@ function onAction(e) {
       const lbl = document.querySelector('[data-bind="lobbyRicoOutfit"]');
       const cur = outfits[state.lobbyRicoIndex];
       if (img) img.src = 'assets/characters/' + cur.file;
-      if (lbl) lbl.textContent = cur.label;
+      if (lbl) lbl.innerHTML = lobbyCostumeBtnHtml(cur); // 「COSTUME／衣装を見る」の組み立てを崩さない
       break;
     }
     case 'rico-viewer-prev': {
@@ -6714,7 +6831,7 @@ function onAction(e) {
       const lbl = document.querySelector('[data-bind="lobbyRicoOutfit"]');
       const cur = outfits[state.lobbyRicoIndex];
       if (img) img.src = 'assets/characters/' + cur.file;
-      if (lbl) lbl.textContent = cur.label;
+      if (lbl) lbl.innerHTML = lobbyCostumeBtnHtml(cur); // 「COSTUME／衣装を見る」の組み立てを崩さない
       break;
     }
     case 'rico-mode-tutorial': {
@@ -9015,6 +9132,8 @@ function showLoginBonusModal(plan, todayKey) {
     saveProgress();
     mpSfx('milestone');
     document.querySelectorAll('[data-bind="saveCoins"]').forEach(el => { el.textContent = save.coins; });
+    // 右上パネルの「ログボ受取可」を受取済みに更新（以前は再描画されず「受取OK」のまま残っていた）
+    if (state.screen === 'lobby') renderLobbyStatus();
     overlay.remove();
     toast(`🎁 ログインボーナス Day${plan.day}：+${plan.reward} コイン！`);
   });
