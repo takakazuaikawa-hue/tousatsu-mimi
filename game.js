@@ -12327,6 +12327,12 @@ function opponentTurnDecide() {
     return;
   }
   const need = state.currentBetPlayer - state.currentBetOpponent;
+  // ミミがオールイン済みなら、もう賭けは起きない。場札を最後まで自動でめくる。
+  // （ここで相手がベットすると、ミミが答えられない心理バトルまで始まってしまっていた）
+  if (state.playerChips <= 0 && need <= 0 && !state.introHandMode) {
+    setTimeout(advanceAfterCall, 700);
+    return;
+  }
   // 相手の手札強度を計算
   const allCards = [...state.opponentHand, ...state.community];
   const hs = state.community.length >= 3 ? handStrength01(allCards) : opponentPreflopStrength(state.opponentHand);
@@ -12370,6 +12376,8 @@ function opponentTurnDecide() {
   } else {
     action = decideOpponentAction(state.opponentProfile, ctx, { forceLargeBet });
   }
+  // オールインに対しては「降りる」か「コール」しかない（上乗せしても受ける側がいない）
+  if (state.playerChips <= 0 && action.type !== 'fold') action = { ...action, type: 'check_call' };
   state.lastOpponentIntent = action.intent || action.type;
 
   // フォールド処理
