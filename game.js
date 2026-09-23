@@ -547,6 +547,9 @@ if (typeof MutationObserver === 'function') {
       if (n.nodeType !== 1) continue;
       if (n.matches && n.matches('img[data-motion]')) attachMotion(n);
       if (n.querySelectorAll) n.querySelectorAll('img[data-motion]').forEach(attachMotion);
+      const bgs = n.matches && n.matches('[data-motion-bg]') ? [n] : [];
+      if (n.querySelectorAll) bgs.push(...n.querySelectorAll('[data-motion-bg]'));
+      bgs.forEach(el => attachMotionBg(el, el.dataset.motionBg));
     }
   }).observe(document.documentElement, { childList: true, subtree: true });
 }

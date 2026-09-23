@@ -16216,3 +16216,12 @@ video.motion-bg.on { opacity: 1; }
   .lobby-screen.v5 .lobby-rico-outfit.is-fresh::after { animation: none !important; }
   .lb6-card, .lb6-face img { transition: none !important; }
 }
+
+/* ロビー背景を動かす：シャンデリアのきらめきと床の照り返しだけが揺れるループ。
+   上下の締めのグラデは動画の上に重ねる（isolation で動画を背景絵の上・中身の下に置く） */
+.lobby-screen.v5 .bg-lobby { isolation: isolate; }
+.lobby-screen.v5 .bg-lobby > video.motion-bg { object-position: center 24%; }
+.lobby-screen.v5 .bg-lobby::before {
+  content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(11,5,16,.5) 0%, rgba(11,5,16,.1) 16%, rgba(11,5,16,0) 42%, rgba(11,5,16,.42) 100%);
+}
