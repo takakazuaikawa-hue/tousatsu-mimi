@@ -491,8 +491,39 @@ window.assetFallback = function(imgEl, key) {
 // 動く一枚絵：<img data-motion="assets/motion/xxx.mp4"> と書いておくと、
 // 動画が実際に再生できた時だけ静止画の上に重ねてフェードで差し替える。
 // 読めない・再生できない・「視差効果を減らす」設定の環境では静止画のまま（壊れない）。
-// data-motion-loop="0" で一度きり再生（最後のコマで止める）。
+// ★動くのは最初の一度だけ。最後は元の一枚絵へ溶かして戻し、そこで止める。
+//   生成動画は長く見るとあらが出るので、じっくり眺める時間は描き込まれた原画に任せる。
+//   ループ用の動画は最初と最後のコマを原画と同じ絵にしてあるので、戻りに継ぎ目は出ない。
+// 画面は render のたびに作り直されるので、同じ動画は45秒以内には再生し直さない
+// （data-motion-replay="1" の画面＝自分で開くビューアなどは毎回再生する）。
 //-------------------------------------------------------------
+const __motionPlayedAt = new Map();
+function motionMayPlay(src, replay) {
+  if (replay) return true;
+  const last = __motionPlayedAt.get(src) || 0;
+  return Date.now() - last > 45000;
+}
+// ロード画面の裏で動き終わってしまわないよう、ロード画面が閉じてから再生を始める
+function playAfterPreload(v) {
+  const go = () => {
+    const pre = document.getElementById('preload-overlay');
+    if (pre && !pre.classList.contains('out')) { setTimeout(go, 150); return; }
+    const p = v.play(); if (p && p.catch) p.catch(() => {});
+  };
+  go();
+}
+// 再生を始めた動画を、終わり際に原画へ溶かして片付ける
+function settleMotionToStill(v, src) {
+  __motionPlayedAt.set(src, Date.now());
+  let settled = false;
+  const settle = () => {
+    if (settled) return; settled = true;
+    v.classList.add('done');
+    setTimeout(() => v.remove(), 1100);
+  };
+  v.addEventListener('timeupdate', () => { if (v.duration && v.currentTime >= v.duration - 0.7) settle(); });
+  v.addEventListener('ended', settle, { once: true });
+}
 const MOTION_OK = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 // 動画が用意できている絵（assets/motion/cg_<id>.mp4 / ep_<id>.mp4）
 const MOTION_CG = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
@@ -500,13 +531,15 @@ const MOTION_EP = ['polka', 'selina', 'grano'];
 function attachMotion(img) {
   if (!MOTION_OK || !img || img.__motion || !img.dataset.motion) return;
   img.__motion = true;
+  if (!motionMayPlay(img.dataset.motion, img.dataset.motionReplay === '1')) return;
   const v = document.createElement('video');
   // 画像と同じクラスを持たせ、切り抜き・色調・ゆっくり寄る演出などの見た目を揃える
   v.className = img.className + ' motion-layer';
-  v.muted = true; v.playsInline = true; v.autoplay = true;
+  v.muted = true; v.playsInline = true; v.autoplay = false;
   v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
-  v.loop = img.dataset.motionLoop !== '0';
+  v.loop = false;
   v.preload = 'auto';
+  settleMotionToStill(v, img.dataset.motion);
   // 位置と大きさだけは実測で合わせる（親を基準にした絶対配置）
   const place = () => {
     v.style.left = img.offsetLeft + 'px';
@@ -522,23 +555,25 @@ function attachMotion(img) {
   img.insertAdjacentElement('afterend', v);
   if (img.complete) place(); else img.addEventListener('load', place, { once: true });
   v.src = img.dataset.motion;
-  const p = v.play(); if (p && p.catch) p.catch(() => {});
+  playAfterPreload(v);
 }
 // CSS 背景に絵を敷いている画面（各話タイトル・エンディングの部屋）向け：
 // 要素いっぱいに動画を敷く。中身の文字や枠はその上に乗る。
 function attachMotionBg(host, src, opts) {
   if (!MOTION_OK || !host || host.querySelector(':scope > .motion-bg')) return;
   const o = opts || {};
+  if (!motionMayPlay(src, o.replay)) return;
   const v = document.createElement('video');
   v.className = 'motion-bg';
-  v.muted = true; v.playsInline = true; v.autoplay = true;
+  v.muted = true; v.playsInline = true; v.autoplay = false; v.preload = 'auto';
   v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
-  v.loop = o.loop !== false;
+  v.loop = false;
+  settleMotionToStill(v, src);
   v.addEventListener('playing', () => v.classList.add('on'), { once: true });
   v.addEventListener('error', () => v.remove(), { once: true });
   host.insertBefore(v, host.firstChild);
   v.src = src;
-  const p = v.play(); if (p && p.catch) p.catch(() => {});
+  playAfterPreload(v);
 }
 // 画面は innerHTML で丸ごと作り直されるので、現れた data-motion 画像を見張って拾う
 if (typeof MutationObserver === 'function') {
@@ -3268,8 +3303,8 @@ function showEpisodeTitle(key, onContinue) {
   probe.onload = () => {
     overlay.style.backgroundImage = `url('${imgPath}')`;
     overlay.classList.add('has-art');
-    // 各話の扉絵は一度きりのカメラワークで動かし、最後のコマで止める
-    if (MOTION_EP.includes(key)) attachMotionBg(overlay, `assets/motion/ep_${key}.mp4`, { loop: false });
+    // 各話の扉絵は一度きりのカメラワークで動かし、最後は原画に戻して止める
+    if (MOTION_EP.includes(key)) attachMotionBg(overlay, `assets/motion/ep_${key}.mp4`, { replay: true });
   };
   probe.src = imgPath;
   overlay.innerHTML = `
@@ -3471,6 +3506,7 @@ function showIntermission(opponentId, onDone) {
     // ご褒美CGは動く（相手に勝った瞬間の最大のご褒美なので、ここは絵が生きている方がいい）
     if (MOTION_CG.includes(opponentId)) {
       cgImg.dataset.motion = `assets/motion/cg_${opponentId}.mp4`;
+      cgImg.dataset.motionReplay = '1';
       attachMotion(cgImg);
     }
     cgLayer.hidden = false;
@@ -3500,7 +3536,7 @@ function showRewardCgViewer(id) {
     <div class="reward-cg-viewer-body">
       <img class="reward-cg-viewer-img" alt="${opp.name || ''}"
            src="assets/backgrounds/reward_cg_${id}.jpg"
-           ${MOTION_CG.includes(id) ? `data-motion="assets/motion/cg_${id}.mp4"` : ''}
+           ${MOTION_CG.includes(id) ? `data-motion="assets/motion/cg_${id}.mp4" data-motion-replay="1"` : ''}
            onerror="this.onerror=function(){this.onerror=null;this.style.display='none';this.closest('.reward-cg-viewer-body').classList.add('noimg');};this.src='assets/episodes/${id}.webp';">
       <div class="reward-cg-viewer-hint">タップして閉じる</div>
     </div>
@@ -7738,7 +7774,7 @@ function showEndingFinalButtons(stage) {
   epilogue.innerHTML = `
     <div class="ep-img-wrap">
       <img class="ep-img" src="assets/episodes/ending.webp" alt=""
-           data-motion="assets/motion/ep_ending.mp4" data-motion-loop="0"
+           data-motion="assets/motion/ep_ending.mp4"
            onerror="this.style.display='none'; this.parentElement.classList.add('ep-fallback');">
       <div class="ep-vignette"></div>
     </div>

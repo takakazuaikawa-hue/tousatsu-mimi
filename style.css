@@ -16234,3 +16234,6 @@ video.motion-bg.on { opacity: 1; }
   mask-image: radial-gradient(ellipse 66% 72% at 46% 42%, #000 52%, transparent 92%), linear-gradient(180deg, transparent 0%, transparent 5%, #000 18%);
   mask-composite: intersect;
 }
+
+/* 動く一枚絵の戻り：動き終わったら、原画へゆっくり溶かして戻す */
+video.motion-layer.done, video.motion-bg.done { opacity: 0; transition: opacity 1s ease-in-out; }
