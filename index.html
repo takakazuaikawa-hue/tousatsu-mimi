@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -6,11 +6,59 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#14081d">
-<title>闘札圧倒伝ミミ 〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</title>
-<link rel="stylesheet" href="style.css">
+<meta name="theme-color" content="#1d080e">
+<link rel="icon" type="image/webp" href="assets/ui/emblem_rabbit_gold.webp">
+<title>ミミのテキサスホールデムポーカー 〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</title>
+<!--
+  ★FOUC（Flash of Unstyled Content）対策：
+  外部 style.css の読み込みが遅延・混雑した瞬間に、無装飾の生HTML（黒文字＋白背景）が
+  一瞬表示されてしまう問題を防ぐための「クリティカルCSSの先出し」。
+  外部CSSが未着でも、最低限「真っ黒画面＋読み込み中の見た目」を即座に保証する。
+  外部CSSが読み込み完了すれば、通常のスタイルが上書きしてそのまま自然に引き継がれる。
+-->
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #000;
+    color: #f7eecf;
+    font-family: "Noto Sans JP", "Yu Gothic", "Hiragino Sans", sans-serif;
+  }
+  #preload-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background: #000;
+    text-align: center;
+  }
+  /* 外部CSSが未着の間だけ、素のテキストが見苦しく散らばらないよう非表示にしておく。
+     着荷後は style.css 側の .preload-overlay 等のルールが上書きして通常表示になる。 */
+  #portrait-warning, #fullscreen-btn-group { display: none; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Shippori+Mincho+B1:wght@700;800&display=swap">
+<link rel="stylesheet" href="style.css?v=20260924e">
 </head>
 <body>
+<div id="preload-overlay">
+  <div class="preload-inner">
+    <div class="preload-logo">ミミのテキサスホールデムポーカー</div>
+    <div class="preload-sub">— Loading · ポーカー豆知識をどうぞ —</div>
+    <div class="preload-bar"><div class="preload-bar-fill" id="preload-fill"></div></div>
+    <div class="preload-count"><span id="preload-loaded">0</span> / <span id="preload-total">0</span></div>
+    <div class="preload-tip" id="preload-tip">🃏 ポーカー豆知識 …</div>
+  </div>
+</div>
+<!-- グローバルなBGM要素（テンプレ外。画面切替でも保持） -->
+<audio id="lobby-bgm-audio" loop preload="auto">
+  <source src="assets/bgm/velvet-night-casino.m4a" type="audio/mp4">
+</audio>
+<audio id="ending-bgm-audio" preload="auto">
+  <source src="assets/bgm/ending.m4a" type="audio/mp4">
+  <source src="assets/bgm/ending.mp3" type="audio/mpeg">
+</audio>
+<!-- シーン専用BGM（タイトル/バトル/ボス/ミニゲーム）。src を差し替えて使い回し、
+     ロビー/エンディング/シンセと排他再生することで二重再生（＝うるささ）を防ぐ -->
+<audio id="scene-bgm-audio" loop preload="auto"></audio>
+
 <div id="stage">
   <div id="app"></div>
 </div>
@@ -38,11 +86,12 @@
 <template id="tpl-title">
   <div class="screen title-screen">
 
-    <!-- タイトル背景画像：assets/background/title_bg.png を読み込み -->
+    <!-- タイトル背景画像：assets/backgrounds/title_bg.webp を読み込み -->
     <div class="bg-layer bg-title">
       <img
         class="title-bg-img"
-        src="assets/backgrounds/title_bg.png"
+        src="assets/backgrounds/title_bg.webp"
+        data-motion="assets/motion/title_loop.mp4"
         alt=""
         onerror="this.style.display='none';"
       >
@@ -50,181 +99,243 @@
 
     <div class="title-inner">
 
-      <!-- タイトルロゴ画像：assets/ui/title.png を読み込み -->
+      <!-- タイトルロゴ画像：新タイトルのロゴを assets/ui/title_logo.webp に置くと自動表示。
+           未納品の間はCSSで組んだテキストロゴにフォールバック（旧 title.png は改名により不使用）。 -->
       <div class="title-logo-frame">
         <img
           class="title-logo-img"
-          src="assets/ui/title.png"
-          alt="闘札圧倒伝ミミ"
+          src="assets/ui/title_logo.webp"
+          alt="ミミのテキサスホールデムポーカー"
           onerror="this.style.display='none'; this.closest('.title-logo-frame').classList.add('logo-fallback');"
         >
-
-        <!-- ロゴ画像が読み込めなかった時だけ表示する文字タイトル -->
         <div class="title-logo-fallback">
           <h1 class="game-title">
-            <span class="title-line1">闘札圧倒伝ミミ</span>
+            <span class="title-line1">ミミの</span>
+            <span class="title-line2">テキサスホールデム</span>
+            <span class="title-line3">ポーカー</span>
           </h1>
-          <p class="subcopy">転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件</p>
+          <div class="title-logo-sub">〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</div>
         </div>
       </div>
+
+      <!-- メインCTA -->
       <div class="title-buttons" data-bind="titleButtons">
-        <button class="btn btn-primary" data-action="start">はじめから</button>
+        <button class="btn btn-primary" data-action="start">
+          <span class="title-btn-main">はじめから</span>
+          <span class="title-btn-sub">FREE · ブラウザで遊べる</span>
+        </button>
       </div>
 
-      <p class="version-tag">ver 1.0</p>
+      <!-- フッター：シェアとバージョンのみ（背景に埋もれないようパネル化） -->
+      <div class="title-footer">
+        <button class="title-link" data-action="share-game">シェア</button>
+        <span class="title-footer-divider">·</span>
+        <span class="title-version">v1.0</span>
+      </div>
     </div>
   </div>
 </template>
 
-<template id="tpl-stage-select">
-  <div class="screen stage-select-screen">
-    <div class="bg-layer bg-stage"></div>
-    <header class="top-hud">
+<template id="tpl-lobby">
+  <div class="screen lobby-screen v3 v4 v5">
+    <div class="bg-layer bg-lobby" data-motion-bg="assets/motion/lobby_loop.mp4"></div>
+
+    <header class="top-hud lobby-hud">
       <button class="btn btn-ghost" data-action="back-title">← タイトルへ</button>
-      <h2>ステージ選択</h2>
+      <h2 class="lobby-title"><span class="v2-disp lobby-title-eyebrow">VIP CASINO LOUNGE</span><span class="lobby-title-main">ロビー</span></h2>
       <div class="hud-right">
-        <span class="coin-display">所持コイン：<span data-bind="saveCoins">0</span></span>
-        <button class="btn btn-secondary" data-action="open-shop">🛍 交換所</button>
-        <button class="btn btn-ghost" data-action="reset-save" title="セーブデータをリセット">⟲</button>
+        <div class="lobby-coins">
+          <div class="lb3-chip-tray" aria-hidden="true"><i class="lb3-chip lb3-chip-r"></i><i class="lb3-chip lb3-chip-r"></i><i class="lb3-chip lb3-chip-r"></i><i class="lb3-chip lb3-chip-g"></i><i class="lb3-chip lb3-chip-g"></i></div>
+          <div>
+            <div class="v2-disp lobby-coins-label">COINS</div>
+            <div class="v2-disp lobby-coins-num"><span data-bind="saveCoins">0</span></div>
+          </div>
+        </div>
       </div>
     </header>
-    <main class="stage-list" data-bind="stageList"></main>
-    <div class="stage-tips">
-      <span>💡 セリナ・グラーノ・ヴェルベット戦の初回クリアで戦術ノート自動解放</span>
-    </div>
-  </div>
-</template>
 
-<template id="tpl-shop">
-  <div class="screen shop-screen">
-    <div class="bg-layer bg-stage"></div>
-    <header class="top-hud">
-      <button class="btn btn-ghost" data-action="back-stage">← ステージ選択へ</button>
-      <h2>🛍 交換所</h2>
-      <span class="coin-display">所持コイン：<span data-bind="saveCoins">0</span></span>
-    </header>
-    <main class="shop-main">
-      <aside class="shop-sidebar">
-        <button class="shop-cat-btn active" data-cat="panyu">ぱにゅ強化</button>
-        <button class="shop-cat-btn" data-cat="note">戦術ノート</button>
-        <button class="shop-cat-btn" data-cat="skin">見た目</button>
-      </aside>
-      <section class="shop-items" data-bind="shopItems"></section>
-      <aside class="shop-comment">
-        <div class="character-frame char-grano-shop">
-          <img src="assets/characters/grano_default.png" alt="グラーノ" onerror="window.assetFallback(this,'grano')">
-        </div>
-        <div class="rico-bubble grano-shop-bubble" data-bind="ricoShopComment">「お嬢さん、ようこそ。ふむ……まずはぱにゅぱにゅLv2あたりが、お買い得ですよ」</div>
-      </aside>
+    <main class="lobby-main">
+      <!-- リコ先輩：左に等身大のコンシェルジュ（衣装ランダム＋衣装ビューア導線） -->
+      <div class="lobby-rico-standing lb4-rico">
+        <img data-bind="lobbyRicoImg" src="assets/characters/rico_default.webp" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+        <button class="lobby-rico-outfit" data-bind="lobbyRicoOutfit" data-action="open-rico-viewer" title="リコ先輩を眺める"></button>
+      </div>
+      <div class="lb4-rico-bubble" data-bind="lb4RicoLine">「ようこそ。今夜の卓、案内するよ」</div>
+
+      <!-- 相手カードの一覧：どの卓につくか悩む美しさで並べる -->
+      <section class="lb5-cards" data-bind="lb5Cards"></section>
+
+      <!-- 右上：帰ってくる理由（ログボ／CG進捗・控えめ） -->
+      <div class="lb4-hooks" data-bind="lb4Hooks"></div>
+
+      <!-- 下部オペレーションバー（黒×金で統一） -->
+      <nav class="lb3-bar lb4-bar">
+        <button class="lb3-bar-btn lb4-bar-btn lb4-ac-red" data-action="open-shop">
+          <span class="lb3-bar-name">交換所</span><span class="lb3-bar-sub">グラーノの店</span>
+          <span class="lobby-shop-newbadge" data-bind="lobbyShopNewBadge" style="display:none"></span>
+        </button>
+        <button class="lb3-bar-btn lb4-bar-btn lb4-ac-gold" data-action="open-collection">
+          <span class="lb3-bar-name">コレクション</span><span class="lb3-bar-sub">称号・ご褒美CG</span>
+        </button>
+        <button class="lb3-bar-btn lb4-bar-btn lb4-ac-pink" data-action="panyu-free" title="ぱにゅぱにゅで遊ぶ（バトル効果なし）">
+          <span class="lb3-bar-name">ぱにゅぱにゅ</span><span class="lb3-bar-sub">ぷにぷにして遊ぶ</span>
+        </button>
+        <button class="lb3-bar-btn lb4-bar-btn lb4-bar-audio" data-action="lb3-toggle-audio" title="音量・設定">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path></svg>
+        </button>
+      </nav>
+
+      <!-- 音量パネル（バーの♪でトグル） -->
+      <div class="lobby-bottom-panel lb3-audio-panel" data-bind="lobbyBottomPanel" style="display:none"></div>
     </main>
   </div>
 </template>
 
-<template id="tpl-battle">
-  <div class="screen battle-screen">
-    <div class="bg-layer bg-poker"></div>
+<template id="tpl-shop">
+  <div class="screen shop-screen v2">
+    <div class="bg-layer bg-shop"></div>
+    <div class="shop-v2-scrim"></div>
 
-    <header class="top-hud">
-      <button class="btn btn-ghost" data-action="back-stage">中断</button>
-      <span class="hand-info">Hand <span data-bind="handNo">1</span></span>
-      <span class="opponent-name" data-bind="opponentName">ポルカ</span>
+    <div class="shop-v2-owner character-frame char-grano-shop">
+      <img src="assets/characters/grano_offer.webp" alt="グラーノ" onerror="this.onerror=function(){window.assetFallback(this,'grano')};this.src='assets/characters/grano_recommend.webp';">
+    </div>
+    <div class="shop-v2-bubble grano-shop-bubble" data-bind="ricoShopComment">「おや、いらっしゃい。今日の掘り出し物は……ふふ、良い目をお持ちだ」</div>
+
+    <button class="btn btn-ghost shop-v2-back" data-action="back-lobby">← ロビーへ</button>
+
+    <header class="shop-v2-head">
+      <div class="shop-v2-disp shop-v2-brand">GRANO TRADING CO.</div>
+      <div class="shop-v2-title">交換所</div>
+    </header>
+    <div class="shop-v2-coins">
+      <div class="shop-v2-disp shop-v2-coins-label">COINS</div>
+      <div class="shop-v2-disp shop-v2-coins-num" data-bind="saveCoins">0</div>
+    </div>
+
+    <nav class="shop-v2-tabs">
+      <button class="shop-cat-btn active" data-cat="panyu"><span>ぱにゅ強化</span></button>
+      <button class="shop-cat-btn" data-cat="note"><span>戦術ノート</span></button>
+      <button class="shop-cat-btn" data-cat="skin"><span>見た目</span></button>
+      <button class="shop-cat-btn" data-cat="stack"><span>チップ拡張</span></button>
+      <button class="shop-cat-btn" data-cat="memory"><span>メモリ</span></button>
+    </nav>
+
+    <section class="shop-items" data-bind="shopItems"></section>
+  </div>
+</template>
+
+<template id="tpl-battle">
+  <div class="screen battle-screen v2">
+    <div class="bg-layer bg-poker"></div>
+    <div class="v2-slash v2-slash-red"></div>
+    <div class="v2-slash v2-slash-gold"></div>
+
+    <!-- 左上：HAND ナンバー＋ストリート（縦積み） -->
+    <header class="v2-hand">
+      <div class="v2-hand-row">
+        <span class="v2-disp v2-hand-label">HAND</span>
+        <span class="v2-disp v2-hand-no" data-bind="handNo2">01</span>
+        <span class="v2-disp v2-hand-max" data-bind="handMax2">/ 05</span>
+      </div>
+      <div class="v2-streets" data-bind="streetList"></div>
     </header>
 
-    <aside class="left-panel">
-      <div class="character-frame char-rico">
-        <img src="assets/characters/rico_default.png" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
-      </div>
-      <div class="rico-bubble" data-bind="ricoAdvice">「いい？相手の言葉を、まず聞いてみな」</div>
-    </aside>
+    <!-- 右上：中断／役の早見表（画面直下に置く。ヘッダー内だと右寄せが効かない） -->
+    <button class="btn btn-ghost v2-pause" data-action="back-lobby">中断</button>
 
-    <section class="center-table">
-      <div class="opponent-area">
-        <div class="character-frame char-opponent">
-          <img data-bind="opponentImg" alt="相手">
-        </div>
-        <div class="opponent-info">
-          <div class="chip-meter">
-            <div class="chip-meter-row">
-              <span class="chip-meter-label">チップ</span>
-              <span class="chip-meter-value" data-bind="opponentChips">1000</span>
-            </div>
-            <div class="chip-bar"><div class="chip-bar-fill chip-bar-opponent" data-bind="opponentChipBar"></div></div>
-          </div>
-          <div class="opponent-bet" data-bind="opponentBet"></div>
-          <div class="opponent-hand">
-            <div class="card card-back"></div>
-            <div class="card card-back"></div>
-          </div>
-          <div class="opponent-speech" data-bind="opponentSpeech"></div>
-        </div>
-      </div>
+    <!-- 左下：役の早見表（常設・研修中も開ける） -->
+    <button class="btn btn-ghost v2-help-btn" data-action="show-hand-guide" type="button" title="役の早見表を見る">❓ 役</button>
 
+    <!-- 裏モード -->
+    <button class="backdoor-toggle" data-action="toggle-backdoor" data-bind="backdoorBtn" title="裏モード：相手の心理ログを盗み見">✦</button>
+    <div class="backdoor-panel" data-bind="backdoorPanel"></div>
+
+    <!-- 相手：卓の向こうに大きく。テルは付箋 -->
+    <div class="v2-opp">
+      <div class="character-frame char-opponent" data-action="char-profile" data-char="__opponent__" title="相手のプロフィールを見る">
+        <img data-bind="opponentImg" alt="相手">
+      </div>
+      <div class="v2-tells" data-bind="tellTags"></div>
+    </div>
+
+    <!-- 戦術ノートの常時表示（相手のレンジ帯／癖メモ）。
+         ★.v2-opp には mask-image が掛かっていて箱の外が透明に切り落とされるため、
+           この2つは .v2-opp の中に置けない。卓の直下（.battle-screen）に出す。 -->
+    <div class="v2-range-band" data-bind="noteRangeBand"></div>
+    <div class="opponent-info"></div>
+
+    <!-- 相手のセリフ：舞台の字幕帯 -->
+    <div class="v2-band">
+      <div class="v2-band-name v2-disp" data-bind="opponentNameLatin">—</div>
+      <div class="opponent-speech v2-band-text" data-bind="opponentSpeech"></div>
+      <div class="opponent-hand v2-band-hand" data-bind="opponentHand">
+        <div class="card card-back"></div>
+        <div class="card card-back"></div>
+      </div>
+    </div>
+
+    <!-- 右上：POT -->
+    <div class="v2-pot" data-bind="potBlock"></div>
+
+    <!-- 中央：場札 -->
+    <section class="center-table v2-table">
       <div class="community-cards" data-bind="communityCards">
-        <div class="card empty"></div>
-        <div class="card empty"></div>
-        <div class="card empty"></div>
-        <div class="card empty"></div>
-        <div class="card empty"></div>
+        <div class="card empty"></div><div class="card empty"></div><div class="card empty"></div><div class="card empty"></div><div class="card empty"></div>
       </div>
-
-      <div class="pot-row">
-        <div class="bet-side bet-side-opponent">
-          <div class="bet-side-label" data-bind="opponentBetLabel">相手</div>
-          <div class="bet-side-amount" data-bind="opponentBetAmount">0</div>
-        </div>
-        <div class="pot-display" title="ポット = このハンドで賭けられたチップの合計。勝った方が総取り。">
-          🪙 ポット <small>(合計)</small>
-          <div class="pot-amount" data-bind="pot">0</div>
-        </div>
-        <div class="bet-side bet-side-player">
-          <div class="bet-side-label">ミミ</div>
-          <div class="bet-side-amount" data-bind="playerBetAmount">0</div>
-        </div>
-      </div>
+      <div class="v2-danger" data-bind="dangerBar"></div>
     </section>
 
-    <aside class="right-panel">
-      <div class="zazazo-display">
-        <div class="zazazo-label">ゾゾゾゲージ</div>
-        <div class="zazazo-bar">
-          <div class="zazazo-fill" data-bind="zazazoFill"></div>
-        </div>
-        <div class="zazazo-text" data-bind="zazazoText">無風</div>
+    <!-- チップ残量ゲージ：数字だけでなくキャラの前面で量が見える -->
+    <div class="v2-stack-gauge is-opp" data-bind="oppStackGauge"></div>
+    <div class="v2-stack-gauge is-mimi" data-bind="mimiStackGauge"></div>
+
+    <!-- 右中：勝率の封印（ぱにゅぱにゅで開封）＋詳細データ -->
+    <div class="v2-seal-row">
+      <div class="v2-seal" data-bind="winrateSeal"></div>
+      <button class="v2-detail-toggle" data-action="toggle-v2-detail">詳細データ ▾</button>
+    </div>
+    <aside class="right-panel v2-detail" data-bind-visible="v2detail">
+      <div class="zazazo-display" style="display:none">
+        <div class="zazazo-bar"><div class="zazazo-fill" data-bind="zazazoFill"></div></div>
+        <div class="zazazo-text" data-bind="zazazoText"></div>
       </div>
-      <div class="psych-log" data-bind="psychLog"></div>
+      <div class="psych-stats" data-bind="psychStats" style="display:none"></div>
+      <div class="situation-analysis" data-bind="situationAnalysis"></div>
     </aside>
 
-    <footer class="bottom-bar">
-      <div class="mimi-area">
-        <div class="character-frame char-mimi">
-          <img data-bind="mimiImg" src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
-        </div>
+    <!-- 左下：コメント帯（ミミの心の声→リコの助言を一箇所に。決断の直前に読む位置） -->
+    <div class="v2-comments left-panel">
+      <div class="v2-com v2-com-mimi">
+        <div class="v2-com-face"><img src="assets/ui/face_mimi.webp" alt="ミミ" onerror="this.onerror=function(){window.assetFallback(this,'mimi')};this.src='assets/characters/mimi_mini.webp';"></div>
+        <div class="mimi-thought-bubble v2-com-text" data-bind="mimiThought"></div>
       </div>
-      <div class="mimi-hand-area">
-        <div class="player-row">
-          <div class="chip-meter">
-            <div class="chip-meter-row">
-              <span class="chip-meter-label">ミミ</span>
-              <span class="chip-meter-value" data-bind="playerChips">1000</span>
-            </div>
-            <div class="chip-bar"><div class="chip-bar-fill chip-bar-player" data-bind="playerChipBar"></div></div>
-          </div>
-          <div class="current-hand-display" data-bind="currentHandName">役：—</div>
+      <div class="v2-com v2-com-rico">
+        <div class="v2-com-face character-frame char-rico v2-rico-face" data-action="char-profile" data-char="rico_tutorial" title="リコ先輩のプロフィールを見る">
+          <img src="assets/ui/face_rico.webp" alt="リコ先輩" onerror="this.onerror=function(){window.assetFallback(this,'rico')};this.src='assets/characters/rico_default.webp';">
         </div>
-        <div class="hand-thought-row">
-          <div class="player-hand" data-bind="playerHand">
-            <div class="card empty"></div>
-            <div class="card empty"></div>
-          </div>
-          <div class="mimi-thought-bubble" data-bind="mimiThought">「ふぅ……まずは手札を見てから」</div>
-        </div>
-        <div class="panyu-gauge">
-          <div class="panyu-bar" title="ぱにゅゲージ">
-            <div class="panyu-fill" data-bind="panyuFill"></div>
-            <div class="panyu-pip" data-bind="panyuPips"></div>
-          </div>
-        </div>
+        <div class="rico-bubble v2-com-text v2-rico-bubble" data-bind="ricoAdvice"></div>
       </div>
+    </div>
+
+    <!-- 右下：ミミのバストアップ＋手札＋役 -->
+    <div class="mimi-area v2-mimi">
+      <div class="character-frame char-mimi v2-mimi-frame" data-action="char-profile" data-char="mimi" title="ミミのプロフィールを見る">
+        <img data-bind="mimiImg" data-mimi-face src="assets/characters/mimi_default.webp" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
+      </div>
+    </div>
+    <div class="v2-myhand">
+      <div class="v2-role">
+        <div class="v2-role-label">ミミの役</div>
+        <div class="hand-label hand-label-hand v2-role-name" data-bind="currentHandName">—</div>
+        <div class="hand-kicker v2-role-kicker" data-bind="currentHandKicker"></div>
+      </div>
+      <div class="player-hand" data-bind="playerHand">
+        <div class="card empty"></div><div class="card empty"></div>
+      </div>
+    </div>
+
+    <!-- 左下：アクション（斜めスラブ） -->
+    <footer class="bottom-bar v2-actions">
       <div class="action-area" data-bind="actionArea"></div>
     </footer>
   </div>
@@ -245,10 +356,16 @@
     <div class="modal psych-modal">
       <h3 class="psych-title">— 心理バトル —</h3>
 
-      <!-- キャラポートレート行（モーダル内・顔から胸まで） -->
+      <!-- v2：右上ミミミゲージ（JSが中身を生成／講義モードでは非表示のまま） -->
+      <div class="v2p-gauge" data-bind="zazazoGaugeBox" style="display:none"></div>
+
+      <!-- v2：相手の舞台演出（顔アップ or 立ち絵。JSが中身を生成） -->
+      <div class="v2p-opponent-stage character-frame" data-bind="psychOpponentStage"></div>
+
+      <!-- キャラポートレート行（モーダル内・顔から胸まで。互換維持のため残置、v2レイアウトでは非表示） -->
       <div class="battle-portraits">
         <div class="battle-portrait portrait-mimi">
-          <img src="assets/characters/mimi_default.png" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
+          <img data-mimi-face src="assets/characters/mimi_default.webp" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
           <div class="portrait-name">ミミ</div>
         </div>
         <div class="battle-portrait portrait-opponent" data-bind="battleOpponentChar"></div>
@@ -258,8 +375,9 @@
         <div class="psych-board-info">
           <div class="psych-board-label">場札</div>
           <div class="psych-board-cards" data-bind="psychBoardCards"></div>
-          <div class="psych-pot" title="ポット = このハンドで賭けられたチップの合計">ポット：<span data-bind="psychPot">0</span></div>
+          <div class="psych-pot" title="ポット = このハンドで賭けられたチップの合計">POT <span data-bind="psychPot">0</span></div>
         </div>
+        <div class="v2p-vs">VS</div>
         <div class="psych-hand-info">
           <div class="psych-hand-label">ミミの手札</div>
           <div class="psych-hand-cards" data-bind="psychHandCards"></div>
@@ -269,54 +387,82 @@
       <div class="psych-speech" data-bind="psychSpeech"></div>
       <div class="psych-hint zazazo-hint" data-bind="zazazoHint"></div>
       <div class="psych-choices" data-bind="psychChoices"></div>
+      <button class="psych-skip-btn" data-bind="psychSkipBtn" data-action="psych-skip" style="display:none;">スキップ（性格読み切り済み）</button>
     </div>
   </div>
 </template>
 
 <template id="tpl-ending">
   <div class="screen ending-screen">
-    <div class="bg-layer bg-result"></div>
-    <div class="ending-inner">
-      <h2 class="ending-title">— ENDING —</h2>
-      <div class="ending-scene">
-        <div class="ending-line"><b class="speaker rico">リコ先輩：</b>「やるじゃん、ミミ。ちゃんと場を見て、顔色を見て、最後まで降りなかった」</div>
-        <div class="ending-line"><b class="speaker mimi">ミミ：</b>「私、カードだけ見てたら負けてました。<br>でも……勝負って、場の空気まで含めて読むものなんですね」</div>
-        <div class="ending-line"><b class="speaker velvet">ヴェルベット：</b>「新人にしては、悪くないわ。<br>その妙なスキル……次の卓でも通じるか、楽しみにしているわ」</div>
-      </div>
-      <div class="ending-credit">闘札大逆転ミミ　MVP END</div>
-      <div class="ending-thanks">遊んでくれてありがとう！</div>
-      <div class="ending-buttons">
-        <button class="btn btn-primary" data-action="back-title">タイトルへ</button>
-      </div>
-    </div>
+    <div class="ending-stage" id="ending-stage"></div>
   </div>
 </template>
 
 <template id="tpl-result">
   <div class="screen result-screen">
-    <div class="bg-layer bg-result"></div>
-    <div class="result-inner">
+    <div class="bg-layer bg-result-stage"></div>
+    <div class="v2-slash v2-slash-gold"></div>
+
+    <div class="result-char result-char-mimi"><img data-result-mimi src="assets/characters/mimi_win.webp" alt="ミミ" onerror="window.assetFallback(this,'mimi')"></div>
+    <div class="result-char result-char-opp"><img data-result-opp alt="相手"></div>
+
+    <div class="rz-titleblock">
       <h2 class="result-title" data-bind="resultTitle">勝利</h2>
-      <div class="rank-display">
-        <div class="rank-label">評価ランク</div>
-        <div class="rank-value" data-bind="rankValue">A</div>
+      <div class="result-stage-tag v2-disp" data-bind="resultStageTag">STAGE 01 — ???</div>
+    </div>
+
+    <div class="rz-panel">
+      <div class="rz-top-row">
+        <div class="rank-display">
+          <div class="rank-emblem-wrap">
+            <img class="rank-emblem-img" src="assets/ui/emblem_rabbit_gold.webp" alt="" onerror="this.style.display='none'">
+            <div class="rank-emblem-inner">
+              <div class="rank-label v2-disp">RANK</div>
+              <div class="rank-value v2-disp" data-bind="rankValue">A</div>
+            </div>
+          </div>
+        </div>
+        <div class="coins-block">
+          <div class="coins-label v2-disp">COINS</div>
+          <div class="coins-value v2-disp"><span data-bind="earnedCoins">0</span></div>
+          <div class="reward-chips" data-bind="rewardChips"></div>
+        </div>
       </div>
+
       <div class="result-stats">
-        <div>獲得コイン：<span data-bind="earnedCoins">0</span></div>
-        <div>スコア：<span data-bind="score">0</span></div>
-        <div>心理バトル成功数：<span data-bind="psychSuccess">0</span></div>
-        <div>最大役：<span data-bind="bestHand">-</span></div>
-        <div>ブラフブレイク：<span data-bind="bluffBreak">なし</span></div>
+        <div class="rz-stat">
+          <div class="rz-stat-k">SCORE</div>
+          <div class="rz-stat-v v2-disp" data-bind="score">0</div>
+        </div>
+        <div class="rz-stat">
+          <div class="rz-stat-k">心理バトル</div>
+          <div class="rz-stat-v v2-disp"><span data-bind="psychSuccess">0</span></div>
+        </div>
+        <div class="rz-stat">
+          <div class="rz-stat-k">最大役</div>
+          <div class="rz-stat-v v2-disp rz-stat-hand" data-bind="bestHand">-</div>
+        </div>
+        <div class="rz-stat">
+          <div class="rz-stat-k">ブラフブレイク</div>
+          <div class="rz-stat-v v2-disp rz-stat-bluff" data-bind="bluffBreak">なし</div>
+        </div>
       </div>
-      <div class="result-reason" data-bind="resultReason"></div>
+
+      <details class="result-breakdown">
+        <summary class="result-breakdown-toggle v2-detail-toggle">スコア内訳を見る ▾</summary>
+        <div class="result-reason" data-bind="resultReason"></div>
+      </details>
+
       <div class="result-buttons" data-bind="resultButtons">
-        <button class="btn btn-primary" data-action="rematch">再戦</button>
-        <button class="btn btn-secondary" data-action="back-stage">ステージ選択へ</button>
+        <button class="btn btn-primary result-main-btn" data-action="rematch"><span>再戦</span></button>
+        <div class="result-sub-buttons">
+          <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<script src="game.js"></script>
+<script src="game.js?v=20260924e"></script>
 </body>
 </html>
