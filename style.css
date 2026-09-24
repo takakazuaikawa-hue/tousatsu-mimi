@@ -16237,3 +16237,146 @@ video.motion-bg.on { opacity: 1; }
 
 /* 動く一枚絵の戻り：動き終わったら、原画へゆっくり溶かして戻す */
 video.motion-layer.done, video.motion-bg.done { opacity: 0; transition: opacity 1s ease-in-out; }
+
+/* =========================================================
+   ロビー v8「フロアに立つ5人 × ロイヤルフラッシュの手札」
+   座標は 1280×800 の画面基準（.lobby-main は上から92px下がっているので -92px で合わせる）。
+   主役は大きさではなく「光」と「一歩前」。倒した子は暗くしない。
+   ========================================================= */
+.lobby-screen.lb8 .lb5-cards.lb8-stage {
+  position: absolute; left: 0; top: -92px; width: 1280px; height: 800px;
+  display: block; padding: 0; margin: 0; transform: none; pointer-events: none; z-index: 3;
+  background: none; border: 0; box-shadow: none; gap: 0;
+}
+.lobby-screen.lb8 .lb5-cards.lb8-stage::before,
+.lobby-screen.lb8 .lb5-cards.lb8-stage::after { display: none; }
+.lb8-seat { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+
+/* 次の卓にだけ、シャンデリアから光を落とす */
+.lb8-seat.is-next::before {
+  content: ""; position: absolute; left: calc(var(--fx, var(--cx)) - 225px); top: 0; width: 450px; height: 660px;
+  clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, rgba(255,240,200,.5), rgba(255,226,160,.16) 72%, rgba(255,226,160,0));
+  mix-blend-mode: screen; pointer-events: none;
+}
+.lb8-pool { position: absolute; left: calc(var(--cx) - 75px); top: 588px; width: 150px; height: 26px; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0,0,0,.7), rgba(0,0,0,0) 70%); pointer-events: none; }
+.lb8-seat.is-next .lb8-pool { left: calc(var(--cx) - 150px); top: 574px; width: 300px; height: 64px;
+  background: radial-gradient(ellipse, rgba(255,228,150,.75), rgba(255,190,90,.25) 42%, rgba(0,0,0,0) 72%); }
+
+/* 人物：床に直接立つ */
+.lb8-fig { position: absolute; left: calc(var(--cx) - 145px); top: 168px; width: 290px; pointer-events: none;
+  transition: transform .18s cubic-bezier(.2,.8,.2,1), filter .18s; }
+.lb8-fig img { display: block; width: 100%; height: auto; }
+.lb8-seat.is-next .lb8-fig { left: calc(var(--cx) - 182px); top: 104px; width: 364px; filter: drop-shadow(0 0 22px rgba(255,220,140,.4)); }
+.lb8-seat.is-locked .lb8-fig img { filter: brightness(0) drop-shadow(0 0 1.5px rgba(245,215,122,.9)) drop-shadow(0 0 12px rgba(245,215,122,.3)); }
+.lb8-seat.is-vip.is-locked .lb8-fig img { filter: brightness(0) drop-shadow(0 0 2px rgba(240,80,100,.95)) drop-shadow(0 0 18px rgba(200,37,58,.6)); }
+.lb8-seat:hover .lb8-fig { transform: translateY(-5px); }
+.lb8-seat.is-next:hover .lb8-fig { transform: translateY(-7px) scale(1.018); }
+
+/* VIP：赤いロープの向こう */
+.lb8-rope { position: absolute; left: calc(var(--cx) - var(--sw) / 2 + 10px); top: 486px; width: calc(var(--sw) - 20px); height: 118px; pointer-events: none; }
+.lb8-post { position: absolute; left: 0; top: 0; width: 10px; height: 118px; border-radius: 5px 5px 2px 2px; background: linear-gradient(90deg, #8a6420, #f7dc8e 45%, #8a6420); }
+.lb8-post.is-r { left: auto; right: 0; }
+.lb8-post::before { content: ""; position: absolute; left: -5px; top: -12px; width: 20px; height: 20px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff0bf, #c99a36 60%, #6a4a12); }
+.lb8-cord { position: absolute; left: 5px; right: 5px; top: 10px; height: 40px; border: 9px solid #b3172f; border-top: 0; border-radius: 0 0 60% 60% / 0 0 100% 100%; box-shadow: 0 6px 10px rgba(0,0,0,.4); }
+
+/* 札：足元に一人一枚 */
+.lb8-card { position: absolute; left: calc(var(--cx) - 46px); top: 612px; width: 92px; height: 138px; border-radius: 9px;
+  background: #f6ecd8; box-shadow: 0 10px 22px rgba(0,0,0,.55), inset 0 0 0 1px rgba(120,80,20,.35);
+  transform: rotate(var(--tilt)); transition: transform .16s cubic-bezier(.2,.8,.2,1), box-shadow .16s; pointer-events: none;
+  font-family: "Shippori Mincho B1", "Noto Serif JP", serif; }
+.lb8-card::after { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(180,130,40,.7); border-radius: 6px; pointer-events: none; }
+.lb8-idx { position: absolute; left: 7px; top: 6px; text-align: center; line-height: 1; color: #a3172c; z-index: 1; }
+.lb8-idx b { display: block; font-size: 18px; font-weight: 800; }
+.lb8-idx i { display: block; font-style: normal; font-size: 13px; margin-top: 1px; }
+.lb8-idx.is-back { color: #f7dc8e; text-shadow: 0 1px 3px rgba(0,0,0,.9); }
+.lb8-heart { position: absolute; left: 0; right: 0; top: 30px; text-align: center; font-size: 42px; line-height: 1; color: #a3172c; }
+.lb8-cname { position: absolute; left: 0; right: 0; bottom: 11px; text-align: center; font-weight: 800; font-size: 13px; letter-spacing: .08em; color: #2a1406; white-space: nowrap; }
+.lb8-seal { position: absolute; right: -12px; top: -11px; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 35% 30%, #e04a5c, #9a1428 58%, #6a0a1a); box-shadow: 0 0 0 2px rgba(154,20,40,.55), 0 4px 8px rgba(0,0,0,.55);
+  font-weight: 800; font-size: 15px; color: #ffe3a8; transform: rotate(-12deg); z-index: 2; }
+.lb8-back { position: absolute; inset: 0; border-radius: 9px; overflow: hidden; }
+.lb8-back img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.lb8-seat.is-locked .lb8-card::after { border-color: rgba(247,220,142,.35); }
+.lb8-seat.is-vip.is-locked .lb8-back img { filter: sepia(1) saturate(4) hue-rotate(-40deg) brightness(.75); }
+.lb8-backprize { position: absolute; left: 7px; right: 7px; bottom: 8px; padding: 2px 0; text-align: center; font-family: "Noto Sans JP", sans-serif;
+  font-size: 10px; font-weight: 700; color: #f7dc8e; background: rgba(14,8,7,.86); border: 1px solid rgba(226,184,92,.5); }
+.lb8-vipmark { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; transform: rotate(45deg);
+  background: linear-gradient(135deg, #fff0bf, #c99a36); box-shadow: 0 5px 12px rgba(0,0,0,.6); }
+.lb8-vipmark b { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%) rotate(-45deg); text-align: center; font-size: 17px; color: #6a0a1a; letter-spacing: .06em; }
+
+/* 次の卓の札：一枚だけ浮いて光る */
+.lb8-seat.is-next .lb8-card { left: calc(var(--cx) - 54px); top: 572px; width: 108px; height: 162px; transform: none;
+  box-shadow: 0 0 0 3px #f5d77a, 0 0 34px rgba(255,210,120,.65), 0 14px 30px rgba(0,0,0,.6); }
+.lb8-seat.is-next .lb8-heart { top: 38px; font-size: 46px; }
+.lb8-seat.is-next .lb8-cname { bottom: 27px; font-size: 16px; }
+.lb8-cprize { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; font-family: "Noto Sans JP", sans-serif; font-size: 11px; font-weight: 700; color: #7a1424; }
+.lb8-band { position: absolute; left: 50%; top: -15px; transform: translateX(-50%); white-space: nowrap; padding: 1px 12px 0;
+  font-size: 15px; letter-spacing: .2em; color: #2a1406; background: linear-gradient(90deg, #c99a36, #f7dc8e 50%, #c99a36); box-shadow: 0 3px 8px rgba(0,0,0,.5); }
+.lb8-seat.is-vip.is-next .lb8-card { box-shadow: 0 0 0 3px #f5d77a, 0 0 0 6px rgba(179,23,47,.8), 0 0 40px rgba(232,70,90,.55), 0 14px 30px rgba(0,0,0,.6); }
+.lb8-seat:hover .lb8-card { transform: rotate(var(--tilt)) translateY(-6px); }
+.lb8-seat.is-next:hover .lb8-card { transform: translateY(-6px) scale(1.02); }
+.lb8-seat.is-go .lb8-card { transform: translateY(3px) scale(.98); transition-duration: 70ms; }
+
+/* 札の下：ボタン／再戦の報酬／開く条件 */
+.lb8-under { position: absolute; left: calc(var(--cx) - 100px); top: 758px; width: 200px; text-align: center; pointer-events: none; }
+.lb8-seat.is-next .lb8-under { top: 744px; }
+.lb8-cta { display: inline-block; padding: 10px 34px; font-size: 16px; font-weight: 900; letter-spacing: .1em; color: #2a1406; border-radius: 3px;
+  background: linear-gradient(180deg, #fff0bf, #f5d77a 45%, #c99a36); box-shadow: 0 4px 0 #6a4a12, 0 10px 22px rgba(0,0,0,.5);
+  animation: lb8Pulse 4s ease-in-out infinite; }
+.lb8-seat.is-go .lb8-cta { background: linear-gradient(180deg, #e8465a, #a3172c); color: #fff3d6; }
+@keyframes lb8Pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.12); } }
+.lb8-sub { font-size: 12px; font-weight: 700; color: #f3e8d0; text-shadow: 0 1px 4px rgba(0,0,0,.95), 0 0 2px rgba(0,0,0,.9); }
+.lb8-need { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; font-size: 11px; font-weight: 700; color: #f7dc8e;
+  background: rgba(14,8,7,.82); border: 1px solid rgba(226,184,92,.45); white-space: nowrap; }
+.lb8-need svg { width: 11px; height: 11px; }
+.lb8-seat.is-denied .lb8-card { animation: lb8Shake .26s linear; }
+.lb8-seat.is-denied .lb8-need { color: #fff; border-color: #f7dc8e; }
+@keyframes lb8Shake { 0%, 100% { translate: 0 0; } 25% { translate: -4px 0; } 50% { translate: 4px 0; } 75% { translate: -3px 0; } }
+
+/* 押せる範囲：人物の頭から札の下まで一本の柱（となりの席とは重ならない） */
+.lb8-hit { position: absolute; left: calc(var(--cx) - var(--sw) / 2 + 6px); top: 176px; width: calc(var(--sw) - 12px); height: 616px;
+  padding: 0; border: 0; background: transparent; cursor: pointer; pointer-events: auto; z-index: 3; }
+.lb8-seat.is-next .lb8-hit { top: 110px; height: 682px; }
+.lb8-seat.is-locked .lb8-hit { cursor: not-allowed; }
+.lb8-hit:focus-visible { outline: 2px solid #f7dc8e; outline-offset: -4px; }
+.lb8-info { position: absolute; left: calc(var(--cx) - 78px); top: 600px; width: 24px; height: 24px; padding: 0; border-radius: 50%; z-index: 4; pointer-events: auto;
+  display: flex; align-items: center; justify-content: center; color: #f6ecd8; background: rgba(14,8,7,.8); border: 1px solid rgba(226,184,92,.5); cursor: pointer; }
+.lb8-seat.is-next .lb8-info { left: calc(var(--cx) - 88px); top: 574px; }
+.lb8-skip { position: absolute; left: calc(var(--cx) + 64px); top: 706px; padding: 1px 0; z-index: 4; pointer-events: auto; white-space: nowrap;
+  font-size: 11px; color: #e3d5bb; background: none; border: 0; border-bottom: 1px solid rgba(227,213,187,.5); cursor: pointer; text-shadow: 0 1px 3px rgba(0,0,0,.9); }
+
+/* 全員に勝った：ロイヤルフラッシュ完成。5枚すべてが金に縁取られる */
+.lb8-seat.is-complete .lb8-card { box-shadow: 0 0 0 2px #f5d77a, 0 0 22px rgba(255,210,120,.5), 0 10px 22px rgba(0,0,0,.55); }
+
+/* 上：見出しの代わりにロイヤルフラッシュの進み具合 */
+.lobby-screen.lb8 .lobby-title { left: 176px; top: 14px; transform: none; flex-direction: row; align-items: center; gap: 12px;
+  padding: 7px 14px; background: rgba(14,8,7,.74); border: 1px solid rgba(226,184,92,.45); text-shadow: none; }
+.lb8-head { font-family: "Shippori Mincho B1", "Noto Serif JP", serif; font-weight: 800; font-size: 17px; letter-spacing: .1em; color: #f6ecd8; white-space: nowrap; }
+.lobby-title.is-complete .lb8-head { color: #f7dc8e; }
+.lb8-pips { display: flex; gap: 4px; }
+.lb8-pip { display: inline-flex; align-items: center; justify-content: center; width: 25px; height: 25px; border-radius: 3px; font-style: normal;
+  font-family: "Shippori Mincho B1", "Noto Serif JP", serif; font-weight: 800; font-size: 12px; color: #8f7f6c; background: rgba(14,8,7,.7); border: 1px solid rgba(226,184,92,.3); }
+.lb8-pip.is-own { background: #f6ecd8; color: #a3172c; border-color: #f6ecd8; }
+.lb8-pip.is-next { color: #f7dc8e; border-color: #e2b85c; }
+
+/* 施設メニューは上の帯へ（下は次の卓のボタンが来る場所なので空ける） */
+.lobby-screen.lb8 .lobby-hud .lb8-nav { position: absolute; top: 18px; bottom: auto; left: auto; right: 208px; width: auto; height: auto; padding: 0; gap: 6px;
+  background: none; border: 0; box-shadow: none; display: flex; transform: none; }
+.lobby-screen.lb8 .lobby-hud .lb8-nav::before, .lobby-screen.lb8 .lobby-hud .lb8-nav::after { display: none; }
+.lobby-screen.v5.lb8 .lobby-hud .lb8-nav .lb4-bar-btn { min-width: 0; width: auto; max-width: none; height: 40px; padding: 0 14px; flex: 0 0 auto; transform: none; clip-path: none;
+  background: rgba(14,8,7,.74); border: 1px solid rgba(226,184,92,.4); border-radius: 0; box-shadow: none; }
+.lobby-screen.v5.lb8 .lobby-hud .lb8-nav .lb3-bar-sub { display: none; }
+.lobby-screen.v5.lb8 .lobby-hud .lb8-nav .lb3-bar-name { font-size: 14px; letter-spacing: .06em; transform: none; }
+.lobby-screen.v5.lb8 .lobby-hud .lb8-nav .lb4-bar-btn:hover { border-color: #e2b85c; }
+.lobby-screen.v5.lb8 .lobby-hud .lb3-audio-panel { position: absolute; top: 64px; bottom: auto; right: 208px; left: auto; }
+
+/* リコ先輩の助言：00番の頭にかからない高さへ */
+.lobby-screen.v5.lb8 .lb4-rico-bubble { left: 206px; top: -4px; bottom: auto; width: 262px; min-height: 0; height: auto; }
+
+/* 10♥ はリコ先輩の卓：左の案内役リコがそのまま席。札は足元、押せるのは札とボタンだけ（リコ本人の反応は残す） */
+.lb8-seat.is-guide .lb8-hit { left: calc(var(--cx) - 74px); top: 560px; width: 148px; height: 232px; }
+.lobby-screen.lb8.lb8-next-first .lobby-rico-standing img {
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,.85)) drop-shadow(0 0 22px rgba(255,220,140,.45));
+}

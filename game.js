@@ -3739,10 +3739,20 @@ function renderLobbyV3() {
     ricoLine.innerHTML = `<span class="lb6-tip-kicker v2-disp">RICO'S TIP</span><span class="lb6-tip-body">${body}</span>`;
   }
 
-  // カード列：並び順の中で「次」だけが舞台中央に出る
-  const host = q('[data-bind="lb5Cards"]');
-  // NEXTが左端（初回＝リコの講義）の時は、助言パネルを一段上げて金ラベルとぶつけない
+  // v8：5人を床に立たせ、足元に♥の札（10〜A）を配る
   const scr = q('.lobby-screen.v5');
+  if (scr) {
+    scr.classList.add('lb8');
+    scr.classList.toggle('lb8-next-first', nextId === STAGE_ORDER[0]);
+  }
+  const host = q('[data-bind="lb5Cards"]');
+  if (host && scr) {
+    renderLobbyV8(host, nextId);
+    renderLobbyStatus();
+    return;
+  }
+  // カード列：並び順の中で「次」だけが舞台中央に出る
+  // NEXTが左端（初回＝リコの講義）の時は、助言パネルを一段上げて金ラベルとぶつけない
   if (scr) scr.classList.toggle('lb6-next-first', nextId === STAGE_ORDER[0]);
   if (host) {
     host.classList.add('lb6-deck');
@@ -3808,6 +3818,146 @@ function renderLobbyV3() {
   }
 
   renderLobbyStatus();
+}
+
+// ===== ロビー v8「フロアに立つ5人 × ロイヤルフラッシュの手札」（2026-09-24 オーナー選択） =====
+// 点数の推移：v6（5人の一覧を保ったまま主役を整理）65点 → v7（4人を細い袖に潰し、舞台を暗くした）40点。
+// オーナーが買っているのは「女の子たちが大きく美しく並んでいて、誰の卓に行くか迷える」ことと明るい豪華さ。
+// そこでカードの箱をやめ、5人を大理石の床に直接大きく立たせる（A案の人物の大きさ）。
+// 主役は大きさの差ではなく「光」と「一歩前」で作る。倒した相手は暗くしない（勝ち取った子たち）。
+// 足元には一人一枚、♥の札を配る（C案の仕掛け）。10リコ先輩 J ポルカ Q セリナ K グラーノ A ヴェルベット。
+// 勝つと札が表に返り、全員に勝つとロイヤルフラッシュが揃う＝「集めたくなる」をロビーの形そのものにする。
+const LB8_RANKS = ['10', 'J', 'Q', 'K', 'A'];
+const LB8_TILT = [-4, 3, -2, 4, -3];
+// 席の割り付け：10♥ はリコ先輩の卓なので、左の案内役リコをそのまま席にして足元に札を置く
+//   （別にもう一人リコを立てると、同じ子が二人並んで見える）。
+//   残り4人に右側の床を配り、次の卓だけ1.4倍の幅（人物が一回り大きく、一歩前に出る）
+const LB8_GUIDE_SLOT = { c: 290, w: 150, fx: 160 };
+function lb8Slots(nextIdx) {
+  const L = 360, R = 1250;
+  const ws = STAGE_ORDER.slice(1).map((_, i) => (i + 1 === nextIdx ? 1.4 : 1));
+  const unit = (R - L) / ws.reduce((a, b) => a + b, 0);
+  let x = L;
+  return [LB8_GUIDE_SLOT].concat(ws.map(w => { const s = { c: Math.round(x + w * unit / 2), w: Math.round(w * unit) }; x += w * unit; return s; }));
+}
+function renderLobbyV8(host, nextId) {
+  const nextIdx = STAGE_ORDER.indexOf(nextId);
+  const slots = lb8Slots(nextIdx);
+  const owned = STAGE_ORDER.filter(sid => save.clearedStages.includes(sid)).length;
+  const allClear = !nextId;
+
+  // 上：見出しの代わりに、ロイヤルフラッシュの進み具合
+  const title = document.querySelector('.lobby-screen.v5 .lobby-title');
+  if (title) {
+    const pips = STAGE_ORDER.map((sid, i) => {
+      const cls = save.clearedStages.includes(sid) ? 'is-own' : (sid === nextId ? 'is-next' : '');
+      return `<i class="lb8-pip ${cls}">${LB8_RANKS[i]}</i>`;
+    }).join('');
+    const head = allClear ? 'ロイヤルフラッシュ、完成' : `ロイヤルフラッシュまで、あと${STAGE_ORDER.length - owned}枚`;
+    title.innerHTML = `<span class="lb8-head">${head}</span><span class="lb8-pips" aria-hidden="true">${pips}</span>`;
+    title.classList.toggle('is-complete', allClear);
+  }
+
+  // 施設メニューは上の帯へ移す（下は次の卓のボタンが来る場所なので空ける）。
+  // 中身の帯の中に置くとヘッダーの裏に隠れるので、ヘッダーそのものへ差し込む
+  const hud = document.querySelector('.lobby-screen.v5 .lobby-hud');
+  const bar = document.querySelector('.lobby-screen.v5 .lb4-bar');
+  const audio = document.querySelector('.lobby-screen.v5 .lb3-audio-panel');
+  if (hud && bar && bar.parentElement !== hud) { bar.classList.add('lb8-nav'); hud.appendChild(bar); }
+  if (hud && audio && audio.parentElement !== hud) hud.appendChild(audio);
+
+  host.classList.add('lb8-stage');
+  host.classList.toggle('is-allclear', allClear);
+  host.innerHTML = STAGE_ORDER.map((sid, i) => {
+    const o = OPPONENTS[sid];
+    const done = save.clearedStages.includes(sid);
+    const unl = isStageUnlocked(sid);
+    const isNext = sid === nextId;
+    const vip = !!o.isBoss;
+    const rank = LB8_RANKS[i];
+    const prevName = i > 0 ? (OPPONENTS[STAGE_ORDER[i - 1]] || {}).name : '';
+    const mainAction = sid === 'rico_tutorial' ? (done ? 'rico-mode-chooser' : 'battle-start') : 'battle-start';
+    const ctaLabel = sid === 'rico_tutorial' ? (done ? '対戦／受講' : '受講する') : (done ? '再戦する' : 'この卓につく');
+    const guide = i === 0;
+    const cls = ['lb8-seat', guide ? 'is-guide' : '', isNext ? 'is-next' : '', done ? 'is-cleared' : '', !unl ? 'is-locked' : '', vip ? 'is-vip' : '', allClear ? 'is-complete' : ''].filter(Boolean).join(' ');
+    const s = slots[i];
+    // 札の表：数字と♥、名前。次の卓には賞金まで載せる。未解放は伏せ札（ゲームの札の裏）
+    const face = unl
+      ? `<span class="lb8-idx"><b>${rank}</b><i>♥</i></span>
+         <span class="lb8-heart">♥</span>
+         <span class="lb8-cname">${o.name}</span>
+         ${isNext && !done ? `<span class="lb8-cprize">賞金 ${o.rewardFirst || 500}</span>` : ''}
+         ${done ? '<span class="lb8-seal">勝</span>' : ''}`
+      : `<span class="lb8-back"><img src="assets/ui/card_back_default.webp" alt=""></span>
+         <span class="lb8-idx is-back"><b>${rank}</b><i>♥</i></span>
+         ${vip ? '<span class="lb8-vipmark"><b class="v2-disp">VIP</b></span>' : `<span class="lb8-backprize">賞金 ${o.rewardFirst || 500}</span>`}`;
+    const band = isNext ? `<span class="lb8-band v2-disp">${vip ? 'FINAL TABLE' : 'NEXT TABLE'}</span>` : '';
+    // 札の下：次の卓＝ボタン、倒した卓＝再戦の報酬、未解放＝開く条件
+    let under = '';
+    if (isNext) under = `<span class="lb8-cta">${ctaLabel}</span>`;
+    else if (!unl) under = `<span class="lb8-need">${LB4_LOCK_SVG}<span>${prevName}に勝つと開く</span></span>`;
+    else if (done) under = `<span class="lb8-sub">再戦 ＋${o.rewardRematch || 50}</span>`;
+    else under = `<span class="lb8-sub">賞金 ${o.rewardFirst || 500}</span>`;
+    const hitAttr = unl
+      ? `data-action="${mainAction}" data-opponent="${sid}" aria-label="${rank}♥ ${o.name}：${ctaLabel}"`
+      : `aria-disabled="true" aria-label="${rank}♥ 伏せ札：${prevName}に勝つと開く"`;
+    const profile = unl
+      ? `<button class="lb8-info" type="button" data-action="char-profile" data-char="${sid}" title="${o.name}のプロフィールを見る" aria-label="${o.name}のプロフィール">${LB6_PROFILE_SVG}</button>`
+      : '';
+    const skip = (isNext && !done && sid !== 'rico_tutorial')
+      ? `<button class="lb8-skip" type="button" data-action="skip-stage" data-opponent="${sid}" title="コインで勝利扱いにする">スキップ ${skipStageCost(o)}</button>`
+      : '';
+    return `<div class="${cls}" style="--cx:${s.c}px;--fx:${s.fx || s.c}px;--sw:${s.w}px;--tilt:${LB8_TILT[i]}deg">
+      ${guide ? '' : `<span class="lb8-pool"></span>
+      <span class="lb8-fig"><img src="assets/characters/${o.imgKey}_default.webp" alt="" onerror="window.assetFallback(this,'${o.imgKey}')"></span>`}
+      ${vip && !unl ? '<span class="lb8-rope"><i class="lb8-post"></i><i class="lb8-post is-r"></i><i class="lb8-cord"></i></span>' : ''}
+      <span class="lb8-card">${face}${band}</span>
+      <span class="lb8-under">${under}</span>
+      <button class="lb8-hit" type="button" ${hitAttr}></button>
+      ${profile}
+      ${skip}
+    </div>`;
+  }).join('');
+  lb8WireSeats(host);
+}
+
+// 席の手応え：伏せ札は押すと札が小さく震えて開く条件が光る（開始はしない）。
+// 卓につく時は v6 と同じ深紅スラブのワイプを挟んでから、既存の onAction 経路へ渡す。
+function lb8WireSeats(host) {
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  host.querySelectorAll('.lb8-seat').forEach(seat => {
+    const hit = seat.querySelector('.lb8-hit');
+    if (!hit) return;
+    if (seat.classList.contains('is-locked')) {
+      hit.addEventListener('click', () => {
+        seat.classList.remove('is-denied');
+        void seat.offsetWidth;
+        seat.classList.add('is-denied');
+        mpSfx('check');
+      });
+      return;
+    }
+    if (hit.dataset.action !== 'battle-start' || reduce) return;
+    // 親で捕捉して一度だけ止める（ボタン自身の onAction より先に走らせるため）
+    seat.addEventListener('click', (e) => {
+      if (e.target !== hit || hit.dataset.wiped === '1') return;
+      e.stopPropagation();
+      e.preventDefault();
+      if (lb6Wiping) return;
+      lb6Wiping = true;
+      seat.classList.add('is-go');
+      setTimeout(() => lb6Wipe(() => {
+        hit.dataset.wiped = '1';
+        hit.click();
+        delete hit.dataset.wiped;
+        seat.classList.remove('is-go');
+      }), 80);
+    }, true);
+  });
+  host.querySelectorAll('.lb8-skip').forEach(b => b.addEventListener('click', () => {
+    const sid = b.dataset.opponent;
+    setTimeout(() => { if (state.screen === 'lobby' && save.clearedStages.includes(sid)) render(); }, 0);
+  }));
 }
 
 // 右上：コイン／ログボ／ご褒美CG を一枚の縦パネルに集約。
