@@ -28,3 +28,6 @@ desktop.ini
 
 # 生成元データ（配信しない：元PNGは巨大）
 assets/_source_png/
+
+# 検証の出力
+qa/out/
