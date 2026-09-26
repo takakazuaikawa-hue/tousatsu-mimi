@@ -16419,3 +16419,187 @@ body:has(.battle-screen.v2) .rico-cutin:not(.opponent-cutin):not(.v2-cutin) {
   bottom: auto;
   top: 11vh;
 }
+
+/* ===== 講義：章バナーの章題（リボンは擬似要素に分け、文字は不透明で読めるように） =====
+   以前は .chapter-banner .chapter-title の background: url(リボン) が .chapter-title のグラデ文字
+   （background-clip: text ＋ color: transparent）を打ち消し、章題が透明で読めなかった。
+   リボンは9分割（両端の尾と飾りは固定、中央の板だけ伸びる）にして、長い章題でも板からはみ出さない。 */
+.chapter-banner .chapter-title {
+  position: relative;
+  z-index: 0;
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: #fff1c9;
+  -webkit-text-fill-color: #fff1c9;
+  font-size: 40px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  padding: 0.55em 0.3em 0.6em;
+  margin: 0 5.2em;
+  max-width: calc(100vw - 10.4em - 32px);
+  text-shadow: 0 2px 0 rgba(70, 8, 18, 0.95), 0 0 14px rgba(245, 215, 122, 0.45), 0 3px 10px rgba(0, 0, 0, 0.85);
+}
+.chapter-banner .chapter-title::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: -5.2em;
+  right: -5.2em;
+  border-style: solid;
+  border-width: 0 5.2em;
+  border-image: url('assets/ui/lecture_ribbon.webp') 0 200 fill / 0 5.2em stretch;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6));
+}
+/* 章題の下の「この章で分かること」1行 */
+.chapter-banner .chapter-lead {
+  margin-top: 18px;
+  max-width: min(680px, calc(100vw - 32px));
+  font-size: 17px;
+  line-height: 1.6;
+  color: #f3e6d8;
+  letter-spacing: 0.04em;
+  animation: chapterTextIn 0.6s ease-out 0.55s both;
+}
+.chapter-banner .chapter-lead-k {
+  display: inline-block;
+  margin-right: 10px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #1d080e;
+  background: var(--c-gold);
+  border-radius: 999px;
+  vertical-align: 2px;
+}
+/* 高さの小さい画面（スマホ横持ち 667×375 など）：はみ出して「講義を中断する」が画面外で押せなかった */
+@media (max-height: 520px) {
+  .chapter-banner {
+    justify-content: center;
+    justify-content: safe center;
+    padding: 10px 16px;
+    overflow-y: auto;
+  }
+  .chapter-banner .chapter-num { font-size: 13px; margin-bottom: 4px; letter-spacing: 0.35em; }
+  .chapter-banner .chapter-title { font-size: 24px; }
+  .chapter-banner .chapter-lead { margin-top: 8px; font-size: 13px; line-height: 1.5; }
+  .chapter-banner .chapter-lead-k { font-size: 10px; padding: 1px 8px; margin-right: 6px; }
+  .chapter-banner .chapter-actions {
+    margin-top: 12px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  .chapter-banner .chapter-btn { min-width: 0; min-height: 44px; padding: 8px 16px; font-size: 14px; letter-spacing: 0.06em; }
+  .chapter-banner .chapter-btn.chapter-start { font-size: 15px; }
+  .chapter-banner .chapter-btn.chapter-exit { min-width: 0; min-height: 44px; font-size: 13px; opacity: 0.85; }
+}
+
+/* ===== 講義：導入（コース選択）・完了の幕 =====
+   中身はスクロールしても、選ぶボタンは下端に固定して常に見せる（667×375 でボタンが画面外だった） */
+.lecture-overlay .lecture-bubble { display: flex; flex-direction: column; }
+.lecture-overlay .lec-title { color: var(--c-red); font-size: 24px; margin: 0 0 12px; letter-spacing: 0.15em; line-height: 1.3; }
+.lecture-overlay .lec-resume {
+  font-size: 15px; line-height: 1.7; margin: 0 0 8px;
+  background: rgba(245, 215, 122, 0.15); padding: 10px; border-radius: 8px; border: 1px solid var(--c-gold);
+}
+.lecture-overlay .lec-lead { font-size: 17px; line-height: 1.8; margin: 0 0 6px; }
+.lecture-overlay .lec-courses { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 10px; }
+.lecture-overlay .lec-course {
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(200, 37, 58, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  text-align: left;
+  line-height: 1.6;
+}
+.lecture-overlay .lec-course.is-lite { background: rgba(245, 215, 122, 0.12); border-color: var(--c-gold); }
+.lecture-overlay .lec-course-name { color: var(--c-gold-bright); }
+.lecture-overlay .lec-course small { display: block; margin-top: 6px; font-size: 14px; }
+.lecture-overlay .lec-note { font-size: 13px; color: var(--c-red); line-height: 1.6; margin: 0; }
+.lecture-overlay .lec-grade { font-size: 64px; font-weight: 900; margin: 4px 0; line-height: 1.1; text-align: center; }
+.lecture-overlay .lec-score { font-size: 17px; margin: 4px 0 10px; text-align: center; }
+.lecture-overlay .lec-rewards {
+  font-size: 14px; line-height: 1.8; margin-bottom: 10px;
+  background: rgba(245, 215, 122, 0.12); border: 1px solid rgba(245, 215, 122, 0.4); border-radius: 8px; padding: 8px 12px;
+}
+.lecture-overlay .lec-actions {
+  position: sticky;
+  bottom: -20px;
+  z-index: 2;
+  flex-wrap: wrap;
+  margin: 12px -28px -20px;
+  padding: 14px 28px 16px;
+  background: linear-gradient(180deg, rgba(245, 215, 122, 0) 0%, #f5d77a 22px);
+}
+.lecture-overlay .lec-actions .next-btn { margin: 0; min-height: 44px; }
+/* フルコースのボタンが素のブラウザボタンのままだった */
+.lecture-overlay .lec-actions .full-btn {
+  min-height: 44px;
+  padding: 10px 22px;
+  background: #fffaf0;
+  color: var(--c-red);
+  border: 2px solid var(--c-red);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+.lecture-overlay .lec-actions .full-btn:hover { filter: brightness(1.05); }
+@media (max-height: 520px) {
+  .lecture-overlay { padding: 8px 16px; }
+  .lecture-overlay .lecture-bubble { max-height: calc(100vh - 16px); font-size: 14px; line-height: 1.55; padding: 12px 18px 10px; }
+  .lecture-overlay .lecture-bubble::before { display: none; }
+  .lecture-overlay .tutorial-step { font-size: 11px; top: -4px; padding: 2px 10px; }
+  .lecture-overlay .lec-title { font-size: 18px; margin-bottom: 4px; }
+  .lecture-overlay .lec-resume { font-size: 13px; padding: 6px 8px; }
+  .lecture-overlay .lec-lead { font-size: 14px; line-height: 1.55; margin-bottom: 4px; }
+  .lecture-overlay .lec-courses { gap: 6px; margin: 4px 0 6px; }
+  .lecture-overlay .lec-course { padding: 6px 10px; line-height: 1.45; }
+  .lecture-overlay .lec-course small { font-size: 12px; margin-top: 2px; }
+  .lecture-overlay .lec-note { font-size: 11px; line-height: 1.45; }
+  .lecture-overlay .lec-grade { font-size: 40px; margin: 0; }
+  .lecture-overlay .lec-score { font-size: 14px; margin: 2px 0 6px; }
+  .lecture-overlay .lec-rewards { font-size: 12px; line-height: 1.6; padding: 6px 10px; margin-bottom: 6px; }
+  .lecture-overlay .lec-actions { bottom: -10px; margin: 6px -18px -10px; padding: 8px 18px 10px; gap: 8px; }
+  .lecture-overlay .lec-actions button { min-height: 40px; padding: 6px 14px; font-size: 14px; letter-spacing: 0.06em; }
+}
+
+/* ===== 講義：背後の卓（行動ボタン・HAND/POT・場札など）を出さない。教室として見せる ===== */
+.battle-screen.is-lecture .v2-hand,
+.battle-screen.is-lecture .v2-pot,
+.battle-screen.is-lecture .v2-table,
+.battle-screen.is-lecture .v2-actions,
+.battle-screen.is-lecture .v2-seal-row,
+.battle-screen.is-lecture .v2-detail,
+.battle-screen.is-lecture .v2-stack-gauge,
+.battle-screen.is-lecture .v2-myhand,
+.battle-screen.is-lecture .v2-band,
+.battle-screen.is-lecture .v2-tells,
+.battle-screen.is-lecture .v2-range-band,
+.battle-screen.is-lecture .opponent-info,
+.battle-screen.is-lecture .backdoor-toggle,
+.battle-screen.is-lecture .backdoor-panel { display: none !important; }
+.battle-screen.is-lecture .bg-poker { filter: brightness(0.5) saturate(0.85) blur(3px); }
+
+/* ===== 講義：確認ダイアログを body 直下の幕（導入・章バナー）より手前に出す（lectureConfirm） ===== */
+.mimi-confirm-overlay.is-over-body { position: fixed; z-index: 13000; }
+.mimi-confirm-overlay.is-over-body .mimi-confirm {
+  box-sizing: border-box;
+  min-width: 0;
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+}
+@media (max-height: 520px) {
+  .mimi-confirm-overlay.is-over-body .mimi-confirm { padding: 10px 16px; gap: 8px; }
+  .mimi-confirm-overlay.is-over-body .mimi-confirm-title { font-size: 18px; }
+  .mimi-confirm-overlay.is-over-body .mimi-confirm-body { font-size: 14px; line-height: 1.5; }
+  .mimi-confirm-overlay.is-over-body .mimi-confirm-actions .btn { min-width: 0; min-height: 44px; padding: 8px 16px; font-size: 15px; }
+}

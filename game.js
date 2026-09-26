@@ -393,6 +393,45 @@ const CHAR_FALLBACK = {
   velvet: "[ヴェルベット]\nVIPルームのボスディーラー\n（仮表示）",
 };
 
+//=============================================================
+// 講義（リコ先輩）の章立て。問題本体は PSYCH_QUESTIONS の lesson_*。
+// 「全○章・○問」の表記はここから数えて組み立てる（直書きの「全8章・24問」「全24問」「全35問」がばらばらだった）ので、
+// それを使う OPPONENTS／LOBBY_PRESENT より前で定義する。
+// lead＝章バナーに添える「この章で分かること」1行。
+//=============================================================
+const LESSON_CHAPTERS = [
+  { key: 1,     title: '第1章：ポーカーって何？',           lead: 'テキサスホールデムがどんな遊びか、ざっくりつかむ',
+                                                            ids: ['lesson_1_1', 'lesson_1_2', 'lesson_1_3'] },
+  { key: 2,     title: '第2章：基本用語',                 lead: '手札・場札・ポット・参加費など、卓で飛び交う言葉',
+                                                            ids: ['lesson_2_1', 'lesson_2_2', 'lesson_2_3'] },
+  { key: '用語', title: '特別講座：用語集（s/o・コネクター・ナッツ・チェックレイズ）',
+                lead: 'スーテッド・コネクター・ナッツなど、少し先の用語',
+                                                            ids: ['lesson_term_1', 'lesson_term_2', 'lesson_term_3', 'lesson_term_4'] },
+  { key: 3,     title: '第3章：ハンドの流れ',             lead: '1回の勝負がどんな順番で進んで、どう終わるか',
+                                                            ids: ['lesson_3_1', 'lesson_3_2', 'lesson_3_3'] },
+  { key: 4,     title: '第4章：5つのアクション',           lead: 'フォールド・チェック・コールなど、自分の番でできる5つの動き',
+                                                            ids: ['lesson_4_1', 'lesson_4_2', 'lesson_4_3'] },
+  { key: 5,     title: '第5章：役の強さ',                 lead: 'どの役が強いか、同じ役どうしはどう比べるか',
+                                                            ids: ['lesson_5_1', 'lesson_5_2', 'lesson_5_3'] },
+  { key: '実戦', title: '実戦講座：役を見つけよう（4問ハンズオン）',
+                lead: '手札と場札の7枚から、いちばん強い5枚を見つける',
+                                                            ids: ['lesson_hand_1', 'lesson_hand_2', 'lesson_hand_3', 'lesson_hand_4'] },
+  { key: 6,     title: '第6章：確率と勝率',               lead: 'あと何枚で役ができるか、数えて考える',
+                                                            ids: ['lesson_6_1', 'lesson_6_2', 'lesson_6_3'] },
+  { key: 7,     title: '第7章：定石',                    lead: '参加する手・賭け額の意味・座る順番の考え方',
+                                                            ids: ['lesson_7_1', 'lesson_7_2', 'lesson_7_3'] },
+  { key: 8,     title: '第8章：心理戦・読み',             lead: '相手の言葉や賭け方から、本心を読むコツ',
+                                                            ids: ['lesson_8_1', 'lesson_8_2', 'lesson_8_3'] },
+  { key: 'マナー', title: '特別講座：バンクロール・マナー・禁止行為',
+                lead: '長く楽しむためのお金の管理と、卓での約束ごと',
+                                                            ids: ['lesson_bank_1', 'lesson_bank_2', 'lesson_bank_3'] },
+];
+// フラット順序（互換性）
+const LESSON_ORDER = LESSON_CHAPTERS.flatMap(c => c.ids);
+// ⚡ライトコース＝この章だけ
+const LESSON_LITE_KEYS = [1, 2, 5];
+const LESSON_LITE_CHAPTERS = LESSON_CHAPTERS.filter(c => LESSON_LITE_KEYS.includes(c.key));
+
 // 対戦相手プロファイル
 const OPPONENTS = {
   rico_tutorial: {
@@ -403,7 +442,7 @@ const OPPONENTS = {
     chips: 800,
     tutorial: true,
     imgKey: 'rico',
-    theme: 'ポーカー基礎講義（全8章・24問）',
+    theme: `ポーカー基礎講義（全${LESSON_CHAPTERS.length}章・${LESSON_ORDER.length}問）`,
     desc: '歴史・用語・流れ・役・確率・定石・心理戦まで、じっくり学ぶリコ先輩の講義',
     rewardFirst: 300, rewardRematch: 50, rewardSBonus: 0,
     unlockNoteOnClear: null,
@@ -1963,7 +2002,7 @@ const PSYCH_QUESTIONS = {
     },
   },
   // ===== チュートリアルレッスン（type: 'lesson'） =====
-  // リコ先輩による講義形式。8章 × 3問。順番に消化。
+  // リコ先輩による講義形式。章立てと出題順は LESSON_CHAPTERS。順番に消化。
   lesson_1_1: { id:'lesson_1_1', type:'lesson', chapter:1, chapterTitle:'第1章：ポーカーって何？',
     rule:'テキサスホールデムは世界で最も遊ばれているポーカーの形。WSOPなど大会も巨大。',
     situationFn: () => '「ポーカー」と一口に言ってもバリエーションは数十種類。\n本ゲームで遊ぶ「テキサスホールデム」は、世界中の大会で最もメジャーな形式。',
@@ -2153,16 +2192,18 @@ const PSYCH_QUESTIONS = {
   },
   lesson_term_3: { id:'lesson_term_3', type:'lesson', chapter:'用語', chapterTitle:'特別講座：用語集（場札・状況関連）',
     rule:'ナッツ＝その場札で作れる「最強の役」',
-    situationFn: () => '<b>ナッツ (the nuts)</b>＝<u>その場札で作れる絶対最強の役</u>。\n例：場札 K♥ Q♥ J♥ 9♣ 3♥ で <b>A♥ 10♥</b> 持ってる → A高ストレートフラッシュ（ロイヤル）＝ナッツ\n「ナッツ持ち」は確実勝利。たとえ相手がフォーカードでも勝てる。',
-    speech: '場札 9♠ 10♠ J♠ Q♠ 3♣ でナッツになる手札は？',
-    zazazoHint: '残るストフラの最強形',
+    // ★場札 9♠10♠J♠Q♠3♣ で作れる最強は A♠K♠ のロイヤル。以前は正解が「K♠＋任意」、誤答が
+    //   この場札では成立しない「A♠A♣（フォーカード）」になっていた。誤答はこの場札で本当に作れる役にする。
+    situationFn: () => '<b>ナッツ (the nuts)</b>＝<u>その場札で作れる絶対最強の役</u>。\n例：場札 A♦ K♣ 7♥ 7♠ 2♦ なら、<b>7♦ 7♣</b> のフォーカードがナッツ（この場札ではフラッシュもストレートも作れない）。\n場札が変われば、ナッツも変わる。',
+    speech: '場札 9♠ 10♠ J♠ Q♠ 3♣ で、ナッツになる手札は？',
+    zazazoHint: '♠の 9・10・J・Q に足りない2枚は？',
     choices: [
-      { id:'nu_a', text:'K♠ + 任意（K-Q-J-10-9 のストレートフラッシュ）', correct:true },
-      { id:'nu_b', text:'A♠ A♣（フォーカード）', correct:false },
-      { id:'nu_c', text:'場札の組み合わせ次第', correct:false },
+      { id:'nu_a', text:'A♠ K♠：ロイヤルストレートフラッシュ', correct:true },
+      { id:'nu_b', text:'A♠ 2♦：Aが入った一番強いフラッシュ', correct:false },
+      { id:'nu_c', text:'K♥ K♦：9からKまでつながるストレート', correct:false },
     ],
-    onSuccess: { panyu:0, zazazo:0, hint:'ストフラ > フォーカード > フルハウス…', rico:'<u>ナッツ持ちは絶対勝てる</u>。バリュー最大化のチャンスだから大胆に攻めよう' },
-    onFail:    { panyu:0, mimi:'AAが最強かと…', rico:'<u>場札にストフラ要素があればストフラがナッツ</u>。AAでも負ける場面' },
+    onSuccess: { panyu:0, zazazo:0, hint:'ロイヤル > ストフラ > フォーカード > フルハウス…', rico:'<u>ナッツ持ちは負けない</u>。バリュー最大化のチャンスだから大胆に攻めよう' },
+    onFail:    { panyu:0, mimi:'フラッシュやストレートで十分かと…', rico:'<u>場札に同じマークの連番が4枚あれば、ストレートフラッシュまで作れる</u>。A♠K♠ ならロイヤルでナッツ' },
   },
   lesson_term_4: { id:'lesson_term_4', type:'lesson', chapter:'用語', chapterTitle:'特別講座：用語集（プレイ用語）',
     rule:'チェックレイズ＝チェック→相手ベット→自分が大レイズ、強い罠',
@@ -2711,7 +2752,7 @@ function render() {
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); if (isBgmOn()) playSceneBgm('title'); break;
     case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); renderLobbyV3(); tryStartLobbyBgm(); break;
-    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI();
+    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI(); if (state.lectureMode) applyLectureUI();
       // v2 拍④「決断」：ミミの手番は卓と相手を落として札と選択肢に視線を集める
       { const scr = document.querySelector('.battle-screen.v2'); if (scr) scr.classList.toggle('is-deciding', !!(state.isPlayerTurn && state.handPhase !== 'idle' && state.handPhase !== 'showdown' && !state.psychPending)); }
       break;
@@ -2795,7 +2836,7 @@ function showAboutModal() {
         <h4>💭 戦闘システム</h4>
         <p>札の強さだけでは勝てない。相手のセリフから「本心」を読む心理バトル、ポットオッズ・アウツを計算する論理バトル、直感を発動する「ぱにゅぱにゅ」の三本柱で勝負。</p>
         <h4>📓 初心者にも安心</h4>
-        <p>リコ先輩による全8章24問の講義モード搭載。ポーカー未経験でも、用語集・ハンズオン演習で段階的に強くなれる。</p>
+        <p>リコ先輩による全${LESSON_CHAPTERS.length}章${LESSON_ORDER.length}問の講義モード搭載。ポーカー未経験でも、用語集・ハンズオン演習で段階的に強くなれる。</p>
         <h4>🛍 やり込み要素</h4>
         <p>56種の交換所アイテム（衣装10着・カード裏・テーブル・寸劇・ボイス集）、28種のトロフィー、過去20ハンドの振り返り、裏モード解放。</p>
         <h4>📱 動作環境</h4>
@@ -3682,9 +3723,9 @@ function renderStageList() {
 const LOBBY_PRESENT = {
   rico_tutorial: {
     rico: '「まずはアタシが基礎から叩き込む。安心してかかってきな」',
-    key: '基礎', feat: 'ポーカー基礎講義・全24問',
+    key: '基礎', feat: `ポーカー基礎講義・全${LESSON_ORDER.length}問`,
     taunt: '「講義、始めよっか」',
-    tells: [['基礎24問の講義', '#c8253a'], ['実戦テスト付き', '#8a4cc4']],
+    tells: [[`基礎${LESSON_ORDER.length}問の講義`, '#c8253a'], ['実戦テスト付き', '#8a4cc4']],
   },
   polka: {
     rico: '「今夜の相手はポルカ。声がでかい時ほど、手は弱い。耳を澄ませな」',
@@ -11030,7 +11071,7 @@ function showCollectionModal() {
     }
     return `<div class="coll-cg-card off" title="未開放">
       <div class="coll-cg-locked">🔒</div>
-      <div class="coll-cg-label">？？？<br><small>（${opp.name}に初勝利で開放）</small></div>
+      <div class="coll-cg-label">？？？<br><small>（${id === 'rico_tutorial' ? `${opp.name}の講義を修了すると開放` : `${opp.name}に初勝利で開放`}）</small></div>
     </div>`;
   }).join('');
   const rewardCgCount = stageOrder.filter(id => rewardCgSeen.includes(id)).length;
@@ -11921,7 +11962,7 @@ function beginIntroHand() {
   state.playerChips = 500;
   state.opponentChips = 500;
   state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
-  state.tutorialMode = false;   // 講義（全8章）ではなく3ハンドの実地研修なのでOFF
+  state.tutorialMode = false;   // 講義（LESSON_CHAPTERS）ではなく3ハンドの実地研修なのでOFF
   state.fullHand = false;
   state.isBoss = false;
   state.introHandMode = true; // 体験ハンド：戦績非カウント・行動制限・相手は必ずコール
@@ -13068,6 +13109,8 @@ function triggerPsychBattle(qid) {
   if (hideBoardHand) {
     root.querySelector('.psych-board-info').style.display = 'none';
     root.querySelector('.psych-hand-info').style.display = 'none';
+    // 講義は v2 舞台演出を外すので、札の行に「VS」だけが迷子で残っていた。行ごと畳む
+    if (isLecture) { const row = root.querySelector('.psych-cards-row'); if (row) row.style.display = 'none'; }
   } else {
     renderCardsInto(root.querySelector('[data-bind="psychBoardCards"]'), state.community, 5);
     renderCardsInto(root.querySelector('[data-bind="psychHandCards"]'), state.playerHand, 2);
@@ -13152,7 +13195,9 @@ function triggerPsychBattle(qid) {
     const btn = document.createElement('button');
     btn.className = 'choice-btn';
     btn.dataset.choiceId = c.id;
-    btn.innerHTML = `<span class="choice-label">${labels[i]}</span><span class="choice-text">${c.text}</span><span class="choice-arm-hint">もう一度タップで<b>この読みに賭ける</b></span>`;
+    // 講義／研修は1タップで確定するので「もう一度タップで…」は出さない（本文に連結して表示され、指示も嘘になっていた）
+    const oneTap = !!(state.lectureMode || state.introHandMode);
+    btn.innerHTML = `<span class="choice-label">${labels[i]}</span><span class="choice-text">${c.text}</span>${oneTap ? '' : '<span class="choice-arm-hint">もう一度タップで<b>この読みに賭ける</b></span>'}`;
     // 重みのある選択：1タップ目で構え（他の選択肢が沈む）、2タップ目で確定
     btn.addEventListener('click', () => {
       if (state.lectureMode || state.introHandMode) return resolvePsych(qid, c, btn); // 講義／研修中はテンポ優先で即決
@@ -13198,11 +13243,13 @@ function triggerPsychBattle(qid) {
     senseBtn.textContent = 'ぱにゅぱにゅ（ゲージ不足）';
   }
   senseBtn.addEventListener('click', () => usePanyuSense(qid, isFree));
+  // 講義では出さない（未説明のまま押せて30タップのミニゲームに飛び、ゲーム全体で1回の無料枠を使っていた）
+  if (isLecture) { senseBtn.style.display = 'none'; senseBtn.disabled = true; }
 
-  // 性格読み切り後はスキップボタンを表示
+  // 性格読み切り後はスキップボタンを表示（講義では出さない：押すと講義の進行が止まる）
   const skipBtn = root.querySelector('[data-bind="psychSkipBtn"]');
   if (skipBtn) {
-    if (state.opponentPersonalityRevealed) {
+    if (state.opponentPersonalityRevealed && !isLecture) {
       skipBtn.style.display = '';
       skipBtn.addEventListener('click', () => skipPsychBattle());
     } else {
@@ -13739,18 +13786,12 @@ function resolvePsych(qid, choice, btn) {
   const introWillRetry = state.introHandMode && !isCorrect
     && (state.__introPsychGrey || 0) < introWrongCount;
 
-  // 講義モード：正誤スタンプ演出（CODEX素材。⚡スピード達成時は稲妻スタンプも追加）
+  // 講義モード：正誤スタンプ演出（CODEX素材）
   if (state.lectureMode) {
     const st = document.createElement('div');
     st.className = 'lecture-stamp ' + (isCorrect ? 'stamp-correct' : 'stamp-wrong');
     document.body.appendChild(st);
-    let sp = null;
-    if (isCorrect && state.__lectureQStart && (Date.now() - state.__lectureQStart) <= 10000) {
-      sp = document.createElement('div');
-      sp.className = 'lecture-stamp stamp-speed';
-      document.body.appendChild(sp);
-    }
-    setTimeout(() => { st.remove(); if (sp) sp.remove(); }, 1400);
+    setTimeout(() => { st.remove(); }, 1400);
   } else {
     // バトル中の心理バトル：判定を即出しせず「カタ…カタ…」と溜めてから発表する
     // （ボール揺れの文法。読み切りが決まる瞬間を作る）
@@ -13797,11 +13838,16 @@ function resolvePsych(qid, choice, btn) {
   if (isCorrect) {
     const eff = q.onSuccess;
     state.panyu = Math.min(state.panyuMax, state.panyu + eff.panyu);
+    // 講義の正解は「相手の読み」ではないので、ミミミ・読み切り・テルの付箋に数えない
+    // （講義で3問正解すると実績「初の読み切り」が解除され、読み切り後の「スキップ」が講義に出て、押すと講義が止まっていた）
+    const countsAsRead = !state.lectureMode;
     // ミミミゲージ：心理バトル勝利1回ごとに +1（最大3）
-    state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
-    state.psychSuccessCount++;
+    if (countsAsRead) {
+      state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
+      state.psychSuccessCount++;
+    }
     // ミミミ MAX（3勝）達成 → 相手の性格を読み切り、以後この対戦では心理バトル封印
-    if (state.zazazo >= state.zazazoMax && !state.opponentPersonalityRevealed) {
+    if (countsAsRead && state.zazazo >= state.zazazoMax && !state.opponentPersonalityRevealed) {
       state.opponentPersonalityRevealed = true;
       unlockAchievement('read_first');
       // 全キャラ読み切り達成チェック
@@ -13817,7 +13863,7 @@ function resolvePsych(qid, choice, btn) {
     if (!state.tellTags) state.tellTags = [];
     const rawTell = (q.zazazoHint || '').replace(/^ゾゾゾ反応[：:]\s*/, '').split(/[。．]/)[0];
     const tellText = (rawTell || (eff.hint || '').replace(/[「」。]/g, '')).slice(0, 16);
-    if (tellText) state.tellTags.push(tellText);
+    if (tellText && countsAsRead) state.tellTags.push(tellText);
     state.ricoAdvice = `「${eff.rico}」`;
     // note_range_lv2/3：心理バトル成功時に相手レンジのヒントを追加表示
     const rangeLv = save.panyuSkills?.rangeLevel || 1;
@@ -13899,16 +13945,20 @@ function resolvePsych(qid, choice, btn) {
       if (isCorrect) {
         state.lectureCorrect++;
         state.lectureCombo = (state.lectureCombo || 0) + 1;
-        // 正解 +5🪙、3コンボ以降さらに +5、10秒以内の早答えでさらに +5（⚡スピード）
-        const fast = state.__lectureQStart && (Date.now() - state.__lectureQStart) <= 10000;
-        const gain = 5 + (state.lectureCombo >= 3 ? 5 : 0) + (fast ? 5 : 0);
-        save.coins += gain;
-        state.lectureEarned = (state.lectureEarned || 0) + gain;
-        saveProgress();
-        const parts = [];
-        if (fast) parts.push('⚡スピード');
-        if (state.lectureCombo >= 3) parts.push(`🔥${state.lectureCombo}コンボ`);
-        rewardMsg = `　${parts.length ? parts.join(' ') + '！ ' : ''}+${gain}🪙`;
+        // 正解 +5🪙、3コンボ以降さらに +5。🪙はその問題に初めて正解した時だけ（再受講の周回で稼げないように）
+        // ※「10秒以内で +5🪙」の早答えボーナスは撤去（長い状況文を読むほど損をする設計だった）
+        if (!Array.isArray(save.lectureRewarded)) save.lectureRewarded = [];
+        const combo = state.lectureCombo >= 3 ? `🔥${state.lectureCombo}コンボ！ ` : '';
+        if (!save.lectureRewarded.includes(qid)) {
+          const gain = 5 + (state.lectureCombo >= 3 ? 5 : 0);
+          save.lectureRewarded.push(qid);
+          save.coins += gain;
+          state.lectureEarned = (state.lectureEarned || 0) + gain;
+          saveProgress();
+          rewardMsg = `　${combo}+${gain}🪙`;
+        } else if (combo) {
+          rewardMsg = `　${combo}`;
+        }
       } else {
         state.lectureCombo = 0;
       }
@@ -15209,32 +15259,28 @@ function triggerVelvetVictoryEffect() {
 // 17a. チュートリアル終了
 //=============================================================
 //=============================================================
-// 講義モード（リコ先輩の8章24問）
+// 講義モード（リコ先輩。章立て LESSON_CHAPTERS はファイル先頭の OPPONENTS の直前）
 //=============================================================
-// 章ごとにグループ化したレッスン構成
-const LESSON_CHAPTERS = [
-  { key: 1,     title: '第1章：ポーカーって何？',                 ids: ['lesson_1_1', 'lesson_1_2', 'lesson_1_3'] },
-  { key: 2,     title: '第2章：基本用語',                       ids: ['lesson_2_1', 'lesson_2_2', 'lesson_2_3'] },
-  { key: '用語', title: '特別講座：用語集（s/o・コネクター・ナッツ・チェックレイズ）',
-                                                            ids: ['lesson_term_1', 'lesson_term_2', 'lesson_term_3', 'lesson_term_4'] },
-  { key: 3,     title: '第3章：ハンドの流れ',                   ids: ['lesson_3_1', 'lesson_3_2', 'lesson_3_3'] },
-  { key: 4,     title: '第4章：5つのアクション',                 ids: ['lesson_4_1', 'lesson_4_2', 'lesson_4_3'] },
-  { key: 5,     title: '第5章：役の強さ',                       ids: ['lesson_5_1', 'lesson_5_2', 'lesson_5_3'] },
-  { key: '実戦', title: '実戦講座：役を見つけよう（4問ハンズオン）',
-                                                            ids: ['lesson_hand_1', 'lesson_hand_2', 'lesson_hand_3', 'lesson_hand_4'] },
-  { key: 6,     title: '第6章：確率と勝率',                     ids: ['lesson_6_1', 'lesson_6_2', 'lesson_6_3'] },
-  { key: 7,     title: '第7章：定石',                          ids: ['lesson_7_1', 'lesson_7_2', 'lesson_7_3'] },
-  { key: 8,     title: '第8章：心理戦・読み',                   ids: ['lesson_8_1', 'lesson_8_2', 'lesson_8_3'] },
-  { key: 'マナー', title: '特別講座：バンクロール・マナー・禁止行為',
-                                                            ids: ['lesson_bank_1', 'lesson_bank_2', 'lesson_bank_3'] },
-];
-// フラット順序（互換性）
-const LESSON_ORDER = LESSON_CHAPTERS.flatMap(c => c.ids);
+// 講義の確認ダイアログ。講義の幕（導入・章バナー・完了）は body 直下にあり、#stage の中に出る
+// showConfirm より手前に描かれて確認が隠れてしまう。確認の幕だけ body 直下へ移して、その上に出す。
+function lectureConfirm(opts) {
+  const p = showConfirm(opts);
+  const ov = [...document.querySelectorAll('.mimi-confirm-overlay')].pop();
+  if (ov) { ov.classList.add('is-over-body'); document.body.appendChild(ov); }
+  return p;
+}
+
+// 講義中は卓の行動欄・HAND/POT などを出さない（押せる対戦ボタンが背後に見えていた）。render() から呼ぶ
+function applyLectureUI() {
+  const scr = document.querySelector('.battle-screen');
+  if (scr) scr.classList.add('is-lecture');
+}
 
 // 講義中の常設 進捗HUD（章・正解・コンボ・獲得コイン）— 講義のゲーム化
 function updateLectureHud() {
   let hud = document.getElementById('lecture-hud');
-  if (!state.lectureMode) { if (hud) hud.remove(); return; }
+  // 完了画面の後ろに、消したはずの HUD が 50ms 遅れで戻っていた
+  if (!state.lectureMode || state.lectureFinished) { if (hud) hud.remove(); return; }
   if (!hud) {
     hud = document.createElement('div');
     hud.id = 'lecture-hud';
@@ -15256,12 +15302,23 @@ function updateLectureHud() {
   `;
 }
 
-// 現在のコースに応じた出題順を返す（⚡ライトコース＝1章・2章・5章のみ）
+// 現在のコースに応じた出題順を返す（⚡ライトコース＝LESSON_LITE_KEYS の章だけ）
 function lectureOrder() {
-  if (state && state.lectureLite) {
-    return LESSON_CHAPTERS.filter(c => c.key === 1 || c.key === 2 || c.key === 5).flatMap(c => c.ids);
-  }
+  if (state && state.lectureLite) return LESSON_LITE_CHAPTERS.flatMap(c => c.ids);
   return LESSON_ORDER;
+}
+
+// 出題順 order の idx 番目から再開する時、それより前に「受け終えた（または飛ばした）」章。
+// その章のあとの演習はもう出さない（中断→再開で同じ演習が出ていた）。
+// ※中断の保存（exitLectureMidway）は位置と正解数だけなので、演習済みは位置から割り出す。
+function lectureChaptersBefore(order, idx) {
+  const cur = PSYCH_QUESTIONS[order[idx]] ? PSYCH_QUESTIONS[order[idx]].chapter : undefined;
+  const done = {};
+  order.slice(0, idx).forEach(id => {
+    const c = PSYCH_QUESTIONS[id] ? PSYCH_QUESTIONS[id].chapter : undefined;
+    if (c !== undefined && c !== cur) done[c] = true;
+  });
+  return done;
 }
 
 function startLecture(opponentId) {
@@ -15278,6 +15335,8 @@ function startLecture(opponentId) {
   state.lectureCorrect = saved ? saved.correct : 0;
   state.lectureEarned = saved ? (saved.earned || 0) : 0;
   state.lectureTotal = lectureOrder().length;
+  state.lectureHandsOnDone = saved ? lectureChaptersBefore(lectureOrder(), state.lectureIdx) : {};
+  state.lectureSkipped = {};
   state.screen = 'battle';
   state.handPhase = 'lecture';
   state.tutorialMode = true;
@@ -15285,7 +15344,8 @@ function startLecture(opponentId) {
   state.mimiThought = saved ? '「続きから……お願いします！」' : '「リコ先輩、よろしくお願いします！」';
   state.lectureCombo = 0; // コンボは再開時リセット（earned は saved から復元済み）
   render();
-  updateLectureHud();
+  // 新規はコースを選ぶまで問題数が決まらない（「0/35問」のあとライトで「0/9問」に変わっていた）。HUD は1問目から出す
+  if (saved) updateLectureHud();
   showLectureIntro(() => {
     triggerLectureQuestion();
   }, saved);
@@ -15293,32 +15353,39 @@ function startLecture(opponentId) {
 
 function showLectureIntro(onContinue, savedProgress) {
   const overlay = document.createElement('div');
-  overlay.className = 'tutorial-overlay';
-  const resumeMsg = savedProgress
-    ? `<p style="font-size:15px;line-height:1.7;background:rgba(245,215,122,0.15);padding:10px;border-radius:8px;border:1px solid var(--c-gold);">📌 <b>続きから再開</b>：${savedProgress.idx}問目から、${savedProgress.correct}問正解中</p>`
-    : '';
+  overlay.className = 'tutorial-overlay lecture-overlay lecture-intro-overlay';
+  const liteQs = LESSON_LITE_CHAPTERS.reduce((n, c) => n + c.ids.length, 0);
+  const firstClear = !save.firstClearRewardClaimed.includes('rico_tutorial');
+  const clearReward = (OPPONENTS.rico_tutorial && OPPONENTS.rico_tutorial.rewardFirst) || 300;
+  let resumeMsg = '';
+  if (savedProgress) {
+    const total = (savedProgress.lite ? liteQs : LESSON_ORDER.length);
+    const nextNo = Math.min(savedProgress.idx + 1, total);
+    resumeMsg = `<p class="lec-resume">📌 <b>続きから再開</b>：${savedProgress.lite ? '⚡ライトコース' : '📚フルコース'}の ${nextNo}/${total}問目から（ここまで ${savedProgress.correct}問正解）</p>`;
+  }
+  const rewardNote = firstClear
+    ? `最後まで受けると、初回クリア報酬 +${clearReward}🪙 と成績ボーナス`
+    : '初回クリア報酬は受け取り済み。🪙は初めて正解した問題だけ';
   overlay.innerHTML = `
-    <div class="tutorial-bubble">
+    <div class="tutorial-bubble lecture-bubble">
       <div class="tutorial-step">${savedProgress ? '講義再開' : '講義開始'}</div>
-      <h2 style="color:var(--c-red);font-size:24px;margin:0 0 14px;letter-spacing:0.15em;">📚 リコ先輩のポーカー講義</h2>
+      <h2 class="lec-title">📚 リコ先輩のポーカー講義</h2>
       ${resumeMsg}
-      <p style="font-size:17px;line-height:1.8;">よろしく〜！ ミミに <b>ポーカーの基本</b> を教えるね。コースを選んで！</p>
+      <p class="lec-lead">よろしく〜！ ミミに <b>ポーカーの基本</b> を教えるね。${savedProgress ? '' : 'コースを選んで！'}</p>
       ${savedProgress ? '' : `
-      <div style="display:flex;flex-direction:column;gap:8px;margin:6px 0 10px;">
-        <div style="background:rgba(245,215,122,0.12);border:1px solid var(--c-gold);border-radius:10px;padding:10px 14px;text-align:left;">
-          <b style="color:var(--c-gold-bright);">⚡ ライトコース（おすすめ）</b><br>
-          <small>基本ルール・用語・役の強さの<b>3章9問だけ</b>。5分で実戦へ！<br>
-          正解ごとに🪙、早答えでさらにボーナス。残りの章は後からいつでも受講OK</small>
+      <div class="lec-courses">
+        <div class="lec-course is-lite">
+          <b class="lec-course-name">⚡ ライトコース（おすすめ）</b>
+          <small>基本ルール・用語・役の強さの<b>${LESSON_LITE_CHAPTERS.length}章${liteQs}問だけ</b>。5分で実戦へ！<br>
+          全章はあとでロビーのリコ先輩「もう一度受講する」から受けられる</small>
         </div>
-        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px 14px;text-align:left;">
-          <b>📚 フルコース</b><br>
-          <small>全 <b>11章／${LESSON_ORDER.length}問</b>。確率・定石・心理戦・用語集・実戦ハンズオン・マナーまで完全網羅</small>
+        <div class="lec-course">
+          <b class="lec-course-name">📚 フルコース</b>
+          <small>全 <b>${LESSON_CHAPTERS.length}章／${LESSON_ORDER.length}問</b>。確率・定石・心理戦・用語集・実戦ハンズオン・マナーまで完全網羅</small>
         </div>
       </div>`}
-      <p style="font-size:13px;color:var(--c-red);line-height:1.6;">
-        ※ 各章の開始時に「始める／スキップ／中断」が選べる ※ 間違えてもOK
-      </p>
-      <div class="tutorial-actions">
+      <p class="lec-note">※ 各章の開始時に「始める／スキップ／中断」が選べる ※ 間違えてもOK<br>※ ${rewardNote}</p>
+      <div class="tutorial-actions lec-actions">
         ${savedProgress
           ? `<button class="next-btn" type="button">▶ 続ける</button>
              <button class="restart-btn" type="button">最初からやり直す</button>`
@@ -15357,19 +15424,37 @@ function showLectureIntro(onContinue, savedProgress) {
   const restartBtn = overlay.querySelector('.restart-btn');
   if (restartBtn) {
     restartBtn.addEventListener('click', () => {
-      if (!confirm('進捗を捨てて最初から始めますか？')) return;
-      state.lectureIdx = 0;
-      state.lectureCorrect = 0;
-      save.lectureProgress = null;
-      saveProgress();
-      overlay.remove();
-      onContinue();
+      lectureConfirm({
+        title: '最初からやり直す？',
+        body: `ここまでの進み具合（${savedProgress.correct}問正解）は消えて、コース選びからになるよ。\n受け取ったコインはそのまま。`,
+        ok: '最初からやり直す', cancel: '続きから受ける', danger: true,
+      }).then(yes => {
+        if (!yes || !overlay.isConnected) return;
+        state.lectureIdx = 0;
+        state.lectureCorrect = 0;
+        state.lectureEarned = 0;
+        state.lectureCombo = 0;
+        state.lectureHandsOnDone = {};
+        state.lectureSkipped = {};
+        save.lectureProgress = null;
+        saveProgress();
+        overlay.remove();
+        document.getElementById('lecture-hud')?.remove();
+        showLectureIntro(onContinue, null);
+      });
     });
   }
   overlay.querySelector('.skip-btn').addEventListener('click', () => {
-    if (!confirm('講義を全スキップしますか？基礎は身につきませんが、すぐにポルカ戦に進めます。')) return;
-    overlay.remove();
-    finishLecture(true);
+    lectureConfirm({
+      title: '講義をスキップする？',
+      body: '説明を飛ばして、すぐ実戦へ進めるよ。\n講義はあとでロビーのリコ先輩からいつでも受けられる。'
+        + (firstClear ? `\n初回クリア報酬（+${clearReward}🪙）は、最後まで受けた時にもらえる。` : ''),
+      ok: 'スキップする', cancel: '講義を受ける', danger: true,
+    }).then(yes => {
+      if (!yes || !overlay.isConnected) return;
+      overlay.remove();
+      finishLecture(true);
+    });
   });
 }
 
@@ -15421,18 +15506,20 @@ function triggerLectureQuestion() {
   // 章タイトルが変わるタイミングで章バナーを表示
   const prevChapter = state.lectureIdx > 0 ? PSYCH_QUESTIONS[order[state.lectureIdx - 1]]?.chapter : null;
   if (q.chapter !== prevChapter) {
-    // 前の章が終わった瞬間にハンズオン演習を挿入（同じ演習は1回だけ）
-    if (typeof prevChapter === 'number' && HANDS_ON_AFTER[prevChapter]) {
-      if (!state.lectureHandsOnDone) state.lectureHandsOnDone = {};
-      if (!state.lectureHandsOnDone[prevChapter]) {
-        state.lectureHandsOnDone[prevChapter] = true;
-        return showHandsOnExercise(HANDS_ON_AFTER[prevChapter], () => triggerLectureQuestion());
-      }
+    // 前の章を受け終えた直後にハンズオン演習を挿入。
+    // 飛ばした章・演習済みの章（再開前に通った章を含む）では出さない
+    if (!state.lectureHandsOnDone) state.lectureHandsOnDone = {};
+    if (!state.lectureSkipped) state.lectureSkipped = {};
+    if (prevChapter != null && HANDS_ON_AFTER[prevChapter]
+        && !state.lectureHandsOnDone[prevChapter] && !state.lectureSkipped[prevChapter]) {
+      state.lectureHandsOnDone[prevChapter] = true;
+      return showHandsOnExercise(HANDS_ON_AFTER[prevChapter], () => triggerLectureQuestion());
     }
+    const ch = LESSON_CHAPTERS.find(c => c.key === q.chapter);
     showChapterBanner(q.chapter, q.chapterTitle, (action) => {
       if (action === 'skip') {
-        // この章の問題を全部スキップ
-        const ch = LESSON_CHAPTERS.find(c => c.key === q.chapter);
+        // この章の問題を全部スキップ（この章のあとの演習も出さない）
+        state.lectureSkipped[q.chapter] = true;
         if (ch) {
           state.lectureIdx += ch.ids.length;
         }
@@ -15442,7 +15529,7 @@ function triggerLectureQuestion() {
       } else {
         doLectureModal(qid);
       }
-    });
+    }, ch ? ch.lead : '');
   } else {
     doLectureModal(qid);
   }
@@ -15481,9 +15568,9 @@ function showHandsOnExercise(ex, onClose) {
         if (ch.correct) b.classList.add('correct');
         if (j === i && !ch.correct) b.classList.add('wrong');
       });
-      // フィードバック
+      // フィードバック（選び直しはできないので「もう一度考えよう」とは言わない。正解は緑で光っている）
       feedbackEl.innerHTML = `
-        <div class="ho-result ${c.correct ? 'good' : 'bad'}">${c.correct ? '⭕ 正解！' : '❌ もう一度考えよう'}</div>
+        <div class="ho-result ${c.correct ? 'good' : 'bad'}">${c.correct ? '⭕ 正解！' : '❌ 残念……正解は緑の選択肢'}</div>
         <div class="ho-hint">${c.hint}</div>
       `;
       feedbackEl.style.display = '';
@@ -15491,7 +15578,10 @@ function showHandsOnExercise(ex, onClose) {
     });
     choicesEl.appendChild(btn);
   });
+  let closed = false;
   overlay.querySelector('.ho-next').addEventListener('click', () => {
+    if (closed) return;
+    closed = true;
     overlay.remove();
     onClose();
   });
@@ -15506,13 +15596,15 @@ function exitLectureMidway() {
   toast('講義を中断しました。続きはリコ先輩から再開できます');
 }
 
-function showChapterBanner(num, title, onClose) {
+// lead：章題の下に添える「この章で分かること」1行（LESSON_CHAPTERS の lead）
+function showChapterBanner(num, title, onClose, lead) {
   const banner = document.createElement('div');
   banner.className = 'chapter-banner';
   const isSpecial = typeof num === 'string';
   banner.innerHTML = `
-    <div class="chapter-num">${isSpecial ? '特別講座' : `CHAPTER ${num}`}</div>
+    <div class="chapter-num">${isSpecial ? (num === '実戦' ? '実戦講座' : '特別講座') : `CHAPTER ${num}`}</div>
     <div class="chapter-title">${title.replace(/^第\d+章：|^特別講座：|^実戦講座：/, '')}</div>
+    ${lead ? `<div class="chapter-lead"><span class="chapter-lead-k">この章で分かること</span>${lead}</div>` : ''}
     <div class="chapter-actions">
       <button class="chapter-btn chapter-start" type="button">▶ この章を始める</button>
       <button class="chapter-btn chapter-skip" type="button">この章をスキップ ⏭</button>
@@ -15520,90 +15612,100 @@ function showChapterBanner(num, title, onClose) {
     </div>
   `;
   document.body.appendChild(banner);
+  // 二度押しで onClose が2回走ると、スキップが2章分進んでいた。1回だけ閉じる
+  let closing = false;
+  const close = (action) => {
+    if (closing) return;
+    closing = true;
+    banner.classList.add('out');
+    battleTimeout(() => { banner.remove(); onClose(action); }, 400);
+  };
   banner.querySelector('.chapter-start').addEventListener('click', (e) => {
     e.stopPropagation();
-    banner.classList.add('out');
-    setTimeout(() => { banner.remove(); onClose('start'); }, 400);
+    close('start');
   });
   banner.querySelector('.chapter-skip').addEventListener('click', (e) => {
     e.stopPropagation();
-    banner.classList.add('out');
-    setTimeout(() => { banner.remove(); onClose('skip'); }, 400);
+    close('skip');
   });
   banner.querySelector('.chapter-exit').addEventListener('click', (e) => {
     e.stopPropagation();
-    if (!confirm('講義を中断してロビーへ戻りますか？\n（進捗は次回引き継ぎ）')) return;
-    banner.classList.add('out');
-    setTimeout(() => { banner.remove(); onClose('exit'); }, 400);
+    if (closing) return;
+    lectureConfirm({
+      title: '講義を中断する？',
+      body: 'ここまでの進み具合は残るよ。\n続きはロビーのリコ先輩から再開できる。',
+      ok: '中断してロビーへ', cancel: '続ける', danger: true,
+    }).then(yes => { if (yes && banner.isConnected) close('exit'); });
   });
 }
 
 function doLectureModal(qid) {
+  // ※「⚡10秒以内で +5🪙」のスピードボーナスは撤去（長い状況文を読むほど損をする設計だった）
   triggerPsychBattle(qid);
-  // ⚡スピードボーナス計測開始＋10秒カウントダウンバーをモーダルに注入
-  state.__lectureQStart = Date.now();
-  setTimeout(() => {
-    const modal = document.querySelector('.psych-modal');
-    if (!modal || modal.querySelector('.lecture-speed-bar')) return;
-    const bar = document.createElement('div');
-    bar.className = 'lecture-speed-bar';
-    bar.innerHTML = '<div class="lsb-label">⚡ 10秒以内で +5🪙</div><div class="lsb-track"><div class="lsb-fill"></div></div>';
-    const title = modal.querySelector('.psych-title');
-    if (title) title.insertAdjacentElement('afterend', bar);
-    else modal.prepend(bar);
-    // 10秒経過でバーをそっと消す（減点はなし＝プレッシャーは軽く）
-    setTimeout(() => { bar.classList.add('lsb-expired'); }, 10000);
-  }, 120);
 }
 
 function finishLecture(skipped) {
+  if (state.lectureFinished) return; // 二重に呼ばれても報酬を二重に払わない
+  state.lectureFinished = true;
   document.getElementById('lecture-hud')?.remove();
   const overlay = document.createElement('div');
-  overlay.className = 'tutorial-overlay';
-  const scorePct = Math.round((state.lectureCorrect / state.lectureTotal) * 100);
+  overlay.className = 'tutorial-overlay lecture-overlay lecture-finish-overlay';
+  const total = state.lectureTotal || lectureOrder().length;
+  const scorePct = total ? Math.round((state.lectureCorrect / total) * 100) : 0;
   // 成績グレード（ゲーム化：S/A/B/C）＋成績ボーナス
   const grade = scorePct >= 90 ? 'S' : scorePct >= 70 ? 'A' : scorePct >= 50 ? 'B' : 'C';
   const gradeColor = { S: '#ffd700', A: '#f5d77a', B: '#a7d8ff', C: '#cccccc' }[grade];
-  const gradeBonus = skipped ? 0 : { S: 200, A: 120, B: 60, C: 20 }[grade];
+  // 成績ボーナスと初回クリア報酬は、初めて最後まで受けた時だけ（周回のコイン稼ぎを止める）。スキップでは払わない。
+  // 画面には実際に払った額だけを出す（再受講でも「初回クリア報酬 +300」と出ていたが払われていなかった）
+  const firstClear = !skipped && !save.firstClearRewardClaimed.includes('rico_tutorial');
+  const gradeBonus = firstClear ? { S: 200, A: 120, B: 60, C: 20 }[grade] : 0;
+  const clearBonus = firstClear ? ((OPPONENTS.rico_tutorial && OPPONENTS.rico_tutorial.rewardFirst) || 300) : 0;
   const earned = state.lectureEarned || 0;
+  // 表示と支払いを同時に確定する（画面を閉じる前に落ちても、見せた報酬は入っている）
+  if (firstClear) save.firstClearRewardClaimed.push('rico_tutorial');
+  save.coins += gradeBonus + clearBonus;
+  if (!save.clearedStages.includes('rico_tutorial')) save.clearedStages.push('rico_tutorial');
+  save.lectureProgress = null;
+  saveProgress();
+  // 初めて最後まで受けた時は、幕間（リコ「はい、講義おしまい」）→ご褒美CG開放につなぐ。CG は幕間を見た時に開放される
+  const showStory = !skipped && !!INTERMISSIONS.rico_tutorial && !(save.rewardCgSeen || []).includes('rico_tutorial');
+  const rewardLines = [
+    earned > 0 ? `正解報酬：<b>+${earned}🪙</b>（獲得済み）` : '正解報酬：なし（🪙は初めて正解した問題だけ）',
+    ...(firstClear
+      ? [`成績ボーナス（${grade}）：<b>+${gradeBonus}🪙</b>`, `初回クリア報酬：<b>+${clearBonus}🪙</b>`]
+      : ['成績ボーナス・初回クリア報酬は受け取り済み']),
+  ];
   overlay.innerHTML = `
-    <div class="tutorial-bubble">
+    <div class="tutorial-bubble lecture-bubble">
       <div class="tutorial-step">講義完了</div>
-      <h2 style="color:var(--c-red);font-size:26px;margin:0 0 14px;letter-spacing:0.15em;">📖 講義お疲れさま！</h2>
+      <h2 class="lec-title">📖 講義お疲れさま！</h2>
       ${skipped
-        ? '<p style="font-size:17px;">スキップでもOK。実戦で覚えていこ〜</p>'
+        ? '<p class="lec-lead">スキップでもOK。実戦で覚えていこ〜<br>講義はロビーのリコ先輩からいつでも受けられるよ。</p>'
         : `
-        <div style="font-size:64px;font-weight:900;color:${gradeColor};text-shadow:0 0 24px ${gradeColor};margin:4px 0;line-height:1.1;">${grade}</div>
-        <p style="font-size:17px;margin:4px 0 10px;">${state.lectureTotal}問中 <b>${state.lectureCorrect}問正解</b>（${scorePct}%）</p>
-        <div style="font-size:14px;background:rgba(245,215,122,0.12);border:1px solid rgba(245,215,122,0.4);border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.8;">
-          正解報酬：<b>+${earned}🪙</b>（獲得済み）<br>
-          成績ボーナス（${grade}）：<b>+${gradeBonus}🪙</b><br>
-          初回クリア報酬：<b>+300🪙</b>
-        </div>`
+        <div class="lec-grade" style="color:${gradeColor};text-shadow:0 0 24px ${gradeColor};">${grade}</div>
+        <p class="lec-score">${total}問中 <b>${state.lectureCorrect}問正解</b>（${scorePct}%）</p>
+        <div class="lec-rewards">${rewardLines.join('<br>')}</div>
+        <p class="lec-lead">これで基本はバッチリ。<br>次は<b>Stage 2「ポルカ戦」</b>で実戦練習だよ。</p>`
       }
-      <p style="font-size:15px;line-height:1.7;">これで基本はバッチリ。<br>次は<b>Stage 2「ポルカ戦」</b>で実戦練習だよ。</p>
-      <div class="tutorial-actions">
-        <button class="next-btn" type="button">▶ ロビーへ</button>
+      <div class="tutorial-actions lec-actions">
+        <button class="next-btn" type="button">${showStory ? '▶ 次へ' : '▶ ロビーへ'}</button>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
+  let closed = false;
   overlay.querySelector('.next-btn').addEventListener('click', () => {
+    if (closed) return;
+    closed = true;
     overlay.remove();
-    // 講義クリア記録＋成績ボーナス＋進捗クリア
-    let totalGain = gradeBonus;
-    if (!save.firstClearRewardClaimed.includes('rico_tutorial')) {
-      totalGain += 300;
-      save.firstClearRewardClaimed.push('rico_tutorial');
-    }
-    save.coins += totalGain;
-    if (!save.clearedStages.includes('rico_tutorial')) save.clearedStages.push('rico_tutorial');
-    save.lectureProgress = null;
-    saveProgress();
-    state = defaultState();
-    state.screen = 'lobby';
-    render();
-    toast(`✨ 講義完了！${totalGain > 0 ? ` +${totalGain}コイン` : ''}`);
+    const gain = gradeBonus + clearBonus;
+    const toLobby = () => {
+      state = defaultState();
+      goLobby();
+      toast(skipped ? '講義はロビーのリコ先輩からいつでも受けられるよ' : `✨ 講義完了！${gain > 0 ? ` +${gain}コイン` : ''}`);
+    };
+    if (showStory) showIntermission('rico_tutorial', toLobby);
+    else toLobby();
   });
 }
 
@@ -15659,9 +15761,15 @@ function showTutorial(step, htmlContent, onNext) {
   const skipBtn = bubble.querySelector('.skip-btn');
   if (skipBtn) {
     skipBtn.addEventListener('click', () => {
-      if (!confirm('チュートリアル解説をスキップして自分でプレイしますか？\n（ゲーム自体は継続）')) return;
-      overlay.remove();
-      state.tutorialMode = false;  // 以降の自動チュートリアル無効
+      lectureConfirm({
+        title: '解説をスキップする？',
+        body: 'このあとの解説の吹き出しを出さずに、自分でプレイするよ。\n（ゲームはそのまま続く）',
+        ok: 'スキップする', cancel: '解説を読む',
+      }).then(yes => {
+        if (!yes || !overlay.isConnected) return;
+        overlay.remove();
+        state.tutorialMode = false;  // 以降の自動チュートリアル無効
+      });
     });
   }
   bubble.querySelector('.next-btn').addEventListener('click', () => {
@@ -16058,7 +16166,8 @@ function showRicoCutIn(text, isSuccess, onClose, opts) {
 }
 // 進行を握るカットイン（研修・講義）の共通オプション
 const CUTIN_ADVANCE = { autoCloseMs: 4500, hint: 'タップで進む' };
-const CUTIN_LECTURE = { autoCloseMs: 6000, hint: 'タップで次の問題へ' };
+// 講義の解説は読み終えてから進める（6秒で自動で閉じ、長い解説や「正解は〜」を読む前に消えていた）
+const CUTIN_LECTURE = { autoCloseMs: 0, hint: 'タップで次の問題へ' };
 function dismissCutIn() {
   if (activeCutInDismiss) activeCutInDismiss();
 }
