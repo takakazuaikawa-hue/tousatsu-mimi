@@ -16419,3 +16419,11 @@ body:has(.battle-screen.v2) .rico-cutin:not(.opponent-cutin):not(.v2-cutin) {
   bottom: auto;
   top: 11vh;
 }
+
+/* 研修中は詳細データ（SPR・戦績など研修範囲外の数値）を開けない */
+.battle-screen.intro-hand-mode .v2-detail-toggle { display: none !important; }
+
+/* 結果画面の称号トーストは左下へ（右下のままで主ボタン「幕間へ」「〜に挑戦」を覆っていた） */
+#stage:has(.result-screen) .achievement-toast { top: auto; bottom: 24px; right: auto; left: -360px; transition: left 0.45s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.4s; }
+#stage:has(.result-screen) .achievement-toast.show { left: 16px; right: auto; }
+#stage:has(.result-screen) .achievement-toast.out { left: -360px; right: auto; }

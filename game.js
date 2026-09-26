@@ -345,6 +345,11 @@ function loadProgress() {
     return normalizeSave(merged);
   } catch (e) {
     console.warn('Save load failed; using default', e);
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (raw) localStorage.setItem(SAVE_KEY + '_broken_' + Date.now(), raw);
+    } catch (e2) {}
+    setTimeout(() => { if (typeof toast === 'function') toast('セーブデータが読めなかったので、控えを残して新しく始めました', 'big'); }, 1500);
     return normalizeSave(defaultSave());
   }
 }
@@ -5316,9 +5321,8 @@ function renderSituationAnalysis() {
     else if (hsPct >= 25) huBonus = 6;
     else                  huBonus = 3;
   }
+  // 相手の本当の意図（AI の内部値）で補正すると答えが漏れるので使わない
   let effectivePct = hsPct + huBonus;
-  if (state.lastOpponentIntent === 'bluff' || state.lastOpponentIntent === 'forced_bluff') effectivePct += 5;
-  if (state.lastOpponentIntent === 'value') effectivePct -= 5;
   effectivePct = Math.max(0, Math.min(100, effectivePct));
 
   let advice = '';
@@ -5359,9 +5363,9 @@ function renderSituationAnalysis() {
     else if (myStack / pot > 8) sprComment = '（SPR高：降りる余地あり）';
   }
 
-  // 相手の直前意図ヒント（裏モードでは無く、推測ベース）
+  // 相手の直前意図ヒント：AI の内部値そのものだったので出さない（読み合いの答えになっていた）
   let intentHint = '';
-  if (state.lastOpponentIntent) {
+  if (false && state.lastOpponentIntent) {
     const intentMap = {
       'bluff': '相手はブラフ寄りかも',
       'forced_bluff': '相手は降ろし狙いの可能性',
@@ -5393,11 +5397,13 @@ function renderSituationAnalysis() {
     ? `<div class="sit-odds">勝率 <b>${effectivePct}%</b> vs 必要 <b>${reqWinRate}%</b></div>`
     : `<div class="sit-odds">勝率 <b>${effectivePct}%</b>（チェック可）</div>`;
 
+  const sealed = !(state.winrateRevealed || state.tutorialMode || state.introHandMode);
+  const sealedLine = `<div class="sit-advice sit-neutral">🔒 勝率と推奨は封印中。ぱにゅぱにゅで開けられる</div>`;
   return `
-    <div class="sit-advice ${adviceClass}">${advice}</div>
-    ${oddsLine}
+    ${sealed ? sealedLine : `<div class="sit-advice ${adviceClass}">${advice}</div>
+    ${oddsLine}`}
     ${dangerFlags.length ? `<div class="sit-danger">⚠ ${dangerFlags.join(' / ')}</div>` : ''}
-    ${drawInfo}
+    ${sealed ? '' : drawInfo}
     ${intentHint ? `<div class="sit-intent">🎭 ${intentHint}</div>` : ''}
     <details class="sit-stats-fold">
       <summary>📊 詳細データ</summary>
@@ -5407,9 +5413,9 @@ function renderSituationAnalysis() {
         <span class="sit-value">${myStack} / ${oppStack}</span>
       </div>
       <div class="sit-grid">
-        <div class="sit-stat" title="絶対勝率／実効勝率（ヘッズアップ補正後）">
+        <div class="sit-stat">
           <span class="sit-stat-label">勝率</span>
-          <span class="sit-stat-val">${hsPct}%→${effectivePct}%</span>
+          <span class="sit-stat-val">${sealed ? '🔒' : effectivePct + '%'}</span>
         </div>
         <div class="sit-stat">
           <span class="sit-stat-label">必要</span>
@@ -12231,6 +12237,7 @@ function startHand() {
   resetHandJuice();
   mpSfx('deal'); // 配布音（equippedSePack設定を反映）
 
+  state.handStartChips = state.playerChips; // このハンドの収支を実額で出すため
   // ブラインド簡略化（v4: 各50チップアンティ）
   const ante = Math.min(50, state.playerChips, state.opponentChips);
   state.playerChips -= ante;
@@ -13674,9 +13681,13 @@ function attachDragStretch(blob) {
     blob.addEventListener('pointermove', onMove);
     blob.addEventListener('pointerup', onUp);
     blob.addEventListener('pointercancel', onUp);
-    // 安全網：blob 外で離されてもタイマー停止
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
+    // 安全網：blob 外で離されてもタイマー停止（玉が画面から消えたら外す。使うたびに増え続けていた）
+    const onWinUp = (e) => {
+      if (!blob.isConnected) { window.removeEventListener('pointerup', onWinUp); window.removeEventListener('pointercancel', onWinUp); return; }
+      onUp(e);
+    };
+    window.addEventListener('pointerup', onWinUp);
+    window.addEventListener('pointercancel', onWinUp);
   } else {
     blob.addEventListener('mousedown', onDown);
     window.addEventListener('mousemove', onMove);
@@ -14331,7 +14342,8 @@ function showHandResultBanner(snapshot) {
   if (last.reason === 'showdown' && eq.length >= 2) {
     // バッドビート判定：プレイヤーが70%以上だったのに負けた
     if (peakEq >= 70 && last.winner === 'opponent') {
-      verdict = { label: '💀 バッドビート', desc: `ピーク${peakEq}%まで有利だったのに、リバーで逆転負け……`, cls: 'verdict-badbeat' };
+      const turnAt = (eq.find((e, i) => i > 0 && e.pct < 50 && eq[i - 1].pct >= 50) || eq[eq.length - 1]).street;
+      verdict = { label: '💀 バッドビート', desc: `ピーク${peakEq}%まで有利だったのに、${turnAt}で逆転負け……`, cls: 'verdict-badbeat' };
     }
     // サックアウト：プレイヤーが30%以下だったのに勝った
     else if (minEq <= 30 && last.winner === 'player') {
@@ -14346,7 +14358,7 @@ function showHandResultBanner(snapshot) {
       verdict = { label: '⚠ 役負け', desc: `${last.oEv.name}には${last.pEv.name}では届かない`, cls: 'verdict-dominated' };
     }
     // 圧勝
-    else if (last.winner === 'player' && lastEq >= 90 && peakEq >= 80) {
+    else if (last.winner === 'player' && eq.length >= 2 && eq[eq.length - 2].pct >= 80 && minEq >= 60) {
       verdict = { label: '🌟 圧勝', desc: '序盤から優位を保って勝ち切った', cls: 'verdict-clean' };
     }
   } else if (last.reason === 'opponentFold' && last.pEv && last.pEv.rank >= 4) {
@@ -14366,7 +14378,7 @@ function showHandResultBanner(snapshot) {
     }
   }
   const pivotHtml = pivot && pivot.delta >= 15
-    ? `<div class="hr-pivot">💡 決定打：<b>${pivot.to.street}</b> で勝率 ${pivot.from.pct}% → <b>${pivot.to.pct}%</b>（${pivot.delta > 0 ? '+' : ''}${pivot.to.pct - pivot.from.pct}）</div>`
+    ? `<div class="hr-pivot">💡 決定打：<b>${pivot.to.street}</b> で勝率 ${pivot.from.pct}% → <b>${pivot.to.pct}%</b>（${pivot.to.pct - pivot.from.pct > 0 ? '+' : ''}${pivot.to.pct - pivot.from.pct}）</div>`
     : '<div class="hr-pivot hr-pivot-empty">—</div>';
 
   // エクイティタイムライン
@@ -14486,6 +14498,8 @@ function showHandResultBanner(snapshot) {
 
   // ポット獲得量と残チップ表記
   const potDelta = last.pot;
+  const handNet = snapshot ? snapshot.handNet : (typeof state.handStartChips === 'number' ? state.playerChips - state.handStartChips : null);
+  const netHtml = (typeof handNet === 'number') ? `このハンドの収支 <b class="${handNet > 0 ? 'hr-pot-plus' : handNet < 0 ? 'hr-pot-minus' : ''}">${handNet > 0 ? '+' : handNet < 0 ? '−' : '±'}${Math.abs(handNet)}</b> <small>（ポット ${potDelta}）</small>` : null;
   const playerChipDeltaText = last.winner === 'player' ? `+${potDelta}` : last.winner === 'opponent' ? `-?` : `+${Math.floor(potDelta/2)}`;
 
   tpl.innerHTML = `
@@ -14497,7 +14511,7 @@ function showHandResultBanner(snapshot) {
       ${strongBadge}
       <div class="hr-title">${winnerText}</div>
       ${streakBadgeHtml}
-      <div class="hr-pot">${
+      <div class="hr-pot">${netHtml ? netHtml : 
         last.winner === 'player' ? `ポット <b>${potDelta}</b> 獲得 (<span class="hr-pot-plus">+${potDelta}</span>)`
         : last.winner === 'opponent' ? `${opponentName}がポット <b>${potDelta}</b> を獲得 (<span class="hr-pot-minus">−${potDelta}</span>)`
         : `ポット <b>${potDelta}</b> を折半`
@@ -14531,6 +14545,7 @@ function showHandResultBanner(snapshot) {
       opponentName, opponentId,
       playerChips, opponentChips,
       equityHistory: (equityHistory || []).map(e => ({...e})),
+      handNet,
       ts: Date.now(),
     });
     if (state.handHistory.length > 20) state.handHistory.shift();
@@ -14586,16 +14601,18 @@ function continueAfterHand() {
     return startDominanceMode();
   }
   state.mimiThought = '「次のハンドだ。集中していこう」';
-  render();
+  // 結果バナーの「次のハンド (Hand N) へ」で、そのまま配る（卓に戻ってもう一度押させていた）
+  startHand();
 }
 
 // 圧倒モード判定：プレイヤー優勢 + 連勝5以上で発動（1戦1回まで）
 // ポーカーは累積差で勝つゲームのため、いわゆる「大逆転」は採用しない
 function isDominanceMode() {
   if (state.dominanceUsed) return false;
+  if (state.tutorialMode || state.introHandMode || state.lectureMode) return false;
   const initial = OPPONENTS[state.opponentId]?.chips || 1000;
   const wins = state.consecutiveWins || 0;
-  const playerAhead = state.playerChips > initial;
+  const playerAhead = state.playerChips > initial && state.playerChips > state.opponentChips;
   if (playerAhead && wins >= 5) return 'complete';
   return false;
 }
@@ -14649,7 +14666,7 @@ function showDominanceChoiceModal() {
         </button>
         <button class="dominance-choice-btn dchoice-mid" data-choice="break">
           <div class="dchoice-icon">💔</div>
-          <div class="dchoice-name">心腰を折る</div>
+          <div class="dchoice-name">心を折る</div>
           <div class="dchoice-desc">相手の精神を粉砕。チップ大削り＋ティルト誘発で再戦時にも有利に</div>
         </button>
         <button class="dominance-choice-btn dchoice-mercy" data-choice="mercy">
@@ -14681,11 +14698,11 @@ function executeDominance(choice) {
   };
   const s = settings[choice] || settings.full;
   // ミミ宣言カットイン
-  showRicoCutIn(s.mimiLine, true, () => {
+  showMimiCutIn(s.mimiLine, null, () => {
     // 相手の反応
-    showOpponentCutIn(s.oppLine);
+    showOpponentCutIn(s.oppLine, 'defeat');
     battleTimeout(() => dominanceActionLoop(s, 0), 1800);
-  });
+  }, 'mimi_bust_smug');
 }
 
 // 派手なアクションループ
@@ -16083,9 +16100,9 @@ function showOpponentCutIn(text, betSize) {
     cut.innerHTML = `
       <div class="v2c-dim"></div>
       <div class="v2c-slash"></div>
-      <div class="v2c-art"><img src="assets/characters/${imgKey}_cutin_smug.webp" alt="${oppName}" onerror="this.onerror=null;this.src='assets/characters/${imgKey}_default.webp';this.classList.add('v2c-fallback')"></div>
+      <div class="v2c-art"><img src="assets/characters/${imgKey}_cutin_${betSize === 'defeat' ? 'panic' : 'smug'}.webp" alt="${oppName}" onerror="this.onerror=null;this.src='assets/characters/${imgKey}_default.webp';this.classList.add('v2c-fallback')"></div>
       <div class="v2c-band"><div class="v2c-name v2-disp">${latin}</div><div class="v2c-line">「${text}」</div></div>
-      <div class="v2c-amount"><div class="v2-disp v2c-amount-num">${sizeTag} +${amt}</div><div class="v2c-amount-sub">タップで閉じる</div></div>
+      ${betSize === 'defeat' ? '' : `<div class="v2c-amount"><div class="v2-disp v2c-amount-num">${sizeTag} +${amt}</div><div class="v2c-amount-sub">タップで閉じる</div></div>`}
     `;
     document.body.appendChild(cut);
     let dismissed = false;
@@ -16148,13 +16165,14 @@ function triggerBetShake(betSize) {
   setTimeout(() => stage.classList.remove(cls), 700);
 }
 
-function showMimiCutIn(text, narration) {
+function showMimiCutIn(text, narration, onClose, face) {
   if (activeCutInDismiss) activeCutInDismiss();
+  const cutGen = battleGen;
   const cut = document.createElement('div');
   cut.className = 'rico-cutin mimi-cutin';
   cut.innerHTML = `
     <div class="cutin-portrait">
-      <img src="assets/characters/mimi_blush.webp" alt="ミミ" onerror="this.src='assets/characters/mimi_default.webp';window.assetFallback(this,'mimi')">
+      <img src="assets/characters/${face || 'mimi_blush'}.webp" alt="ミミ" onerror="this.src='assets/characters/mimi_default.webp';window.assetFallback(this,'mimi')">
     </div>
     <div class="cutin-text">
       <div class="cutin-name">ミミ</div>
@@ -16171,12 +16189,39 @@ function showMimiCutIn(text, narration) {
     activeCutInDismiss = null;
     if (autoDismissTimer) clearTimeout(autoDismissTimer);
     cut.classList.add('cutin-out');
-    setTimeout(() => cut.remove(), 500);
+    setTimeout(() => { cut.remove(); if (onClose && cutGen === battleGen) onClose(); }, 500);
   };
   const autoDismissTimer = setTimeout(dismiss, 3800);
   cut.addEventListener('click', dismiss);
   activeCutInDismiss = dismiss;
 }
+
+// 進行中の例外の受け皿。タイマーの連鎖の中で例外が出ると「相手の番……」のまま黙って止まっていた。
+// 描き直して続けるか、ロビーへ戻るかを選べるようにする（ゲーム本体の例外だけが対象）。
+(function installErrorNet() {
+  let shownAt = 0;
+  window.addEventListener('error', (e) => {
+    const src = String(e.filename || '');
+    if (src && src.indexOf('game.js') < 0) return;
+    if (Date.now() - shownAt < 4000 || document.querySelector('.mimi-error-net')) return;
+    shownAt = Date.now();
+    const el = document.createElement('div');
+    el.className = 'mimi-confirm-overlay mimi-error-net';
+    el.innerHTML = '<div class="mimi-confirm" role="alertdialog"><div class="mimi-confirm-title">進行が止まったかもしれません</div>' +
+      '<div class="mimi-confirm-body">画面を描き直して続けるか、ロビーへ戻ってください。<br>コインと進み具合は保存されています。</div>' +
+      '<div class="mimi-confirm-actions"><button type="button" class="btn btn-secondary" data-net="lobby">ロビーへ戻る</button>' +
+      '<button type="button" class="btn btn-primary" data-net="retry">描き直して続ける</button></div></div>';
+    el.addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-net]'); if (!b) return;
+      el.remove();
+      try {
+        if (b.dataset.net === 'lobby') goLobby();
+        else { render(); if (state.screen === 'battle' && !state.isPlayerTurn && state.handPhase !== 'idle' && state.handPhase !== 'showdown') battleTimeout(opponentTurn, 300); }
+      } catch (err) { console.error(err); }
+    });
+    (document.getElementById('stage') || document.body).appendChild(el);
+  });
+})();
 
 // ゲーム内の確認ダイアログ（ブラウザ標準の confirm は世界観を壊し、スマホでは全画面が解ける）
 // 使い方: if (!(await showConfirm({ title: '対戦をやめる？', body: '…', ok: 'やめる', cancel: '続ける', danger: true }))) return;
