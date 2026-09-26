@@ -16380,3 +16380,42 @@ video.motion-layer.done, video.motion-bg.done { opacity: 0; transition: opacity 
 .lobby-screen.lb8.lb8-next-first .lobby-rico-standing img {
   filter: drop-shadow(0 20px 40px rgba(0,0,0,.85)) drop-shadow(0 0 22px rgba(255,220,140,.45));
 }
+
+/* ===== ゲーム内の確認ダイアログ（showConfirm） ===== */
+.mimi-confirm-overlay {
+  position: absolute; inset: 0; z-index: 13000;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.72);
+  animation: fadeIn 0.18s;
+}
+.mimi-confirm-overlay.out { opacity: 0; transition: opacity 0.18s; pointer-events: none; }
+.mimi-confirm {
+  min-width: 460px; max-width: 640px;
+  padding: 22px 28px 20px;
+  background: linear-gradient(180deg, rgba(80, 20, 34, 0.97) 0%, rgba(29, 8, 14, 0.98) 100%);
+  border: 14px solid rgba(245,215,122,0.5);
+  border-image: url('assets/ui/frame_gold.webp') 96 / 14px stretch;
+  box-shadow: 0 0 30px rgba(245,215,122,0.45), 0 12px 36px rgba(0,0,0,0.7);
+  display: flex; flex-direction: column; gap: 12px; text-align: center;
+}
+.mimi-confirm-title { font-size: 24px; font-weight: 800; color: var(--c-gold-bright); letter-spacing: 0.08em; }
+.mimi-confirm-body { font-size: 16px; line-height: 1.6; color: #f3e6d8; }
+.mimi-confirm-actions { display: flex; gap: 14px; justify-content: center; margin-top: 6px; }
+.mimi-confirm-actions .btn { min-width: 170px; min-height: 52px; font-size: 17px; }
+.mimi-confirm-overlay.is-danger .mimi-confirm-title { color: #ffd0c8; }
+
+/* ===== ハンド結果：進むボタンは内容が長くても常に下端に見せる（スクロールしないと押せなかった） ===== */
+.hr-card > #continue-hand-btn {
+  position: sticky;
+  bottom: -22px;
+  flex-shrink: 0;
+  z-index: 3;
+  margin-top: 4px;
+  box-shadow: 0 -14px 20px 6px rgba(24, 7, 12, 0.92), 0 0 18px rgba(245, 215, 122, 0.35);
+}
+
+/* ===== 卓の上の解説カットインは行動ボタンを覆わない位置へ（コールが押せずフォールドだけ押せる状態になっていた） ===== */
+body:has(.battle-screen.v2) .rico-cutin:not(.opponent-cutin):not(.v2-cutin) {
+  bottom: auto;
+  top: 11vh;
+}

@@ -71,6 +71,20 @@ try {
       for (const x of tx) report.text.push({ ...x, at: `${snap.screen}/${snap.opp}/${snap.phase}/${snap.intro ? 'intro' : snap.lecture ? 'lecture' : 'main'}` });
       lastSig = res.sig; lastChange = Date.now(); sameClick = 0;
     }
+    if (res.coverOverActions) {
+      report.coverOverActions = report.coverOverActions || [];
+      if (report.coverOverActions.length < 3) {
+        const hits = await page.eval(`[...document.querySelectorAll('.action-slot')].map(b => { const r = b.getBoundingClientRect(); const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return (b.dataset.action || b.className.split(' ').pop()) + ':' + (h && (h === b || b.contains(h)) ? 'ok' : 'COVERED'); }).join(' ')`).catch(() => '');
+        report.coverOverActions.push({ t: Date.now() - t0, cover: res.coverOverActions, hits });
+        await page.screenshot(path.join(outDir, `cover-${++shotN}.png`));
+      }
+    }
+    if (res.needsScroll) {
+      report.needsScroll = report.needsScroll || [];
+      const k = res.needsScroll + '@' + snap.screen;
+      if (!report.needsScroll.some(x => x.k === k)) { report.needsScroll.push({ k, t: Date.now() - t0, snap }); await page.screenshot(path.join(outDir, `needs-scroll-${++shotN}.png`)); }
+      lastChange = Date.now();
+    }
     if (reached(snap)) { report.done = true; report.reason = 'reached ' + until; break; }
     if (res.did) {
       const key = res.did.what;
@@ -109,6 +123,6 @@ console.log(JSON.stringify({
   policy, size: report.size, seed, done: report.done, reason: report.reason, elapsedSec: report.elapsedSec, steps: report.steps, hands: report.handsSeen,
   final: report.final && { screen: report.final.screen, opp: report.final.opp, cleared: report.final.cleared, coins: report.final.coins },
   errors: errU.length, dups: report.dups.map(d => d.dup + '@' + d.snap.screen), stuck: report.stuck.map(s => s.kind + ' ' + (s.what || s.sig || '')),
-  dialogs: (report.dialogs || []).map(d => d.message.slice(0, 40)), layoutIssues: report.layout.length, out: path.relative(REPO, outDir),
+  dialogs: (report.dialogs || []).map(d => d.message.slice(0, 40)), needsScroll: (report.needsScroll || []).map(x => x.k), layoutIssues: report.layout.length, out: path.relative(REPO, outDir),
 }, null, 1));
 if (errU.length) console.log('ERRORS:\n  ' + errU.slice(0, 15).join('\n  '));

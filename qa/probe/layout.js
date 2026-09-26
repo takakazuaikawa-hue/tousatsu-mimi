@@ -23,7 +23,19 @@
   const ownText = (el) => [...el.childNodes].some(n => n.nodeType === 3 && n.nodeValue.trim().length > 0);
   const DISPLAY_FONT = /Bebas|Anton|Oswald/i;
 
+  const isTransparent = (el) => {
+    const cs = getComputedStyle(el);
+    const bg = cs.backgroundColor;
+    const clearBg = bg === 'transparent' || /rgba\([^)]*,\s*0\)$/.test(bg);
+    return clearBg && cs.backgroundImage === 'none' && !ownText(el) && el.tagName !== 'IMG' && el.tagName !== 'VIDEO' && !el.querySelector('img,video,svg');
+  };
   function scan() {
+    const probeStyle = document.createElement('style');
+    probeStyle.textContent = '* { pointer-events: auto !important; }';
+    document.head.appendChild(probeStyle);
+    try { return scanInner(); } finally { probeStyle.remove(); }
+  }
+  function scanInner() {
     const issues = [];
     const all = [...document.body.querySelectorAll('*')].filter(el => ownText(el) && vis(el));
     for (const el of all) {
@@ -49,7 +61,7 @@
         if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue;
         const h = document.elementFromPoint(x, y);
         if (!h || h === el || el.contains(h) || h.contains(el)) continue;
-        if (getComputedStyle(h).pointerEvents === 'none') continue;
+        if (isTransparent(h)) continue;
         if (layerOf(h) !== layerOf(el)) continue; // モーダル越しは意図どおり
         covered++; by = h;
       }
@@ -62,7 +74,7 @@
     const btns = [...document.querySelectorAll('button, [data-action], .choice-btn, [role="button"]')].filter(el => vis(el) && !el.disabled);
     for (const b of btns) {
       const r = b.getBoundingClientRect();
-      if (r.right > innerWidth + 1 || r.bottom > innerHeight + 1 || r.left < -1 || r.top < -1) issues.push({ kind: 'button-offscreen', el: desc(b), text: txt(b) });
+      if ((r.right > innerWidth + 1 || r.bottom > innerHeight + 1 || r.left < -1 || r.top < -1) && r.width * r.height < innerWidth * innerHeight * 0.15) issues.push({ kind: 'button-offscreen', el: desc(b), text: txt(b) });
       else if (Math.min(r.width, r.height) < 24) issues.push({ kind: 'small-target', el: desc(b), text: txt(b), px: Math.round(Math.min(r.width, r.height)) });
     }
     return issues;

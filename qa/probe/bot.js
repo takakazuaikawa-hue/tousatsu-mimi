@@ -96,8 +96,17 @@
       return { el: primary, why: 'intro' };
     }
     if (policy === 'random') return { el: btns[Math.floor(rnd() * btns.length)], why: 'random' };
-    if (policy === 'allin') return { el: one('player-allin') || passive() || btns[0], why: 'allin' };
-    if (policy === 'station') return { el: passive() || btns[0], why: 'station' };
+    if (policy === 'allin') return { el: one('player-allin') || passive(), why: 'allin' };
+    if (policy === 'station') return { el: passive(), why: 'station' };
+    if (policy === 'beginner') {
+      let rank = -1;
+      try { if ((S.community || []).length >= 3) rank = evaluateHand([...(S.playerHand || []), ...S.community]).rank; } catch (e) {}
+      const need0 = Math.max(0, (S.currentBetOpponent || 0) - (S.currentBetPlayer || 0));
+      if (rank < 0) return { el: (need0 > 150 && has('player-fold')) ? one('player-fold') : passive(), why: 'beginner-pre' };
+      if (need0 > 0) return { el: rank >= 1 ? passive() : one('player-fold'), why: 'beginner-facing r=' + rank };
+      const small = bets[0];
+      return { el: rank >= 1 && small ? small : passive(), why: 'beginner r=' + rank };
+    }
     // learner：手の強さと必要勝率で判断する
     let eq = 0.5;
     try {
@@ -110,10 +119,10 @@
     if (need > 0) {
       if (eq < potOdds + 0.03 && has('player-fold')) return { el: one('player-fold'), why: `fold eq=${eq.toFixed(2)} po=${potOdds.toFixed(2)}` };
       if (eq > 0.88 && midBet()) return { el: midBet(), why: `raise eq=${eq.toFixed(2)}` };
-      return { el: passive() || btns[0], why: `call eq=${eq.toFixed(2)} po=${potOdds.toFixed(2)}` };
+      return { el: passive(), why: `call eq=${eq.toFixed(2)} po=${potOdds.toFixed(2)}` };
     }
-    if (eq > 0.68 && midBet()) return { el: midBet(), why: `bet eq=${eq.toFixed(2)}` };
-    return { el: passive() || btns[0], why: `check eq=${eq.toFixed(2)}` };
+    if (eq > 0.62 && midBet()) return { el: midBet(), why: `bet eq=${eq.toFixed(2)}` };
+    return { el: passive(), why: `check eq=${eq.toFixed(2)}` };
   }
 
   function dupOverlays() {
@@ -157,11 +166,17 @@
     const dom = cands.filter(el => el.classList.contains('dominance-choice-btn'));
     if (dom.length) return click(dom[0], 'dominance', res);
 
-    // 3) 卓でのミミの手番
+    // 3) 卓でのミミの手番（相手のベット演出などが上に出ていれば、先にそれを送る）
+    const cover = TAP_OVERLAYS.map(s => [...document.querySelectorAll(s)].filter(vis).pop()).find(el => el && hittable(el));
+    if (S && S.screen === 'battle' && cover && !cands.some(el => el.classList.contains('choice-btn'))) {
+      const blocked = cands.filter(el => el.classList.contains('action-slot')).length;
+      res.coverOverActions = blocked ? desc(cover).slice(0, 60) : null;
+      return click(cover, 'tap-cover', res);
+    }
     if (S && S.screen === 'battle') {
       const acts = cands.filter(el => el.classList.contains('action-slot') && /^player-/.test(el.dataset.action || ''));
       const topHasOverlay = cands.some(el => !el.closest('.battle-screen'));
-      if (acts.length && !topHasOverlay) { const a = battleAction(acts, policy, S); if (a.el) return click(a.el, a.why, res); }
+      if (acts.length && !topHasOverlay) { const a = battleAction(acts, policy, S); if (a.el) return click(a.el, a.why, res); res.waitAction = a.why; return res; }
     }
 
     // 4) ロビー：次の卓
@@ -198,6 +213,23 @@
       }
     }
     if (best) return click(best, 'weak-button', res);
+    // 7) スクロールしないと見えない主ボタン（それ自体が不具合なので記録してから見える所へ出す）
+    const hidden = [...document.querySelectorAll('button, [data-action]')].filter(el => {
+      if (el.disabled) return false;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+      const r = el.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2) return false;
+      const t = label(el);
+      if (AVOID_TEXT.test(t)) return false;
+      return !hittable(el) && PREFER.some(([re]) => re.test(t));
+    });
+    if (hidden.length) {
+      const el = hidden[hidden.length - 1];
+      res.needsScroll = desc(el);
+      el.scrollIntoView({ block: 'center' });
+      return res;
+    }
     res.did = null;
     return res;
   }

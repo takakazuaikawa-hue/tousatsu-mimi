@@ -2690,6 +2690,14 @@ function defaultState() {
   };
 }
 
+// 対戦の世代番号：ロビーへ戻る・次の対戦を始める・対戦を終える度に進める。
+// battleTimeout で予約した進行は、予約時と世代が違えば実行しない（前の対戦のタイマーが新しい卓を動かしていた）。
+let battleGen = 0;
+function battleTimeout(fn, ms) {
+  const gen = battleGen;
+  return setTimeout(() => { if (gen === battleGen) fn(); }, ms);
+}
+
 function log(category, entry) {
   state.logs[category].push({ t: Date.now(), hand: state.handNo, ...entry });
 }
@@ -6787,8 +6795,9 @@ function renderActionArea(el) {
         return { kind, label, subText: '→ オールイン', chipAmount: state.playerChips,
                  action: 'player-allin', enabled: state.playerChips > 0 };
       }
-      if (canFullRaise && fits(amount)) {
-        return { kind, label, subText: sub, chipAmount: amount, action: 'player-bet', dataSize, enabled: true };
+      const raiseTotal = need + Math.max(amount, need, 50);
+      if (canFullRaise && state.playerChips >= raiseTotal) {
+        return { kind, label, subText: sub, chipAmount: raiseTotal, action: 'player-bet', dataSize, enabled: true };
       }
       if (canAllInOver) {
         return { kind, label, subText: '→ オールイン', chipAmount: state.playerChips,
@@ -6934,6 +6943,19 @@ function onAction(e) {
     case 'skip-stage': skipStageWithCoins(data.opponent); break;
     case 'back-title':    stopEndingBgm(); state = defaultState(); render(); break;
     case 'back-lobby': {
+      // 対戦・講義の途中で抜ける時だけ、失うものを書いた確認を挟む（誤タップ1回で対戦が消えていた）
+      if (state.screen === 'battle' && !state.introHandMode) {
+        const inLecture = !!state.lectureMode;
+        showConfirm(inLecture
+          ? { title: '講義を中断する？', body: 'ここまでの進み具合は残るよ。\n続きはロビーのリコ先輩から再開できる。', ok: '中断してロビーへ', cancel: '続ける', danger: true }
+          : { title: '対戦をやめる？', body: `いまの対戦（${state.handNo}ハンド目）はここで終わり。\nチップは持ち帰れないけど、いつでも挑戦し直せる。`, ok: 'やめてロビーへ', cancel: '続ける', danger: true }
+        ).then(yes => {
+          if (!yes) return;
+          if (inLecture && typeof exitLectureMidway === 'function') exitLectureMidway();
+          else goLobby();
+        });
+        break;
+      }
       stopEndingBgm();
       // ショップから出る瞬間にここまで見た商品を seen マーク（NEW表示はショップ内では消えない）
       if (state.screen === 'shop') markShopItemsSeen();
@@ -7951,6 +7973,12 @@ function showEndingFinalButtons(stage) {
 
 
 function goLobby() {
+  battleGen++;
+  if (typeof dismissCutIn === 'function') dismissCutIn();
+  if (state && state.psychRoot) { state.psychRoot.remove(); state.psychRoot = null; }
+  document.querySelectorAll('.hand-result-overlay, .rebuy-overlay, .dominance-overlay, .dominance-choice-overlay, .tutorial-overlay, .chapter-banner, .hands-on-overlay, .personality-reveal-banner, .emote-cutin, .clutch-cutin, .bluff-break-charge, .lecture-stamp, .psych-modal, .rico-cutin, .allin-cutin, .panyu-clicker-overlay').forEach(el => el.remove());
+  const lhud = document.getElementById('lecture-hud'); if (lhud) lhud.remove();
+  if (state) { state.lectureMode = false; state.introHandMode = false; state.tutorialMode = false; state.psychPending = false; }
   if (typeof stopBattleBgmSkin === 'function') stopBattleBgmSkin(); // バトル専用BGMスキンを止めてロビーへ戻す
   document.body.dataset.oppBg = ''; // 相手別テーブル背景を解除
   document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
@@ -11511,6 +11539,7 @@ function startBattle(opponentId) {
 }
 
 function startBattleInternal(opponentId) {
+  battleGen++;
   const opp0 = OPPONENTS[opponentId];
   const seriousRico = (opponentId === 'rico_tutorial' && window.__ricoSeriousMode === true);
   window.__ricoSeriousMode = false; // 一回限り
@@ -11860,6 +11889,7 @@ const INTRO_HANDS = [
 //   introEpisodeShown は「実際に全文を見せた」ときだけ立てる（見せていないのに
 //   立ててしまうと、講義に入ったときに第1話が永久に出なくなる）。
 function startIntroHand() {
+  battleGen++;
   showEpisodeChip(EPISODES.rico_tutorial && EPISODES.rico_tutorial.short);
   beginIntroHand();
 }
@@ -11904,7 +11934,7 @@ function beginIntroHand() {
   state.ricoAdvice = '「今日は3ハンドだけ、私が相手するよ。習うより慣れろ〜」';
   state.opponentSpeech = '「そんな固くならないの。ほら、座った座った」';
   render();
-  setTimeout(dealIntroHand, 900);
+  battleTimeout(dealIntroHand, 900);
 }
 
 // Hand1（そろえる）の入口。以後の進行は introHandAdvance() が dealIntroHandByNo() を呼んで繋ぐ
@@ -11961,7 +11991,7 @@ function dealIntroHandByNo(no) {
     // Hand2/3：リコ先輩が先にベットしてくる → ミミは反応するだけ
     state.isPlayerTurn = false;
     render();
-    setTimeout(() => introHandOpponentOpenBet(no), 900);
+    battleTimeout(() => introHandOpponentOpenBet(no), 900);
   }
 }
 
@@ -11997,10 +12027,10 @@ function introHandOpponentOpenBet(no) {
     state.mimiThought = cfg.betMimi;
     state.ricoAdvice = cfg.betRico;
     state.isPlayerTurn = true;
-    setTimeout(() => { if (state.screen === 'battle') render(); }, 600);
+    battleTimeout(() => { if (state.screen === 'battle') render(); }, 600);
   } else {
     // Hand3：心理バトルを固定出題（qidは実在確認済みの初心者向け問題）
-    setTimeout(() => triggerPsychBattle(cfg.psychQid), 900);
+    battleTimeout(() => triggerPsychBattle(cfg.psychQid), 900);
   }
 }
 
@@ -12020,7 +12050,7 @@ function introHandFold() {
   setOpponentExpression('pleased');
   render();
   flyChips('.bu-pot-physical', '.char-opponent', potWon);
-  setTimeout(() => {
+  battleTimeout(() => {
     if (state.screen !== 'battle') return;
     showRicoCutIn((cfg && cfg.foldRico) || 'えらい！　損切りできる子は強くなるよ', true, () => introHandAdvance(), CUTIN_ADVANCE);
   }, 1200);
@@ -12043,7 +12073,7 @@ function introHandAfterPsych() {
   // ★以前はここから直接ショーダウンへ飛んでいたため、場札3枚のまま
   //   ストリート表示だけ「RIVER ✓」になり、空きスロット2枚を残して勝負が終わっていた。
   //   最後まで場札を開いてから見せる。
-  setTimeout(() => {
+  battleTimeout(() => {
     if (state.screen !== 'battle' || !state.introHandMode) return;
     const cfg = INTRO_HANDS[(state.introHandNo || 3) - 1];
     const rest = (cfg && cfg.turnRiver) ? cfg.turnRiver.map(c => ({ ...c })) : null;
@@ -12065,15 +12095,15 @@ function introHandAdvance() {
   if (state.__introAdvancedFrom === no) return;
   state.__introAdvancedFrom = no;
   if (no < INTRO_HANDS.length) {
-    setTimeout(() => dealIntroHandByNo(no + 1), 300);
+    battleTimeout(() => dealIntroHandByNo(no + 1), 300);
   } else {
-    setTimeout(showIntroHandWinScreen, 300);
+    battleTimeout(showIntroHandWinScreen, 300);
   }
 }
 
 // 研修スキップ：確認なしで即・終了画面へ（報酬は最後まで進めた場合と同額）
 function introHandSkip() {
-  if (!state.introHandMode) return;
+  if (!state.introHandMode || state.introWinShown) return;
   if (typeof dismissCutIn === 'function') dismissCutIn();
   if (state.psychRoot) { state.psychRoot.remove(); state.psychRoot = null; }
   state.psychPending = false;
@@ -12105,7 +12135,7 @@ function introHandShowdown() {
   state.opponentSpeech = '「……ショーダウン。見せてごらん」';
   state.mimiThought = '「……勝負！」';
   render();
-  setTimeout(() => {
+  battleTimeout(() => {
     if (state.screen !== 'battle') return;
     state.opponentRevealed = true;
     state.__dealSeen.opp = 0;
@@ -12113,7 +12143,7 @@ function introHandShowdown() {
     mpSfx('flip');
     render();
   }, 550);
-  setTimeout(() => {
+  battleTimeout(() => {
     if (state.screen !== 'battle') return;
     state.sdHighlight = new Set((pEv.bestFive || []).map(cardKey));
     state.opponentSpeech = '「……お見事。上等だよ」';
@@ -12124,7 +12154,7 @@ function introHandShowdown() {
     showShowdownCallout('player', pEv, oEv);
     mpSfx('bigwin');
   }, 1500);
-  setTimeout(() => {
+  battleTimeout(() => {
     if (state.screen !== 'battle') return;
     state.playerChips += pot;
     state.pot = 0; resetPotChips();
@@ -12133,7 +12163,7 @@ function introHandShowdown() {
     flyChips('.bu-pot-physical', '.char-mimi', pot);
     floatText('.char-mimi', `+${pot}`, 'ft-gain');
   }, 2600);
-  setTimeout(() => {
+  battleTimeout(() => {
     if (state.screen !== 'battle') return;
     const line = (cfg && cfg.winNextRico) || 'ね、いい調子。次いこ！';
     showRicoCutIn(line, true, () => introHandAdvance(), CUTIN_ADVANCE);
@@ -12141,6 +12171,9 @@ function introHandShowdown() {
 }
 
 function showIntroHandWinScreen() {
+  if (state.introWinShown || document.querySelector('.intro-win-overlay')) return;
+  state.introWinShown = true;
+  battleGen++; // 研修の残りの台本（ショーダウン演出・次ハンドへの予約）をここで無効にする
   save.coins = (save.coins || 0) + 300;
   save.introPlayed = true;
   saveProgress();
@@ -12240,14 +12273,14 @@ function startHand() {
   if (!state.tutorialMode) {
     const base = OPPONENTS[state.opponentId]?.chips || 1000;
     if (state.opponentChips > 0 && state.opponentChips <= (state.__oppInitialChips || base) * 0.18) {
-      setTimeout(() => playEmote('opponent', 'desperate'), 800);
+      battleTimeout(() => playEmote('opponent', 'desperate'), 800);
     } else if (state.playerChips > 0 && state.playerChips <= (state.__initialChips || base) * 0.18) {
-      setTimeout(() => playEmote('mimi', 'desperate'), 800);
+      battleTimeout(() => playEmote('mimi', 'desperate'), 800);
     }
   }
 
   if (state.tutorialMode) {
-    setTimeout(() => showTutorial('preflop',
+    battleTimeout(() => showTutorial('preflop',
       'ミミの手札は<b>A♠ K♠</b>！スーテッドのトップハンド、最強クラスだよ。<br>' +
       'プリフロップでは、<b>「コール」</b>で安く場札を見にいくのが基本。<br>' +
       'もちろん「レイズ」で攻めても良い。今回は<b>「コール」</b>を押してみよう。'
@@ -12332,6 +12365,8 @@ function mimiAssess(allCards, community, opponentBet, pot, callNeed) {
 // 12. プレイヤーアクション
 //=============================================================
 function playerFold() {
+  if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
+  state.isPlayerTurn = false;
   mpSfx('fold');
   state.opponentSpeech = opponentReactToPlayerFold();
   log('actions', { actor: 'player', type: 'fold' });
@@ -12341,9 +12376,10 @@ function playerFold() {
   state.pot = 0; resetPotChips();
   flyChips('.bu-pot-physical', '.char-opponent', potWon);
   render();
-  setTimeout(endHand, 1100);
+  battleTimeout(endHand, 1100);
 }
 function playerCall() {
+  if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
   mpSfx('call');
   const need = state.currentBetOpponent - state.currentBetPlayer;
   const pay = Math.max(0, Math.min(need, state.playerChips));
@@ -12355,9 +12391,10 @@ function playerCall() {
   state.mimiThought = '「コールした。次の場札を見よう」';
   render();
   flyChips('.char-mimi', '.bu-pot-physical', pay);
-  setTimeout(advanceAfterCall, 700);
+  battleTimeout(advanceAfterCall, 700);
 }
 function playerCheckCall() {
+  if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
   const need = state.currentBetOpponent - state.currentBetPlayer;
   if (need > 0) return playerCall();
   mpSfx('check');
@@ -12366,9 +12403,10 @@ function playerCheckCall() {
   state.isPlayerTurn = false;
   state.mimiThought = '「こちらもチェック」';
   render();
-  setTimeout(advanceAfterCall, 700);
+  battleTimeout(advanceAfterCall, 700);
 }
 function playerRaise(bb) {
+  if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
   mpSfx('battle-bet');
   const amount = Math.max(0, Math.min(50 * bb, state.playerChips));
   state.playerChips = Math.max(0, state.playerChips - amount);
@@ -12376,7 +12414,7 @@ function playerRaise(bb) {
   state.pot += amount; pushPotChips(amount);
   log('bets', { actor: 'player', type: 'raise', amount });
   state.isPlayerTurn = false;
-  state.mimiThought = `「${bb}BBレイズ！」`;
+  state.mimiThought = `「${amount}にレイズ！」`;
   state.opponentSpeech = opponentReactToPlayerAggression('raise', amount);
   if (!state.introHandMode && !state.tutorialMode) {
     setOpponentExpression(state.opponentId === 'velvet' ? 'pleased' : 'rattled');
@@ -12384,17 +12422,23 @@ function playerRaise(bb) {
   setMimiExpression('smug'); // 攻めに出るミミは不敵な笑みに
   render();
   flyChips('.char-mimi', '.bu-pot-physical', amount);
-  setTimeout(opponentTurn, 700);
+  battleTimeout(opponentTurn, 700);
 }
 function playerBet(size) {
+  if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
   mpSfx('battle-bet');
-  const amount = betSizeToChips(size, state.pot, state.playerChips);
+  // ベットされた後にサイズを選んだら「コール額＋上乗せ」を払うレイズになる（以前は上乗せ分だけを払い、コール額にも届かないことがあった）
+  const needNow = Math.max(0, state.currentBetOpponent - state.currentBetPlayer);
+  const sized = betSizeToChips(size, state.pot, state.playerChips);
+  const amount = needNow > 0
+    ? Math.min(state.playerChips, needNow + Math.max(sized, needNow, 50))
+    : sized;
   state.playerChips = Math.max(0, state.playerChips - amount);
   state.currentBetPlayer += amount;
   state.pot += amount; pushPotChips(amount);
-  log('bets', { actor: 'player', type: 'bet', size, amount });
+  log('bets', { actor: 'player', type: needNow > 0 ? 'raise' : 'bet', size, amount });
   state.isPlayerTurn = false;
-  state.mimiThought = `「${amount}ベット」`;
+  state.mimiThought = needNow > 0 ? `「${amount}出して、上乗せ！」` : `「${amount}ベット」`;
   // pot 1/2以下は 'bet_small'、2/3〜pot は 'bet_big'
   const aggroKind = (size === 'pot_2_3' || size === 'pot_1') ? 'bet_big' : 'bet_small';
   state.opponentSpeech = opponentReactToPlayerAggression(aggroKind, amount);
@@ -12404,9 +12448,10 @@ function playerBet(size) {
   if (aggroKind === 'bet_big') setMimiExpression('smug');
   render();
   flyChips('.char-mimi', '.bu-pot-physical', amount);
-  setTimeout(opponentTurn, 700);
+  battleTimeout(opponentTurn, 700);
 }
 function playerAllIn() {
+  if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
   mpSfx('battle-allin');
   const amount = state.playerChips;
   state.playerChips = 0;
@@ -12423,7 +12468,7 @@ function playerAllIn() {
   render();
   flyChips('.char-mimi', '.bu-pot-physical', amount);
   showAllInCutIn('player', amount);
-  setTimeout(opponentTurn, 1800);
+  battleTimeout(opponentTurn, 1800);
 }
 
 // オールイン カットイン演出
@@ -12490,7 +12535,7 @@ function opponentTurn() {
   const delay = heavy ? 900 + rand() * 800 : 380 + rand() * 320;
   state.opponentThinking = true;
   render();
-  setTimeout(() => {
+  battleTimeout(() => {
     state.opponentThinking = false;
     if (state.screen !== 'battle') return;
     opponentTurnDecide();
@@ -12505,10 +12550,10 @@ function opponentTurnDecide() {
     const oppNeedNow = state.currentBetPlayer - state.currentBetOpponent;
     if (oppNeedNow > 0) {
       // 既に全額入っているのでこれ以上は払えない（自動コール扱い）→ そのまま次ストリートへ
-      setTimeout(advanceAfterCall, 600);
+      battleTimeout(advanceAfterCall, 600);
     } else {
       // ベットが揃っている → 次ストリートへ
-      setTimeout(advanceAfterCall, 600);
+      battleTimeout(advanceAfterCall, 600);
     }
     return;
   }
@@ -12516,7 +12561,7 @@ function opponentTurnDecide() {
   // ミミがオールイン済みなら、もう賭けは起きない。場札を最後まで自動でめくる。
   // （ここで相手がベットすると、ミミが答えられない心理バトルまで始まってしまっていた）
   if (state.playerChips <= 0 && need <= 0 && !state.introHandMode) {
-    setTimeout(advanceAfterCall, 700);
+    battleTimeout(advanceAfterCall, 700);
     return;
   }
   // 相手の手札強度を計算
@@ -12536,7 +12581,7 @@ function opponentTurnDecide() {
     state.opponentSpeech = pay > 0 ? 'う……いいよ、コール' : 'チェックで';
     render();
     if (pay > 0) flyChips('.char-opponent', '.bu-pot-physical', pay);
-    setTimeout(advanceAfterCall, 900);
+    battleTimeout(advanceAfterCall, 900);
     return;
   }
 
@@ -12578,7 +12623,7 @@ function opponentTurnDecide() {
     setOpponentExpression('defeat');
     render();
     floatText('.char-mimi', `+${potWon}`, 'ft-gain');
-    setTimeout(endHand, 1300);
+    battleTimeout(endHand, 1300);
     return;
   }
   // チェック/コール
@@ -12596,7 +12641,7 @@ function opponentTurnDecide() {
     if (pay > 0) flyChips('.char-opponent', '.bu-pot-physical', pay);
     if (pay > 0) {
       // 相手がコール → ベットマッチ → 次ストリートへ
-      setTimeout(advanceAfterCall, 900);
+      battleTimeout(advanceAfterCall, 900);
     } else {
       // 相手がチェック → プレイヤーに手番を渡す
       state.isPlayerTurn = true;
@@ -12606,7 +12651,7 @@ function opponentTurnDecide() {
       } else {
         state.mimiThought = '「相手はチェックか……こちらのターン」';
       }
-      setTimeout(render, 900);
+      battleTimeout(render, 900);
     }
     return;
   }
@@ -12628,7 +12673,7 @@ function opponentTurnDecide() {
       mpSfx('call');
       render();
       flyChips('.char-opponent', '.bu-pot-physical', pay);
-      setTimeout(advanceAfterCall, 900);
+      battleTimeout(advanceAfterCall, 900);
       return;
     }
     const minRaiseTotal = need + Math.max(50, need); // call + min raise step
@@ -12654,7 +12699,7 @@ function opponentTurnDecide() {
     if (bigBet) {
       setOpponentExpression('pressure'); // 相手を強気表情に
       triggerBetShake(action.size);
-      setTimeout(() => showOpponentCutIn(state.opponentSpeech, action.size), 300);
+      battleTimeout(() => showOpponentCutIn(state.opponentSpeech, action.size), 300);
     }
   }
   // ★テル：賭けた直後、本心が顔に出ることがある。
@@ -12662,7 +12707,7 @@ function opponentTurnDecide() {
   //   出るかどうかはキャラの TELL_LEAK 次第。ポルカはほぼ毎回出て、ヴェルベットはめったに出ない。
   //   中途半端な強さ（0.42〜0.62）では出さない＝「顔に出た時は情報」という約束を守る。
   if (hs < 0.42 || hs >= 0.62) {
-    setTimeout(() => maybeOpponentTell(hs < 0.42), 700);
+    battleTimeout(() => maybeOpponentTell(hs < 0.42), 700);
   }
 
   const bigEnough = (action.size === 'pot_2_3' || action.size === 'pot_1' || action.size === 'allin');
@@ -12699,7 +12744,7 @@ function opponentTurnDecide() {
     render();
     const qid = pickPsychQuestion();
     if (triggerBoss) state.bossPsychFiredThisHand = true;
-    setTimeout(() => triggerPsychBattle(qid), 900);
+    battleTimeout(() => triggerPsychBattle(qid), 900);
     return;
   }
 
@@ -12711,7 +12756,7 @@ function opponentTurnDecide() {
     if (lqid) {
       state.logicResolvedStreet = true;
       render();
-      setTimeout(() => triggerPsychBattle(lqid), 900);
+      battleTimeout(() => triggerPsychBattle(lqid), 900);
       return;
     }
   }
@@ -12865,9 +12910,9 @@ function advanceAfterCall() {
         'フロップは<b>A♥ 5♦ 9♣</b>！<br>' +
         'ミミの手札A♠ K♠と合わせると、<b>「Aのペア」</b>が完成。かなり強い手だよ。<br>' +
         'ここで私がガツンとベットしてくるから、よく見てね〜',
-        () => setTimeout(opponentTurn, 400));
+        () => battleTimeout(opponentTurn, 400));
     } else {
-      setTimeout(opponentTurn, 1000);
+      battleTimeout(opponentTurn, 1000);
     }
   } else if (state.handPhase === 'flop') {
     if (state.fullHand) {
@@ -13765,7 +13810,7 @@ function resolvePsych(qid, choice, btn) {
       const allOpps = ['polka','selina','grano','velvet'];
       if (allOpps.every(o => save.readSetByOpp[o])) unlockAchievement('read_all');
       saveProgress();
-      setTimeout(() => showPersonalityRevealBanner(), 600);
+      state.__pendingReveal = true; // 判定スタンプ→解説→この告知、の順に1枚ずつ出す（同時に3枚重なっていた）
     }
     state.mimiThought = `「読めた……！${eff.hint}」`;
     // v2：読み取った「テル」を卓上の付箋として残す
@@ -13784,9 +13829,8 @@ function resolvePsych(qid, choice, btn) {
       state.ricoAdvice += `<br><small class="range-hint">${rangeText}</small>`;
     }
     log('psych', { qid, choice: choice.id, success: true });
-    // 証拠突きつけ成功でブラフブレイク確定
-    if (eff.bluffBreak) triggerBluffBreak();
-    else if (state.zazazo >= state.zazazoMax) triggerBluffBreak();
+    // 証拠突きつけ成功でブラフブレイク確定。演出は判定スタンプと解説の後に出す（先に出すと結果がばれる）
+    if (eff.bluffBreak || state.zazazo >= state.zazazoMax) state.__pendingBluffBreak = true;
   } else {
     const eff = q.onFail;
     state.panyu = Math.max(0, state.panyu + eff.panyu);
@@ -13885,7 +13929,14 @@ function resolvePsych(qid, choice, btn) {
           'あとはAペアの強さを信じて、<b>「コール」</b>か<b>「1/2ポット」</b>でベットしてみよう。<br>' +
           '私はもう手を引くから、安心していいよ。')
       : null;
-    showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, onCutInClose);
+    const afterExplain = () => {
+      if (onCutInClose) onCutInClose();
+      const bb = state.__pendingBluffBreak, rv = state.__pendingReveal;
+      state.__pendingBluffBreak = false; state.__pendingReveal = false;
+      if (bb) triggerBluffBreak();
+      if (rv) battleTimeout(() => showPersonalityRevealBanner(), bb ? 2600 : 200);
+    };
+    showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, afterExplain, { autoCloseMs: 5200, hint: 'タップで閉じる' });
   }, 700 + (state.__psychRevealDelay || 0));
 }
 
@@ -13981,9 +14032,7 @@ function showPersonalityRevealBanner() {
     setTimeout(() => banner.remove(), 500);
   };
   banner.querySelector('.prb-close-btn').addEventListener('click', dismiss);
-  banner.addEventListener('click', (e) => {
-    if (e.target === banner) dismiss(); // 背景クリック
-  });
+  banner.addEventListener('click', dismiss); // どこを押しても閉じる（背景の判定だけだと、上に重なった演出で閉じられなかった）
   // pointer-events を有効化（クリック受付）
   banner.style.pointerEvents = 'auto';
 }
@@ -14047,7 +14096,7 @@ function showdown() {
   state.mimiThought = '「……勝負！」';
   render();
 
-  setTimeout(() => {
+  battleTimeout(() => {
     if (!alive()) return;
     state.opponentRevealed = true;
     state.__dealSeen.opp = 0;
@@ -14063,7 +14112,7 @@ function showdown() {
     }
   }, T.flip);
 
-  setTimeout(() => {
+  battleTimeout(() => {
     if (!alive()) return;
     stopTeaseHeartbeat();
     document.body.classList.remove('is-tease-reach');
@@ -14084,7 +14133,7 @@ function showdown() {
     else if (winner === 'player') showWinBurst(false);
   }, T.call);
 
-  setTimeout(() => {
+  battleTimeout(() => {
     if (!alive()) return;
     if (winner === 'player') {
       state.playerChips += pot;
@@ -14110,7 +14159,7 @@ function showdown() {
     render();
   }, T.chips);
 
-  setTimeout(() => { if (alive()) endHand(); }, T.end);
+  battleTimeout(() => { if (alive()) endHand(); }, T.end);
 }
 
 // ショーダウンの尺：接戦は長く、決着済みは短く（待たせるのは結果の直前だけ）
@@ -14194,14 +14243,14 @@ function endHand() {
       const bigPot = potSize >= (OPPONENTS[state.opponentId]?.chips || 1000) * 0.35;
       if (last.winner === 'player') {
         // 大きいポットを取ったら、ミミが調子に乗る
-        if (bigPot) setTimeout(() => playEmote('mimi', 'tellStrong', { force: true }), 500);
+        if (bigPot) battleTimeout(() => playEmote('mimi', 'tellStrong', { force: true }), 500);
         // 相手は撃沈。チップが尽きたら大泣きして暴れる
-        if (state.opponentChips <= 0) setTimeout(() => playCollapse('opponent', 'defeat'), 900);
-        else if (bigPot)             { bumpTaunt(-1); setTimeout(() => playEmote('opponent', 'tellBluff', { force: true }), 1100); }
+        if (state.opponentChips <= 0) battleTimeout(() => playCollapse('opponent', 'defeat'), 900);
+        else if (bigPot)             { bumpTaunt(-1); battleTimeout(() => playEmote('opponent', 'tellBluff', { force: true }), 1100); }
       } else if (last.winner === 'opponent') {
-        if (state.playerChips <= 0) setTimeout(() => playEmote('mimi', 'defeat', { force: true, holdMs: 2800 }), 900);
-        else if (bigPot)            setTimeout(() => playEmote('mimi', 'tellBluff', { force: true }), 700);
-        if (bigPot) { bumpTaunt(1); setTimeout(() => playEmote('opponent', tauntLevel() >= 2 && charEmote('opponent','tellStrongMax') ? 'tellStrongMax' : 'tellStrong', { force: true }), 500); }
+        if (state.playerChips <= 0) battleTimeout(() => playEmote('mimi', 'defeat', { force: true, holdMs: 2800 }), 900);
+        else if (bigPot)            battleTimeout(() => playEmote('mimi', 'tellBluff', { force: true }), 700);
+        if (bigPot) { bumpTaunt(1); battleTimeout(() => playEmote('opponent', tauntLevel() >= 2 && charEmote('opponent','tellStrongMax') ? 'tellStrongMax' : 'tellStrong', { force: true }), 500); }
       }
     }
     // ハンド勝敗SFX（ショーダウンは演出内で再生済み）
@@ -14230,6 +14279,7 @@ function showHandResultBanner(snapshot) {
   const opponentChips = snapshot ? snapshot.opponentChips : state.opponentChips;
   const equityHistory = snapshot ? snapshot.equityHistory : (state.equityHistory || []);
 
+  if (!isReplay) document.querySelectorAll('.hand-result-overlay:not(.is-replay)').forEach(el => el.remove());
   const tpl = document.createElement('div');
   tpl.className = 'hand-result-overlay' + (isReplay ? ' is-replay' : '');
 
@@ -14485,15 +14535,15 @@ function showHandResultBanner(snapshot) {
     });
     if (state.handHistory.length > 20) state.handHistory.shift();
   }
-  document.getElementById('continue-hand-btn').addEventListener('click', () => {
+  tpl.querySelector('#continue-hand-btn').addEventListener('click', () => {
     tpl.remove();
     if (!isReplay) continueAfterHand();
   });
   // 「見せて？」ボタン
-  const revealBtn = document.getElementById('hr-reveal-btn');
+  const revealBtn = tpl.querySelector('#hr-reveal-btn');
   if (revealBtn) {
     revealBtn.addEventListener('click', () => {
-      const panel = document.getElementById('hr-reveal-panel');
+      const panel = tpl.querySelector('#hr-reveal-panel');
       if (panel) {
         panel.style.display = 'block';
         // ボタン自体は disable して隠す
@@ -14634,14 +14684,14 @@ function executeDominance(choice) {
   showRicoCutIn(s.mimiLine, true, () => {
     // 相手の反応
     showOpponentCutIn(s.oppLine);
-    setTimeout(() => dominanceActionLoop(s, 0), 1800);
+    battleTimeout(() => dominanceActionLoop(s, 0), 1800);
   });
 }
 
 // 派手なアクションループ
 function dominanceActionLoop(s, iteration) {
   if (state.opponentChips <= 0 || iteration >= s.hands) {
-    setTimeout(() => {
+    battleTimeout(() => {
       // 完了画面
       showDominanceComplete(state.dominanceChoice);
     }, 800);
@@ -14669,7 +14719,7 @@ function dominanceActionLoop(s, iteration) {
   }
   if (navigator.vibrate) navigator.vibrate(50);
   render();
-  setTimeout(() => dominanceActionLoop(s, iteration + 1), 800);
+  battleTimeout(() => dominanceActionLoop(s, iteration + 1), 800);
 }
 
 function spawnDominanceBurst(amount, index) {
@@ -14721,6 +14771,7 @@ const RANK_THRESHOLDS = [
 ];
 
 function endBattle() {
+  battleGen++; // 以後、前の卓の予約処理（崩れ演出など）が結果画面の上で動かないように
   document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
   cancelTease(); // 溜め演出も必ず解除
   document.querySelectorAll('.clutch-cutin').forEach(e => e.remove()); // 勝負帯も画面離脱で必ず解除
@@ -15447,12 +15498,11 @@ function showHandsOnExercise(ex, onClose) {
 }
 
 function exitLectureMidway() {
+  battleGen++;
   // 進捗を保存して中断（コース種別も保存）
   save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect, earned: state.lectureEarned || 0, lite: !!state.lectureLite };
   saveProgress();
-  state = defaultState();
-  state.screen = 'lobby';
-  render();
+  goLobby();
   toast('講義を中断しました。続きはリコ先輩から再開できます');
 }
 
@@ -15974,6 +16024,7 @@ function shakeImpact() {
 function showRicoCutIn(text, isSuccess, onClose, opts) {
   // 既存があれば即dismiss
   if (activeCutInDismiss) activeCutInDismiss();
+  const cutGen = battleGen;
   const o = opts || {};
   const cut = document.createElement('div');
   cut.className = 'rico-cutin ' + (isSuccess ? 'cutin-success' : 'cutin-fail');
@@ -15998,7 +16049,7 @@ function showRicoCutIn(text, isSuccess, onClose, opts) {
     cut.classList.add('cutin-out');
     setTimeout(() => {
       cut.remove();
-      if (onClose) onClose();
+      if (onClose && cutGen === battleGen) onClose();
     }, 500);
   };
   cut.addEventListener('click', dismiss);
@@ -16125,6 +16176,40 @@ function showMimiCutIn(text, narration) {
   const autoDismissTimer = setTimeout(dismiss, 3800);
   cut.addEventListener('click', dismiss);
   activeCutInDismiss = dismiss;
+}
+
+// ゲーム内の確認ダイアログ（ブラウザ標準の confirm は世界観を壊し、スマホでは全画面が解ける）
+// 使い方: if (!(await showConfirm({ title: '対戦をやめる？', body: '…', ok: 'やめる', cancel: '続ける', danger: true }))) return;
+// danger のときは「続ける」側を主ボタンにして、誤タップで失うものが出ないようにする。
+function showConfirm({ title = '確認', body = '', ok = 'はい', cancel = 'やめる', danger = false } = {}) {
+  return new Promise((resolve) => {
+    document.querySelectorAll('.mimi-confirm-overlay').forEach(el => el.remove());
+    const overlay = document.createElement('div');
+    overlay.className = 'mimi-confirm-overlay' + (danger ? ' is-danger' : '');
+    overlay.innerHTML = `
+      <div class="mimi-confirm" role="dialog" aria-modal="true">
+        <div class="mimi-confirm-title">${title}</div>
+        ${body ? `<div class="mimi-confirm-body">${String(body).split(String.fromCharCode(10)).join('<br>')}</div>` : ''}
+        <div class="mimi-confirm-actions">
+          <button type="button" class="btn ${danger ? 'btn-primary' : 'btn-secondary'} mimi-confirm-cancel">${cancel}</button>
+          <button type="button" class="btn ${danger ? 'btn-ghost' : 'btn-primary'} mimi-confirm-ok">${ok}</button>
+        </div>
+      </div>`;
+    let settled = false;
+    const finish = (v) => {
+      if (settled) return; settled = true;
+      document.removeEventListener('keydown', onKey, true);
+      overlay.classList.add('out');
+      setTimeout(() => overlay.remove(), 180);
+      resolve(v);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); finish(false); } };
+    overlay.querySelector('.mimi-confirm-ok').addEventListener('click', (e) => { e.stopPropagation(); finish(true); });
+    overlay.querySelector('.mimi-confirm-cancel').addEventListener('click', (e) => { e.stopPropagation(); finish(false); });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(false); });
+    document.addEventListener('keydown', onKey, true);
+    (document.getElementById('stage') || document.body).appendChild(overlay);
+  });
 }
 
 function toast(msg, variant) {
