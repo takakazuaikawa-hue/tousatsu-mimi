@@ -11914,6 +11914,10 @@ function startBattle(opponentId) {
   let isFirstTime = !save.firstClearRewardClaimed.includes(opponentId);
   // 体験ハンドの直前に第1話を見せているので、続けて講義へ入るときに二度出さない
   if (opponentId === 'rico_tutorial' && save.introEpisodeShown) isFirstTime = false;
+  // 題字は各話で一度だけ（負けて再挑戦するたびに長い題字が毎回出ていた）。見返しはコレクションから
+  if (!save.episodesSeen) save.episodesSeen = [];
+  if (save.episodesSeen.includes(opponentId)) isFirstTime = false;
+  else if (isFirstTime && EPISODES[opponentId]) { save.episodesSeen.push(opponentId); saveProgress(); }
   if (isFirstTime && EPISODES[opponentId]) {
     showEpisodeTitle(opponentId, () => startBattleInternal(opponentId));
     return;
@@ -15271,9 +15275,10 @@ function endBattle() {
     // ベストランク・スコア更新（練習中は記録しない）
     if (!practice) {
       const rankOrder = ['C','B','A','S','SS'];
-      const prevIdx = rankOrder.indexOf(save.bestRanks[state.opponentId] || 'C');
+      const prevRank = save.bestRanks[state.opponentId];
       const newIdx = rankOrder.indexOf(rank);
-      if (newIdx > prevIdx) save.bestRanks[state.opponentId] = rank;
+      // 初めての記録は C でも残す（以前は「前が無ければ C」とみなして比べ、C の勝ちが記録されなかった）
+      if (!prevRank || newIdx > rankOrder.indexOf(prevRank)) save.bestRanks[state.opponentId] = rank;
       if (!save.bestScores[state.opponentId] || score > save.bestScores[state.opponentId]) {
         save.bestScores[state.opponentId] = score;
       }
