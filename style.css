@@ -16419,3 +16419,54 @@ body:has(.battle-screen.v2) .rico-cutin:not(.opponent-cutin):not(.v2-cutin) {
   bottom: auto;
   top: 11vh;
 }
+
+/* ===== 体裁：大きいトーストは設計どおり4.2秒読める（2秒のアニメで約2秒後に透明になっていた） ===== */
+.toast.toast-big { animation: toastShowLong 4.2s ease-out forwards; }
+@keyframes toastShowLong {
+  0%        { opacity: 0; transform: translate(-50%, -20px); }
+  7%, 88%   { opacity: 1; transform: translate(-50%, 0); }
+  100%      { opacity: 0; transform: translate(-50%, -20px); }
+}
+
+/* ===== 体裁：題字・幕間は閉じ始めたら押せない（フェード中の二度押しで後続が2回走っていた） ===== */
+.episode-overlay.out,
+.intermission-overlay.out { pointer-events: none; }
+
+/* ===== 体裁：各話の題字は枠内スクロールなしで全文を見せる（文字の大きさ・枠の高さは fitEpisodeTitle が合わせる） ===== */
+.episode-card-bottom .episode-scroll .episode-title { margin-bottom: 0; }
+
+/* ===== 体裁：コレクションの「スタッフロール再生」はエンディングと同じロールを最前面で流す ===== */
+.staff-roll-replay {
+  position: absolute;
+  inset: 0;
+  z-index: 95; /* コレクション(85)・メモリ閲覧(90)より上 */
+  background: #000;
+  overflow: hidden;
+}
+
+/* ===== 体裁：製品版のスタッフロール（役割の見出し＋名前を中央に1行ずつ） ===== */
+.cr-line {
+  font-size: 18px;
+  line-height: 1.9;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.85);
+}
+.cr-line.is-person {
+  font-size: 22px;
+  color: var(--c-gold-bright);
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 10px rgba(245,215,122,0.55), 0 2px 6px rgba(0,0,0,0.85);
+}
+
+/* ===== 体裁：練習用「相手の手札を見る」（旧「デバッグ：覗き見モード」） ===== */
+.settings-modal-practice .settings-modal-debug-label { color: var(--c-gold-bright); }
+.backdoor-panel .bd-note {
+  font-size: 11px;
+  color: #ffd0c8;
+  text-align: center;
+  margin: -2px 0 6px;
+  letter-spacing: 0.04em;
+}
