@@ -26,14 +26,14 @@ class Conn {
       }
     };
   }
-  send(method, params = {}, sessionId) {
+  send(method, params = {}, sessionId, timeoutMs = 60000) {
     const id = ++this.id;
     const msg = { id, method, params };
     if (sessionId) msg.sessionId = sessionId;
     this.ws.send(JSON.stringify(msg));
     return new Promise((res, rej) => {
       this.pending.set(id, { res, rej });
-      setTimeout(() => { if (this.pending.has(id)) { this.pending.delete(id); rej(new Error('CDP timeout: ' + method)); } }, 60000);
+      setTimeout(() => { if (this.pending.has(id)) { this.pending.delete(id); rej(new Error('CDP timeout: ' + method)); } }, timeoutMs);
     });
   }
   on(method, fn, sessionId = '') {
@@ -45,10 +45,10 @@ class Conn {
 
 export class Page {
   constructor(conn, sid) { this.conn = conn; this.sid = sid; }
-  send(m, p) { return this.conn.send(m, p, this.sid); }
+  send(m, p, timeoutMs) { return this.conn.send(m, p, this.sid, timeoutMs); }
   on(m, f) { this.conn.on(m, f, this.sid); }
-  async eval(expr) {
-    const r = await this.send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+  async eval(expr, timeoutMs = 60000) {
+    const r = await this.send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }, timeoutMs);
     if (r.exceptionDetails) {
       const d = r.exceptionDetails;
       throw new Error((d.exception && d.exception.description) || d.text || 'eval error');

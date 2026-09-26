@@ -15,12 +15,20 @@
     else eq = opponentPreflopStrength(S.ph);
     const potOdds = need > 0 ? need / (S.pot + need) : 0;
     if (pol === 'learner') {
+      const eqv = fn('equityVsRandom') ? fn('equityVsRandom')(S.ph, S.comm, 200) : eq;
+      let e2 = eqv;
       if (need > 0) {
-        if (eq < potOdds + 0.03) return { t: 'fold' };
-        if (eq > 0.88) return { t: 'raise' };
+        const sizeRatio = need / Math.max(1, S.pot - need);
+        const sty = S.oppStyle || '';
+        // 卓で学ぶ読み：ポルカの大きい賭けは弱い、セリナの大きい賭けは強い、ヴェルベットは両極
+        if (sty === 'loud' && sizeRatio >= 0.66) e2 += 0.12;
+        if (sty === 'honest' && sizeRatio >= 0.66) e2 -= 0.12;
+        if (sty === 'polar' && sizeRatio >= 0.9) e2 = e2 >= 0.6 ? e2 + 0.05 : e2 - 0.05;
+        if (e2 < potOdds) return { t: 'fold' };
+        if (e2 > 0.85) return { t: 'raise' };
         return { t: 'call' };
       }
-      if (eq > 0.68) return { t: 'bet', size: 'pot_2_3' };
+      if (e2 > 0.66) return { t: 'bet', size: 'pot_2_3' };
       return { t: 'check' };
     }
     if (pol === 'beginner') { // 役があれば賭け、無ければ降りる素朴な初心者
@@ -40,7 +48,7 @@
     const anteFor = fn('anteForHand'); // フェーズ2で追加予定（参加費の段階上げ）
     const opp = OPP[oppId]; const base = opp.chips || 1000; const prof = opp.profile; const isBoss = !!opp.isBoss;
     const oppMult = opp.oppChipMult || 2;
-    const S = { P: base, O: base * oppMult, rebuy: 1, wins: 0, handNo: 0, zaz: 0, revealed: false };
+    const S = { P: base, O: base * oppMult, rebuy: 1, wins: 0, handNo: 0, zaz: 0, revealed: false, oppStyle: (fn('aiStyleOf') ? fn('aiStyleOf')(prof).sizing : '') };
     const st = { hands: 0, psych: 0, logic: 0, showdowns: 0, oppFolds: 0, plFolds: 0, dom: false, rebuy: false, cap: false, allinCalledLost: 0 };
     while (S.P > 0 && S.O > 0) {
       S.handNo++; st.hands++; if (st.hands > 400) { st.cap = true; break; }
@@ -69,7 +77,7 @@
             const pay = Math.min(Math.max(0, need), S.P); S.P -= pay; S.cbP += pay; S.pot += pay;
             if (advance()) { done = true; break; } who = 'opp'; continue;
           }
-          if (d.t === 'allin') { const amt = S.P; S.P = 0; S.cbP += amt; S.pot += amt; S.shoved = true; who = 'opp'; continue; }
+          if (d.t === 'allin') { S.shoves = (S.shoves || 0) + 1; const amt = S.P; S.P = 0; S.cbP += amt; S.pot += amt; S.shoved = true; who = 'opp'; continue; }
           if (d.t === 'raise') { const amt = Math.min(Math.max(need * 2, need + Math.max(50, need)), S.P); S.P -= amt; S.cbP += amt; S.pot += amt; who = 'opp'; continue; }
           if (d.t === 'bet') { const amt = Math.min(betSizeToChips(d.size, S.pot, S.P) + Math.max(0, need), S.P); S.P -= amt; S.cbP += amt; S.pot += amt; who = 'opp'; continue; }
         } else {
@@ -78,9 +86,10 @@
           if (S.P <= 0 && need <= 0) { if (advance()) { done = true; break; } who = 'opp'; continue; }
           const all = [...S.oh, ...S.comm];
           const hs = S.comm.length >= 3 ? handStrength01(all) : opponentPreflopStrength(S.oh);
-          const ctx = { handStrength: hs, toCall: need, boardDanger: evaluateBoardDanger(S.comm), canCheck: need === 0, pot: S.pot, oppChips: S.O, playerChips: S.P, street: S.phase, playerAllIn: S.P <= 0 };
+          const ctx = { handStrength: hs, toCall: need, boardDanger: evaluateBoardDanger(S.comm), canCheck: need === 0, pot: S.pot, oppChips: S.O, playerChips: S.P, street: S.phase, playerAllIn: S.P <= 0,
+            hole: S.oh, board: S.comm, potBeforeBet: S.pot - need, playerShoves: S.shoves || 0 };
           const post = S.phase !== 'preflop';
-          const force = (S.handNo === 1 && S.phase === 'flop' && !S.psychResolved && S.cbP === 0) || (isBoss && post && !S.psychResolved && S.cbP === 0) || (isBoss && S.phase === 'preflop' && S.cbP === 0 && rng() < 0.15);
+          const force = (S.handNo === 1 && S.phase === 'flop' && !S.psychResolved && S.cbP === 0);
           let act = decideOpponentAction(prof, ctx, { forceLargeBet: force });
           if (S.P <= 0 && act.type !== 'fold') act = { ...act, type: 'check_call' };
           if (act.type === 'fold' && need > 0) { S.P += S.pot; winner = 'player'; st.oppFolds++; done = true; break; }
@@ -116,7 +125,7 @@
       if (S.P <= 0 && S.O > 0 && S.rebuy > 0) { S.rebuy = 0; S.P = base; st.rebuy = true; continue; }
       if (S.P <= 0 || S.O <= 0) break;
       const domCheck = fn('isDominanceMode');
-      const domNow = (window.__mimiEngine && window.__mimiEngine.dominanceReady) ? window.__mimiEngine.dominanceReady({ P: S.P, O: S.O, base, wins: S.wins }) : (S.P > base && S.wins >= 5);
+      const domNow = (window.__mimiEngine && window.__mimiEngine.dominanceReady) ? window.__mimiEngine.dominanceReady({ P: S.P, O: S.O, base, wins: S.wins }) : (S.P > base && S.P >= S.O * 2 && S.wins >= 5);
       if (domNow) { st.dom = true; break; }
     }
     st.won = st.dom ? (S.P > 0) : S.P > S.O;
@@ -152,7 +161,7 @@
       const deck = newDeck(); const oh = [deck.pop(), deck.pop()]; const comm = [deck.pop(), deck.pop(), deck.pop()];
       if (street !== 'flop') comm.push(deck.pop()); if (street === 'river') comm.push(deck.pop());
       const pot = 200; const need = betSizeToChips(betSize, pot, 5000);
-      const ctx = { handStrength: handStrength01([...oh, ...comm]), toCall: need, boardDanger: evaluateBoardDanger(comm), canCheck: false, pot: pot + need, street };
+      const ctx = { handStrength: handStrength01([...oh, ...comm]), toCall: need, boardDanger: evaluateBoardDanger(comm), canCheck: false, pot: pot + need, street, hole: oh, board: comm, potBeforeBet: pot };
       const act = decideOpponentAction(prof, ctx, {});
       if (act.type === 'fold') cnt.fold++; else if (act.type === 'check_call') cnt.call++; else cnt.raise++;
     }

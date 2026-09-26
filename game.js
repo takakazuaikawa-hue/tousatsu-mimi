@@ -403,7 +403,7 @@ const OPPONENTS = {
   rico_tutorial: {
     id: 'rico_tutorial',
     name: 'リコ先輩',
-    profile: { bluffTendency: 0.2, aggression: 0.3, foldDiscipline: 0.8, valueBetTendency: 0.4, drawAggression: 0.3 },
+    profile: { style: 'rico_tutorial', bluffTendency: 0.2, aggression: 0.3, foldDiscipline: 0.8, valueBetTendency: 0.4, drawAggression: 0.3 },
     maxHands: 1,
     chips: 800,
     tutorial: true,
@@ -418,7 +418,7 @@ const OPPONENTS = {
     id: 'polka',
     name: 'ポルカ',
     // 自信家ブラファー：ブラフ多発・降りない・大きめベット
-    profile: { bluffTendency: 0.85, aggression: 0.9, foldDiscipline: 0.18, valueBetTendency: 0.55, drawAggression: 0.5 },
+    profile: { style: 'polka', bluffTendency: 0.85, aggression: 0.9, foldDiscipline: 0.18, valueBetTendency: 0.55, drawAggression: 0.5 },
     maxHands: 999,
     chips: 1000,
     tutorial: false,
@@ -433,7 +433,7 @@ const OPPONENTS = {
     id: 'selina',
     name: 'セリナ',
     // 冷静な観察者：ブラフ少・ドロー警戒で大ベット・ドライ場では消極的
-    profile: { bluffTendency: 0.35, aggression: 0.55, foldDiscipline: 0.72, valueBetTendency: 0.7, drawAggression: 0.9 },
+    profile: { style: 'selina', bluffTendency: 0.35, aggression: 0.55, foldDiscipline: 0.72, valueBetTendency: 0.7, drawAggression: 0.9 },
     maxHands: 999,
     chips: 1200,
     tutorial: false,
@@ -448,7 +448,7 @@ const OPPONENTS = {
     id: 'grano',
     name: 'グラーノ',
     // 商人気質：割が合わなければ降りる・ブラフ少・強い手で罠
-    profile: { bluffTendency: 0.25, aggression: 0.5, foldDiscipline: 0.82, valueBetTendency: 0.85, drawAggression: 0.4, trapTendency: 0.85 },
+    profile: { style: 'grano', bluffTendency: 0.25, aggression: 0.5, foldDiscipline: 0.82, valueBetTendency: 0.85, drawAggression: 0.4, trapTendency: 0.85 },
     maxHands: 999,
     chips: 1300,
     tutorial: false,
@@ -463,7 +463,7 @@ const OPPONENTS = {
     id: 'velvet',
     name: 'ヴェルベット',
     // 圧支配のディーラー：大ベットで圧かけ・優勢時もさらに追い込む
-    profile: { bluffTendency: 0.6, aggression: 0.92, foldDiscipline: 0.55, valueBetTendency: 0.85, drawAggression: 0.75, pressureTalkTendency: 0.95 },
+    profile: { style: 'velvet', bluffTendency: 0.6, aggression: 0.92, foldDiscipline: 0.55, valueBetTendency: 0.85, drawAggression: 0.75, pressureTalkTendency: 0.95 },
     maxHands: 999, // 実質無限。チップが尽きるまで継続
     chips: 1500,
     tutorial: false,
@@ -869,65 +869,196 @@ const POLKA_PROFILE = {
   drawAggression: 0.6,
 };
 
-// v4 B1 のアルゴリズム強化版：プロファイル差が体感できるよう細分化
-function decideOpponentAction(profile, ctx, opts = {}) {
-  const r = rand();
-  const hs = ctx.handStrength;
+// === 相手 AI（2026-09 作り直し）===
+// 強さは「ランダムな手に対する実際の勝率」を残りの札を配って見積もる（役の種類を9で割るだけだと、
+// ワンペアが降りる側・スリーカードがブラフ側に入っていた）。降りるかどうかは払う額とポットで決める。
+// 賭け方の癖は、その卓で教えるテーマに合わせて性格ごとに変える（プレイヤーが読み取れる規則性）。
 
-  // === サイズ決定ヘルパー：aggression を3段階に分解 ===
-  // 高アグレッション(>=0.7)：pot_1 / pot_2_3 / pot_1_2 を 4:4:2 配分
-  // 中アグレッション(>=0.5)：pot_2_3 / pot_1_2 / pot_1_3 を 4:5:1 配分
-  // 低アグレッション(<0.5)：pot_1_2 / pot_1_3 を 6:4 配分
-  const pickSize = (extraAggro = 0) => {
-    const a = Math.min(1, profile.aggression + extraAggro);
-    const rr = rand();
-    if (a >= 0.7) {
-      if (rr < 0.4) return 'pot_1';
-      if (rr < 0.8) return 'pot_2_3';
-      return 'pot_1_2';
+// 7枚から最強の5枚を比べられる数に（大きいほど強い）。AI の見積もりで何百回も呼ぶので組み合わせを作らない。
+function fastHandScore(cards) {
+  const cnt = new Array(15).fill(0);
+  const bySuit = {};
+  let mask = 0;
+  for (const c of cards) {
+    cnt[c.rank]++;
+    (bySuit[c.suit] || (bySuit[c.suit] = [])).push(c.rank);
+    mask |= 1 << c.rank;
+  }
+  const straightTop = (m) => {
+    if (m & (1 << 14)) m |= 2; // A を 1 としても使う
+    for (let t = 14; t >= 5; t--) {
+      const need = 31 << (t - 4);
+      if ((m & need) === need) return t;
     }
-    if (a >= 0.5) {
-      if (rr < 0.4) return 'pot_2_3';
-      if (rr < 0.9) return 'pot_1_2';
-      return 'pot_1_3';
-    }
-    if (rr < 0.6) return 'pot_1_2';
-    return 'pot_1_3';
+    return 0;
   };
+  for (const s in bySuit) {
+    const arr = bySuit[s];
+    if (arr.length >= 5) {
+      let m = 0;
+      for (const r of arr) m |= 1 << r;
+      const t = straightTop(m);
+      if (t) return 8e10 + t;
+    }
+  }
+  const quads = [], trips = [], pairs = [], singles = [];
+  for (let r = 14; r >= 2; r--) {
+    if (cnt[r] === 4) quads.push(r);
+    else if (cnt[r] === 3) trips.push(r);
+    else if (cnt[r] === 2) pairs.push(r);
+    else if (cnt[r] === 1) singles.push(r);
+  }
+  const pack = (arr) => arr.reduce((a, r) => a * 15 + r, 0);
+  if (quads.length) {
+    const k = [...quads.slice(1), ...trips, ...pairs, ...singles].sort((a, b) => b - a)[0] || 0;
+    return 7e10 + quads[0] * 15 + k;
+  }
+  if (trips.length && (trips.length > 1 || pairs.length)) {
+    return 6e10 + trips[0] * 15 + Math.max(trips[1] || 0, pairs[0] || 0);
+  }
+  for (const s in bySuit) {
+    const arr = bySuit[s];
+    if (arr.length >= 5) return 5e10 + pack(arr.slice().sort((a, b) => b - a).slice(0, 5));
+  }
+  const st = straightTop(mask);
+  if (st) return 4e10 + st;
+  if (trips.length) return 3e10 + pack([trips[0], ...singles.slice(0, 2)]);
+  if (pairs.length >= 2) {
+    const k = [...pairs.slice(2), ...singles].sort((a, b) => b - a)[0] || 0;
+    return 2e10 + pack([pairs[0], pairs[1], k]);
+  }
+  if (pairs.length === 1) return 1e10 + pack([pairs[0], ...singles.slice(0, 3)]);
+  return pack(singles.slice(0, 5));
+}
 
-  if (opts.forceLargeBet) {
-    return { type: 'bet', size: pickSize(0.15), intent: 'forced_bluff' };
+// ランダムな相手の手に対する勝率（0-1）。残りの場札も毎回配り直して数える。
+function equityVsRandom(hole, board, samples = 160) {
+  const used = new Set([...hole, ...board].map(c => c.rank + c.suit));
+  const deck = [];
+  for (const s of SUITS) for (let r = 2; r <= 14; r++) if (!used.has(r + s)) deck.push({ rank: r, suit: s });
+  const need = 5 - board.length;
+  let win = 0;
+  for (let i = 0; i < samples; i++) {
+    for (let j = 0; j < 2 + need; j++) {
+      const k = j + Math.floor(rand() * (deck.length - j));
+      const t = deck[j]; deck[j] = deck[k]; deck[k] = t;
+    }
+    const run = need ? board.concat(deck.slice(2, 2 + need)) : board;
+    const a = fastHandScore(hole.concat(run));
+    const b = fastHandScore([deck[0], deck[1]].concat(run));
+    win += a > b ? 1 : a === b ? 0.5 : 0;
   }
-  // フォールド判定（強さが0.18未満かつコール額あり）
-  // foldDiscipline が高いほど降りやすい（規律ある）／低いほどコールしがち
-  if (hs < 0.18 && r > profile.foldDiscipline && ctx.toCall > 0) {
-    return { type: 'fold' };
+  return win / samples;
+}
+
+// 次の1枚でストレート以上になる札の枚数（場札だけでできるものは数えない）
+function countStrongOuts(hole, board) {
+  if (board.length < 3 || board.length > 4) return 0;
+  const known = [...hole, ...board];
+  const used = new Set(known.map(c => c.rank + c.suit));
+  if (fastHandScore(known) >= 4e10) return 0;
+  let outs = 0;
+  for (const s of SUITS) for (let r = 2; r <= 14; r++) {
+    if (used.has(r + s)) continue;
+    const c = { rank: r, suit: s };
+    if (fastHandScore(known.concat(c)) >= 4e10 && fastHandScore(board.concat(c)) < 4e10) outs++;
   }
-  // チェックレイズ罠（trapTendency）：強い手でもチェックして相手の攻めを誘う
-  // ※ ブラフ判定より前に判定（強い手の trap が bluff に誤分類されないように）
-  if (hs > 0.65 && ctx.canCheck && profile.trapTendency && r < profile.trapTendency * 0.5) {
-    return { type: 'check_call', intent: 'trap' };
+  return outs;
+}
+
+// 性格ごとの打ち方。
+//  loose：付いていく甘さ（1＝割に合う時だけ、0.7＝割に合わなくても付いていく）
+//  respect：ミミの大きい賭けを強さの証拠としてどれだけ割り引くか
+//  valueEq / valueFreq：何%以上の強さで稼ぎに賭けるか／その頻度
+//  bluffFreq：弱い手で賭ける頻度　raiseEq：上乗せする強さ　trap：強い手でわざとチェックする頻度
+//  sizing：loud＝弱いほど大きく賭ける（ポルカ）／honest＝強いほど大きく（セリナ）／
+//          flat＝いつもポットの半分（グラーノ）／polar＝とても強いか空っぽなら大きく（ヴェルベット）
+const AI_STYLES = {
+  polka:  { loose: 0.72, respect: 0.04, valueEq: 0.66, valueFreq: 0.75, bluffFreq: 0.36, raiseEq: 0.82, trap: 0,    sizing: 'loud',   shoveCall: 0.52 },
+  selina: { loose: 1.0,  respect: 0.2,  valueEq: 0.64, valueFreq: 0.85, bluffFreq: 0.12, raiseEq: 0.84, trap: 0.1,  sizing: 'honest', shoveCall: 0.58 },
+  grano:  { loose: 1.0,  respect: 0.08, valueEq: 0.66, valueFreq: 0.8,  bluffFreq: 0.08, raiseEq: 0.86, trap: 0.45, sizing: 'flat',   shoveCall: 0.57 },
+  velvet: { loose: 0.95, respect: 0.14, valueEq: 0.66, valueFreq: 0.85, bluffFreq: 0.34, raiseEq: 0.8,  trap: 0.15, sizing: 'polar',  shoveCall: 0.56 },
+  rico_serious: { loose: 0.97, respect: 0.12, valueEq: 0.62, valueFreq: 0.85, bluffFreq: 0.3, raiseEq: 0.8, trap: 0.2, sizing: 'mixed', shoveCall: 0.56 },
+  rico_tutorial: { loose: 0.9, respect: 0.1, valueEq: 0.66, valueFreq: 0.6, bluffFreq: 0.2, raiseEq: 0.9, trap: 0, sizing: 'flat' },
+};
+function aiStyleOf(profile) {
+  if (profile && profile.style && AI_STYLES[profile.style]) return AI_STYLES[profile.style];
+  // 旧形式の数値だけのプロフィール（互換）：近い性格に寄せる
+  const p = profile || {};
+  if ((p.bluffTendency || 0) >= 0.7) return AI_STYLES.polka;
+  if (p.pressureTalkTendency) return AI_STYLES.velvet;
+  if (p.trapTendency) return AI_STYLES.grano;
+  return AI_STYLES.selina;
+}
+function aiPickSize(st, kind, eq) {
+  const r = rand();
+  switch (st.sizing) {
+    case 'loud': // 声が大きい時ほど弱い
+      if (kind === 'bluff') return r < 0.75 ? 'pot_1' : 'pot_2_3';
+      if (kind === 'semi') return 'pot_2_3';
+      if (eq >= 0.85) return r < 0.5 ? 'pot_1' : 'pot_1_2';
+      return 'pot_1_3';
+    case 'honest': // 賭け額＝強さ
+      if (kind === 'bluff') return 'pot_1_3';
+      if (kind === 'semi') return 'pot_1_2';
+      return eq >= 0.82 ? 'pot_1' : eq >= 0.72 ? 'pot_2_3' : 'pot_1_2';
+    case 'flat': // いつも半分：毎回同じ計算で判断できる
+      return 'pot_1_2';
+    case 'polar': // とても強いか、空っぽか
+      if (kind === 'bluff') return 'pot_1';
+      if (kind === 'semi') return 'pot_2_3';
+      return eq >= 0.82 ? 'pot_1' : 'pot_1_3';
+    default:
+      return r < 0.34 ? 'pot_1_2' : r < 0.67 ? 'pot_2_3' : 'pot_1';
   }
-  // ブラフ
-  if (hs < 0.35 && r < profile.bluffTendency) {
-    // ポルカ系（aggression高 & bluffTendency高）はブラフでも遠慮なくデカく打つ
-    const aggroBoost = profile.bluffTendency > 0.65 ? 0.1 : 0;
-    return { type: 'bet', size: pickSize(aggroBoost), intent: 'bluff' };
+}
+
+function decideOpponentAction(profile, ctx, opts = {}) {
+  const st = aiStyleOf(profile);
+  const r = rand();
+  const hole = ctx.hole;
+  const board = ctx.board || [];
+  const eq = (hole && hole.length === 2) ? equityVsRandom(hole, board, 160) : (ctx.handStrength != null ? ctx.handStrength : 0.5);
+  const street = board.length === 0 ? 'preflop' : board.length === 3 ? 'flop' : board.length === 4 ? 'turn' : 'river';
+  const draw = (hole && hole.length === 2) ? countStrongOuts(hole, board) : 0;
+  const size = (kind) => aiPickSize(st, kind, eq);
+
+  // 研修・初回の読み合いの練習：先に賭けて心理バトルを起こす（強さに合った意図で）
+  if (opts.forceLargeBet && ctx.canCheck) {
+    return { type: 'bet', size: size(eq < 0.5 ? 'bluff' : 'value'), intent: eq < 0.5 ? 'bluff' : 'value', eq };
   }
-  // バリュー
-  if (hs > 0.55 && r < profile.valueBetTendency + 0.2) {
-    // 圧支配タイプ（pressureTalkTendency）はバリューも大きく
-    const pressureBoost = profile.pressureTalkTendency ? 0.1 : 0;
-    return { type: 'bet', size: pickSize(pressureBoost), intent: 'value' };
+
+  if (ctx.toCall > 0) {
+    const pot = ctx.pot || 0; // 相手（ミミ）の賭けを含む今のポット
+    const odds = ctx.toCall / (pot + ctx.toCall);
+    const potBefore = ctx.potBeforeBet > 0 ? ctx.potBeforeBet : Math.max(1, pot - ctx.toCall);
+    const sizeRatio = Math.min(1.5, ctx.toCall / potBefore);
+    // ミミの大きい賭けは強さの証拠として割り引く。オールインを続けられると割り引かなくなる（読まれる）
+    const shoves = ctx.playerShoves || 0;
+    const respect = st.respect * Math.max(0, 1 - 0.4 * Math.max(0, shoves - 1));
+    const eqAdj = eq - respect * sizeRatio;
+    if (!ctx.playerAllIn && eqAdj >= st.raiseEq && r < 0.75) return { type: 'bet', size: size('value'), intent: 'value', eq };
+    if (!ctx.playerAllIn && street !== 'river' && st.sizing !== 'flat' && eqAdj < 0.3 && r < st.bluffFreq * 0.2) {
+      return { type: 'bet', size: size('bluff'), intent: 'bluff', eq };
+    }
+    const drawBonus = (draw >= 8 && street !== 'river') ? 0.04 : 0;
+    const floor = ctx.playerAllIn ? (st.shoveCall || 0.55) : 0;
+    if (eqAdj + drawBonus >= Math.max(odds * st.loose, floor)) return { type: 'check_call', intent: eqAdj >= 0.6 ? 'value' : 'call', eq };
+    return { type: 'fold', eq };
   }
-  // ドロー潰し（フラッシュ/ストレート両対応）
-  if (ctx.boardDanger && (ctx.boardDanger.flushAlert || ctx.boardDanger.straightAlert)
-      && r < profile.drawAggression) {
-    // 両ドロー兼ねは大ベット、片方なら標準
-    const both = ctx.boardDanger.flushAlert && ctx.boardDanger.straightAlert;
-    return { type: 'bet', size: pickSize(both ? 0.15 : 0), intent: 'draw' };
-  }
-  return { type: 'check_call' };
+
+  // チェックで回ってきた：自分から賭けるか
+  if (eq >= 0.8 && st.trap && r < st.trap && street !== 'river') return { type: 'check_call', intent: 'trap', eq };
+  if (eq >= st.valueEq && r < st.valueFreq) return { type: 'bet', size: size('value'), intent: 'value', eq };
+  if (draw >= 8 && street !== 'river' && r < 0.4 + st.bluffFreq * 0.5) return { type: 'bet', size: size('semi'), intent: 'draw', eq };
+  if (eq < 0.42 && street !== 'preflop' && r < st.bluffFreq) return { type: 'bet', size: size('bluff'), intent: 'bluff', eq };
+  return { type: 'check_call', intent: 'check', eq };
+}
+
+// 参加費（アンテ）：5ハンドごとに上がり、対戦を締める
+const ANTE_LEVELS = [50, 75, 100, 150, 200, 300];
+function anteForHand(handNo) {
+  return ANTE_LEVELS[Math.min(ANTE_LEVELS.length - 1, Math.floor(Math.max(0, handNo - 1) / 5))];
 }
 
 // ベットサイズ → チップ数
@@ -3155,8 +3286,8 @@ function applyBindings() {
       case 'tellTags': el.innerHTML = renderTellTags(); break;
       case 'noteRangeBand': el.innerHTML = renderNoteRangeBand(); break;
       case 'winrateSeal': el.innerHTML = renderWinrateSeal(); break;
-      case 'oppStackGauge':  el.innerHTML = renderStackGauge('opp');  break;
-      case 'mimiStackGauge': el.innerHTML = renderStackGauge('mimi'); break;
+      case 'oppStackGauge':  el.innerHTML = renderTugOfWar(el);  break;
+      case 'mimiStackGauge': el.innerHTML = ''; break; // 綱引きの帯に一本化（2本のバーは互いに比べられなかった）
       case 'dangerBar':
         el.innerHTML = renderDangerBar();
         el.classList.toggle('has-note', hasNote('board_danger') && el.innerHTML !== '');
@@ -5912,6 +6043,43 @@ function renderStackGauge(side) {
   return `<div class="v2-sg-head"><span class="v2-sg-name">${name}</span><span class="v2-sg-num">${cur}</span></div>` +
          `<div class="v2-sg-bar"><i class="v2-sg-fill" style="width:calc(${pct}% - 2px)"></i></div>`;
 }
+// 綱引きの帯：2人のチップの取り合いを1本で見せる。
+// 以前は「自分の最初の額に対して何%」を別々のバーで出しており、相手は2倍から始まるため、
+// 勝っているのか負けているのかが分からなかった（ユーザーの実機の感想）。
+function renderTugOfWar(host) {
+  const P = Math.max(0, state.playerChips || 0);
+  const O = Math.max(0, state.opponentChips || 0);
+  const total = P + O;
+  if (!total) return '';
+  const share = P / total;
+  const pct = Math.round(share * 1000) / 10;
+  const oppName = (state.opponentName || '相手').replace(/（.*）/, '');
+  const base = battleInitialChips();
+  let mood, cls;
+  if (state.handNo <= 1 && P === base && O > P) { mood = `相手は${Math.round(O / P * 10) / 10}倍`; cls = 's-start'; }
+  else if (share >= 0.8) { mood = 'あと一押し'; cls = 's-finish'; }
+  else if (share >= 0.55) { mood = '優勢'; cls = 's-ahead'; }
+  else if (share >= 0.45) { mood = '互角'; cls = 's-even'; }
+  else if (share >= 0.25) { mood = '劣勢'; cls = 's-behind'; }
+  else { mood = 'ピンチ'; cls = 's-pinch'; }
+  const prev = state.__tugPrev;
+  state.__tugPrev = share;
+  const moved = (typeof prev === 'number') ? (share - prev > 0.02 ? 'up' : prev - share > 0.02 ? 'down' : '') : '';
+  if (host) {
+    host.classList.add('is-tug');
+    host.classList.remove('moved-up', 'moved-down');
+    if (moved) { void host.offsetWidth; host.classList.add('moved-' + moved); }
+  }
+  return `<div class="tug-head">
+      <span class="tug-name is-mimi">ミミ <b>${P}</b></span>
+      <span class="tug-state ${cls}">${mood}</span>
+      <span class="tug-name is-opp"><b>${O}</b> ${oppName}</span>
+    </div>
+    <div class="tug-bar" role="img" aria-label="ミミ ${P}、${oppName} ${O}">
+      <i class="tug-mimi" style="width:${pct}%"></i><i class="tug-opp" style="width:${100 - pct}%"></i><i class="tug-mid"></i>
+    </div>
+    <div class="tug-goal">${O > 0 ? `${oppName}のチップを 0 にしたら勝ち（あと <b>${O}</b>）` : '勝ち！'}</div>`;
+}
 function renderStreetList() {
   const order = ['preflop', 'flop', 'turn', 'river', 'showdown'];
   const labels = { preflop: 'PREFLOP', flop: 'FLOP', turn: 'TURN', river: 'RIVER', showdown: 'SHOWDOWN' };
@@ -6750,6 +6918,7 @@ function renderActionArea(el) {
     return;
   }
   if (!state.isPlayerTurn) {
+    state.betChooserOpen = false;
     el.innerHTML = `<div class="status-note dim">相手の番……</div>`;
     return;
   }
@@ -6855,6 +7024,11 @@ function renderActionArea(el) {
     });
   }
 
+  if (!state.introHandMode && !state.tutorialMode) {
+    el.innerHTML = renderVerbActions(slots, need);
+    scheduleRicoSuggest(need);
+    return;
+  }
   el.innerHTML = `<div class="action-grid">${slots.map(s => {
     const chipHtml = (s.chipAmount && s.chipAmount > 0)
       ? `<span class="slot-chips">${buildHorizontalChips(s.chipAmount, 'small', 'slot-chip-num', 'bu-rchip-tiny')}</span>`
@@ -6875,6 +7049,77 @@ function renderActionArea(el) {
       </button>
     `;
   }).join('')}</div>`;
+}
+
+// ============================================================
+// 行動ボタン：「降りる／チェック・コール／賭ける」の3つの動詞にまとめる。
+// 以前は6個が同時に並び、コールとオールインの両方が主役に見えて「どれに誘導されているか分からない」
+// 「フォールドが小さくて押しにくい」（ユーザーの実機の感想）状態だった。賭ける額は「賭ける」の後で選ぶ。
+// ============================================================
+function renderVerbActions(slots, need) {
+  const foldS = slots.find(s => s.kind === 'fold');
+  const ccS = slots.find(s => s.kind === 'callcheck');
+  const betS = slots.filter(s => ['sm', 'md', 'lg', 'allin'].includes(s.kind) && s.enabled);
+  const sug = state.__suggest;
+  const tag = (verb) => (sug === verb ? ' is-suggest' : '');
+  const attrs = (s) => (s && s.enabled ? `data-action="${s.action}"` : 'disabled') + (s && s.dataSize ? ` data-size="${s.dataSize}"` : '');
+  const num = (n) => (n > 0 ? `<span class="verb-num">${n}</span>` : '');
+  const raising = need > 0;
+  if (state.betChooserOpen && betS.length) {
+    const sizeName = { sm: raising ? '小さく' : '1/2ポット', md: raising ? 'ふつう' : '2/3ポット', lg: raising ? '大きく' : 'ポット', allin: 'ぜんぶ' };
+    return `<div class="bet-chooser">
+      <div class="bet-chooser-head"><span>${raising ? 'いくら出して上乗せする？' : 'いくら賭ける？'}</span>
+        <button class="btn verb-back" data-action="close-bet-chooser">もどる</button></div>
+      <div class="bet-chooser-grid">${betS.map(s => {
+        const label = (state.handPhase === 'preflop' && s.kind !== 'allin') ? s.label : (sizeName[s.kind] || s.label);
+        const sub = s.kind === 'allin' ? 'オールイン' : (state.handPhase === 'preflop' ? '' : s.label);
+        const fe = s.noteHint ? `<small class="verb-fe fe-${s.noteHint.tier}">通る見込み ${s.noteHint.label}</small>` : '';
+        return `<button class="btn verb-size size-${s.kind}" ${attrs(s)}><span class="verb-label">${label}</span>${sub ? `<small class="verb-sub">${sub}</small>` : ''}${num(s.chipAmount)}${fe}</button>`;
+      }).join('')}</div>
+    </div>`;
+  }
+  const foldEnabled = foldS && foldS.enabled && need > 0;
+  const ccLabel = raising ? 'コール' : 'チェック';
+  const ccSub = raising ? `${need} 払って付いていく` : 'タダで次の札を見る';
+  const betLabel = raising ? '上乗せする' : '賭ける';
+  const betSub = betS.length ? (raising ? 'レイズ：額を選ぶ' : 'ベット：額を選ぶ') : 'チップが足りない';
+  return `<div class="verb-grid">
+    <button class="btn verb-btn verb-cc${tag('call')}" ${attrs(ccS)}><span class="verb-label">${ccLabel}</span><small class="verb-sub">${ccSub}</small>${num(raising ? need : 0)}</button>
+    <button class="btn verb-btn verb-fold${tag('fold')}" ${foldEnabled ? attrs(foldS) : 'disabled'}><span class="verb-label">降りる</span><small class="verb-sub">${foldEnabled ? 'このハンドをあきらめる' : 'いまは降りなくていい'}</small></button>
+    <button class="btn verb-btn verb-bet${tag('bet')}" ${betS.length ? 'data-action="open-bet-chooser"' : 'disabled'}><span class="verb-label">${betLabel} ▸</span><small class="verb-sub">${betSub}</small></button>
+  </div>`;
+}
+
+// 迷っている時だけ、リコが「おすすめ」を1つ光らせる（ポルカとセリナの卓だけ。数字は出さない）
+function computeSuggestVerb(need) {
+  let eq = 0.5;
+  try { eq = equityVsRandom(state.playerHand, state.community || [], 220); } catch (e) {}
+  if (need > 0) {
+    const odds = need / ((state.pot || 0) + need);
+    if (eq < odds) return 'fold';
+    return eq >= 0.82 ? 'bet' : 'call';
+  }
+  return eq >= 0.68 ? 'bet' : 'call';
+}
+const SUGGEST_LINES = {
+  fold: '払う額のわりに手が弱いかも。ここは降りても損は小さいよ',
+  call: '払う額と手の強さ、釣り合ってる。付いていってみよ',
+  check: '無理しないで、タダで次の札を見よう',
+  bet: 'いい手！　賭けて相手から取りに行こ',
+};
+function scheduleRicoSuggest(need) {
+  if (!['polka', 'selina'].includes(state.opponentId)) return;
+  const key = [state.handNo, (state.community || []).length, state.currentBetOpponent, state.currentBetPlayer].join('|');
+  if (state.__turnKey === key) return;
+  state.__turnKey = key;
+  state.__suggest = null;
+  battleTimeout(() => {
+    if (state.__turnKey !== key || !state.isPlayerTurn || state.psychPending || state.screen !== 'battle') return;
+    const v = computeSuggestVerb(need);
+    state.__suggest = v;
+    state.ricoAdvice = `「${SUGGEST_LINES[v === 'call' && need === 0 ? 'check' : v]}」`;
+    render();
+  }, 8000);
 }
 
 //=============================================================
@@ -7076,6 +7321,8 @@ function onAction(e) {
     case 'start-hand':    startHand(); break;
     case 'intro-skip':    introHandSkip(); break;
     case 'show-hand-guide': showHandGuide(); break;
+    case 'open-bet-chooser':  state.betChooserOpen = true; render(); break;
+    case 'close-bet-chooser': state.betChooserOpen = false; render(); break;
     case 'player-fold':   if (state.introHandMode) introHandFold(); else playerFold(); break;
     case 'player-call':   playerCall(); break;
     case 'player-checkcall': playerCheckCall(); break;
@@ -11558,7 +11805,7 @@ function startBattleInternal(opponentId) {
   state.opponentName = seriousRico ? 'リコ先輩（真剣）' : opp.name;
   // 真剣モードのリコ先輩は全パラメータ最強
   state.opponentProfile = seriousRico
-    ? { bluffTendency: 0.7, aggression: 0.85, foldDiscipline: 0.7, valueBetTendency: 0.8, drawAggression: 0.85, trapTendency: 0.6 }
+    ? { style: 'rico_serious', bluffTendency: 0.7, aggression: 0.85, foldDiscipline: 0.7, valueBetTendency: 0.8, drawAggression: 0.85, trapTendency: 0.6 }
     : opp.profile;
   state.opponentImgKey = opp.imgKey;
   state.maxHands = seriousRico ? 999 : opp.maxHands;
@@ -12238,8 +12485,11 @@ function startHand() {
   mpSfx('deal'); // 配布音（equippedSePack設定を反映）
 
   state.handStartChips = state.playerChips; // このハンドの収支を実額で出すため
-  // ブラインド簡略化（v4: 各50チップアンティ）
-  const ante = Math.min(50, state.playerChips, state.opponentChips);
+  // 参加費（アンテ）：5ハンドごとに上がる（対戦が延々と続かないように）
+  const anteNow = anteForHand(state.handNo);
+  const antePrev = state.handNo > 1 ? anteForHand(state.handNo - 1) : anteNow;
+  if (anteNow > antePrev) { state.anteRaisedTo = anteNow; if (typeof toast === 'function') toast(`参加費アップ！ 1ハンド ${anteNow} ずつ`, 'big'); }
+  const ante = Math.min(anteNow, state.playerChips, state.opponentChips);
   state.playerChips -= ante;
   state.opponentChips -= ante;
   state.pot = ante * 2;
@@ -12272,7 +12522,7 @@ function startHand() {
   state.isPlayerTurn = true;
   state.opponentSpeech = opponentReadyLine();
   state.mimiThought = mimiThoughtPreflop(state.playerHand);
-  state.ricoAdvice = `「Hand ${state.handNo}、いっくよー。アンテは50ずつ。まずは手札確認ね」`;
+  state.ricoAdvice = `「Hand ${state.handNo}、いっくよー。参加費は${ante}ずつ。まずは手札確認ね」`;
   log('actions', { phase: 'preflop_start', playerHand: state.playerHand.map(c => c.label + c.suit) });
   render();
 
@@ -12459,6 +12709,7 @@ function playerBet(size) {
 }
 function playerAllIn() {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
+  state.playerShoves = (state.playerShoves || 0) + 1;
   mpSfx('battle-allin');
   const amount = state.playerChips;
   state.playerChips = 0;
@@ -12575,7 +12826,9 @@ function opponentTurnDecide() {
   const allCards = [...state.opponentHand, ...state.community];
   const hs = state.community.length >= 3 ? handStrength01(allCards) : opponentPreflopStrength(state.opponentHand);
   const boardDanger = evaluateBoardDanger(state.community);
-  const ctx = { handStrength: hs, toCall: need, boardDanger, canCheck: need === 0 };
+  const ctx = { handStrength: hs, toCall: need, boardDanger, canCheck: need === 0,
+    hole: state.opponentHand, board: state.community, pot: state.pot, potBeforeBet: state.pot - need,
+    playerShoves: state.playerShoves || 0, playerAllIn: state.playerChips <= 0 };
 
   // P2: 体験ハンドでは相手は必ずチェック/コールで応じ、そのまま次ストリートへ自動進行
   // （体験ハンドはフロップの1択のみ・以降は自動でミミの勝利へ。フォールドもレイズもしない＝確実にミミが勝つ）
@@ -12595,11 +12848,9 @@ function opponentTurnDecide() {
   // v4: 第1ハンドのフロップ後、ポルカは必ず2/3以上ベット → 心理バトル強制発生
   // チュートリアル時もリコ先輩は同様にブラフベットして練習させる
   // ボス戦は各ストリートで強制大ベット（心理バトルを必ず発動させるため）
-  const forceLargeBet =
-    (state.handNo === 1 && state.handPhase === 'flop' && !state.psychResolved && state.currentBetPlayer === 0) ||
-    (state.isBoss && (state.handPhase === 'flop' || state.handPhase === 'turn' || state.handPhase === 'river') && !state.psychResolved && state.currentBetPlayer === 0) ||
-    // ボス戦のプリフロップ：15%確率で威圧的レイズ（開幕の重圧）
-    (state.isBoss && state.handPhase === 'preflop' && state.currentBetPlayer === 0 && rand() < 0.15);
+  // 最初のハンドのフロップだけ、先に賭けて読み合いの練習を起こす。
+  // （以前はボスが毎ストリート必ず大きく賭けていて、常にコールが最善＝AI が機能していなかった）
+  const forceLargeBet = (state.handNo === 1 && state.handPhase === 'flop' && !state.psychResolved && state.currentBetPlayer === 0);
   let action;
   if (state.tutorialMode) {
     if (state.handPhase === 'flop' && !state.psychResolved) {
@@ -12713,8 +12964,9 @@ function opponentTurnDecide() {
   //   強い手なら得意顔（ふふーん♪）、ブラフなら焦り顔（あわわ……）。
   //   出るかどうかはキャラの TELL_LEAK 次第。ポルカはほぼ毎回出て、ヴェルベットはめったに出ない。
   //   中途半端な強さ（0.42〜0.62）では出さない＝「顔に出た時は情報」という約束を守る。
-  if (hs < 0.42 || hs >= 0.62) {
-    battleTimeout(() => maybeOpponentTell(hs < 0.42), 700);
+  const tellEq = (action.eq != null) ? action.eq : hs; // 実際の強さ（勝率の見積もり）で顔に出す
+  if (tellEq < 0.42 || tellEq >= 0.62) {
+    battleTimeout(() => maybeOpponentTell(tellEq < 0.42), 700);
   }
 
   const bigEnough = (action.size === 'pot_2_3' || action.size === 'pot_1' || action.size === 'allin');
@@ -14612,7 +14864,7 @@ function isDominanceMode() {
   if (state.tutorialMode || state.introHandMode || state.lectureMode) return false;
   const initial = OPPONENTS[state.opponentId]?.chips || 1000;
   const wins = state.consecutiveWins || 0;
-  const playerAhead = state.playerChips > initial && state.playerChips > state.opponentChips;
+  const playerAhead = state.playerChips > initial && state.playerChips >= state.opponentChips * 2;
   if (playerAhead && wins >= 5) return 'complete';
   return false;
 }

@@ -89,22 +89,24 @@
     const has = (a) => by(a).length > 0;
     const one = (a) => by(a)[0];
     const bets = btns.filter(b => b.dataset.action === 'player-bet' || b.dataset.action === 'player-raise');
-    const midBet = () => bets.length ? bets[Math.min(1, bets.length - 1)] : null;
-    const passive = () => one('player-checkcall') || one('player-call') || one('player-check');
+    const opener = one('open-bet-chooser'), closer = one('close-bet-chooser');
+    // 賭ける額は「賭ける」を押してから選ぶ2段階。額のボタンが無ければまず開く／賭けないなら閉じる
+    const midBet = () => bets.length ? bets[Math.min(1, bets.length - 1)] : opener;
+    const passive = () => one('player-checkcall') || one('player-call') || one('player-check') || closer;
     if (S && S.introHandMode) {
       const primary = btns.find(b => b.classList.contains('btn-primary')) || btns[0];
       return { el: primary, why: 'intro' };
     }
     if (policy === 'random') return { el: btns[Math.floor(rnd() * btns.length)], why: 'random' };
-    if (policy === 'allin') return { el: one('player-allin') || passive(), why: 'allin' };
+    if (policy === 'allin') return { el: one('player-allin') || opener || passive(), why: 'allin' };
     if (policy === 'station') return { el: passive(), why: 'station' };
     if (policy === 'beginner') {
       let rank = -1;
       try { if ((S.community || []).length >= 3) rank = evaluateHand([...(S.playerHand || []), ...S.community]).rank; } catch (e) {}
       const need0 = Math.max(0, (S.currentBetOpponent || 0) - (S.currentBetPlayer || 0));
       if (rank < 0) return { el: (need0 > 150 && has('player-fold')) ? one('player-fold') : passive(), why: 'beginner-pre' };
-      if (need0 > 0) return { el: rank >= 1 ? passive() : one('player-fold'), why: 'beginner-facing r=' + rank };
-      const small = bets[0];
+      if (need0 > 0) return { el: rank >= 1 ? passive() : (one('player-fold') || closer), why: 'beginner-facing r=' + rank };
+      const small = bets[0] || opener;
       return { el: rank >= 1 && small ? small : passive(), why: 'beginner r=' + rank };
     }
     // learner：手の強さと必要勝率で判断する
@@ -117,7 +119,7 @@
     const need = Math.max(0, (S.currentBetOpponent || 0) - (S.currentBetPlayer || 0));
     const potOdds = need > 0 ? need / ((S.pot || 0) + need) : 0;
     if (need > 0) {
-      if (eq < potOdds + 0.03 && has('player-fold')) return { el: one('player-fold'), why: `fold eq=${eq.toFixed(2)} po=${potOdds.toFixed(2)}` };
+      if (eq < potOdds + 0.03 && (has('player-fold') || closer)) return { el: one('player-fold') || closer, why: `fold eq=${eq.toFixed(2)} po=${potOdds.toFixed(2)}` };
       if (eq > 0.88 && midBet()) return { el: midBet(), why: `raise eq=${eq.toFixed(2)}` };
       return { el: passive(), why: `call eq=${eq.toFixed(2)} po=${potOdds.toFixed(2)}` };
     }
@@ -169,12 +171,12 @@
     // 3) 卓でのミミの手番（相手のベット演出などが上に出ていれば、先にそれを送る）
     const cover = TAP_OVERLAYS.map(s => [...document.querySelectorAll(s)].filter(vis).pop()).find(el => el && hittable(el));
     if (S && S.screen === 'battle' && cover && !cands.some(el => el.classList.contains('choice-btn'))) {
-      const blocked = cands.filter(el => el.classList.contains('action-slot')).length;
+      const blocked = cands.filter(el => el.classList.contains('action-slot') || el.classList.contains('verb-btn')).length;
       res.coverOverActions = blocked ? desc(cover).slice(0, 60) : null;
       return click(cover, 'tap-cover', res);
     }
     if (S && S.screen === 'battle') {
-      const acts = cands.filter(el => el.classList.contains('action-slot') && /^player-/.test(el.dataset.action || ''));
+      const acts = cands.filter(el => /^(player-|open-bet-chooser|close-bet-chooser)/.test(el.dataset.action || '') && (el.classList.contains('action-slot') || el.classList.contains('verb-btn') || el.classList.contains('verb-size') || el.classList.contains('verb-back')));
       const topHasOverlay = cands.some(el => !el.closest('.battle-screen'));
       if (acts.length && !topHasOverlay) { const a = battleAction(acts, policy, S); if (a.el) return click(a.el, a.why, res); res.waitAction = a.why; return res; }
     }
@@ -194,7 +196,7 @@
       const t = label(el);
       if (act && AVOID_ACTION.has(act) && !(act === 'back-lobby' && /ロビーへ/.test(t) && S && (S.screen === 'result' || S.screen === 'ending'))) continue;
       if (AVOID_TEXT.test(t) && !(act && PREFER_ACTION[act])) continue;
-      if (el.classList.contains('action-slot')) continue;
+      if (el.classList.contains('action-slot') || el.classList.contains('verb-btn') || el.classList.contains('verb-size') || el.classList.contains('verb-back')) continue;
       let sc = 1;
       if (act && PREFER_ACTION[act] != null) sc = Math.max(sc, PREFER_ACTION[act]);
       for (const [re, v] of PREFER) if (re.test(t)) sc = Math.max(sc, v);

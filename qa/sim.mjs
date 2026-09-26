@@ -17,10 +17,11 @@ const sess = await openSession({ probes: ['sim.js'] });
 const rows = [], reactions = [];
 try {
   for (const pol of policies) for (const opp of opps) {
-    rows.push(await sess.page.eval(`window.__qaSim.run(${JSON.stringify({ opp, policy: pol, n, pCorrect: 0.6 })})`));
+    rows.push(await sess.page.eval(`window.__qaSim.run(${JSON.stringify({ opp, policy: pol, n, pCorrect: 0.6 })})`, 30 * 60000));
+    process.stderr.write(`${pol}/${opp} `);
   }
   for (const opp of opps) for (const betSize of ['pot_1_2', 'pot_1']) {
-    reactions.push(await sess.page.eval(`window.__qaSim.reaction(${JSON.stringify({ opp, betSize, n: 20000 })})`));
+    reactions.push(await sess.page.eval(`window.__qaSim.reaction(${JSON.stringify({ opp, betSize, n: 4000 })})`, 30 * 60000));
   }
 } finally { await sess.close(); }
 
