@@ -16419,3 +16419,130 @@ body:has(.battle-screen.v2) .rico-cutin:not(.opponent-cutin):not(.v2-cutin) {
   bottom: auto;
   top: 11vh;
 }
+
+/* ===== ファイブポーカー：どの画面の大きさでも DEAL／AUTO と賭け額の操作が画面内で押せる配置 ===== */
+/* ステージ（1280×800）は JS で丸ごと縮むので、画面幅で並びを変える古い @media（≤1000px・≤800px）を打ち消し、
+   どの大きさでも同じ配置にする。以前は ≤800px（スマホ横持ち）で縦積みになり、DEAL/AUTO がモーダルの外へ押し出されて押せなかった */
+.minipoker-overlay .minipoker-board { flex-direction: row !important; }
+.minipoker-overlay .mp-paytable { width: 200px; max-height: none; font-size: 12px; }
+/* 役名の欄は「スリーカード」「ストレートフラッシュ」が1語で収まる幅に（100px では途中で折れていた） */
+.minipoker-overlay .mp-play .mp-side { grid-template-columns: 100px 1fr 180px; min-height: 0; }
+.minipoker-overlay .mp-play .mp-side .mp-handname { font-size: 16px; line-height: 1.3; letter-spacing: 0.04em; }
+.minipoker-overlay .mp-play .mp-side .mp-handname-big { font-size: 18px !important; }
+.minipoker-overlay .mp-char { height: 128px; }
+.minipoker-overlay .mp-char-img { height: 100px; }
+/* 「ヴェルベット」が2行に折れていた */
+.minipoker-overlay .mp-char-name { font-size: 14px; letter-spacing: 0.04em; white-space: nowrap; }
+.minipoker-overlay .mp-card { width: 64px; height: 92px; }
+.minipoker-overlay .mp-card-suit-big { font-size: 34px; }
+.minipoker-overlay .mp-card-corner { font-size: 14px; }
+.minipoker-overlay .mp-side-panel { width: 280px; right: 12px; }
+.minipoker-overlay .mp-panel-mission { width: 320px; }
+.minipoker-overlay .mp-bubble { max-width: 180px; font-size: 12px; }
+.minipoker-overlay .mp-hand-cutin,
+.minipoker-overlay .mp-suspense { font-size: 64px; }
+.minipoker-overlay .mp-royal-logo { font-size: 70px; }
+.minipoker-overlay .mp-royal-logo div:nth-child(2) { font-size: 90px; }
+.minipoker-overlay .mp-jumbo-char img { height: 320px; }
+
+/* 右上の × が音ボタンに重なって押せなかった：見出しの右端を × の分だけ空ける */
+.minipoker-overlay .mp-header { padding-right: 46px; }
+
+/* 中央欄：詰めて並べ、操作ボタンは欄の下端に貼り付けて、中身が増えても必ず見えて押せるようにする */
+.minipoker-overlay .mp-center { gap: 8px; }
+.minipoker-overlay .mp-status { padding: 8px 14px; font-size: 16px; line-height: 1.45; }
+.minipoker-overlay .mp-status small { font-size: 13px; }
+.minipoker-overlay .mp-cap-note { margin-left: 4px; color: #ffd8a8; }
+.minipoker-overlay .mp-wager-tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.minipoker-overlay .mp-wager-tags .mp-daily-bonus,
+.minipoker-overlay .mp-wager-tags .mp-hotcold { display: inline-block; margin: 0; padding: 4px 14px; font-size: 13px; }
+.minipoker-overlay .mp-bet-row { margin: 0; align-items: center; gap: 10px; }
+.minipoker-overlay .mp-bet-chip { width: 56px; height: 56px; font-size: 15px; }
+/* 旧 ALL IN（赤く点滅・揺れ・全力勝負）の代わり。上限までを静かに選ぶだけのボタン */
+.mp-bet-max {
+  height: 56px;
+  padding: 0 18px;
+  border-radius: 28px;
+  border: 2px solid rgba(245,215,122,0.55);
+  background: rgba(90, 28, 42, 0.55);
+  color: #fbeec8;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mp-bet-max:hover:not(:disabled) { border-color: var(--c-gold-bright); }
+.mp-bet-max.on {
+  background: radial-gradient(circle at 30% 30%, #f5d77a 0%, #c89020 100%);
+  color: #2a1810;
+  border-color: #fffdf3;
+}
+.mp-bet-max:disabled { opacity: 0.3; cursor: not-allowed; }
+.minipoker-overlay .mp-bet-display { margin: 0; }
+.minipoker-overlay .mp-bet-display small { font-size: 13px; margin-left: 6px; color: #ffd8a8; }
+.minipoker-overlay .mp-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: none;
+  margin-top: auto;
+  padding: 6px 0 10px;
+  position: sticky;
+  bottom: -10px;
+  z-index: 3;
+  background: linear-gradient(180deg, rgba(14, 6, 16, 0) 0%, rgba(14, 6, 16, 0.92) 32%);
+}
+.minipoker-overlay .mp-actions .mp-btn { flex: 0 1 auto; min-width: 150px; padding: 12px 18px; }
+.minipoker-overlay .mp-actions-wager .mp-btn-deal { min-width: 240px; padding: 14px 26px; font-size: 20px; }
+.minipoker-overlay .mp-actions-wager .mp-btn-auto { min-width: 170px; }
+.minipoker-overlay .mp-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; animation: none; }
+.minipoker-overlay .mp-hilo-actions {
+  width: 100%;
+  margin: auto 0 0;
+  padding: 6px 0 10px;
+  position: sticky;
+  bottom: -10px;
+  z-index: 3;
+  background: linear-gradient(180deg, rgba(14, 6, 16, 0) 0%, rgba(14, 6, 16, 0.92) 32%);
+}
+.minipoker-overlay .mp-hilo-actions .mp-btn-double { min-width: 150px; }
+.minipoker-overlay .mp-double-pitch { margin: 0; padding: 8px 14px; }
+.minipoker-overlay .mp-double-pitch small { display: block; margin-top: 2px; }
+.minipoker-overlay .mp-double-cards { margin: 2px 0; }
+.minipoker-overlay .mp-garapon-row { margin: 4px 0; }
+.minipoker-overlay .mp-reach { margin: 0; }
+.minipoker-overlay .mp-warn { margin: 0; }
+.minipoker-overlay .mp-result-banner { margin: 0; padding: 12px 22px; min-width: 340px; }
+.minipoker-overlay .mp-result-headline { font-size: 26px; margin-bottom: 4px; }
+.minipoker-overlay .mp-result-amount { font-size: 20px; }
+.mp-result-sub { margin-top: 4px; font-size: 13px; color: #fbeec8; opacity: 0.85; }
+
+/* 履歴：返金・配当なし・サレンダーも実際の増減で色分け */
+.mp-hist-push { background: rgba(100, 100, 100, 0.15); }
+.mp-hist-nopay,
+.mp-hist-surrender { background: rgba(200, 50, 80, 0.1); }
+.mp-hist-nopay .mp-hist-reward,
+.mp-hist-surrender .mp-hist-reward { color: #ff8fa3; }
+
+/* ===== ロビーのぱにゅぱにゅ：今日のコインのごほうびの残り回数（1日5回まで） ===== */
+.lobby-panyu-left {
+  position: absolute;
+  top: -8px; right: -8px;
+  min-width: 22px; height: 18px;
+  padding: 0 6px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 9px;
+  border: 1px solid rgba(216, 170, 72, 0.7);
+  background: rgba(40, 18, 10, 0.95);
+  color: #f7dc8e;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.02em; line-height: 1;
+  white-space: nowrap;
+  transform: none;
+  pointer-events: none;
+  z-index: 3;
+}
+.lobby-panyu-left:empty { display: none; }
+.lobby-panyu-left.is-done { color: #b9a98e; border-color: rgba(185, 169, 142, 0.5); background: rgba(20, 12, 10, 0.92); }
