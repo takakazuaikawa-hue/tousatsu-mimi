@@ -53,7 +53,6 @@
 </audio>
 <audio id="ending-bgm-audio" preload="auto">
   <source src="assets/bgm/ending.m4a" type="audio/mp4">
-  <source src="assets/bgm/ending.mp3" type="audio/mpeg">
 </audio>
 <!-- シーン専用BGM（タイトル/バトル/ボス/ミニゲーム）。src を差し替えて使い回し、
      ロビー/エンディング/シンセと排他再生することで二重再生（＝うるささ）を防ぐ -->
@@ -70,8 +69,9 @@
     <div class="portrait-message">
       <h2>横向きでプレイしてください</h2>
       <p>このゲームは横向き画面に最適化されています。<br>
-      端末を横にすると、自動的にフルスクリーン表示されます。</p>
-      <p class="portrait-tip">💡 画面回転ロックがオンの場合は解除してください</p>
+      端末を横にしてから「⛶ 全画面で遊ぶ」ボタンを押すと、画面いっぱいに広がります。</p>
+      <p class="portrait-tip">💡 画面回転ロックがオンの場合は解除してください<br>
+      iPhone は Safari の共有ボタン →「ホーム画面に追加」から起動すると、広い画面で遊べます</p>
     </div>
   </div>
 </div>
@@ -122,7 +122,7 @@
       <div class="title-buttons" data-bind="titleButtons">
         <button class="btn btn-primary" data-action="start">
           <span class="title-btn-main">はじめから</span>
-          <span class="title-btn-sub">FREE · ブラウザで遊べる</span>
+          <span class="title-btn-sub">ブラウザで遊べる心理ポーカーADV</span>
         </button>
       </div>
 
@@ -164,9 +164,6 @@
 
       <!-- 相手カードの一覧：どの卓につくか悩む美しさで並べる -->
       <section class="lb5-cards" data-bind="lb5Cards"></section>
-
-      <!-- 右上：帰ってくる理由（ログボ／CG進捗・控えめ） -->
-      <div class="lb4-hooks" data-bind="lb4Hooks"></div>
 
       <!-- 下部オペレーションバー（黒×金で統一） -->
       <nav class="lb3-bar lb4-bar">
@@ -246,8 +243,8 @@
     <!-- 左下：役の早見表（常設・研修中も開ける） -->
     <button class="btn btn-ghost v2-help-btn" data-action="show-hand-guide" type="button" title="役の早見表を見る">❓ 役</button>
 
-    <!-- 裏モード -->
-    <button class="backdoor-toggle" data-action="toggle-backdoor" data-bind="backdoorBtn" title="裏モード：相手の心理ログを盗み見">✦</button>
+    <!-- クリア後の練習用：相手の手札を見る（使っている間の対戦は称号・ランクの記録対象外） -->
+    <button class="backdoor-toggle" data-action="toggle-backdoor" data-bind="backdoorBtn" title="練習用：相手の手札を見る（使っている間の対戦は称号・ランクの記録対象外）">✦</button>
     <div class="backdoor-panel" data-bind="backdoorPanel"></div>
 
     <!-- 相手：卓の向こうに大きく。テルは付箋 -->
