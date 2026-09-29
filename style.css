@@ -17103,3 +17103,6 @@ body[data-cutin-skin="neon"] .cutin-flash {
 .hr-card.hr-fold-good .hr-title { color: #fbe28a; }
 .hr-fold-note { font-size: 15px; font-weight: 700; padding: 8px 12px; background: rgba(0,0,0,.35); border-left: 3px solid rgba(217,179,90,.6); color: #f3e6d8; }
 .hr-fold-note.fq-good { border-left-color: #fbe28a; color: #ffe9a8; }
+
+/* 今のストリートにはカナの説明を添える（研修の言葉と一致させる） */
+.v2-st-kana { display: block; font-family: "Noto Sans JP", sans-serif; font-size: 12px; letter-spacing: .04em; color: #ffe9a8; margin-top: 2px; }

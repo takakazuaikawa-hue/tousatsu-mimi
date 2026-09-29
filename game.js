@@ -6305,7 +6305,9 @@ function renderStreetList() {
   return order.filter(s => (state.fullHand || s !== 'turn') && (s !== 'showdown' || cur === 'showdown')).map(s => {
     const i = order.indexOf(s);
     const cls = i < curIdx ? 'v2-st-done' : i === curIdx ? 'v2-st-cur' : 'v2-st-future';
-    return `<span class="v2-disp v2-st ${cls}">${labels[s]}${i < curIdx ? ' ✓' : ''}</span>`;
+    // 研修でカナで教える言葉（フロップ等）と画面の英字表記をそろえる
+    const kana = { preflop: '配った直後', flop: 'フロップ（3枚）', turn: 'ターン（4枚目）', river: 'リバー（5枚目）', showdown: '見せ合い' }[s];
+    return `<span class="v2-disp v2-st ${cls}">${labels[s]}${i < curIdx ? ' ✓' : ''}${i === curIdx ? `<small class="v2-st-kana">${kana}</small>` : ''}</span>`;
   }).join('');
 }
 function renderPotBlock() {
