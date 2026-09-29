@@ -40,6 +40,7 @@
     return need > 0 ? { t: 'call' } : { t: 'check' };
   }
 
+  let OPT = {};
   function battle(oppId, pol, pCorrect, rng) {
     const OPP = fn('OPPONENTS') || OPPONENTS;
     const newDeck = fn('newDeck'), evaluateHand = fn('evaluateHand'), handStrength01 = fn('handStrength01');
@@ -47,7 +48,7 @@
     const decideOpponentAction = fn('decideOpponentAction'), betSizeToChips = fn('betSizeToChips');
     const anteFor = fn('anteForHand'); // フェーズ2で追加予定（参加費の段階上げ）
     const opp = OPP[oppId]; const base = opp.chips || 1000; const prof = opp.profile; const isBoss = !!opp.isBoss;
-    const oppMult = opp.oppChipMult || 2;
+    const oppMult = OPT.mult || opp.oppChipMult || 2;
     const S = { P: base, O: base * oppMult, rebuy: 1, wins: 0, handNo: 0, zaz: 0, revealed: false, oppStyle: (fn('aiStyleOf') ? fn('aiStyleOf')(prof).sizing : '') };
     const st = { hands: 0, psych: 0, logic: 0, showdowns: 0, oppFolds: 0, plFolds: 0, dom: false, rebuy: false, cap: false, allinCalledLost: 0 };
     while (S.P > 0 && S.O > 0) {
@@ -55,7 +56,7 @@
       const ante0 = anteFor ? anteFor(S.handNo, oppId) : 50;
       const a = Math.min(ante0, S.P, S.O); S.P -= a; S.O -= a; S.pot = 2 * a; S.cbP = 0; S.cbO = 0;
       const deck = newDeck(); S.ph = [deck.pop(), deck.pop()]; S.oh = [deck.pop(), deck.pop()]; S.comm = []; S.phase = 'preflop';
-      S.psychResolved = false; S.logicResolved = false; S.bossFired = false;
+      S.psychResolved = false; S.logicResolved = false; S.bossFired = false; S.lastSd = false;
       let winner = null;
       const advance = () => {
         const d = S.cbP - S.cbO;
@@ -115,13 +116,13 @@
         }
       }
       if (!winner) {
-        const pe = evaluateHand([...S.ph, ...S.comm]), oe = evaluateHand([...S.oh, ...S.comm]); st.showdowns++;
+        const pe = evaluateHand([...S.ph, ...S.comm]), oe = evaluateHand([...S.oh, ...S.comm]); st.showdowns++; S.lastSd = true;
         if (pe.score > oe.score) { S.P += S.pot; winner = 'player'; }
         else if (pe.score < oe.score) { S.O += S.pot; winner = 'opponent'; if (S.shoved) st.allinCalledLost++; }
         else { S.P += Math.floor(S.pot / 2); S.O += Math.ceil(S.pot / 2); winner = 'split'; }
       }
       S.pot = 0; S.shoved = false;
-      if (winner === 'player') S.wins++; else if (winner === 'opponent') S.wins = 0;
+      if (winner === 'player') { if (OPT.domRule !== 'showdown' || S.lastSd) S.wins++; } else if (winner === 'opponent') S.wins = 0;
       if (S.P <= 0 && S.O > 0 && S.rebuy > 0) { S.rebuy = 0; S.P = base; st.rebuy = true; continue; }
       if (S.P <= 0 || S.O <= 0) break;
       const domCheck = fn('isDominanceMode');
@@ -133,7 +134,11 @@
     return st;
   }
 
-  function run({ opp = 'polka', policy = 'learner', n = 2000, pCorrect = 0.6, seed = 7 } = {}) {
+  function run({ opp = 'polka', policy = 'learner', n = 2000, pCorrect = 0.6, seed = 7, opt = {} } = {}) {
+    OPT = opt || {};
+    const styles = (typeof AI_STYLES !== 'undefined') ? AI_STYLES : null;
+    const saved = styles ? JSON.stringify(styles) : null;
+    if (styles && OPT.shoveCall != null) for (const k in styles) styles[k].shoveCall = OPT.shoveCall;
     let a = seed >>> 0;
     const rng = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
     const R0 = Math.random; Math.random = rng;
@@ -148,7 +153,7 @@
       H.sort((x, y) => x - y);
       const f = (k) => +(acc[k] / n).toFixed(2);
       return { opp, policy, n, winPct: +(100 * W / n).toFixed(1), domPct: +(100 * D / n).toFixed(1), domBehindPct: +(100 * DB / n).toFixed(1), rebuyPct: +(100 * RB / n).toFixed(0), capPct: +(100 * CAP / n).toFixed(1), handsAvg: f('hands'), handsMedian: H[n >> 1], handsP90: H[Math.floor(n * 0.9)], psych: f('psych'), logic: f('logic'), oppFolds: f('oppFolds'), plFolds: f('plFolds'), showdowns: f('showdowns') };
-    } finally { Math.random = R0; }
+    } finally { Math.random = R0; if (saved) { const o = JSON.parse(saved); for (const k in o) Object.assign(AI_STYLES[k], o[k]); } }
   }
 
   // 相手の「賭けられた時」の反応の内訳（性格の説明文と挙動の一致を確かめる）

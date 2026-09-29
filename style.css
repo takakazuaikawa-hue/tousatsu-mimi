@@ -16813,3 +16813,46 @@ body[data-cutin-skin="neon"] .cutin-flash {
 }
 .lobby-panyu-left:empty { display: none; }
 .lobby-panyu-left.is-done { color: #b9a98e; border-color: rgba(185, 169, 142, 0.5); background: rgba(20, 12, 10, 0.92); }
+
+/* ===== キャラの顔は丸で囲まない（ユーザー指摘「安っぽい」2026-09-27）=====
+   ゲームの文法どおり、-12度の斜めスラブの窓に金の細縁で見せる。窓ごと傾け、顔は逆に傾けて正面を保つ。 */
+.cutin-portrait,
+.v2-rico-face.character-frame,
+.v2-com-face,
+.ims-dlg-face,
+.psych-opponent-face,
+.battle-modal-overlay .battle-portrait .bp-avatar,
+.cp-icon {
+  border-radius: 0 !important;
+  transform: skewX(-12deg);
+}
+.cutin-portrait { width: 176px !important; height: 212px !important; border-width: 3px !important; margin-right: -40px !important; box-shadow: 0 10px 28px rgba(0,0,0,.6), 0 0 18px rgba(245,215,122,.35); }
+.v2-rico-face.character-frame { width: 40px !important; height: 48px !important; }
+.v2-com-face { width: 30px !important; height: 38px !important; }
+.ims-dlg-face { width: 56px !important; height: 68px !important; }
+.psych-opponent-face { width: 70px !important; height: 86px !important; }
+.cutin-portrait img,
+.v2-rico-face.character-frame img,
+.battle-screen.v2 .v2-com-face img,
+.battle-screen.v2 .v2-com-rico .v2-com-face img,
+.v2-com-face img,
+.ims-dlg-face img,
+.psych-opponent-face img,
+.battle-modal-overlay .battle-portrait .bp-avatar img {
+  transform: skewX(12deg) scale(1.28) !important;
+  transform-origin: 50% 40% !important;
+  object-fit: cover !important;
+  object-position: 50% 30% !important;
+}
+.cp-icon > * { transform: skewX(12deg); }
+/* 動きのある表情カットイン（小）は傾けると動きとぶつかるので、平行四辺形に切り抜く */
+.emote-cutin.light .ec-face-wrap {
+  border-radius: 0 !important; border: 0 !important; aspect-ratio: 5 / 6;
+  clip-path: polygon(16% 0, 100% 0, 84% 100%, 0 100%);
+  background: linear-gradient(180deg, rgba(60,25,40,.95), rgba(20,8,14,.95));
+}
+.rebuy-overlay .rb-rico img {
+  border-radius: 0 !important; border: 0 !important; box-shadow: none !important;
+  width: 52px !important; height: 62px !important; object-fit: cover; object-position: 50% 25%;
+  clip-path: polygon(16% 0, 100% 0, 84% 100%, 0 100%);
+}
