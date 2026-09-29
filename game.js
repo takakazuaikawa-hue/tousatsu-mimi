@@ -13168,9 +13168,16 @@ function playerFold() {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
   state.isPlayerTurn = false;
   mpSfx('fold');
+  // 降りた判断の質：ランダムな手に対してすら払う額に見合わない強さなら「ナイス撤退」
+  const needF = Math.max(0, state.currentBetOpponent - state.currentBetPlayer);
+  let eqF = null;
+  try { eqF = equityVsRandom(state.playerHand, state.community || [], 220); } catch (e) {}
+  const oddsF = needF > 0 ? needF / ((state.pot || 0) + needF) : 0;
+  const foldQuality = (eqF == null || needF === 0) ? 'ok' : eqF < oddsF ? 'good' : eqF >= oddsF + 0.18 ? 'waste' : 'ok';
+  if (foldQuality === 'good') state.goodFolds = (state.goodFolds || 0) + 1;
   state.opponentSpeech = opponentReactToPlayerFold();
   log('actions', { actor: 'player', type: 'fold' });
-  state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'fold', pot: state.pot, by: '降伏' });
+  state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'fold', pot: state.pot, by: '降伏', foldQuality });
   const potWon = state.pot;
   state.opponentChips += state.pot;
   state.pot = 0; resetPotChips();
@@ -15046,14 +15053,15 @@ function endHand() {
         if (state.consecutiveWins >= 5) mpSfx('bigwin');
         else if (state.consecutiveWins >= 3) mpSfx('milestone');
       }
-    } else if (last.winner === 'opponent') {
+    } else if (last.winner === 'opponent' && last.reason !== 'fold') {
       const brokenStreak = state.consecutiveWins || 0;
       state.consecutiveWins = 0;
       // 3連勝以上が途切れた時だけ、控えめに「連勝ストップ」を知らせる
       if (brokenStreak >= 3) showStreakBadge('連勝ストップ…', 'stop');
     }
-    // P1-3: ハンドの勝敗でミミの表情を切り替え
-    setMimiExpression(last.winner === 'player' ? 'win' : last.winner === 'opponent' ? 'sad' : 'default');
+    // P1-3: ハンドの勝敗でミミの表情を切り替え（自分で降りた時は負け顔にしない）
+    const folded = last.reason === 'fold';
+    setMimiExpression(folded ? 'default' : last.winner === 'player' ? 'win' : last.winner === 'opponent' ? 'sad' : 'default');
     // 相手の表情：相手が勝てば余裕顔、負ければ敗北顔（差分のあるキャラのみ変化）
     setOpponentExpression(last.winner === 'opponent' ? 'pleased' : last.winner === 'player' ? 'defeat' : 'default');
     // ★勝敗の感情を漫符で乗せる。差分絵の無いキャラ（セリナ・ヴェルベット）でもここで表情が付く。
@@ -15075,7 +15083,8 @@ function endHand() {
     // ハンド勝敗SFX（ショーダウンは演出内で再生済み）
     if (last.reason !== 'showdown') {
       if (last.winner === 'player') mpSfx('hand-win');
-      else if (last.winner === 'opponent') mpSfx('hand-lose');
+      else if (last.winner === 'opponent' && last.reason !== 'fold') mpSfx('hand-lose');
+      else if (last.reason === 'fold' && last.foldQuality === 'good') mpSfx('check');
     }
   }
   // 結果バナー表示
@@ -15105,6 +15114,7 @@ function showHandResultBanner(snapshot) {
   // 勝敗テキスト
   let winnerText, winnerClass;
   if (last.winner === 'player')       { winnerText = '🏆 勝利！';   winnerClass = 'win'; }
+  else if (last.reason === 'fold')    { winnerText = last.foldQuality === 'good' ? '🛡 ナイス撤退' : '撤退'; winnerClass = last.foldQuality === 'good' ? 'fold-good' : 'fold'; }
   else if (last.winner === 'opponent'){ winnerText = '✗ 敗北';      winnerClass = 'lose'; }
   else                                { winnerText = '＝ 引き分け'; winnerClass = 'draw'; }
 
@@ -15325,6 +15335,7 @@ function showHandResultBanner(snapshot) {
         : `ポット <b>${potDelta}</b> を折半`
       }</div>
       ${verdict ? `<div class="hr-verdict-desc">${verdict.desc}</div>` : ''}
+      ${last.reason === 'fold' ? `<div class="hr-fold-note fq-${last.foldQuality || 'ok'}">${last.foldQuality === 'good' ? '払う額に見合う手じゃなかった。損を小さく済ませた、いい判断（+10点）' : last.foldQuality === 'waste' ? '払う額のわりに手は強かったかも。付いていく手もあった' : 'ここまでの分だけで済ませた'}</div>` : ''}
       ${showdownHtml}
       ${equityTimelineHtml}
       ${pivotHtml}
@@ -15625,13 +15636,18 @@ function endBattle() {
     reasons.push(`心理バトル成功×${state.psychSuccessCount} +${s}`);
   }
   if (state.bluffBreakHappened) { score += SCORE_TABLE.bluffBreak; reasons.push(`ブラフブレイク +${SCORE_TABLE.bluffBreak}`); }
+  if (state.goodFolds > 0) {
+    const n = Math.min(3, state.goodFolds);
+    score += SCORE_TABLE.goodFold * n;
+    reasons.push(`ナイス撤退×${n} +${SCORE_TABLE.goodFold * n}`);
+  }
   // ボス勝利ボーナス（ヴェルベット撃破）
   if (won && state.isBoss) { score += 40; reasons.push(`ボス撃破ボーナス +40`); }
   // オールイン勝利・逆転勝利の簡易検出
   const lastHand = state.handResults[state.handResults.length - 1];
   if (won && lastHand && lastHand.winner === 'player' && state.opponentChips === 0) {
     score += SCORE_TABLE.allInWin;
-    reasons.push(`オールイン圧勝 +${SCORE_TABLE.allInWin}`);
+    reasons.push(`相手のチップを0に +${SCORE_TABLE.allInWin}`);
   }
 
   state.score = score;
