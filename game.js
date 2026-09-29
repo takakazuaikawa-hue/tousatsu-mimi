@@ -6529,7 +6529,13 @@ function renderCurrentHandName() {
                        .sort((a,b) => b.n - a.n || b.r - a.r);
     switch (ev.rank) {
       case 0: suffix = `(${nameOf(sortedRanks[0])} ハイ)`; break;
-      case 1: { const p = groups.find(g => g.n === 2); suffix = `(${nameOf(p.r)})`; break; }
+      case 1: {
+        const p = groups.find(g => g.n === 2);
+        // 場札だけでできたペアは、相手も同じように使える（研修2ハンド目で「自分もKのペア？」と迷わせていた）
+        const fromHole = state.playerHand.some(c => c.rank === p.r);
+        suffix = fromHole ? `(${nameOf(p.r)})` : `(場の${nameOf(p.r)}・ふたりとも使える)`;
+        break;
+      }
       case 2: {
         const pairs = groups.filter(g => g.n === 2).sort((a,b) => b.r - a.r);
         suffix = `(${nameOf(pairs[0].r)} & ${nameOf(pairs[1].r)})`; break;
