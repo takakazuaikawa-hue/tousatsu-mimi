@@ -16855,6 +16855,8 @@ body[data-cutin-skin="neon"] .cutin-flash {
   border-radius: 0 !important; border: 0 !important; box-shadow: none !important;
   width: 52px !important; height: 62px !important; object-fit: cover; object-position: 50% 25%;
   clip-path: polygon(16% 0, 100% 0, 84% 100%, 0 100%);
+}
+
 /* ===== 講義：章バナーの章題（リボンは擬似要素に分け、文字は不透明で読めるように） =====
    以前は .chapter-banner .chapter-title の background: url(リボン) が .chapter-title のグラデ文字
    （background-clip: text ＋ color: transparent）を打ち消し、章題が透明で読めなかった。
