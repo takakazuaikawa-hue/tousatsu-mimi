@@ -5367,12 +5367,16 @@ function pickLogicQuestion() {
   if (state.handPhase === 'river' && need > 0) candidates.push('logic_bluff_catcher');
   if (state.handPhase === 'flop' && state.handNo === 1) candidates.push('logic_implied_odds');
   candidates.push('logic_position');
-  // 未出題優先
-  const fresh = candidates.find(q => !seen.has(q));
-  if (fresh) return fresh;
-  // 全部出題済みなら全プールから未出題、なければランダム
-  const allFresh = allLogicIds.find(q => !seen.has(q));
-  return allFresh || pick(candidates);
+  // その卓のテーマに合う問題だけ。場面に合わなければ出さない（全問から適当に選ぶと盤面と食い違っていた）
+  const STAGE_LOGIC = {
+    selina: ['logic_hand_compare', 'logic_flush_outs'],
+    grano: ['logic_pot_odds_basic', 'logic_flush_outs', 'logic_bluff_catcher', 'logic_implied_odds'],
+    velvet: ['logic_pot_odds_basic', 'logic_flush_outs', 'logic_bluff_catcher', 'logic_hand_compare', 'logic_spr'],
+  };
+  const allow = STAGE_LOGIC[state.opponentId] || STAGE_LOGIC.velvet;
+  const seenMatch = new Set(state.seenQuestions || []);
+  const fresh = candidates.find(q => allow.includes(q) && !seenMatch.has(q));
+  return fresh || null;
 }
 
 function pickPsychQuestion() {
@@ -13548,10 +13552,14 @@ function opponentTurnDecide() {
 
   // 論理バトル：心理バトルが出なかった時、ストリート毎に発動チャンス
   const logicAllowed = state.tutorialMode || (save.logicEnabled !== false);
-  const triggerLogic = logicAllowed && isPostFlop && !state.logicResolvedStreet && !state.psychResolved && rand() < 0.55;
+  // 応急処置（作り直しまで）：ポルカ卓では出さない（テーマはブラフの読み）。1ハンド1回・1戦2回まで
+  const logicRoom = state.opponentId !== 'polka' && (state.logicCount || 0) < 2 && state.logicHandNo !== state.handNo;
+  const triggerLogic = logicAllowed && logicRoom && isPostFlop && !state.logicResolvedStreet && !state.psychResolved && rand() < 0.55;
   if (triggerLogic) {
     const lqid = pickLogicQuestion();
     if (lqid) {
+      state.logicCount = (state.logicCount || 0) + 1;
+      state.logicHandNo = state.handNo;
       state.logicResolvedStreet = true;
       render();
       battleTimeout(() => triggerPsychBattle(lqid), 900);
