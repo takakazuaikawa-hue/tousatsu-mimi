@@ -272,6 +272,22 @@
       if (Math.abs(dy) > 1) scroller.scrollTo({ top: scroller.scrollTop + dy, behavior: reduce ? 'auto' : 'smooth' });
     }
 
+    // 次の手順のボタンが舞台の下にはみ出して出ると、押す物が見つからず止まってしまう（800px の卓で実測）。
+    // 遊びの中身に新しく押せる物が出た／隠れていた物が出た時だけ、その所まで舞台の中を寄せる
+    let revealTimer = 0, revealTarget = null;
+    const actionable = (n) => n && n.nodeType === 1 && (n.matches('button:not([disabled]), input, [data-action]') || n.querySelector('button:not([disabled]), input'));
+    const autoReveal = new MutationObserver((list) => {
+      if (dead || dev) return;
+      for (const m of list) {
+        if (m.type === 'childList') { for (const n of m.addedNodes) if (actionable(n)) revealTarget = n; }
+        else if (m.type === 'attributes' && !m.target.hidden && !m.target.disabled && actionable(m.target)) revealTarget = m.target;
+      }
+      if (!revealTarget) return;
+      clearTimeout(revealTimer);
+      revealTimer = setTimeout(() => { const t = revealTarget; revealTarget = null; if (t && t.isConnected) reveal(t, 'nearest'); }, 160);
+    });
+    autoReveal.observe(gameRoot, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled'] });
+
     // フィーバーを当て切ったご褒美：流れる倍率をタップで止める。止まる倍率は抽選で、×10 の隣で止まる「惜しい」も出る
     const RL_CELLS = [1, 2, 3, 1, 5, 2, 10, 3, 1, 2, 5, 3];
     function roulette(unit) {
@@ -509,6 +525,7 @@
       restart() { if (!dead) { exited = false; play(); } },
       destroy() {
         if (dead) return; dead = true; runId++;
+        try { autoReveal.disconnect(); clearTimeout(revealTimer); } catch (e) {}
         host.classList.remove('mb-host', 'is-dev', 'is-fever');
         host.innerHTML = '';
         if (lastInst === inst) lastInst = null;
