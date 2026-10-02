@@ -8376,6 +8376,8 @@ function showEndingFinalButtons(stage) {
 
 function goLobby() {
   battleGen++;
+  if (state && state.readBattle) { try { state.readBattle.inst && state.readBattle.inst.destroy(); } catch (e) {} state.readBattle = null; }
+  document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
   if (typeof dismissCutIn === 'function') dismissCutIn();
   if (state && state.psychRoot) { state.psychRoot.remove(); state.psychRoot = null; }
   document.querySelectorAll('.hand-result-overlay, .rebuy-overlay, .dominance-overlay, .dominance-choice-overlay, .tutorial-overlay, .chapter-banner, .hands-on-overlay, .personality-reveal-banner, .emote-cutin, .clutch-cutin, .bluff-break-charge, .lecture-stamp, .psych-modal, .rico-cutin, .allin-cutin, .panyu-clicker-overlay').forEach(el => el.remove());
@@ -13556,8 +13558,9 @@ function opponentTurnDecide() {
   const psychAllowed = (state.tutorialMode || (save.psychEnabled !== false)) && !state.opponentPersonalityRevealed;
   if (psychAllowed && !state.psychResolved && (triggerFirstHand || triggerBluff || triggerBoss)) {
     render();
-    const qid = pickPsychQuestion();
     if (triggerBoss) state.bossPsychFiredThisHand = true;
+    if (readBattleReady('psych')) { state.psychPending = true; battleTimeout(() => startReadBattle('psych'), 900); return; }
+    const qid = pickPsychQuestion();
     battleTimeout(() => triggerPsychBattle(qid), 900);
     return;
   }
@@ -13565,8 +13568,18 @@ function opponentTurnDecide() {
   // 論理バトル：心理バトルが出なかった時、ストリート毎に発動チャンス
   const logicAllowed = state.tutorialMode || (save.logicEnabled !== false);
   // 応急処置（作り直しまで）：ポルカ卓では出さない（テーマはブラフの読み）。1ハンド1回・1戦2回まで
-  const logicRoom = state.opponentId !== 'polka' && (state.logicCount || 0) < 2 && state.logicHandNo !== state.handNo;
+  // 1ハンド1回・1戦2回まで。ポルカ卓は新しい読み合い（役づくり・ハイ＆ロー）がある時だけ
+  const logicRoom = (state.opponentId !== 'polka' || readBattleReady('logic')) && (state.logicCount || 0) < 2 && state.logicHandNo !== state.handNo;
   const triggerLogic = logicAllowed && logicRoom && isPostFlop && !state.logicResolvedStreet && !state.psychResolved && rand() < 0.55;
+  if (triggerLogic && readBattleReady('logic')) {
+    state.logicCount = (state.logicCount || 0) + 1;
+    state.logicHandNo = state.handNo;
+    state.logicResolvedStreet = true;
+    state.psychPending = true;
+    render();
+    battleTimeout(() => startReadBattle('logic'), 900);
+    return;
+  }
   if (triggerLogic) {
     const lqid = pickLogicQuestion();
     if (lqid) {
@@ -13795,6 +13808,116 @@ function advanceAfterCall() {
 //=============================================================
 // 15. 心理バトル
 //=============================================================
+// ============================================================
+// 読み合い（battles/ の11種類）。心理＝大きな表情顔、論理＝全身ミニキャラ。
+// 勝負の中身は独立した一問だが、読み勝つと「今のハンドの相手の本当の強さ」が一言わかる＝読みの報酬が卓に返る。
+// 賭けた倍率・コンボで増減したコインは「読み合いボーナス」として対戦後に受け取る。
+// ============================================================
+const READ_BATTLE_POOLS = {
+  polka:  { psych: ['detective', 'stare', 'doubt', 'gacha'], logic: ['handbuild', 'highlow'] },
+  selina: { psych: ['detective', 'stare', 'gacha'],          logic: ['danger', 'sniper'] },
+  grano:  { psych: ['gacha'],                                 logic: ['outs', 'highlow'] },
+  velvet: { psych: ['objection', 'stare', 'gacha'],          logic: ['suspects'] },
+};
+const READ_BATTLE_TELL = {
+  detective: '手がかりを読んだ', stare: '見つめ合いに勝った', doubt: 'ウソを見抜いた', gacha: '心の声を聞いた', objection: '矛盾を突いた',
+  handbuild: '最強の役を作った', highlow: '強さを比べ切った', danger: '危険札を見抜いた', sniper: '賭け額を当てた', outs: 'アウツを数えた', suspects: '容疑者を絞った',
+};
+function readBattleReady(group) {
+  if (!window.MB || typeof window.MB.mount !== 'function') return false;
+  if (!state || state.tutorialMode || state.introHandMode || state.lectureMode) return false;
+  const pool = (READ_BATTLE_POOLS[state.opponentImgKey] || {})[group];
+  return !!(pool && pool.length);
+}
+function pickReadBattle(group) {
+  const pool = READ_BATTLE_POOLS[state.opponentImgKey][group];
+  const played = state.readBattlePlayed || (state.readBattlePlayed = {});
+  if (!save.readBattleSeen) save.readBattleSeen = {};
+  // まだ遊んだことの無い種類を先に、次にこの対戦で出た回数が少ない種類を出す
+  const score = (id) => (save.readBattleSeen[id] ? 10 : 0) + (played[id] || 0) * 3 + Math.random();
+  return pool.slice().sort((a, b) => score(a) - score(b))[0];
+}
+// 相手の今の手の強さを、ミミの言葉で一言にする（読み勝った時のご褒美）
+function readBattleRealHint() {
+  let eq = 0.5;
+  try { eq = equityVsRandom(state.opponentHand, state.community || [], 200); } catch (e) {}
+  const name = (state.opponentName || '相手').replace(/（.*）/, '');
+  if (eq >= 0.72) return { eq, text: `今の${name}は、本当に強い手を持ってる`, tag: '相手は本物' };
+  if (eq >= 0.52) return { eq, text: `今の${name}は、そこそこの手。五分に近い`, tag: '相手は五分' };
+  return { eq, text: `今の${name}は、弱い。ブラフ寄りだ`, tag: '相手は弱い' };
+}
+function startReadBattle(group) {
+  if (state.screen !== 'battle' || !readBattleReady(group)) { state.psychPending = false; state.isPlayerTurn = true; render(); return; }
+  const gameId = pickReadBattle(group);
+  const stage = document.getElementById('stage') || document.body;
+  document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
+  if (typeof dismissCutIn === 'function') dismissCutIn();
+  const host = document.createElement('div');
+  host.className = 'read-battle-host';
+  stage.appendChild(host);
+  state.isPlayerTurn = false;
+  state.readBattlePurse = state.readBattlePurse || { coins: 0, combo: 0, fever: 0, best: 0, perfect: 0 };
+  const coinsBefore = state.readBattlePurse.coins;
+  const gen = battleGen;
+  let inst = null;
+  try {
+    inst = window.MB.mount(host, {
+      gameId, charId: state.opponentImgKey, purse: state.readBattlePurse, exitLabel: '卓にもどる',
+      volume: isSfxOn() ? sfxVolFloat() : 0,
+      onExit: (r) => {
+        try { inst && inst.destroy(); } catch (e) {}
+        host.remove(); state.readBattle = null;
+        if (gen !== battleGen || state.screen !== 'battle') return;
+        finishReadBattle(group, gameId, r || {}, state.readBattlePurse.coins - coinsBefore);
+      },
+    });
+  } catch (e) {
+    console.error('read battle failed', e);
+    host.remove(); state.psychPending = false; state.isPlayerTurn = true; render(); return;
+  }
+  state.readBattle = { inst, host };
+  state.readBattlePlayed[gameId] = (state.readBattlePlayed[gameId] || 0) + 1;
+  save.readBattleSeen[gameId] = true;
+  saveProgress();
+}
+function finishReadBattle(group, gameId, r, gain) {
+  state.psychPending = false;
+  state.psychResolving = false;
+  if (group === 'psych') state.psychResolved = true;
+  state.psychTried = (state.psychTried || 0) + 1;
+  state.readBattleBonus = (state.readBattleBonus || 0) + (Number.isFinite(r.gain) ? r.gain : gain);
+  log('psych', { qid: 'mb_' + gameId, success: !!r.correct, mult: r.mult || 1 });
+  if (r.correct) {
+    state.panyu = Math.min(state.panyuMax, state.panyu + 25);
+    state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
+    state.psychSuccessCount++;
+    const hint = readBattleRealHint();
+    if (!state.tellTags) state.tellTags = [];
+    state.tellTags.push(hint.tag);
+    state.mimiThought = `「${READ_BATTLE_TELL[gameId] || '読み勝った'}……！ ${hint.text}」`;
+    state.ricoAdvice = '「読み勝ったご褒美。今のハンド、その一言を信じて決めな」';
+    if (state.zazazo >= state.zazazoMax && !state.opponentPersonalityRevealed) {
+      state.opponentPersonalityRevealed = true;
+      unlockAchievement('read_first');
+      if (!save.readSetByOpp) save.readSetByOpp = {};
+      save.readSetByOpp[state.opponentId] = true;
+      if (['polka', 'selina', 'grano', 'velvet'].every(o => save.readSetByOpp[o])) unlockAchievement('read_all');
+      saveProgress();
+      state.__pendingReveal = true;
+      state.__pendingBluffBreak = true;
+    }
+  } else {
+    state.mimiThought = '「読み違えた……。でも、手札はまだ生きてる」';
+    state.ricoAdvice = '「外れても、ここからの判断は別の勝負。落ち着いて」';
+  }
+  state.isPlayerTurn = true;
+  render();
+  const bb = state.__pendingBluffBreak, rv = state.__pendingReveal;
+  state.__pendingBluffBreak = false; state.__pendingReveal = false;
+  if (bb) triggerBluffBreak();
+  if (rv) battleTimeout(() => showPersonalityRevealBanner(), bb ? 2600 : 200);
+}
+
 function triggerPsychBattle(qid) {
   // 多重起動・画面遷移ガード
   if (state.psychRoot && state.psychRoot.isConnected) return;
@@ -15737,6 +15860,10 @@ function endBattle() {
     rewards.push(`参加賞：+50`);
   }
   if (practice) rewards.push('練習モード：称号・ランクは記録されません');
+  if ((state.readBattleBonus || 0) > 0) {
+    earned += state.readBattleBonus;
+    rewards.push(`読み合いボーナス：+${state.readBattleBonus}`);
+  }
   if (!won && state.playerChips <= 0 && (state.rebuysLeft || 0) > 0 && !usedReads()) {
     rewards.push('ヒント：心理バトル・論理バトル・降りる、のどれかを1回でも使うと、飛んでも1回だけ座り直せます');
   }

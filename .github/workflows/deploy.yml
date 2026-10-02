@@ -28,6 +28,9 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html game.js style.css _site/
+          mkdir -p _site/battles/games
+          cp battles/core.js battles/core.css _site/battles/
+          cp battles/games/*.js _site/battles/games/
           rsync -a --exclude '_source_png' --exclude '_original' --exclude '*.md' assets/ _site/assets/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

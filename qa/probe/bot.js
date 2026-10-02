@@ -137,11 +137,13 @@
     return out;
   }
 
+  // 読み合いの中で進んでいるか（卓の状態は止まったままなので、中身の変化で見る）
+  function readBattleMark() { const h = document.querySelector('.read-battle-host'); return h ? 'rb' + h.innerHTML.length : ''; }
   function signature() {
     const { S } = G();
     const ov = TAP_OVERLAYS.concat(DUP_WATCH.map(c => '.' + c)).map(s => [...document.querySelectorAll(s)].filter(vis).length ? s : '').filter(Boolean).join(',');
     if (!S) return 'boot';
-    return [S.screen, S.opponentId, S.handPhase, S.handNo, S.isPlayerTurn ? 1 : 0, S.playerChips, S.opponentChips, S.pot, S.psychPending ? 1 : 0, S.introHandMode ? 1 : 0, S.lectureMode ? 1 : 0, ov].join('|');
+    return [S.screen, S.opponentId, S.handPhase, S.handNo, S.isPlayerTurn ? 1 : 0, S.playerChips, S.opponentChips, S.pot, S.psychPending ? 1 : 0, S.introHandMode ? 1 : 0, S.lectureMode ? 1 : 0, ov, readBattleMark()].join('|');
   }
 
   function snapshot() {
@@ -160,6 +162,21 @@
     const res = { sig: signature(), snap: snapshot(), dup: dupOverlays(), did: null };
     const cands = candidates();
 
+    // 0) 読み合い（battles/）：中の押せる物をでたらめに押して結果まで進め、結果の「卓にもどる」を押す
+    const rb = document.querySelector('.read-battle-host');
+    if (rb) {
+      const okEl = (e) => { const r = e.getBoundingClientRect(); if (r.width < 4 || r.height < 4 || e.disabled || e.closest('[hidden]')) return false; const cs = getComputedStyle(e); if (cs.visibility === 'hidden' || cs.pointerEvents === 'none') return false; const x = r.left + r.width / 2, y = r.top + r.height / 2; const t = document.elementFromPoint(x, y); return !!t && (t === e || e.contains(t)); };
+      const all = [...rb.querySelectorAll('*')].filter(e => e.tagName === 'BUTTON' || (getComputedStyle(e).cursor === 'pointer' && !(e.parentElement && getComputedStyle(e.parentElement).cursor === 'pointer')));
+      const off = all.filter(e => !okEl(e) && e.getBoundingClientRect().width > 4 && !e.disabled);
+      let vis2 = all.filter(okEl);
+      if (!vis2.length && off.length) { off[0].scrollIntoView({ block: 'center' }); vis2 = all.filter(okEl); }
+      const exitBtn = vis2.find(e => /卓にもどる/.test(e.textContent || ''));
+      if (exitBtn) return click(exitBtn, 'read-exit', res);
+      const btns2 = vis2.filter(e => e.tagName === 'BUTTON');
+      const pool2 = btns2.length && rnd() < 0.5 ? btns2 : vis2;
+      if (pool2.length) return click(pool2[Math.floor(rnd() * pool2.length)], 'read-battle', res);
+      res.waitAction = 'read-battle'; return res;
+    }
     // 1) 心理・論理バトルの選択肢
     const choice = cands.filter(el => el.classList.contains('choice-btn'));
     if (choice.length) { const p = pickPsych(choice, policy, S); return click(p.el, p.why, res); }

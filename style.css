@@ -17106,3 +17106,17 @@ body[data-cutin-skin="neon"] .cutin-flash {
 
 /* 今のストリートにはカナの説明を添える（研修の言葉と一致させる） */
 .v2-st-kana { display: block; font-family: "Noto Sans JP", sans-serif; font-size: 12px; letter-spacing: .04em; color: #ffe9a8; margin-top: 2px; }
+
+/* ============================================================
+   読み合い（battles/）を卓の上に開く器。中身の見た目は battles/core.css（.mb-host で閉じている）
+   ============================================================ */
+.read-battle-host {
+  position: absolute; inset: 0; z-index: 9000;
+  background: radial-gradient(120% 90% at 50% 0%, #3a0f1b 0%, #1d080e 55%, #0b0306 100%);
+  animation: readBattleIn .28s ease-out;
+  overflow: hidden;
+}
+@keyframes readBattleIn { from { opacity: 0; transform: scale(1.03); } }
+@media (prefers-reduced-motion: reduce) { .read-battle-host { animation: none; } }
+/* battles/core.css の .mb-host（position:relative 等）に器の位置を上書きされないよう、卓の上に固定する */
+#stage > .read-battle-host { display: block !important; overflow: hidden !important; background: radial-gradient(120% 90% at 50% 0%, #3a0f1b 0%, #1d080e 55%, #0b0306 100%) !important; position: absolute !important; inset: 0 !important; width: auto !important; height: auto !important; margin: 0 !important; z-index: 9000 !important; }
