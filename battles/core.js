@@ -82,6 +82,8 @@
     velvet: { name: 'VELVET', jp: 'ヴェルベット', face: 'face_velvet.webp', panic: 'art/velvet_cutin_panic.webp', smug: 'art/velvet_cutin_smug.webp', one: 'あたし' },
     rico: { name: 'RICO', jp: 'リコ先輩', face: 'face_rico.webp', panic: 'art/rico_cutin_panic.webp', smug: 'art/rico_cutin_smug.webp', one: 'アタシ' },
   };
+  // VS カットインで動く顔（assets/battle/motion/<key>_vs.mp4 がある子）
+  const VS_MOTION = { mimi: 1, polka: 1, selina: 1, grano: 1, velvet: 1 };
   const MIMI_RAW = { win: 'art/mimi_bust_win.webp', sad: 'art/mimi_bust_sad.webp', think: 'art/mimi_bust_think.webp', shock: 'art/mimi_bust_shock.webp', smug: 'art/mimi_bust_smug.webp', calm: 'art/mimi_bust_calm.webp' };
   // 話す時の姿：心理バトルは大きな顔（art/face）、論理バトルは全身のミニキャラ（art/chibi）
   // 表情の言葉：think 様子見 / smug 余裕 / panic 焦り / busted 見抜かれた / lose 崩れる / win 勝ち誇る / plead すがる
@@ -379,14 +381,23 @@
           return new Promise(res => {
             if (reduce) return res();
             const c = api.char || CHARS.polka;
+            const oid = api.charId || 'polka';
+            // 斜めの窓に顔。動画がある子は窓の中で一度だけ動いて原画（最後のコマ）で止まる
+            const win = (k, name, side) => `<div class="mb-vs-win ${side}"><div class="mb-vs-pic"><img src="${A('art/face/' + k + '_smug.webp')}" alt="">${VS_MOTION[k] ? `<video src="${A('art/motion/' + k + '_vs.mp4')}" muted playsinline preload="auto"></video>` : ''}</div><b class="mb-vs-name">${name}</b></div>`;
             const el = document.createElement('div');
             el.className = 'mb-intro' + (kind === 'logic' ? ' is-logic' : '');
-            el.innerHTML = `<div class="mb-intro-slab"></div><div class="mb-intro-mimi"><img src="${MIMI.smug}" alt=""></div><div class="mb-intro-opp"><img src="${c.smug}" alt=""></div>
-              <div class="mb-intro-vs">VS</div><div class="mb-intro-word">${kind === 'logic' ? 'LOGIC BATTLE' : 'PSYCH BATTLE'}<small>${g.title}</small></div>`;
+            el.innerHTML = `${win('mimi', 'MIMI', 'me')}${win(oid, c.name, 'opp')}<div class="mb-vs-flash"></div>
+              <div class="mb-intro-vs">VS</div><div class="mb-intro-slab"></div><div class="mb-intro-word">${kind === 'logic' ? 'LOGIC BATTLE' : 'PSYCH BATTLE'}<small>${g.title}</small></div>`;
             layer.appendChild(el); sfx.whoosh();
+            el.querySelectorAll('video').forEach(v => {
+              v.playbackRate = 1.4;
+              v.addEventListener('playing', () => v.classList.add('is-playing'), { once: true });
+              v.addEventListener('error', () => v.remove(), { once: true });
+              const pr = v.play && v.play(); if (pr && pr.catch) pr.catch(() => v.remove());
+            });
             let done = false;
             const end = () => { if (done) return; done = true; el.remove(); res(); };
-            el.addEventListener('click', end); setTimeout(end, 1300);
+            el.addEventListener('click', end); setTimeout(end, 2500);
           });
         },
         // 「同じ場面を100回やったら」：運で勝ち負けしても、判断の得失は回数で見える（結果の extra に入れる）
