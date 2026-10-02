@@ -296,3 +296,9 @@
 .mb-host *::before,
 .mb-host *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* 見抜かれる瞬間の動画（結果の札）。読み込めたら絵の代わりに見せ、1回で止める */
+.mb-host .mb-result-art.has-motion { background: #1c060c; }
+.mb-host .mb-result-motion { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .2s; }
+.mb-host .mb-result-art.is-playing .mb-result-motion { opacity: 1; }
+.mb-host .mb-result-art.is-playing img { opacity: 0; }

@@ -28,6 +28,7 @@
     let m;
     if ((m = /^art\/chibi\/(.+)$/.exec(p))) return base + 'assets/battle/chibi/' + m[1];
     if ((m = /^art\/face\/(.+)$/.exec(p))) return base + 'assets/battle/face/' + m[1];
+    if ((m = /^art\/motion\/(.+)$/.exec(p))) return base + 'assets/battle/motion/' + m[1];
     if ((m = /^art\/(.+)$/.exec(p))) return base + 'assets/characters/' + m[1];
     if (/^face_[\w]+\.webp$/.test(p)) return base + 'assets/ui/' + p;
     return base + p;
@@ -455,12 +456,15 @@
           const c = api.char || CHARS.polka;
           const cls = o.correct ? (o.perfect ? 'good perfect' : 'good') : 'bad';
           const art = o.correct ? c.panic : MIMI.sad;
+          // 見抜かれる瞬間の動画（心理バトルで読み勝った時だけ）。動かない環境・読み込めない時は今までの絵のまま
+          const MOTION = { polka: 1, selina: 1, grano: 1, velvet: 1 };
+          const motion = o.correct && g.group === 'psych' && MOTION[api.charId] && !reduce ? A('art/motion/' + api.charId + '_busted.mp4') : '';
           const exitMode = !!opts.exitLabel; // 組み込み：ボタンは出口（onExit）。無ければ同じ種類をもう一回（単独ページ用）
           const el = document.createElement('div');
           el.className = 'mb-result ' + cls;
           el.innerHTML = `<div class="mb-result-card">
               ${P.combo >= 2 ? `<div class="mb-combo-pop">COMBO ${P.combo}</div>` : ''}
-              <div class="mb-result-art"><img src="${art}" alt=""></div>
+              <div class="mb-result-art${motion ? ' has-motion' : ''}"><img src="${art}" alt="">${motion ? `<video class="mb-result-motion" src="${motion}" muted playsinline autoplay preload="auto"></video>` : ''}</div>
               <div>
                 <div class="mb-result-stamp">${o.title || (o.correct ? (o.perfect ? 'PERFECT READ!' : '読み勝ち！') : '読み違い……')}</div>
                 <div class="mb-result-detail">${o.detail || ''}</div>
@@ -470,6 +474,7 @@
               <div class="mb-result-actions"><button class="btn gold" id="mb-next"${feverDone ? ' disabled' : ''}>${exitMode ? opts.exitLabel : `次の勝負へ<small>${o.nextHint || '同じ種類をもう一回'}</small>`}</button></div>
             </div>`;
           layer.appendChild(el);
+          { const mv = el.querySelector('.mb-result-motion'); if (mv) { const box = mv.parentElement; mv.addEventListener('playing', () => box.classList.add('is-playing'), { once: true }); mv.addEventListener('error', () => mv.remove(), { once: true }); const pr = mv.play && mv.play(); if (pr && pr.catch) pr.catch(() => mv.remove()); } }
           // 縦に長い単独ページでは結果の札が画面外に出ることがあるので、見える所まで寄せる
           if (dev) { try { el.querySelector('.mb-result-card').scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' }); } catch (e) {} }
           if (o.correct) { sfx.fanfare(); const r = el.querySelector('.mb-result-stamp').getBoundingClientRect(); sparkles(r.left + r.width / 2, r.top + r.height / 2, o.perfect ? 40 : 20); }

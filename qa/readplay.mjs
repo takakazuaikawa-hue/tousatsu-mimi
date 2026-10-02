@@ -15,7 +15,7 @@ const PICK = `(() => {
   let vis = all.filter(ok);
   const off = all.filter(e => !ok(e) && e.getBoundingClientRect().width > 4 && !e.disabled);
   if (!vis.length && off.length) { off[0].scrollIntoView({ block: 'center' }); vis = all.filter(ok); }
-  const ex = vis.find(e => /卓にもどる/.test(e.textContent || '')); if (ex) { ex.click(); return 'exit'; }
+  const ex = vis.find(e => /卓にもどる/.test(e.textContent || '')); if (ex) { const ma = h.querySelector('.mb-result-art.has-motion'); if (ma && !window.__mShot) { window.__mShot = 1; return 'motion:' + ma.className; } window.__mShot = 0; ex.click(); return 'exit'; }
   const bt = vis.filter(e => e.tagName === 'BUTTON'); const pool = bt.length && Math.random() < .5 ? bt : vis;
   const e = pool[Math.floor(Math.random() * pool.length)]; if (!e) return 'none:' + off.map(x => (x.className || x.tagName) + ' ' + (x.textContent || '').trim().slice(0, 12)).slice(0, 4).join(' / ');
   const rr = e.getBoundingClientRect(); return JSON.stringify({ x: rr.left + rr.width / 2, y: rr.top + rr.height / 2, w: (e.className || e.tagName) + ' ' + (e.textContent || '').trim().slice(0, 14) });
@@ -28,6 +28,7 @@ for (let r = 0; r < +rounds; r++) {
     const w = await page.eval(PICK);
     let w2 = w; if (w && w[0] === '{') { const o = JSON.parse(w); await page.click(o.x, o.y); w2 = o.w; }
     last.push(w2); if (last.length > 8) last.shift();
+    if (String(w).startsWith('motion:')) { await sleep(2500); const st = await page.eval("(() => { const a = document.querySelector('.mb-result-art.has-motion'); const v = a && a.querySelector('video'); return a ? a.className + ' t=' + (v ? v.currentTime.toFixed(1) : 'none') : 'gone'; })()"); console.log('MOTION', st); await page.screenshot(path.resolve('qa/out/readplay_motion_' + gameId + '.png')); }
     if (w === 'exit') { res = 'OK ' + i + ' taps'; break; }
     await sleep(220);
   }
