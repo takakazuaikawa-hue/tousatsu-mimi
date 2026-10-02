@@ -1036,11 +1036,11 @@ function countStrongOuts(hole, board) {
 //  sizing：loud＝弱いほど大きく賭ける（ポルカ）／honest＝強いほど大きく（セリナ）／
 //          flat＝いつもポットの半分（グラーノ）／polar＝とても強いか空っぽなら大きく（ヴェルベット）
 const AI_STYLES = {
-  polka:  { loose: 0.72, respect: 0.04, valueEq: 0.66, valueFreq: 0.75, bluffFreq: 0.36, raiseEq: 0.82, trap: 0,    sizing: 'loud',   shoveCall: 0.52 },
-  selina: { loose: 1.0,  respect: 0.2,  valueEq: 0.64, valueFreq: 0.85, bluffFreq: 0.12, raiseEq: 0.84, trap: 0.1,  sizing: 'honest', shoveCall: 0.58 },
-  grano:  { loose: 1.0,  respect: 0.08, valueEq: 0.66, valueFreq: 0.8,  bluffFreq: 0.08, raiseEq: 0.86, trap: 0.45, sizing: 'flat',   shoveCall: 0.57 },
-  velvet: { loose: 0.95, respect: 0.14, valueEq: 0.66, valueFreq: 0.85, bluffFreq: 0.34, raiseEq: 0.8,  trap: 0.15, sizing: 'polar',  shoveCall: 0.56 },
-  rico_serious: { loose: 0.97, respect: 0.12, valueEq: 0.62, valueFreq: 0.85, bluffFreq: 0.3, raiseEq: 0.8, trap: 0.2, sizing: 'mixed', shoveCall: 0.56 },
+  polka:  { loose: 0.72, respect: 0.04, valueEq: 0.66, valueFreq: 0.75, bluffFreq: 0.36, raiseEq: 0.82, trap: 0,    sizing: 'loud',   shoveCall: 0.47 },
+  selina: { loose: 0.8,  respect: 0.2,  valueEq: 0.64, valueFreq: 0.65, bluffFreq: 0.12, raiseEq: 0.9,  trap: 0.1,  sizing: 'honest', shoveCall: 0.47 },
+  grano:  { loose: 1.0,  respect: 0.08, valueEq: 0.66, valueFreq: 0.8,  bluffFreq: 0.08, raiseEq: 0.86, trap: 0.45, sizing: 'flat',   shoveCall: 0.47 },
+  velvet: { loose: 0.95, respect: 0.14, valueEq: 0.66, valueFreq: 0.85, bluffFreq: 0.34, raiseEq: 0.8,  trap: 0.15, sizing: 'polar',  shoveCall: 0.47 },
+  rico_serious: { loose: 0.97, respect: 0.12, valueEq: 0.62, valueFreq: 0.85, bluffFreq: 0.3, raiseEq: 0.8, trap: 0.2, sizing: 'mixed', shoveCall: 0.47 },
   rico_tutorial: { loose: 0.9, respect: 0.1, valueEq: 0.66, valueFreq: 0.6, bluffFreq: 0.2, raiseEq: 0.9, trap: 0, sizing: 'flat' },
 };
 function aiStyleOf(profile) {
@@ -12211,7 +12211,7 @@ function startBattleInternal(opponentId) {
   //   同額スタートだと、1ハンド目にオールインを押すだけで約96%がその場で決着し、
   //   コイン投げ2回分でステージを抜けられてしまっていた（実測）。
   //   2倍なら一発では構造的に終わらず、その相手のテーマ（ブラフ・危険度・オッズ）を
-  //   何度も踏むことになる。代わりにミミは1回だけ座り直せる（運の一撃で即敗北もしない）。
+  //   何度も踏むことになる。代わりにミミは、読み（心理・論理バトル）か降りるを使っていれば1回だけ座り直せる（usedReads）。
   //   相手の2倍は「基本値」基準。持ち込みチップで相手まで増えると、買った意味が消えるため
   if (!state.tutorialMode) state.opponentChips = baseChips * 2;
   // 持ち込みは卓についた時に短く知らせる（効いていることが見えないと、買った品が無いのと同じ）
@@ -13177,6 +13177,7 @@ function playerFold() {
   const oddsF = needF > 0 ? needF / ((state.pot || 0) + needF) : 0;
   const foldQuality = (eqF == null || needF === 0) ? 'ok' : eqF < oddsF ? 'good' : eqF >= oddsF + 0.18 ? 'waste' : 'ok';
   if (foldQuality === 'good') state.goodFolds = (state.goodFolds || 0) + 1;
+  state.playerFolds = (state.playerFolds || 0) + 1;
   state.opponentSpeech = opponentReactToPlayerFold();
   log('actions', { actor: 'player', type: 'fold' });
   state.handResults.push({ hand: state.handNo, winner: 'opponent', reason: 'fold', pot: state.pot, by: '降伏', foldQuality });
@@ -13639,8 +13640,13 @@ function opponentPreflopStrength(hand) {
 // 座り直し（リバイ）：ミミは1戦に1回だけ、飛んでも同じ額で座り直せる。
 // 相手は2倍積んでいるので、ここで折れずに立て直すのが中盤の山場になる。
 //-------------------------------------------------------------
+// 座り直しは、読み（心理バトル・論理バトル）か降りる判断を1回でも使った人へのお守り。
+// 毎ハンド全部賭けるだけの遊び方では2回目の抽選を渡さない（qa/sim.mjs rebuyRule:"earned" で検証）
+function usedReads() {
+  return (state.psychTried || 0) + (state.logicCount || 0) + (state.playerFolds || 0) > 0;
+}
 function canRebuy() {
-  return !!state && state.playerChips <= 0 && state.opponentChips > 0 && (state.rebuysLeft || 0) > 0;
+  return !!state && state.playerChips <= 0 && state.opponentChips > 0 && (state.rebuysLeft || 0) > 0 && usedReads();
 }
 function showRebuy() {
   if (document.querySelector('.rebuy-overlay')) return;
@@ -13798,6 +13804,7 @@ function triggerPsychBattle(qid) {
     console.warn('Psych battle: invalid qid', qid);
     return;
   }
+  state.psychTried = (state.psychTried || 0) + 1;
   state.psychResolving = false; // 新ラウンドで再解放
   state.psychPending = true;
   // 出題履歴に追加
@@ -15048,6 +15055,7 @@ function endHand() {
   if (last) {
     if (last.winner === 'player') {
       state.consecutiveWins = (state.consecutiveWins || 0) + 1;
+      if (last.reason === 'showdown') state.showdownStreak = (state.showdownStreak || 0) + 1;
       // 連勝モメンタム演出：2連勝目から卓上バッジを表示
       const momentum = streakMomentumInfo(state.consecutiveWins);
       if (momentum) {
@@ -15056,6 +15064,7 @@ function endHand() {
         else if (state.consecutiveWins >= 3) mpSfx('milestone');
       }
     } else if (last.winner === 'opponent' && last.reason !== 'fold') {
+      state.showdownStreak = 0;
       const brokenStreak = state.consecutiveWins || 0;
       state.consecutiveWins = 0;
       // 3連勝以上が途切れた時だけ、控えめに「連勝ストップ」を知らせる
@@ -15432,7 +15441,7 @@ function isDominanceMode() {
   if (state.dominanceUsed) return false;
   if (state.tutorialMode || state.introHandMode || state.lectureMode) return false;
   const initial = OPPONENTS[state.opponentId]?.chips || 1000;
-  const wins = state.consecutiveWins || 0;
+  const wins = state.showdownStreak || 0;
   const playerAhead = state.playerChips > initial && state.playerChips >= state.opponentChips * 2;
   if (playerAhead && wins >= 5) return 'complete';
   return false;
@@ -15726,6 +15735,9 @@ function endBattle() {
     rewards.push(`参加賞：+50`);
   }
   if (practice) rewards.push('練習モード：称号・ランクは記録されません');
+  if (!won && state.playerChips <= 0 && (state.rebuysLeft || 0) > 0 && !usedReads()) {
+    rewards.push('ヒント：心理バトル・論理バトル・降りる、のどれかを1回でも使うと、飛んでも1回だけ座り直せます');
+  }
   // note_bankroll：コイン獲得効率+10%
   if (save.unlockedNotes && save.unlockedNotes.includes('bankroll') && earned > 0) {
     const bonus = Math.floor(earned * 0.1);

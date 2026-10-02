@@ -49,7 +49,7 @@
     const anteFor = fn('anteForHand'); // フェーズ2で追加予定（参加費の段階上げ）
     const opp = OPP[oppId]; const base = opp.chips || 1000; const prof = opp.profile; const isBoss = !!opp.isBoss;
     const oppMult = OPT.mult || opp.oppChipMult || 2;
-    const S = { P: base, O: base * oppMult, rebuy: 1, wins: 0, handNo: 0, zaz: 0, revealed: false, oppStyle: (fn('aiStyleOf') ? fn('aiStyleOf')(prof).sizing : '') };
+    const S = { P: base, O: base * oppMult, rebuy: OPT.rebuy == null ? 1 : OPT.rebuy, wins: 0, handNo: 0, zaz: 0, revealed: false, oppStyle: (fn('aiStyleOf') ? fn('aiStyleOf')(prof).sizing : '') };
     const st = { hands: 0, psych: 0, logic: 0, showdowns: 0, oppFolds: 0, plFolds: 0, dom: false, rebuy: false, cap: false, allinCalledLost: 0 };
     while (S.P > 0 && S.O > 0) {
       S.handNo++; st.hands++; if (st.hands > 400) { st.cap = true; break; }
@@ -123,7 +123,7 @@
       }
       S.pot = 0; S.shoved = false;
       if (winner === 'player') { if (OPT.domRule !== 'showdown' || S.lastSd) S.wins++; } else if (winner === 'opponent') S.wins = 0;
-      if (S.P <= 0 && S.O > 0 && S.rebuy > 0) { S.rebuy = 0; S.P = base; st.rebuy = true; continue; }
+      if (S.P <= 0 && S.O > 0 && S.rebuy > 0 && (OPT.rebuyRule !== "earned" || st.psych + st.logic + st.plFolds > 0)) { S.rebuy = 0; S.P = base; st.rebuy = true; continue; }
       if (S.P <= 0 || S.O <= 0) break;
       const domCheck = fn('isDominanceMode');
       const domNow = (window.__mimiEngine && window.__mimiEngine.dominanceReady) ? window.__mimiEngine.dominanceReady({ P: S.P, O: S.O, base, wins: S.wins }) : (S.P > base && S.P >= S.O * 2 && S.wins >= 5);
@@ -139,6 +139,7 @@
     const styles = (typeof AI_STYLES !== 'undefined') ? AI_STYLES : null;
     const saved = styles ? JSON.stringify(styles) : null;
     if (styles && OPT.shoveCall != null) for (const k in styles) styles[k].shoveCall = OPT.shoveCall;
+    if (styles && OPT.style) for (const k in OPT.style) if (styles[k]) Object.assign(styles[k], OPT.style[k]); // 性格ごとの上書き（試算用）
     let a = seed >>> 0;
     const rng = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
     const R0 = Math.random; Math.random = rng;
