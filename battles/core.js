@@ -458,7 +458,8 @@
           const art = o.correct ? c.panic : MIMI.sad;
           // 見抜かれる瞬間の動画（心理バトルで読み勝った時だけ）。動かない環境・読み込めない時は今までの絵のまま
           const MOTION = { polka: 1, selina: 1, grano: 1, velvet: 1 };
-          const motion = o.correct && g.group === 'psych' && MOTION[api.charId] && !reduce ? A('art/motion/' + api.charId + '_busted.mp4') : '';
+          // 心理：読み勝った時だけ「見抜かれる瞬間」の顔。論理：当てれば相手のミニキャラが崩れ、外せば勝ち誇る
+          const motion = !MOTION[api.charId] || reduce ? '' : g.group === 'psych' ? (o.correct ? A('art/motion/' + api.charId + '_busted.mp4') : '') : A('art/motion/' + api.charId + '_chibi_' + (o.correct ? 'lose' : 'win') + '.mp4');
           const exitMode = !!opts.exitLabel; // 組み込み：ボタンは出口（onExit）。無ければ同じ種類をもう一回（単独ページ用）
           const el = document.createElement('div');
           el.className = 'mb-result ' + cls;
