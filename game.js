@@ -7290,7 +7290,8 @@ function renderActionArea(el) {
 function renderVerbActions(slots, need) {
   const foldS = slots.find(s => s.kind === 'fold');
   const ccS = slots.find(s => s.kind === 'callcheck');
-  const betS = slots.filter(s => ['sm', 'md', 'lg', 'allin'].includes(s.kind) && s.enabled);
+  // チップが少なく、どの額を選んでもオールインになる時は「ぜんぶ」1つだけにする（同じ額のボタンが4つ並ぶのを防ぐ）
+  const betS = slots.filter(s => ['sm', 'md', 'lg', 'allin'].includes(s.kind) && s.enabled && (s.kind === 'allin' || s.action !== 'player-allin'));
   const sug = state.__suggest;
   const tag = (verb) => (sug === verb ? ' is-suggest' : '');
   const attrs = (s) => (s && s.enabled ? `data-action="${s.action}"` : 'disabled') + (s && s.dataSize ? ` data-size="${s.dataSize}"` : '');
@@ -7313,7 +7314,8 @@ function renderVerbActions(slots, need) {
   const ccLabel = raising ? 'コール' : 'チェック';
   const ccSub = raising ? `${need} 払って付いていく` : 'タダで次の札を見る';
   const betLabel = raising ? '上乗せする' : '賭ける';
-  const betSub = betS.length ? (raising ? 'レイズ：額を選ぶ' : 'ベット：額を選ぶ') : 'チップが足りない';
+  const onlyAllin = betS.length === 1 && betS[0].kind === 'allin';
+  const betSub = !betS.length ? 'チップが足りない' : onlyAllin ? `残り全部（${betS[0].chipAmount}）だけ` : (raising ? 'レイズ：額を選ぶ' : 'ベット：額を選ぶ');
   return `<div class="verb-grid">
     <button class="btn verb-btn verb-cc${tag('call')}" ${attrs(ccS)}><span class="verb-label">${ccLabel}</span><small class="verb-sub">${ccSub}</small>${num(raising ? need : 0)}</button>
     <button class="btn verb-btn verb-fold${tag('fold')}" ${foldEnabled ? attrs(foldS) : 'disabled'}><span class="verb-label">降りる</span><small class="verb-sub">${foldEnabled ? 'このハンドをあきらめる' : 'いまは降りなくていい'}</small></button>

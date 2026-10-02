@@ -91,7 +91,8 @@
     const bets = btns.filter(b => b.dataset.action === 'player-bet' || b.dataset.action === 'player-raise');
     const opener = one('open-bet-chooser'), closer = one('close-bet-chooser');
     // 賭ける額は「賭ける」を押してから選ぶ2段階。額のボタンが無ければまず開く／賭けないなら閉じる
-    const midBet = () => bets.length ? bets[Math.min(1, bets.length - 1)] : opener;
+    // チップが少ないと額の選択肢が「ぜんぶ（オールイン）」だけになる。その時はそれを押す（開け閉めを繰り返さない）
+    const midBet = () => bets.length ? bets[Math.min(1, bets.length - 1)] : (opener || one('player-allin'));
     const passive = () => one('player-checkcall') || one('player-call') || one('player-check') || closer;
     if (S && S.introHandMode) {
       const primary = btns.find(b => b.classList.contains('btn-primary')) || btns[0];
