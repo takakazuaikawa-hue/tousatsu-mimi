@@ -223,13 +223,13 @@
                 <div class="mb-opp-name" id="mb-opp-name">POLKA</div>
                 <div class="mb-speech"><span id="mb-opp-line">……</span></div>
               </div>
+              <div class="mb-coach">
+                <span class="mb-coach-pop" id="mb-coach-pop"><img id="mb-coach-img" src="${A('art/chibi/rico_think.webp')}" alt="リコ先輩"></span>
+                <div><div class="mb-coach-name">RICO · リコ先輩</div><div class="mb-coach-line" id="mb-coach">……</div></div>
+              </div>
               <div class="mb-betchip"><div class="lbl">BET</div><div class="num" id="mb-opp-bet">—</div></div>
             </div>
             <div class="mb-game-root" id="mb-game-root"></div>
-            <div class="mb-coach">
-              <span class="mb-coach-pop" id="mb-coach-pop"><img id="mb-coach-img" src="${A('art/chibi/rico_think.webp')}" alt="リコ先輩"></span>
-              <div><div class="mb-coach-name">RICO · リコ先輩</div><div class="mb-coach-line" id="mb-coach">……</div></div>
-            </div>
           </section>
         </div>
         <div class="mb-layer" id="mb-layer"></div>
@@ -439,15 +439,17 @@
                 <button class="mb-wchip x3" data-m="3"><span>ぜったい<b>×3</b></span></button>
               </div>
               <div class="mb-wager-note">当たれば ${b}×倍率、外れたら その半分を失う${P.fever > 0 ? '（フィーバー中は当たりがさらに2倍）' : ''}</div>`;
-            (o.into || gameRoot).appendChild(box);
-            reveal(box, 'nearest');
+            // 置き場所の指定が無ければ、遊びの下に継ぎ足さず舞台の上に重ねて出す（継ぎ足すと 190px 伸びて画面からはみ出していた）
+            const ov = o.into ? null : document.createElement('div');
+            if (ov) { ov.className = 'mb-wager-ov'; ov.appendChild(box); layer.appendChild(ov); }
+            else { o.into.appendChild(box); reveal(box, 'nearest'); }
             box.querySelectorAll('.mb-wchip').forEach(btn => btn.addEventListener('click', () => {
               if (!live()) return;
               sfx.tap(); const m = +btn.dataset.m; api.mult = m;
               // 自信の大きさに相手が反応する（×3 は焦る、×1 は余裕）
               if (m === 3) api.emote('panic'); else if (m === 1) api.emote('smug');
               box.querySelectorAll('.mb-wchip').forEach(x => { x.disabled = true; x.style.opacity = x === btn ? 1 : .3; });
-              setTimeout(() => { box.remove(); res(m); }, 250);
+              setTimeout(() => { box.remove(); if (ov) ov.remove(); res(m); }, 250);
             }));
           });
         },

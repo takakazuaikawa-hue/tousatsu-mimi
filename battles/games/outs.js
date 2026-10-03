@@ -40,6 +40,10 @@ MB.register({
       .outs-deck .card.found { background: linear-gradient(180deg, #fff7d6, #f5d77a); border-color: #b8860b; transform: translateY(-3px); box-shadow: 0 0 12px rgba(245,215,122,.8); }
       .outs-deck .card.shown { border-color: var(--gold-hi); border-style: dashed; }
       .outs-deck .card.hint { box-shadow: 0 0 0 2px rgba(245,215,122,.6); }
+      .outs-deck.is-collapsed { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: none; }
+      .outs-deck.is-collapsed .card { display: none; }
+      .outs-deck.is-collapsed .card.found, .outs-deck.is-collapsed .card.shown { display: flex; width: 42px; flex: 0 0 42px; transform: none; }
+      .outs-deck.is-collapsed .card b { font-size: 16px; } .outs-deck.is-collapsed .card i { font-size: 12px; }
       .outs-count { font-family: var(--disp); font-size: 30px; text-align: center; color: var(--gold-hi); font-variant-numeric: tabular-nums; }
       .outs-count small { font-family: var(--sans); font-size: 12px; color: var(--dim); margin-left: 6px; }
       .outs-meter { max-width: 620px; width: 100%; margin: 0 auto; display: grid; gap: 8px; }
@@ -98,6 +102,9 @@ MB.register({
     api.sfx.fanfare();
     root.querySelector('.steps').outerHTML = api.steps(['当たり札をさがす', '値段とくらべる', '決める', 'スロット'], 1);
     root.querySelector('.actions').remove();
+    // 探し終えたら 52 枚の一覧は畳み、当たり札だけを1列に並べる（1画面に収めるため。何が当たりかも一目で分かる）
+    root.querySelector('#mb-o-deck').classList.add('is-collapsed');
+    const cnt = root.querySelector('#mb-o-count'); if (cnt) cnt.innerHTML = `当たり札 ${s.outs.length}枚<small>この札が最後に来れば勝ち</small>`;
     const meter = document.createElement('div');
     meter.className = 'outs-meter pop';
     meter.innerHTML = `<p class="prompt">${s.outs.length}枚！ じゃあ、この値段は割に合う？</p>

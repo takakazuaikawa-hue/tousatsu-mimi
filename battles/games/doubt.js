@@ -343,8 +343,9 @@
     pad.classList.remove('is-live'); pad.innerHTML = '';
     $('#mb-doubt-steps').innerHTML = api.steps(STEPS, 1);
     api.coach('何問当てたと思う？ その自信を賭けて');
-    const wp = api.wager({ question: '4問以上当てた自信は？', base: 40, into: pad });
-    const note = pad.querySelector('.wager-note');
+    // 賭けの札は舞台の上に重ねて出す（操作盤に継ぎ足すと画面からはみ出していた）。説明はダウト用の決まりに差し替える
+    const wp = api.wager({ question: '4問以上当てた自信は？', base: 40 });
+    const note = api.layer.querySelector('.mb-wager-ov .mb-wager-note');
     if (note) note.textContent = `4問以上なら 正解数×8×倍率 がもらえる。3問以下なら 15×倍率 を失う${MB.P.fever > 0 ? '（フィーバー中は当たりがさらに2倍）' : ''}`;
     await wp;
     if (!api.alive()) return;
