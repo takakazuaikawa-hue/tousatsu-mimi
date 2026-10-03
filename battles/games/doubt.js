@@ -157,8 +157,9 @@
     .doubt-btn .w small { font-size: 12px; font-weight: 700; opacity: .85; }
     .doubt-btn kbd { font-family: var(--disp); font-size: 30px; line-height: 1; color: var(--gold-hi); }
     .doubt-btn.is-hit::before { filter: brightness(1.7); transform: skewX(-12deg) scale(.94); }
-    .doubt-pad.is-live .doubt-btn::before, .doubt-btn.is-start::before { animation: mb-doubt-glow 1.2s ease-in-out infinite; }
-    @keyframes mb-doubt-glow { 50% { box-shadow: 0 0 0 3px rgba(245,215,122,.3), 0 0 24px rgba(245,215,122,.7); } }
+    /* 光は別の層に描いておき、濃さだけを動かす（影を毎フレーム描き直すとスマホが熱くなる） */
+    .doubt-pad.is-live .doubt-btn::after, .doubt-btn.is-start::after { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); pointer-events: none; box-shadow: 0 0 0 3px rgba(245,215,122,.3), 0 0 24px rgba(245,215,122,.7); opacity: 0; animation: mb-doubt-glow 1.2s ease-in-out infinite; }
+    @keyframes mb-doubt-glow { 50% { opacity: 1; } }
     .doubt-btn:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
     .doubt-btn[disabled] { opacity: .45; cursor: default; }
     .doubt-pad .wager { grid-column: 1 / -1; }

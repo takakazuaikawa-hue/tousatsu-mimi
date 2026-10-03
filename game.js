@@ -8594,6 +8594,15 @@ function initGlobalAudioBar() {
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) applyAudioSession();
     });
+    // 隠れている間は演出（CSS アニメ）と再生中の動画を止める。戻ったら続きから
+    const syncHidden = () => {
+      document.body.classList.toggle('is-hidden', document.hidden);
+      document.querySelectorAll('video').forEach(v => {
+        if (document.hidden) { if (!v.paused && !v.ended) { v.pause(); v.dataset.hidPaused = '1'; } }
+        else if (v.dataset.hidPaused) { delete v.dataset.hidPaused; const p = v.play(); if (p && p.catch) p.catch(() => {}); }
+      });
+    };
+    document.addEventListener('visibilitychange', syncHidden);
     ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
       window.addEventListener(ev, applyAudioSession, { passive: true }));
   } catch (e) {}

@@ -17122,3 +17122,33 @@ body:has(.char-profile-overlay, .hand-guide-overlay, .settings-overlay, .glossar
 @media (prefers-reduced-motion: reduce) { .read-battle-host { animation: none; } }
 /* battles/core.css の .mb-host（position:relative 等）に器の位置を上書きされないよう、卓の上に固定する */
 #stage > .read-battle-host { display: flex !important; flex-direction: column !important; overflow: hidden !important; background: radial-gradient(120% 90% at 50% 0%, #3a0f1b 0%, #1d080e 55%, #0b0306 100%) !important; position: absolute !important; inset: 0 !important; width: auto !important; height: auto !important; margin: 0 !important; z-index: 9000 !important; }
+
+/* ===== 待機中の光（スマホの発熱対策 2026-10-03） =====
+   影（box-shadow / filter）を毎フレーム描き直すと、待機中でもスマホが熱くなる。
+   最大の光を一度だけ描いた層を重ね、その層の濃さ（opacity）だけを動かす。見た目はほぼ同じで、描き直しが要らない。 */
+@keyframes glowLayer { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+#fullscreen-btn { position: relative; animation: none; }
+#fullscreen-btn::after { content: ''; position: absolute; inset: -2px; border-radius: inherit; pointer-events: none; box-shadow: 0 0 40px rgba(245,215,122,.45); animation: glowLayer 2.5s ease-in-out infinite; }
+/* おすすめ・研修で押すボタン */
+.battle-screen.v2 .is-suggest, .battle-screen.v2 .is-intro-go { animation: none; }
+.battle-screen.v2 .is-suggest::after, .battle-screen.v2 .is-intro-go::after { content: ''; position: absolute; inset: 0; pointer-events: none; box-shadow: 0 0 0 6px rgba(255,243,194,.35), 0 0 36px rgba(255,243,194,.55); animation: glowLayer 1.2s ease-in-out infinite; }
+/* ログインボーナスの今日の枠 */
+.login-bonus-day-today { animation: none; }
+.login-bonus-day-today::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; box-shadow: 0 0 22px rgba(245,215,122,.9); animation: glowLayer 1.4s ease-in-out infinite; }
+/* ロビーの「挑む」札：明るさの往復（filter）を、明るい層の濃さに */
+.lb8-cta { position: relative; animation: none; }
+.lb8-cta::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: rgba(255,244,214,.16); animation: glowLayer 4s ease-in-out infinite; }
+/* タイトルの「はじめる」は前後の飾りで疑似要素が埋まっているので、3回呼吸したら止める */
+.title-buttons .btn-primary { animation-iteration-count: 3; }
+/* 研修の光る枠：周りの暗幕（巨大な影）は止めたまま、縁の光だけを別の層で脈打たせる */
+.coach-hole { animation: none; box-shadow: 0 0 0 200vmax rgba(8, 2, 4, 0.62), 0 0 26px rgba(255, 243, 194, 0.75); }
+.coach-hole::after { content: ''; position: absolute; inset: -3px; pointer-events: none; box-shadow: 0 0 40px rgba(255, 243, 194, 1); animation: glowLayer 1.4s ease-in-out infinite; }
+/* ピンチの赤いふち：画面全体の巨大な内側の影をやめ、同じ形のグラデーション（描くのが軽い）に */
+body.is-danger .battle-screen::after {
+  box-shadow: none; will-change: opacity;
+  background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 55%, rgba(120,0,10,.42) 82%, rgba(200,0,20,.62) 100%);
+}
+/* タブを隠した・画面を切り替えた間は、演出を全部止める（動画は JS で止める） */
+body.is-hidden *, body.is-hidden *::before, body.is-hidden *::after { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) { .battle-screen.v2 .is-suggest::after, .battle-screen.v2 .is-intro-go::after, #fullscreen-btn::after, .login-bonus-day-today::after, .lb8-cta::after, .coach-hole::after { animation: none; opacity: .6; } }
+.battle-screen.v2 .v2-mimi-frame img { will-change: transform; }
