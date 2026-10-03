@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Bebas+Neue&display=swap">
+  <style>
+    body { margin: 0; font-family: "Noto Sans JP", "Yu Gothic", "Hiragino Sans", sans-serif; color: #f7eecf; background: #0b0510; }
+    a { color: #f5d77a; } a:hover { color: #fff3c4; }
+    .disp { font-family: "Bebas Neue", "Noto Sans JP", Impact, sans-serif; letter-spacing: .06em; }
+    .stat { display: flex; flex-direction: column; gap: 2px; padding-left: 14px; border-left: 2px solid rgba(245,215,122,.5); }
+    .stat .k { font-size: 11px; letter-spacing: .25em; color: #c4b89a; font-weight: 900; }
+    .stat .v { font-size: 30px; line-height: 1; color: #f7eecf; }
+    .btn { height: 60px; border: 0; font-family: inherit; font-weight: 900; transform: skewX(-12deg); display: flex; align-items: center; justify-content: center; gap: 14px; box-shadow: 0 12px 26px rgba(0,0,0,.6); }
+    .btn > * { transform: skewX(12deg); }
+  </style>
+</helmet>
+<div style="position: relative; width: 1280px; height: 800px; overflow: hidden; background: #0b0510;">
+  <!-- 背景：卓を暗く沈め、金のスポットライト -->
+  <div style="position: absolute; inset: 0; background: url(./poker_table_bg.jpg) center 30% / 130% no-repeat; filter: brightness(.5) saturate(.7);"></div>
+  <div style="position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 45%, rgba(245,215,122,.32) 0%, rgba(0,0,0,0) 48%), linear-gradient(180deg, rgba(11,5,16,.5) 0%, rgba(11,5,16,0) 40%, rgba(11,5,16,.9) 100%);"></div>
+  <div style="position: absolute; inset: -300px; background: repeating-conic-gradient(from 0deg at 30% 50%, rgba(245,215,122,.08) 0deg 2deg, rgba(0,0,0,0) 2deg 9deg); pointer-events: none;"></div>
+  <div style="position: absolute; inset: 0; background: linear-gradient(104deg, rgba(0,0,0,0) 0 52%, rgba(245,215,122,.25) 52% 52.5%, rgba(0,0,0,0) 52.5%); pointer-events: none;"></div>
+
+  <!-- 背面の巨大ナンバー：透かし -->
+  <div class="disp" style="position: absolute; right: -10px; top: -30px; font-size: 420px; line-height: 1; color: rgba(245,215,122,.06); letter-spacing: 0;">A</div>
+
+  <!-- 勝者：左を丸ごと使う -->
+  <div style="position: absolute; left: -30px; bottom: -20px; width: 600px; height: 820px; display: flex; align-items: flex-end; justify-content: center;">
+    <img src="./mimi_win.webp" alt="ミミ" style="height: 100%; object-fit: contain; filter: drop-shadow(0 0 50px rgba(245,215,122,.45)) drop-shadow(0 20px 40px rgba(0,0,0,.85));">
+  </div>
+  <!-- 敗者：奥に小さく、暗く -->
+  <div style="position: absolute; right: 20px; bottom: 236px; width: 200px; height: 230px; display: flex; align-items: flex-end; justify-content: center; opacity: .6;">
+    <img src="./polka_blush.webp" alt="ポルカ" style="height: 100%; object-fit: contain; filter: brightness(.55) saturate(.6) drop-shadow(0 14px 28px rgba(0,0,0,.8));">
+  </div>
+  <div style="position: absolute; right: 20px; bottom: 208px; width: 200px; text-align: center; font-size: 11px; font-weight: 700; color: #c4b89a;">「へへっ……今日は負けでいいや。次は勝つからね！」</div>
+
+  <!-- 勝利：縦書きの巨大文字 -->
+  <div style="position: absolute; left: 540px; top: 36px; writing-mode: vertical-rl; font-size: 120px; font-weight: 900; color: #f5d77a; letter-spacing: .12em; line-height: 1; text-shadow: 0 0 40px rgba(245,215,122,.6), 0 10px 0 rgba(0,0,0,.5);">勝利</div>
+  <div class="disp" style="position: absolute; left: 676px; top: 44px; writing-mode: vertical-rl; font-size: 18px; color: #c4b89a; letter-spacing: .4em;">STAGE 02 — POLKA</div>
+
+  <!-- 成果：右上にランク判子＋コイン -->
+  <div style="position: absolute; left: 740px; top: 56px; display: flex; align-items: center; gap: 28px;">
+    <div style="position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; transform: rotate(-8deg);">
+      <div style="position: absolute; inset: 0; border-radius: 50%; border: 5px solid #f5d77a; box-shadow: 0 0 30px rgba(245,215,122,.6), inset 0 0 0 3px rgba(11,5,16,1), inset 0 0 0 5px rgba(245,215,122,.6);"></div>
+      <div style="text-align: center;">
+        <div class="disp" style="font-size: 14px; color: #f5d77a; letter-spacing: .4em;">RANK</div>
+        <div class="disp" style="font-size: 96px; line-height: .85; color: #f5d77a; text-shadow: 0 0 20px rgba(245,215,122,.8);">A</div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px;">
+      <div class="disp" style="font-size: 16px; color: #c4b89a; letter-spacing: .35em;">COINS</div>
+      <div class="disp" style="font-size: 110px; line-height: .85; color: #f5d77a; text-shadow: 0 0 40px rgba(245,215,122,.6);">+650</div>
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <div style="padding: 3px 10px; background: rgba(245,215,122,.9); color: #14081d; font-size: 12px; font-weight: 900; transform: skewX(-12deg);">初回クリア +500</div>
+        <div style="padding: 3px 10px; background: rgba(245,215,122,.9); color: #14081d; font-size: 12px; font-weight: 900; transform: skewX(-12deg);">A評価 +150</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 戦績：横一列の数字 -->
+  <div style="position: absolute; left: 740px; top: 290px; display: flex; gap: 34px;">
+    <div class="stat"><div class="k">SCORE</div><div class="v disp">90</div></div>
+    <div class="stat"><div class="k">心理バトル</div><div class="v disp">3 <span style="font-size: 16px; color: #c4b89a;">/ 4</span></div></div>
+    <div class="stat"><div class="k">最大役</div><div class="v disp" style="font-size: 22px;">フルハウス</div></div>
+    <div class="stat"><div class="k">ブラフブレイク</div><div class="v disp" style="color: #ff9a9a;">1</div></div>
+  </div>
+
+  <!-- 称号：さりげなく -->
+  <div style="position: absolute; left: 740px; top: 380px; display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: rgba(245,215,122,.1); border: 1px solid rgba(245,215,122,.35); width: fit-content;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5d77a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M5 4h14v5a7 7 0 0 1-14 0z"></path><path d="M5 6H2v2a4 4 0 0 0 4 4M19 6h3v2a4 4 0 0 1-4 4"></path></svg>
+    <div style="font-size: 13px; font-weight: 900; color: #f5d77a;">称号獲得　<span style="color: #f7eecf;">卒業生</span>　<span style="font-weight: 600; color: #c4b89a;">初めてキャラを撃破</span></div>
+  </div>
+
+  <!-- 次へ：主ボタン1つ -->
+  <div style="position: absolute; left: 740px; bottom: 60px; width: 500px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: baseline; gap: 12px;">
+      <div class="disp" style="font-size: 18px; color: #c4b89a; letter-spacing: .35em;">NEXT</div>
+      <div style="font-size: 18px; font-weight: 900; color: #f7eecf;">Stage 03 セリナ戦 解放</div>
+      <div style="font-size: 12px; color: #c4b89a; font-weight: 700;">冷静な分析家。ボード危険度を読め</div>
+    </div>
+    <button class="btn" style="background: linear-gradient(90deg, #f5d77a, #d9b35a); color: #14081d; height: 72px; box-shadow: 0 0 30px rgba(245,215,122,.45), 0 12px 26px rgba(0,0,0,.6);"><span style="font-size: 24px;">セリナに挑戦</span><span class="disp" style="font-size: 28px;">→</span></button>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+      <button class="btn" style="background: rgba(0,0,0,.55); color: #f7eecf; height: 50px; box-shadow: inset 0 0 0 1px rgba(245,215,122,.4);"><span style="font-size: 16px;">再戦</span></button>
+      <button class="btn" style="background: rgba(0,0,0,.55); color: #f7eecf; height: 50px; box-shadow: inset 0 0 0 1px rgba(245,215,122,.4);"><span style="font-size: 16px;">ロビーへ</span></button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

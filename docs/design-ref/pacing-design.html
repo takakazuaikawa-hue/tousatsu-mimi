@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Bebas+Neue&display=swap">
+  <style>
+    body { margin: 0; font-family: "Noto Sans JP", "Yu Gothic", "Hiragino Sans", sans-serif; color: #f7eecf; background: #0b0510; }
+    a { color: #f5d77a; } a:hover { color: #fff3c4; }
+    .disp { font-family: "Bebas Neue", "Noto Sans JP", Impact, sans-serif; letter-spacing: .06em; }
+    .lane { display: flex; align-items: center; gap: 0; }
+    .seg { height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0 10px; box-shadow: inset 0 0 0 1px rgba(245,215,122,.3); }
+    .seg .t { font-size: 12.5px; font-weight: 900; white-space: nowrap; }
+    .seg .ms { font-family: "Bebas Neue", Impact, sans-serif; font-size: 15px; color: #c4b89a; }
+    .tier { padding: 14px 16px; background: rgba(20,8,29,.9); box-shadow: inset 0 0 0 1px rgba(245,215,122,.35); display: flex; flex-direction: column; gap: 8px; }
+    .tier h4 { margin: 0; font-size: 16px; }
+    .tier p { margin: 0; font-size: 12.5px; color: #c4b89a; font-weight: 700; line-height: 1.55; }
+  </style>
+</helmet>
+<div style="position: relative; width: 1280px; height: 800px; overflow: hidden; background: #0b0510; padding: 0;">
+  <div style="position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(90,42,138,.4), rgba(0,0,0,0) 55%);"></div>
+  <div style="position: absolute; left: 36px; top: 16px;">
+    <div class="disp" style="font-size: 20px; color: #c4b89a; letter-spacing: .4em;">TEMPO &amp; ANTICIPATION</div>
+    <div style="font-size: 36px; font-weight: 900; letter-spacing: .08em;">バトル演出のテンポ設計 — 「溜め」の3段階</div>
+  </div>
+
+  <!-- 原則 -->
+  <div style="position: absolute; left: 36px; top: 106px; right: 36px; padding: 12px 16px; background: rgba(245,215,122,.1); box-shadow: inset 0 0 0 1px rgba(245,215,122,.35); font-size: 13px; color: #f5d77a; font-weight: 700; line-height: 1.6;">
+    原則：<b>待たせるのは「結果の直前」だけ</b>。操作へのレスポンスは常に即時（ボタンは0ms反応）。期待が乗る瞬間＝場札の開示・ショーダウン・心理バトル正解発表だけを、接戦度に応じて引き延ばす。ハズレ濃厚のハンドは今のまま速く流す（パチスロの「通常時は速い、アツい時だけ長い」の文法）
+  </div>
+
+  <!-- 接戦度→溜めティア -->
+  <div style="position: absolute; left: 36px; top: 196px; width: 590px; display: flex; flex-direction: column; gap: 12px;">
+    <div class="disp" style="font-size: 18px; color: #c4b89a; letter-spacing: .3em;">REVEAL TIERS（勝率と潜在役から自動判定）</div>
+    <div class="tier">
+      <h4><span style="color:#c4b89a;">通常</span>　勝敗にほぼ関与しない札</h4>
+      <p>今のテンポのまま：スッと配る（1枚 130ms ずらし）。待たせない</p>
+    </div>
+    <div class="tier" style="box-shadow: inset 0 0 0 2px #f5d77a, 0 0 20px rgba(245,215,122,.3);">
+      <h4><span style="color:#f5d77a;">リーチ（金）</span>　この1枚で役が完成する可能性</h4>
+      <p>該当の場札だけ配置後 <b>800ms 裏のまま静止</b> → 金のフチが明滅（心音SE小）→ めくり。ターン/リバーでフラッシュ・ストレートドローを持っている時に自動発動</p>
+    </div>
+    <div class="tier" style="box-shadow: inset 0 0 0 2px #ff3d57, 0 0 26px rgba(255,61,87,.4);">
+      <h4><span style="color:#ff3d57;">激アツ（虹）</span>　勝敗がこの1枚で入れ替わる</h4>
+      <p>画面全体が暗転 → 札が中央へズームして <b>1.6秒 震えながら発光</b>（虹色オーラ＋速い心音）→ ミミの息を呑むカットイン0.6秒 → めくり → 結果に応じ WIN 爆発 or 落胆の静寂0.8秒。1バトル2回まで（濫発防止）</p>
+    </div>
+    <div class="tier" style="box-shadow: inset 0 0 0 2px #ffc1d8;">
+      <h4><span style="color:#ffc1d8;">読み切り（ポケモンゲット文法）</span>　心理バトル正解発表</h4>
+      <p>選択 → 相手の顔アップが <b>カタ…カタ…と2回揺れて静止</b>（ボール揺れ相当・各600ms）→ 3拍目で「読み切った！」スタンプ or 「外れ…」。正解率が高いほど揺れを1回に短縮（テンポ維持）</p>
+    </div>
+  </div>
+
+  <!-- 1ハンドのタイムライン比較 -->
+  <div style="position: absolute; left: 660px; top: 196px; right: 36px; display: flex; flex-direction: column; gap: 18px;">
+    <div class="disp" style="font-size: 18px; color: #c4b89a; letter-spacing: .3em;">HAND TIMELINE</div>
+    <div>
+      <div style="font-size: 13px; font-weight: 900; color: #c4b89a; margin-bottom: 6px;">通常ハンド（現状維持 ＝ 約20秒）</div>
+      <div class="lane">
+        <div class="seg" style="width: 90px; background: rgba(90,42,138,.4);"><span class="t">配札</span><span class="ms">0.8s</span></div>
+        <div class="seg" style="width: 120px; background: rgba(200,37,58,.35);"><span class="t">相手ベット</span><span class="ms">1.5s</span></div>
+        <div class="seg" style="width: 100px; background: rgba(245,215,122,.25);"><span class="t">決断</span><span class="ms">自由</span></div>
+        <div class="seg" style="width: 90px; background: rgba(90,42,138,.4);"><span class="t">場札</span><span class="ms">0.9s</span></div>
+        <div class="seg" style="width: 130px; background: rgba(245,215,122,.4);"><span class="t">ショーダウン</span><span class="ms">3.6s</span></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 13px; font-weight: 900; color: #ff9a9a; margin-bottom: 6px;">激アツハンド（ここだけ長い ＝ 約35秒）</div>
+      <div class="lane">
+        <div class="seg" style="width: 70px; background: rgba(90,42,138,.4);"><span class="t">配札</span><span class="ms">0.8s</span></div>
+        <div class="seg" style="width: 110px; background: rgba(200,37,58,.5);"><span class="t">カットイン</span><span class="ms">2.6s</span></div>
+        <div class="seg" style="width: 90px; background: rgba(245,215,122,.25);"><span class="t">決断</span><span class="ms">自由</span></div>
+        <div class="seg" style="width: 150px; background: linear-gradient(90deg, rgba(255,61,87,.6), rgba(245,215,122,.5)); box-shadow: inset 0 0 0 2px #ff3d57;"><span class="t">激アツ溜め</span><span class="ms">2.8s</span></div>
+        <div class="seg" style="width: 170px; background: rgba(245,215,122,.5);"><span class="t">ショーダウン（開示ずらし）</span><span class="ms">5.5s</span></div>
+        <div class="seg" style="width: 100px; background: rgba(245,215,122,.3);"><span class="t">余韻</span><span class="ms">1.2s</span></div>
+      </div>
+    </div>
+    <div class="tier">
+      <h4>操作の快適さは削らない</h4>
+      <p>・演出はすべて<b>タップでスキップ可</b>（スキップしても結果は同じ）<br>・「相手の考える間」は今の 0.4〜1.7秒 を維持（迷いの演技はここだけ）<br>・連続ハンドで同じティアが続いたら自動で1段階短縮（飽き防止）</p>
+    </div>
+    <div class="tier">
+      <h4>実装の骨子（承認後に着手）</h4>
+      <p>接戦度 = |ミミ勝率 − 50%| と ドロー有無から `revealTier` を算出 → `advanceAfterCall()` の場札公開と `showdown()` の開示を Promise チェーン化してティア別の待ちを挿入。SE は既存 Web Audio（心音は実装済み）を流用</p>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ミミの読み合い（開発用）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Shippori+Mincho+B1:wght@700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap">
+<link rel="stylesheet" href="core.css">
+<style>
+  /* 開発用ページの外枠だけ（ゲームの見た目は core.css） */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: #f7eecf; font-family: "Noto Sans JP", "Yu Gothic", "Hiragino Sans", sans-serif; font-size: 15px; line-height: 1.6;
+    background: radial-gradient(120% 80% at 50% 0%, #3a0f1b 0%, #1d080e 55%, #0b0306 100%) fixed;
+    padding-inline: 16px; padding-block: 18px 40px;
+  }
+  .app { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  .brand { font-family: "Bebas Neue", sans-serif; letter-spacing: .2em; color: #d9b35a; font-size: 15px; }
+  h1 { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 800; font-size: clamp(26px, 5vw, 38px); margin: 2px 0 0; letter-spacing: .04em; text-wrap: balance; }
+  .lead { margin: 0; color: #c4b89a; max-width: 60ch; font-size: 14px; }
+  .tabs { display: flex; flex-direction: column; gap: 8px; }
+  .tab-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .tab-group > span { font-family: "Bebas Neue", sans-serif; letter-spacing: .2em; font-size: 13px; color: #d9b35a; width: 62px; }
+  .tab { position: relative; border: 0; cursor: pointer; padding: 8px 18px 7px; color: #c4b89a; background: transparent; font: inherit; font-weight: 700; font-size: 13px; isolation: isolate; }
+  .tab::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); background: rgba(0,0,0,.45); border: 1px solid rgba(217,179,90,.3); }
+  .tab small { display: block; font-family: "Bebas Neue", sans-serif; font-size: 11px; letter-spacing: .14em; color: #d9b35a; font-weight: 400; }
+  .tab[aria-selected="true"] { color: #fff; }
+  .tab[aria-selected="true"]::before { background: linear-gradient(90deg, #c8253a, #7d1022); border-color: #f5d77a; box-shadow: 0 0 16px rgba(200,37,58,.5); }
+  .tab.is-new::after { content: "NEW"; position: absolute; top: -8px; right: -4px; font-family: "Bebas Neue", sans-serif; font-size: 11px; letter-spacing: .1em; background: #f5d77a; color: #1d080e; padding: 0 5px; }
+  .notes { display: grid; gap: 8px; color: #c4b89a; font-size: 13px; }
+  .notes h2 { margin: 0; font-family: "Shippori Mincho B1", serif; font-size: 18px; color: #f7eecf; }
+  .notes ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; max-width: 72ch; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">MIMI'S HOLD'EM · PSYCH &amp; LOGIC BATTLE</div>
+    <h1>ミミの読み合い（開発用）</h1>
+    <p class="lead">心理バトルと論理バトルの全種類を触れるページです。本編には MB.mount() で組み込みます（embed-test.html が本編に近い形）。どの種類も最後に「読みに賭ける」を選び、当たればコイン、3連続でぱにゅフィーバーに入ります。</p>
+  </header>
+  <nav class="tabs" id="tabs" aria-label="種類を選ぶ"></nav>
+  <div id="mb-host"></div>
+  <section class="notes">
+    <h2>メモ</h2>
+    <ul>
+      <li>画像は ../assets/ から読みます（MB.config の base）。</li>
+      <li>フィーバー（3回続けて当たりが2倍）を当て切ると、倍率を止める<b>ボーナスルーレット</b>が出ます。</li>
+    </ul>
+  </section>
+</div>
+<script src="core.js"></script>
+<script>MB.config({ base: '../' });</script>
+<script src="games/detective.js"></script>
+<script src="games/stare.js"></script>
+<script src="games/doubt.js"></script>
+<script src="games/objection.js"></script>
+<script src="games/gacha.js"></script>
+<script src="games/handbuild.js"></script>
+<script src="games/highlow.js"></script>
+<script src="games/danger.js"></script>
+<script src="games/sniper.js"></script>
+<script src="games/outs.js"></script>
+<script src="games/suspects.js"></script>
+<script>MB.boot();</script>
+</body>
+</html>

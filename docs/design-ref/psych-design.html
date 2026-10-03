@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Bebas+Neue&display=swap">
+  <style>
+    body { margin: 0; font-family: "Noto Sans JP", "Yu Gothic", "Hiragino Sans", sans-serif; color: #f7eecf; background: #0b0510; }
+    a { color: #f5d77a; } a:hover { color: #fff3c4; }
+    .disp { font-family: "Bebas Neue", "Noto Sans JP", Impact, sans-serif; letter-spacing: .06em; }
+    .choice { position: relative; height: 62px; border: 0; color: #f7eecf; font-family: inherit; font-weight: 900; font-size: 18px; display: flex; align-items: center; gap: 18px; padding: 0 30px; transform: skewX(-12deg); background: rgba(20,8,29,.92); box-shadow: 0 12px 28px rgba(0,0,0,.6), inset 0 0 0 1px rgba(245,215,122,.35); text-align: left; }
+    .choice > * { transform: skewX(12deg); }
+    .key { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f5d77a; color: #14081d; font-family: "Bebas Neue", Impact, sans-serif; font-size: 30px; flex: 0 0 auto; }
+    .card { width: 50px; height: 70px; border-radius: 6px; background: #fffdf3; color: #1a1a1a; font-weight: 900; display: flex; flex-direction: column; padding: 5px 7px; box-shadow: 0 6px 14px rgba(0,0,0,.6); }
+    .card .r { font-size: 14px; line-height: 1; } .card .c { font-size: 24px; margin: auto; line-height: 1; } .card.red { color: #c8253a; }
+  </style>
+</helmet>
+<div style="position: relative; width: 1280px; height: 800px; overflow: hidden; background: #0b0510;">
+  <!-- 背景：紫の集中線＋赤の斜光。卓はぼかして奥へ -->
+  <div style="position: absolute; inset: 0; background: url(./poker_table_bg.jpg) center 40% / 140% no-repeat; filter: blur(6px) brightness(.35) saturate(.6);"></div>
+  <div style="position: absolute; inset: -300px; background: repeating-conic-gradient(from 0deg at 26% 62%, rgba(138,76,196,.22) 0deg 3deg, rgba(0,0,0,0) 3deg 11deg);"></div>
+  <div style="position: absolute; inset: 0; background: radial-gradient(ellipse at 26% 62%, rgba(255,61,87,.28) 0%, rgba(0,0,0,0) 45%), linear-gradient(180deg, rgba(11,5,16,.2) 0%, rgba(11,5,16,0) 40%, rgba(11,5,16,.85) 100%);"></div>
+  <div style="position: absolute; inset: 0; background: linear-gradient(104deg, rgba(0,0,0,0) 0 46%, rgba(245,215,122,.22) 46% 46.5%, rgba(0,0,0,0) 46.5%);"></div>
+
+  <!-- 見出し：左上の巨大文字。UIというより「章タイトル」 -->
+  <div style="position: absolute; left: 470px; top: 24px; display: flex; flex-direction: column; gap: 0;">
+    <div class="disp" style="font-size: 22px; color: #d9c6ff; letter-spacing: .4em;">PSYCH BATTLE</div>
+    <div style="font-size: 44px; font-weight: 900; color: #fff; letter-spacing: .1em; line-height: 1.1; text-shadow: 0 0 24px rgba(255,193,216,.6), 0 4px 0 rgba(0,0,0,.5);">心理バトル</div>
+  </div>
+  <!-- ゲージ：ミミミ -->
+  <div style="position: absolute; right: 40px; top: 28px; display: flex; align-items: center; gap: 12px;">
+    <div class="disp" style="font-size: 18px; color: #c4b89a; letter-spacing: .3em;">ミミミ</div>
+    <div style="display: flex; gap: 6px;">
+      <div style="width: 38px; height: 14px; background: #ff3d57; transform: skewX(-20deg);"></div>
+      <div style="width: 38px; height: 14px; background: #ff3d57; transform: skewX(-20deg);"></div>
+      <div style="width: 38px; height: 14px; background: rgba(255,255,255,.12); transform: skewX(-20deg);"></div>
+    </div>
+    <div class="disp" style="font-size: 22px; color: #ff9a9a;">2 / 3</div>
+  </div>
+
+  <!-- 相手：画面の左半分を占める。動揺の表情 -->
+  <div style="position: absolute; left: -40px; bottom: -70px; width: 560px; height: 790px; display: flex; align-items: flex-end; justify-content: center;">
+    <img src="./polka_panic.webp" alt="ポルカ" style="height: 100%; object-fit: contain; filter: drop-shadow(0 0 50px rgba(255,61,87,.4)) drop-shadow(0 20px 40px rgba(0,0,0,.85));">
+  </div>
+  <!-- 気づき（ゾゾゾ反応）：顔の横に貼る -->
+  <div style="position: absolute; left: 470px; top: 236px; padding: 8px 14px; background: #fffdf3; color: #14081d; font-size: 15px; font-weight: 900; transform: rotate(-6deg); box-shadow: 0 8px 18px rgba(0,0,0,.6); border-left: 7px solid #c8253a;">ゾゾゾ反応：声が裏返ってる</div>
+
+  <!-- セリフ：舞台の字幕帯。巨大に -->
+  <div style="position: absolute; left: 430px; right: -40px; top: 318px; height: 104px; background: #fffdf3; transform: skewY(-2.5deg); box-shadow: 0 16px 40px rgba(0,0,0,.7); display: flex; align-items: center; padding-left: 180px;">
+    <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 170px; background: #c8253a; transform: skewX(-12deg); transform-origin: 0 100%;"></div>
+    <div class="disp" style="position: absolute; left: 28px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 40px; color: #fff;">POLKA</div>
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <div style="font-size: 13px; font-weight: 900; color: #c8253a; letter-spacing: .2em;">2/3ポットをベットしながら</div>
+      <div style="font-size: 31px; font-weight: 900; color: #14081d; line-height: 1.2;">「これは……ヤバいやつだよ……うん！」</div>
+    </div>
+  </div>
+
+  <!-- 状況：帯の下に小さく（場札・手札・ポット） -->
+  <div style="position: absolute; left: 560px; top: 456px; display: flex; align-items: center; gap: 16px;">
+    <div style="display: flex; gap: 6px;">
+      <div class="card red"><span class="r">K♦</span><span class="c">♦</span></div>
+      <div class="card"><span class="r">2♠</span><span class="c">♠</span></div>
+      <div class="card"><span class="r">9♠</span><span class="c">♠</span></div>
+    </div>
+    <div class="disp" style="font-size: 26px; color: #7d7360;">VS</div>
+    <div style="display: flex; gap: 6px;">
+      <div class="card"><span class="r">Q♣</span><span class="c">♣</span></div>
+      <div class="card"><span class="r">10♠</span><span class="c">♠</span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; margin-left: 12px;">
+      <div class="disp" style="font-size: 16px; color: #c4b89a; letter-spacing: .3em;">POT</div>
+      <div class="disp" style="font-size: 36px; line-height: .9; color: #f5d77a;">166</div>
+      <div style="font-size: 12px; font-weight: 900; color: #ff9a9a;">コール 66 必要</div>
+    </div>
+  </div>
+
+  <!-- 問い：ミミの心の声 -->
+  <div style="position: absolute; left: 560px; top: 538px; font-size: 15px; font-weight: 700; font-style: italic; color: #ffc1d8; text-shadow: 0 2px 6px rgba(0,0,0,.8);">（強く見せてるのに、声が……。この言葉、どう読む？）</div>
+
+  <!-- 選択肢：右側に斜めスラブ3枚 -->
+  <div style="position: absolute; left: 560px; right: 56px; top: 568px; display: flex; flex-direction: column; gap: 8px;">
+    <button class="choice"><div class="key">A</div><div>セリフは関係ない。自分の手だけで判断</div></button>
+    <button class="choice" style="box-shadow: 0 0 0 3px #ffc1d8, 0 0 30px rgba(255,193,216,.45), 0 12px 28px rgba(0,0,0,.6);"><div class="key" style="background: #ffc1d8;">B</div><div>強気に言いすぎ＝逆に弱い。<span style="color: #f5d77a;">コール or レイズ</span></div></button>
+    <button class="choice" style="opacity: .4;"><div class="key" style="background: #7d7360;">C</div><div style="text-decoration: line-through;">本人がヤバいと言ってるから降りる</div></button>
+  </div>
+
+  <!-- ぱにゅぱにゅ：右上の帯下、アクションとして -->
+  <button style="position: absolute; right: 56px; top: 78px; height: 46px; padding: 0 22px; border: 0; background: linear-gradient(180deg, #ffc1d8, #ff8fb8); color: #3a0f2a; font-weight: 900; font-size: 15px; font-family: inherit; transform: skewX(-12deg); box-shadow: 0 8px 20px rgba(255,143,184,.45);"><span style="display: inline-block; transform: skewX(12deg);">ぱにゅぱにゅ　残り 1</span></button>
+  <div style="position: absolute; right: 56px; top: 130px; font-size: 12px; color: #c4b89a; text-align: right;">ハズレを1つ消した（C）</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
