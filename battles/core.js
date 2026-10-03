@@ -82,6 +82,9 @@
     velvet: { name: 'VELVET', jp: 'ヴェルベット', face: 'face_velvet.webp', panic: 'art/velvet_cutin_panic.webp', smug: 'art/velvet_cutin_smug.webp', one: 'あたし' },
     rico: { name: 'RICO', jp: 'リコ先輩', face: 'face_rico.webp', panic: 'art/rico_cutin_panic.webp', smug: 'art/rico_cutin_smug.webp', one: 'アタシ' },
   };
+  // 動画は、読み込み係（本編の loader.js）が手元に読み終えた分だけ出す。間に合っていなければ出さず原画のまま
+  // （途中から動き出すのを見せない）。読み込み係の無い試作ページでは URL をそのまま使う
+  function localVideo(url) { if (!url) return ''; const MA = window.MimiAssets; if (!MA) return url; const s = MA.videoSrc(url); if (!s) MA.warm([url]); return s || ''; }
   // VS カットインで動く顔（assets/battle/motion/<key>_vs.mp4 がある子）
   const VS_MOTION = { mimi: 1, polka: 1, selina: 1, grano: 1, velvet: 1 };
   const MIMI_RAW = { win: 'art/mimi_bust_win.webp', sad: 'art/mimi_bust_sad.webp', think: 'art/mimi_bust_think.webp', shock: 'art/mimi_bust_shock.webp', smug: 'art/mimi_bust_smug.webp', calm: 'art/mimi_bust_calm.webp' };
@@ -209,7 +212,7 @@
     hostEl.innerHTML = `<div class="mb-purse" aria-live="polite">
         <div>コイン<b id="mb-p-coins">0</b></div>
         <div>コンボ<b id="mb-p-combo">0</b></div>
-        <div class="mb-fever-box">フィーバー<b id="mb-p-fever">0/3</b><i class="mb-fever-bar" id="mb-p-fever-bar"></i></div>
+        <div class="mb-fever-box">フィーバー<b id="mb-p-fever">0/3</b><span class="mb-lamps" id="mb-p-lamps"><i></i><i></i><i></i></span><i class="mb-fever-bar" id="mb-p-fever-bar"></i></div>
       </div>
       <div class="mb-body">
         <div class="mb-scroll" id="mb-scroll">
@@ -245,6 +248,8 @@
       $('#mb-p-fever').textContent = P.fever > 0 ? `あと${P.fever}回` : `${Math.min(P.combo, 3)}/3`;
       $('#mb-p-fever-bar').style.width = (P.fever > 0 ? 100 : Math.min(P.combo, 3) / 3 * 100) + '%';
       host.classList.toggle('is-fever', P.fever > 0);
+      // フィーバーの残りはランプで見せる（1回使うごとに1つ消える）
+      const lamps = $('#mb-p-lamps'); if (lamps) [...lamps.children].forEach((l, i) => l.classList.toggle('on', i < P.fever));
     }
     // 金の粒。x, y は画面座標（getBoundingClientRect の値）。本編のように舞台が拡縮されていても合うよう、見かけの倍率で割る
     function sparkles(x, y, n = 18) {
@@ -287,7 +292,13 @@
       }
       if (!revealTarget) return;
       clearTimeout(revealTimer);
-      revealTimer = setTimeout(() => { const t = revealTarget; revealTarget = null; if (t && t.isConnected) reveal(t, 'nearest'); }, 160);
+      // 寄せる先は「押せる物のうち最後のもの」。説明とボタンをまとめた枠が舞台より縦に長いと、枠の上端に合わせて
+      // 一番下の決めるボタンが切れてしまう（アウツで実測）。ボタンが見えていれば説明は少しスクロールすれば読める
+      revealTimer = setTimeout(() => {
+        const t = revealTarget; revealTarget = null; if (!t || !t.isConnected) return;
+        const last = t.matches('button, input') ? t : [...t.querySelectorAll('button:not([disabled]), input')].pop();
+        reveal(last || t, 'nearest');
+      }, 160);
     });
     autoReveal.observe(gameRoot, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled'] });
 
@@ -300,7 +311,7 @@
         const el = document.createElement('div'); el.className = 'mb-roulette';
         el.innerHTML = `<div class="mb-rl-card mb-pop">
             <div class="mb-rl-title">BONUS CHANCE!<small>フィーバー完走のご褒美。止めた倍率 × ${unit} コイン</small></div>
-            <div class="mb-rl-window"><div class="mb-rl-track">${seq.map(v => `<span class="mb-rl-cell v${v}">×${v}</span>`).join('')}</div><div class="mb-rl-mark"></div></div>
+            <div class="mb-rl-window"><i class="mb-rl-bulbs top"></i><i class="mb-rl-bulbs bot"></i><div class="mb-rl-track">${seq.map(v => `<span class="mb-rl-cell v${v}">×${v}</span>`).join('')}</div><div class="mb-rl-mark"></div></div>
             <div class="mb-rl-foot"><button class="btn gold" id="mb-rl-stop">ストップ！<small>好きな所でタップ</small></button></div>
           </div>`;
         layer.appendChild(el);
@@ -333,6 +344,11 @@
             const cell = track.children[i]; cell.classList.add('hit');
             const gain = unit * want; P.coins += gain; purse();
             if (want >= 5) sfx.jackpot(); else sfx.fanfare();
+            // 大当たり（×5・×10）は後光と揺れ、×10 の隣で止まった「惜しい」は赤い閃き
+            const card = el.querySelector('.mb-rl-card');
+            if (want >= 5) { card.classList.add(want >= 10 ? 'is-jackpot' : 'is-big'); const rays = document.createElement('i'); rays.className = 'mb-fv-rays mb-rl-rays'; el.insertBefore(rays, card); }
+            else if (tease) card.classList.add('is-tease');
+            el.classList.add('is-stopped');
             const r2 = cell.getBoundingClientRect(); sparkles(r2.left + r2.width / 2, r2.top + r2.height / 2, want >= 5 ? 50 : 24);
             foot.innerHTML = `<div class="mb-rl-gain ${want >= 5 ? 'big' : ''}">×${want}　+${gain}<small> コイン</small></div>
               ${tease ? '<div class="mb-rl-tease">あと少しで ×10 だった……！</div>' : ''}
@@ -383,7 +399,7 @@
             const c = api.char || CHARS.polka;
             const oid = api.charId || 'polka';
             // 斜めの窓に顔。動画がある子は窓の中で一度だけ動いて原画（最後のコマ）で止まる
-            const win = (k, name, side) => `<div class="mb-vs-win ${side}"><div class="mb-vs-pic"><img src="${A('art/face/' + k + '_smug.webp')}" alt="">${VS_MOTION[k] ? `<video src="${A('art/motion/' + k + '_vs.mp4')}" muted playsinline preload="auto"></video>` : ''}</div><b class="mb-vs-name">${name}</b></div>`;
+            const win = (k, name, side) => `<div class="mb-vs-win ${side}"><div class="mb-vs-pic"><img src="${A('art/face/' + k + '_smug.webp')}" alt="">${VS_MOTION[k] && localVideo(A('art/motion/' + k + '_vs.mp4')) ? `<video src="${localVideo(A('art/motion/' + k + '_vs.mp4'))}" muted playsinline preload="auto"></video>` : ''}</div><b class="mb-vs-name">${name}</b></div>`;
             const el = document.createElement('div');
             el.className = 'mb-intro' + (kind === 'logic' ? ' is-logic' : '');
             el.innerHTML = `${win('mimi', 'MIMI', 'me')}${win(oid, c.name, 'opp')}<div class="mb-vs-flash"></div>
@@ -470,7 +486,7 @@
           // 見抜かれる瞬間の動画（心理バトルで読み勝った時だけ）。動かない環境・読み込めない時は今までの絵のまま
           const MOTION = { polka: 1, selina: 1, grano: 1, velvet: 1 };
           // 心理：読み勝った時だけ「見抜かれる瞬間」の顔。論理：当てれば相手のミニキャラが崩れ、外せば勝ち誇る
-          const motion = !MOTION[api.charId] || reduce ? '' : g.group === 'psych' ? (o.correct ? A('art/motion/' + api.charId + '_busted.mp4') : '') : A('art/motion/' + api.charId + '_chibi_' + (o.correct ? 'lose' : 'win') + '.mp4');
+          const motion = localVideo(!MOTION[api.charId] || reduce ? '' : g.group === 'psych' ? (o.correct ? A('art/motion/' + api.charId + '_busted.mp4') : '') : A('art/motion/' + api.charId + '_chibi_' + (o.correct ? 'lose' : 'win') + '.mp4'));
           const exitMode = !!opts.exitLabel; // 組み込み：ボタンは出口（onExit）。無ければ同じ種類をもう一回（単独ページ用）
           const el = document.createElement('div');
           el.className = 'mb-result ' + cls;
@@ -494,8 +510,10 @@
           if (enterFever) {
             await wait(600);
             if (!live()) return;
-            const fb = document.createElement('div'); fb.className = 'mb-fever-banner'; fb.innerHTML = 'PANYU FEVER!<small>3回、ご褒美2倍</small>';
-            layer.appendChild(fb); sfx.jackpot(); setTimeout(() => fb.remove(), 1700);
+            // 突入：金の閃光 → 背後で回る光の筋 → 斜めの帯に PANYU FEVER! → ランプ3つが順に点く（動かすのは位置・回転・濃さだけ）
+            const fb = document.createElement('div'); fb.className = 'mb-fever-in';
+            fb.innerHTML = '<i class="mb-fv-flash"></i><i class="mb-fv-rays"></i><div class="mb-fv-slab"><b>PANYU FEVER!</b><small>3回、ご褒美2倍</small><span class="mb-fv-lamps"><i></i><i></i><i></i></span></div>';
+            layer.appendChild(fb); sfx.jackpot(); setTimeout(() => fb.remove(), 2300);
           }
           if (feverDone) {
             await wait(900);

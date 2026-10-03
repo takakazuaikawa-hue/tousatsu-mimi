@@ -11,7 +11,7 @@ import { serve } from '../lib/server.mjs';
 import { REPO } from '../lib/session.mjs';
 
 const [outDir, ...files] = process.argv.slice(2);
-const WMIN = +(process.env.WMIN || 236), SAT = +(process.env.SAT || 14), BIG = +(process.env.BIG || 2000), NEAR = +(process.env.NEAR || 20), SMALL = +(process.env.SMALL || 40), BAND = +(process.env.BAND || 3);
+const WMIN = +(process.env.WMIN || 236), SAT = +(process.env.SAT || 14), BIG = +(process.env.BIG || 2000), NEAR = +(process.env.NEAR || 20), SMALL = +(process.env.SMALL || 40), BAND = +(process.env.BAND || 3), RINGDARK = +(process.env.RINGDARK || 1), MINDEEP = +(process.env.MINDEEP || 0);
 fs.mkdirSync(path.resolve(outDir), { recursive: true });
 const server = await serve(REPO, 0); const br = await launch({}); const page = await br.newPage();
 await page.goto(`http://127.0.0.1:${server.port}/qa/alpha/page.html`); await sleep(200);
@@ -33,13 +33,14 @@ for (const f of files) {
       for (let s = 1; s <= 4; s++) { const nx = []; for (const q of fr) { const X = q % W, Y = (q / W) | 0; for (const o of [X > 0 ? q - 1 : -1, X < W - 1 ? q + 1 : -1, Y > 0 ? q - W : -1, Y < H - 1 ? q + W : -1]) if (o >= 0 && depth[o] === 255) { depth[o] = s; nx.push(o); } } fr = nx; } }
     // 白の塊ごとに、大きさと透明部分に接するか・近いかを調べる
     const comp = new Int32Array(N).fill(-1); const info = []; const st = [];
-    for (let k = 0; k < N; k++) { if (!white[k] || comp[k] >= 0) continue; const id = info.length; let n = 0, touch = 0, close = 0, deep = 0; st.push(k); comp[k] = id;
+    for (let k = 0; k < N; k++) { if (!white[k] || comp[k] >= 0) continue; const id = info.length; let n = 0, touch = 0, close = 0, deep = 0, ring = 0, dark = 0; st.push(k); comp[k] = id;
       while (st.length) { const q = st.pop(); n++; if (near[q] !== 255) close = 1; if (depth[q] > deep) deep = depth[q]; const X = q % W, Y = (q / W) | 0;
-        for (const o of [X > 0 ? q - 1 : -1, X < W - 1 ? q + 1 : -1, Y > 0 ? q - W : -1, Y < H - 1 ? q + W : -1]) { if (o < 0) continue; if (trans[o]) touch = 1; if (white[o] && comp[o] < 0) { comp[o] = id; st.push(o); } } }
-      info.push({ n, touch, close, deep }); }
+        for (const o of [X > 0 ? q - 1 : -1, X < W - 1 ? q + 1 : -1, Y > 0 ? q - W : -1, Y < H - 1 ? q + W : -1]) { if (o < 0) continue; if (trans[o]) touch = 1; if (!white[o] && !trans[o]) { ring++; const pp = o * 4; if (Math.max(d[pp], d[pp + 1], d[pp + 2]) < 80) dark++; } if (white[o] && comp[o] < 0) { comp[o] = id; st.push(o); } } }
+      info.push({ n, touch, close, deep, dark: ring ? dark / ring : 0 }); }
     const kill = new Uint8Array(N); let removed = 0, blobs = 0;
     info.forEach((b, id) => { // 輪郭に接する白は細い筋（深さ2まで）だけ消す。接していない白は、輪郭の近くの髪のすき間か、とても大きな塊を消す
-      b.kill = b.touch ? (b.n >= 6 && b.deep <= 2) : ((b.close && b.n >= ${SMALL}) || b.n >= ${BIG}); if (b.kill) blobs++; });
+      b.kill = b.touch ? (b.n >= 6 && b.deep <= 2) : ((b.close && b.n >= ${SMALL} && b.dark < ${RINGDARK} && b.deep >= ${MINDEEP}) || b.n >= ${BIG});
+      if (b.kill) blobs++; }); // RINGDARK<1 の時：周りが黒い線で縁取られた白（袖口・襟・ファー）は服とみなして残す
     for (let k = 0; k < N; k++) if (comp[k] >= 0 && info[comp[k]].kill) { kill[k] = 1; removed++; }
     // 消した所＋元の透明部分からの距離（BAND px まで）
     const dist = new Uint8Array(N).fill(255); let front = [];

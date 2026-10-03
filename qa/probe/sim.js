@@ -73,7 +73,8 @@
           const need = S.cbO - S.cbP;
           if (S.P <= 0) { if (advance()) { done = true; break; } who = 'opp'; continue; }
           const d = playerDecide(pol, S, need);
-          if (d.t === 'fold' && need > 0) { S.O += S.pot; winner = 'opponent'; st.plFolds++; done = true; break; }
+          if (d.t === 'fold' && need > 0) { S.O += S.pot; winner = 'opponent'; st.plFolds++; S.pFolds = (S.pFolds || 0) + 1; done = true; break; }
+          if (d.t === 'call' && need > 0) S.pCalls = (S.pCalls || 0) + 1;
           if (d.t === 'fold' || d.t === 'check' || d.t === 'call') {
             const pay = Math.min(Math.max(0, need), S.P); S.P -= pay; S.cbP += pay; S.pot += pay;
             if (advance()) { done = true; break; } who = 'opp'; continue;
@@ -88,7 +89,7 @@
           const all = [...S.oh, ...S.comm];
           const hs = S.comm.length >= 3 ? handStrength01(all) : opponentPreflopStrength(S.oh);
           const ctx = { handStrength: hs, toCall: need, boardDanger: evaluateBoardDanger(S.comm), canCheck: need === 0, pot: S.pot, oppChips: S.O, playerChips: S.P, street: S.phase, playerAllIn: S.P <= 0,
-            hole: S.oh, board: S.comm, potBeforeBet: S.pot - need, playerShoves: S.shoves || 0 };
+            hole: S.oh, board: S.comm, potBeforeBet: S.pot - need, playerShoves: S.shoves || 0, playerCalls: S.pCalls || 0, playerFolds: S.pFolds || 0 };
           const post = S.phase !== 'preflop';
           const force = (S.handNo === 1 && S.phase === 'flop' && !S.psychResolved && S.cbP === 0);
           let act = decideOpponentAction(prof, ctx, { forceLargeBet: force });

@@ -591,6 +591,8 @@ function settleMotionToStill(v, src) {
   v.addEventListener('timeupdate', () => { if (v.duration && v.currentTime >= v.duration - 0.7) settle(); });
   v.addEventListener('ended', settle, { once: true });
 }
+// 読み込み係が手元に持っている動画の src（無ければ null）。読み込み係が無いページでは元の URL をそのまま使う
+function motionLocalSrc(src) { return window.MimiAssets ? window.MimiAssets.videoSrc(src) : src; }
 const MOTION_OK = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 // 動画が用意できている絵（assets/motion/cg_<id>.mp4 / ep_<id>.mp4）
 const MOTION_CG = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
@@ -599,6 +601,15 @@ function attachMotion(img) {
   if (!MOTION_OK || !img || img.__motion || !img.dataset.motion) return;
   img.__motion = true;
   if (!motionMayPlay(img.dataset.motion, img.dataset.motionReplay === '1')) return;
+  // 動画が手元に読み終わっていなければ、原画のまま（途中から動き出すのを見せない）。
+  // 自分で開くビューアだけは少し待つ。次に備えて読んでおく
+  const local = motionLocalSrc(img.dataset.motion);
+  if (!local) {
+    const MA = window.MimiAssets;
+    if (MA && img.dataset.motionReplay === '1') MA.ready([img.dataset.motion], 1200).then(ok => { if (ok && img.isConnected) { img.__motion = false; attachMotion(img); } });
+    else if (MA) MA.warm([img.dataset.motion]);
+    return;
+  }
   const v = document.createElement('video');
   // 画像と同じクラスを持たせ、切り抜き・色調・ゆっくり寄る演出などの見た目を揃える
   v.className = img.className + ' motion-layer';
@@ -621,7 +632,7 @@ function attachMotion(img) {
   v.addEventListener('error', () => v.remove(), { once: true });
   img.insertAdjacentElement('afterend', v);
   if (img.complete) place(); else img.addEventListener('load', place, { once: true });
-  v.src = img.dataset.motion;
+  v.src = local;
   playAfterPreload(v);
 }
 // CSS 背景に絵を敷いている画面（各話タイトル・エンディングの部屋）向け：
@@ -630,6 +641,8 @@ function attachMotionBg(host, src, opts) {
   if (!MOTION_OK || !host || host.querySelector(':scope > .motion-bg')) return;
   const o = opts || {};
   if (!motionMayPlay(src, o.replay)) return;
+  const local = motionLocalSrc(src);
+  if (!local) { if (window.MimiAssets) window.MimiAssets.warm([src]); return; } // 間に合わなければ原画のまま
   const v = document.createElement('video');
   v.className = 'motion-bg';
   v.muted = true; v.playsInline = true; v.autoplay = false; v.preload = 'auto';
@@ -639,7 +652,7 @@ function attachMotionBg(host, src, opts) {
   v.addEventListener('playing', () => v.classList.add('on'), { once: true });
   v.addEventListener('error', () => v.remove(), { once: true });
   host.insertBefore(v, host.firstChild);
-  v.src = src;
+  v.src = local;
   playAfterPreload(v);
 }
 // 画面は innerHTML で丸ごと作り直されるので、現れた data-motion 画像を見張って拾う
@@ -1084,6 +1097,11 @@ function decideOpponentAction(profile, ctx, opts = {}) {
   const street = board.length === 0 ? 'preflop' : board.length === 3 ? 'flop' : board.length === 4 ? 'turn' : 'river';
   const draw = (hole && hole.length === 2) ? countStrongOuts(hole, board) : 0;
   const size = (kind) => aiPickSize(st, kind, eq);
+  // よくコールしてくる相手（3回以上見て、付いてくる割合が高い）には、はったりを減らし、少し弱い手でも稼ぎに賭ける
+  const seen = (ctx.playerCalls || 0) + (ctx.playerFolds || 0);
+  const sticky = seen >= 3 ? Math.max(0, Math.min(1, (((ctx.playerCalls || 0) + 1) / (seen + 2) - 0.55) / 0.3)) : 0;
+  const bluffFreq = st.bluffFreq * (1 - 0.8 * sticky);
+  const valueEq = st.valueEq - 0.08 * sticky, valueFreq = Math.min(0.95, st.valueFreq + 0.15 * sticky);
 
   // 研修・初回の読み合いの練習：先に賭けて心理バトルを起こす（強さに合った意図で）
   if (opts.forceLargeBet && ctx.canCheck) {
@@ -1100,7 +1118,7 @@ function decideOpponentAction(profile, ctx, opts = {}) {
     const respect = st.respect * Math.max(0, 1 - 0.4 * Math.max(0, shoves - 1));
     const eqAdj = eq - respect * sizeRatio;
     if (!ctx.playerAllIn && eqAdj >= st.raiseEq && r < 0.75) return { type: 'bet', size: size('value'), intent: 'value', eq };
-    if (!ctx.playerAllIn && street !== 'river' && st.sizing !== 'flat' && eqAdj < 0.3 && r < st.bluffFreq * 0.2) {
+    if (!ctx.playerAllIn && street !== 'river' && st.sizing !== 'flat' && eqAdj < 0.3 && r < bluffFreq * 0.2) {
       return { type: 'bet', size: size('bluff'), intent: 'bluff', eq };
     }
     const drawBonus = (draw >= 8 && street !== 'river') ? 0.04 : 0;
@@ -1111,9 +1129,9 @@ function decideOpponentAction(profile, ctx, opts = {}) {
 
   // チェックで回ってきた：自分から賭けるか
   if (eq >= 0.8 && st.trap && r < st.trap && street !== 'river') return { type: 'check_call', intent: 'trap', eq };
-  if (eq >= st.valueEq && r < st.valueFreq) return { type: 'bet', size: size('value'), intent: 'value', eq };
-  if (draw >= 8 && street !== 'river' && r < 0.4 + st.bluffFreq * 0.5) return { type: 'bet', size: size('semi'), intent: 'draw', eq };
-  if (eq < 0.42 && street !== 'preflop' && r < st.bluffFreq) return { type: 'bet', size: size('bluff'), intent: 'bluff', eq };
+  if (eq >= valueEq && r < valueFreq) return { type: 'bet', size: size('value'), intent: 'value', eq };
+  if (draw >= 8 && street !== 'river' && r < 0.4 + bluffFreq * 0.5) return { type: 'bet', size: size('semi'), intent: 'draw', eq };
+  if (eq < 0.42 && street !== 'preflop' && r < bluffFreq) return { type: 'bet', size: size('bluff'), intent: 'bluff', eq };
   return { type: 'check_call', intent: 'check', eq };
 }
 
@@ -8387,6 +8405,7 @@ function goLobby() {
   document.body.dataset.oppBg = ''; // 相手別テーブル背景を解除
   document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
   state.screen = 'lobby';
+  warmNextBattle();
   // 入室時にリコの衣装を抽選し直す
   state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
   state.lobbyRicoChangedAt = 'lobby';
@@ -12176,7 +12195,40 @@ function chipBonusTotal() {
   return b;
 }
 
+// 対戦に入る前に、入った瞬間に要る絵と動画がそろうのを待つ（そろっていなければ「準備中」を出す）。
+// 対戦中に出るもの（表情の顔アップ・読み合いの絵と動画）は裏で読む。前の相手の分は手放す
+let __battleAssetsOpp = null, __battleGateBusy = false;
+function battleAssetsGate(opponentId, resume) {
+  const MA = window.MimiAssets; if (!MA) return true;
+  const key = (OPPONENTS[opponentId] || {}).imgKey || opponentId;
+  if (__battleAssetsOpp && __battleAssetsOpp !== opponentId) MA.release('battle:' + __battleAssetsOpp);
+  __battleAssetsOpp = opponentId;
+  const set = 'battle:' + opponentId, now = MA.sets.battleNow(opponentId, key);
+  const later = () => { MA.warm(MA.sets.battleLater(opponentId, key), { set, light: true }); MA.warm(MA.sets.reward(opponentId), { set, light: true }); };
+  if (MA.allReady(now)) { later(); return true; }
+  if (__battleGateBusy) return false;
+  __battleGateBusy = true;
+  const veil = showLoadingVeil();
+  MA.ready(now, 6000, { set }).then(() => { __battleGateBusy = false; veil(); later(); resume(); });
+  return false;
+}
+// 短い「準備中」。すぐ終わる時はちらつかないよう 0.2 秒待ってから出す。閉じる関数を返す
+function showLoadingVeil() {
+  const el = document.createElement('div');
+  el.className = 'loading-veil';
+  el.innerHTML = '<div class="lv-box"><i class="lv-spin"></i><span>準備中…</span></div>';
+  const t = setTimeout(() => { document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('on')); }, 200);
+  return () => { clearTimeout(t); el.classList.remove('on'); setTimeout(() => el.remove(), 250); };
+}
+// ロビーにいる間に、次の相手の対戦に入る分を読んでおく
+function warmNextBattle() {
+  const MA = window.MimiAssets; if (!MA || !save) return;
+  const next = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'].find(id => !(save.clearedStages || []).includes(id)) || 'velvet';
+  const key = (OPPONENTS[next] || {}).imgKey || next;
+  MA.warm(MA.sets.battleNow(next, key), { set: 'battle:' + next });
+}
 function startBattle(opponentId) {
+  if (!battleAssetsGate(opponentId, () => startBattle(opponentId))) return;
   // 開始チップは startBattleInternal が「卓の基本値＋持ち込みチップ」で決める。
   // （旧ロビーのスライダー値 save.chipChoice は今のロビーでは選べないので使わない）
   const isSkipLecture = opponentId === 'rico_tutorial' && window.__ricoSkipLecture === true;
@@ -13236,6 +13288,7 @@ function playerCall() {
   state.currentBetPlayer += pay;
   state.pot += pay; pushPotChips(pay);
   log('bets', { actor: 'player', type: 'call', amount: pay });
+  if (need > 0) state.playerCalls = (state.playerCalls || 0) + 1; // 相手の賭けに付いていった回数（AI が覚える）
   state.isPlayerTurn = false;
   state.mimiThought = '「コールした。次の場札を見よう」';
   render();
@@ -13420,7 +13473,8 @@ function opponentTurnDecide() {
   const boardDanger = evaluateBoardDanger(state.community);
   const ctx = { handStrength: hs, toCall: need, boardDanger, canCheck: need === 0,
     hole: state.opponentHand, board: state.community, pot: state.pot, potBeforeBet: state.pot - need,
-    playerShoves: state.playerShoves || 0, playerAllIn: state.playerChips <= 0 };
+    playerShoves: state.playerShoves || 0, playerAllIn: state.playerChips <= 0,
+    playerCalls: state.playerCalls || 0, playerFolds: state.playerFolds || 0 };
 
   // P2: 体験ハンドでは相手は必ずチェック/コールで応じ、そのまま次ストリートへ自動進行
   // （体験ハンドはフロップの1択のみ・以降は自動でミミの勝利へ。フォールドもレイズもしない＝確実にミミが勝つ）
@@ -17530,6 +17584,17 @@ const DEFERRED_ASSETS = [
   'assets/backgrounds/table_grano.webp', 'assets/backgrounds/table_velvet.webp',
 ];
 function startDeferredPrefetch() {
+  // 読み込み係があれば、プレイの順番どおりに読む：ロビー → ロビーのBGM → 次の相手の対戦 → 残りの背景
+  const MA = window.MimiAssets;
+  if (MA) {
+    MA.warm(MA.sets.lobby(), { set: 'lobby' }).then(() => {
+      const a = document.getElementById('lobby-bgm-audio');
+      if (a && a.preload !== 'auto') { a.preload = 'auto'; try { a.load(); } catch (e) {} }
+      warmNextBattle();
+      MA.warm(DEFERRED_ASSETS.filter(u => !u.includes("assets/episodes/")), { light: true });
+    });
+    return;
+  }
   const run = () => {
     let k = 0;
     const next = () => {
@@ -17544,11 +17609,12 @@ function startDeferredPrefetch() {
   if (window.requestIdleCallback) requestIdleCallback(run, { timeout: 3000 });
   else setTimeout(run, 1500);
 }
-const PRELOAD_AUDIO = [
-  'assets/bgm/ending.m4a',
-];
+// 起動時に音楽は読まない（エンディングの曲は4.7MBあり、画像と帯域を取り合って起動を遅らせていた）
+const PRELOAD_AUDIO = [];
 
 function preloadOne(url) {
+  // 絵と動画は読み込み係で（展開まで済ませる）。最長8秒で諦めて先へ進む
+  if (window.MimiAssets && /\.(png|jpe?g|webp|gif|mp4)$/i.test(url)) return window.MimiAssets.ready([url], 8000, { set: 'boot' });
   return new Promise((resolve) => {
     if (/\.(png|jpe?g|webp|gif)$/i.test(url)) {
       const img = new Image();
@@ -17622,7 +17688,7 @@ async function startPreload() {
   const loadedEl = document.getElementById('preload-loaded');
   const totalEl = document.getElementById('preload-total');
   const tipEl = document.getElementById('preload-tip');
-  const all = [...PRELOAD_ASSETS, ...PRELOAD_AUDIO];
+  const all = [...(window.MimiAssets ? window.MimiAssets.sets.title() : []), ...PRELOAD_ASSETS, ...PRELOAD_AUDIO];
   totalEl.textContent = all.length;
   let loaded = 0;
   // tip rotation：ポーカー豆知識をランダム順で表示（読み応え重視で2.8秒間隔）

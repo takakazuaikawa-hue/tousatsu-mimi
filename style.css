@@ -17152,3 +17152,10 @@ body.is-danger .battle-screen::after {
 body.is-hidden *, body.is-hidden *::before, body.is-hidden *::after { animation-play-state: paused !important; }
 @media (prefers-reduced-motion: reduce) { .battle-screen.v2 .is-suggest::after, .battle-screen.v2 .is-intro-go::after, #fullscreen-btn::after, .login-bonus-day-today::after, .lb8-cta::after, .coach-hole::after { animation: none; opacity: .6; } }
 .battle-screen.v2 .v2-mimi-frame img { will-change: transform; }
+/* 読み込み待ちの「準備中」（対戦に入る時、絵と動画がそろうまで）。回転は transform だけで軽く */
+.loading-veil { position: fixed; inset: 0; z-index: 13000; display: grid; place-items: center; background: rgba(8,2,4,.55); opacity: 0; transition: opacity .2s; pointer-events: auto; }
+.loading-veil.on { opacity: 1; }
+.loading-veil .lv-box { display: flex; align-items: center; gap: 14px; padding: 14px 26px; transform: skewX(-12deg); background: linear-gradient(180deg, rgba(80,20,34,.96), rgba(24,7,12,.97)); border: 2px solid rgba(245,215,122,.85); color: #f7eecf; font-weight: 900; letter-spacing: .14em; }
+.loading-veil .lv-box > * { transform: skewX(12deg); }
+.loading-veil .lv-spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid rgba(245,215,122,.25); border-top-color: #f5d77a; animation: lvSpin .8s linear infinite; }
+@keyframes lvSpin { to { transform: skewX(12deg) rotate(360deg); } }

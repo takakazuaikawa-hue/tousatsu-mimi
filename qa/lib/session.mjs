@@ -37,8 +37,8 @@ function initScript(cfg) {
 })();`;
 }
 
-export async function openSession({ width = 1280, height = 800, mobile = false, speed = 1, seed = 12345, save = null, clear = true, probes = [] } = {}) {
-  const server = await serve(REPO, 0);
+export async function openSession({ width = 1280, height = 800, mobile = false, speed = 1, seed = 12345, save = null, clear = true, probes = [], cacheControl = 'no-store' } = {}) {
+  const server = await serve(REPO, 0, cacheControl);
   const browser = await launch({ width, height });
   const page = await browser.newPage();
   await page.setViewport(width, height, mobile);

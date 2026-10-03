@@ -11,7 +11,7 @@ const TYPES = {
   '.woff2': 'font/woff2', '.ico': 'image/x-icon', '.md': 'text/plain; charset=utf-8', '.txt': 'text/plain; charset=utf-8',
 };
 
-export function serve(root, port = 0) {
+export function serve(root, port = 0, cacheControl = 'no-store') {
   root = path.resolve(root);
   return new Promise((resolve) => {
     const srv = http.createServer((req, res) => {
@@ -26,10 +26,10 @@ export function serve(root, port = 0) {
         const m = /bytes=(\d*)-(\d*)/.exec(range);
         const start = m && m[1] ? +m[1] : 0;
         const end = m && m[2] ? Math.min(+m[2], size - 1) : size - 1;
-        res.writeHead(206, { 'Content-Type': type, 'Content-Range': `bytes ${start}-${end}/${size}`, 'Accept-Ranges': 'bytes', 'Content-Length': end - start + 1, 'Cache-Control': 'no-store' });
+        res.writeHead(206, { 'Content-Type': type, 'Content-Range': `bytes ${start}-${end}/${size}`, 'Accept-Ranges': 'bytes', 'Content-Length': end - start + 1, 'Cache-Control': cacheControl });
         fs.createReadStream(f, { start, end }).pipe(res);
       } else {
-        res.writeHead(200, { 'Content-Type': type, 'Content-Length': size, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store' });
+        res.writeHead(200, { 'Content-Type': type, 'Content-Length': size, 'Accept-Ranges': 'bytes', 'Cache-Control': cacheControl });
         fs.createReadStream(f).pipe(res);
       }
     });
