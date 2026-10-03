@@ -17074,6 +17074,8 @@ body[data-cutin-skin="neon"] .cutin-flash {
 .coach-choice { min-height: 46px; padding: 8px 18px; font-size: 16px; font-weight: 900; color: #fff; border: 0; background: linear-gradient(90deg, #c8253a, #7d1022); box-shadow: inset 0 0 0 1px rgba(245,215,122,.6); cursor: pointer; }
 .coach-choice:disabled { opacity: .35; cursor: default; }
 @media (prefers-reduced-motion: reduce) { .coach-hole, .coach-card { animation: none; } }
+/* 研修中にプロフィール・役の一覧・設定などを開いたら、光る枠と吹き出しは引っ込める（閉じると戻る） */
+body:has(.char-profile-overlay, .hand-guide-overlay, .settings-overlay, .glossary-overlay, .rule-primer-overlay, .hand-history-overlay, .rico-viewer-overlay, .note-article-overlay, .equip-overlay, .collection-overlay, .memory-viewer-overlay) .coach-layer { visibility: hidden; pointer-events: none; }
 /* 研修で押すボタン：光らせて「ここを押そう」 */
 .battle-screen.v2 .is-intro-go { outline: 3px solid #fff3c2; outline-offset: 3px; animation: verbSuggest 1.1s ease-in-out infinite; z-index: 3; }
 .battle-screen.v2 .is-intro-go::before { content: "ここを押そう"; position: absolute; top: -26px; left: 12px; transform: skewX(12deg); font-size: 12px; font-weight: 900; color: #1d080e; background: #fff3c2; padding: 2px 10px; letter-spacing: .08em; }

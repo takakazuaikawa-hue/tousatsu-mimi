@@ -12579,34 +12579,60 @@ function closeCoach() {
   document.querySelectorAll('.coach-layer').forEach(el => el.remove());
   window.removeEventListener('resize', placeCoach);
 }
+// 研修の吹き出しで隠したくないもの（話題にしている札・相手のセリフ・押すボタン・表情の顔）
+const COACH_KEEP = ['.community-cards', '.v2-myhand', '.v2-band', '.verb-btn.is-intro-go', '.emote-cutin .ec-face-wrap', '.v2-role'];
 function placeCoach() {
   const layer = document.querySelector('.coach-layer');
   if (!layer) return;
   const hole = layer.querySelector('.coach-hole');
   const card = layer.querySelector('.coach-card');
   const sel = layer.dataset.target;
-  const t = sel ? document.querySelector(sel) : null;
+  // 「場札と手札」のように複数を指したら、まとめて1つの枠で照らす
+  const ts = sel ? [...document.querySelectorAll(sel)].filter(e => e.getBoundingClientRect().width > 0) : [];
+  const t = ts[0] || null;
   const vw = window.innerWidth, vh = window.innerHeight;
   const dim = layer.querySelector('.coach-dim');
   if (dim) dim.hidden = !!t;
   if (t && hole) {
-    const r = t.getBoundingClientRect();
+    const rs = ts.map(e => e.getBoundingClientRect());
+    const r = { left: Math.min(...rs.map(q => q.left)), top: Math.min(...rs.map(q => q.top)), right: Math.max(...rs.map(q => q.right)), bottom: Math.max(...rs.map(q => q.bottom)) };
     const pad = 8;
     hole.hidden = false;
-    Object.assign(hole.style, { left: (r.left - pad) + 'px', top: (r.top - pad) + 'px', width: (r.width + pad * 2) + 'px', height: (r.height + pad * 2) + 'px' });
-    const cw = Math.min(560, vw * 0.92);
-    card.style.width = cw + 'px';
-    const ch = card.offsetHeight || 110;
-    let top = r.bottom + 16;
-    if (top + ch > vh - 8) top = r.top - ch - 16;
-    if (top < 8) top = Math.max(8, vh - ch - 12);
-    let left = r.left + r.width / 2 - cw / 2;
-    left = Math.max(8, Math.min(vw - cw - 8, left));
-    Object.assign(card.style, { left: left + 'px', top: top + 'px', bottom: 'auto' });
+    const H = { left: r.left - pad, top: r.top - pad, right: r.right + pad, bottom: r.bottom + pad };
+    Object.assign(hole.style, { left: H.left + 'px', top: H.top + 'px', width: (H.right - H.left) + 'px', height: (H.bottom - H.top) + 'px' });
+    // 吹き出しは、光らせた所・札・セリフ帯・押すボタンを隠さない場所に置く。
+    // 上下左右と画面の上下端を試し、隠してしまう面積がいちばん小さい所を選ぶ
+    const keep = [{ ...H, w: 4 }];
+    COACH_KEEP.forEach(s => document.querySelectorAll(s).forEach(e => {
+      if (ts.some(x => x === e || x.contains(e) || e.contains(x))) return;
+      const q = e.getBoundingClientRect();
+      if (q.width > 2 && q.height > 2) keep.push({ left: q.left, top: q.top, right: q.right, bottom: q.bottom, w: 1 });
+    }));
+    const tries = [];
+    for (const cw of [Math.min(560, vw * 0.92), Math.min(440, vw * 0.7)]) {
+      card.style.width = cw + 'px';
+      const ch = card.offsetHeight || 110;
+      const cx = (H.left + H.right) / 2 - cw / 2, cy = (H.top + H.bottom) / 2 - ch / 2;
+      [[cx, H.bottom + 12], [cx, H.top - ch - 12], [H.right + 14, cy], [H.left - cw - 14, cy],
+       [(vw - cw) / 2, vh - ch - 10], [(vw - cw) / 2, 10], [10, vh - ch - 10], [vw - cw - 10, vh - ch - 10]]
+        .forEach(([x, y], i) => tries.push({ cw, ch, x: Math.max(8, Math.min(vw - cw - 8, x)), y: Math.max(8, Math.min(vh - ch - 8, y)), i }));
+    }
+    let best = null;
+    for (const c of tries) {
+      let cost = 0;
+      for (const k of keep) {
+        const ox = Math.min(c.x + c.cw, k.right) - Math.max(c.x, k.left), oy = Math.min(c.y + c.ch, k.bottom) - Math.max(c.y, k.top);
+        if (ox > 0 && oy > 0) cost += ox * oy * k.w;
+      }
+      cost += c.i * 40 + (c.cw < 500 ? 400 : 0); // 同じくらいなら、光らせた所のすぐ下・広い吹き出しを選ぶ
+      if (!best || cost < best.cost) best = { ...c, cost };
+    }
+    Object.assign(card.style, { width: best.cw + 'px', left: best.x + 'px', top: best.y + 'px', bottom: 'auto' });
   } else if (hole) {
     hole.hidden = true;
     const cw = Math.min(600, vw * 0.92);
-    Object.assign(card.style, { width: cw + 'px', left: ((vw - cw) / 2) + 'px', top: 'auto', bottom: '6vh' });
+    // 光らせる所が無い一言は、手札と押すボタンにかからない上寄りに出す
+    Object.assign(card.style, { width: cw + 'px', left: ((vw - cw) / 2) + 'px', top: '13vh', bottom: 'auto' });
   }
 }
 // tap:true … 画面のどこを押しても次へ。tap:false … 光っているボタンを押すまで待つ（ここでは閉じない）
@@ -12799,7 +12825,7 @@ async function introHand1(gen) {
   await introCoach('場札が3枚開いた（フロップ）。場札はふたりで一緒に使う', '.community-cards'); if (!introAlive(gen)) return;
   state.mimiThought = '「Aが……3枚そろった！」';
   render();
-  await introCoach('Aが3枚！『スリーカード』。手札と場札から5枚を選んで役を作るよ', '.v2-role'); if (!introAlive(gen)) return;
+  await introCoach('Aが3枚！『スリーカード』。手札と場札から5枚を選んで役を作るよ', '.v2-role, .v2-myhand'); if (!introAlive(gen)) return;
   await introCoach('役の強い順は、この『❓ 役』でいつでも見られる', '.v2-help-btn'); if (!introAlive(gen)) return;
   await introWaitAction('check', 0, 'もう十分強い。ここは『チェック』。タダで次の札を見よう', '.verb-cc'); if (!introAlive(gen)) return;
   state.mimiThought = '「チェック」';
@@ -12847,7 +12873,7 @@ async function introHand2(gen) {
   introBet('rico', 100);
   state.mimiThought = '「Kのペア……？」';
   await introWait(700); if (!introAlive(gen)) return;
-  await introCoach('場のKペアは、ふたりとも使える。ミミの手札の7と2は、何も足せてない', '.community-cards'); if (!introAlive(gen)) return;
+  await introCoach('場のKペアは、ふたりとも使える。ミミの手札の7と2は、何も足せてない', '.community-cards, .v2-myhand'); if (!introAlive(gen)) return;
   await introWaitAction('fold', 0, '払う100に見合わない。『降りる』と、これ以上払わずに済むよ', '.verb-fold'); if (!introAlive(gen)) return;
   mpSfx('fold');
   const pot = state.pot;
@@ -12875,7 +12901,7 @@ async function introHand3(gen) {
   introEndStreet();
   introReveal(3, 'flop');
   await introWait(900); if (!introAlive(gen)) return;
-  await introCoach('Aのペアができた。悪くない手', '.v2-role'); if (!introAlive(gen)) return;
+  await introCoach('Aのペアができた。悪くない手', '.v2-role, .v2-myhand'); if (!introAlive(gen)) return;
   state.opponentSpeech = '「……こ、これは、勝ったかも」';
   introBet('rico', 200);
   await introWait(700); if (!introAlive(gen)) return;
