@@ -19,3 +19,16 @@ Bot（`qa/probe/bot.js`）は画面の最前面で実際に押せるものだけ
 
 `qa/probe/sim.js` の進行は game.js の手番の流れを写した模型で、AI の判断だけ本物を呼ぶ。
 game.js 側の進行を変えたら、この模型も合わせて直すこと。
+
+### 本物の字体で撮る
+検査用のブラウザが外（Google Fonts）へ出られない環境では、字体が代わりの物で写る。手元に落としておくと、`openSession` と `qa/shotpage.mjs` が fonts.googleapis.com への要求をそれで返す（`qa/out/` は git 管理外）。
+
+```sh
+mkdir -p qa/out/fonts && cd qa/out/fonts
+UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+curl -s -A "$UA" "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700;900&family=Shippori+Mincho+B1:wght@600;700;800&family=Bebas+Neue&display=swap" -o g.css
+grep -o "https://fonts.gstatic.com[^)]*" g.css | sort -u | xargs -P 24 -I{} sh -c 'f=$(echo "{}" | sed "s#https://fonts.gstatic.com/##; s#/#_#g"); curl -s -o "$f" "{}"'
+python3 -c "import re;s=open('g.css').read();open('fonts.css','w').write(re.sub(r'url\(https://fonts.gstatic.com/([^)]*)\)',lambda m:'url(/qa/out/fonts/'+m.group(1).replace('/','_')+')',s))"
+```
+
+`node qa/shotpage.mjs <page.html> <out.png>` はリポジトリ内の HTML（見本など）を1枚撮る。
