@@ -17687,32 +17687,43 @@ const PRELOAD_TIPS = [
 async function startPreload() {
   const overlay = document.getElementById('preload-overlay');
   const fill = document.getElementById('preload-fill');
-  const loadedEl = document.getElementById('preload-loaded');
-  const totalEl = document.getElementById('preload-total');
+  const pctEl = document.getElementById('preload-pct');
   const tipEl = document.getElementById('preload-tip');
+  // 読み込み画面のミミ：動画が再生できた時だけ一枚絵の上に重ねる（視差効果を減らす設定・データ節約では一枚絵のまま）
+  const kvMotion = overlay && overlay.querySelector('.preload-kv-motion');
+  const saveData = !!(navigator.connection && navigator.connection.saveData);
+  if (kvMotion && MOTION_OK && !saveData) {
+    kvMotion.addEventListener('playing', () => kvMotion.classList.add('is-playing'), { once: true });
+    kvMotion.addEventListener('error', () => kvMotion.remove(), { once: true });
+    kvMotion.src = 'assets/motion/loading_mimi.mp4';
+    const pr = kvMotion.play(); if (pr && pr.catch) pr.catch(() => {});
+  }
   const all = [...(window.MimiAssets ? window.MimiAssets.sets.title() : []), ...PRELOAD_ASSETS, ...PRELOAD_AUDIO];
-  totalEl.textContent = all.length;
   let loaded = 0;
-  // tip rotation：ポーカー豆知識をランダム順で表示（読み応え重視で2.8秒間隔）
+  // 豆知識：ランダム順に2.8秒ごと。頭の絵文字は外して、文だけを静かに切り替える
+  const plain = (t) => String(t).replace(/^[\p{Extended_Pictographic}\u2600-\u27BF\uFE0F\u200D\s]+/u, '');
   const tipOrder = [...Array(PRELOAD_TIPS.length).keys()].sort(() => Math.random() - 0.5);
   let tipIdx = 0;
-  if (tipEl) tipEl.textContent = PRELOAD_TIPS[tipOrder[0]];
+  if (tipEl) tipEl.textContent = plain(PRELOAD_TIPS[tipOrder[0]]);
   const tipInterval = setInterval(() => {
     tipIdx = (tipIdx + 1) % tipOrder.length;
-    if (tipEl) tipEl.textContent = PRELOAD_TIPS[tipOrder[tipIdx]];
+    if (!tipEl) return;
+    tipEl.classList.add('is-swapping');
+    setTimeout(() => { tipEl.textContent = plain(PRELOAD_TIPS[tipOrder[tipIdx]]); tipEl.classList.remove('is-swapping'); }, 300);
   }, 2800);
   // 並列で読み込み、各完了で進捗更新
   await Promise.all(all.map(url => preloadOne(url).then(() => {
     loaded++;
-    loadedEl.textContent = loaded;
-    fill.style.width = (loaded / all.length * 100) + '%';
+    const pct = Math.round(loaded / all.length * 100);
+    if (pctEl) pctEl.textContent = pct;
+    if (fill) fill.style.width = pct + '%';
   })));
   clearInterval(tipInterval);
   startDeferredPrefetch(); // 起動完了後、残りの画像を裏で温めておく
-  // フェードアウト
+  // フェードアウト（読み込み画面の動画も一緒に片付ける）
   if (overlay) {
     overlay.classList.add('out');
-    setTimeout(() => { if (overlay) overlay.remove(); }, 600);
+    setTimeout(() => { if (kvMotion) { try { kvMotion.pause(); kvMotion.removeAttribute('src'); kvMotion.load(); } catch (e) {} } if (overlay) overlay.remove(); }, 600);
   }
 }
 
