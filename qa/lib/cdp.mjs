@@ -9,7 +9,9 @@ const EDGE_CANDIDATES = [
   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
   'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
-];
+  process.env.QA_BROWSER || '',
+  '/opt/pw-browsers/chromium',
+].filter(Boolean);
 export const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 class Conn {
@@ -96,7 +98,8 @@ export async function launch({ port = 9400 + Math.floor(Math.random() * 500), wi
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
     `--window-size=${width},${height}`, '--mute-audio', '--no-first-run', '--no-default-browser-check',
     '--disable-extensions', '--disable-background-timer-throttling', '--disable-renderer-backgrounding',
-    '--disable-backgrounding-occluded-windows', '--autoplay-policy=no-user-gesture-required', 'about:blank',
+    '--disable-backgrounding-occluded-windows', '--autoplay-policy=no-user-gesture-required',
+    ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-dev-shm-usage'] : []), 'about:blank',
   ], { stdio: 'ignore' });
   let ver = null;
   for (let i = 0; i < 150 && !ver; i++) {

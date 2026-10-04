@@ -6428,12 +6428,12 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .battle-modal-overlay .battle-vignette {
   background:
     radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 90%),
-    url('assets/ui/fx_aura_psych.webp') center bottom / cover no-repeat;
+    url('assets/ui/fx_aura_psych.webp?v=20261004d') center bottom / cover no-repeat;
 }
 .battle-modal-overlay:has(.psych-modal.logic-mode) .battle-vignette {
   background:
     radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 90%),
-    url('assets/ui/fx_aura_logic.webp') center bottom / cover no-repeat;
+    url('assets/ui/fx_aura_logic.webp?v=20261004d') center bottom / cover no-repeat;
 }
 .battle-modal-overlay:has(.psych-modal.lecture-mode) .battle-vignette {
   /* 講義は落ち着いた既定ビネットのみ（オーラなし） */
@@ -17122,6 +17122,9 @@ body:has(.char-profile-overlay, .hand-guide-overlay, .settings-overlay, .glossar
 @media (prefers-reduced-motion: reduce) { .read-battle-host { animation: none; } }
 /* battles/core.css の .mb-host（position:relative 等）に器の位置を上書きされないよう、卓の上に固定する */
 #stage > .read-battle-host { display: flex !important; flex-direction: column !important; overflow: hidden !important; background: radial-gradient(120% 90% at 50% 0%, #3a0f1b 0%, #1d080e 55%, #0b0306 100%) !important; position: absolute !important; inset: 0 !important; width: auto !important; height: auto !important; margin: 0 !important; z-index: 9000 !important; }
+/* 背景の光：舞台（卓の地）の下に、心理＝立ちのぼる紫の妖気、論理＝青の電脳の床。上の暗い膜で濃さを抑え、文字や札を邪魔しない */
+#stage > .read-battle-host.rb-psych .mb-stage { background: linear-gradient(rgba(22,6,11,.45), rgba(22,6,11,.45)), url('assets/ui/fx_aura_psych.webp?v=20261004d') center bottom / 100% auto no-repeat, radial-gradient(110% 90% at 50% 25%, #4a1422 0%, #2a0a13 55%, #16060b 100%); }
+#stage > .read-battle-host.rb-logic .mb-stage { background: linear-gradient(rgba(8,8,20,.62), rgba(8,8,20,.62)), url('assets/ui/fx_aura_logic.webp?v=20261004d') center bottom / 100% auto no-repeat, radial-gradient(110% 90% at 50% 25%, #3a1430 0%, #1e0a1c 55%, #0c0610 100%); }
 
 /* ===== 待機中の光（スマホの発熱対策 2026-10-03） =====
    影（box-shadow / filter）を毎フレーム描き直すと、待機中でもスマホが熱くなる。

@@ -13942,7 +13942,7 @@ function startReadBattle(group) {
   document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
   if (typeof dismissCutIn === 'function') dismissCutIn();
   const host = document.createElement('div');
-  host.className = 'read-battle-host';
+  host.className = 'read-battle-host rb-' + group;
   stage.appendChild(host);
   state.isPlayerTurn = false;
   state.readBattlePurse = state.readBattlePurse || { coins: 0, combo: 0, fever: 0, best: 0, perfect: 0 };
