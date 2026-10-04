@@ -20,6 +20,9 @@
   body { font-family: var(--sans); color: var(--ivory); -webkit-font-smoothing: antialiased; }
   .stage { position: relative; width: 1280px; height: 800px; overflow: hidden; background: var(--ink); }
   .kv { position: absolute; inset: 0; background: var(--kv) 68% center / cover no-repeat; }
+  /* 待機ループ：再生が始まったら一枚絵の上にふわっと重ねる。再生できない環境では一枚絵のまま */
+  .kv-motion { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 68% center; opacity: 0; transition: opacity .6s ease; }
+  .kv-motion.is-playing { opacity: 1; }
   /* 左を暗く沈めてロゴの地にする。下も少し沈めて操作部分を読みやすく */
   .shade { position: absolute; inset: 0; background:
       linear-gradient(90deg, rgba(11,8,9,.92) 0%, rgba(11,8,9,.78) 30%, rgba(11,8,9,.2) 52%, rgba(11,8,9,0) 64%),
@@ -51,6 +54,7 @@
 <body>
 <div class="stage">
   <div class="kv"></div>
+  <video class="kv-motion" muted playsinline loop autoplay preload="auto"></video>
   <div class="shade"></div>
 
   <div class="logo">
@@ -72,9 +76,18 @@
   </div>
 </div>
 <script>
+  // ?ui=1：絵と動画を外して文字と操作だけ（動画に重ねた確認用の合成に使う）
+  if (new URLSearchParams(location.search).get('ui')) { document.documentElement.style.background = document.body.style.background = 'transparent'; document.querySelector('.stage').style.background = 'transparent'; document.querySelector('.kv').remove(); document.querySelector('.kv-motion').remove(); }
   // ?kv=<画像のパス> で一枚絵を差し替える（既定は描き直した title_kv_a。今の絵は ?kv=../../assets/backgrounds/title_bg.webp）
   const kv = new URLSearchParams(location.search).get('kv') || '../../assets/backgrounds/title_kv_a.webp';
-  document.querySelector('.kv').style.setProperty('--kv', `url("${kv}")`);
+  const kvEl = document.querySelector('.kv'); if (kvEl) kvEl.style.setProperty('--kv', `url("${kv}")`);
+  const mv = new URLSearchParams(location.search).get('mv') || '../../assets/motion/title_kv_a_loop.mp4';
+  const v = document.querySelector('.kv-motion');
+  if (v) {
+  v.addEventListener('playing', () => v.classList.add('is-playing'), { once: true });
+  v.addEventListener('error', () => v.remove(), { once: true });
+  v.src = mv; const pr = v.play(); if (pr && pr.catch) pr.catch(() => {});
+  }
 </script>
 </body>
 </html>
