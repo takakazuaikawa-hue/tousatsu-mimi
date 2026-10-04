@@ -37,9 +37,9 @@
   #portrait-warning, #fullscreen-btn-group { display: none; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Shippori+Mincho+B1:wght@700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap">
-<link rel="stylesheet" href="style.css?v=20261004g">
-<link rel="stylesheet" href="battles/core.css?v=20261004g">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Bebas+Neue&family=Shippori+Mincho+B1:wght@600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="style.css?v=20261004i">
+<link rel="stylesheet" href="battles/core.css?v=20261004i">
 </head>
 <body>
 <div id="preload-overlay">
@@ -90,61 +90,50 @@
 
 <!-- 全画面化ボタン：横向きでフルスクリーン未適用時に表示 -->
 <div id="fullscreen-btn-group" hidden>
-  <button id="fullscreen-btn" type="button">⛶ タップして全画面で遊ぶ</button>
-  <button id="fullscreen-dismiss-btn" type="button" title="このボタンを閉じる">✕</button>
+  <button id="fullscreen-btn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg><span class="fs-label">タップして全画面で遊ぶ</span></button>
+  <button id="fullscreen-dismiss-btn" type="button" title="このボタンを閉じる" aria-label="閉じる"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
 
 <!-- 画面テンプレート群 -->
 <template id="tpl-title">
-  <div class="screen title-screen">
-
-    <!-- タイトル背景画像：assets/backgrounds/title_bg.webp を読み込み -->
-    <div class="bg-layer bg-title">
-      <img
-        class="title-bg-img"
-        src="assets/backgrounds/title_bg.webp"
-        data-motion="assets/motion/title_loop.mp4"
-        alt=""
-        onerror="this.style.display='none';"
-      >
+  <!-- タイトル v3（2026-10-04・見本は docs/design-ref/title-v3.html）：今の背景（title_bg）とロゴ（title_logo_hd＝同じデザインの高解像度版）を活かす。
+       ・背景：一枚絵の上に、ミミの写っていない所の光（シャンデリア・ろうそく・大時計）だけが動くループ動画を重ねる（game.js applyTitleScene）
+       ・ロゴは大時計が後ろからのぞく位置。操作はミミの体に重ならない右下。金は押してほしい1つだけ、絵文字なし
+       ・起動して初めて開いた時だけ、黒から → ロゴに金の光 → ボタンの順に出す（.t3-intro） -->
+  <div class="screen title-screen t3">
+    <div class="t3-scene" aria-hidden="true">
+      <img class="t3-bg" src="assets/backgrounds/title_bg.webp" alt="" onerror="this.style.display='none';">
+      <video class="t3-motion" muted playsinline loop preload="none"></video>
+    </div>
+    <div class="t3-grade" aria-hidden="true"></div>
+    <div class="t3-motes" aria-hidden="true">
+      <i style="--x:640px;--y:520px;--s:7px;--d:9s;--delay:0s;--o:.7;--dx:18px"></i>
+      <i style="--x:760px;--y:600px;--s:5px;--d:11s;--delay:2s;--o:.55;--dx:-14px"></i>
+      <i style="--x:880px;--y:470px;--s:6px;--d:10s;--delay:4.5s;--o:.6;--dx:22px"></i>
+      <i style="--x:990px;--y:560px;--s:4px;--d:12s;--delay:1.2s;--o:.5;--dx:-10px"></i>
+      <i style="--x:1120px;--y:420px;--s:6px;--d:9.5s;--delay:3.3s;--o:.6;--dx:12px"></i>
+      <i style="--x:560px;--y:300px;--s:4px;--d:13s;--delay:6s;--o:.45;--dx:16px"></i>
+      <i style="--x:1200px;--y:640px;--s:5px;--d:10.5s;--delay:5.2s;--o:.5;--dx:-18px"></i>
+      <i style="--x:700px;--y:250px;--s:3px;--d:12s;--delay:7.4s;--o:.4;--dx:10px"></i>
+      <i style="--x:920px;--y:700px;--s:6px;--d:11.5s;--delay:8.1s;--o:.55;--dx:-12px"></i>
+      <i style="--x:430px;--y:640px;--s:4px;--d:10s;--delay:3.8s;--o:.45;--dx:14px"></i>
     </div>
 
-    <div class="title-inner">
+    <h1 class="t3-logo">
+      <img src="assets/ui/title_logo_hd.webp" alt="ミミのテキサスホールデムポーカー 〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜"
+        onerror="this.closest('.t3-logo').classList.add('is-text'); this.remove();">
+      <i class="t3-shine" aria-hidden="true"></i>
+      <span class="t3-logo-text"><span>ミミの</span>テキサスホールデム<br>ポーカー</span>
+    </h1>
 
-      <!-- タイトルロゴ画像：新タイトルのロゴを assets/ui/title_logo.webp に置くと自動表示。
-           未納品の間はCSSで組んだテキストロゴにフォールバック（旧 title.png は改名により不使用）。 -->
-      <div class="title-logo-frame">
-        <img
-          class="title-logo-img"
-          src="assets/ui/title_logo.webp"
-          alt="ミミのテキサスホールデムポーカー"
-          onerror="this.style.display='none'; this.closest('.title-logo-frame').classList.add('logo-fallback');"
-        >
-        <div class="title-logo-fallback">
-          <h1 class="game-title">
-            <span class="title-line1">ミミの</span>
-            <span class="title-line2">テキサスホールデム</span>
-            <span class="title-line3">ポーカー</span>
-          </h1>
-          <div class="title-logo-sub">〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</div>
-        </div>
-      </div>
+    <!-- 続きから／はじめから・記録（game.js applyTitleButtons が埋める） -->
+    <div class="t3-menu" data-bind="titleButtons"></div>
 
-      <!-- メインCTA -->
-      <div class="title-buttons" data-bind="titleButtons">
-        <button class="btn btn-primary" data-action="start">
-          <span class="title-btn-main">はじめから</span>
-          <span class="title-btn-sub">ブラウザで遊べる心理ポーカーADV</span>
-        </button>
-      </div>
-
-      <!-- フッター：シェアとバージョンのみ（背景に埋もれないようパネル化） -->
-      <div class="title-footer">
-        <button class="title-link" data-action="share-game">シェア</button>
-        <span class="title-footer-divider">·</span>
-        <span class="title-version">v1.0</span>
-      </div>
-    </div>
+    <!-- 右上：音（共通の音量バーを injectAudioBars がここへ入れる）・シェア -->
+    <nav class="t3-utils" aria-label="音とシェア">
+      <button class="t3-icon" type="button" data-action="share-game" aria-label="シェア" title="シェア"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="17.5" cy="6" r="2.5"/><circle cx="17.5" cy="18" r="2.5"/><path d="M8.2 10.9l7-3.7M8.2 13.1l7 3.7"/></svg></button>
+    </nav>
+    <div class="t3-ver">v1.0</div>
   </div>
 </template>
 
@@ -235,13 +224,16 @@
 </template>
 
 <template id="tpl-battle">
-  <div class="screen battle-screen v2">
+  <div class="screen battle-screen v2 t8">
     <div class="bg-layer bg-poker"></div>
+    <!-- v8：卓の奥の部屋に、相手の頭上から落ちる柔らかい光 -->
+    <div class="t8-room" aria-hidden="true"></div>
     <div class="v2-slash v2-slash-red"></div>
     <div class="v2-slash v2-slash-gold"></div>
 
     <!-- 左上：HAND ナンバー＋ストリート（縦積み） -->
     <header class="v2-hand">
+      <div class="t8-table-name" data-bind="t8TableName"></div>
       <div class="v2-hand-row">
         <span class="v2-disp v2-hand-label">HAND</span>
         <span class="v2-disp v2-hand-no" data-bind="handNo2">01</span>
@@ -251,10 +243,10 @@
     </header>
 
     <!-- 右上：中断／役の早見表（画面直下に置く。ヘッダー内だと右寄せが効かない） -->
-    <button class="btn btn-ghost v2-pause" data-action="back-lobby">中断</button>
+    <button class="btn btn-ghost v2-pause" data-action="back-lobby"><svg class="t8-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg>中断</button>
 
     <!-- 左下：役の早見表（常設・研修中も開ける） -->
-    <button class="btn btn-ghost v2-help-btn" data-action="show-hand-guide" type="button" title="役の早見表を見る">❓ 役</button>
+    <button class="btn btn-ghost v2-help-btn" data-action="show-hand-guide" type="button" title="役の早見表を見る"><svg class="t8-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="11" height="15" rx="1.5"/><path d="M8.5 20.5h10V8"/></svg>役の一覧</button>
 
     <!-- クリア後の練習用：相手の手札を見る（使っている間の対戦は称号・ランクの記録対象外） -->
     <button class="backdoor-toggle" data-action="toggle-backdoor" data-bind="backdoorBtn" title="練習用：相手の手札を見る（使っている間の対戦は称号・ランクの記録対象外）">✦</button>
@@ -264,9 +256,18 @@
     <div class="v2-opp">
       <div class="character-frame char-opponent" data-action="char-profile" data-char="__opponent__" title="相手のプロフィールを見る">
         <img data-bind="opponentImg" alt="相手">
+        <!-- 卓での待機（呼吸・まばたき）。いつもの表情の時だけ、再生できたら上に重ねる -->
+        <video class="t8-idle" muted playsinline loop preload="none" aria-hidden="true"></video>
       </div>
       <div class="v2-tells" data-bind="tellTags"></div>
     </div>
+    <!-- v8：相手に落ちる光、卓のレール（革＋金の象嵌）とフェルト、四隅の沈み、上の帯の下地 -->
+    <div class="t8-opp-light" aria-hidden="true"></div>
+    <div class="t8-tint" aria-hidden="true"></div>
+    <div class="t8-rail" aria-hidden="true"></div>
+    <div class="t8-felt" aria-hidden="true"></div>
+    <div class="t8-vignette" aria-hidden="true"></div>
+    <div class="t8-topbar" aria-hidden="true"></div>
 
     <!-- 戦術ノートの常時表示（相手のレンジ帯／癖メモ）。
          ★.v2-opp には mask-image が掛かっていて箱の外が透明に切り落とされるため、
@@ -473,20 +474,20 @@
   </div>
 </template>
 
-<script src="battles/core.js?v=20261004g"></script>
-<script src="battles/games/detective.js?v=20261004g"></script>
-<script src="battles/games/stare.js?v=20261004g"></script>
-<script src="battles/games/doubt.js?v=20261004g"></script>
-<script src="battles/games/objection.js?v=20261004g"></script>
-<script src="battles/games/gacha.js?v=20261004g"></script>
-<script src="battles/games/handbuild.js?v=20261004g"></script>
-<script src="battles/games/highlow.js?v=20261004g"></script>
-<script src="battles/games/danger.js?v=20261004g"></script>
-<script src="battles/games/sniper.js?v=20261004g"></script>
-<script src="battles/games/outs.js?v=20261004g"></script>
-<script src="battles/games/suspects.js?v=20261004g"></script>
-<script src="assets/manifest.js?v=20261004g"></script>
-<script src="loader.js?v=20261004g"></script>
-<script src="game.js?v=20261004g"></script>
+<script src="battles/core.js?v=20261004i"></script>
+<script src="battles/games/detective.js?v=20261004i"></script>
+<script src="battles/games/stare.js?v=20261004i"></script>
+<script src="battles/games/doubt.js?v=20261004i"></script>
+<script src="battles/games/objection.js?v=20261004i"></script>
+<script src="battles/games/gacha.js?v=20261004i"></script>
+<script src="battles/games/handbuild.js?v=20261004i"></script>
+<script src="battles/games/highlow.js?v=20261004i"></script>
+<script src="battles/games/danger.js?v=20261004i"></script>
+<script src="battles/games/sniper.js?v=20261004i"></script>
+<script src="battles/games/outs.js?v=20261004i"></script>
+<script src="battles/games/suspects.js?v=20261004i"></script>
+<script src="assets/manifest.js?v=20261004i"></script>
+<script src="loader.js?v=20261004i"></script>
+<script src="game.js?v=20261004i"></script>
 </body>
 </html>

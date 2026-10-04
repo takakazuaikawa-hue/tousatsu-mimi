@@ -104,7 +104,7 @@
   const RICO_OUTFITS = /^(bunny|casual|dress|gym|kimono|pajama|santa|school|swimsuit|witch|ending)$/;
   MA.sets = {
     // タイトル：ロード画面で待つ
-    title: () => ['assets/backgrounds/title_bg.webp', 'assets/ui/title_logo.webp', 'assets/motion/title_loop.mp4'],
+    title: () => ['assets/backgrounds/title_bg.webp', 'assets/ui/title_logo_hd.webp', 'assets/motion/title_loop_v3.mp4'],
     // ロビー：タイトルにいる間に読む
     lobby: () => ['assets/backgrounds/bg_lobby_clock.jpg', 'assets/motion/lobby_loop.mp4', 'assets/characters/rico_greet.webp',
       ...['rico', 'polka', 'selina', 'grano', 'velvet'].map(k => `assets/characters/${k}_default.webp`), 'assets/ui/card_back_default.webp'],
@@ -116,6 +116,8 @@
       `assets/ui/face_${key}.webp`, 'assets/ui/face_mimi.webp', 'assets/ui/face_rico.webp', 'assets/ui/card_back_default.webp',
       `assets/episodes/${oppId}.webp`, `assets/motion/ep_${oppId}.mp4`,
     ].filter(u => MAN[u]),
+    // 卓の相手の待機動画（呼吸・まばたき）。入った瞬間には要らないが、見える場所なので裏の列の先頭で読む
+    battleIdle: (oppId) => [`assets/motion/idle_${oppId}.mp4`].filter(u => MAN[u]),
     // 対戦中に出るもの（裏で読む）：表情の顔アップ・読み合いの顔とミニキャラ・動画・演出の素材
     battleLater: (oppId, key) => MA.pick(new RegExp(
       `^assets/(characters/(${key}_|mimi_bust_|mimi_cutin_|mimi_clutch|mimi_allin|mimi_intermission|panyu)|battle/(face|chibi|motion)/(${key}|mimi)_|battle/chibi/rico_|ui/(fx_|stamp_|panyu_|frame_(psych|logic))|backgrounds/(bg_psych_stage|bg_result_stage|bg_intermission))`))

@@ -17147,3 +17147,588 @@ body.is-hidden *, body.is-hidden *::before, body.is-hidden *::after { animation-
 .loading-veil .lv-box > * { transform: skewX(12deg); }
 .loading-veil .lv-spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid rgba(245,215,122,.25); border-top-color: #f5d77a; animation: lvSpin .8s linear infinite; }
 @keyframes lvSpin { to { transform: skewX(12deg) rotate(360deg); } }
+
+/* ============================================================
+   卓 v8（2026-10-04）：docs/design-ref/table-v8.html を本体に入れた層。
+   対戦画面（.battle-screen.v2.t8）だけに効く最後の層として重ねる。処理は変えない。
+   ・キャラが主役：相手を卓の奥に大きく座らせ、手前に革のレール（金の象嵌）とフェルト
+   ・UI は黒の半透明＋細い線。金は「自分の数字・ポット」と「押してほしいボタン」だけ
+   ・文字は明朝（名前）・ゴシック（本文）・Barlow Condensed（数字）
+   ・相手のセリフは字幕、リコの助言は押すボタンの真上に1つ。ミミの心の声の小さな枠は出さない
+   ============================================================ */
+.battle-screen.v2.t8 {
+  --t8-ink: #0b0809; --t8-panel: rgba(12,9,10,.74); --t8-line: rgba(243,236,224,.14); --t8-line2: rgba(243,236,224,.28);
+  --t8-ivory: #f3ece0; --t8-muted: #a99f93; --t8-gold: #d8b56c; --t8-gold-hi: #f0d595; --t8-gold-ink: #1a1206;
+  --t8-num: "Barlow Condensed", "Noto Sans JP", sans-serif; --t8-mincho: "Shippori Mincho B1", serif;
+  --t8-felt-hi: #4a141d; --t8-felt-mid: #2c0a11; --t8-felt-lo: #15060a; --t8-pool: rgba(255,196,150,.20); --t8-inlay: rgba(216,181,108,.65);
+  background: var(--t8-ink);
+}
+/* 卓の見た目（交換所のテーブル）ごとのフェルトの色 */
+body[data-table-skin="emerald"]   .battle-screen.v2.t8 { --t8-felt-hi: #1d4a2e; --t8-felt-mid: #0e2a1a; --t8-felt-lo: #06140c; --t8-pool: rgba(200,240,190,.14); }
+body[data-table-skin="vip"]       .battle-screen.v2.t8 { --t8-felt-hi: #3a1238; --t8-felt-mid: #220a24; --t8-felt-lo: #110512; --t8-pool: rgba(255,210,240,.16); --t8-inlay: rgba(240,213,149,.85); }
+body[data-table-skin="neon"]      .battle-screen.v2.t8 { --t8-felt-hi: #5a1030; --t8-felt-mid: #2e0718; --t8-felt-lo: #14030b; --t8-pool: rgba(255,120,170,.22); --t8-inlay: rgba(255,120,170,.75); }
+body[data-table-skin="speakeasy"] .battle-screen.v2.t8 { --t8-felt-hi: #4a3016; --t8-felt-mid: #2a190a; --t8-felt-lo: #140b04; --t8-pool: rgba(255,214,150,.20); }
+
+.battle-screen.v2.t8::after { display: none; }
+.battle-screen.v2.t8 > .v2-slash { display: none; }
+
+/* ---- 部屋：ぼかして暗く。考え中・溜め・講義では、さらに暗く（演出は残す） ---- */
+.battle-screen.v2.t8 > .bg-poker { inset: -20px; z-index: 0; background-size: 130% auto !important; background-position: center 20% !important; filter: blur(5px) saturate(.8) brightness(.5); }
+/* 考え中は部屋も相手と同じ割合（0.86）で落とす：相手の待機動画は部屋ごと撮ってあるので、割合が違うと動画の縁か相手の明るさがずれる */
+.battle-screen.v2.t8.is-deciding > .bg-poker { filter: blur(5px) saturate(.8) brightness(.43); }
+body.is-tease-reach .battle-screen.v2.t8 > .bg-poker,
+body.is-tease-hot   .battle-screen.v2.t8 > .bg-poker { filter: blur(5px) saturate(.5) brightness(.3); }
+/* 講義中も部屋の暗さはいつもと同じ（相手の待機動画は部屋ごと撮ってあるので、部屋だけ暗くすると動画の縁が浮く） */
+.battle-screen.v2.t8.is-lecture > .bg-poker { filter: blur(5px) saturate(.8) brightness(.5); }
+.battle-screen.v2.t8 > .t8-room { position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(28% 36% at 50% 26%, rgba(255,214,150,.16), rgba(0,0,0,0) 70%),
+              linear-gradient(90deg, rgba(11,8,9,.72) 0%, rgba(11,8,9,0) 28%, rgba(11,8,9,0) 72%, rgba(11,8,9,.55) 100%); }
+
+/* ---- 相手：卓の奥。枠は胸から上（研修で囲む範囲）、絵は枠の下へはみ出してレールの奥に消える ---- */
+.battle-screen.v2.t8 > .v2-opp { left: 340px !important; top: 84px !important; width: 600px !important; height: 318px !important; z-index: 2; }
+.battle-screen.v2.t8 .v2-opp::after { display: none; }
+.battle-screen.v2.t8 .v2-opp .char-opponent { inset: 0; overflow: visible; display: block; }
+.battle-screen.v2.t8 .v2-opp .char-opponent img,
+.battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle {
+  position: absolute; left: 0; top: 0; width: 600px !important; height: 900px !important; max-width: none !important;
+  object-fit: contain !important; object-position: center top !important; transform: none !important;
+  -webkit-mask-image: none !important; mask-image: none !important;
+  filter: drop-shadow(0 0 1px rgba(255,220,170,.35)) drop-shadow(0 24px 40px rgba(0,0,0,.65)) contrast(1.04) saturate(.96);
+}
+.battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle { opacity: 0; transition: opacity .6s ease; pointer-events: none; filter: none; }
+.battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle.is-playing { opacity: 1; }
+.battle-screen.v2.t8 .v2-opp .char-opponent.is-expr .t8-idle { opacity: 0 !important; }
+.battle-screen.v2.t8 > .t8-opp-light { position: absolute; left: 340px; top: 84px; width: 600px; height: 360px; z-index: 2; pointer-events: none; mix-blend-mode: soft-light;
+  background: radial-gradient(40% 50% at 50% 18%, rgba(255,228,180,.55), rgba(255,228,180,0) 70%); }
+/* 相手の癖（付箋）：相手の左肩の外へ、小さな札に */
+.battle-screen.v2.t8 .v2-tells { left: -240px !important; top: 70px !important; gap: 8px; }
+.battle-screen.v2.t8 .v2-tag { transform: none; background: rgba(12,9,10,.82); color: var(--t8-ivory); border-left: 2px solid var(--t8-gold); font-size: 13px; font-weight: 700; padding: 6px 12px; box-shadow: 0 6px 14px rgba(0,0,0,.45); margin-left: 0; animation: none; }
+
+/* ---- 卓：レール（革＋金の象嵌）→ フェルト（布目＋光だまり＋印刷の線＋紋章） ---- */
+.battle-screen.v2.t8 > .t8-rail { position: absolute; z-index: 3; left: -12%; width: 124%; top: 380px; height: 900px; pointer-events: none;
+  border-radius: 50% 50% 0 0 / 132px 132px 0 0;
+  background: linear-gradient(180deg, #4a2c1c 0%, #2b170f 10px, #160b07 22px, #0d0604 30px);
+  box-shadow: 0 -18px 40px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,214,160,.35); }
+.battle-screen.v2.t8 > .t8-rail::after { content: ""; position: absolute; inset: 9px 0 auto 0; height: 900px; border-radius: 50% 50% 0 0 / 126px 126px 0 0; border-top: 1px solid var(--t8-inlay); }
+.battle-screen.v2.t8 > .t8-felt { position: absolute; z-index: 3; left: -12%; width: 124%; top: 404px; height: 900px; overflow: hidden; pointer-events: none;
+  border-radius: 50% 50% 0 0 / 120px 120px 0 0;
+  background:
+    radial-gradient(34% 30% at 50% 22%, var(--t8-pool), rgba(0,0,0,0) 70%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    radial-gradient(60% 46% at 50% 14%, var(--t8-felt-hi) 0%, var(--t8-felt-mid) 52%, var(--t8-felt-lo) 100%);
+  box-shadow: inset 0 14px 18px -10px rgba(0,0,0,.85); }
+.battle-screen.v2.t8 > .t8-felt::before { content: ""; position: absolute; left: 50%; top: 36px; width: 760px; height: 420px; transform: translateX(-50%); border-radius: 50%; border: 1px solid rgba(216,181,108,.22); }
+.battle-screen.v2.t8 > .t8-felt::after { content: ""; position: absolute; left: 50%; top: 150px; width: 210px; height: 210px; transform: translateX(-50%); background: url('assets/ui/emblem_rabbit_gold.webp') center / contain no-repeat; opacity: .07; filter: grayscale(.3); }
+body[data-table-skin="neon"] .battle-screen.v2.t8 > .t8-felt { box-shadow: inset 0 14px 18px -10px rgba(0,0,0,.85), inset 0 0 60px rgba(255,90,132,.18); }
+.battle-screen.v2.t8 > .t8-vignette { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(120% 100% at 50% 45%, rgba(0,0,0,0) 62%, rgba(0,0,0,.42) 100%); }
+
+/* ---- 上の帯：卓の名前と手番（左）／綱引き（中）／メニュー・勝率（右） ---- */
+.battle-screen.v2.t8 > .t8-topbar { position: absolute; left: 0; right: 0; top: 0; height: 84px; z-index: 5; pointer-events: none;
+  background: linear-gradient(180deg, rgba(11,8,9,.94) 0%, rgba(11,8,9,.7) 60%, rgba(11,8,9,0) 100%); }
+.battle-screen.v2.t8 > .v2-hand { left: 28px !important; top: 12px !important; z-index: 8; display: grid; grid-template-columns: auto auto; column-gap: 10px; row-gap: 3px; align-items: baseline; }
+.battle-screen.v2.t8 .t8-table-name { grid-column: 1 / -1; font-family: var(--t8-mincho); font-size: 17px; font-weight: 700; letter-spacing: .12em; color: var(--t8-ivory); }
+.battle-screen.v2.t8 .v2-hand-row { gap: 6px; }
+.battle-screen.v2.t8 .v2-hand-label, .battle-screen.v2.t8 .v2-hand-no, .battle-screen.v2.t8 .v2-hand-max { font-family: var(--t8-num); font-weight: 500; font-size: 15px; line-height: 1; letter-spacing: .12em; color: var(--t8-ivory); text-shadow: none; }
+.battle-screen.v2.t8 .v2-hand-max { color: var(--t8-muted); }
+.battle-screen.v2.t8 .v2-streets { display: block; margin: 0; }
+.battle-screen.v2.t8 .v2-st { display: none; }
+.battle-screen.v2.t8 .v2-st.v2-st-cur { display: inline; font-size: 0; background: none; padding: 0; transform: none; color: var(--t8-gold); }
+.battle-screen.v2.t8 .v2-st-cur .v2-st-kana { display: inline; font-family: "Noto Sans JP", sans-serif; font-size: 13px; letter-spacing: .08em; color: var(--t8-gold); margin: 0; }
+
+.battle-screen.v2.t8 > .v2-pause,
+.battle-screen.v2.t8 > .v2-help-btn {
+  top: 18px !important; height: 38px; padding: 0 14px; gap: 8px; z-index: 40;
+  background: rgba(12,9,10,.55); color: var(--t8-ivory); border: 1px solid var(--t8-line); border-radius: 2px; box-shadow: none;
+  font-size: 14px; font-weight: 500; letter-spacing: .1em; opacity: 1;
+}
+.battle-screen.v2.t8 > .v2-pause { left: auto !important; right: 28px !important; }
+.battle-screen.v2.t8 > .v2-help-btn { left: auto !important; right: 112px !important; }
+.battle-screen.v2.t8 > .v2-pause:hover, .battle-screen.v2.t8 > .v2-help-btn:hover { border-color: var(--t8-line2); color: #fff; box-shadow: none; }
+.battle-screen.v2.t8 .t8-ic { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: .85; flex: 0 0 auto; }
+.battle-screen.v2.t8 .backdoor-toggle { left: auto !important; right: 254px !important; top: 18px !important; }
+
+/* 綱引き：パネルをやめて帯の中央に。ミミの数字は金、相手は白。小さなチップの印 */
+.battle-screen.v2.t8 > .v2-stack-gauge.is-opp.is-tug {
+  top: 10px !important; left: 50% !important; transform: translateX(-50%) !important; width: 540px !important; z-index: 8;
+  background: none; box-shadow: none; padding: 0; gap: 0; border-radius: 0;
+}
+.battle-screen.v2.t8 .tug-head { grid-template-columns: 1fr auto 1fr; gap: 10px; }
+.battle-screen.v2.t8 .tug-name { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; letter-spacing: .16em; color: var(--t8-muted); }
+.battle-screen.v2.t8 .tug-name.is-opp { justify-content: flex-end; }
+.battle-screen.v2.t8 .tug-name b { font-family: var(--t8-num); font-weight: 500; font-size: 24px; letter-spacing: .02em; color: var(--t8-ivory); text-shadow: none; vertical-align: 0; }
+.battle-screen.v2.t8 .tug-name.is-mimi b { color: var(--t8-gold); }
+.battle-screen.v2.t8 .tug-name.is-mimi::before,
+.battle-screen.v2.t8 .tug-name.is-opp::after { content: ""; width: 20px; height: 20px; flex: 0 0 auto; background: url('assets/ui/chip_gold.webp') center / contain no-repeat; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); }
+.battle-screen.v2.t8 .tug-name.is-opp::after { background-image: url('assets/ui/chip_red.webp'); }
+.battle-screen.v2.t8 .tug-state { font-size: 12px; font-weight: 700; padding: 1px 10px; border-radius: 2px; letter-spacing: .12em; }
+.battle-screen.v2.t8 .tug-bar { height: 4px; margin: 6px 0 5px; border-radius: 2px; background: rgba(197,58,76,.8); box-shadow: none; }
+.battle-screen.v2.t8 .tug-mimi { background: linear-gradient(90deg, #b8934c, var(--t8-gold-hi)); box-shadow: none; }
+.battle-screen.v2.t8 .tug-opp { background: none; }
+.battle-screen.v2.t8 .tug-mid { top: 0; bottom: 0; width: 1px; margin-left: 0; background: rgba(255,255,255,.7); box-shadow: none; }
+.battle-screen.v2.t8 .tug-goal { font-size: 13px; color: var(--t8-muted); letter-spacing: .06em; }
+.battle-screen.v2.t8 .tug-goal b { font-family: var(--t8-num); font-weight: 500; font-size: 15px; color: var(--t8-ivory); }
+.battle-screen.v2.t8 > .v2-stack-gauge.is-tug.moved-up   { animation: t8TugUp .9s ease; }
+.battle-screen.v2.t8 > .v2-stack-gauge.is-tug.moved-down { animation: t8TugDown .9s ease; }
+@keyframes t8TugUp   { 30% { filter: drop-shadow(0 0 10px rgba(240,213,149,.8)); } }
+@keyframes t8TugDown { 30% { filter: drop-shadow(0 0 10px rgba(255,74,96,.8)); } }
+
+/* 勝率（封印）と詳細データ：右上、メニューの下 */
+.battle-screen.v2.t8 > .v2-seal-row { left: auto !important; right: 28px !important; top: 68px !important; z-index: 8; gap: 8px; flex-direction: row-reverse; }
+.battle-screen.v2.t8 .v2-seal-closed,
+.battle-screen.v2.t8 .v2-seal-open { width: auto; height: 46px; border-radius: 2px; flex-direction: row; gap: 8px; padding: 0 14px; border: 1px solid var(--t8-line2); background: var(--t8-panel); box-shadow: none; animation: none; }
+.battle-screen.v2.t8 .v2-seal-closed .v2-seal-q { font-family: var(--t8-num); font-size: 22px; color: var(--t8-muted); }
+.battle-screen.v2.t8 .v2-seal-open .v2-seal-pct { font-family: var(--t8-num); font-size: 26px; font-weight: 500; color: var(--t8-gold-hi); text-shadow: none; }
+.battle-screen.v2.t8 .v2-seal-cap { order: -1; font-size: 12px; font-weight: 500; letter-spacing: .14em; color: var(--t8-muted); }
+.battle-screen.v2.t8 .v2-detail-toggle { height: 46px; padding: 0 12px; font-size: 12px; font-weight: 500; letter-spacing: .08em; color: var(--t8-muted); background: rgba(12,9,10,.55); border: 1px solid var(--t8-line); box-shadow: none; transform: none; }
+.battle-screen.v2.t8 > .v2-range-band { left: auto !important; right: 28px !important; top: 124px !important; width: 260px !important; z-index: 8; }
+.battle-screen.v2.t8 > .opponent-info { position: absolute; left: auto; right: 28px; top: 124px; width: 260px; z-index: 8; }
+.battle-screen.v2.t8 > .v2-range-band:not(:empty) ~ .opponent-info { top: 214px; }
+.battle-screen.v2.t8 .note-tell-hint { background: var(--t8-panel); border: 1px solid var(--t8-line); padding: 8px 10px; font-size: 12px; }
+
+/* ---- 相手のセリフ：フェルトの上の字幕。伏せ札（見せ合いで表）は字幕の右、卓の上 ---- */
+.battle-screen.v2.t8 > .v2-band {
+  left: 240px !important; right: 240px !important; top: 396px !important; height: 56px !important; z-index: 6;
+  transform: none !important; background: radial-gradient(50% 60% at 50% 55%, rgba(8,4,6,.62), rgba(8,4,6,0) 100%) !important;
+  border: 0 !important; box-shadow: none !important; opacity: 1 !important; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.battle-screen.v2.t8 > .v2-band::before { display: none !important; }
+.battle-screen.v2.t8 .v2-band-name { position: static !important; width: auto !important; justify-content: center; font-family: var(--t8-mincho) !important; font-size: 14px !important; font-weight: 700; letter-spacing: .3em !important; color: var(--t8-gold) !important; text-shadow: 0 1px 2px rgba(0,0,0,.9) !important; line-height: 1.2; }
+.battle-screen.v2.t8 .opponent-speech.v2-band-text,
+.battle-screen.v2.t8 .opponent-speech.v2-band-text.speech-long {
+  position: static !important; left: auto !important; right: auto !important; max-width: 760px; display: block !important;
+  text-align: center !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 20px !important; font-weight: 500 !important; line-height: 1.35 !important; letter-spacing: .04em; color: var(--t8-ivory) !important; background: none !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,.9), 0 0 18px rgba(0,0,0,.8) !important;
+}
+.battle-screen.v2.t8 .opponent-speech.v2-band-text.speech-long { font-size: 17px !important; white-space: normal; max-height: 2.7em; }
+.battle-screen.v2.t8 .v2-band:has(.v2-band-text:empty) .v2-band-name { visibility: hidden; }
+.battle-screen.v2.t8 .opponent-speech.v2-band-text:empty::before { content: ''; }
+.battle-screen.v2.t8 .v2-band-hand { position: absolute !important; left: 640px !important; top: 10px !important; transform: none !important; gap: 6px; pointer-events: auto; }
+.battle-screen.v2.t8 .v2-band-hand .card { width: 50px !important; height: 70px !important; border-radius: 5px; box-shadow: 0 6px 14px rgba(0,0,0,.55); }
+.battle-screen.v2.t8 .v2-band-hand .card:nth-child(1) { transform: rotate(-5deg); }
+.battle-screen.v2.t8 .v2-band-hand .card:nth-child(2) { transform: rotate(4deg); }
+.battle-screen.v2.t8 .v2-band-hand.revealed { top: -6px !important; }
+.battle-screen.v2.t8 .v2-band-hand.revealed .card { width: 64px !important; height: 90px !important; }
+
+/* ---- 卓の中央：チップの山とポット ---- */
+.battle-screen.v2.t8 > .v2-pot { right: auto !important; left: 50% !important; top: 456px !important; transform: translateX(-50%); z-index: 6;
+  display: grid; grid-template-columns: auto auto auto; grid-template-rows: auto auto; align-items: center; column-gap: 12px; text-align: center; }
+.battle-screen.v2.t8 .t8-stack { grid-row: 1 / span 2; position: relative; width: 40px; height: 40px; }
+.battle-screen.v2.t8 .t8-stack-l { grid-column: 1; }
+.battle-screen.v2.t8 .t8-stack-r { grid-column: 3; }
+.battle-screen.v2.t8 .t8-stack img { position: absolute; left: 0; bottom: calc(var(--i) * 5px); width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0,0,0,.55)); }
+.battle-screen.v2.t8 .v2-pot-label { grid-column: 2; grid-row: 1; font-family: "Noto Sans JP", sans-serif; font-size: 11px; letter-spacing: .26em; color: var(--t8-muted); line-height: 1; }
+.battle-screen.v2.t8 .v2-pot-num { grid-column: 2; grid-row: 2; font-family: var(--t8-num); font-weight: 500; font-size: 30px; line-height: 1; color: var(--t8-gold-hi); text-shadow: none; min-height: 0; margin-top: 3px; }
+.battle-screen.v2.t8 .v2-pot-sub { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin: 0 0 0 12px; white-space: nowrap; }
+.battle-screen.v2.t8 .v2-chip { transform: none; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 2px; }
+.battle-screen.v2.t8 .v2-chip-red { background: rgba(197,58,76,.85); }
+
+/* ---- 場札：印刷された置き場に、本物らしい札 ---- */
+.battle-screen.v2.t8 > .center-table.v2-table { top: 508px !important; height: 116px !important; z-index: 6; }
+.battle-screen.v2.t8 .community-cards { left: 50% !important; top: 0 !important; transform: translateX(-50%) !important; gap: 10px !important; align-items: flex-start; }
+.battle-screen.v2.t8 .community-cards .card { width: 62px !important; height: 86px !important; border-radius: 6px; padding: 0; transform: none; }
+.battle-screen.v2.t8 .community-cards .card.empty { border: 1px solid rgba(216,181,108,.24) !important; background: rgba(0,0,0,.12) !important; box-shadow: inset 0 0 0 4px rgba(0,0,0,.08) !important; }
+.battle-screen.v2.t8 .v2-danger {
+  left: 50% !important; right: auto !important; top: 92px !important; transform: translateX(-50%) !important;
+  width: auto !important; max-width: 520px !important; height: 18px !important; padding: 0 !important; gap: 8px;
+  background: none !important; border: 0 !important;
+}
+.battle-screen.v2.t8 .v2-danger::before { content: '場の危険'; font-size: 11px; font-weight: 500; letter-spacing: .14em; color: var(--t8-muted); opacity: 1; }
+.battle-screen.v2.t8 .v2-danger-track { width: 90px; height: 3px; background: rgba(243,236,224,.14); }
+.battle-screen.v2.t8 .v2-danger-label { font-size: 12px; font-weight: 500; color: #ff9aa9; }
+
+/* 札の顔：四隅の数字（右下は逆さ）＋中央の大きなマーク。紙の白と細い内枠 */
+.battle-screen.v2.t8 .card:not(.empty):not(.card-back) {
+  background: linear-gradient(160deg, #fffdf8 0%, #f6f0e4 100%); color: #17171b;
+  box-shadow: 0 12px 26px rgba(0,0,0,.55), 0 2px 4px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,.07); border: 0;
+}
+.battle-screen.v2.t8 .card.red:not(.empty):not(.card-back) { color: #c22a3e; }
+.battle-screen.v2.t8 .card:not(.empty):not(.card-back) .rank { position: absolute; left: 7px; top: 5px; font-family: var(--t8-num); font-weight: 600; font-size: 22px; line-height: 1; letter-spacing: 0; }
+.battle-screen.v2.t8 .card:not(.empty):not(.card-back) .suit { position: absolute; left: 8px; top: 27px; font-size: 13px; line-height: 1; }
+.battle-screen.v2.t8 .card:not(.empty):not(.card-back) .center-suit { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); font-size: 34px; line-height: 1; opacity: 1; }
+.battle-screen.v2.t8 .card[data-r]:not(.empty):not(.card-back)::after {
+  content: attr(data-r) "\A" attr(data-s); white-space: pre; position: absolute; right: 7px; bottom: 5px; transform: rotate(180deg);
+  font-family: var(--t8-num); font-weight: 600; font-size: 13px; line-height: 1.05; text-align: center; color: inherit; opacity: .9;
+}
+.battle-screen.v2.t8 .player-hand .card:not(.empty):not(.card-back) .rank { left: 9px; top: 7px; font-size: 30px; }
+.battle-screen.v2.t8 .player-hand .card:not(.empty):not(.card-back) .suit { left: 10px; top: 37px; font-size: 17px; }
+.battle-screen.v2.t8 .player-hand .card:not(.empty):not(.card-back) .center-suit { font-size: 52px; }
+.battle-screen.v2.t8 .player-hand .card[data-r]:not(.empty):not(.card-back)::after { font-size: 17px; right: 9px; bottom: 7px; }
+.battle-screen.v2.t8 .v2-band-hand .card:not(.empty):not(.card-back) .rank { font-size: 20px; }
+.battle-screen.v2.t8 .v2-band-hand .card:not(.empty):not(.card-back) .center-suit { font-size: 30px; }
+
+/* ---- ミミ：左下。手札と役は真ん中下 ---- */
+.battle-screen.v2.t8 > .v2-mimi.mimi-area { left: -40px !important; right: auto !important; bottom: 0 !important; width: 470px !important; height: 442px !important; z-index: 5; overflow: hidden; }
+.battle-screen.v2.t8 .v2-mimi-frame img { top: 0 !important; bottom: auto !important; left: 50% !important; width: auto !important; height: 627px !important; object-position: center top !important; filter: drop-shadow(0 0 1px rgba(255,220,170,.3)) drop-shadow(0 20px 40px rgba(0,0,0,.6)); }
+.battle-screen.v2.t8 > .v2-myhand { left: 50% !important; right: auto !important; top: auto !important; bottom: 26px !important; transform: translateX(-50%); z-index: 7;
+  display: flex !important; flex-direction: column; align-items: center; gap: 10px; width: auto !important; }
+.battle-screen.v2.t8 .v2-role { display: flex; align-items: baseline; gap: 10px; background: none; box-shadow: none; padding: 0; border: 0; order: -1; }
+.battle-screen.v2.t8 .v2-role-label { font-size: 14px; font-weight: 400; letter-spacing: .1em; color: var(--t8-muted); }
+.battle-screen.v2.t8 .v2-role-name { font-size: 14px; font-weight: 500; letter-spacing: .04em; color: var(--t8-ivory); text-shadow: none; }
+.battle-screen.v2.t8 .v2-role-kicker { font-size: 12px; color: var(--t8-muted); }
+.battle-screen.v2.t8 .player-hand { display: flex; gap: 10px; }
+.battle-screen.v2.t8 .player-hand .card { width: 92px !important; height: 128px !important; border-radius: 8px; padding: 0; }
+.battle-screen.v2.t8 .player-hand .card.empty { border: 1px solid rgba(216,181,108,.24); background: rgba(0,0,0,.18); }
+
+/* ---- リコの助言：押すボタンの真上に1つ。ミミの心の声の枠は出さない ---- */
+.battle-screen.v2.t8 > .v2-comments.left-panel { left: auto !important; right: 28px !important; top: auto !important; bottom: 212px !important; width: 330px !important; z-index: 7; gap: 0; transition: opacity .2s ease; }
+.battle-screen.v2.t8 .v2-com-mimi { display: none !important; }
+.battle-screen.v2.t8 .v2-com-rico { display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: center; padding: 10px 8px 10px 12px; /* 文は18字（括弧込み）が1行に収まる幅 */ background: linear-gradient(90deg, rgba(10,6,8,0), rgba(10,6,8,.7) 30%); }
+.battle-screen.v2.t8 .v2-com-rico:has(.v2-com-text:empty) { display: none; }
+.battle-screen.v2.t8 .v2-com-face { width: 44px !important; height: 44px !important; border: 1px solid var(--t8-line2) !important; border-radius: 0 !important; box-shadow: none !important; overflow: hidden; }
+.battle-screen.v2.t8 .v2-com-face img { width: 100%; height: 100%; object-fit: cover; object-position: center 20% !important; }
+.battle-screen.v2.t8 .rico-bubble.v2-com-text { background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; font-size: 15px !important; line-height: 1.5 !important; color: var(--t8-ivory) !important; text-shadow: 0 1px 2px rgba(0,0,0,.9); max-height: 4.6em !important; }
+.battle-screen.v2.t8 .rico-bubble.v2-com-text::before { content: 'リコ先輩'; display: block; font-size: 12px; letter-spacing: .16em; color: var(--t8-gold); }
+.battle-screen.v2.t8 .rico-bubble.v2-com-text::after { display: none !important; }
+.battle-screen.v2.t8:has(.bet-chooser) > .v2-comments { opacity: 0; pointer-events: none; }
+
+/* ---- 行動：右下。押してほしい1つだけ金。斜めの板はやめる ---- */
+.battle-screen.v2.t8 > .bottom-bar.v2-actions { left: auto !important; right: 28px !important; top: auto !important; bottom: 34px !important; width: 330px !important; height: auto !important; z-index: 8; padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; }
+.battle-screen.v2.t8 .verb-grid { gap: 8px; }
+.battle-screen.v2.t8 .verb-btn, .battle-screen.v2.t8 .verb-size, .battle-screen.v2.t8 .verb-back {
+  transform: none !important; border-radius: 2px; min-height: 58px; padding: 6px 16px; column-gap: 8px;
+  background: rgba(12,9,10,.72); color: var(--t8-ivory); border: 1px solid var(--t8-line2); box-shadow: none;
+}
+.battle-screen.v2.t8 .verb-btn > *, .battle-screen.v2.t8 .verb-size > *, .battle-screen.v2.t8 .verb-back > * { transform: none !important; }
+.battle-screen.v2.t8 .verb-label { font-size: 19px; font-weight: 700; letter-spacing: .1em; }
+.battle-screen.v2.t8 .verb-sub { font-size: 12px; font-weight: 400; opacity: 1; color: var(--t8-muted); letter-spacing: .02em; }
+.battle-screen.v2.t8 .verb-num { font-family: var(--t8-num); font-weight: 500; font-size: 26px; }
+.battle-screen.v2.t8 .verb-cc { min-height: 64px; color: var(--t8-gold-ink); border-color: var(--t8-gold-hi); background: linear-gradient(180deg, var(--t8-gold-hi) 0%, var(--t8-gold) 100%); box-shadow: 0 10px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.45); }
+.battle-screen.v2.t8 .verb-cc .verb-label { font-size: 21px; }
+.battle-screen.v2.t8 .verb-cc .verb-sub { color: rgba(26,18,6,.72); }
+.battle-screen.v2.t8 .verb-fold { background: rgba(12,9,10,.72); box-shadow: none; }
+.battle-screen.v2.t8 .verb-bet { background: rgba(12,9,10,.72); color: var(--t8-ivory); }
+.battle-screen.v2.t8 .verb-btn:disabled, .battle-screen.v2.t8 .verb-size:disabled { opacity: .45; filter: none; }
+.battle-screen.v2.t8 .verb-btn:not(:disabled):hover, .battle-screen.v2.t8 .verb-size:not(:disabled):hover { border-color: rgba(243,236,224,.5); }
+.battle-screen.v2.t8 .verb-cc:not(:disabled):hover { border-color: #fff3c2; filter: brightness(1.04); }
+.battle-screen.v2.t8 .verb-btn:not(:disabled):active, .battle-screen.v2.t8 .verb-size:not(:disabled):active { transform: translateY(1px) !important; filter: brightness(.95); }
+.battle-screen.v2.t8 .is-suggest, .battle-screen.v2.t8 .is-intro-go { outline: 2px solid #fff3c2; outline-offset: 3px; overflow: visible; } /* 上の「リコのおすすめ」の札が切れないように */
+.battle-screen.v2.t8 .is-suggest::before, .battle-screen.v2.t8 .is-intro-go::before { transform: none; top: -24px; left: 0; font-size: 11px; font-weight: 700; padding: 2px 8px; }
+/* 印の明滅する輪：押した時の波紋（.btn::after の 0.4 倍の縮小と白い円）を引き継ぎ、ボタンの真ん中に白い四角が出ていた */
+.battle-screen.v2 .is-suggest::after, .battle-screen.v2 .is-intro-go::after { transform: none; background: none; border-radius: inherit; transition: none; }
+.battle-screen.v2.t8 .is-suggest::after, .battle-screen.v2.t8 .is-intro-go::after { box-shadow: 0 0 0 5px rgba(255,243,194,.22), 0 0 22px rgba(255,243,194,.32); }
+.battle-screen.v2.t8 .bet-chooser { gap: 8px; }
+.battle-screen.v2.t8 .bet-chooser-head { font-size: 15px; font-weight: 700; color: var(--t8-ivory); letter-spacing: .06em; }
+.battle-screen.v2.t8 .verb-back { min-height: 38px; padding: 0 14px; font-size: 13px; }
+.battle-screen.v2.t8 .bet-chooser-grid { gap: 8px; }
+.battle-screen.v2.t8 .verb-size { min-height: 58px; background: rgba(12,9,10,.78); }
+.battle-screen.v2.t8 .verb-size .verb-label { font-size: 16px; }
+.battle-screen.v2.t8 .verb-size .verb-num { font-size: 24px; color: var(--t8-gold-hi); }
+.battle-screen.v2.t8 .verb-size.size-allin { border-color: rgba(197,58,76,.8); background: rgba(80,14,24,.82); }
+.battle-screen.v2.t8 .verb-fe { font-size: 11px; font-weight: 400; color: var(--t8-muted); }
+.battle-screen.v2.t8 .action-area .btn-primary.big { transform: none; border-radius: 2px; height: 64px; font-size: 19px; letter-spacing: .2em; font-weight: 700;
+  color: var(--t8-gold-ink); background: linear-gradient(180deg, var(--t8-gold-hi) 0%, var(--t8-gold) 100%); box-shadow: 0 10px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.45); }
+.battle-screen.v2.t8 .action-area .btn-primary.big::after { display: none; }
+.battle-screen.v2.t8 .action-area .btn-primary.big:active { transform: translateY(1px); }
+.battle-screen.v2.t8 .status-note { text-align: center; font-size: 15px; letter-spacing: .1em; color: var(--t8-muted); padding: 18px 0; background: rgba(12,9,10,.55); border: 1px solid var(--t8-line); }
+@media (prefers-reduced-motion: reduce) { .battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle { display: none; } }
+/* 卓 v8：前の層の指定の打ち消し（相手の枠のぼかし・伏せ札の非表示・役の欄の幅・リコの名札の位置） */
+.battle-screen.v2.t8 > .v2-opp { -webkit-mask-image: none !important; mask-image: none !important; }
+.battle-screen.v2.t8 .v2-band-hand:not(.revealed) { display: flex !important; }
+.battle-screen.v2.t8 .v2-role { width: auto !important; max-width: none !important; white-space: nowrap; text-align: left; }
+.battle-screen.v2.t8 .v2-role-label, .battle-screen.v2.t8 .v2-role-name, .battle-screen.v2.t8 .v2-role-kicker { white-space: nowrap; width: auto !important; writing-mode: horizontal-tb; }
+.battle-screen.v2.t8 .rico-bubble.v2-com-text::before {
+  position: static !important; transform: none !important; inset: auto !important; width: auto !important; height: auto !important;
+  background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; margin: 0 0 2px !important;
+}
+.battle-screen.v2.t8 .verb-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; letter-spacing: 0; }
+/* 卓 v8：考え中でも相手をくすませすぎない（手番は時間の大半。主役の相手が 55% の暗さに沈んでいた） */
+.battle-screen.v2.t8 .v2-opp .char-opponent img { transition: filter .45s ease; }
+.battle-screen.v2.t8.is-deciding .v2-opp .char-opponent img,
+.battle-screen.v2.t8.is-deciding .v2-opp .char-opponent .t8-idle { filter: brightness(.86) drop-shadow(0 0 1px rgba(255,220,170,.3)) drop-shadow(0 24px 40px rgba(0,0,0,.65)) !important; }
+/* 字幕は2行まで・幅を抑える。相手の伏せ札（見せ合いで表）はフェルトの右寄りへ */
+.battle-screen.v2.t8 > .v2-band { top: 390px !important; height: 58px !important; }
+.battle-screen.v2.t8 .opponent-speech.v2-band-text, .battle-screen.v2.t8 .opponent-speech.v2-band-text.speech-long { max-width: 600px; }
+.battle-screen.v2.t8 .v2-band-hand { left: 700px !important; top: 34px !important; }
+.battle-screen.v2.t8 .v2-band-hand.revealed { top: 28px !important; }
+/* 場札・場の危険・ミミの役の縦の間隔 */
+.battle-screen.v2.t8 > .v2-pot { top: 450px !important; }
+.battle-screen.v2.t8 > .center-table.v2-table { top: 500px !important; }
+/* 行動欄とリコの助言を少し広く（「上乗せする ▸」が2行に折れないように） */
+.battle-screen.v2.t8 > .bottom-bar.v2-actions, .battle-screen.v2.t8 > .v2-comments.left-panel { width: 360px !important; }
+.battle-screen.v2.t8 .verb-fold .verb-label, .battle-screen.v2.t8 .verb-bet .verb-label { font-size: 18px; letter-spacing: .08em; white-space: nowrap; }
+/* 卓 v8：卓の見た目（交換所）は、部屋の背景ではなく「フェルト・レール」と「四隅の層」で表す。
+   部屋の背景に色を足すと、相手の待機動画（部屋ごと撮った絵）と周りがずれるため。四隅の層は相手と動画の上にかかる */
+body[data-table-skin] .battle-screen.v2.t8 > .bg-poker::before,
+body[data-table-skin] .battle-screen.v2.t8 > .bg-poker::after { display: none !important; }
+/* VIP：卓を暗く沈め、画面を金の額縁で囲み、天井から光 */
+body[data-table-skin="vip"] .battle-screen.v2.t8 > .t8-vignette {
+  background: radial-gradient(ellipse 36% 38% at 50% -4%, rgba(255,226,150,.30), rgba(255,226,150,0) 72%),
+              radial-gradient(120% 100% at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,.6) 100%), rgba(8,2,4,.18);
+  box-shadow: inset 0 0 0 3px rgba(245,215,122,.6), inset 0 0 0 9px rgba(20,6,10,.8), inset 0 0 0 10px rgba(245,215,122,.35), inset 0 0 70px rgba(245,215,122,.2);
+}
+/* ネオン：夜の暗さに沈め、上下の縁で深紅と金のネオン管が明滅 */
+body[data-table-skin="neon"] .battle-screen.v2.t8 > .t8-vignette {
+  background:
+    linear-gradient(180deg, rgba(255,59,92,0) 2.4%, rgba(255,59,92,.95) 2.8%, rgba(255,160,176,1) 3%, rgba(255,59,92,.95) 3.2%, rgba(255,59,92,0) 4.6%),
+    linear-gradient(0deg, rgba(245,215,122,0) 2.4%, rgba(245,215,122,.9) 2.8%, rgba(255,240,200,1) 3%, rgba(245,215,122,.9) 3.2%, rgba(245,215,122,0) 4.6%),
+    radial-gradient(120% 100% at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), rgba(8,2,4,.28);
+  box-shadow: inset 0 0 36px rgba(255,59,92,.5), inset 0 0 90px rgba(255,59,92,.16);
+  animation: shopNeonPulse 2.6s ease-in-out infinite;
+}
+/* スピークイージー：セピアの灯り＋縁に木目の影と真鍮の縁取り */
+body[data-table-skin="speakeasy"] .battle-screen.v2.t8 > .t8-vignette {
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 50%, rgba(40,20,6,0) 58%, rgba(40,20,6,.55) 100%),
+    repeating-linear-gradient(90deg, rgba(92,52,20,.18) 0 2px, rgba(0,0,0,0) 2px 9px, rgba(120,72,30,.12) 9px 10px, rgba(0,0,0,0) 10px 19px);
+  box-shadow: inset 0 0 0 3px rgba(201,150,70,.7);
+}
+.battle-screen.v2.t8 > .t8-tint { display: none; }
+body[data-table-skin="speakeasy"] .battle-screen.v2.t8 > .t8-tint { display: block; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: rgba(150,96,42,.5); mix-blend-mode: color; }
+@media (prefers-reduced-motion: reduce) { body[data-table-skin="neon"] .battle-screen.v2.t8 > .t8-vignette { animation: none; } }
+/* 卓 v8：相手の待機動画。相手の枠（x340・y84）から 600×450 を、部屋ごと撮った絵で動かす。
+   上と左右の縁はぼかして周りの部屋になじませる（下はレールとフェルトの裏）。
+   考え中は部屋と相手を同じ割合で落とすので、動画にも同じ割合を掛ける（溜め・煽り・崩壊の演出の間は一枚絵に戻す） */
+.battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle {
+  width: 600px !important; height: 450px !important; object-fit: cover !important; object-position: center top !important; filter: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 70px, #000 530px, transparent 600px), linear-gradient(180deg, transparent 0, #000 50px, #000 100%) !important;
+  -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent 0, #000 70px, #000 530px, transparent 600px), linear-gradient(180deg, transparent 0, #000 50px, #000 100%) !important; mask-composite: intersect;
+  transition: opacity .6s ease, filter .45s ease;
+}
+/* 煽りの縁光・崩壊の溜めは一枚絵の輪郭に掛ける演出なので、その間は動画を伏せて一枚絵を見せる */
+body.taunt-1 .battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle,
+body.taunt-2 .battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle,
+body.taunt-3 .battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle { opacity: 0 !important; }
+body.collapse-freeze .battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle { opacity: 0 !important; transition: none !important; }
+.battle-screen.v2.t8.is-deciding .v2-opp .char-opponent .t8-idle { filter: brightness(.86) !important; }
+/* 溜め（相手だけ 0.4・部屋 0.6 の割合で落とす）は割合が違うので、一枚絵に戻す */
+body.is-tease-reach .battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle,
+body.is-tease-hot   .battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle { opacity: 0 !important; }
+
+/* =====================================================================
+   タイトル v3（2026-10-04・見本 docs/design-ref/title-v3.html）：今の背景（title_bg）とロゴ（title_logo_hd）を活かす
+   ・背景は一枚絵＋光だけが動くループ動画。全体を24秒かけてゆっくり寄せ、光の粒が舞う
+   ・ロゴは大時計が後ろからのぞく位置。11秒後から10秒ごとに、ロゴの形で切り抜いた金の光が弱く走る
+   ・操作はミミの体に重ならない右下。卓 v8 と同じ決まり：黒の半透明＋細い線、金は押してほしい1つだけ、絵文字なし
+   ・起動して初めて開いた時だけ（.t3-intro）、黒から → ロゴ（金の光） → ボタンの順に出す
+   ===================================================================== */
+.title-screen.t3 {
+  --t3-line: rgba(243,236,224,.18); --t3-line-strong: rgba(243,236,224,.34);
+  --t3-ivory: #f3ece0; --t3-muted: #b3a998; --t3-gold: #d8b56c; --t3-gold-hi: #f0d595; --t3-gold-ink: #1a1206;
+  --t3-num: "Barlow Condensed", "Noto Sans JP", sans-serif; --t3-mincho: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  display: block; overflow: hidden; background: #000; isolation: isolate; color: var(--t3-ivory);
+}
+.title-screen.t3 .t3-scene { position: absolute; inset: 0; transform-origin: 38% 45%; animation: t3Push 24s ease-in-out infinite alternate; }
+.title-screen.t3 .t3-scene > img, .title-screen.t3 .t3-scene > video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.title-screen.t3 .t3-motion { opacity: 0; transition: opacity .8s ease; }
+.title-screen.t3 .t3-motion.is-playing { opacity: 1; }
+@keyframes t3Push { from { transform: scale(1); } to { transform: scale(1.035); } }
+/* 縁を沈めて視線を中へ。右下は操作を置くので少し深く */
+.title-screen.t3 .t3-grade { position: absolute; inset: 0; pointer-events: none; background:
+    radial-gradient(120% 95% at 40% 42%, rgba(0,0,0,0) 55%, rgba(8,4,6,.55) 100%),
+    radial-gradient(48% 46% at 86% 86%, rgba(8,4,6,.72) 0%, rgba(8,4,6,0) 100%),
+    linear-gradient(0deg, rgba(8,4,6,.55) 0%, rgba(8,4,6,0) 22%); }
+/* 光の粒：ゆっくり上へ漂う（位置と不透明度だけを動かす） */
+.title-screen.t3 .t3-motes { position: absolute; inset: 0; pointer-events: none; }
+.title-screen.t3 .t3-motes i { position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s); border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle, rgba(255,226,160,.95) 0%, rgba(255,200,120,.35) 45%, rgba(255,200,120,0) 70%);
+  animation: t3Mote var(--d) linear var(--delay) infinite; }
+@keyframes t3Mote { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: var(--o); } 85% { opacity: var(--o); } 100% { opacity: 0; transform: translate(var(--dx), -140px); } }
+
+/* ロゴ */
+.title-screen.t3 .t3-logo { position: absolute; left: 472px; top: 34px; width: 600px; aspect-ratio: 1600 / 939; margin: 0; pointer-events: none;
+  filter: drop-shadow(0 18px 30px rgba(0,0,0,.55)); }
+.title-screen.t3 .t3-logo img { width: 100%; height: 100%; display: block; }
+.title-screen.t3 .t3-shine { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: .55;
+  -webkit-mask: url('assets/ui/title_logo_hd.webp') center / 100% 100% no-repeat; mask: url('assets/ui/title_logo_hd.webp') center / 100% 100% no-repeat;
+  background: linear-gradient(105deg, rgba(255,240,200,0) 42%, rgba(255,240,200,.75) 50%, rgba(255,240,200,0) 58%) no-repeat;
+  background-size: 260% 100%; background-position: 130% 0; animation: t3ShineAgain 10s ease-in-out 11s infinite; }
+@keyframes t3Shine { from { background-position: 130% 0; opacity: 1; } to { background-position: -30% 0; opacity: 1; } }
+@keyframes t3ShineAgain { 0% { background-position: 130% 0; opacity: .55; } 14%, 100% { background-position: -30% 0; opacity: .55; } }
+/* ロゴの絵が読めない時だけの文字組み */
+.title-screen.t3 .t3-logo-text { display: none; }
+.title-screen.t3 .t3-logo.is-text { aspect-ratio: auto; }
+.title-screen.t3 .t3-logo.is-text .t3-shine { display: none; }
+.title-screen.t3 .t3-logo.is-text .t3-logo-text { display: block; font-family: var(--t3-mincho); font-weight: 800; font-size: 52px; line-height: 1.15; letter-spacing: .04em; text-align: center; color: var(--t3-ivory); }
+.title-screen.t3 .t3-logo-text span { display: block; font-size: 30px; letter-spacing: .14em; }
+
+/* 操作：右下。金は「続きから／はじめる」だけ */
+.title-screen.t3 .t3-menu { position: absolute; right: 64px; bottom: 92px; width: 340px; display: grid; gap: 10px; z-index: 2; }
+.title-screen.t3 .t3-btn { display: flex; justify-content: space-between; align-items: center; height: 60px; padding: 0 22px; margin: 0;
+  border: 1px solid var(--t3-line-strong); border-radius: 2px; background: rgba(14,9,10,.62); color: var(--t3-ivory);
+  font-family: "Noto Sans JP", sans-serif; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); transition: background-color .2s ease, border-color .2s ease, filter .2s ease, transform .12s ease; }
+.title-screen.t3 .t3-btn b { font-size: 18px; font-weight: 700; letter-spacing: .16em; }
+.title-screen.t3 .t3-btn small { font-family: var(--t3-num); font-size: 14px; font-weight: 500; letter-spacing: .14em; color: var(--t3-muted); }
+.title-screen.t3 .t3-btn:hover { border-color: rgba(243,236,224,.6); background: rgba(28,19,21,.72); }
+.title-screen.t3 .t3-btn:active { transform: translateY(1px); }
+.title-screen.t3 .t3-btn:focus-visible { outline: 2px solid var(--t3-gold-hi); outline-offset: 3px; }
+.title-screen.t3 .t3-btn.is-primary { height: 66px; color: var(--t3-gold-ink); border-color: var(--t3-gold-hi);
+  background: linear-gradient(180deg, var(--t3-gold-hi) 0%, var(--t3-gold) 100%); box-shadow: 0 10px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.45); }
+.title-screen.t3 .t3-btn.is-primary small { color: rgba(26,18,6,.72); }
+.title-screen.t3 .t3-btn.is-primary:hover { filter: brightness(1.06); background: linear-gradient(180deg, var(--t3-gold-hi) 0%, var(--t3-gold) 100%); }
+.title-screen.t3 .t3-record { display: flex; justify-content: flex-end; gap: 18px; margin-top: 4px; font-size: 13px; color: var(--t3-muted); letter-spacing: .06em; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+.title-screen.t3 .t3-record b { font-family: var(--t3-num); font-weight: 500; font-size: 15px; color: var(--t3-ivory); letter-spacing: .04em; margin-left: 6px; }
+
+/* 右上：音（共通の音量バー）とシェア。左下：版 */
+.title-screen.t3 .t3-utils { position: absolute; right: 24px; top: 20px; display: flex; gap: 8px; align-items: center; z-index: 3; }
+.title-screen.t3 .t3-icon { width: 40px; height: 40px; display: grid; place-items: center; padding: 0; margin: 0; border: 1px solid var(--t3-line); border-radius: 2px;
+  background: rgba(12,9,10,.5); color: var(--t3-ivory); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color .2s ease, background-color .2s ease; }
+.title-screen.t3 .t3-icon:hover { border-color: rgba(243,236,224,.5); background: rgba(28,19,21,.6); }
+.title-screen.t3 .t3-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.title-screen.t3 .t3-utils .audio-bar-wrap { position: static; display: block; }
+.title-screen.t3 .t3-utils .audio-bar { margin: 0; height: 40px; padding: 0 12px 0 0; gap: 6px; border: 1px solid var(--t3-line); border-radius: 2px; background: rgba(12,9,10,.5); box-shadow: none; }
+.title-screen.t3 .t3-utils .audio-bar-toggle { width: 38px; height: 38px; border: 0; border-radius: 0; background: none; color: var(--t3-ivory); font-size: 0; }
+.title-screen.t3 .t3-utils .audio-bar-toggle:hover { background: none; color: #fff; }
+.title-screen.t3 .t3-utils .audio-bar-toggle svg { width: 18px; height: 18px; stroke-width: 1.6; }
+.title-screen.t3 .t3-utils .audio-bar-volume { width: 84px; height: 2px; border: 0; border-radius: 1px; background: rgba(243,236,224,.3); }
+.title-screen.t3 .t3-utils .audio-bar-volume::-webkit-slider-thumb { width: 12px; height: 12px; border: 0; background: var(--t3-ivory); }
+.title-screen.t3 .t3-utils .audio-bar-volume::-moz-range-thumb { width: 12px; height: 12px; border: 0; background: var(--t3-ivory); }
+.title-screen.t3 .t3-ver { position: absolute; left: 24px; bottom: 18px; font-family: var(--t3-num); font-size: 13px; letter-spacing: .16em; color: rgba(243,236,224,.5); }
+
+/* 初めて開いた時の出方 */
+.title-screen.t3.t3-intro .t3-scene { animation: t3SceneIn 1.1s ease-out both, t3Push 24s ease-in-out 1.1s infinite alternate; }
+.title-screen.t3.t3-intro .t3-logo { animation: t3LogoIn 1s cubic-bezier(.2,.8,.2,1) .35s both; }
+.title-screen.t3.t3-intro .t3-shine { animation: t3Shine 1.4s ease-in-out 1.25s 1 both, t3ShineAgain 10s ease-in-out 11s infinite; }
+.title-screen.t3.t3-intro .t3-menu { animation: t3Rise .7s ease-out 1.5s both; }
+.title-screen.t3.t3-intro .t3-utils, .title-screen.t3.t3-intro .t3-ver { animation: t3Rise .7s ease-out 1.6s both; }
+@keyframes t3SceneIn { from { opacity: 0; filter: brightness(.4); } to { opacity: 1; filter: none; } }
+@keyframes t3LogoIn { from { opacity: 0; transform: translateY(-10px) scale(1.04); filter: blur(6px) drop-shadow(0 18px 30px rgba(0,0,0,.55)); } to { opacity: 1; transform: none; filter: drop-shadow(0 18px 30px rgba(0,0,0,.55)); } }
+@keyframes t3Rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* スマホ横持ち：画面全体が 0.4〜0.55 倍に縮むので、押す所を大きくする（実寸で 40px 前後） */
+@media (max-width: 920px) {
+  .title-screen.t3 .t3-menu { right: 48px; bottom: 64px; width: 440px; gap: 14px; }
+  .title-screen.t3 .t3-btn { height: 82px; padding: 0 28px; }
+  .title-screen.t3 .t3-btn.is-primary { height: 92px; }
+  .title-screen.t3 .t3-btn b { font-size: 26px; }
+  .title-screen.t3 .t3-btn small { font-size: 20px; }
+  .title-screen.t3 .t3-record { font-size: 18px; gap: 24px; }
+  .title-screen.t3 .t3-record b { font-size: 21px; }
+  .title-screen.t3 .t3-utils { gap: 12px; }
+  .title-screen.t3 .t3-icon { width: 64px; height: 64px; }
+  .title-screen.t3 .t3-icon svg { width: 28px; height: 28px; }
+  .title-screen.t3 .t3-utils .audio-bar { height: 64px; padding-right: 16px; }
+  .title-screen.t3 .t3-utils .audio-bar-toggle { width: 62px !important; height: 62px !important; }
+  .title-screen.t3 .t3-utils .audio-bar-toggle svg { width: 28px; height: 28px; }
+  .title-screen.t3 .t3-utils .audio-bar-volume { width: 120px; }
+  .title-screen.t3 .t3-ver { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .title-screen.t3 .t3-scene, .title-screen.t3 .t3-logo, .title-screen.t3 .t3-shine, .title-screen.t3 .t3-menu, .title-screen.t3 .t3-utils, .title-screen.t3 .t3-ver { animation: none !important; }
+  .title-screen.t3 .t3-motes, .title-screen.t3 .t3-shine { display: none; }
+}
+
+/* 全画面の案内（スマホ横持ち）：タイトル v3・卓 v8 と同じ決まり（黒の半透明＋細い線、象牙色の文字）。光の脈打ちはやめる */
+#fullscreen-btn-group { gap: 6px; }
+#fullscreen-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: 1px solid rgba(243,236,224,.34); border-radius: 2px;
+  background: rgba(12,9,10,.82); color: #f3ece0; font-family: "Noto Sans JP", sans-serif; font-size: 13px; font-weight: 500; letter-spacing: .08em;
+  box-shadow: 0 6px 18px rgba(0,0,0,.5); animation: none; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+#fullscreen-btn::after { display: none; }
+#fullscreen-btn svg, #fullscreen-dismiss-btn svg { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#fullscreen-dismiss-btn { display: grid; place-items: center; width: 40px; border: 1px solid rgba(243,236,224,.24); border-radius: 2px; background: rgba(12,9,10,.82); color: #b3a998; }
+
+/* 研修のリコ先輩の一言：卓 v8 と同じ決まりに（黒の半透明＋細い線、名前は明朝の金、斜めの枠はやめる） */
+.coach-card { gap: 12px; padding: 12px 18px 12px 12px; color: #f3ece0; border-radius: 2px;
+  background: rgba(12,9,10,.94); border: 1px solid rgba(243,236,224,.3); box-shadow: 0 14px 36px rgba(0,0,0,.6); }
+.coach-face { width: 52px; height: 60px; transform: none; border: 1px solid rgba(216,181,108,.6); border-radius: 2px; background: #1a1012; }
+.coach-face img { transform: scale(1.28); }
+.coach-name { font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif; font-size: 13px; font-weight: 700; letter-spacing: .12em; color: #d8b56c; }
+.coach-text { font-size: 17px; font-weight: 700; line-height: 1.6; }
+.coach-hint { color: #a99f93; opacity: 1; }
+.coach-layer.is-wait .coach-hint { color: #f3ece0; }
+.coach-choice { min-height: 46px; padding: 8px 18px; font-size: 15px; font-weight: 700; letter-spacing: .06em; color: #f3ece0; border-radius: 2px;
+  background: rgba(20,14,15,.9); border: 1px solid rgba(243,236,224,.34); box-shadow: none; }
+.coach-choice:hover:not(:disabled) { border-color: rgba(243,236,224,.6); }
+.coach-hole { border-width: 2px; border-radius: 2px; }
+
+/* =====================================================================
+   ハンドの結果（毎ハンドの後）：卓 v8 と同じ決まりに揃える
+   黒の半透明＋細い線、文字は明朝・ゴシック・Barlow Condensed。金は「勝った額・決め手の札・進むボタン」だけ。光る縁・絵文字・斜めはやめる
+   ===================================================================== */
+.hand-result-overlay { background: rgba(6,4,5,.74); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+.hand-result-overlay::before { display: none; }
+.hand-result-overlay .hr-card { width: 720px; padding: 20px 32px 24px; gap: 10px; border: 1px solid rgba(243,236,224,.22); border-radius: 2px;
+  background: rgba(14,10,11,.97); box-shadow: 0 24px 60px rgba(0,0,0,.6), inset 0 2px 0 rgba(243,236,224,.35); color: #f3ece0;
+  font-family: "Noto Sans JP", sans-serif; animation: hrIn .32s cubic-bezier(.2,.8,.2,1); }
+@keyframes hrIn { from { opacity: 0; transform: translateY(10px); } }
+.hand-result-overlay .hr-card.hr-win, .hand-result-overlay .hr-card.hr-fold-good { border-color: rgba(216,181,108,.5); box-shadow: 0 24px 60px rgba(0,0,0,.6), inset 0 2px 0 #d8b56c; }
+.hand-result-overlay .hr-card.hr-lose { border-color: rgba(243,236,224,.18); box-shadow: 0 24px 60px rgba(0,0,0,.6), inset 0 2px 0 #b0565c; }
+.hand-result-overlay .hr-card.hr-draw, .hand-result-overlay .hr-card.hr-fold { border-color: rgba(243,236,224,.18); box-shadow: 0 24px 60px rgba(0,0,0,.6), inset 0 2px 0 rgba(243,236,224,.35); }
+.hand-result-overlay.is-replay .hr-card::before { content: 'リプレイ'; top: 10px; left: 32px; font-size: 11px; color: #a99f93; letter-spacing: .2em; }
+.hand-result-overlay .hr-head { font-family: "Barlow Condensed", "Noto Sans JP", sans-serif; font-size: 14px; letter-spacing: .16em; color: #a99f93; }
+.hand-result-overlay .hr-handno { font-weight: 500; text-transform: uppercase; }
+.hand-result-overlay .hr-verdict { font-family: "Noto Sans JP", sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .08em; padding: 2px 10px; border-radius: 2px; background: none; box-shadow: none; animation: none; border: 1px solid currentColor; }
+.hand-result-overlay .verdict-clean { color: #d8b56c; }
+.hand-result-overlay .verdict-suckout { color: #9fd3a8; }
+.hand-result-overlay .verdict-badbeat, .hand-result-overlay .verdict-dominated { color: #e0959a; }
+.hand-result-overlay .verdict-cooler, .hand-result-overlay .verdict-bluff, .hand-result-overlay .verdict-misfold { color: #c9b8a6; }
+.hand-result-overlay .hr-strong-badge { align-self: center; padding: 2px 14px; border: 1px solid rgba(216,181,108,.7); border-radius: 2px; background: none; color: #f0d595; font-size: 13px; font-weight: 700; letter-spacing: .14em; box-shadow: none; animation: none; }
+.hand-result-overlay .hr-title { font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif; font-size: 40px; font-weight: 800; letter-spacing: .2em; line-height: 1.2; color: #f3ece0; text-shadow: none; }
+.hand-result-overlay .hr-card.hr-win .hr-title, .hand-result-overlay .hr-card.hr-fold-good .hr-title { color: #f0d595; text-shadow: none; }
+.hand-result-overlay .hr-card.hr-lose .hr-title { color: #e0a3a6; }
+.hand-result-overlay .hr-streak-badge { font-size: 12px; color: #a99f93; letter-spacing: .1em; margin: 0; }
+.hand-result-overlay .hr-pot { font-size: 14px; color: #a99f93; letter-spacing: .04em; }
+.hand-result-overlay .hr-pot b { font-family: "Barlow Condensed", sans-serif; font-size: 32px; font-weight: 600; color: #f3ece0; margin: 0 2px; }
+.hand-result-overlay .hr-pot small { font-size: 12px; }
+.hand-result-overlay .hr-pot .hr-pot-plus, .hand-result-overlay .hr-pot b.hr-pot-plus { color: #f0d595; }
+.hand-result-overlay .hr-pot .hr-pot-minus, .hand-result-overlay .hr-pot b.hr-pot-minus { color: #e0a3a6; }
+.hand-result-overlay .hr-verdict-desc { font-size: 13px; font-style: normal; color: #cfc6b8; background: none; border: 0; border-radius: 0; padding: 0; }
+.hand-result-overlay .hr-fold-note { font-size: 14px; font-weight: 500; color: #e6ddd0; background: rgba(243,236,224,.04); border: 0; border-left: 2px solid rgba(243,236,224,.3); padding: 8px 12px; text-align: left; }
+.hand-result-overlay .hr-fold-note.fq-good { border-left-color: #d8b56c; color: #f3ece0; }
+/* 見せ合い：ふたりの札と役。勝った方だけ細い金の線 */
+.hand-result-overlay .hr-showdown { background: none; border-radius: 0; padding: 4px 0; gap: 14px; }
+.hand-result-overlay .hr-player-block { padding: 10px 8px; border: 1px solid rgba(243,236,224,.12); border-radius: 2px; background: rgba(243,236,224,.03); }
+.hand-result-overlay .hr-winner { animation: none; background: rgba(216,181,108,.06); border-color: rgba(216,181,108,.55); }
+.hand-result-overlay .hr-loser { opacity: .72; }
+.hand-result-overlay .hr-player-name { font-family: "Shippori Mincho B1", serif; font-size: 13px; font-weight: 700; letter-spacing: .12em; color: #cfc6b8; }
+.hand-result-overlay .hr-vs { font-family: "Barlow Condensed", sans-serif; font-size: 15px; font-weight: 500; letter-spacing: .2em; color: #8d8379; }
+.hand-result-overlay .hr-player-eval { font-size: 14px; font-weight: 700; color: #cfc6b8; background: none; padding: 0; border-radius: 0; letter-spacing: .06em; }
+.hand-result-overlay .hr-player-eval.winning { color: #f0d595; background: none; }
+.hand-result-overlay .hr-pcard { min-width: 38px; padding: 5px 7px; border-radius: 3px; background: #f4efe6; color: #1b1516; border: 1px solid rgba(0,0,0,.35);
+  font-family: "Barlow Condensed", "Noto Sans JP", sans-serif; font-size: 20px; font-weight: 600; line-height: 1.1; box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+.hand-result-overlay .hr-pcard.red { color: #b3262f; }
+/* 役に使った札：金で塗りつぶさず、細い金の縁と少し持ち上げるだけ。使わなかった札は沈める */
+.hand-result-overlay .hr-pcard-hi { background: #f4efe6 !important; color: #1b1516 !important; border-color: #d8b56c; box-shadow: 0 0 0 2px #d8b56c, 0 6px 12px rgba(0,0,0,.4); transform: translateY(-3px); }
+.hand-result-overlay .hr-pcard-hi.red { color: #b3262f !important; }
+.hand-result-overlay .hr-player-hand .hr-pcard:not(.hr-pcard-hi), .hand-result-overlay .hr-board-cards .hr-pcard:not(.hr-pcard-hi) { opacity: .62; }
+.hand-result-overlay .hr-board { gap: 12px; }
+.hand-result-overlay .hr-board-label { font-size: 12px; letter-spacing: .14em; color: #a99f93; }
+.hand-result-overlay .hr-board-cards { gap: 6px; }
+/* 降りた時 */
+.hand-result-overlay .hr-fold-row { background: rgba(243,236,224,.03); border: 1px solid rgba(243,236,224,.12); border-radius: 2px; font-style: normal; color: #e6ddd0; }
+.hand-result-overlay .hr-fold-msg { font-size: 15px; }
+.hand-result-overlay .hr-muck-card { width: 34px; height: 48px; border-radius: 3px; border: 1px solid rgba(216,181,108,.4); background: url('assets/ui/card_back_default.webp') center / cover, #3a1c22; color: transparent; }
+.hand-result-overlay .hr-muck-label { font-size: 12px; color: #8d8379; }
+.hand-result-overlay .hr-reveal-btn { min-width: 220px; min-height: 40px; padding: 6px 16px; border: 1px solid rgba(243,236,224,.34); border-radius: 2px; background: rgba(20,14,15,.9); color: #f3ece0; font-size: 13px; font-weight: 700; letter-spacing: .08em; box-shadow: none; border-image: none; }
+.hand-result-overlay .hr-reveal-panel { background: rgba(243,236,224,.03); border: 1px solid rgba(243,236,224,.12); border-radius: 2px; }
+.hand-result-overlay .hr-reveal-label { color: #a99f93; }
+.hand-result-overlay .hr-reveal-eval { color: #f0d595; }
+.hand-result-overlay .hr-reveal-analysis { background: none; border-left: 2px solid rgba(243,236,224,.3); border-radius: 0; }
+.hand-result-overlay .hr-ra-tag { background: none; border: 1px solid rgba(243,236,224,.34); border-radius: 2px; color: #cfc6b8; font-weight: 700; }
+.hand-result-overlay .hr-ra-text { color: #e6ddd0; }
+.hand-result-overlay .hr-ra-text b { color: #f0d595; }
+.hand-result-overlay .hr-ra-note { color: #8d8379; font-style: normal; }
+/* 勝率の推移・決め手 */
+.hand-result-overlay .hr-equity { background: none; border: 0; border-top: 1px solid rgba(243,236,224,.12); border-bottom: 1px solid rgba(243,236,224,.12); border-radius: 0; padding: 8px 4px; }
+.hand-result-overlay .hr-equity-title { font-size: 12px; font-weight: 500; letter-spacing: .14em; color: #a99f93; text-align: center; }
+.hand-result-overlay .hre-street { color: #a99f93; letter-spacing: .1em; }
+.hand-result-overlay .hre-pct { font-family: "Barlow Condensed", sans-serif; font-size: 22px; font-weight: 600; text-shadow: none; }
+.hand-result-overlay .hre-pct.good { color: #9fd3a8; }
+.hand-result-overlay .hre-pct.mid { color: #f3ece0; }
+.hand-result-overlay .hre-pct.bad { color: #e0a3a6; }
+.hand-result-overlay .hre-arrow { color: #5d554e; }
+.hand-result-overlay .hr-pivot { font-size: 13px; color: #a99f93; background: none; border: 0; }
+.hand-result-overlay .hr-pivot b { color: #f3ece0; }
+.hand-result-overlay .hr-pivot-empty { display: none; }
+/* ひとこと：字幕の書き方（明朝・控えめ） */
+.hand-result-overlay .hr-line, .hand-result-overlay .hr-line-mimi, .hand-result-overlay .hr-line-opp { font-family: "Shippori Mincho B1", serif; font-size: 15px; font-style: normal; font-weight: 600; color: #e6ddd0; background: none; border: 0; padding: 2px 0; }
+.hand-result-overlay .hr-chips { font-size: 13px; color: #a99f93; background: none; border-radius: 0; border-top: 1px solid rgba(243,236,224,.12); padding: 10px 12px 2px; }
+.hand-result-overlay .hr-chips b { font-family: "Barlow Condensed", sans-serif; font-size: 20px; font-weight: 600; color: #f3ece0; }
+/* 進む：金の平らなボタン（金の額縁画像と光沢はやめる） */
+.hand-result-overlay .hr-card > #continue-hand-btn { min-height: 54px; padding: 0 24px; border: 1px solid #f0d595; border-image: none; border-radius: 2px;
+  background: linear-gradient(180deg, #f0d595 0%, #d8b56c 100%); color: #1a1206; text-shadow: none;
+  font-family: "Noto Sans JP", sans-serif; font-size: 17px; font-weight: 700; letter-spacing: .14em; transform: none; animation: none;
+  box-shadow: 0 -14px 20px 6px rgba(14,10,11,.94), inset 0 1px 0 rgba(255,255,255,.45); }
+.hand-result-overlay .hr-card > #continue-hand-btn::before, .hand-result-overlay .hr-card > #continue-hand-btn::after { display: none; }
+@media (prefers-reduced-motion: reduce) { .hand-result-overlay .hr-card { animation: none; } }
+
+/* スマホ（画面全体が 0.4〜0.55 倍に縮む）：卓の上の小さな操作は、見た目を変えずに押せる範囲だけ広げる */
+@media (max-width: 920px), (pointer: coarse) {
+  .battle-screen.v2.t8 .v2-pause::before, .battle-screen.v2.t8 .v2-help-btn::before,
+  .battle-screen.v2.t8 .v2-detail-toggle::before, .battle-screen.v2.t8 .v2-seal-closed::before {
+    content: ''; position: absolute; inset: -12px 0; background: none; border: 0; box-shadow: none; transform: none;
+  }
+  .battle-screen.v2.t8 .v2-detail-toggle, .battle-screen.v2.t8 .v2-seal-closed { position: relative; }
+}
