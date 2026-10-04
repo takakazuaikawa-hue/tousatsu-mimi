@@ -1135,10 +1135,12 @@ function decideOpponentAction(profile, ctx, opts = {}) {
   return { type: 'check_call', intent: 'check', eq };
 }
 
-// 参加費（アンテ）：5ハンドごとに上がり、対戦を締める
-const ANTE_LEVELS = [50, 75, 100, 150, 200, 300];
+// 参加費（アンテ）：4ハンドごとに上がり、対戦を締める（qa/sim.mjs 各300戦：学んだ方針 55〜65%・中央値12〜17ハンド、
+// オールイン連打 31〜35%。3ハンドごとにすると中央値11〜16ハンドだが、学んだ方針が50%前後まで落ちる卓が出る）
+const ANTE_STEP = 4;
+const ANTE_LEVELS = [50, 100, 150, 200, 300, 400];
 function anteForHand(handNo) {
-  return ANTE_LEVELS[Math.min(ANTE_LEVELS.length - 1, Math.floor(Math.max(0, handNo - 1) / 5))];
+  return ANTE_LEVELS[Math.min(ANTE_LEVELS.length - 1, Math.floor(Math.max(0, handNo - 1) / ANTE_STEP))];
 }
 
 // ベットサイズ → チップ数
@@ -13121,7 +13123,7 @@ function startHand() {
   mpSfx('deal'); // 配布音（equippedSePack設定を反映）
 
   state.handStartChips = state.playerChips; // このハンドの収支を実額で出すため
-  // 参加費（アンテ）：5ハンドごとに上がる（対戦が延々と続かないように）
+  // 参加費（アンテ）：4ハンドごとに上がる（対戦が延々と続かないように）
   const anteNow = anteForHand(state.handNo);
   const antePrev = state.handNo > 1 ? anteForHand(state.handNo - 1) : anteNow;
   if (anteNow > antePrev) { state.anteRaisedTo = anteNow; if (typeof toast === 'function') toast(`参加費アップ！ 1ハンド ${anteNow} ずつ`, 'big'); }
