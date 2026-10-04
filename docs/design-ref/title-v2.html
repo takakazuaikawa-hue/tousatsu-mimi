@@ -78,10 +78,10 @@
 <script>
   // ?ui=1：絵と動画を外して文字と操作だけ（動画に重ねた確認用の合成に使う）
   if (new URLSearchParams(location.search).get('ui')) { document.documentElement.style.background = document.body.style.background = 'transparent'; document.querySelector('.stage').style.background = 'transparent'; document.querySelector('.kv').remove(); document.querySelector('.kv-motion').remove(); }
-  // ?kv=<画像のパス> で一枚絵を差し替える（既定は描き直した title_kv_a。今の絵は ?kv=../../assets/backgrounds/title_bg.webp）
-  const kv = new URLSearchParams(location.search).get('kv') || '../../assets/backgrounds/title_kv_a.webp';
+  // ?kv=<画像のパス> で一枚絵を差し替える（既定は描き直した一枚絵（今は読み込み画面の loading_mimi.webp）。今の絵は ?kv=../../assets/backgrounds/title_bg.webp）
+  const kv = new URLSearchParams(location.search).get('kv') || '../../assets/backgrounds/loading_mimi.webp';
   const kvEl = document.querySelector('.kv'); if (kvEl) kvEl.style.setProperty('--kv', `url("${kv}")`);
-  const mv = new URLSearchParams(location.search).get('mv') || '../../assets/motion/title_kv_a_loop.mp4';
+  const mv = new URLSearchParams(location.search).get('mv') || '../../assets/motion/loading_mimi.mp4';
   const v = document.querySelector('.kv-motion');
   if (v) {
   v.addEventListener('playing', () => v.classList.add('is-playing'), { once: true });
