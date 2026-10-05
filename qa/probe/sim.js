@@ -53,7 +53,7 @@
     const st = { hands: 0, psych: 0, logic: 0, showdowns: 0, oppFolds: 0, plFolds: 0, dom: false, rebuy: false, cap: false, allinCalledLost: 0 };
     while (S.P > 0 && S.O > 0) {
       S.handNo++; st.hands++; if (st.hands > 400) { st.cap = true; break; }
-      const ante0 = anteFor ? anteFor(S.handNo, oppId) : 50;
+      const ante0 = OPT.anteLevels ? OPT.anteLevels[Math.min(OPT.anteLevels.length - 1, Math.floor((S.handNo - 1) / (OPT.anteEvery || 5)))] : anteFor ? anteFor(S.handNo, oppId) : 50; // what-if：--opt '{"anteLevels":[...],"anteEvery":3}'
       const a = Math.min(ante0, S.P, S.O); S.P -= a; S.O -= a; S.pot = 2 * a; S.cbP = 0; S.cbO = 0;
       const deck = newDeck(); S.ph = [deck.pop(), deck.pop()]; S.oh = [deck.pop(), deck.pop()]; S.comm = []; S.phase = 'preflop';
       S.psychResolved = false; S.logicResolved = false; S.bossFired = false; S.lastSd = false;
@@ -124,7 +124,7 @@
       }
       S.pot = 0; S.shoved = false;
       if (winner === 'player') { if (OPT.domRule !== 'showdown' || S.lastSd) S.wins++; } else if (winner === 'opponent') S.wins = 0;
-      if (S.P <= 0 && S.O > 0 && S.rebuy > 0 && (OPT.rebuyRule !== "earned" || st.psych + st.logic + st.plFolds > 0)) { S.rebuy = 0; S.P = base; st.rebuy = true; continue; }
+      if (S.P <= 0 && S.O > 0 && S.rebuy > 0 && ((OPT.rebuyRule || "earned") !== "earned" || st.psych + st.logic + st.plFolds > 0)) { S.rebuy = 0; S.P = base; st.rebuy = true; continue; }
       if (S.P <= 0 || S.O <= 0) break;
       const domCheck = fn('isDominanceMode');
       const domNow = (window.__mimiEngine && window.__mimiEngine.dominanceReady) ? window.__mimiEngine.dominanceReady({ P: S.P, O: S.O, base, wins: S.wins }) : (S.P > base && S.P >= S.O * 2 && S.wins >= 5);

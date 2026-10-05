@@ -9,7 +9,9 @@ const EDGE_CANDIDATES = [
   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
   'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
-];
+  process.env.QA_BROWSER || '',
+  '/opt/pw-browsers/chromium',
+].filter(Boolean);
 export const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 class Conn {
@@ -70,6 +72,22 @@ export class Page {
     await this.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile, screenWidth: width, screenHeight: height });
     await this.send('Emulation.setTouchEmulationEnabled', { enabled: !!mobile, maxTouchPoints: mobile ? 5 : 1 });
   }
+  // この環境のブラウザは外（Google Fonts）へ出られないことがある。手元に落とした字体（qa/out/fonts/fonts.css、
+  // 作り方は qa/README.md）があれば、fonts.googleapis.com への要求をそれで返して、本物の字体で撮る
+  async useLocalFonts(cssFile) {
+    if (!cssFile || !fs.existsSync(cssFile)) return false;
+    const css = fs.readFileSync(cssFile);
+    await this.send('Fetch.enable', { patterns: [{ urlPattern: '*fonts.googleapis.com*' }] });
+    const dir = path.dirname(cssFile);
+    this.on('Fetch.requestPaused', (p) => {
+      const m = p.request.url.match(/\/qa\/out\/fonts\/([^?#]+)/);
+      const file = m ? path.join(dir, path.basename(m[1])) : null;
+      const isFont = file && fs.existsSync(file);
+      const body = isFont ? fs.readFileSync(file) : css;
+      this.send('Fetch.fulfillRequest', { requestId: p.requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: isFont ? 'font/woff2' : 'text/css' }, { name: 'Access-Control-Allow-Origin', value: '*' }], body: body.toString('base64') }).catch(() => {});
+    });
+    return true;
+  }
   async addInit(source) { await this.send('Page.addScriptToEvaluateOnNewDocument', { source }); }
   async screenshot(file) {
     const r = await this.send('Page.captureScreenshot', { format: 'png' });
@@ -96,7 +114,8 @@ export async function launch({ port = 9400 + Math.floor(Math.random() * 500), wi
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
     `--window-size=${width},${height}`, '--mute-audio', '--no-first-run', '--no-default-browser-check',
     '--disable-extensions', '--disable-background-timer-throttling', '--disable-renderer-backgrounding',
-    '--disable-backgrounding-occluded-windows', '--autoplay-policy=no-user-gesture-required', 'about:blank',
+    '--disable-backgrounding-occluded-windows', '--autoplay-policy=no-user-gesture-required',
+    ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-dev-shm-usage'] : []), 'about:blank',
   ], { stdio: 'ignore' });
   let ver = null;
   for (let i = 0; i < 150 && !ver; i++) {

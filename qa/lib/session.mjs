@@ -42,6 +42,7 @@ export async function openSession({ width = 1280, height = 800, mobile = false, 
   const browser = await launch({ width, height });
   const page = await browser.newPage();
   await page.setViewport(width, height, mobile);
+  await page.useLocalFonts(path.join(REPO, 'qa', 'out', 'fonts', 'fonts.css'));
   await page.addInit(initScript({ speed, seed, save, clear }));
   for (const p of probes) await page.addInit(fs.readFileSync(path.join(REPO, 'qa', 'probe', p), 'utf8'));
   // ネイティブの confirm/alert は検査を止めるので、記録して自動で OK にする（製品不備として報告対象）

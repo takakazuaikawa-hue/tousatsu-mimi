@@ -106,7 +106,7 @@
     .stare-meter.is-hot { border-color: var(--red-hi); animation: mb-stare-hot .3s steps(2) infinite; }
     @keyframes mb-stare-hot { 50% { box-shadow: 0 0 14px rgba(255,74,96,.95); } }
     .stare-meter.is-beat { box-shadow: 0 0 10px rgba(255,159,194,.8); }
-    .stare-meter .lbl { position: absolute; left: 0; right: 0; bottom: 6px; writing-mode: vertical-rl; margin: 0 auto; font-size: 11px; font-weight: 900; letter-spacing: .2em; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; z-index: 1; line-height: 20px; }
+    .stare-meter .lbl { position: absolute; left: 0; right: 0; bottom: 6px; width: 1em; word-break: break-all; text-align: center; margin: 0 auto; font-size: 11px; font-weight: 900; letter-spacing: 0; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; z-index: 1; line-height: 1.25; }
     .stare-meter .tick { position: absolute; left: -4px; right: -4px; height: 2px; margin-bottom: -1px; background: rgba(255,255,255,.7); z-index: 2; }
     .stare-meter .tick b { position: absolute; left: calc(100% + 1px); top: -8px; font-family: var(--disp); font-weight: 400; font-size: 13px; line-height: 16px; color: var(--dim); }
     .stare-meter .tick.is-got { background: var(--gold-hi); box-shadow: 0 0 8px var(--gold-hi); } .stare-meter .tick.is-got b { color: var(--gold-hi); }
