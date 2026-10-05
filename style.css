@@ -17752,7 +17752,8 @@ body.is-tease-hot   .battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle { opaci
   --st-gold: #d8b56c;
   --st-ink: #f3ece0;
   --st-ease: cubic-bezier(.2, .7, .2, 1);
-  position: absolute; inset: 0; z-index: 320; overflow: hidden;
+  /* 舞台の縁より少し外まで覆う（スマホの縮小で、縁の1画素に下のタイトルがにじんでいた） */
+  position: absolute; inset: -2px; z-index: 320; overflow: hidden;
   background: #07050a; color: var(--st-ink);
   font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
   cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
@@ -17792,6 +17793,44 @@ body.is-tease-hot   .battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle { opaci
 .story-mono p.in { opacity: 1; transform: none; }
 .story-mono p:not(:last-child) { color: rgba(236, 229, 217, .55); }
 .story-overlay:not(.is-mono) .story-mono { opacity: 0; pointer-events: none; }
+
+/* 転生の場面：記憶が途切れた黒が、白金の光にほどける。真ん中に声だけ（女神）。次の題字で光が引き、扉絵の朝へ */
+.story-light {
+  position: absolute; inset: -6%; pointer-events: none; opacity: 0;
+  transition: opacity 1.6s ease;
+  background:
+    radial-gradient(42% 52% at 50% 47%, rgba(255, 252, 244, .98) 0%, rgba(255, 240, 210, .9) 22%, rgba(244, 214, 158, .55) 46%, rgba(216, 181, 108, .16) 70%, rgba(7, 5, 10, 0) 92%);
+}
+.story-light::before {
+  content: ""; position: absolute; left: 50%; top: 47%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 246, 222, 0) 0deg, rgba(255, 246, 222, .1) 3deg, rgba(255, 246, 222, 0) 7deg, rgba(255, 246, 222, 0) 17deg);
+  -webkit-mask: radial-gradient(closest-side, transparent 6%, #000 22%, transparent 52%); mask: radial-gradient(closest-side, transparent 6%, #000 22%, transparent 52%);
+  animation: stRays 60s linear infinite paused;
+}
+.story-overlay.is-voice .story-light { opacity: 1; }
+.story-overlay.is-voice .story-light::before { animation-play-state: running; }
+.story-overlay.is-voice .story-mono { opacity: 0; }
+@keyframes stRays { to { transform: rotate(360deg); } }
+.story-voice {
+  position: absolute; left: 50%; top: 50%; width: min(1000px, 84%); text-align: center; pointer-events: none;
+  opacity: 0; transform: translate(-50%, -44%);
+  transition: opacity .9s ease .6s, transform 1.2s var(--st-ease) .6s;
+}
+.story-overlay.is-voice .story-voice { opacity: 1; transform: translate(-50%, -50%); }
+.story-voice-name {
+  font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", serif; font-weight: 700; font-size: var(--st-name);
+  letter-spacing: .6em; padding-left: .6em; color: #8f6a2c; margin-bottom: .7em;
+}
+.story-voice-name::before, .story-voice-name::after { content: ""; display: inline-block; vertical-align: middle; width: 2.4em; height: 1px; margin: 0 .9em; background: linear-gradient(90deg, rgba(143, 106, 44, 0), rgba(143, 106, 44, .7)); }
+.story-voice-name::after { transform: scaleX(-1); }
+.story-voice-text {
+  margin: 0; white-space: pre-line;
+  font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif; font-weight: 700;
+  font-size: var(--st-mono); line-height: 1.8; letter-spacing: .06em; color: #2b1c10;
+  text-shadow: 0 0 22px rgba(255, 252, 244, .95), 0 0 2px rgba(255, 252, 244, .9);
+}
+.story-voice-text .story-rest { color: transparent; text-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .story-light::before { animation: none; } }
 
 /* 題字：第1話（金・字間広め）→ 副題（明朝・大）→ 細い金線 → 長いタイトル（1行ずつ） */
 .story-title {
