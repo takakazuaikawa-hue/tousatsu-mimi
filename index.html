@@ -38,8 +38,8 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Bebas+Neue&family=Shippori+Mincho+B1:wght@600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap">
-<link rel="stylesheet" href="style.css?v=20261004i">
-<link rel="stylesheet" href="battles/core.css?v=20261004i">
+<link rel="stylesheet" href="style.css?v=20261005a">
+<link rel="stylesheet" href="battles/core.css?v=20261005a">
 </head>
 <body>
 <div id="preload-overlay">
@@ -97,13 +97,28 @@
 <!-- 画面テンプレート群 -->
 <template id="tpl-title">
   <!-- タイトル v3（2026-10-04・見本は docs/design-ref/title-v3.html）：今の背景（title_bg）とロゴ（title_logo_hd＝同じデザインの高解像度版）を活かす。
-       ・背景：一枚絵の上に、ミミの写っていない所の光（シャンデリア・ろうそく・大時計）だけが動くループ動画を重ねる（game.js applyTitleScene）
+       ・背景：一枚絵の上で、ミミの写っていない所の光（シャンデリア・ろうそく・大時計）だけを CSS でなめらかに動かす（.t3-lights）
        ・ロゴは大時計が後ろからのぞく位置。操作はミミの体に重ならない右下。金は押してほしい1つだけ、絵文字なし
        ・起動して初めて開いた時だけ、黒から → ロゴに金の光 → ボタンの順に出す（.t3-intro） -->
   <div class="screen title-screen t3">
     <div class="t3-scene" aria-hidden="true">
       <img class="t3-bg" src="assets/backgrounds/title_bg.webp" alt="" onerror="this.style.display='none';">
-      <video class="t3-motion" muted playsinline loop preload="none"></video>
+      <!-- 光：大時計のガラスを横切る光・灯りの呼吸・星のきらめき。動画をやめ、なめらかに動く CSS の層にした
+           （2026-10 オーナー指摘「動画というよりがくがくしているだけで不具合に見える」：光の粒が1コマで点滅し、ループの継ぎ目で跳ねていた） -->
+      <div class="t3-lights">
+        <i class="t3-clock"><b></b></i>
+        <i class="t3-glow" style="--x:1147px;--y:661px;--r:120px;--d:4.6s;--delay:0s;--o:.42"></i>
+        <i class="t3-glow" style="--x:1245px;--y:672px;--r:96px;--d:5.8s;--delay:1.4s;--o:.36"></i>
+        <i class="t3-glow" style="--x:965px;--y:661px;--r:90px;--d:3.9s;--delay:.7s;--o:.3"></i>
+        <i class="t3-glow" style="--x:640px;--y:150px;--r:150px;--d:6.4s;--delay:2.1s;--o:.26"></i>
+        <i class="t3-glow" style="--x:150px;--y:80px;--r:130px;--d:5.2s;--delay:.4s;--o:.22"></i>
+        <i class="t3-star" style="--x:702px;--y:90px;--s:30px;--d:7.2s;--delay:.8s"></i>
+        <i class="t3-star" style="--x:555px;--y:136px;--s:22px;--d:8.6s;--delay:3.1s"></i>
+        <i class="t3-star" style="--x:694px;--y:232px;--s:26px;--d:9.4s;--delay:5.6s"></i>
+        <i class="t3-star" style="--x:616px;--y:34px;--s:18px;--d:7.9s;--delay:2.2s"></i>
+        <i class="t3-star" style="--x:1147px;--y:440px;--s:24px;--d:8.8s;--delay:4.3s"></i>
+        <i class="t3-star" style="--x:965px;--y:640px;--s:20px;--d:10.2s;--delay:6.8s"></i>
+      </div>
     </div>
     <div class="t3-grade" aria-hidden="true"></div>
     <div class="t3-motes" aria-hidden="true">
@@ -233,7 +248,8 @@
 
     <!-- 左上：HAND ナンバー＋ストリート（縦積み） -->
     <header class="v2-hand">
-      <div class="t8-table-name" data-bind="t8TableName"></div>
+      <!-- 相手のプロフィールは、卓の名前を押した時だけ開く（立ち絵そのものは押せない：何気ない1タップで画面が飛んでいた） -->
+      <button type="button" class="t8-table-name" data-action="char-profile" data-char="__opponent__" title="相手のプロフィールを見る"><span data-bind="t8TableName"></span><svg class="t8-info-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></button>
       <div class="v2-hand-row">
         <span class="v2-disp v2-hand-label">HAND</span>
         <span class="v2-disp v2-hand-no" data-bind="handNo2">01</span>
@@ -254,7 +270,7 @@
 
     <!-- 相手：卓の向こうに大きく。テルは付箋 -->
     <div class="v2-opp">
-      <div class="character-frame char-opponent" data-action="char-profile" data-char="__opponent__" title="相手のプロフィールを見る">
+      <div class="character-frame char-opponent">
         <img data-bind="opponentImg" alt="相手">
         <!-- 卓での待機（呼吸・まばたき）。いつもの表情の時だけ、再生できたら上に重ねる -->
         <video class="t8-idle" muted playsinline loop preload="none" aria-hidden="true"></video>
@@ -321,7 +337,7 @@
         <div class="mimi-thought-bubble v2-com-text" data-bind="mimiThought"></div>
       </div>
       <div class="v2-com v2-com-rico">
-        <div class="v2-com-face character-frame char-rico v2-rico-face" data-action="char-profile" data-char="rico_tutorial" title="リコ先輩のプロフィールを見る">
+        <div class="v2-com-face character-frame char-rico v2-rico-face">
           <img src="assets/ui/face_rico.webp" alt="リコ先輩" onerror="this.onerror=function(){window.assetFallback(this,'rico')};this.src='assets/characters/rico_default.webp';">
         </div>
         <div class="rico-bubble v2-com-text v2-rico-bubble" data-bind="ricoAdvice"></div>
@@ -330,7 +346,7 @@
 
     <!-- 右下：ミミのバストアップ＋手札＋役 -->
     <div class="mimi-area v2-mimi">
-      <div class="character-frame char-mimi v2-mimi-frame" data-action="char-profile" data-char="mimi" title="ミミのプロフィールを見る">
+      <div class="character-frame char-mimi v2-mimi-frame">
         <img data-bind="mimiImg" data-mimi-face src="assets/characters/mimi_default.webp" alt="ミミ" onerror="window.assetFallback(this,'mimi')">
       </div>
     </div>
@@ -474,20 +490,20 @@
   </div>
 </template>
 
-<script src="battles/core.js?v=20261004i"></script>
-<script src="battles/games/detective.js?v=20261004i"></script>
-<script src="battles/games/stare.js?v=20261004i"></script>
-<script src="battles/games/doubt.js?v=20261004i"></script>
-<script src="battles/games/objection.js?v=20261004i"></script>
-<script src="battles/games/gacha.js?v=20261004i"></script>
-<script src="battles/games/handbuild.js?v=20261004i"></script>
-<script src="battles/games/highlow.js?v=20261004i"></script>
-<script src="battles/games/danger.js?v=20261004i"></script>
-<script src="battles/games/sniper.js?v=20261004i"></script>
-<script src="battles/games/outs.js?v=20261004i"></script>
-<script src="battles/games/suspects.js?v=20261004i"></script>
-<script src="assets/manifest.js?v=20261004i"></script>
-<script src="loader.js?v=20261004i"></script>
-<script src="game.js?v=20261004i"></script>
+<script src="battles/core.js?v=20261005a"></script>
+<script src="battles/games/detective.js?v=20261005a"></script>
+<script src="battles/games/stare.js?v=20261005a"></script>
+<script src="battles/games/doubt.js?v=20261005a"></script>
+<script src="battles/games/objection.js?v=20261005a"></script>
+<script src="battles/games/gacha.js?v=20261005a"></script>
+<script src="battles/games/handbuild.js?v=20261005a"></script>
+<script src="battles/games/highlow.js?v=20261005a"></script>
+<script src="battles/games/danger.js?v=20261005a"></script>
+<script src="battles/games/sniper.js?v=20261005a"></script>
+<script src="battles/games/outs.js?v=20261005a"></script>
+<script src="battles/games/suspects.js?v=20261005a"></script>
+<script src="assets/manifest.js?v=20261005a"></script>
+<script src="loader.js?v=20261005a"></script>
+<script src="game.js?v=20261005a"></script>
 </body>
 </html>

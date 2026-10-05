@@ -104,7 +104,7 @@
   const RICO_OUTFITS = /^(bunny|casual|dress|gym|kimono|pajama|santa|school|swimsuit|witch|ending)$/;
   MA.sets = {
     // タイトル：ロード画面で待つ
-    title: () => ['assets/backgrounds/title_bg.webp', 'assets/ui/title_logo_hd.webp', 'assets/motion/title_loop_v3.mp4'],
+    title: () => ['assets/backgrounds/title_bg.webp', 'assets/ui/title_logo_hd.webp'],
     // ロビー：タイトルにいる間に読む
     lobby: () => ['assets/backgrounds/bg_lobby_clock.jpg', 'assets/motion/lobby_loop.mp4', 'assets/characters/rico_greet.webp',
       ...['rico', 'polka', 'selina', 'grano', 'velvet'].map(k => `assets/characters/${k}_default.webp`), 'assets/ui/card_back_default.webp'],

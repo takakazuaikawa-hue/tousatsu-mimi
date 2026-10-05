@@ -46,8 +46,8 @@
     [/結果を見る/, 16], [/進む/, 15], [/はじめから/, 15], [/続きから/, 15], [/OK|はい|了解/, 14], [/閉じる/, 12], [/ロビーへ/, 8], [/再挑戦/, 9], [/再戦/, 4],
   ];
   const PREFER_ACTION = { 'start': 15, 'go-intermission': 19, 'battle-start': 18, 'intro-to-lobby': 18, 'start-hand': 20, 'go-ending': 18, 'rematch': 9, 'rico-mode-serious': 6, 'rico-mode-tutorial': 7, 'history-close': 10, 'glossary-close': 10, 'collection-close': 10, 'rico-viewer-close': 10 };
-  const TAP_OVERLAYS = ['.coach-layer.is-tap', '.rico-cutin', '.cutin-overlay', '.emote-cutin', '.clutch-cutin', '.mp-hand-cutin', '.intermission-overlay', '.reward-cg-viewer-overlay', '.dominance-overlay', '.personality-reveal-banner', '.episode-overlay', '.allin-cutin', '.v2-cutin'];
-  const DUP_WATCH = ['hand-result-overlay', 'intro-win-overlay', 'episode-overlay', 'intermission-overlay', 'ending-prompt-overlay', 'rebuy-overlay', 'login-bonus-overlay', 'chapter-banner', 'psych-modal', 'tutorial-overlay', 'hands-on-overlay', 'dominance-choice-overlay', 'rico-mode-overlay', 'reward-cg-viewer-overlay', 'rico-viewer-overlay'];
+  const TAP_OVERLAYS = ['.story-overlay', '.coach-layer.is-tap', '.rico-cutin', '.cutin-overlay', '.emote-cutin', '.clutch-cutin', '.mp-hand-cutin', '.intermission-overlay', '.reward-cg-viewer-overlay', '.dominance-overlay', '.personality-reveal-banner', '.episode-overlay', '.allin-cutin', '.v2-cutin'];
+  const DUP_WATCH = ['story-overlay', 'hand-result-overlay', 'intro-win-overlay', 'episode-overlay', 'intermission-overlay', 'ending-prompt-overlay', 'rebuy-overlay', 'login-bonus-overlay', 'chapter-banner', 'psych-modal', 'tutorial-overlay', 'hands-on-overlay', 'dominance-choice-overlay', 'rico-mode-overlay', 'reward-cg-viewer-overlay', 'rico-viewer-overlay'];
 
   const mem = { psychPick: {}, rng: 1 };
   const rnd = () => { mem.rng = (mem.rng * 1103515245 + 12345) % 2147483648; return mem.rng / 2147483648; };

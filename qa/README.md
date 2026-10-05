@@ -8,6 +8,7 @@
 | `node qa/smoke.mjs --policy learner --until ending --speed 10 --layout` | 新規セーブからエンディングまで Bot で通す。例外・停止・二重オーバーレイ・ネイティブの確認ダイアログ・レイアウト不備・画面に出た文字を `qa/out/<run>/report.json` に集める |
 | `node qa/smoke.mjs --until stage:polka --size 667x375 --mobile --layout` | スマホ横持ちで同じ検査 |
 | `node qa/sim.mjs --n 2000` | 本物の AI 関数で対戦を回し、方針（allin/station/beginner/learner）ごとの勝率・ハンド数・割り込み回数と、賭けられた時の反応を表にする |
+| `node qa/storyshots.mjs [outDir] [幅x高さ] [mobile]` | 第1話の導入（黒地のモノローグ→扉絵と題字→会話→研修の卓）を、新しいセーブで場面ごとに撮る。会話の文字の画面上の大きさも出す |
 | `node qa/titleshots.mjs [outDir] [new\|return\|ending\|phone]` | タイトル画面（v3）を、初めての人・続きからの人・クリア後・スマホ横持ちで撮る |
 | `node qa/battleshots.mjs <相手> [幅 高さ] [out]` | 卓（v8）を、手番・賭け額選び・フロップ・見せ合いの4場面で撮る |
 | `node qa/idleframes.mjs [outDir] [相手...]` | 相手の待機動画の元の絵を、本編の卓から撮る（部屋＋相手だけ・2倍の解像度）。仕上げは `qa/alpha/idle_finish.py` |

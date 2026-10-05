@@ -3048,18 +3048,12 @@ function applyTitleButtons() {
 // 読み込み画面の間に読み込み係が持っている。持っていない・「視差効果を減らす」設定・データ節約の時は一枚絵のまま。
 // 起動して初めて開いた時だけ、黒から → ロゴに金の光 → ボタンの順に出す（ロビーから戻った時は待たせない）
 let __titleIntroDone = false;
+// 背景の光は CSS（.t3-lights）で動かす。以前の「光だけが動くループ動画」は、光の粒が1コマで点滅し
+// ループの継ぎ目で跳ねて、実機で「がくがくしているだけで不具合に見える」と言われたのでやめた。
 function applyTitleScene() {
   const scr = document.querySelector('.title-screen.t3');
   if (!scr) return;
   if (!__titleIntroDone) { __titleIntroDone = true; scr.classList.add('t3-intro'); }
-  const v = scr.querySelector('.t3-motion');
-  if (!v) return;
-  const local = MOTION_OK && !(navigator.connection && navigator.connection.saveData) ? motionLocalSrc('assets/motion/title_loop_v3.mp4') : null;
-  if (!local) { v.remove(); return; }
-  v.addEventListener('playing', () => v.classList.add('is-playing'), { once: true });
-  v.addEventListener('error', () => v.remove(), { once: true });
-  v.src = local;
-  playAfterPreload(v);
 }
 
 function applyBindings() {
@@ -3379,6 +3373,7 @@ const EPISODES = {
     no: '第1話',
     // 初回導線で全画面を止めずに出す1行。長いタイトル全文は研修完了画面から任意で読ませる。
     short: '第1話 ─ 初日、いきなりポーカー卓',
+    sub: '初日、いきなりポーカー卓',
     bg: 'bg_bunny_locker_room',
     title:
       'デスマーチ明けにトラック転生した私が、\n' +
@@ -3595,6 +3590,171 @@ function showEpisodeTitle(key, onContinue) {
       overlay.classList.toggle('art-only');
     }
   });
+}
+
+//=============================================================
+// 物語の場面（第1話の導入）
+// 黒地のモノローグ → 扉絵と題字（第1話・長いタイトル）→ 扉絵の上の会話 → 卓へ。
+// 押す（クリック・タップ・Enter・Space・→）と、文字送りの途中なら全文を出し、出ていれば次へ進む。
+// 右上の「スキップ」で最後まで飛ばす。文字は舞台（1280×800）の中で組み、スマホで舞台ごと縮んでも
+// 画面上で小さくなりすぎないよう、CSS 側で --game-scale に合わせて大きくする（.story-overlay の変数）。
+//=============================================================
+const STORY_WHO = {
+  rico: { name: 'リコ先輩', face: 'assets/ui/face_rico_bunny.webp' },
+  mimi: { name: 'ミミ', face: 'assets/ui/face_mimi.webp' },
+};
+const PROLOGUES = {
+  rico_tutorial: [
+    { k: 'mono', t: '三日目の徹夜明け。終電は、とっくに出たあとだった。' },
+    { k: 'mono', t: 'ふらつく足で渡った、深夜の横断歩道。' },
+    { k: 'mono', t: '目の前いっぱいのライト。鳴りやまないクラクション。' },
+    { k: 'mono', t: '――そこで、私の記憶は途切れている。' },
+    { k: 'title' },
+    { k: 'say', who: 'mimi', t: '……え？　なにこれ。うさぎの耳？　しっぽ？' },
+    { k: 'say', who: 'mimi', t: 'あったかい……ぴくぴく動く……。これ、本物！？' },
+    { k: 'think', who: 'mimi', t: 'トラック、知らない部屋、うさぎの耳。……まさか、異世界転生ってやつ！？' },
+    { k: 'say', who: 'rico', t: 'おはよ、新人ちゃん。鏡に見とれてないで、そろそろ開店だよ' },
+    { k: 'say', who: 'mimi', t: 'あ、あの！　ここどこですか！？　私、会社の帰りで……' },
+    { k: 'say', who: 'rico', t: 'ここはカジノ。あんたは今日から、うちの新人バニー。名簿にもちゃんと「ミミ」って載ってたよ' },
+    { k: 'say', who: 'mimi', t: '登録したの誰ですか！？　契約書は！？　この耳の説明は！？' },
+    { k: 'say', who: 'rico', t: '登録されてるなら働けるっしょ。細かいことは、あと、あと' },
+    { k: 'say', who: 'rico', t: 'ここのバニーの仕事はね、お客さんとポーカーで勝負すること' },
+    { k: 'say', who: 'mimi', t: 'ポーカー……！？　ルールも知らないです……' },
+    { k: 'say', who: 'rico', t: 'だから研修。今日はアタシと3回だけ勝負して、遊びながら覚えよ' },
+    { k: 'say', who: 'rico', t: '覚えるのはひとつだけ。ポーカーはチップの取り合い。相手のチップを全部もらったら勝ち' },
+    { k: 'think', who: 'mimi', t: '……耳が勝手にぴくっと動いた。どうやら、逃げ道はないらしい' },
+    { k: 'say', who: 'rico', t: 'さ、卓へ行こ。大丈夫、最初はちゃんと教えるから' },
+  ],
+};
+
+function showStoryScene(key, onDone) {
+  const steps = PROLOGUES[key];
+  const done = () => { if (onDone) onDone(); };
+  if (!steps || document.querySelector('.story-overlay')) { done(); return; }
+  const ep = EPISODES[key] || {};
+  const art = `assets/episodes/${key}.webp`;
+  if (window.MimiAssets) window.MimiAssets.warm([art]);
+  const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const sub = ep.sub || String(ep.short || '').split('─').pop().trim();
+  const lnLines = String(ep.title || '').split('\n').filter(Boolean);
+  const ov = document.createElement('div');
+  ov.className = 'story-overlay is-mono';
+  ov.setAttribute('role', 'dialog');
+  ov.setAttribute('aria-label', `${ep.no || ''} ${sub}`.trim());
+  ov.innerHTML = `
+    <div class="story-art" style="background-image:url('${art}')"></div>
+    <div class="story-shade"></div>
+    <div class="story-mono" aria-live="polite"></div>
+    <section class="story-title" aria-live="polite">
+      <div class="story-title-no">${esc(ep.no || '')}</div>
+      <h1 class="story-title-main">${esc(sub)}</h1>
+      <div class="story-title-ln">${lnLines.map((l, i) => `<span style="--i:${i}">${esc(l)}</span>`).join('')}</div>
+    </section>
+    <div class="story-box" aria-live="polite">
+      <div class="story-name"><span class="story-face"><img alt=""></span><b></b></div>
+      <p class="story-text"></p>
+      <span class="story-next" aria-hidden="true"></span>
+    </div>
+    <button type="button" class="story-skip"><span>スキップ</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6l6 6-6 6M12 6l6 6-6 6"/></svg></button>
+    <div class="story-tap" aria-hidden="true">タップで進む</div>`;
+  (document.getElementById('stage') || document.body).appendChild(ov);
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const monoEl = ov.querySelector('.story-mono');
+  const titleEl = ov.querySelector('.story-title');
+  const boxEl = ov.querySelector('.story-box');
+  const nameEl = ov.querySelector('.story-name b');
+  const faceImg = ov.querySelector('.story-face img');
+  const textEl = ov.querySelector('.story-text');
+  let idx = -1, finished = false, typing = false, raf = 0, holdUntil = 0, full = '', shown = 0;
+
+  // 文字送り：まだ出ていない部分も透明で置いておくので、行の折り返しが途中で動かない
+  const paint = () => { textEl.innerHTML = `${esc(full.slice(0, shown))}<span class="story-rest">${esc(full.slice(shown))}</span>`; };
+  const finishTyping = () => { cancelAnimationFrame(raf); typing = false; shown = full.length; paint(); ov.classList.add('can-next'); };
+  const type = (t) => {
+    full = t; shown = 0; ov.classList.remove('can-next');
+    if (reduce) { finishTyping(); return; }
+    typing = true; paint();
+    let last = performance.now();
+    const tick = (now) => {
+      if (!typing) return;
+      const add = Math.floor((now - last) * 0.042); // 1秒に42字
+      if (add > 0) { shown = Math.min(full.length, shown + add); last = now; paint(); }
+      if (shown >= full.length) { finishTyping(); return; }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+  };
+
+  const showStep = (s) => {
+    if (s.k === 'mono') {
+      const line = document.createElement('p');
+      line.textContent = s.t;
+      monoEl.appendChild(line);
+      holdUntil = performance.now() + (reduce ? 0 : 900);   // 1行がふわっと出るまでは次へ進めない（全文表示だけ）
+      requestAnimationFrame(() => line.classList.add('in'));
+      return;
+    }
+    if (ov.classList.contains('is-mono')) {
+      ov.classList.remove('is-mono');
+      ov.classList.add('has-art');
+    }
+    if (s.k === 'title') {
+      ov.classList.add('is-title');
+      holdUntil = performance.now() + (reduce ? 0 : 900 + lnLines.length * 160);
+      return;
+    }
+    // 会話（say／think）
+    ov.classList.remove('is-title');
+    ov.classList.add('is-talk');
+    const who = STORY_WHO[s.who] || {};
+    boxEl.classList.toggle('is-rico', s.who === 'rico');
+    boxEl.classList.toggle('is-mimi', s.who === 'mimi');
+    boxEl.classList.toggle('is-think', s.k === 'think');
+    nameEl.textContent = who.name || '';
+    if (who.face && faceImg.getAttribute('src') !== who.face) faceImg.setAttribute('src', who.face);
+    type(s.k === 'think' ? `（${s.t}）` : s.t);
+  };
+
+  const next = () => {
+    idx++;
+    if (idx >= steps.length) { finish(); return; }
+    showStep(steps[idx]);
+  };
+  const advance = () => {
+    if (finished) return;
+    if (typing) { finishTyping(); return; }
+    if (performance.now() < holdUntil) {
+      // 演出の途中で押したら、その場面を出し切る（もう一度押すと次へ）
+      holdUntil = 0;
+      ov.classList.add('is-instant');
+      requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.remove('is-instant')));
+      monoEl.querySelectorAll('p').forEach(p => p.classList.add('in'));
+      ov.classList.add('title-shown');
+      return;
+    }
+    if (typeof mpSfx === 'function') mpSfx('tap');
+    next();
+  };
+  const onKey = (e) => {
+    if (!ov.isConnected) return;
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); advance(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(); }
+  };
+  function finish() {
+    if (finished) return;
+    finished = true;
+    cancelAnimationFrame(raf);
+    window.removeEventListener('keydown', onKey, true);
+    ov.classList.add('out');
+    setTimeout(() => { ov.remove(); done(); }, reduce ? 0 : 520);
+  }
+  ov.addEventListener('click', (e) => {
+    if (e.target.closest('.story-skip')) { e.stopPropagation(); finish(); return; }
+    advance();
+  });
+  window.addEventListener('keydown', onKey, true);
+  // 最初の1行は少し間を置いてから（黒からの入り）
+  setTimeout(() => { if (!finished && idx < 0) next(); }, reduce ? 0 : 450);
 }
 
 //=============================================================
@@ -6902,14 +7062,26 @@ function waitOrSkip(ms) {
       if (done) return;
       done = true;
       clearTimeout(_teaseTimer); _teaseTimer = null;
-      document.removeEventListener('pointerdown', finish, true);
+      document.removeEventListener('pointerdown', onDown, true);
       _teaseSkip = null;
       resolve();
     };
     _teaseSkip = finish;
     _teaseTimer = setTimeout(finish, ms);
-    document.addEventListener('pointerdown', finish, true);
+    document.addEventListener('pointerdown', onDown, true);
+    // 溜めを飛ばすために押した指の click は、下のボタンへ通さない（相手の立ち絵などへ抜けていた）
+    function onDown() { swallowNextClick(); finish(); }
   });
+}
+// 次の1回の click を、どの要素にも届けずに捨てる（タップで飛ばす・閉じる演出の後始末）
+function swallowNextClick(ms = 700) {
+  const until = Date.now() + ms;
+  const h = (ev) => {
+    document.removeEventListener('click', h, true);
+    if (Date.now() <= until) { ev.stopPropagation(); ev.preventDefault(); }
+  };
+  document.addEventListener('click', h, true);
+  setTimeout(() => document.removeEventListener('click', h, true), ms);
 }
 function cancelTease() {
   if (_teaseSkip) _teaseSkip();
@@ -7443,8 +7615,11 @@ function onAction(e) {
   if (navigator.vibrate) {
     try { navigator.vibrate(12); } catch(_) {}
   }
-  // 任意のアクションでカットインを閉じる
-  dismissCutIn();
+  // 画面を覆うカットインが出ている間の1タップは、閉じるだけにする（以前は閉じると同時に、押した所のボタン
+  //   ＝降りる・中断・プロフィールなども動き、「閉じたつもりが別の画面へ飛ぶ」ことがあった）。
+  //   自動で閉じた直後（0.4秒）の押下も、閉じようとした指の2打目なので受け付けない。
+  if (activeCutInDismiss) { dismissCutIn(); return; }
+  if (Date.now() - lastCutInClosedAt < 400) return;
   // 研修中の行動ボタンは台本が受け取る（光っている1つだけが効く）
   if (state && state.introHandMode && /^player-/.test(action || '')) { introAct(action); return; }
   switch (action) {
@@ -12660,10 +12835,13 @@ const INTRO_HANDS = [
 //   長い第1話タイトルは研修完了画面から「読みたい人だけ」読めるようにした。
 //   introEpisodeShown は「実際に全文を見せた」ときだけ立てる（見せていないのに
 //   立ててしまうと、講義に入ったときに第1話が永久に出なくなる）。
+// 2026-10 オーナー指摘「始めるといきなり『今日は3ハンドだけ』から始まるのは意味不明。導入の無いゲームはゼロ点」を受けて、
+//   第1話の導入（黒地のモノローグ→扉絵と題字→扉絵の上の会話、約1分・いつでもスキップ可）を卓の前に戻した。
+//   会話の中で「ここはどこ・リコは誰・ポーカーで何をすれば勝ちか・今日は3回だけ」を先に渡しておき、卓の一言は操作に絞る。
 function startIntroHand() {
   battleGen++;
-  showEpisodeChip(EPISODES.rico_tutorial && EPISODES.rico_tutorial.short);
-  beginIntroHand();
+  const gen = battleGen;
+  showStoryScene('rico_tutorial', () => { if (gen === battleGen) beginIntroHand(); });
 }
 
 // 進行を止めない話数チップ。卓の上に数秒だけ重ねて自動で消える。
@@ -12921,10 +13099,10 @@ function introDealMimi() {
 // ---------- 3ハンドの台本 ----------
 async function introHand1(gen) {
   introNewHand(1);
-  state.opponentSpeech = '「今日は3ハンドだけ。気楽にいこ」';
-  state.mimiThought = '「い、いきなり卓……！？」';
+  state.opponentSpeech = '「1回目、いくよ。気楽にね」';
+  state.mimiThought = '「よ、よろしくお願いします……！」';
   render();
-  await introCoach('今日は3ハンドだけ。ルールは、遊びながら覚えよ', null); if (!introAlive(gen)) return;
+  await introCoach('ポーカー1回の勝負を『1ハンド』って言うよ。まずは1ハンド目。ルールは遊びながら覚えよ', null); if (!introAlive(gen)) return;
   introAnte();
   await introWait(500); if (!introAlive(gen)) return;
   await introCoach('ふたりとも参加費を50ずつ出したよ。真ん中が『ポット』。勝った方が全部もらえる', '.v2-pot'); if (!introAlive(gen)) return;
@@ -13075,8 +13253,8 @@ function beginIntroHand() {
   state.handPhase = 'idle';
   state.handNo = 0;
   state.panyuMax = save.panyuGaugeMax || 100;
-  state.mimiThought = '「い、いきなり卓……！？」';
-  state.ricoAdvice = '「今日は3ハンドだけ。習うより慣れろ〜」';
+  state.mimiThought = '「よ、よろしくお願いします……！」';
+  state.ricoAdvice = '「習うより慣れろ、だよ」';
   state.opponentSpeech = '「そんな固くならないの。ほら、座った座った」';
   render();
   const gen = battleGen;
@@ -16873,6 +17051,8 @@ function showTutorial(step, htmlContent, onNext) {
 }
 
 let activeCutInDismiss = null;
+// カットインが閉じた時刻：閉じた直後の押下は、下の画面のボタンへ素通りさせない（onAction で使う）
+let lastCutInClosedAt = 0;
 //=============================================================
 // 感情演出（漫符レイヤー）
 // 表情はポーカーの中心要素なので、飾りではなく「読めるテル」として動かす。
@@ -17247,7 +17427,7 @@ function showRicoCutIn(text, isSuccess, onClose, opts) {
     if (dismissed) return;
     dismissed = true;
     if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
-    activeCutInDismiss = null;
+    activeCutInDismiss = null; lastCutInClosedAt = Date.now();
     cut.classList.add('cutin-out');
     setTimeout(() => {
       cut.remove();
@@ -17293,7 +17473,7 @@ function showOpponentCutIn(text, betSize) {
     document.body.appendChild(cut);
     let dismissed = false;
     const dismiss = () => {
-      if (dismissed) return; dismissed = true; activeCutInDismiss = null;
+      if (dismissed) return; dismissed = true; activeCutInDismiss = null; lastCutInClosedAt = Date.now();
       clearTimeout(autoT); cut.classList.add('cutin-out');
       if (betSize === 'allin' || betSize === 'pot_1') setMimiExpression('default');
       setTimeout(() => cut.remove(), 450);
@@ -17325,7 +17505,7 @@ function showOpponentCutIn(text, betSize) {
   const dismiss = () => {
     if (dismissed) return;
     dismissed = true;
-    activeCutInDismiss = null;
+    activeCutInDismiss = null; lastCutInClosedAt = Date.now();
     if (autoDismissTimer) clearTimeout(autoDismissTimer);
     cut.classList.add('cutin-out');
     // P1-3: 動揺表情はカットインが消えたら通常に戻す
@@ -17372,7 +17552,7 @@ function showMimiCutIn(text, narration, onClose, face) {
   const dismiss = () => {
     if (dismissed) return;
     dismissed = true;
-    activeCutInDismiss = null;
+    activeCutInDismiss = null; lastCutInClosedAt = Date.now();
     if (autoDismissTimer) clearTimeout(autoDismissTimer);
     cut.classList.add('cutin-out');
     setTimeout(() => { cut.remove(); if (onClose && cutGen === battleGen) onClose(); }, 500);
@@ -17775,7 +17955,8 @@ async function startPreload() {
     if (fill) fill.style.width = pct + '%';
   })));
   clearInterval(tipInterval);
-  startDeferredPrefetch(); // 起動完了後、残りの画像を裏で温めておく
+  // 起動完了後、残りの画像を裏で温めておく。タイトルの出方（約2秒）と重なると、スマホで出方がつかえるので少し待つ
+  setTimeout(startDeferredPrefetch, 2500);
   // フェードアウト（読み込み画面の動画も一緒に片付ける）
   if (overlay) {
     overlay.classList.add('out');
