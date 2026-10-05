@@ -3602,6 +3602,7 @@ function showEpisodeTitle(key, onContinue) {
 const STORY_WHO = {
   rico: { name: 'リコ先輩', face: 'assets/ui/face_rico_bunny.webp' },
   mimi: { name: 'ミミ', face: 'assets/ui/face_mimi.webp' },
+  goddess: { name: '女神' },
 };
 const PROLOGUES = {
   rico_tutorial: [
@@ -3609,6 +3610,7 @@ const PROLOGUES = {
     { k: 'mono', t: 'ふらつく足で渡った、深夜の横断歩道。' },
     { k: 'mono', t: '目の前いっぱいのライト。鳴りやまないクラクション。' },
     { k: 'mono', t: '――そこで、私の記憶は途切れている。' },
+    { k: 'voice', who: 'goddess', t: 'この子のスキルは……《ぱ●ぱ●》。\nなにこれ、外れスキルだね' },
     { k: 'title' },
     { k: 'say', who: 'mimi', t: '……え？　なにこれ。うさぎの耳？　しっぽ？' },
     { k: 'say', who: 'mimi', t: 'あったかい……ぴくぴく動く……。これ、本物！？' },
@@ -3645,6 +3647,8 @@ function showStoryScene(key, onDone) {
     <div class="story-art" style="background-image:url('${art}')"></div>
     <div class="story-shade"></div>
     <div class="story-mono" aria-live="polite"></div>
+    <div class="story-light" aria-hidden="true"></div>
+    <div class="story-voice" aria-live="polite"><div class="story-voice-name"></div><p class="story-voice-text"></p></div>
     <section class="story-title" aria-live="polite">
       <div class="story-title-no">${esc(ep.no || '')}</div>
       <h1 class="story-title-main">${esc(sub)}</h1>
@@ -3665,16 +3669,19 @@ function showStoryScene(key, onDone) {
   const nameEl = ov.querySelector('.story-name b');
   const faceImg = ov.querySelector('.story-face img');
   const textEl = ov.querySelector('.story-text');
-  let idx = -1, finished = false, typing = false, raf = 0, holdUntil = 0, full = '', shown = 0;
+  const voiceName = ov.querySelector('.story-voice-name');
+  const voiceText = ov.querySelector('.story-voice-text');
+  let idx = -1, finished = false, typing = false, raf = 0, holdUntil = 0, full = '', shown = 0, tgt = textEl;
 
   // 文字送り：まだ出ていない部分も透明で置いておくので、行の折り返しが途中で動かない
-  const paint = () => { textEl.innerHTML = `${esc(full.slice(0, shown))}<span class="story-rest">${esc(full.slice(shown))}</span>`; };
+  const paint = () => { tgt.innerHTML = `${esc(full.slice(0, shown))}<span class="story-rest">${esc(full.slice(shown))}</span>`; };
   const finishTyping = () => { cancelAnimationFrame(raf); typing = false; shown = full.length; paint(); ov.classList.add('can-next'); };
-  const type = (t) => {
-    full = t; shown = 0; ov.classList.remove('can-next');
+  // delay：光が満ちてから文字を出し始める（待つ間に押せば、その場で全文）
+  const type = (t, el = textEl, delay = 0) => {
+    tgt = el; full = t; shown = 0; ov.classList.remove('can-next');
     if (reduce) { finishTyping(); return; }
     typing = true; paint();
-    let last = performance.now();
+    let last = performance.now() + delay;
     const tick = (now) => {
       if (!typing) return;
       const add = Math.floor((now - last) * 0.042); // 1秒に42字
@@ -3694,6 +3701,14 @@ function showStoryScene(key, onDone) {
       requestAnimationFrame(() => line.classList.add('in'));
       return;
     }
+    // 転生の場面：黒が白金の光にほどけ、声だけが真ん中に（まだ扉絵は出さない）
+    if (s.k === 'voice') {
+      ov.classList.add('is-voice');
+      voiceName.textContent = (STORY_WHO[s.who] || {}).name || '';
+      type(s.t, voiceText, 1000);
+      return;
+    }
+    ov.classList.remove('is-voice');
     if (ov.classList.contains('is-mono')) {
       ov.classList.remove('is-mono');
       ov.classList.add('has-art');

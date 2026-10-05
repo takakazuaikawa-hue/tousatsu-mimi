@@ -1,4 +1,4 @@
-// 第1話の導入（物語の場面）を撮る：新しいセーブでタイトル →「はじめる」→ 黒地のモノローグ → 扉絵と題字 → 会話 → 研修の卓。
+// 第1話の導入（物語の場面）を撮る：新しいセーブでタイトル →「はじめる」→ 黒地のモノローグ → 転生の光と女神の声 → 扉絵と題字 → 会話 → 研修の卓。
 // 場面ごとに1枚ずつ撮り、例外が無いかも見る。
 // node qa/storyshots.mjs [outDir] [幅x高さ] [mobile]
 //   例：node qa/storyshots.mjs qa/out/story 1280x800
@@ -16,7 +16,7 @@ const shot = async (name) => {
 };
 const click = () => page.eval(`(() => { const o = document.querySelector('.story-overlay'); if (o) o.click(); return !!o; })()`);
 const info = () => page.eval(`(() => { const o = document.querySelector('.story-overlay'); if (!o) return JSON.stringify({ gone: true, screen: state.screen });
-  const t = o.querySelector('.story-text'); const fs = parseFloat(getComputedStyle(t).fontSize); const k = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--game-scale')) || 1;
+  const t = o.querySelector(o.classList.contains('is-voice') ? '.story-voice-text' : '.story-text'); const fs = parseFloat(getComputedStyle(t).fontSize); const k = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--game-scale')) || 1;
   return JSON.stringify({ cls: o.className, text: t.textContent, textPx: +(fs * k).toFixed(1) }); })()`);
 
 for (let i = 0; i < 80; i++) { if (await page.eval(`!!document.querySelector('[data-action="start"]')`)) break; await sleep(500); }
@@ -29,8 +29,8 @@ let n = 1;
 for (let guard = 0; guard < 40; guard++) {
   const st = JSON.parse(await info());
   if (st.gone) break;
-  const tag = /is-mono/.test(st.cls) ? 'mono' : /is-title/.test(st.cls) ? 'title' : 'talk';
-  await sleep(tag === 'title' ? 3000 : tag === 'mono' ? 300 : 1400);
+  const tag = /is-voice/.test(st.cls) ? 'voice' : /is-mono/.test(st.cls) ? 'mono' : /is-title/.test(st.cls) ? 'title' : 'talk';
+  await sleep(tag === 'title' ? 3000 : tag === 'voice' ? 2600 : tag === 'mono' ? 300 : 1400);
   const st2 = JSON.parse(await info());
   log.push({ n, tag, text: st2.text, textPx: st2.textPx });
   await shot(`${String(n).padStart(2, '0')}_${tag}`);
