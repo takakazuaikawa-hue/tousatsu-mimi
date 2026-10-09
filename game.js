@@ -7880,7 +7880,7 @@ function onAction(e) {
       // コインのごほうびは1日5回まで。尽きていても遊べることを先に伝える
       if (panyuFreeRewardsLeft() <= 0) toast('今日のコインのごほうびはおしまい（あそぶのは自由）');
       // ぷにぷに完走でコイン報酬（panyu_combo_x2 購入時は2倍）
-      showPanyuClicker(30, () => {
+      const startPanyuFree = () => showPanyuClicker(30, (roll) => {
         const refreshSub = panyuFreeRefreshLobby;
         // 完走した時点で数え直す（日付が変わっていれば新しい日の分になる）。結果は発動の札に書く
         if (panyuFreeRewardsLeft() <= 0) {
@@ -7889,14 +7889,15 @@ function onAction(e) {
         }
         const base = 30;
         const mul = save.panyuComboMultiplier || 1;
-        const reward = base * mul;
+        const reward = base * mul * ((roll && roll.mult) || 1);
         panyuFreeUseReward();
         save.coins += reward;
         saveProgress();
         document.querySelectorAll('[data-bind="saveCoins"]').forEach(el => { el.textContent = save.coins; });
         refreshSub();
         return { reward, mul, left: panyuFreeRewardsLeft() };
-      }, { lobby: true });
+      }, { lobby: true, again: () => startPanyuFree() });
+      startPanyuFree();
       break;
     }
     case 'toggle-bgm':    toggleLobbyBgm(); break;
@@ -14853,6 +14854,39 @@ const PANYU_BG_THEMES = [
 function panyuSkillLevel() {
   return 1 + ((save && save.ownedItems) || []).filter(id => id.startsWith('panyu_')).length;
 }
+// ぱにゅ判定（完走のたびの当たり）。速く押す・フィーバー中に押すほど上が出やすい。10回までに SR 以上が必ず出る（天井）
+const PANYU_RARITY = [
+  { id: 'N',   name: 'ぷに',     mult: 1,  w: 55,  color: '#ffc6da' },
+  { id: 'R',   name: 'ぱにゅ',   mult: 2,  w: 28,  color: '#ff8fb8' },
+  { id: 'SR',  name: 'とろけ',   mult: 3,  w: 12,  color: '#f6d58f', video: 'assets/motion/panyu_sr.mp4' },
+  { id: 'SSR', name: 'きらめき', mult: 5,  w: 4.5, color: '#ffe9a8', video: 'assets/motion/panyu_ssr.mp4' },
+  { id: 'LEG', name: 'ぱにゅ神', mult: 10, w: 0.5, color: '#fff3cf', video: 'assets/motion/panyu_leg.mp4', label: '伝説' },
+];
+const PANYU_PITY = 10;
+const PANYU_LINES = {
+  N:   ['えへへ、ありがと', 'ぷにぷに、おしまい', 'また触ってね'],
+  R:   ['ん……ちょっと、くすぐったい', 'ぱにゅぱにゅ、好調かも', 'もう一回、いく？'],
+  SR:  ['……とろけちゃいそう', 'そんなに優しくされたら、照れる……', 'ふわぁ……しあわせ'],
+  SSR: ['今日いちばんの、ぱにゅぱにゅ！', 'ミミのスキル、外れなんかじゃないよね？', 'きらきら、止まらない……！'],
+  LEG: ['これが……《ぱにゅぱにゅ》の本当の力……！', '神さまも、きっと見直したよね', '伝説、出ちゃった……！'],
+};
+function panyuRoll(boost) {
+  const pity = (save.panyuPity || 0) + 1 >= PANYU_PITY;
+  // boost 0〜1：上の段の重みを最大2.2倍に
+  const k = 1 + 1.2 * Math.max(0, Math.min(1, boost || 0));
+  const pool = PANYU_RARITY.filter(r => !pity || ['SR', 'SSR', 'LEG'].includes(r.id))
+    .map(r => ({ r, w: ['N', 'R'].includes(r.id) ? r.w : r.w * k }));
+  let x = rand() * pool.reduce((a, b) => a + b.w, 0);
+  let hit = pool[pool.length - 1].r;
+  for (const p of pool) { if ((x -= p.w) <= 0) { hit = p.r; break; } }
+  const good = ['SR', 'SSR', 'LEG'].includes(hit.id);
+  save.panyuPity = good ? 0 : (save.panyuPity || 0) + 1;
+  if (!save.panyuDex) save.panyuDex = {};
+  const isNew = !save.panyuDex[hit.id];
+  save.panyuDex[hit.id] = (save.panyuDex[hit.id] || 0) + 1;
+  saveProgress();
+  return { ...hit, isNew, pity };
+}
 // 押した所に弾ける擬音
 const PANYU_SOUNDS = ['ぱにゅ', 'ぷにっ', 'ぽよん', 'むにゅ', 'ぷるん', 'ぱにゅ♡'];
 function spawnPanyuWord(overlay, x, y, big) {
@@ -14929,7 +14963,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     <footer class="pv2-meter">
       <div class="pv2-meter-row"><span class="pv2-meter-k">ぱにゅ</span><b class="pv2-meter-n">0</b><span class="pv2-meter-of">/ ${totalTaps}</span></div>
       <div class="pv2-bar"><i class="pv2-bar-fill"></i></div>
-      <div class="pv2-hint">タップ・長押し・引っぱり、どれでも。両手でも</div>
+      <div class="pv2-hint">タップ・長押し・引っぱり、どれでも。速いほど当たりやすい${cfg.lobby ? `<span class="pv2-pity">SR 以上まで あと ${PANYU_PITY - ((save && save.panyuPity) || 0)} 回</span>` : ''}</div>
     </footer>
     <div class="panyu-combo pv2-combo" data-bind="panyuCombo"></div>
   `;
@@ -14959,8 +14993,9 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     if (!cups) { blobs.forEach(b => b.style.opacity = '0'); return; }
     blobs.forEach(b => b.style.opacity = '');
     if (pairEl) Object.assign(pairEl.style, { position: 'absolute', inset: '0', pointerEvents: 'none' });
-    const box = img.getBoundingClientRect();
     const ov = overlay.getBoundingClientRect();
+    // v2 は絵が画面いっぱい（呼吸で拡縮するので、変形前の大きさで測る）
+    const box = overlay.classList.contains('pv2') ? { left: ov.left, top: ov.top, width: overlay.clientWidth, height: overlay.clientHeight } : img.getBoundingClientRect();
     const s = (overlay.classList.contains('pv2') ? Math.max : Math.min)(box.width / img.naturalWidth, box.height / img.naturalHeight);
     const ox = box.left - ov.left + (box.width - img.naturalWidth * s) / 2;
     const oy = box.top - ov.top + (box.height - img.naturalHeight * s) / 2;
@@ -15088,10 +15123,33 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
   requestAnimationFrame(physTick);
 
   // タップ／ドラッグ中の連続カウント共通処理
+  // フィーバー（途中でときどき起きる「金のぱにゅ」）と、押す速さ。どちらも当たりを出やすくする
+  const tapTimes = [];
+  let feverPts = 0, feverOn = false;
+  const feverAt = (cfg.lobby && rand() < 0.4) ? 8 + Math.floor(rand() * 9) : -1;
+  const startFever = () => {
+    feverOn = true;
+    overlay.classList.add('is-fever');
+    const b = document.createElement('div');
+    b.className = 'pv2-fever';
+    b.innerHTML = '<b>FEVER</b><span>金のぱにゅ　いまのうちに連打！</span>';
+    overlay.appendChild(b);
+    mpSfx('milestone');
+    setTimeout(() => { feverOn = false; overlay.classList.remove('is-fever'); b.classList.add('out'); setTimeout(() => b.remove(), 400); }, 3600);
+  };
+  const boostNow = () => {
+    const iv = []; for (let i = 1; i < tapTimes.length; i++) iv.push(tapTimes[i] - tapTimes[i - 1]);
+    const avg = iv.length ? iv.reduce((a, b) => a + b, 0) / iv.length : 400;
+    const speed = Math.max(0, Math.min(1, (300 - avg) / 160));
+    return Math.min(1, speed * 0.45 + Math.min(1, feverPts / 10) * 0.75);
+  };
   const doTick = (blob, opts = {}) => {
     if (completed) return;
     count--;
     tapped++;
+    tapTimes.push(performance.now());
+    if (feverOn) feverPts++;
+    if (tapped === feverAt) startFever();
     countEls.forEach(el => el.textContent = Math.max(0, count));
     updateColor();
     if (navigator.vibrate) navigator.vibrate(opts.fromDrag ? 20 : 35);
@@ -15100,7 +15158,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     {
       const r = blob.getBoundingClientRect(), o = overlay.getBoundingClientRect();
       const x = (opts.x != null ? opts.x : r.left + r.width / 2) - o.left, y = (opts.y != null ? opts.y : r.top + r.height * 0.35) - o.top;
-      if (!opts.fromDrag || tapped % 3 === 0) spawnPanyuWord(overlay, x, y, tapped % 10 === 0);
+      if (!opts.fromDrag || tapped % 3 === 0) spawnPanyuWord(overlay, x, y, feverOn || tapped % 10 === 0);
     }
     if (tapped === 10) showCombo(10);
     else if (tapped === 20) showCombo(20);
@@ -15127,24 +15185,65 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
         setTimeout(() => { window.removeEventListener('resize', onPanyuResize); overlay.remove(); if (onComplete) onComplete(); }, panyuFaceOk.finish ? 1400 : 900);
         return;
       }
-      // ごほうびを先に受け取り、その結果を発動の札に書く（以前は画面を閉じてから小さな知らせだけ）
-      const res = (onComplete && onComplete()) || null;
-      setTimeout(() => {
+      // ぱにゅ判定 → ごほうび（倍率つき）→ 当たりの札。以前は画面を閉じてから小さな知らせだけ
+      const roll = panyuRoll(boostNow());
+      const res = (onComplete && onComplete(roll)) || null;
+      const tierClass = 'is-' + roll.id.toLowerCase();
+      const hint = roll.id === 'LEG' || roll.id === 'SSR' ? 'is-rainbow' : roll.id === 'SR' ? 'is-gold' : (rand() < 0.25 ? 'is-gold' : 'is-pink'); // 金の光は「もしかして」の予感（外れることもある）
+      const closeAll = () => { window.removeEventListener('resize', onPanyuResize); overlay.classList.add('is-out'); setTimeout(() => overlay.remove(), 260); };
+      const showResult = () => {
+        overlay.classList.add('is-revealed', tierClass);
+        const dexN = Object.keys(save.panyuDex || {}).length;
+        const stamp = document.createElement('div');
+        stamp.className = 'pv2-stamp ' + tierClass;
+        stamp.innerHTML = `<b>${roll.label ? 'LEGEND' : roll.id}</b><span>${roll.label || ''}${roll.name}</span>${roll.isNew ? '<i>NEW</i>' : ''}`;
+        overlay.appendChild(stamp);
+        if (roll.video) {
+          const vw = document.createElement('div');
+          vw.className = 'pv2-video ' + tierClass;
+          vw.innerHTML = `<video src="${roll.video}" autoplay muted playsinline preload="auto"></video>`;
+          overlay.appendChild(vw);
+          const v = vw.querySelector('video');
+          v.addEventListener('error', () => vw.remove());
+          const pr = v.play && v.play(); if (pr && pr.catch) pr.catch(() => {});
+        }
         const card = document.createElement('div');
-        card.className = 'pv2-result';
-        const gain = res && res.reward ? `<div class="pv2-res-gain"><span>ごほうび</span><b>+${res.reward}</b><span>コイン${res.mul > 1 ? `（コンボ倍率 ×${res.mul}）` : ''}</span></div>` : '';
-        const note = res ? (res.reward ? (res.left > 0 ? `今日のごほうび、あと ${res.left} 回` : '今日のごほうびは、ここまで') : '今日のごほうびはおしまい。あそぶのは自由です') : '';
+        card.className = 'pv2-result ' + tierClass + (roll.video ? ' has-video' : '');
+        const coin = res && res.reward ? `<div class="pv2-res-gain"><span>ごほうび</span><b>+${res.reward}</b><span>コイン（×${roll.mult}${res.mul > 1 ? `・コンボ ×${res.mul}` : ''}）</span></div>` : '';
+        const note = res ? (res.reward ? (res.left > 0 ? `今日のコインのごほうび、あと ${res.left} 回` : '今日のコインのごほうびは、ここまで') : '今日のコインはおしまい。判定と図鑑は何度でも') : '';
+        const pityLeft = PANYU_PITY - (save.panyuPity || 0);
         card.innerHTML = `<div class="pv2-res-eye">SKILL ACTIVATED</div>
           <div class="pv2-res-title">《ぱにゅぱにゅ》<em>発動</em></div>
-          ${gain}${note ? `<div class="pv2-res-note">${note}</div>` : ''}
-          <div class="pv2-res-line">「えへへ……今日も絶好調、かも」<span>ミミ</span></div>
-          <button type="button" class="pv2-res-btn">ロビーへ</button>`;
+          ${coin}${note ? `<div class="pv2-res-note">${note}</div>` : ''}
+          <div class="pv2-res-line">「${pick(PANYU_LINES[roll.id])}」<span>ミミ</span></div>
+          <div class="pv2-res-meta"><span>ぱにゅ図鑑 ${dexN} / ${PANYU_RARITY.length}</span><span>SR 以上まで、あと ${pityLeft} 回で確定</span></div>
+          <div class="pv2-res-btns"><button type="button" class="pv2-res-again">もう一回</button><button type="button" class="pv2-res-btn">ロビーへ</button></div>`;
         overlay.appendChild(card);
-        let armed = false; setTimeout(() => { armed = true; }, 400);
-        const closeAll = () => { if (!armed) return; window.removeEventListener('resize', onPanyuResize); overlay.classList.add('is-out'); setTimeout(() => overlay.remove(), 260); };
         card.querySelector('.pv2-res-btn').addEventListener('click', (e) => { e.stopPropagation(); closeAll(); });
-        overlay.addEventListener('click', closeAll);
-      }, panyuFaceOk.finish ? 900 : 500);
+        card.querySelector('.pv2-res-again').addEventListener('click', (e) => {
+          e.stopPropagation(); closeAll();
+          setTimeout(() => { if (typeof cfg.again === 'function') cfg.again(); }, 280);
+        });
+        if (['SSR', 'LEG'].includes(roll.id)) { mpSfx('bigwin'); for (let i = 0; i < 30; i++) setTimeout(() => spawnPanyuParticle(overlay), i * 40); }
+        else mpSfx(roll.id === 'SR' ? 'milestone' : 'hand-win');
+      };
+      // 判定のハート：色で「もしかして」を見せ、押すと割れる（2.4秒で自動）
+      setTimeout(() => {
+        const cap = document.createElement('button');
+        cap.type = 'button';
+        cap.className = 'pv2-capsule ' + hint;
+        cap.innerHTML = '<i class="pv2-cap-heart"></i><span>ぱにゅ判定</span><small>タップで開ける</small>';
+        overlay.appendChild(cap);
+        let opened = false;
+        const open = () => {
+          if (opened) return; opened = true;
+          cap.classList.add('is-open');
+          overlay.classList.add('is-burst');
+          setTimeout(() => { cap.remove(); showResult(); }, 520);
+        };
+        cap.addEventListener('click', (e) => { e.stopPropagation(); open(); });
+        setTimeout(open, 2400);
+      }, panyuFaceOk.finish ? 800 : 450);
     }
   };
   // 外部（drag）からも呼べるよう公開
