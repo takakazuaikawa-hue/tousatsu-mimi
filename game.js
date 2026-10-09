@@ -6535,7 +6535,7 @@ function renderTugOfWar(host) {
     <div class="tug-bar" role="img" aria-label="ミミ ${P}、${oppName} ${O}">
       <i class="tug-mimi" style="width:${pct}%"></i><i class="tug-opp" style="width:${100 - pct}%"></i><i class="tug-mid"></i>
     </div>
-    <div class="tug-goal">${O > 0 ? `${oppName}のチップを 0 にしたら勝ち（あと <b>${O}</b>）` : '勝ち！'}</div>`;
+    <div class="tug-goal">${O > 0 ? `<span class="tug-goal-long">${oppName}のチップを 0 にしたら勝ち（あと <b>${O}</b>）</span><span class="tug-goal-short">勝ちまで あと <b>${O}</b></span>` : '勝ち！'}</div>`;
 }
 function renderStreetList() {
   const order = ['preflop', 'flop', 'turn', 'river', 'showdown'];
@@ -18097,6 +18097,8 @@ function fitStage() {
   const sy = window.innerHeight / 800;
   const scale = Math.min(sx, sy);
   document.documentElement.style.setProperty('--game-scale', scale);
+  // スマホ（舞台が 0.62 倍より小さい）：文字の基準に合わせて、画面ごとに詰めた配置に切り替える
+  document.documentElement.classList.toggle('is-compact', scale < 0.62);
 }
 window.addEventListener('resize', fitStage);
 window.addEventListener('orientationchange', () => setTimeout(fitStage, 100));
