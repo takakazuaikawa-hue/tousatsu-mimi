@@ -7882,11 +7882,10 @@ function onAction(e) {
       // ぷにぷに完走でコイン報酬（panyu_combo_x2 購入時は2倍）
       showPanyuClicker(30, () => {
         const refreshSub = panyuFreeRefreshLobby;
-        // 完走した時点で数え直す（日付が変わっていれば新しい日の分になる）
+        // 完走した時点で数え直す（日付が変わっていれば新しい日の分になる）。結果は発動の札に書く
         if (panyuFreeRewardsLeft() <= 0) {
           refreshSub();
-          toast('今日のごほうびはおしまい（あそぶのは自由）');
-          return;
+          return { reward: 0 };
         }
         const base = 30;
         const mul = save.panyuComboMultiplier || 1;
@@ -7896,10 +7895,8 @@ function onAction(e) {
         saveProgress();
         document.querySelectorAll('[data-bind="saveCoins"]').forEach(el => { el.textContent = save.coins; });
         refreshSub();
-        const left = panyuFreeRewardsLeft();
-        const tail = left > 0 ? `（今日のごほうび あと${left}回）` : '（今日のごほうびはここまで）';
-        toast((mul > 1 ? `+${reward}コイン（コンボ倍率 ×${mul}）` : `+${reward}コイン`) + tail);
-      });
+        return { reward, mul, left: panyuFreeRewardsLeft() };
+      }, { lobby: true });
       break;
     }
     case 'toggle-bgm':    toggleLobbyBgm(); break;
@@ -14846,12 +14843,28 @@ function usePanyuSense(qid, isFree) {
 
 // ぱにゅぱにゅ背景テーマ
 const PANYU_BG_THEMES = [
-  { id: 'pink',   label: '🌸 桜風', desc: 'やわらかピンク' },
-  { id: 'purple', label: '🌙 夜空', desc: '紫の幻想' },
-  { id: 'gold',   label: '✨ 黄金', desc: 'リッチなゴールド' },
-  { id: 'aqua',   label: '🐬 水中', desc: '涼しげな水色' },
-  { id: 'dark',   label: '⚫ 黒幕', desc: 'シンプルブラック' },
+  { id: 'pink',   label: '桜', desc: '桜（やわらかなピンク）' },
+  { id: 'purple', label: '夜', desc: '夜（紫の幻想）' },
+  { id: 'gold',   label: '金', desc: '金（シャンパンの光）' },
+  { id: 'aqua',   label: '水', desc: '水（涼しげな青）' },
+  { id: 'dark',   label: '黒', desc: '黒（落ち着いた暗がり）' },
 ];
+// 外れスキル《ぱにゅぱにゅ》のレベル＝交換所のぱにゅ強化を買った数＋1（外れスキルでも育つ）
+function panyuSkillLevel() {
+  return 1 + ((save && save.ownedItems) || []).filter(id => id.startsWith('panyu_')).length;
+}
+// 押した所に弾ける擬音
+const PANYU_SOUNDS = ['ぱにゅ', 'ぷにっ', 'ぽよん', 'むにゅ', 'ぷるん', 'ぱにゅ♡'];
+function spawnPanyuWord(overlay, x, y, big) {
+  const el = document.createElement('div');
+  el.className = 'pv2-word' + (big ? ' is-big' : '');
+  el.textContent = pick(PANYU_SOUNDS);
+  el.style.left = x + 'px'; el.style.top = y + 'px';
+  el.style.setProperty('--r', ((rand() - 0.5) * 24).toFixed(1) + 'deg');
+  el.style.setProperty('--dx', ((rand() - 0.5) * 90).toFixed(0) + 'px');
+  overlay.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
 function getCurrentPanyuBg() {
   return (save && save.panyuBgTheme) || 'pink';
 }
@@ -14868,12 +14881,12 @@ function applyPanyuBg(overlay) {
 }
 
 // ぱにゅぱにゅ30タップミニゲーム
-function showPanyuClicker(totalTaps, onComplete) {
+function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
   let count = totalTaps;
   let tapped = 0;
   let lastTapTime = 0;
   const overlay = document.createElement('div');
-  overlay.className = 'panyu-clicker-overlay';
+  overlay.className = 'panyu-clicker-overlay pv2';
   applyPanyuBg(overlay);
   // 2つの blob を並べて両手タップ可能に
   const blobTemplate = (id) => `
@@ -14893,18 +14906,32 @@ function showPanyuClicker(totalTaps, onComplete) {
     </div>
   `;
   const bgPicker = PANYU_BG_THEMES.map(t =>
-    `<button class="panyu-bg-btn${getCurrentPanyuBg() === t.id ? ' active' : ''}" data-bg="${t.id}" title="${t.desc}">${t.label}</button>`
+    `<button class="panyu-bg-btn pv2-swatch is-${t.id}${getCurrentPanyuBg() === t.id ? ' active' : ''}" data-bg="${t.id}" title="${t.desc}" aria-label="${t.desc}"></button>`
   ).join('');
+  // 絵は画面いっぱい。胸の上には何も重ねない（以前は白い輪と大きな数字が絵を隠していた）
   overlay.innerHTML = `
-    <div class="panyu-bg-picker">${bgPicker}</div>
     <img class="panyu-bg-char" src="assets/characters/panyu_reach.webp" alt=""
          onerror="this.onerror=function(){this.style.display='none'};this.src='assets/characters/panyu.webp';">
-    <div class="panyu-clicker-label-top">タップ or ぐりぐり！ <small>両手でOK</small></div>
+    <div class="pv2-grade" aria-hidden="true"></div>
+    <div class="pv2-vignette" aria-hidden="true"></div>
+    <header class="pv2-skill">
+      <div class="pv2-skill-eye">SKILL<span>外れスキル</span></div>
+      <div class="pv2-skill-name">《ぱにゅぱにゅ》<b>Lv.${panyuSkillLevel()}</b></div>
+    </header>
+    <div class="pv2-tools">
+      <div class="panyu-bg-picker pv2-picker" role="group" aria-label="光の色">${bgPicker}</div>
+      <button type="button" class="pv2-quit">やめる</button>
+    </div>
     <div class="panyu-clicker-pair">
       ${blobTemplate('panyu-blob-l')}
       ${blobTemplate('panyu-blob-r')}
     </div>
-    <div class="panyu-combo" data-bind="panyuCombo"></div>
+    <footer class="pv2-meter">
+      <div class="pv2-meter-row"><span class="pv2-meter-k">ぱにゅ</span><b class="pv2-meter-n">0</b><span class="pv2-meter-of">/ ${totalTaps}</span></div>
+      <div class="pv2-bar"><i class="pv2-bar-fill"></i></div>
+      <div class="pv2-hint">タップ・長押し・引っぱり、どれでも。両手でも</div>
+    </footer>
+    <div class="panyu-combo pv2-combo" data-bind="panyuCombo"></div>
   `;
   document.body.appendChild(overlay);
   const blobs = [...overlay.querySelectorAll('.panyu-clicker-blob')];
@@ -14934,7 +14961,7 @@ function showPanyuClicker(totalTaps, onComplete) {
     if (pairEl) Object.assign(pairEl.style, { position: 'absolute', inset: '0', pointerEvents: 'none' });
     const box = img.getBoundingClientRect();
     const ov = overlay.getBoundingClientRect();
-    const s = Math.min(box.width / img.naturalWidth, box.height / img.naturalHeight);
+    const s = (overlay.classList.contains('pv2') ? Math.max : Math.min)(box.width / img.naturalWidth, box.height / img.naturalHeight);
     const ox = box.left - ov.left + (box.width - img.naturalWidth * s) / 2;
     const oy = box.top - ov.top + (box.height - img.naturalHeight * s) / 2;
     [['l', blobs[0]], ['r', blobs[1]]].forEach(([k, blob]) => {
@@ -14993,11 +15020,15 @@ function showPanyuClicker(totalTaps, onComplete) {
     // プログレスリング更新
     const offset = 289 * (1 - ratio);
     ringFills.forEach(r => r.style.strokeDashoffset = offset);
+    const nEl = overlay.querySelector('.pv2-meter-n'), fEl = overlay.querySelector('.pv2-bar-fill');
+    if (nEl) nEl.textContent = tapped;
+    if (fEl) fEl.style.width = (ratio * 100).toFixed(1) + '%';
+    overlay.style.setProperty('--heat', ratio.toFixed(3));
     if (ratio >= 0.5) setPanyuFace('blush');
   };
 
   const showCombo = (n) => {
-    comboEl.textContent = `×${n} COMBO!`;
+    comboEl.innerHTML = `<b>${n}</b><span>COMBO</span>`;
     comboEl.classList.remove('show');
     void comboEl.offsetWidth;
     comboEl.classList.add('show');
@@ -15066,6 +15097,11 @@ function showPanyuClicker(totalTaps, onComplete) {
     if (navigator.vibrate) navigator.vibrate(opts.fromDrag ? 20 : 35);
     const burstN = opts.fromDrag ? 2 : 3;
     for (let i = 0; i < burstN; i++) spawnPanyuParticle(overlay);
+    {
+      const r = blob.getBoundingClientRect(), o = overlay.getBoundingClientRect();
+      const x = (opts.x != null ? opts.x : r.left + r.width / 2) - o.left, y = (opts.y != null ? opts.y : r.top + r.height * 0.35) - o.top;
+      if (!opts.fromDrag || tapped % 3 === 0) spawnPanyuWord(overlay, x, y, tapped % 10 === 0);
+    }
     if (tapped === 10) showCombo(10);
     else if (tapped === 20) showCombo(20);
     else if (tapped === 25) showCombo(25);
@@ -15085,13 +15121,30 @@ function showPanyuClicker(totalTaps, onComplete) {
       if (navigator.vibrate) navigator.vibrate([60, 30, 80, 30, 120]);
       for (let i = 0; i < 16; i++) spawnPanyuParticle(overlay);
       setPanyuFace('finish'); // ご満悦の顔でフィニッシュ
-      const label = overlay.querySelector('.panyu-clicker-label-top');
-      if (label) label.innerHTML = '<span class="panyu-burst-text">✨ ぱにゅぱにゅ発動！ ✨</span>';
+      overlay.classList.add('is-done');
+      // 卓の中（本気リコ戦の心理バトル）では、以前どおり閉じてから続きへ
+      if (!cfg.lobby) {
+        setTimeout(() => { window.removeEventListener('resize', onPanyuResize); overlay.remove(); if (onComplete) onComplete(); }, panyuFaceOk.finish ? 1400 : 900);
+        return;
+      }
+      // ごほうびを先に受け取り、その結果を発動の札に書く（以前は画面を閉じてから小さな知らせだけ）
+      const res = (onComplete && onComplete()) || null;
       setTimeout(() => {
-        window.removeEventListener('resize', onPanyuResize);
-        overlay.remove();
-        if (onComplete) onComplete();
-      }, panyuFaceOk.finish ? 1400 : 900);
+        const card = document.createElement('div');
+        card.className = 'pv2-result';
+        const gain = res && res.reward ? `<div class="pv2-res-gain"><span>ごほうび</span><b>+${res.reward}</b><span>コイン${res.mul > 1 ? `（コンボ倍率 ×${res.mul}）` : ''}</span></div>` : '';
+        const note = res ? (res.reward ? (res.left > 0 ? `今日のごほうび、あと ${res.left} 回` : '今日のごほうびは、ここまで') : '今日のごほうびはおしまい。あそぶのは自由です') : '';
+        card.innerHTML = `<div class="pv2-res-eye">SKILL ACTIVATED</div>
+          <div class="pv2-res-title">《ぱにゅぱにゅ》<em>発動</em></div>
+          ${gain}${note ? `<div class="pv2-res-note">${note}</div>` : ''}
+          <div class="pv2-res-line">「えへへ……今日も絶好調、かも」<span>ミミ</span></div>
+          <button type="button" class="pv2-res-btn">ロビーへ</button>`;
+        overlay.appendChild(card);
+        let armed = false; setTimeout(() => { armed = true; }, 400);
+        const closeAll = () => { if (!armed) return; window.removeEventListener('resize', onPanyuResize); overlay.classList.add('is-out'); setTimeout(() => overlay.remove(), 260); };
+        card.querySelector('.pv2-res-btn').addEventListener('click', (e) => { e.stopPropagation(); closeAll(); });
+        overlay.addEventListener('click', closeAll);
+      }, panyuFaceOk.finish ? 900 : 500);
     }
   };
   // 外部（drag）からも呼べるよう公開
@@ -15106,12 +15159,23 @@ function showPanyuClicker(totalTaps, onComplete) {
     const now = Date.now();
     if (now - lastTapMs < TAP_DEBOUNCE_MS) return;
     lastTapMs = now;
-    doTick(which);
+    const pt = (e.touches && e.touches[0]) || e;
+    doTick(which, { x: pt.clientX, y: pt.clientY });
   };
   blobs.forEach(b => {
     b.addEventListener('click', onTap(b));
     b.addEventListener('touchstart', onTap(b), { passive: false });
     attachDragStretch(b);
+  });
+  // やめる（ごほうびなし）
+  const quit = overlay.querySelector('.pv2-quit');
+  if (quit) quit.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (completed) return;
+    completed = true; physRunning = false;
+    window.removeEventListener('resize', onPanyuResize);
+    overlay.classList.add('is-out');
+    setTimeout(() => overlay.remove(), 260);
   });
   // 背景テーマ切替
   overlay.querySelectorAll('.panyu-bg-btn').forEach(btn => {
@@ -15254,7 +15318,8 @@ function attachDragStretch(blob) {
 function spawnPanyuParticle(parent) {
   const p = document.createElement('div');
   p.className = 'panyu-particle';
-  p.textContent = pick(['💖', '✨', '♡', '🌸', '💫', '🐰']);
+  p.textContent = pick(['♥', '♡', '✦', '♥', '✧']);
+  p.classList.add(pick(['is-pink', 'is-pink', 'is-gold', 'is-white']));
   const angle = rand() * Math.PI * 2;
   const dist = 70 + rand() * 80;
   p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');

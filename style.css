@@ -18182,3 +18182,129 @@ body:has(.story-overlay) #fullscreen-btn-group { display: none !important; }
 .hand-result-overlay .hr-ante-lv i.is-new { background: #f0d595; box-shadow: 0 0 8px rgba(240,213,149,.6); }
 .hand-result-overlay .hr-ante-sub { order: 4; flex: 1 0 100%; font-size: max(13px, calc(11px / var(--game-scale, 1))); color: #a99f93; letter-spacing: .04em; }
 @media (prefers-reduced-motion: reduce) { .hand-result-overlay .hr-ante { animation: none; } }
+
+/* =====================================================================
+   外れスキル《ぱにゅぱにゅ》 v2（2026-10）
+   絵は画面いっぱい。胸の上には何も重ねない（白い輪と大きな数字をやめた）。
+   左上にスキル名とLv、下に細い進み具合の帯、押した所に擬音。完走で「発動」の札。
+   文字はスマホでも読める大きさ（画面の短い辺に合わせ、下限を持つ）。
+   ===================================================================== */
+.panyu-clicker-overlay.pv2 { --heat: 0; display: block; padding: 0; overflow: hidden; background: #14060d; animation: pv2In .35s ease-out both; }
+@keyframes pv2In { from { opacity: 0; } }
+.panyu-clicker-overlay.pv2.is-out { opacity: 0; transition: opacity .25s ease-in; }
+.pv2 .panyu-bg-char { left: 0; top: 0; width: 100%; height: 100%; transform: none; object-fit: cover; opacity: 1; filter: none; transition: opacity .2s ease; }
+/* 光の色（テーマ）：絵そのものに薄く色をのせる */
+.pv2 .pv2-grade { position: absolute; inset: 0; z-index: 1; pointer-events: none; transition: background .5s ease, opacity .5s ease; }
+.pv2.panyu-bg-pink .pv2-grade { background: none; }
+.pv2.panyu-bg-purple .pv2-grade { background: linear-gradient(180deg, rgba(86,40,170,.55), rgba(40,16,90,.45)); mix-blend-mode: color; }
+.pv2.panyu-bg-gold .pv2-grade { background: radial-gradient(ellipse at 50% 40%, rgba(255,214,140,.55), rgba(190,120,40,.45)); mix-blend-mode: soft-light; }
+.pv2.panyu-bg-aqua .pv2-grade { background: linear-gradient(180deg, rgba(40,150,220,.5), rgba(20,70,140,.5)); mix-blend-mode: color; }
+.pv2.panyu-bg-dark .pv2-grade { background: rgba(8,4,8,.42); }
+/* 四隅の沈みと、押すほど真ん中が温かく光る */
+.pv2 .pv2-vignette { position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 62%, rgba(255,140,190, calc(var(--heat) * .32)) 0%, rgba(255,140,190,0) 70%),
+    radial-gradient(130% 100% at 50% 45%, rgba(0,0,0,0) 55%, rgba(10,2,6,.55) 100%),
+    linear-gradient(180deg, rgba(10,2,6,.55) 0%, rgba(10,2,6,0) 18%, rgba(10,2,6,0) 72%, rgba(10,2,6,.7) 100%); }
+.pv2.is-done .pv2-vignette { animation: pv2Flash .9s ease-out; }
+@keyframes pv2Flash { 0% { background-color: rgba(255,230,240,.0); } 12% { background-color: rgba(255,230,240,.45); } 100% { background-color: rgba(255,230,240,0); } }
+/* 玉：絵と同じ所を切り出した「地続き」の玉。縁はぼかして、継ぎ目を見せない */
+.pv2 .panyu-clicker-pair { z-index: 2; }
+.pv2 .panyu-clicker-blob { border: 0; box-shadow: none; filter: none !important; background-color: transparent;
+  -webkit-mask-image: radial-gradient(circle, #000 60%, transparent 71%); mask-image: radial-gradient(circle, #000 60%, transparent 71%); }
+.pv2 .panyu-clicker-blob:hover { filter: none !important; }
+.pv2 .panyu-clicker-blob::after { background: radial-gradient(circle at 40% 35%, rgba(255,255,255,.18), rgba(255,255,255,0) 55%); border: 0; box-shadow: none; }
+.pv2 .panyu-clicker-inner, .pv2 .panyu-progress-ring { display: none; }
+
+/* 左上：スキル名とLv */
+.pv2 .pv2-skill { position: absolute; z-index: 3; left: max(18px, 3vw); top: max(14px, 3.2vh); pointer-events: none; color: #fff6f9;
+  text-shadow: 0 2px 10px rgba(60,0,24,.75); }
+.pv2 .pv2-skill-eye { display: flex; align-items: center; gap: 10px; font-family: "Barlow Condensed", sans-serif; font-weight: 500;
+  font-size: max(13px, 1.9vmin); letter-spacing: .32em; color: #f0d595; }
+.pv2 .pv2-skill-eye span { font-family: "Noto Sans JP", sans-serif; font-weight: 700; letter-spacing: .1em; font-size: max(12px, 1.7vmin);
+  padding: 1px 8px; border: 1px solid rgba(255,190,210,.7); border-radius: 2px; color: #ffd3e1; background: rgba(120,20,60,.35); text-shadow: none; }
+.pv2 .pv2-skill-name { margin-top: 4px; font-family: "Shippori Mincho B1", serif; font-weight: 800; font-size: max(24px, 4.6vmin); letter-spacing: .06em; line-height: 1.15; }
+.pv2 .pv2-skill-name b { margin-left: .35em; font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: .78em; letter-spacing: .04em; color: #f0d595; }
+/* 右上：光の色・やめる */
+.pv2 .pv2-tools { position: absolute; z-index: 4; right: max(16px, 2.6vw); top: max(14px, 3.2vh); display: flex; align-items: center; gap: 14px; }
+.pv2 .pv2-picker { position: static; display: flex; gap: 8px; padding: 6px 8px; border-radius: 999px; background: rgba(20,6,12,.55); border: 1px solid rgba(255,220,232,.18); }
+.pv2 .pv2-swatch { width: max(22px, 3.6vmin); height: max(22px, 3.6vmin); padding: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); box-shadow: none; cursor: pointer; transform: none; }
+.pv2 .pv2-swatch::before { display: none; }
+.pv2 .pv2-swatch.is-pink { background: radial-gradient(circle at 35% 30%, #ffd6e6, #ff6fa3 70%); }
+.pv2 .pv2-swatch.is-purple { background: radial-gradient(circle at 35% 30%, #d9c6ff, #6c3bd1 70%); }
+.pv2 .pv2-swatch.is-gold { background: radial-gradient(circle at 35% 30%, #fff1c9, #d3a346 70%); }
+.pv2 .pv2-swatch.is-aqua { background: radial-gradient(circle at 35% 30%, #d4f2ff, #2f9bdc 70%); }
+.pv2 .pv2-swatch.is-dark { background: radial-gradient(circle at 35% 30%, #6a5a62, #120a0e 70%); }
+.pv2 .pv2-swatch.active { box-shadow: 0 0 0 2px #14060d, 0 0 0 4px #f0d595; border-color: transparent; }
+.pv2 .pv2-quit { min-height: max(36px, 6vmin); padding: 0 max(14px, 2.2vmin); border-radius: 2px; border: 1px solid rgba(255,230,238,.4); background: rgba(20,6,12,.55);
+  color: #fff3f7; font-family: "Noto Sans JP", sans-serif; font-weight: 700; font-size: max(13px, 2vmin); letter-spacing: .14em; cursor: pointer; }
+/* 下：進み具合 */
+.pv2 .pv2-meter { position: absolute; z-index: 3; left: 50%; bottom: max(12px, 3vh); transform: translateX(-50%); width: min(560px, 72vw); pointer-events: none; text-align: center; color: #fff4f8; }
+.pv2 .pv2-meter-row { display: flex; align-items: baseline; justify-content: center; gap: 8px; text-shadow: 0 2px 10px rgba(60,0,24,.8); }
+.pv2 .pv2-meter-k { font-family: "Shippori Mincho B1", serif; font-weight: 700; font-size: max(14px, 2.2vmin); letter-spacing: .2em; }
+.pv2 .pv2-meter-n { font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: max(26px, 4.6vmin); line-height: 1; color: #f0d595; min-width: 1.4em; }
+.pv2 .pv2-meter-of { font-family: "Barlow Condensed", sans-serif; font-weight: 500; font-size: max(15px, 2.4vmin); color: #ffd8e6; }
+.pv2 .pv2-bar { position: relative; height: 4px; margin: 6px auto 0; background: rgba(255,255,255,.2); overflow: hidden; }
+.pv2 .pv2-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, #ff8fb8, #ffd1e1 60%, #f0d595); box-shadow: 0 0 10px rgba(255,170,200,.8); transition: width .18s ease-out; }
+.pv2 .pv2-hint { margin-top: 6px; font-family: "Noto Sans JP", sans-serif; font-weight: 500; font-size: max(12px, 1.8vmin); letter-spacing: .06em; color: rgba(255,236,243,.85); text-shadow: 0 1px 6px rgba(40,0,16,.8); }
+.pv2.is-done .pv2-meter, .pv2.is-done .pv2-tools { opacity: 0; transition: opacity .3s; }
+/* 押した所の擬音 */
+.pv2 .pv2-word { position: absolute; z-index: 5; pointer-events: none; transform: translate(-50%, -50%) rotate(var(--r));
+  font-family: "Noto Sans JP", sans-serif; font-weight: 900; font-size: max(22px, 4.4vmin); letter-spacing: .02em; color: #fff;
+  -webkit-text-stroke: max(4px, .7vmin) #ff5c95; paint-order: stroke fill; text-shadow: 0 4px 14px rgba(120,0,50,.45);
+  animation: pv2Word .85s cubic-bezier(.2,.9,.3,1) forwards; }
+.pv2 .pv2-word.is-big { font-size: max(32px, 6.6vmin); -webkit-text-stroke-color: #e8a83a; color: #fff8e6; }
+@keyframes pv2Word {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r)) scale(.4); }
+  18% { opacity: 1; transform: translate(-50%, -60%) rotate(var(--r)) scale(1.12); }
+  32% { transform: translate(-50%, -64%) rotate(var(--r)) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), -190%) rotate(var(--r)) scale(.92); } }
+/* 小さな光（絵文字はやめて、ハートと星の記号に） */
+.pv2 .panyu-particle { z-index: 4; font-family: "Noto Sans JP", sans-serif; text-shadow: 0 0 10px currentColor; }
+.pv2 .panyu-particle.is-pink { color: #ff8fb8; }
+.pv2 .panyu-particle.is-gold { color: #f6d58f; }
+.pv2 .panyu-particle.is-white { color: #fff4f8; }
+/* コンボ */
+.pv2 .pv2-combo { position: absolute; z-index: 4; left: 50%; top: 22%; transform: translateX(-50%); display: flex; align-items: baseline; gap: 10px; pointer-events: none;
+  background: none; border: 0; box-shadow: none; color: #fff; text-shadow: 0 2px 16px rgba(120,0,50,.6); }
+.pv2 .pv2-combo b { font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: max(44px, 9vmin); line-height: 1; color: #f0d595; }
+.pv2 .pv2-combo span { font-family: "Barlow Condensed", sans-serif; font-weight: 500; font-size: max(16px, 2.8vmin); letter-spacing: .3em; }
+/* 完走：発動の札 */
+.pv2 .pv2-result { position: absolute; z-index: 6; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, 88vw);
+  padding: max(18px, 3.4vmin) max(20px, 4vmin) max(16px, 3vmin); text-align: center; color: #fff4f8;
+  background: linear-gradient(180deg, rgba(40,8,22,.92), rgba(18,4,10,.95)); border: 1px solid rgba(240,213,149,.6); border-radius: 2px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.6), inset 0 2px 0 #f0d595; animation: pv2Res .5s cubic-bezier(.2,.9,.3,1.2) both; }
+@keyframes pv2Res { from { opacity: 0; transform: translate(-50%, -44%) scale(.94); } }
+.pv2 .pv2-res-eye { font-family: "Barlow Condensed", sans-serif; font-weight: 500; font-size: max(13px, 1.9vmin); letter-spacing: .36em; color: #f0d595; }
+.pv2 .pv2-res-title { margin-top: 6px; font-family: "Shippori Mincho B1", serif; font-weight: 800; font-size: max(26px, 5.2vmin); letter-spacing: .06em; line-height: 1.2; }
+.pv2 .pv2-res-title em { margin-left: .2em; font-style: normal; background: linear-gradient(180deg, #fff3cf, #e1ad4f); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pv2 .pv2-res-gain { display: flex; align-items: baseline; justify-content: center; gap: 10px; margin-top: max(12px, 2vmin); padding: 10px 0; border-top: 1px solid rgba(255,230,238,.16); border-bottom: 1px solid rgba(255,230,238,.16);
+  font-size: max(14px, 2.2vmin); color: #ffd8e6; letter-spacing: .08em; }
+.pv2 .pv2-res-gain b { font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: max(38px, 7vmin); line-height: 1; color: #f0d595; letter-spacing: .02em; }
+.pv2 .pv2-res-note { margin-top: 10px; font-size: max(14px, 2.1vmin); color: rgba(255,236,243,.85); }
+.pv2 .pv2-res-line { margin-top: 10px; font-family: "Shippori Mincho B1", serif; font-weight: 700; font-size: max(15px, 2.4vmin); color: #fff4f8; }
+.pv2 .pv2-res-line span { margin-left: .8em; font-size: .78em; color: #f0d595; letter-spacing: .14em; }
+.pv2 .pv2-res-btn { margin-top: max(14px, 2.4vmin); min-height: max(44px, 7vmin); min-width: 46%; border: 1px solid #f0d595; border-radius: 2px; cursor: pointer;
+  background: linear-gradient(180deg, #f0d595, #d8b56c); color: #1a1206; font-family: "Noto Sans JP", sans-serif; font-weight: 700; font-size: max(15px, 2.4vmin); letter-spacing: .16em; }
+@media (prefers-reduced-motion: reduce) { .pv2 .pv2-word, .pv2 .pv2-result, .pv2.is-done .pv2-vignette { animation: none; } }
+/* 発動の札は下に置き、ご満悦の顔を隠さない */
+.pv2 .pv2-result { top: auto; bottom: max(14px, 3vh); transform: translateX(-50%); }
+@keyframes pv2Res { from { opacity: 0; transform: translate(-50%, 16px) scale(.96); } }
+/* スマホの横持ち：発動の札は右下へ寄せ、真ん中の顔を空ける */
+@media (max-height: 520px) {
+  .pv2 .pv2-result { left: auto; right: max(12px, 2.4vw); bottom: max(10px, 2.6vh); width: min(400px, 42vw); transform: none; padding: 12px 16px 12px; }
+  @keyframes pv2Res { from { opacity: 0; transform: translateY(14px); } }
+  .pv2 .pv2-res-title { font-size: max(20px, 5.4vmin); }
+  .pv2 .pv2-res-gain { margin-top: 8px; padding: 6px 0; }
+  .pv2 .pv2-res-gain b { font-size: max(30px, 8vmin); }
+  .pv2 .pv2-res-note, .pv2 .pv2-res-line { margin-top: 6px; }
+  .pv2 .pv2-res-btn { margin-top: 10px; min-height: 44px; width: 100%; }
+}
+/* コンボは顔にかからない右側に */
+.pv2 .pv2-combo { left: auto; right: max(24px, 9vw); top: 34%; transform: none; }
+/* 光の色は外側だけ（ミミの肌や髪の色は変えない）。玉の上にも同じように掛かるよう、玉より手前に置く */
+.pv2 .pv2-grade { z-index: 3; mix-blend-mode: normal !important; }
+.pv2.panyu-bg-purple .pv2-grade { background: radial-gradient(ellipse 58% 62% at 50% 52%, rgba(90,40,180,0) 55%, rgba(90,40,180,.5) 100%); mix-blend-mode: color !important; }
+.pv2.panyu-bg-gold .pv2-grade { background: radial-gradient(ellipse 58% 62% at 50% 52%, rgba(255,200,110,0) 55%, rgba(255,196,96,.42) 100%); mix-blend-mode: soft-light !important; }
+.pv2.panyu-bg-aqua .pv2-grade { background: radial-gradient(ellipse 58% 62% at 50% 52%, rgba(40,150,220,0) 55%, rgba(40,150,220,.5) 100%); mix-blend-mode: color !important; }
+.pv2.panyu-bg-dark .pv2-grade { background: radial-gradient(ellipse 58% 62% at 50% 52%, rgba(6,2,6,0) 50%, rgba(6,2,6,.72) 100%); }
