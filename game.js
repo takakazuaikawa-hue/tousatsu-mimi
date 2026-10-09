@@ -2239,7 +2239,7 @@ const PSYCH_QUESTIONS = {
   },
   lesson_2_2: { id:'lesson_2_2', type:'lesson', chapter:2, chapterTitle:'第2章：基本用語',
     rule:'アンテ＝全員強制参加金／ブラインド＝SB(小)・BB(大)の2人だけ強制',
-    situationFn: () => '「強制ベット」には2方式ある。\n<b>アンテ式</b>：全員が同じ額を最初にポットに入れる（本ゲームの方式：50ずつ）。\n<b>ブラインド式</b>：実プロホールデムで主流。2人だけが強制ベット（SB / BB）。',
+    situationFn: () => '「強制ベット」には2方式ある。\n<b>アンテ式</b>：全員が同じ額を最初にポットに入れる（本ゲームの方式：はじめは50ずつ。4ハンドごとに上がる）。\n<b>ブラインド式</b>：実プロホールデムで主流。2人だけが強制ベット（SB / BB）。',
     speech: '本ゲームはアンテ方式。プロはブラインド方式',
     zazazoHint: '全員 vs 一部の違い',
     choices: [
@@ -2247,7 +2247,7 @@ const PSYCH_QUESTIONS = {
       { id:'t2_b', text:'同じ意味', correct:false },
       { id:'t2_c', text:'ブラインドは目をつぶる演出のこと', correct:false },
     ],
-    onSuccess: { panyu:0, zazazo:0, hint:'本ゲームは簡略化のため両者50ずつアンテ', rico:'<u>強制ベットがあるから降りるだけでは勝てない</u>。攻めの姿勢が必要ってこと' },
+    onSuccess: { panyu:0, zazazo:0, hint:'本ゲームは簡略化のため両者同額のアンテ（はじめ50・4ハンドごとに上がる）', rico:'<u>強制ベットがあるから降りるだけでは勝てない</u>。攻めの姿勢が必要ってこと' },
     onFail:    { panyu:0, mimi:'同じだと思ってました', rico:'<u>アンテ＝全員 / ブラインド＝SB+BBだけ</u>。実プロはブラインド方式が主流' },
   },
   lesson_2_3: { id:'lesson_2_3', type:'lesson', chapter:2, chapterTitle:'第2章：基本用語',
@@ -12127,7 +12127,7 @@ const GLOSSARY = [
   { cat: '確率・期待値', term: 'ガットショット', body: '内側1枚で完成するストレートドロー。4outs（=リバーまで16%）。' },
   { cat: '確率・期待値', term: 'バックドア', body: '残り2枚（ターンとリバー）両方を引いて完成するドロー。約4%と低確率。' },
 
-  { cat: 'ベット', term: 'アンテ', body: '全員が強制的にポットに入れる小額（本ゲームでは50ずつ）。プレイ活性化目的。' },
+  { cat: 'ベット', term: 'アンテ', body: '全員が強制的にポットに入れる小額。本ゲームでは毎ハンドの始めにふたりが同じ額を出す（はじめは50。4ハンドごとに100→150→200→300→400と上がる）。' },
   { cat: 'ベット', term: 'ブラインド', body: 'SB／BBが強制的にポストする額。アンテと違い2人だけが負担。実プロでは主流。' },
   { cat: 'ベット', term: '4ベット／5ベット', body: '3ベット（リレイズ）に対するさらなるレイズ。4-bet は通常プレミアム手の領域。' },
   { cat: 'ベット', term: 'スロープレイ', body: '強い手を弱く見せて相手を釣る打ち方。トラップの一種、過剰使用は禁物。' },
@@ -16234,17 +16234,17 @@ function showDominanceChoiceModal() {
         <button class="dominance-choice-btn" data-choice="full">
           <div class="dchoice-icon">💰</div>
           <div class="dchoice-name">全取り</div>
-          <div class="dchoice-desc">相手チップを完全に削り切る最大の勝利。バリュー最大化</div>
+          <div class="dchoice-desc">相手のチップを0まで削り切る。スコア +20（相手のチップを0に）</div>
         </button>
         <button class="dominance-choice-btn dchoice-mid" data-choice="break">
           <div class="dchoice-icon">💔</div>
           <div class="dchoice-name">心を折る</div>
-          <div class="dchoice-desc">相手の精神を粉砕。チップ大削り＋ティルト誘発で再戦時にも有利に</div>
+          <div class="dchoice-desc">いちばん派手なとどめ。ほぼ削り切るが、相手のチップが少し残る（+20 は付かない）</div>
         </button>
         <button class="dominance-choice-btn dchoice-mercy" data-choice="mercy">
           <div class="dchoice-icon">🌸</div>
           <div class="dchoice-name">見逃す</div>
-          <div class="dchoice-desc">余裕の貫禄。チップは少し取るだけで終わらせる、紳士的勝利</div>
+          <div class="dchoice-desc">余裕の貫禄。相手のチップを7割ほど取って終わる（+20 は付かない）</div>
         </button>
       </div>
     </div>
