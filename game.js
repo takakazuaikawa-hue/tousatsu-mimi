@@ -3334,6 +3334,7 @@ function applyBindings() {
       case 'handNo2': el.textContent = String(state.handNo || 1).padStart(2, '0'); break;
       case 'handMax2': el.textContent = state.maxHands >= 999 ? '' : '/ ' + String(state.maxHands || 0).padStart(2, '0'); break;
       case 'streetList': el.innerHTML = renderStreetList(); break;
+      case 'anteInfo': el.innerHTML = renderAnteInfo(); break;
       case 'opponentNameLatin': el.textContent = opponentLatinName(); break;
       case 'potBlock': el.innerHTML = renderPotBlock(); break;
       case 'tellTags': el.innerHTML = renderTellTags(); break;
@@ -8643,7 +8644,7 @@ function goLobby() {
   document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
   if (typeof dismissCutIn === 'function') dismissCutIn();
   if (state && state.psychRoot) { state.psychRoot.remove(); state.psychRoot = null; }
-  document.querySelectorAll('.hand-result-overlay, .rebuy-overlay, .dominance-overlay, .dominance-choice-overlay, .tutorial-overlay, .chapter-banner, .hands-on-overlay, .personality-reveal-banner, .emote-cutin, .clutch-cutin, .bluff-break-charge, .lecture-stamp, .psych-modal, .rico-cutin, .allin-cutin, .panyu-clicker-overlay').forEach(el => el.remove());
+  document.querySelectorAll('.hand-result-overlay, .rebuy-overlay, .dominance-overlay, .dominance-choice-overlay, .tutorial-overlay, .chapter-banner, .hands-on-overlay, .personality-reveal-banner, .emote-cutin, .clutch-cutin, .bluff-break-charge, .lecture-stamp, .psych-modal, .rico-cutin, .allin-cutin, .panyu-clicker-overlay, .mk-layer').forEach(el => el.remove());
   const lhud = document.getElementById('lecture-hud'); if (lhud) lhud.remove();
   if (state) { state.lectureMode = false; state.introHandMode = false; state.tutorialMode = false; state.psychPending = false; }
   if (typeof stopBattleBgmSkin === 'function') stopBattleBgmSkin(); // バトル専用BGMスキンを止めてロビーへ戻す
@@ -12590,6 +12591,7 @@ function startBattleInternal(opponentId) {
     state.mimiThought = '「相手のチップは私の倍……一発勝負じゃ勝てない。まずは相手をよく見よう」';
     state.ricoAdvice = pickRicoOpeningAdvice(state.opponentId);
     render();
+    maybeShowHouseRules();
   }
 }
 
@@ -13357,6 +13359,249 @@ function applyIntroHandUI() {
     skipBtn.addEventListener('click', onAction);
     scr.appendChild(skipBtn);
   }
+}
+
+//=============================================================
+// 10b. 必ず分かってほしいこと（卓の決まり・読み合い・読み勝ちのご褒美）2026-10
+// 研修のコーチと同じく、真ん中に1枚ずつ大きく出して、押して進む。話題にしている所だけを明るく残す。
+// 札は #stage の中に置く（舞台と一緒に縮む。render() が作り直す #app の外なので消えない）。
+// 文字はスマホで小さくなりすぎないよう、CSS 側で --game-scale から割り戻す（.mk-layer の変数）。
+//=============================================================
+// 読み勝った時に分かる「相手の今の手」。readBattleRealHint の3段階と同じ
+const READ_TELLS = [
+  { k: 'real', word: '本物', desc: '本当に強い手' },
+  { k: 'even', word: '五分', desc: 'そこそこの手' },
+  { k: 'weak', word: '弱い', desc: 'ブラフ寄り' },
+];
+// 卓の左のリコ先輩と同じ顔（着せている衣装の顔）
+function ricoFaceSrc() {
+  const equipped = save && save.equippedRicoOutfit;
+  const found = equipped && equipped !== 'default' ? RICO_OUTFITS.find(o => outfitIdFor(o.file) === equipped) : null;
+  return 'assets/ui/face_' + (found ? found.file : 'rico_default.webp').slice(0, -5) + '.webp';
+}
+// pages: [{ eyebrow, count, title, fig, note, rico, target, next, cls }]。最後の札を閉じると解決する
+function showMustKnow(pages, opts = {}) {
+  return new Promise(resolve => {
+    document.querySelectorAll('.mk-layer').forEach(e => e.remove());
+    const stage = document.getElementById('stage');
+    if (!stage || !pages.length) { resolve(); return; }
+    const gen = battleGen;
+    const layer = document.createElement('div');
+    layer.className = 'mk-layer' + (opts.cls ? ' ' + opts.cls : '');
+    layer.innerHTML = '<div class="mk-dim"></div><div class="mk-hole" hidden></div><section class="mk-card" role="dialog" aria-modal="true" aria-live="polite"></section>';
+    stage.appendChild(layer);
+    const card = layer.querySelector('.mk-card'), hole = layer.querySelector('.mk-hole');
+    let idx = 0, armedAt = 0, done = false;
+    const close = () => {
+      if (done) return;
+      done = true;
+      window.removeEventListener('resize', place);
+      document.removeEventListener('keydown', onKey, true);
+      layer.classList.add('is-out');
+      setTimeout(() => layer.remove(), 220);
+      resolve();
+    };
+    const go = (d) => {
+      if (done || performance.now() < armedAt) return;
+      if (gen !== battleGen) return close();
+      mpSfx('check');
+      const n = idx + d;
+      if (n < 0) return;
+      if (n >= pages.length) return close();
+      idx = n;
+      paint();
+    };
+    // 話題の所（target）を照らし、札はその下（入らなければ上、それも無理なら真ん中）に置く。座標は舞台の 1280×800
+    function place() {
+      if (done) return;
+      const p = pages[idx];
+      const sr = stage.getBoundingClientRect();
+      const k = sr.width / 1280 || 1;
+      const els = p.target ? [...document.querySelectorAll(p.target)].filter(e => e.getBoundingClientRect().width > 0) : [];
+      let H = null;
+      if (els.length) {
+        const rs = els.map(e => e.getBoundingClientRect()), pad = 10;
+        H = { l: (Math.min(...rs.map(r => r.left)) - sr.left) / k - pad, t: (Math.min(...rs.map(r => r.top)) - sr.top) / k - pad,
+              r: (Math.max(...rs.map(r => r.right)) - sr.left) / k + pad, b: (Math.max(...rs.map(r => r.bottom)) - sr.top) / k + pad };
+      }
+      const ch = card.offsetHeight;
+      let top = Math.max(12, (800 - ch) / 2);
+      if (H) {
+        if (H.b + 18 + ch <= 788) top = H.b + 18;
+        else if (H.t - 18 - ch >= 12) top = H.t - 18 - ch;
+        // 札が照らした所の大半を隠してしまう時（スマホで札が大きい時など）は、照らさずに全体を暗くする
+        const cw = card.offsetWidth, cl = (1280 - cw) / 2;
+        const ox = Math.max(0, Math.min(cl + cw, H.r) - Math.max(cl, H.l)), oy = Math.max(0, Math.min(top + ch, H.b) - Math.max(top, H.t));
+        if (ox * oy > (H.r - H.l) * (H.b - H.t) * 0.2) H = null;
+      }
+      layer.classList.toggle('has-hole', !!H);
+      hole.hidden = !H;
+      if (H) Object.assign(hole.style, { left: H.l + 'px', top: H.t + 'px', width: (H.r - H.l) + 'px', height: (H.b - H.t) + 'px' });
+      card.style.top = Math.round(top) + 'px';
+    }
+    function paint() {
+      const p = pages[idx];
+      const last = idx === pages.length - 1;
+      const count = pages.length > 1 ? `${idx + 1} / ${pages.length}` : (p.count || '');
+      card.className = 'mk-card' + (p.cls ? ' ' + p.cls : '');
+      card.innerHTML = `
+        <header class="mk-head"><span class="mk-eyebrow">${p.eyebrow || ''}</span><span class="mk-count">${count}</span></header>
+        <h2 class="mk-title">${p.title}</h2>
+        ${p.fig ? `<div class="mk-fig">${p.fig}</div>` : ''}
+        ${p.note ? `<p class="mk-note">${p.note}</p>` : ''}
+        <footer class="mk-foot">
+          <div class="mk-rico">${p.rico ? `<span class="mk-face"><img src="${ricoFaceSrc()}" alt="" onerror="this.onerror=null;this.src='assets/ui/face_rico.webp'"></span><div class="mk-rico-body"><div class="mk-rico-name">リコ先輩</div><p class="mk-rico-line">「${p.rico}」</p></div>` : ''}</div>
+          <div class="mk-nav">
+            ${idx > 0 ? '<button type="button" class="mk-btn mk-back">戻る</button>' : ''}
+            <button type="button" class="mk-btn mk-next">${p.next || (last ? '閉じる' : '次へ')}</button>
+          </div>
+        </footer>`;
+      card.querySelector('.mk-next').addEventListener('click', (e) => { e.stopPropagation(); go(1); });
+      const back = card.querySelector('.mk-back');
+      if (back) back.addEventListener('click', (e) => { e.stopPropagation(); go(-1); });
+      armedAt = performance.now() + 380; // 前の画面のタップが、そのまま「次へ」に届かないように
+      card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+      place();
+      requestAnimationFrame(place);
+    }
+    const onKey = (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); go(1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); go(-1); }
+    };
+    window.addEventListener('resize', place);
+    document.addEventListener('keydown', onKey, true);
+    paint();
+  });
+}
+
+// 初めての本番の卓で一度だけ：勝ち負け／相手は2倍／参加費の段（本番のルールを、真ん中で一度も見せていなかった）
+function houseRulesPages() {
+  const opp = (state.opponentName || '相手').replace(/（.*）/, '');
+  const P = state.playerChips, O = state.opponentChips;
+  const carry = Math.max(0, P - startingBaseChips(state.opponentId, state.seriousRicoMode));
+  const share = Math.round(P / Math.max(1, P + O) * 1000) / 10;
+  const chipCol = (cols) => `<span class="mk-chipcol" style="--n:${cols.length}">${cols.map((c, i) => `<img src="assets/ui/chip_${c}.webp" alt="" style="--i:${i}">`).join('')}</span>`;
+  // 参加費の段：数字の行・棒・何ハンド目の行。いまの段（1〜4ハンド目）は金
+  const top = ANTE_LEVELS[ANTE_LEVELS.length - 1];
+  const steps = '<span class="mk-sk is-v">参加費</span><span class="mk-sk is-r">ハンド目</span><i class="mk-steps-base"></i>' + ANTE_LEVELS.map((v, i) => {
+    const from = i * ANTE_STEP + 1, col = `grid-column:${i + 2}`, now = i === 0 ? ' is-now' : '';
+    const range = i === ANTE_LEVELS.length - 1 ? `${from}〜` : `${from}〜${from + ANTE_STEP - 1}`;
+    return `${i === 0 ? `<em class="mk-snow" style="${col}">いまここ</em>` : ''}<b class="mk-sv${now}" style="${col}">${v}</b><i class="mk-sb${now}" style="${col};--h:${(v / top).toFixed(3)}"></i><small class="mk-sr${now}" style="${col}">${range}</small>`;
+  }).join('');
+  return [
+    { eyebrow: 'HOUSE RULES', target: '.battle-screen .v2-stack-gauge.is-opp',
+      title: `${opp}のチップを <b>0</b> にしたら勝ち`,
+      fig: `<div class="mk-tug">
+          <div class="mk-tug-row"><span class="mk-tug-name">ミミ <b>${P}</b></span><span class="mk-tug-name is-opp"><b>${O}</b> ${opp}</span></div>
+          <div class="mk-tug-bar"><i class="mk-tug-mimi" style="width:${share}%"></i><i class="mk-tug-opp"></i></div>
+          <div class="mk-tug-ends"><span class="mk-tug-end is-lose">ミミが <b>0</b> になったら負け</span><span class="mk-tug-end is-win">${opp}が <b>0</b> になったら勝ち</span></div>
+        </div>`,
+      note: 'ハンドの数に決まりはありません。ミミが 0 になっても、1回だけ座り直せます（それまでに読み合いか「降りる」を使っていれば）。',
+      rico: '上の帯は、チップの綱引き。金色を右の端まで押し切ったら勝ちだよ' },
+    { eyebrow: 'HOUSE RULES', target: '.battle-screen .v2-stack-gauge.is-opp',
+      title: `${opp}は <b>2</b> 倍のチップで始まる`,
+      fig: `<div class="mk-stacks">
+          <figure class="mk-stack">${chipCol(['gold', 'red', 'gold', 'red', 'gold'])}<figcaption>ミミ <b>${P}</b>${carry ? `<small>持ち込み +${carry} を含む</small>` : ''}</figcaption></figure>
+          <span class="mk-times">×2</span>
+          <figure class="mk-stack is-opp">${chipCol(['red', 'white', 'blue', 'red', 'white', 'blue', 'red', 'white', 'blue', 'red'])}<figcaption>${opp} <b>${O}</b></figcaption></figure>
+        </div>`,
+      note: '1回勝っただけでは、終わりません。',
+      rico: '一発で全部取ろうとしないで。勝てる時に勝って、少しずつ削っていこう' },
+    { eyebrow: 'HOUSE RULES', target: '.battle-screen .t8-ante',
+      title: '参加費は <b>4</b> ハンドごとに上がる',
+      fig: `<div class="mk-steps">${steps}</div>`,
+      note: '参加費は、毎ハンドの始めにふたりが同じだけ出すチップ。いまの額は左上に出ています。',
+      rico: '様子見ばかりだと、参加費だけで削られていくよ。勝負どころで仕掛けよう',
+      next: '対戦へ' },
+  ];
+}
+function maybeShowHouseRules() {
+  if (save.houseRulesSeen || state.tutorialMode || state.introHandMode || state.lectureMode) return;
+  battleTimeout(() => {
+    if (state.screen !== 'battle' || state.handNo !== 0) return;
+    showMustKnow(houseRulesPages(), { cls: 'is-rules' }).then(() => {
+      save.houseRulesSeen = true;
+      saveProgress();
+    });
+  }, 650);
+}
+
+// 初めての読み合いの前に一度だけ：なぜ始まったか／勝つと何が分かるか（意味を説明しないまま始まっていた）
+function readTellsRow(on) {
+  return `<div class="mk-tells">${READ_TELLS.map(t => `<div class="mk-tell is-${t.k}${on ? (on === t.k ? ' is-on' : ' is-off') : ''}"><b>${t.word}</b><small>${t.desc}</small></div>`).join('')}</div>`;
+}
+function readIntroPages(group) {
+  const opp = (state.opponentName || '相手').replace(/（.*）/, '');
+  const bet = Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0));
+  const back = '<span class="mk-dl-cards"><span class="mk-dl-card"></span><span class="mk-dl-card"></span></span>';
+  const first = (group === 'psych' && bet > 0)
+    ? { eyebrow: 'READ BATTLE',
+        title: `${opp}が <b>${bet}</b> 賭けてきた`,
+        fig: `<div class="mk-dilemma">
+            <div class="mk-dl">${back}<b>本当に強い手</b><small>なら、降りるのが正解</small></div>
+            <span class="mk-dl-or">それとも</span>
+            <div class="mk-dl">${back}<b>ハッタリ</b><small>なら、受けて立てば取れる</small></div>
+          </div>`,
+        note: '相手の手札は見えません。ここで「読み合い」が始まります。',
+        rico: `${opp}の心を読んでみよう。読み勝つと、手の強さがわかるよ` }
+    : { eyebrow: 'READ BATTLE',
+        title: '読み合いのチャンス',
+        fig: `<div class="mk-dilemma">
+            <div class="mk-dl">${back}<b>${opp}の手札</b><small>は見えない</small></div>
+            <span class="mk-dl-or">だから</span>
+            <div class="mk-dl"><span class="mk-dl-q">?</span><b>場札と賭け方</b><small>から推理する</small></div>
+          </div>`,
+        note: 'ここで「読み合い」が始まります。',
+        rico: `${opp}の手を推理してみよう。読み勝つと、手の強さがわかるよ` };
+  return [first, {
+    eyebrow: 'READ BATTLE',
+    title: `読み勝つと、${opp}の今の手がわかる`,
+    fig: readTellsRow(null) + '<p class="mk-fig-cap">このどれか1つ。コインのおまけも付きます</p>',
+    note: '読み合いは、卓とは別の小さな勝負です。札も別のものが出ます。読み違えても、卓のチップは減りません。',
+    rico: 'わかったら、その一言を信じて、付いていくか降りるか決めよう',
+    next: '読み合いへ',
+  }];
+}
+// 読み合いから卓に戻った瞬間：ご褒美（相手の今の手）を真ん中で大きく見せる（以前は非表示の枠に入っていて見えなかった）
+const READ_ADVICE = {
+  real: 'こっちの手がよほど強くないなら、降りるのが安全',
+  even: '自分の役と、払う額で決めよう',
+  weak: 'こっちに役があるなら、受けて立とう',
+};
+const READ_ADVICE_SHORT = { real: 'よほど強くなければ降りよう', even: '役と払う額で決めよう', weak: '役があるなら受けて立とう' };
+function showReadReward(correct, hint, gameId) {
+  const opp = (state.opponentName || '相手').replace(/（.*）/, '');
+  if (!correct) {
+    return showMustKnow([{ eyebrow: 'READ BATTLE', count: '読み違い', cls: 'is-miss',
+      title: '読み違えた……',
+      note: '読み合いは、卓とは別の勝負。卓のチップは減っていません。ここからは、手札と場札で決めよう。',
+      rico: '外れても、ここからの判断は別の勝負。落ち着いて', next: '卓へ' }], { cls: 'is-reward' });
+  }
+  const T = READ_TELLS.find(t => t.k === hint.k) || READ_TELLS[1];
+  const firstTime = !save.readRewardSeen;
+  if (firstTime) { save.readRewardSeen = true; saveProgress(); }
+  return showMustKnow([{ eyebrow: 'READ BATTLE · ' + (READ_BATTLE_TELL[gameId] || '読み勝ち'), count: '読み勝ち', cls: 'is-win is-' + T.k,
+    title: `今の${opp}は――<em>${T.word}</em>`,
+    fig: readTellsRow(T.k),
+    note: firstTime ? 'この一言は、このハンドが終わるまで、右の吹き出しに残ります。' : '',
+    rico: READ_ADVICE[T.k], next: '卓へ' }], { cls: 'is-reward' });
+}
+
+// 左上の「参加費」：いまの額と、次に上がるハンド（4ハンドごとに上がるのに、卓のどこにも出ていなかった）
+function renderAnteInfo() {
+  if (!state || state.screen !== 'battle' || state.tutorialMode || state.introHandMode || state.lectureMode) return '';
+  const h = Math.max(1, state.handNo || 1);
+  const now = anteForHand(h);
+  const next = ANTE_LEVELS[ANTE_LEVELS.indexOf(now) + 1];
+  const nextAt = (Math.floor((h - 1) / ANTE_STEP) + 1) * ANTE_STEP + 1;
+  const tail = next == null ? '' : nextAt === h + 1 ? `次のハンドから ${next}` : `${nextAt}ハンド目から ${next}`;
+  return `<span class="t8-ante-k">参加費</span><b class="t8-ante-v">${now}</b>${tail ? `<span class="t8-ante-next">${tail}</span>` : ''}`;
+}
+// 次のハンドで参加費が上がるなら { from, to, level }（結果の札で知らせる）
+function anteChangeAt(handNo) {
+  if (handNo <= 1) return null;
+  const now = anteForHand(handNo), prev = anteForHand(handNo - 1);
+  return now > prev ? { from: prev, to: now, level: ANTE_LEVELS.indexOf(now) } : null;
 }
 
 //=============================================================
@@ -14184,12 +14429,23 @@ function readBattleRealHint() {
   let eq = 0.5;
   try { eq = equityVsRandom(state.opponentHand, state.community || [], 200); } catch (e) {}
   const name = (state.opponentName || '相手').replace(/（.*）/, '');
-  if (eq >= 0.72) return { eq, text: `今の${name}は、本当に強い手を持ってる`, tag: '相手は本物' };
-  if (eq >= 0.52) return { eq, text: `今の${name}は、そこそこの手。五分に近い`, tag: '相手は五分' };
-  return { eq, text: `今の${name}は、弱い。ブラフ寄りだ`, tag: '相手は弱い' };
+  if (eq >= 0.72) return { eq, k: 'real', text: `今の${name}は、本当に強い手を持ってる`, tag: '相手は本物' };
+  if (eq >= 0.52) return { eq, k: 'even', text: `今の${name}は、そこそこの手。五分に近い`, tag: '相手は五分' };
+  return { eq, k: 'weak', text: `今の${name}は、弱い。ブラフ寄りだ`, tag: '相手は弱い' };
 }
 function startReadBattle(group) {
   if (state.screen !== 'battle' || !readBattleReady(group)) { state.psychPending = false; state.isPlayerTurn = true; render(); return; }
+  // 初めての読み合いは、始まる前に「なぜ始まったか・勝つと何が分かるか」を2枚で見せる
+  if (!save.readIntroSeen) {
+    const gen0 = battleGen;
+    if (typeof dismissCutIn === 'function') dismissCutIn(); // 相手のカットイン（画面の一番上）が説明の札を覆っていた
+    showMustKnow(readIntroPages(group), { cls: 'is-read' }).then(() => {
+      save.readIntroSeen = true;
+      saveProgress();
+      if (gen0 === battleGen && state.screen === 'battle') startReadBattle(group);
+    });
+    return;
+  }
   const gameId = pickReadBattle(group);
   const stage = document.getElementById('stage') || document.body;
   document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
@@ -14229,15 +14485,18 @@ function finishReadBattle(group, gameId, r, gain) {
   state.psychTried = (state.psychTried || 0) + 1;
   state.readBattleBonus = (state.readBattleBonus || 0) + (Number.isFinite(r.gain) ? r.gain : gain);
   log('psych', { qid: 'mb_' + gameId, success: !!r.correct, mult: r.mult || 1 });
+  let hint = null;
   if (r.correct) {
     state.panyu = Math.min(state.panyuMax, state.panyu + 25);
     state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
     state.psychSuccessCount++;
-    const hint = readBattleRealHint();
+    hint = readBattleRealHint();
     if (!state.tellTags) state.tellTags = [];
     state.tellTags.push(hint.tag);
     state.mimiThought = `「${READ_BATTLE_TELL[gameId] || '読み勝った'}……！ ${hint.text}」`;
-    state.ricoAdvice = '「読み勝ったご褒美。今のハンド、その一言を信じて決めな」';
+    // ご褒美の一言は、このハンドの間ずっと右の吹き出しに残す（決める時に読み返せるように。吹き出しは2行まで）
+    const T = READ_TELLS.find(t => t.k === hint.k) || READ_TELLS[1];
+    state.ricoAdvice = `「読み：${(state.opponentName || '相手').replace(/（.*）/, '')}は${T.word}。${READ_ADVICE_SHORT[T.k]}」`;
     if (state.zazazo >= state.zazazoMax && !state.opponentPersonalityRevealed) {
       state.opponentPersonalityRevealed = true;
       unlockAchievement('read_first');
@@ -14256,8 +14515,13 @@ function finishReadBattle(group, gameId, r, gain) {
   render();
   const bb = state.__pendingBluffBreak, rv = state.__pendingReveal;
   state.__pendingBluffBreak = false; state.__pendingReveal = false;
-  if (bb) triggerBluffBreak();
-  if (rv) battleTimeout(() => showPersonalityRevealBanner(), bb ? 2600 : 200);
+  // 卓に戻った瞬間に、ご褒美（読み違いなら、その知らせ）を真ん中で見せてから続きの演出へ
+  const gen = battleGen;
+  showReadReward(!!r.correct, hint, gameId).then(() => {
+    if (gen !== battleGen || state.screen !== 'battle') return;
+    if (bb) triggerBluffBreak();
+    if (rv) battleTimeout(() => showPersonalityRevealBanner(), bb ? 2600 : 200);
+  });
 }
 
 function triggerPsychBattle(qid) {
@@ -15797,6 +16061,16 @@ function showHandResultBanner(snapshot) {
   const handNet = snapshot ? snapshot.handNet : (typeof state.handStartChips === 'number' ? state.playerChips - state.handStartChips : null);
   const netHtml = (typeof handNet === 'number') ? `このハンドの収支 <b class="${handNet > 0 ? 'hr-pot-plus' : handNet < 0 ? 'hr-pot-minus' : ''}">${handNet > 0 ? '+' : handNet < 0 ? '−' : '±'}${Math.abs(handNet)}</b> <small>（ポット ${potDelta}）</small>` : null;
   const playerChipDeltaText = last.winner === 'player' ? `+${potDelta}` : last.winner === 'opponent' ? `-?` : `+${Math.floor(potDelta/2)}`;
+  // 次のハンドで参加費が上がる時は、結果の札で知らせ、進むボタンを押して確かめてもらう（以前は4秒の小さな知らせだけ）
+  const anteUp = (!isReplay && !state.tutorialMode && !state.introHandMode && !state.lectureMode
+    && playerChips > 0 && opponentChips > 0 && state.handNo < state.maxHands && !isDominanceMode()) ? anteChangeAt(state.handNo + 1) : null;
+  const anteHtml = anteUp ? `
+      <div class="hr-ante">
+        <div class="hr-ante-k">次のハンドから、参加費が上がります</div>
+        <div class="hr-ante-v"><b>${anteUp.from}</b><i class="hr-ante-arrow" aria-hidden="true"></i><b class="is-up">${anteUp.to}</b></div>
+        <div class="hr-ante-lv" role="img" aria-label="全${ANTE_LEVELS.length}段のうち${anteUp.level + 1}段目">${ANTE_LEVELS.map((v, i) => `<i class="${i < anteUp.level ? 'on' : i === anteUp.level ? 'on is-new' : ''}"></i>`).join('')}</div>
+        <div class="hr-ante-sub">待っているだけでも、1ハンドごとに ${anteUp.to} ずつ出ていきます</div>
+      </div>` : '';
 
   tpl.innerHTML = `
     <div class="hr-card hr-${winnerClass}">
@@ -15822,9 +16096,10 @@ function showHandResultBanner(snapshot) {
         <span>ミミ <b>${playerChips}</b></span>
         <span>${opponentName} <b>${opponentChips}</b></span>
       </div>
+      ${anteHtml}
       ${isReplay
         ? `<button class="btn btn-primary big" id="continue-hand-btn">閉じる</button>`
-        : `<button class="btn btn-primary big" id="continue-hand-btn">${continueButtonLabel()}</button>`}
+        : `<button class="btn btn-primary big" id="continue-hand-btn">${anteUp ? `参加費 ${anteUp.to} で、次のハンドへ` : continueButtonLabel()}</button>`}
     </div>
   `;
   (document.getElementById('stage') || document.body).appendChild(tpl);
