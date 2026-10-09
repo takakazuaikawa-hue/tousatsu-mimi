@@ -15171,6 +15171,9 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
       p.vsx += 0.11;            // 横に大きく膨らむ
       p.sag += 14;              // 平衡を 14px ほど下にずらす → 沈み込んで戻る
       p.vrot += (p.rot > 0 ? -1 : 1) * 0.7;
+      // もう片方も、少し遅れてつられて揺れる（ひとつながりの柔らかさ）
+      const other = blobs.find(b => b !== blob);
+      if (other && other.__phys) setTimeout(() => { const q = other.__phys; q.vty += 4.2; q.vsy -= 0.06; q.vsx += 0.05; q.sag += 6; q.vrot += (q.rot > 0 ? -1 : 1) * 0.35; }, 70);
     }
     if (count <= 0) {
       completed = true;

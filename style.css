@@ -18397,3 +18397,5 @@ body:has(.story-overlay) #fullscreen-btn-group { display: none !important; }
 .pv2 .pv2-res-gain { flex-wrap: wrap; row-gap: 2px; }
 .pv2 .pv2-res-gain span { white-space: nowrap; }
 .pv2 .pv2-result.has-video .pv2-res-title em { display: inline-block; }
+.pv2 .pv2-res-line span { white-space: nowrap; }
+.pv2.is-revealed .pv2-skill { opacity: 0; transition: opacity .3s; }
