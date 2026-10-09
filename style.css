@@ -17984,3 +17984,201 @@ body:has(.story-overlay) #fullscreen-btn-group { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .title-screen.t3 .t3-lights, .title-screen.t3 .t3-shine::before { display: none; }
 }
+
+/* =====================================================================
+   必ず分かってほしいこと（卓の決まり・読み合い・読み勝ちのご褒美）2026-10
+   真ん中に1枚ずつ出して、押して進む。ハンドの結果の札と同じ決まり（黒の半透明・細い線・明朝の見出し、
+   金は進むボタンと大事な数字だけ）。話題にしている所だけを明るく残す（.mk-hole）。
+   文字の大きさは「文字の基準（案）」どおり：PC の値を下限に、スマホでは画面上の大きさが下限を割らないよう
+   --game-scale で割り戻す。図（札・チップ）はスマホで少しだけ大きくする（--mk-g）。
+   ===================================================================== */
+.mk-layer {
+  --mk-cap: max(14px, calc(11px / var(--game-scale, 1)));
+  --mk-sub: max(16px, calc(13px / var(--game-scale, 1)));
+  --mk-body: max(20px, calc(14px / var(--game-scale, 1)));
+  --mk-main: max(24px, calc(16px / var(--game-scale, 1)));
+  --mk-head: max(30px, calc(20px / var(--game-scale, 1)));
+  --mk-num: max(32px, calc(18px / var(--game-scale, 1)));
+  --mk-tap: max(48px, calc(44px / var(--game-scale, 1)));
+  --mk-g: max(1, calc(.64 / var(--game-scale, 1)));
+  --mk-w: max(780px, min(1180px, calc(580px / var(--game-scale, 1))));
+  --mk-ivory: #f3ece0; --mk-soft: #cfc6b8; --mk-muted: #a99f93; --mk-line: rgba(243,236,224,.14);
+  --mk-gold: #d8b56c; --mk-gold-hi: #f0d595; --mk-rose: #e0a3a6; --mk-red: #c53a4c;
+  --mk-mincho: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --mk-numf: "Barlow Condensed", "Noto Sans JP", sans-serif;
+  position: absolute; inset: 0; z-index: 300;
+  font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif; color: var(--mk-ivory);
+  -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+.mk-layer.is-out { opacity: 0; transition: opacity .2s ease-in; }
+.mk-dim { position: absolute; inset: 0; background: rgba(6,4,5,.76); animation: mkFade .28s ease-out both; }
+.mk-layer.has-hole .mk-dim { background: transparent; }
+.mk-hole { position: absolute; border-radius: 2px; pointer-events: none;
+  box-shadow: 0 0 0 2400px rgba(6,4,5,.76), 0 0 0 1px rgba(240,213,149,.9), 0 0 26px 2px rgba(240,213,149,.28);
+  transition: left .35s cubic-bezier(.2,.8,.2,1), top .35s cubic-bezier(.2,.8,.2,1), width .35s cubic-bezier(.2,.8,.2,1), height .35s cubic-bezier(.2,.8,.2,1);
+  animation: mkFade .28s ease-out both; }
+.mk-hole[hidden] { display: none; }
+@keyframes mkFade { from { opacity: 0; } }
+
+.mk-card { position: absolute; left: 50%; top: 120px; width: var(--mk-w); max-width: calc(100% - 32px); transform: translateX(-50%);
+  padding: 22px 40px 24px; border: 1px solid rgba(216,181,108,.5); border-radius: 2px; background: rgba(14,10,11,.97);
+  box-shadow: 0 24px 60px rgba(0,0,0,.62), inset 0 2px 0 var(--mk-gold); text-align: left;
+  animation: mkIn .34s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes mkIn { from { opacity: 0; transform: translate(-50%, 10px); } }
+.mk-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  font-family: var(--mk-numf); font-size: var(--mk-cap); font-weight: 500; letter-spacing: .26em; line-height: 1.2; }
+.mk-eyebrow { color: var(--mk-gold); }
+.mk-count { color: var(--mk-muted); letter-spacing: .18em; white-space: nowrap; }
+.mk-title { margin: 10px 0 0; font-family: var(--mk-mincho); font-size: var(--mk-head); font-weight: 800; line-height: 1.4; letter-spacing: .06em; color: var(--mk-ivory); text-wrap: balance; }
+.mk-title b { font-family: var(--mk-numf); font-weight: 600; font-size: 1.22em; line-height: 1; letter-spacing: .02em; color: var(--mk-gold-hi); margin: 0 .06em; }
+.mk-fig { margin: 18px 0 0; padding: 22px 28px 20px; border: 1px solid var(--mk-line); border-radius: 2px; background: rgba(243,236,224,.03); }
+.mk-fig-cap { margin: 14px 0 0; font-size: var(--mk-sub); color: var(--mk-muted); text-align: center; letter-spacing: .06em; }
+.mk-note { margin: 14px 0 0; font-size: var(--mk-body); font-weight: 500; line-height: 1.65; color: var(--mk-soft); }
+.mk-foot { display: flex; align-items: center; gap: 24px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--mk-line); }
+.mk-rico { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; }
+.mk-face { flex: none; width: calc(54px * var(--mk-g)); height: calc(62px * var(--mk-g)); overflow: hidden; border: 1px solid rgba(216,181,108,.6); border-radius: 2px; background: #1a1012; }
+.mk-face img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; transform: scale(1.28); }
+.mk-rico-body { min-width: 0; }
+.mk-rico-name { font-family: var(--mk-mincho); font-size: var(--mk-cap); font-weight: 700; letter-spacing: .14em; color: var(--mk-gold); }
+.mk-rico-line { margin: 2px 0 0; font-size: var(--mk-body); font-weight: 700; line-height: 1.55; color: var(--mk-ivory); }
+.mk-nav { flex: none; display: flex; gap: 10px; }
+.mk-btn { min-height: var(--mk-tap); min-width: calc(var(--mk-tap) * 2.6); padding: 0 26px; border-radius: 2px; cursor: pointer;
+  font-family: "Noto Sans JP", sans-serif; font-size: var(--mk-sub); font-weight: 700; letter-spacing: .16em; white-space: nowrap; }
+.mk-next { border: 1px solid var(--mk-gold-hi); background: linear-gradient(180deg, #f0d595 0%, #d8b56c 100%); color: #1a1206; box-shadow: inset 0 1px 0 rgba(255,255,255,.45); }
+.mk-next:hover { filter: brightness(1.05); }
+.mk-back { min-width: 0; border: 1px solid rgba(243,236,224,.3); background: rgba(20,14,15,.9); color: var(--mk-soft); }
+.mk-back:hover { border-color: rgba(243,236,224,.55); color: var(--mk-ivory); }
+.mk-btn:focus-visible { outline: 2px solid var(--mk-gold-hi); outline-offset: 3px; }
+
+/* 図1：チップの綱引き（上の帯と同じ形を大きく。両端が「0になったら」の線） */
+.mk-tug { display: grid; gap: 12px; padding: 2px 6px 0; }
+.mk-tug-row { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--mk-sub); letter-spacing: .1em; color: var(--mk-soft); }
+.mk-tug-name b { font-family: var(--mk-numf); font-size: var(--mk-num); font-weight: 500; letter-spacing: .02em; color: var(--mk-ivory); margin: 0 .2em; }
+.mk-tug-bar { position: relative; display: flex; height: 12px; margin: 4px 0; background: rgba(197,58,76,.82); }
+.mk-tug-bar::before, .mk-tug-bar::after { content: ""; position: absolute; top: -10px; bottom: -10px; width: 2px; }
+.mk-tug-bar::before { left: -2px; background: var(--mk-rose); }
+.mk-tug-bar::after { right: -2px; background: var(--mk-gold-hi); }
+.mk-tug-mimi { position: relative; display: block; height: 100%; background: linear-gradient(90deg, #a8873f 0%, #f0d595 100%); }
+/* 押し合いの最前線：ここが右へ動くほど勝ちに近い */
+.mk-tug-mimi::after { content: ""; position: absolute; right: -1px; top: -6px; bottom: -6px; width: 2px; background: #fff6de; box-shadow: 0 0 10px rgba(255,246,222,.8); }
+.mk-tug-mimi::before { content: ""; position: absolute; left: calc(100% + 12px); top: 50%; width: 30px; height: 10px; margin-top: -5px;
+  background: linear-gradient(90deg, rgba(255,246,222,.0), rgba(255,246,222,.9)); clip-path: polygon(0 40%, 70% 40%, 70% 0, 100% 50%, 70% 100%, 70% 60%, 0 60%);
+  animation: mkPush 1.6s ease-in-out infinite; }
+@keyframes mkPush { 0%, 100% { transform: translateX(0); opacity: .45; } 50% { transform: translateX(10px); opacity: 1; } }
+.mk-tug-opp { flex: 1; }
+.mk-tug-ends { display: flex; justify-content: space-between; gap: 16px; font-size: var(--mk-body); font-weight: 700; letter-spacing: .04em; }
+.mk-tug-end b { font-family: var(--mk-numf); font-weight: 600; font-size: 1.2em; margin: 0 .12em; }
+.mk-tug-end.is-lose { color: var(--mk-rose); }
+.mk-tug-end.is-win { color: var(--mk-gold-hi); text-align: right; }
+
+/* 図2：チップの山（相手は2倍の高さ） */
+.mk-stacks { display: flex; align-items: flex-end; justify-content: center; gap: calc(72px * var(--mk-g)); }
+.mk-stack { display: grid; justify-items: center; gap: 12px; margin: 0; }
+.mk-chipcol { --cw: calc(78px * var(--mk-g)); --step: calc(9px * var(--mk-g)); position: relative; display: block; width: var(--cw);
+  height: calc(var(--cw) * .62 + var(--n, 5) * var(--step)); }
+.mk-chipcol img { position: absolute; left: 0; bottom: calc(var(--cw) * -.2 + var(--i) * var(--step)); width: var(--cw); height: var(--cw); object-fit: contain;
+  filter: drop-shadow(0 3px 3px rgba(0,0,0,.55)); }
+.mk-stack figcaption { font-size: var(--mk-sub); letter-spacing: .1em; color: var(--mk-soft); text-align: center; line-height: 1.3; }
+.mk-stack figcaption b { font-family: var(--mk-numf); font-size: var(--mk-num); font-weight: 500; letter-spacing: .02em; color: var(--mk-ivory); margin-left: .2em; }
+.mk-stack.is-opp figcaption b { color: var(--mk-rose); }
+.mk-stack figcaption small { display: block; font-size: var(--mk-cap); color: var(--mk-muted); letter-spacing: .04em; }
+.mk-times { align-self: center; margin-bottom: calc(46px * var(--mk-g)); font-family: var(--mk-numf); font-size: calc(var(--mk-num) * 1.5); font-weight: 500; line-height: 1; color: var(--mk-gold-hi); }
+
+/* 図3：参加費の段（数字の行・棒・何ハンド目の行。いまの段は金） */
+.mk-steps { display: grid; grid-template-columns: auto repeat(6, minmax(0, 1fr)); grid-template-rows: auto auto calc(108px * var(--mk-g)) auto; column-gap: 12px; row-gap: 6px; align-items: end; }
+.mk-sk { grid-column: 1; padding-right: 6px; font-size: var(--mk-cap); color: var(--mk-muted); letter-spacing: .08em; white-space: nowrap; align-self: center; }
+.mk-sk.is-v { grid-row: 2; }
+.mk-sk.is-r { grid-row: 4; }
+.mk-snow { grid-row: 1; justify-self: center; font-style: normal; font-size: var(--mk-cap); font-weight: 700; letter-spacing: .1em; color: var(--mk-gold-hi); white-space: nowrap; }
+.mk-sv { grid-row: 2; justify-self: center; font-family: var(--mk-numf); font-size: var(--mk-num); font-weight: 500; line-height: 1; color: var(--mk-soft); }
+.mk-sb { grid-row: 3; display: block; height: calc((14px + var(--h) * 92px) * var(--mk-g)); background: rgba(243,236,224,.1); border: 1px solid rgba(243,236,224,.24); border-bottom: 0; }
+.mk-sr { grid-row: 4; justify-self: center; font-family: var(--mk-numf); font-size: var(--mk-sub); font-weight: 500; letter-spacing: .04em; color: var(--mk-muted); white-space: nowrap; }
+.mk-sv.is-now { color: var(--mk-gold-hi); }
+.mk-sb.is-now { background: linear-gradient(180deg, #f0d595 0%, #a8873f 100%); border-color: #f0d595; box-shadow: 0 0 16px rgba(240,213,149,.3); }
+.mk-sr.is-now { color: var(--mk-gold-hi); }
+.mk-steps-base { grid-column: 2 / -1; grid-row: 3; align-self: end; height: 1px; background: rgba(243,236,224,.3); margin-bottom: -1px; }
+
+/* 図4：本当に強いか、ハッタリか（伏せた2枚） */
+.mk-dilemma { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 20px; }
+.mk-dl { display: grid; justify-items: center; gap: 8px; text-align: center; }
+.mk-dl-cards { display: flex; margin-bottom: 4px; }
+.mk-dl-card { width: calc(56px * var(--mk-g)); height: calc(80px * var(--mk-g)); border-radius: 4px; border: 1px solid rgba(216,181,108,.5);
+  background: url('assets/ui/card_back_default.webp') center / cover, #3a1c22; box-shadow: 0 8px 16px rgba(0,0,0,.5); transform: rotate(-5deg); }
+.mk-dl-card + .mk-dl-card { margin-left: calc(-20px * var(--mk-g)); transform: rotate(6deg) translateY(2px); }
+.mk-dl-q { display: grid; place-items: center; width: calc(56px * var(--mk-g)); height: calc(80px * var(--mk-g)); margin-bottom: 4px; border: 1px dashed rgba(240,213,149,.6); border-radius: 4px;
+  font-family: var(--mk-numf); font-size: calc(44px * var(--mk-g)); font-weight: 500; color: var(--mk-gold-hi); }
+.mk-dl b { font-family: var(--mk-mincho); font-size: var(--mk-main); font-weight: 800; letter-spacing: .08em; color: var(--mk-ivory); }
+.mk-dl small { font-size: var(--mk-sub); color: var(--mk-soft); letter-spacing: .04em; }
+.mk-dl-or { font-family: var(--mk-mincho); font-size: var(--mk-sub); font-weight: 700; letter-spacing: .2em; color: var(--mk-muted); }
+
+/* 図5：読み勝つと分かる3つ（本物＝危ない／五分／弱い＝好機） */
+.mk-tells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.mk-tell { display: grid; justify-items: center; gap: 4px; padding: 14px 8px 12px; border: 1px solid rgba(243,236,224,.18); border-radius: 2px; background: rgba(243,236,224,.03);
+  transition: opacity .3s, border-color .3s; }
+.mk-tell b { font-family: var(--mk-mincho); font-size: var(--mk-head); font-weight: 800; letter-spacing: .14em; line-height: 1.2; }
+.mk-tell small { font-size: var(--mk-sub); color: var(--mk-soft); letter-spacing: .04em; white-space: nowrap; }
+.mk-tell.is-real b { color: var(--mk-rose); }
+.mk-tell.is-even b { color: var(--mk-ivory); }
+.mk-tell.is-weak b { color: var(--mk-gold-hi); }
+.mk-tell.is-on { border-color: rgba(240,213,149,.85); background: rgba(216,181,108,.09); box-shadow: inset 0 2px 0 var(--mk-gold-hi); }
+.mk-tell.is-real.is-on { border-color: rgba(224,163,166,.85); background: rgba(197,58,76,.1); box-shadow: inset 0 2px 0 var(--mk-rose); }
+.mk-tell.is-off { opacity: .3; }
+
+/* 読み勝ち：相手の今の手を、題の中で大きく */
+.mk-card.is-win .mk-title em { font-style: normal; font-size: 1.55em; letter-spacing: .14em; margin-left: .12em; vertical-align: -.06em; }
+.mk-card.is-real .mk-title em { color: var(--mk-rose); }
+.mk-card.is-even .mk-title em { color: var(--mk-ivory); }
+.mk-card.is-weak .mk-title em { color: var(--mk-gold-hi); }
+.mk-card.is-miss { border-color: rgba(243,236,224,.2); box-shadow: 0 24px 60px rgba(0,0,0,.62), inset 0 2px 0 #b0565c; }
+.mk-card.is-miss .mk-eyebrow { color: var(--mk-muted); }
+.mk-card.is-miss .mk-title { color: var(--mk-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-card, .mk-dim, .mk-hole, .mk-tug-mimi::before { animation: none; }
+  .mk-hole { transition: none; }
+}
+/* スマホの横持ち（画面の高さが低く、舞台が 0.65 倍より小さい）：文字は大きいまま、余白と図の高さを詰めて札を低くする */
+@media (max-height: 520px) {
+  .mk-card { padding: 16px 34px 18px; }
+  .mk-title { margin-top: 6px; }
+  .mk-fig { margin-top: 12px; padding: 14px 22px 13px; }
+  .mk-fig-cap { margin-top: 8px; }
+  .mk-note { margin-top: 10px; line-height: 1.5; }
+  .mk-foot { margin-top: 12px; padding-top: 12px; }
+  .mk-tug { gap: 8px; }
+  .mk-steps { grid-template-rows: auto auto calc(78px * var(--mk-g)) auto; row-gap: 4px; }
+  .mk-sb { height: calc((10px + var(--h) * 66px) * var(--mk-g)); }
+  .mk-chipcol { --cw: calc(64px * var(--mk-g)); --step: calc(7px * var(--mk-g)); }
+  .mk-times { margin-bottom: calc(36px * var(--mk-g)); }
+  .mk-dl-card, .mk-dl-q { width: calc(46px * var(--mk-g)); height: calc(66px * var(--mk-g)); }
+  .mk-dl { gap: 4px; }
+  .mk-tell { padding: 10px 8px 9px; }
+}
+
+/* 卓の左上：参加費（いまの額と、次に上がるハンド）。この行が広くても「HAND 01」と「配った直後」の間が開かないよう、余りは右の列へ */
+.battle-screen.v2.t8 > .v2-hand { grid-template-columns: auto 1fr; }
+.battle-screen.v2.t8 .t8-ante { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; margin-top: 3px; white-space: nowrap;
+  font-size: max(13px, calc(11px / var(--game-scale, 1))); letter-spacing: .06em; color: var(--t8-muted); }
+.battle-screen.v2.t8 .t8-ante:empty { display: none; }
+.battle-screen.v2.t8 .t8-ante-k { color: var(--t8-ivory); }
+.battle-screen.v2.t8 .t8-ante-v { font-family: var(--t8-num); font-weight: 500; font-size: 1.3em; letter-spacing: .02em; color: var(--t8-gold-hi); }
+.battle-screen.v2.t8 .t8-ante-next::before { content: "·"; margin-right: 8px; color: rgba(243,236,224,.3); }
+.battle-screen.is-lecture .t8-ante { display: none; }
+
+/* ハンドの結果の札：次のハンドで参加費が上がる時の知らせ（進むボタンにも額を書く） */
+.hand-result-overlay .hr-ante { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; column-gap: 20px; row-gap: 8px;
+  padding: 12px 18px; border: 1px solid rgba(216,181,108,.6); border-radius: 2px; background: rgba(216,181,108,.07); text-align: left;
+  animation: hrAnteIn .5s .2s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes hrAnteIn { from { opacity: 0; transform: translateY(6px); } }
+.hand-result-overlay .hr-ante-k { flex: 1 1 auto; font-family: "Shippori Mincho B1", serif; font-size: max(17px, calc(13px / var(--game-scale, 1))); font-weight: 700; letter-spacing: .08em; color: #f3ece0; }
+.hand-result-overlay .hr-ante-v { order: 2; display: flex; align-items: center; gap: 12px; font-family: "Barlow Condensed", sans-serif; line-height: 1; }
+.hand-result-overlay .hr-ante-v b { font-size: max(26px, calc(16px / var(--game-scale, 1))); font-weight: 500; color: #a99f93; }
+.hand-result-overlay .hr-ante-v b.is-up { font-size: max(38px, calc(22px / var(--game-scale, 1))); color: #f0d595; }
+.hand-result-overlay .hr-ante-arrow { position: relative; display: block; width: 26px; height: 1px; background: rgba(240,213,149,.75); }
+.hand-result-overlay .hr-ante-arrow::after { content: ""; position: absolute; right: -1px; top: -4px; width: 8px; height: 8px; border-top: 1px solid rgba(240,213,149,.9); border-right: 1px solid rgba(240,213,149,.9); transform: rotate(45deg); }
+.hand-result-overlay .hr-ante-lv { order: 3; flex: 1 0 100%; display: flex; gap: 4px; }
+.hand-result-overlay .hr-ante-lv i { flex: 1; max-width: 44px; height: 5px; background: rgba(243,236,224,.14); }
+.hand-result-overlay .hr-ante-lv i.on { background: rgba(240,213,149,.5); }
+.hand-result-overlay .hr-ante-lv i.is-new { background: #f0d595; box-shadow: 0 0 8px rgba(240,213,149,.6); }
+.hand-result-overlay .hr-ante-sub { order: 4; flex: 1 0 100%; font-size: max(13px, calc(11px / var(--game-scale, 1))); color: #a99f93; letter-spacing: .04em; }
+@media (prefers-reduced-motion: reduce) { .hand-result-overlay .hr-ante { animation: none; } }
