@@ -104,6 +104,38 @@ if (doResult) {
   }
 }
 
+// 卓（手番・賭け額選び・フロップで相手が賭けた時）
+if (want.includes('table')) {
+  await enterTable('grano');
+  for (let i = 0; i < 40; i++) { if (await page.eval(`!!(state.isPlayerTurn && document.querySelector('.verb-grid'))`)) break; await sleep(500); }
+  const steps = [];
+  const snap = async (name) => { const m = await page.eval(MEASURE('#stage')); const s = summarize(m); s.n = steps.length + 1; s.shot = `table_${name}.png`; await page.screenshot(path.join(OUT, s.shot)); steps.push(s); };
+  await sleep(800); await snap('turn');
+  await page.eval(`(() => { state.betChooserOpen = true; render(); return true; })()`); await sleep(600); await snap('bet');
+  await page.eval(`(() => { state.betChooserOpen = false; while (state.community.length < 3) state.community.push(state.deck.pop()); state.handPhase = 'flop'; state.currentBetOpponent = 60; state.pot += 60; render(); return true; })()`); await sleep(900); await snap('flop');
+  report.table = { steps };
+  console.log('table', steps.map(s => `small ${s.small.length} tap ${s.smallTap.length} min ${s.minPx}`).join(' / '));
+}
+
+// 従来の心理バトル（研修・講義・本気リコ・ヴェルベットの本気の読み合いで使う三択の札）：問いの時と、答えた後
+if (!want.length || want.includes('psych')) {
+  for (const qid of ['rico_serious_polarized', 'logic_pot_odds_basic', 'lesson_1_1', 'velvet_river_evidence']) {
+    await enterTable('polka');
+    await page.eval(`(() => { document.querySelectorAll('.battle-modal-overlay').forEach(e => e.remove()); state.psychRoot = null; triggerPsychBattle(${JSON.stringify(qid)}); return true; })()`);
+    await sleep(2500);
+    const steps = [];
+    for (const phase of ['q', 'a']) {
+      const m = await page.eval(MEASURE(phase === 'q' ? '.battle-modal-overlay' : '#stage'));
+      if (!m) break;
+      const s = summarize(m); s.n = steps.length + 1; s.shot = `psych_${qid}_${phase}.png`;
+      await page.screenshot(path.join(OUT, s.shot)); steps.push(s);
+      if (phase === 'q') { await page.eval(`(() => { const b = document.querySelector('.battle-modal-overlay .psych-choices button'); if (b) { b.click(); setTimeout(() => b.isConnected && b.click(), 400); } return !!b; })()`); await sleep(2500); }
+    }
+    report['psych_' + qid] = { steps };
+    console.log('psych', qid, steps.map(s => `small ${s.small.length} tap ${s.smallTap.length} off ${s.off.length} min ${s.minPx}`).join(' / '));
+  }
+}
+
 if (doRead) {
   for (const [gameId, opp, group] of GAMES) {
     if (readOnly.length && !readOnly.includes(gameId)) continue;

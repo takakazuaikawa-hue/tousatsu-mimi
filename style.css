@@ -18314,3 +18314,106 @@ html.is-compact .result-screen .result-sub-buttons .btn { flex: 1 1 0; height: v
 /* ランクの文字が金の紋章に溶けて読めなかった：暗い縁取りで浮かせる（PC・スマホとも） */
 .result-screen .rank-value { -webkit-text-stroke: 3px rgba(42,18,4,.9); paint-order: stroke fill; text-shadow: 0 3px 0 rgba(30,12,2,.85), 0 0 18px rgba(0,0,0,.6); }
 .result-screen .rank-label { -webkit-text-stroke: 2px rgba(42,18,4,.9); paint-order: stroke fill; }
+
+/* =====================================================================
+   スマホ横持ち（html.is-compact）の三択の心理・論理バトル（研修・講義・本気リコ・ヴェルベットの本気の読み合い）2026-10
+   読み合いと同じく、舞台の縮小を打ち消して「画面の本当の大きさ（CSS px）」で描き、黒い帯まで広げる。
+   左の列＝相手の顔・題・ゲージ・ぱにゅぱにゅ・付箋、右＝セリフ・場札と手札・心の声・選択肢。PC の配置（絶対位置）は使わない。
+   ===================================================================== */
+html.is-compact #app:has(> .battle-modal-overlay.v2psych) { overflow: visible; }
+html.is-compact #app > .battle-modal-overlay.v2psych {
+  zoom: calc(1 / var(--game-scale, 1));
+  inset: calc(-1 * var(--gut-y, 0px)) calc(-1 * var(--gut-x, 0px)) !important;
+  width: auto !important; height: auto !important;
+}
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal {
+  display: grid !important; grid-template-columns: 236px minmax(0, 1fr); grid-template-rows: auto auto minmax(58px, auto) 1fr auto;
+  grid-template-areas: "opp speech" "opp cards" "title sit" "hint choices" ". ctx";
+  column-gap: 14px; row-gap: 6px; padding: 8px 12px 8px 10px !important; align-content: start;
+}
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal > * { position: relative !important; inset: auto !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; width: auto !important; max-width: none !important; margin: 0 !important; transform: none; }
+/* 左の列 */
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-opponent-stage { grid-area: opp; height: 124px !important; align-self: start; }
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-opponent-stage.v2p-mode-standee { height: 124px !important; overflow: hidden; align-items: flex-start; }
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-opponent-stage.v2p-mode-standee .v2p-stage-img { height: 300% !important; object-position: top center; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-title { grid-area: title; align-self: start; flex-direction: row !important; align-items: baseline !important; gap: 10px !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-title-en { font-size: 11px; letter-spacing: .2em; }
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-title-jp { font-size: 22px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-title .battle-subtitle { font-size: 11px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-gauge { grid-area: title; align-self: end; gap: 6px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-gauge-label { font-size: 11px; letter-spacing: .1em; }
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-gauge-seg { width: 22px; height: 9px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-gauge-num { font-size: 14px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .zazazo-hint { grid-area: hint; align-self: start; margin-bottom: 56px !important; font-size: 13px !important; padding: 6px 10px !important; transform: rotate(-2deg); max-width: none !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .logic-rule-box { grid-area: rule; align-self: start; padding: 6px 10px !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal.logic-mode { grid-template-rows: auto auto minmax(58px, auto) auto 1fr auto; grid-template-areas: "opp speech" "opp sit" "title sit" "rule choices" "hint choices" ". ctx"; }
+html.is-compact #app > .battle-modal-overlay.v2psych .logic-rule-label { font-size: 11px !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .logic-rule-text { font-size: 12px !important; line-height: 1.45; }
+/* ぱにゅぱにゅ・スキップは左下（44px） */
+html.is-compact #app > .battle-modal-overlay.v2psych .panyu-floating-btn { position: absolute !important; left: 22px !important; right: auto !important; top: auto !important; bottom: 10px !important; height: 44px !important; font-size: 13px !important; padding: 0 16px !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-skip-btn { grid-area: panyu; font-size: 12px !important; min-height: 44px; padding: 0 12px !important; }
+/* 右：セリフの帯 */
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-speech { grid-area: speech; align-self: start; height: auto !important; min-height: 52px; transform: none !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-speech > * { transform: none !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-opponent-line { min-height: 52px !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-opponent-name { min-width: 0; padding: 0 14px; font-size: 18px !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-opponent-quote,
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-opponent-quote.quote-long { font-size: 14px !important; line-height: 1.35 !important; padding: 4px 12px !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-speech:not(.with-portrait) { font-size: 14px !important; padding: 6px 12px !important; }
+/* 右：場札・手札 */
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-cards-row { grid-area: cards; gap: 12px; align-items: flex-end !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-board-label,
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-hand-label,
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-pot { font-size: 11px !important; letter-spacing: .1em; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-pot span[data-bind="psychPot"] { font-size: 16px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-board-info { flex-direction: row; align-items: flex-end; flex-wrap: wrap; column-gap: 8px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-board-label { width: 100%; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-board-cards .card,
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-hand-cards .card { width: 36px; height: 50px; padding: 2px 3px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-board-cards .card .rank,
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-hand-cards .card .rank { font-size: 13px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-board-cards .card .suit,
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-hand-cards .card .suit { font-size: 11px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-board-cards .card .center-suit,
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-hand-cards .card .center-suit { font-size: 18px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-vs { font-size: 18px; padding-bottom: 14px; }
+/* 右：ミミの心の声（状況） */
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-situation { grid-area: sit; font-size: 13px !important; line-height: 1.4 !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal.logic-mode .psych-situation { height: auto; max-height: 150px; align-self: start; font-size: 12px !important; line-height: 1.5 !important; padding: 6px 10px !important; }
+/* 右：選択肢（高さ44px以上。4つ以上なら2列） */
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-choices { grid-area: choices; display: grid !important; grid-auto-rows: minmax(44px, auto); gap: 6px !important; align-content: start; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-choices:has(> :nth-child(4)) { grid-template-columns: 1fr 1fr; }
+html.is-compact #app > .battle-modal-overlay.v2psych .choice-btn { min-height: 44px !important; padding: 4px 14px !important; gap: 10px; font-size: 14px !important; line-height: 1.3 !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .choice-btn .choice-label { width: 28px; height: 28px; font-size: 17px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .choice-btn .choice-arm-hint { font-size: 11px; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-choices:has(> :nth-child(4)) .choice-btn { font-size: 13px !important; padding: 4px 10px !important; }
+/* 右下：この読みの賭け金 */
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-context { grid-area: ctx; justify-content: flex-start; font-size: 11px !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .v2p-context * { font-size: 11px !important; }
+
+/* スマホの卓：押す所を 44px に（行動ボタン・賭け額選び・右上のボタン）、札の文字を読める大きさに 2026-10 */
+html.is-compact .battle-screen.v2.t8 { --fx-tap: calc(44px / var(--game-scale, 1)); }
+html.is-compact .battle-screen.v2.t8 > .bottom-bar.v2-actions { width: 424px !important; right: 16px !important; bottom: 16px !important; }
+html.is-compact .battle-screen.v2.t8 .verb-btn, html.is-compact .battle-screen.v2.t8 .verb-size { min-height: var(--fx-tap); padding: 4px 12px; }
+html.is-compact .battle-screen.v2.t8 .verb-cc { min-height: calc(50px / var(--game-scale, 1)); }
+html.is-compact .battle-screen.v2.t8 .bet-chooser-head, html.is-compact .battle-screen.v2.t8 .bet-chooser-head span { font-size: var(--fx-sub); }
+html.is-compact .battle-screen.v2.t8 .verb-back { min-height: var(--fx-tap); font-size: var(--fx-sub); padding: 0 24px; }
+html.is-compact .battle-screen.v2.t8 .verb-size .verb-label { font-size: var(--fx-body); white-space: nowrap; }
+html.is-compact .battle-screen.v2.t8 .verb-size .verb-num { font-size: var(--fx-num); }
+html.is-compact .battle-screen.v2.t8 .verb-size .verb-sub { display: none; }
+html.is-compact .battle-screen.v2.t8 .verb-fe { font-size: var(--fx-cap); }
+html.is-compact .battle-screen.v2.t8 .tug-state { font-size: calc(11.4px / var(--game-scale, 1)); }
+/* 右上：役の一覧・中断・勝率、左上の卓の名前も 44px の押す所 */
+html.is-compact .battle-screen.v2.t8 > .v2-pause, html.is-compact .battle-screen.v2.t8 > .v2-help-btn { height: var(--fx-tap); top: 6px !important; }
+html.is-compact .battle-screen.v2.t8 > .v2-help-btn { right: calc(18px + 140px) !important; }
+html.is-compact .battle-screen.v2.t8 > .v2-seal-row { top: calc(12px + 44px / var(--game-scale, 1)) !important; }
+html.is-compact .battle-screen.v2.t8 .v2-seal-closed { min-height: var(--fx-tap); display: inline-flex; align-items: center; padding: 0 16px; }
+html.is-compact .battle-screen.v2.t8 .t8-table-name { min-height: var(--fx-tap); display: inline-flex; align-items: center; }
+html.is-compact .battle-screen.v2.t8 > .v2-comments.left-panel { top: calc(20px + 88px / var(--game-scale, 1)) !important; }
+/* 札：場札を少し大きく。四隅の小さなマークは畳み、数字と真ん中のマークで読む */
+html.is-compact .battle-screen.v2.t8 > .center-table.v2-table { top: 502px !important; }
+html.is-compact .battle-screen.v2.t8 .community-cards .card { width: 66px !important; height: 92px !important; }
+html.is-compact .battle-screen.v2.t8 .card:not(.empty):not(.card-back) .rank { font-size: max(22px, calc(13px / var(--game-scale, 1))); }
+html.is-compact .battle-screen.v2.t8 .card:not(.empty):not(.card-back) .suit,
+html.is-compact .battle-screen.v2.t8 .card[data-r]:not(.empty):not(.card-back)::after { display: none; }
+html.is-compact .battle-screen.v2.t8 .card:not(.empty):not(.card-back) .center-suit { font-size: max(34px, calc(22px / var(--game-scale, 1))); top: 58%; }
