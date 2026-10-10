@@ -17932,6 +17932,10 @@ function fitStage() {
   document.documentElement.style.setProperty('--game-scale', scale);
   // スマホ（舞台が 0.62 倍より小さい）：文字の基準に合わせて、画面ごとに詰めた配置に切り替える
   document.documentElement.classList.toggle('is-compact', scale < 0.62);
+  // 舞台の左右・上下に空く黒い帯の幅（画面の px）。スマホの読み合いは、この帯まで広げて画面いっぱいに使う
+  document.documentElement.style.setProperty('--gut-x', Math.max(0, (window.innerWidth - 1280 * scale) / 2) + 'px');
+  document.documentElement.style.setProperty('--gut-y', Math.max(0, (window.innerHeight - 800 * scale) / 2) + 'px');
+  document.documentElement.style.setProperty('--rb-h', window.innerHeight + 'px');
 }
 window.addEventListener('resize', fitStage);
 window.addEventListener('orientationchange', () => setTimeout(fitStage, 100));

@@ -1,0 +1,112 @@
+/* スマホ横持ち（html.is-compact：舞台が 0.62 倍より小さい）の読み合い 2026-10
+   ・舞台の縮小を打ち消して「画面の本当の大きさ（CSS px）」で描く。文字は画面上 11px 以上、押す所は 44px 以上
+   ・舞台の外の黒い帯まで広げ、左に細い列（財布・相手・リコ先輩）、右に遊び
+   ・遊びの中身は、この下の「遊びごとの詰め」で、縦 390px（小さいスマホは 375px）にスクロールなしで収める
+   battles/core.css と各遊びの CSS の後に読む。詳細度は html.is-compact #stage > .read-battle-host.mb-host で勝たせる */
+html.is-compact #stage > .read-battle-host.mb-host {
+  zoom: calc(1 / var(--game-scale, 1));
+  /* 舞台の外の黒い帯まで広げる（zoom の中の長さは画面の px） */
+  inset: calc(-1 * var(--gut-y, 0px)) calc(-1 * var(--gut-x, 0px)) !important;
+  --rail: 196px;
+}
+/* 財布：左の列の上に小さく */
+html.is-compact #stage > .read-battle-host.mb-host .mb-purse { position: absolute; left: 0; top: 0; width: var(--rail); z-index: 3; padding: 4px 6px; gap: 4px; background: rgba(0,0,0,.6); border-bottom: 1px solid rgba(217,179,90,.4); border-right: 1px solid rgba(217,179,90,.25); }
+html.is-compact #stage > .read-battle-host.mb-host .mb-purse > div { padding: 1px 6px; font-size: 11px; gap: 3px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-purse b { font-size: 16px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-purse .mb-fever-box { min-width: 0; flex: 1 1 100%; }
+/* 舞台：左の列（相手・リコ先輩）＋右の遊び */
+html.is-compact #stage > .read-battle-host.mb-host .mb-stage { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); align-items: start; gap: 0 12px; padding: 0 10px 0 0; border-width: 0; box-shadow: none; min-height: 100%; overflow: clip; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row { grid-column: 1; grid-row: 1; position: sticky; top: 0; align-self: start; display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 62px 8px 8px; height: var(--rb-h, 390px); background: rgba(0,0,0,.42); border-right: 1px solid rgba(217,179,90,.25); }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row > .mb-portrait { position: absolute; right: 10px; top: 62px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-portrait.is-face { width: 64px; height: 80px; border-width: 2px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-portrait.is-face img { left: -11px; top: -2px; width: 86px; height: 108px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-portrait.is-chibi { width: 72px; height: 84px; margin: 0; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row > div:not(.mb-coach):not(.mb-betchip) { min-height: 84px; padding-right: 76px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-name { font-size: 13px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-speech { font-size: 13px; line-height: 1.4; padding: 4px 8px; transform: none; margin-top: 4px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-speech > span { transform: none; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-betchip { display: flex; align-items: baseline; justify-content: flex-start; gap: 8px; text-align: left; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-betchip .lbl { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-betchip .num { font-size: 22px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach { order: 3; margin-top: auto; padding: 6px 8px 6px 54px; min-height: 64px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-pop { width: 48px; height: 60px; left: 2px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-coach-name { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-line { font-size: 12px; line-height: 1.4; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root { grid-column: 2; grid-row: 1; padding: 8px 0 10px; gap: 8px; min-height: 0; }
+
+/* 小さいスマホ（幅720px未満）：左の列を細く */
+@media (max-width: 719px) { html.is-compact #stage > .read-battle-host.mb-host { --rail: 168px; } }
+/* 始まりの VS：下の帯と種類名が画面の下で切れないよう、窓と帯を上へ */
+html.is-compact #stage > .read-battle-host.mb-host .mb-vs-win { top: 5%; height: 56%; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-intro-vs { top: 33%; font-size: 88px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-vs-flash { top: 33%; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-intro-slab { top: 66%; height: 104px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-intro-word { top: calc(66% + 8px); font-size: 64px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-intro-word small { font-size: 16px; margin-top: 4px; }
+
+/* ================= 遊びごとの詰め ================= */
+
+/* ----- detective ここから ----- */
+
+
+/* ----- detective ここまで ----- */
+
+
+/* ----- stare ここから ----- */
+
+
+/* ----- stare ここまで ----- */
+
+
+/* ----- doubt ここから ----- */
+
+
+/* ----- doubt ここまで ----- */
+
+
+/* ----- gacha ここから ----- */
+
+
+/* ----- gacha ここまで ----- */
+
+
+/* ----- objection ここから ----- */
+
+
+/* ----- objection ここまで ----- */
+
+
+/* ----- handbuild ここから ----- */
+
+
+/* ----- handbuild ここまで ----- */
+
+
+/* ----- highlow ここから ----- */
+
+
+/* ----- highlow ここまで ----- */
+
+
+/* ----- danger ここから ----- */
+
+
+/* ----- danger ここまで ----- */
+
+
+/* ----- sniper ここから ----- */
+
+
+/* ----- sniper ここまで ----- */
+
+
+/* ----- outs ここから ----- */
+
+
+/* ----- outs ここまで ----- */
+
+
+/* ----- suspects ここから ----- */
+
+
+/* ----- suspects ここまで ----- */

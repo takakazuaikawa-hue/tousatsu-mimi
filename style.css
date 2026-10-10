@@ -18283,3 +18283,34 @@ html.is-compact .hand-result-overlay .hr-title { line-height: 1.05; }
 html.is-compact .hand-result-overlay .hr-player-block { padding: 4px 8px; }
 html.is-compact .hand-result-overlay .hr-ante { padding: 8px 16px; row-gap: 4px; }
 html.is-compact .hand-result-overlay .hr-card > #continue-hand-btn { box-shadow: inset 0 1px 0 rgba(255,255,255,.45); }
+
+/* スマホ：対戦の結果画面。右の札を広げ、文字を基準の大きさに。スコアの内訳（細かい分析）は畳む */
+html.is-compact .result-screen { --fx-cap: calc(11px / var(--game-scale, 1)); --fx-sub: calc(13px / var(--game-scale, 1)); --fx-body: calc(14px / var(--game-scale, 1)); --fx-main: calc(16px / var(--game-scale, 1)); --fx-num: calc(18px / var(--game-scale, 1)); --fx-tap: calc(44px / var(--game-scale, 1)); }
+html.is-compact .result-screen .rz-titleblock { left: 33%; top: 22px; gap: 10px; }
+html.is-compact .result-screen .result-title { font-size: 120px; }
+html.is-compact .result-screen .result-stage-tag { font-size: var(--fx-cap); letter-spacing: .2em; }
+html.is-compact .result-screen .rz-panel { left: 46%; right: 22px; top: 22px; bottom: 20px; gap: 16px; padding: 18px 24px 0; background: linear-gradient(90deg, rgba(10,4,7,.0), rgba(10,4,7,.62) 18%, rgba(10,4,7,.62)); }
+html.is-compact .result-screen .rz-top-row { gap: 18px; align-items: flex-start; }
+html.is-compact .result-screen .rank-emblem-wrap { width: 150px; height: 150px; }
+html.is-compact .result-screen .rank-label { font-size: var(--fx-cap); letter-spacing: .2em; }
+html.is-compact .result-screen .rank-value { font-size: 72px; }
+html.is-compact .result-screen .coins-label { font-size: var(--fx-cap); letter-spacing: .2em; }
+html.is-compact .result-screen .coins-value { font-size: 84px; }
+html.is-compact .result-screen .reward-chips { gap: 8px 10px; margin-top: 10px; }
+html.is-compact .result-screen .reward-chips .v2-chip { font-size: var(--fx-cap); line-height: 1.3; padding: 4px 14px; }
+html.is-compact .result-screen .result-stats { display: grid; grid-template-columns: auto auto auto auto; justify-content: start; gap: 10px 22px; }
+html.is-compact .result-screen .rz-stat { padding-left: 12px; }
+html.is-compact .result-screen .rz-stat-k { font-size: var(--fx-cap); letter-spacing: .04em; white-space: nowrap; }
+html.is-compact .result-screen .rz-stat-v { font-size: var(--fx-num); }
+html.is-compact .result-screen .rz-stat-hand { font-size: var(--fx-sub); line-height: 1.2; }
+html.is-compact .result-screen .result-next-goal { font-size: var(--fx-body); line-height: 1.4; }
+html.is-compact .result-screen .result-next-goal::before { font-size: var(--fx-cap); }
+html.is-compact .result-screen .result-breakdown { display: none; }
+/* ボタンは横に並べ、どちらも押せる高さ（44px）に */
+html.is-compact .result-screen .result-buttons { flex-direction: row; gap: 14px; }
+html.is-compact .result-screen .result-main-btn { flex: 1.5 1 0; height: var(--fx-tap); font-size: var(--fx-main); }
+html.is-compact .result-screen .result-sub-buttons { flex: 1 1 0; display: flex; gap: 14px; }
+html.is-compact .result-screen .result-sub-buttons .btn { flex: 1 1 0; height: var(--fx-tap); font-size: var(--fx-main); padding: 0 10px; }
+/* ランクの文字が金の紋章に溶けて読めなかった：暗い縁取りで浮かせる（PC・スマホとも） */
+.result-screen .rank-value { -webkit-text-stroke: 3px rgba(42,18,4,.9); paint-order: stroke fill; text-shadow: 0 3px 0 rgba(30,12,2,.85), 0 0 18px rgba(0,0,0,.6); }
+.result-screen .rank-label { -webkit-text-stroke: 2px rgba(42,18,4,.9); paint-order: stroke fill; }
