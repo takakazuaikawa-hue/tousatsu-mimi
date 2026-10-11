@@ -54,7 +54,7 @@ const PICK = `(() => {
   const rr = e.getBoundingClientRect(); return JSON.stringify({ x: rr.left + rr.width / 2, y: rr.top + rr.height / 2 });
 })()`;
 
-const { page, close } = await openSession({ width: 1280, height: 800, speed: 1, save: { clearedStages: ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'], introPlayed: true, coins: 500 } });
+const { page, close } = await openSession({ width: 1280, height: 800, speed: 1, save: { clearedStages: ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'], introPlayed: true, coins: 500, readIntroSeen: true, houseRulesSeen: true } });
 for (let i = 0; i < 20 && !(await page.eval('typeof startBattle === "function"')); i++) await sleep(500);
 
 let report = {};
@@ -68,6 +68,8 @@ for (const [gameId, opp, group] of GAMES) {
     for (let i = 0; i < 6; i++) { await page.eval(`(() => { const b = [...document.querySelectorAll('button')].find(b => /開始|対戦開始/.test(b.textContent)); if (b) b.click(); return true; })()`); await sleep(900); }
     curOpp = opp;
   }
+  // 環境変数 MB_FORCE（例 {"objection":{"id":"mirror"}}）で場面を固定できる
+  if (process.env.MB_FORCE) await page.eval(`window.MB_FORCE = ${process.env.MB_FORCE}; true`);
   await page.eval(`(() => { READ_BATTLE_POOLS[${JSON.stringify(opp)}][${JSON.stringify(group)}] = [${JSON.stringify(gameId)}]; state.psychPending = true; startReadBattle(${JSON.stringify(group)}); return true; })()`);
   await sleep(2600);
   const steps = []; let prevSig = null, stable = 0, maxOv = -1, res = 'STUCK';

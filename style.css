@@ -6411,7 +6411,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .battle-modal-overlay .battle-vignette {
   background:
     radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 90%),
-    url('assets/ui/fx_aura_psych.webp?v=20261004d') center bottom / cover no-repeat;
+    url('assets/ui/fx_aura_psych.webp?v=20261011a') center bottom / cover no-repeat;
 }
 .battle-modal-overlay:has(.psych-modal.logic-mode) .battle-vignette {
   background:
@@ -17108,7 +17108,7 @@ body:has(.char-profile-overlay, .hand-guide-overlay, .settings-overlay, .glossar
 /* battles/core.css の .mb-host（position:relative 等）に器の位置を上書きされないよう、卓の上に固定する */
 #stage > .read-battle-host { display: flex !important; flex-direction: column !important; overflow: hidden !important; background: radial-gradient(120% 90% at 50% 0%, #3a0f1b 0%, #1d080e 55%, #0b0306 100%) !important; position: absolute !important; inset: 0 !important; width: auto !important; height: auto !important; margin: 0 !important; z-index: 9000 !important; }
 /* 背景の光：舞台（卓の地）の下に、心理＝立ちのぼる紫の妖気、論理＝青の電脳の床。上の暗い膜で濃さを抑え、文字や札を邪魔しない */
-#stage > .read-battle-host.rb-psych .mb-stage { background: linear-gradient(rgba(22,6,11,.45), rgba(22,6,11,.45)), url('assets/ui/fx_aura_psych.webp?v=20261004d') center bottom / 100% auto no-repeat, radial-gradient(110% 90% at 50% 25%, #4a1422 0%, #2a0a13 55%, #16060b 100%); }
+#stage > .read-battle-host.rb-psych .mb-stage { background: linear-gradient(rgba(22,6,11,.56), rgba(22,6,11,.56)), url('assets/ui/fx_aura_psych.webp?v=20261011a') center bottom / 100% auto no-repeat, radial-gradient(110% 90% at 50% 25%, #4a1422 0%, #2a0a13 55%, #16060b 100%); }
 #stage > .read-battle-host.rb-logic .mb-stage { background: linear-gradient(rgba(8,8,20,.62), rgba(8,8,20,.62)), url('assets/ui/fx_aura_logic.webp?v=20261004d') center bottom / 100% auto no-repeat, radial-gradient(110% 90% at 50% 25%, #3a1430 0%, #1e0a1c 55%, #0c0610 100%); }
 
 /* ===== 待機中の光（スマホの発熱対策 2026-10-03） =====
@@ -18188,7 +18188,7 @@ body:has(.story-overlay) #fullscreen-btn-group { display: none !important; }
    画面上で 補足11px／小見出し13px／本文14px／主文16px／数字18px を下回らないよう、舞台の px に割り戻す。
    ===================================================================== */
 html.is-compact .battle-screen.v2.t8 {
-  --fx-cap: calc(11px / var(--game-scale, 1)); --fx-sub: calc(13px / var(--game-scale, 1)); --fx-body: calc(14px / var(--game-scale, 1));
+  --fx-cap: calc(11.4px / var(--game-scale, 1)); --fx-sub: calc(13px / var(--game-scale, 1)); --fx-body: calc(14px / var(--game-scale, 1));
   --fx-main: calc(16px / var(--game-scale, 1)); --fx-num: calc(18px / var(--game-scale, 1));
 }
 /* 左上：卓の名前・HAND・場面 */
@@ -18417,3 +18417,28 @@ html.is-compact .battle-screen.v2.t8 .card:not(.empty):not(.card-back) .rank { f
 html.is-compact .battle-screen.v2.t8 .card:not(.empty):not(.card-back) .suit,
 html.is-compact .battle-screen.v2.t8 .card[data-r]:not(.empty):not(.card-back)::after { display: none; }
 html.is-compact .battle-screen.v2.t8 .card:not(.empty):not(.card-back) .center-suit { font-size: max(34px, calc(22px / var(--game-scale, 1))); top: 58%; }
+/* 小さいスマホ（幅720px未満）の三択の札：顔の窓と札を小さく、選択肢の間を詰めて、五択でも下で切れないように */
+@media (max-width: 719px) {
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal { grid-template-columns: 196px minmax(0, 1fr); row-gap: 4px; padding-top: 6px !important; padding-bottom: 6px !important; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .v2p-opponent-stage, html.is-compact #app > .battle-modal-overlay.v2psych .v2p-opponent-stage.v2p-mode-standee { height: 104px !important; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-speech, html.is-compact #app > .battle-modal-overlay.v2psych .psych-opponent-line { min-height: 44px !important; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-opponent-quote, html.is-compact #app > .battle-modal-overlay.v2psych .psych-opponent-quote.quote-long { font-size: 13px !important; padding: 2px 10px !important; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-cards-row { gap: 8px; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-hand-cards { flex-wrap: nowrap; display: flex; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-board-cards .card, html.is-compact #app > .battle-modal-overlay.v2psych .psych-hand-cards .card { width: 30px; height: 42px; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-situation { display: -webkit-box !important; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px !important; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal.logic-mode .psych-situation { display: block !important; -webkit-line-clamp: unset; max-height: 168px; overflow-y: auto; line-height: 1.4 !important; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-choices { gap: 4px !important; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .choice-btn { padding: 2px 10px !important; font-size: 13px !important; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-choices:has(> :nth-child(4)) .choice-btn { font-size: 12px !important; line-height: 1.25 !important; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .choice-btn .choice-label { width: 24px; height: 24px; font-size: 15px; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-title { gap: 6px !important; white-space: nowrap; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .v2p-title-en { letter-spacing: .06em; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .v2p-title-jp { font-size: 18px; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .v2p-title-en { font-size: 11.4px; }
+  /* 論理バトル：顔の窓は外し、左は題・ルール・付箋。右の計算の箱に高さを回す */
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal.logic-mode { grid-template-rows: auto auto 1fr auto auto; grid-template-areas: "title speech" "rule sit" "rule choices" "hint choices" ". ctx"; }
+  html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal.logic-mode .v2p-opponent-stage { display: none !important; }
+}
+/* スマホ：研修の「研修をスキップ」も、文字と押す所の基準に */
+html.is-compact .intro-skip-btn { font-size: calc(13px / var(--game-scale, 1)) !important; min-height: calc(44px / var(--game-scale, 1)); padding: 0 calc(14px / var(--game-scale, 1)) !important; }

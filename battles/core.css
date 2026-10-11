@@ -398,11 +398,11 @@
 .mb-host .mb-wager-ov { position: absolute; inset: 0; z-index: 21; display: grid; place-items: center; background: rgba(8,2,4,.6); animation: mb-fadeIn .18s; }
 .mb-host .mb-wager-ov .mb-wager { padding: 22px 36px 18px; background: linear-gradient(180deg, #5a1424, #1c060c); border: 2px solid var(--gold-hi); box-shadow: 0 0 40px rgba(245,215,122,.3), 0 20px 50px rgba(0,0,0,.7); }
 /* 遊びごとの詰め（1画面に収める）。zoom は中の配置ごと縮める */
-.mb-host .gc-mach { zoom: .8; }
+.mb-host .gc-mach { zoom: .7; } /* ぱにゅが残っている時、下の2つのボタンが切れていた（2026-10-11） */
 .mb-host .gc-left { gap: 8px; }
 .mb-host .gc-acts { flex-direction: row; align-items: stretch; gap: 8px; width: 100%; }
 .mb-host .gc-acts .btn { flex: 1 1 0; min-width: 0; padding-inline: 8px; }
-.mb-host .stare-duel { zoom: .86; }
+.mb-host .stare-duel { zoom: .83; }
 .mb-host .hl-duel { zoom: .8; }
 .mb-host .gc-odds { gap: 2px; padding: 6px 12px 8px; }
 .mb-host .gc-orow { line-height: 1.2; }
@@ -415,6 +415,11 @@
 .mb-host .gc-right:has(.gc-voices > :not(.gc-empty)) .gc-odds > .gc-ceil { grid-column: 1 / -1; }
 .mb-host .gc-right:has(.gc-voices > :not(.gc-empty)) .gc-orow { grid-template-columns: auto auto; gap: 6px; }
 .mb-host .gc-right:has(.gc-voices > :not(.gc-empty)) .gc-orow > span:last-child { display: none; }
+/* 心の声が3つ並ぶと下の図鑑が切れていた：天井の説明は畳み、心の声の間を詰める（2026-10-11） */
+.mb-host .gc-right:has(.gc-voices > :not(.gc-empty)) .gc-odds > .gc-ceil { display: none; }
+.mb-host .gc-right .gc-voices { gap: 4px; }
 .mb-host .outs-meter .formula { line-height: 1.3; font-size: 13px; }
-.mb-host .ob-court { zoom: .8; }
+.mb-host .ob-court { zoom: .77; } /* 証拠が4枚＋信用ゼロの一行の時、下のボタンが切れていた（2026-10-11） */
+.mb-host .mb-game-root:has(.ob-court) { gap: 6px; }
+.mb-host .mb-game-root .outs-deck { max-width: 700px; } /* 当たり札を探す一覧：札を少し小さくして、1画面に収める */
 .mb-host .sn-wrap { zoom: .86; }
