@@ -67,10 +67,11 @@
       gap: { gx: 700, gy: 632, ends: [632, 670, 708, 800], lin: [0.55, 0.06, 0.09], lin2: [0.25, 0.02, 0.04], line: [0.12, 0.02, 0.03] } },
     bikini: { name: '水着', img: 'panyu_bikini_reach.webp', kind: 'strap', ring: 1, feel: { k: 1.4, c: 0.92, ks: 1.45, cs: 0.9, sq: 1.25, kc: 0.85, push: 1.1 }, label: '留め', what: '肩紐と胸のリング',   // 伸びる生地：速く、ぷるんと細かく戻る
       parts: [{ a: [581, 536], b: [621, 458] }, { a: [825, 536], b: [786, 458] }, { c: [702, 655], w: 28, h: 28, ring: 1 }], covers: [], gap: null },
-    halter: { name: 'ホルター', img: 'panyu_halter_reach.webp', kind: 'strap', ring: 1, ringG: [700, 658, 1.6, 14.5], inpaint: 1, bkSkin: 1, strapFill: 1, sw: [5.5, 8.0, 10.5],   /* リングは細く穴が大きい（穴の半径17） */ feel: { k: 1.3, c: 0.95, ks: 1.35, cs: 0.92, sq: 1.2, kc: 0.9, push: 1.08 }, label: '留め', what: '金の鎖と胸の金のリング',   // つやのある水着：少し重めの金のリング
-      parts: [{ a: [580, 537], b: [645, 405] }, { a: [824, 537], b: [755, 405] },   /* 金の鎖は首の方まで消す（元の絵で測った） */ { c: [700, 658], w: 48, h: 48, ring: 1 }], covers: [], gap: null },
-    blue: { name: '水色', img: 'panyu_blue_reach.webp', kind: 'strap', ring: 1, ringG: [701, 657, 0.95], inpaint: 1, bkSkin: 1, strapFill: 1, sw: [7.0, 9.5, 11.5], feel: { k: 1.45, c: 0.9, ks: 1.5, cs: 0.88, sq: 1.28, kc: 0.82, push: 1.12 }, label: '留め', what: '肩紐と胸の留め金',   // 薄い水着：いちばん速く、ぷるんと
-      parts: [{ a: [580, 543], b: [636, 420] }, { a: [826, 543], b: [767, 420] }, { c: [701, 657], w: 28, h: 28, ring: 1 }], covers: [], gap: null },
+    halter: { name: 'ホルター', img: 'panyu_halter_reach.webp', kind: 'strap', ring: 1, ringG: [700, 656, 0.95, 9.6], inpaint: 1, ringNoSprite: 1, ringAn: [-1, -1],   /* 小さな金のリングと短い棒（絵で描き直した） */ bkSkin: 1, strapFill: 1, sw: [5.5, 8.0, 10.5],   /* リングは細く穴が大きい（穴の半径17） */ feel: { k: 1.3, c: 0.95, ks: 1.35, cs: 0.92, sq: 1.2, kc: 0.9, push: 1.08 }, label: '留め', what: '金の鎖と胸の金のリング',   // つやのある水着：少し重めの金のリング
+      parts: [{ a: [581, 539], b: [650, 402] }, { a: [825, 539], b: [757, 402] },   /* 金の鎖は首の方まで消す（元の絵で測った） */ { c: [700, 656], w: 32, h: 32, ring: 1 }], covers: [], gap: null },
+    white: { name: '白サテン', img: 'panyu_white_reach.webp', kind: 'strap', ring: 1, ringG: [701, 659, 0.78, 0], inpaint: 1, ringNoSprite: 1, ringAn: [-1, -1], bkSkin: 1, strapFill: 1, sw: [4.0, 6.0, 7.5],
+      feel: { k: 0.95, c: 0.85, ks: 0.95, cs: 0.88, sq: 1.05, kc: 1.2, push: 1.0 }, label: '留め', what: 'サテンの肩紐と胸の真珠',   // シルクサテン：しなやかで、とろりと揺れる
+      parts: [{ a: [581, 538], b: [612, 470] }, { a: [823, 538], b: [794, 470] }, { c: [701, 659], w: 22, h: 22, ring: 1 }], covers: [], gap: null },
     dress: { name: 'ドレス', img: 'panyu_dress_reach.webp', kind: 'strap', feel: { k: 0.92, c: 0.8, ks: 0.9, cs: 0.85, sq: 1.0, kc: 1.35, push: 1.0 },   // シルク：しなやか。左右がつられて一緒に揺れる
       label: '留め', sw: [5.0, 6.8, 7.8], what: '肩紐と胸元の宝石',
       parts: [{ a: [570, 512], b: [598, 446] }, { a: [832, 512], b: [810, 446] }, { c: [700, 672], w: 56, h: 70 }],
@@ -85,7 +86,7 @@
   OUTFITS.bikini.fly = { vx: [220, 380], vy: [950, 1200], g: 2500, spin: [18, 28], life: 1.9, bounce: 0.4, spark: '#ffe9a8', n: 14, shake: 3 };   // リングは高く回る
   OUTFITS.bikini.strapShake = 4;
   OUTFITS.halter.fly = { ...OUTFITS.bikini.fly, vy: [800, 1000], g: 2800, spark: '#ffd98a', n: 18, shake: 4 }; OUTFITS.halter.strapShake = 4; OUTFITS.halter.ropeCol = ['#a8761f', 'rgba(255,226,150,.85)']; OUTFITS.halter.ropeChain = 1; OUTFITS.halter.ropeG = 3400; OUTFITS.halter.ropeDamp = 0.97;   // 金の鎖は重く、じゃらっと落ちる   // 大きな金のリングは少し重く
-  OUTFITS.blue.fly = { ...OUTFITS.bikini.fly, spark: '#e8f6ff' }; OUTFITS.blue.strapShake = 3; OUTFITS.blue.ropeCol = ['#4ea6dc', 'rgba(225,245,255,.85)'];
+  OUTFITS.white.fly = { ...OUTFITS.bikini.fly, vy: [1000, 1250], spin: [10, 16], spark: '#fff7ea', n: 16 }; OUTFITS.white.strapShake = 2; OUTFITS.white.ropeCol = ['#d9d3dc', 'rgba(255,255,255,.95)'];   // 真珠は高く、くるくる
   Object.assign(OUTFITS.bunny.gap, { flap: [0.12, 1.8], wk: 1, spring: 0 });
   Object.assign(OUTFITS.pajama.gap, { flap: [0.42, 6.5], wk: 1.25, spring: 0, gx: 706, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 2.1, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.14, 1.18],   /* ボタンが外れると服が大きく開く */   /* ボタンが外れると、V字の先の襟の重なりも左右に離れる */   /* V字の中は引き伸ばさない（網目で胸が動くだけ）。開くのはV字の先から下 */ ends: [606, 700, 758, 830] });   // 一番上のボタンの所でつながらない（V字からそのまま開く）   // やわらかい前立てが外へ大きくめくれ、裏地のサテンが幅広くのぞく
   Object.assign(OUTFITS.pajama2.gap, { flap: [0.42, 6.5], wk: 1.25, spring: 0, fabY: 664, ramp: 40, vk: [0.6, 0.6, 0], ct: [0, 0], shear: 0.42, skin: [600, 445, 690, 500] });   // 合わせ目は下ほど右へ傾く（V字の先を中心に斜めに開く）
@@ -378,21 +379,30 @@
     // 胸のリング：輪とつながる帯の真ん中を、上下の本物の肌でつなぐ（輪の内側も含めて一続きに。半径の向きで写すと帯や金を拾う）
     uniform vec3 uRG;   // リングの中心と大きさ
     uniform float uInp;
+    uniform vec2 uRAn;   // 留まっている間に消す輪の帯（内側・外側の半径）
     float ringMask(vec2 q, float on) {   // 外れたリングと帯の範囲（1＝中）
+      if (on < 0.5 && uRAn.x < 0.0) return 0.0;   // 小さな金具は、留まっている間は絵のまま（消さない）
+      if (on < 0.5 && uRAn.y > 0.0) { float rq = length(q - uRG.xy), dx = abs(q.x - uRG.x);
+        float band = smoothstep(uRAn.x - 1.0, uRAn.x, rq) * (1.0 - smoothstep(uRAn.y, uRAn.y + 1.0, rq));
+        float bar = (1.0 - smoothstep(2.5, 3.5, abs(q.y - uRG.y))) * smoothstep(uRAn.y - 2.0, uRAn.y, dx) * (1.0 - smoothstep(uRAn.y + 3.0, uRAn.y + 4.0, dx));
+        return max(band, bar); }
       float K = uRG.z; vec2 C = uRG.xy; float r = length(q - C) / K, ax = abs(q.x - C.x) / K;
-      float ringM = on > 0.5 ? 1.0 - smoothstep(16.0, 18.4, r) : 1.0 - smoothstep(15.6, 17.0, r);
-      float bandM = on > 0.5 ? (1.0 - smoothstep(4.8, 6.6, abs(q.y - C.y - 1.4 * K) / K)) * (1.0 - smoothstep(20.0, 25.0, ax)) : 0.0;
+      float ringM = on > 0.5 ? 1.0 - smoothstep(19.0, 21.5, r) : 1.0 - smoothstep(15.6, 17.0, r);   // 輪の影まで含めて消す
+      float bandM = on > 0.5 ? (1.0 - smoothstep(5.5, 7.5, abs(q.y - C.y - 1.4 * K) / K)) * (1.0 - smoothstep(20.0, 25.0, ax)) : 0.0;
       return max(ringM, bandM);
     }
     // 穴のまわりの肌を、16の向きから拾って距離で重みづけして混ぜる（すじも継ぎ目も出ない、なめらかな埋め方）
     vec3 inpaint(vec2 p, float on) {
       vec3 acc = vec3(0.0); float ws = 0.0;
-      for (int k = 0; k < 16; k++) {
-        float an = float(k) * 0.3927; vec2 d = vec2(cos(an), sin(an));
-        float t = 2.0;
-        for (int j = 0; j < 24; j++) { if (ringMask(p + d * t, on) < 0.02) break; t += 3.0; }
-        vec3 sc = (tex(p + d * (t + 2.0)) + tex(p + d * (t + 5.0))) * 0.5;
-        float w = (0.02 + skinLike(sc)) / (t * t);   // 肌でない所（カップ・金具）は拾わない
+      for (int k = 0; k < 24; k++) {
+        float an = float(k) * 0.2618 + 0.13; vec2 d = vec2(cos(an), sin(an));
+        float t = 1.0;
+        for (int j = 0; j < 40; j++) { if (ringMask(p + d * t, on) < 0.02) break; t += 1.5; }
+        float lo = max(1.0, t - 1.5); for (int j = 0; j < 3; j++) { float mid = (lo + t) * 0.5; if (ringMask(p + d * mid, on) < 0.02) t = mid; else lo = mid; }   // 縁の位置を細かく求める（段々にしない）
+        vec3 sc = (tex(p + d * (t + 1.5)) + tex(p + d * (t + 3.5)) + tex(p + d * (t + 6.0))) / 3.0;
+        float lum = dot(sc, vec3(0.3, 0.59, 0.11));
+        float ok = (1.0 - smoothstep(0.38, 0.46, sc.r - sc.g)) * (1.0 - smoothstep(0.15, 0.22, sc.g - sc.b)) * smoothstep(0.45, 0.6, lum);   // 赤いカップ・金具・暗い溝は拾わない
+        float w = (0.002 + ok) / (t * t);
         acc += sc * w; ws += w;
       }
       return acc / ws;
@@ -667,7 +677,7 @@
     if (OF.fold) { const f = OF.fold; gl.uniform4f(U('uFA0'), ...f.apex[0], foldA[1], 0); gl.uniform4f(U('uFA1'), ...f.apex[1], 0, 0); gl.uniform4f(U('uFN'), ...f.neck[0], ...f.neck[1]); gl.uniform4f(U('uFO'), ...f.out[0], ...f.out[1]); gl.uniform2f(U('uFold'), foldA[0], f.len); } else gl.uniform2f(U('uFold'), 0, 0);
     gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform1f(U('uUseBk'), bkReady ? 1 : 0); gl.uniform3f(U('uBkGain'), ...(OF.bkGain || (OF.gap && OF.gap.bkGain) || [1, 1, 1])); gl.uniform1f(U('uWide'), (OF.gap && OF.gap.wide) || 1); gl.uniform1f(U('uRamp'), (OF.gap && (OF.gap.bkSkin && bkReady ? OF.gap.rampB : OF.gap.ramp)) || 24); gl.uniform1f(U('uShift'), (OF.gap && OF.gap.shift) || 0); gl.uniform1f(U('uGs'), (OF.gap && OF.gap.shear) || 0); gl.uniform4f(U('uSkin'), ...((OF.gap && OF.gap.skin) || [0, 0, 0, 0])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
     gl.uniform2f(U('uFlap'), ...((OF.gap && OF.gap.flap) || [0.12, 1.8]));
-    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint);
+    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0]));
     gl.uniform1f(U('uSF'), +(OUTFIT === 'dress' || !!OF.strapFill)); gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));   // 髪の上を通る紐は、両側の色（髪・肌）でつなぐ消し方
     if (STRAP) { gl.uniform4f(U('uSA'), ...BTNS[0].a, ...BTNS[0].b); gl.uniform4f(U('uSB'), ...BTNS[1].a, ...BTNS[1].b); }
     const r0 = restOf(0), r1 = restOf(1);
@@ -729,16 +739,25 @@
     g.imageSmoothingQuality = 'high'; g.drawImage(img, RING[0] - R0, RING[1] - R0, R0 * 2, R0 * 2, 0, 0, c.width, c.height);
     const d = g.getImageData(0, 0, c.width, c.height);
     // 外側は丸く、横だけ帯の付け根まで切り出す
-    for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) { const r = Math.hypot(x / sc - R0 + 0.5 / sc, y / sc - R0 + 0.5 / sc), dy = Math.abs(y / sc - R0), ro = 13.9 * K + Math.min(1, Math.max(0, (2.6 * K - Math.abs(y / sc - R0 - 0.9 * K)) / 0.7)) * 5.0 * K, a = Math.min(1, Math.max(0, (r - (RING[3] || 7.7 * K)) / 0.6)) * Math.min(1, Math.max(0, (ro - r) / 0.6)); d.data[(y * c.width + x) * 4 + 3] *= a; }
+    for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) { const r = Math.hypot(x / sc - R0 + 0.5 / sc, y / sc - R0 + 0.5 / sc), dy = Math.abs(y / sc - R0), ro = 13.9 * K + (OF.ringBars ? 0 : Math.min(1, Math.max(0, (2.6 * K - Math.abs(y / sc - R0 - 0.9 * K)) / 0.7)) * 5.0 * K), a = Math.min(1, Math.max(0, (r - (RING[3] || 7.7 * K)) / 0.6)) * Math.min(1, Math.max(0, (ro - r) / 0.6)); d.data[(y * c.width + x) * 4 + 3] *= a; }
     g.putImageData(d, 0, 0); ringSpr = c;
   }
   function drawRing() {
-    if (!BIKINI || popped[2] || !img.complete) return; if (!ringSpr) makeRing();
+    if (!BIKINI || popped[2] || !img.complete || OF.ringNoSprite) return; if (!ringSpr) makeRing();
     const C = meshAt(RING[0], RING[1]), L = meshAt(RING[0] - 24 * RING[2], RING[1] + RING[2]), Rr = meshAt(RING[0] + 24 * RING[2], RING[1] + RING[2]), ang = Math.atan2(Rr[1] - L[1], Rr[0] - L[0]);
-    const x = view.ox + C[0] * view.s, y = view.oy + C[1] * view.s, w = 40 * RING[2] * view.s;
+    const x = view.ox + C[0] * view.s, y = view.oy + C[1] * view.s, w = 40 * RING[2] * view.s * (OF.ringScale || 1);
     fc.save(); fc.translate(x, y); fc.rotate(ang);
     fc.globalAlpha = 0.3; fc.filter = 'brightness(0) blur(' + (1.2 * view.s).toFixed(1) + 'px)'; fc.drawImage(ringSpr, -w / 2 + 0.6 * view.s, -w / 2 + 1.6 * view.s, w, w);   // 肌に落ちる影
     fc.filter = 'none'; fc.globalAlpha = 1; fc.drawImage(ringSpr, -w / 2, -w / 2, w, w); fc.restore();
+    if (OF.ringBars) {   // 小さくした輪から、カップの角の小さな輪まで、金の短い棒でつなぐ
+      const [r0, r1] = OF.ringBars;
+      for (const sd of [-1, 1]) { const A = meshAt(RING[0] + sd * r0, RING[1]), B = meshAt(RING[0] + sd * r1, RING[1]);
+        const ax = view.ox + A[0] * view.s, ay = view.oy + A[1] * view.s, bx = view.ox + B[0] * view.s, by = view.oy + B[1] * view.s;
+        fc.lineCap = 'round';
+        fc.strokeStyle = 'rgba(70,35,0,.35)'; fc.lineWidth = 3.4 * view.s; fc.beginPath(); fc.moveTo(ax, ay + 1.2 * view.s); fc.lineTo(bx, by + 1.2 * view.s); fc.stroke();
+        fc.strokeStyle = '#8f5f16'; fc.lineWidth = 2.8 * view.s; fc.beginPath(); fc.moveTo(ax, ay); fc.lineTo(bx, by); fc.stroke();
+        fc.strokeStyle = '#ffe3a0'; fc.lineWidth = 1.0 * view.s; fc.beginPath(); fc.moveTo(ax, ay - 0.6 * view.s); fc.lineTo(bx, by - 0.6 * view.s); fc.stroke(); }
+    }
   }
   function addRope(k, out) {
     const a = BTNS[k].a, b = BTNS[k].b, len = Math.hypot(b[0] - a[0], b[1] - a[1]) * (OF.ropeLen || 1.05), pts = [];
