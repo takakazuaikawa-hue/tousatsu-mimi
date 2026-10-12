@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>ぱにゅぱにゅ 触り比べ</title>
+<style>
+  :root { --ink: #0b0809; --ivory: #f3ece0; --muted: #c9bfb2; --gold: #d8b56c; --gold-hi: #f0d595; }
+  html, body { margin: 0; height: 100%; background: var(--ink); color: var(--ivory); overflow: hidden;
+    font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  #stage { position: fixed; inset: 0; touch-action: none; }
+  /* 呼吸：絵全体をゆっくり拡縮（合成だけで済むので、止まっている間も描き直しは起きない） */
+  #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; transform-origin: 50% 100%; animation: breath 3.6s ease-in-out infinite; }
+  @keyframes breath { 50% { transform: scale(1.006, 1.01); } }
+  @media (prefers-reduced-motion: reduce) { #gl { animation: none; } }
+  .bar { position: fixed; left: 0; right: 0; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center;
+    padding: 8px max(12px, env(safe-area-inset-left)); background: linear-gradient(180deg, rgba(8,4,6,.82), rgba(8,4,6,0)); }
+  .grp { display: flex; align-items: center; gap: 6px; }
+  .grp > span { font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+  .bar button { min-height: 44px; min-width: 44px; padding: 0 14px; border: 1px solid rgba(243,236,224,.28); border-radius: 2px;
+    background: rgba(12,9,10,.72); color: var(--ivory); font: 700 14px/1 inherit; font-family: inherit; cursor: pointer; }
+  .bar button.on { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1206; border-color: var(--gold-hi); }
+  .note { position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 5; font-size: 13px; color: var(--muted);
+    background: rgba(8,4,6,.6); padding: 6px 14px; border-radius: 2px; white-space: nowrap; pointer-events: none; }
+  .err { position: fixed; inset: 0; display: none; place-items: center; z-index: 9; font-size: 15px; padding: 24px; text-align: center; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="gl"></canvas></div>
+<div class="bar">
+  <div class="grp"><span>動き</span><button data-mode="mesh" class="on">網目＋ばね（新）</button><button data-mode="disc">今に近い動き</button></div>
+  <div class="grp"><span>構図</span><button data-zoom="1">今</button><button data-zoom="1.28" class="on">寄り</button><button data-zoom="1.5">もっと寄り</button></div>
+  <div class="grp"><span>揺れ</span><button data-amp="0.75">控えめ</button><button data-amp="1" class="on">標準</button><button data-amp="1.3">大きめ</button></div>
+</div>
+<div class="note">押す・長押し・引っぱる、どれでも</div>
+<div class="err" id="err">この端末では試作を表示できませんでした（WebGL が使えません）</div>
+<script>
+(() => {
+  // 絵：本編のぱにゅぱにゅと同じ 1400x788。胸のふくらみの中心（本編の座標と同じ）
+  const IMG = '../../assets/characters/panyu_reach.webp';
+  const CUPS = [{ c: [607, 600], r: 132 }, { c: [795, 600], r: 132 }];
+  const FOCUS = [701, 548];          // 寄せる時の注目点（胸の少し上）
+  const cv = document.getElementById('gl');
+  const gl = cv.getContext('webgl', { antialias: true, alpha: false, premultipliedAlpha: false });
+  if (!gl) { document.getElementById('err').style.display = 'grid'; return; }
+
+  // ---- 設定（ボタンで切り替え） ----
+  const opt = { mode: 'mesh', zoom: 1.28, amp: 1 };
+  document.querySelectorAll('.bar button').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.mode ? 'mode' : b.dataset.zoom ? 'zoom' : 'amp';
+    opt[k] = k === 'mode' ? b.dataset.mode : +b.dataset[k];
+    b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    resetPhys(); layout(); kick();
+  }));
+
+  // ---- シェーダー：画像の座標で網目を置き、胸の範囲だけをずらす ----
+  const VS = `
+    attribute vec2 aP;
+    uniform vec2 uImg, uOff, uView; uniform float uScale, uDisc;
+    uniform vec2 uC0, uC1, uD0, uD1, uS0, uS1; uniform float uR0, uR1;
+    varying vec2 vUV; varying float vLit;
+    vec3 cup(vec2 p, vec2 c, float r, vec2 d, vec2 s) {
+      vec2 q = p - c;
+      float rr = length(q / vec2(r * 1.12, r));
+      float w, a;
+      if (uDisc > 0.5) { w = 1.0 - smoothstep(0.78, 1.0, rr); a = 1.0; }      // 今に近い：丸い板が丸ごと動く
+      else {
+        w = 1.0 - smoothstep(0.30, 1.05, rr);                                  // 中心ほど大きく、ふちは体に溶ける
+        float t = clamp((q.y + r * 0.95) / (r * 1.7), 0.0, 1.0);               // 上（付け根）は固定、下ほど自由
+        a = 0.18 + 0.82 * t * t * (3.0 - 2.0 * t);
+      }
+      vec2 o = d * w * a + q * (s - 1.0) * w * (uDisc > 0.5 ? 1.0 : (0.35 + 0.65 * a));
+      // つや：前へ出る向き（下へ沈む・横へ寄る）に合わせて、ほんの少し明るさを変える
+      float lit = w * a * (-d.y / r) * 0.9 + w * (s.x - 1.0) * 0.6;
+      return vec3(o, lit);
+    }
+    void main() {
+      vec3 a = cup(aP, uC0, uR0, uD0, uS0), b = cup(aP, uC1, uR1, uD1, uS1);
+      vec2 p = aP + a.xy + b.xy;
+      vec2 s = uOff + p * uScale;
+      gl_Position = vec4(s.x / uView.x * 2.0 - 1.0, 1.0 - s.y / uView.y * 2.0, 0.0, 1.0);
+      vUV = aP / uImg; vLit = a.z + b.z;
+    }`;
+  const FS = `
+    precision mediump float;
+    uniform sampler2D uTex; varying vec2 vUV; varying float vLit;
+    void main() { vec4 c = texture2D(uTex, vUV); gl_FragColor = vec4(c.rgb * (1.0 + clamp(vLit, -0.25, 0.25) * 0.35), 1.0); }`;
+  const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o; };
+  const prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); gl.useProgram(prog);
+  const U = n => gl.getUniformLocation(prog, n);
+
+  // 網目：全体は粗く、胸のまわりだけ細かく（三角形の数を抑えて、スマホで軽く）
+  const iw = 1400, ih = 788;
+  const xs = [], ys = [];
+  for (let x = 0; x <= iw; x += (x > 430 && x < 980 ? 8 : 40)) xs.push(Math.min(x, iw)); if (xs[xs.length - 1] !== iw) xs.push(iw);
+  for (let y = 0; y <= ih; y += (y > 420 && y < 788 ? 8 : 40)) ys.push(Math.min(y, ih)); if (ys[ys.length - 1] !== ih) ys.push(ih);
+  const verts = [], idx = [];
+  ys.forEach(y => xs.forEach(x => verts.push(x, y)));
+  const W = xs.length;
+  for (let j = 0; j < ys.length - 1; j++) for (let i = 0; i < W - 1; i++) { const a = j * W + i; idx.push(a, a + 1, a + W, a + 1, a + W + 1, a + W); }
+  const vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+  const ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+  const big = verts.length / 2 > 65535;
+  if (big && !gl.getExtension('OES_element_index_uint')) throw 'index';
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, big ? new Uint32Array(idx) : new Uint16Array(idx), gl.STATIC_DRAW);
+  const aP = gl.getAttribLocation(prog, 'aP'); gl.enableVertexAttribArray(aP); gl.vertexAttribPointer(aP, 2, gl.FLOAT, false, 0, 0);
+
+  const tex = gl.createTexture();
+  const img = new Image();
+  img.onload = () => {
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    layout(); kick();
+  };
+  img.src = IMG;
+
+  // ---- 画面への置き方（cover。寄せる時は注目点を画面の 56% の高さに） ----
+  let view = { w: 1, h: 1, dpr: 1, s: 1, ox: 0, oy: 0 };
+  function layout() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = innerWidth, h = innerHeight;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    const s = Math.max(w / iw, h / ih) * opt.zoom;
+    let ox = w / 2 - FOCUS[0] * s, oy = h * 0.56 - FOCUS[1] * s;
+    ox = Math.min(0, Math.max(w - iw * s, ox)); oy = Math.min(0, Math.max(h - ih * s, oy));   // 絵の外を見せない
+    view = { w, h, dpr, s, ox, oy };
+    gl.viewport(0, 0, cv.width, cv.height);
+    gl.uniform2f(U('uImg'), iw, ih); gl.uniform2f(U('uView'), w, h); gl.uniform2f(U('uOff'), ox, oy); gl.uniform1f(U('uScale'), s);
+    gl.uniform2f(U('uC0'), ...CUPS[0].c); gl.uniform2f(U('uC1'), ...CUPS[1].c); gl.uniform1f(U('uR0'), CUPS[0].r); gl.uniform1f(U('uR1'), CUPS[1].r);
+    draw();
+  }
+  addEventListener('resize', () => { layout(); });
+
+  // ---- ばね（左右それぞれ：ずれ d と、縦横の伸び縮み s） ----
+  const P = CUPS.map(() => ({ d: [0, 0], v: [0, 0], sy: 1, svy: 0, sx: 1, grab: null }));
+  function resetPhys() { P.forEach(p => { p.d = [0, 0]; p.v = [0, 0]; p.sy = 1; p.svy = 0; p.sx = 1; p.grab = null; }); }
+  const K = 150, C = 6.2, KC = 55, KS = 260, CS = 9;   // 硬さ・減衰・左右のつながり・伸び縮みの硬さと減衰
+  function step(dt) {
+    const amp = opt.amp, disc = opt.mode === 'disc';
+    for (let i = 0; i < 2; i++) {
+      const p = P[i], o = P[1 - i], r = CUPS[i].r;
+      let fx, fy;
+      if (p.grab) {                                       // つかんでいる間：指へ引っぱられる（離れすぎない）
+        const lim = r * 0.36 * amp;
+        let tx = p.grab.dx * 0.6, ty = p.grab.dy * 0.6; const L = Math.hypot(tx, ty); if (L > lim) { tx *= lim / L; ty *= lim / L; }
+        fx = (tx - p.d[0]) * 420; fy = (ty - p.d[1]) * 420;
+        fx -= p.v[0] * 18; fy -= p.v[1] * 18;
+      } else {
+        fx = -K * p.d[0] - C * p.v[0]; fy = -K * p.d[1] - C * p.v[1];
+        if (!disc) { fx += KC * (o.d[0] * 0.55 - p.d[0] * 0.15); fy += KC * (o.d[1] * 0.8 - p.d[1] * 0.2); }   // もう片方の重さにつられる
+      }
+      p.v[0] += fx * dt; p.v[1] += fy * dt; p.d[0] += p.v[0] * dt; p.d[1] += p.v[1] * dt;
+      // 縦の伸び縮み：下へ沈む勢いで縦に縮み、横は体積を保つように広がる
+      const fs = -KS * (p.sy - 1) - CS * p.svy + (disc ? 0 : -p.v[1] * 0.012);
+      p.svy += fs * dt; p.sy += p.svy * dt; p.sy = Math.min(1.14, Math.max(0.84, p.sy));
+      p.sx = disc ? p.sy : 1 / Math.sqrt(p.sy);
+      const lim = r * 0.42 * amp, L = Math.hypot(p.d[0], p.d[1]); if (L > lim) { p.d[0] *= lim / L; p.d[1] *= lim / L; }
+    }
+  }
+  function energy() { return P.reduce((e, p) => e + Math.abs(p.d[0]) + Math.abs(p.d[1]) + Math.abs(p.v[0]) * .05 + Math.abs(p.v[1]) * .05 + Math.abs(p.sy - 1) * 40 + Math.abs(p.svy) * 2 + (p.grab ? 9 : 0), 0); }
+
+  function draw() {
+    gl.uniform1f(U('uDisc'), opt.mode === 'disc' ? 1 : 0);
+    gl.uniform2f(U('uD0'), P[0].d[0], P[0].d[1]); gl.uniform2f(U('uD1'), P[1].d[0], P[1].d[1]);
+    gl.uniform2f(U('uS0'), P[0].sx, P[0].sy); gl.uniform2f(U('uS1'), P[1].sx, P[1].sy);
+    gl.clearColor(0.04, 0.03, 0.035, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawElements(gl.TRIANGLES, idx.length, big ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
+  }
+  // 動いている間だけ回す。止まったら描き直しも止める（スマホが熱くならないように）
+  let raf = 0, last = 0;
+  function loop(t) {
+    const dt = Math.min(0.033, (t - (last || t)) / 1000) || 0.016; last = t;
+    for (let n = 0; n < 4; n++) step(dt / 4);
+    draw();
+    if (energy() < 0.06 && !P.some(p => p.grab)) { resetPhys(); draw(); raf = 0; last = 0; return; }
+    raf = requestAnimationFrame(loop);
+  }
+  function kick() { if (!raf) { last = 0; raf = requestAnimationFrame(loop); } }
+  document.addEventListener('visibilitychange', () => { if (document.hidden && raf) { cancelAnimationFrame(raf); raf = 0; } });
+
+  // ---- 触る：押した位置から、押し込む向きにはずみ。長押し・引っぱりは指についてくる ----
+  const toImg = (x, y) => [(x - view.ox) / view.s, (y - view.oy) / view.s];
+  const hit = (ix, iy) => { let best = -1, bd = 1e9; CUPS.forEach((c, i) => { const d = Math.hypot((ix - c.c[0]) / 1.12, iy - c.c[1]); if (d < c.r * 1.15 && d < bd) { bd = d; best = i; } }); return best; };
+  const ptrs = new Map();
+  const stageEl = document.getElementById('stage');
+  stageEl.addEventListener('pointerdown', (e) => {
+    const [ix, iy] = toImg(e.clientX, e.clientY); const i = hit(ix, iy); if (i < 0) return;
+    stageEl.setPointerCapture(e.pointerId);
+    const p = P[i], c = CUPS[i], amp = opt.amp;
+    // 押し込み：押した所から中心へ向かう向き＋下へ。中心に近いほど縦に縮む
+    const qx = c.c[0] - ix, qy = c.c[1] - iy; const L = Math.hypot(qx, qy) || 1;
+    const near = 1 - Math.min(1, L / c.r);
+    p.v[0] += (qx / L) * 260 * amp * (1 - near * 0.6);
+    p.v[1] += ((qy / L) * 200 + 340 * (0.4 + near * 0.6)) * amp;
+    p.svy -= 2.4 * amp * (0.5 + near * 0.5);
+    ptrs.set(e.pointerId, { i, x0: e.clientX, y0: e.clientY, t0: performance.now() });
+    kick();
+  });
+  stageEl.addEventListener('pointermove', (e) => {
+    const g = ptrs.get(e.pointerId); if (!g) return;
+    const dx = (e.clientX - g.x0) / view.s, dy = (e.clientY - g.y0) / view.s;
+    if (!P[g.i].grab && (Math.hypot(dx, dy) > 6 || performance.now() - g.t0 > 220)) P[g.i].grab = { dx: 0, dy: 0 };
+    if (P[g.i].grab) { P[g.i].grab.dx = dx; P[g.i].grab.dy = dy; }
+    kick();
+  });
+  const up = (e) => {
+    const g = ptrs.get(e.pointerId); if (!g) return; ptrs.delete(e.pointerId);
+    const p = P[g.i]; if (p.grab) { p.grab = null; p.svy += 1.2 * opt.amp; }   // 離した瞬間の弾み
+    kick();
+  };
+  stageEl.addEventListener('pointerup', up); stageEl.addEventListener('pointercancel', up);
+})();
+</script>
+</body>
+</html>
