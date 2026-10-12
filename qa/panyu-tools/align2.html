@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><body><script>
+// 生成した衣装違いの絵を元の絵に合わせる（頭・髪・肩・腕輪で比べる。胸元は衣装が違うので外す）。広い倍率で探す
+const load = (src) => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = src; });
+window.run = async (src) => {
+  const [o, n] = await Promise.all([load('orig.webp'), load(src)]);
+  const W = 1400, H = 788;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d', { willReadFrequently: true });
+  g.drawImage(o, 0, 0); const od = g.getImageData(0, 0, W, H).data;
+  const pts = []; for (let y = 40; y < 470; y += 5) for (let x = 300; x < 1100; x += 5) { if (y > 380 && x > 520 && x < 880) continue; pts.push([x, y]); }
+  const score = (s, dx, dy, step) => { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.setTransform(s, 0, 0, s, dx, dy); g.drawImage(n, 0, 0, W, H); g.setTransform(1, 0, 0, 1, 0, 0); const nd = g.getImageData(0, 0, W, H).data; let e = 0, c = 0; for (let pi = 0; pi < pts.length; pi += (step || 1)) { const [x, y] = pts[pi]; const k = (y * W + x) * 4; e += Math.abs(nd[k] - od[k]) + Math.abs(nd[k + 1] - od[k + 1]) + Math.abs(nd[k + 2] - od[k + 2]); c++; } return e / c; };
+  const T = (s, dx, dy) => [s, dx - (s - 1) * 701, dy - (s - 1) * 300];
+  let best = { e: 1e9 };
+  for (let s = 0.86; s <= 1.2; s += 0.02) for (let dx = -60; dx <= 60; dx += 10) for (let dy = -60; dy <= 60; dy += 10) { const e = score(...T(s, dx, dy), 3); if (e < best.e) best = { e, s, dx, dy }; }
+  for (let pass = 0; pass < 4; pass++) { const ss = [0.01, 0.004, 0.0015, 0.0006][pass], dd = [5, 2, 1, 0.5][pass]; const b0 = { ...best }; for (let s = b0.s - ss * 2; s <= b0.s + ss * 2 + 1e-9; s += ss) for (let dx = b0.dx - dd * 2; dx <= b0.dx + dd * 2; dx += dd) for (let dy = b0.dy - dd * 2; dy <= b0.dy + dd * 2; dy += dd) { const e = score(...T(s, dx, dy)); if (e < best.e) best = { e, s, dx, dy }; } }
+  const ident = score(1, 0, 0);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.setTransform(...[best.s, 0, 0, best.s].concat(T(best.s, best.dx, best.dy).slice(1))); g.drawImage(n, 0, 0, W, H); g.setTransform(1, 0, 0, 1, 0, 0);
+  const full = cv.toDataURL('image/png');
+  const cmp = document.createElement('canvas'); cmp.width = W; cmp.height = H; const cg = cmp.getContext('2d'); cg.drawImage(o, 0, 0); cg.globalAlpha = 0.5; cg.drawImage(cv, 0, 0);
+  return { best, ident, nw: n.naturalWidth, nh: n.naturalHeight, full, cmp: cmp.toDataURL('image/jpeg', 0.8) };
+};
+</script>

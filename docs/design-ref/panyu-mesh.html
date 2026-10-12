@@ -34,26 +34,37 @@
   <div class="grp"><span>動き</span><button data-mode="mesh" class="on">網目＋ばね（新）</button><button data-mode="disc">今に近い動き</button></div>
   <div class="grp"><span>構図</span><button data-zoom="1">今</button><button data-zoom="1.28" class="on">寄り</button><button data-zoom="1.5">もっと寄り</button></div>
   <div class="grp"><span>揺れ</span><button data-amp="1.1">控えめ</button><button data-amp="1.5">標準</button><button data-amp="1.95" class="on">大きめ</button></div>
-  <div class="grp"><span>ボタン</span><b id="lv">0/3</b><button id="btnReset">戻す</button></div>
+  <div class="grp"><span>衣装</span><button data-outfit="bunny">バニー</button><button data-outfit="bikini">水着</button></div>
+  <div class="grp"><span id="lvName">ボタン</span><b id="lv">0/3</b><button id="btnReset">戻す</button></div>
 </div>
 <div class="note">押す・連打・長押し・引っぱる・お腹のボタン／寄り具合：ホイール・ピンチ・L/R</div>
 <div class="err" id="err">この端末では試作を表示できませんでした（WebGL が使えません）</div>
 <script>
 (() => {
   // 絵：本編のぱにゅぱにゅと同じ 1400x788。胸のふくらみの中心（本編の座標と同じ）
-  const IMG = '../../assets/characters/panyu_reach.webp';
+  // 衣装：bunny＝黒いコルセット（お腹のボタン3つ）／bikini＝水着（左右の肩紐と胸の真ん中のリング）。どちらも同じ構図に位置合わせ済み
+  const OUTFIT = new URLSearchParams(location.search).get('c') === 'bikini' ? 'bikini' : 'bunny', BIKINI = OUTFIT === 'bikini';
+  const IMG = BIKINI ? '../../assets/characters/panyu_bikini_reach.webp' : '../../assets/characters/panyu_reach.webp';
   const CUPS = [{ c: [607, 600], r: 132 }, { c: [795, 600], r: 132 }];
   const CHEEK = [[636, 324], [764, 324]];
   const EYES = [[640, 281], [762, 281]];   // 目の中心（驚いた時に少し開く）
   // お腹のボタン（金のひし形・上から大中小）。外れるごとに揺れのレベルが上がる
-  const BTNS = [{ c: [700, 663], w: 54, h: 54 }, { c: [700, 725], w: 30, h: 36 }, { c: [700, 775], w: 26, h: 30 }];
+  // 水着は：左の肩紐（カップの角の留め輪→首の方。見えている所だけ）、右の肩紐、胸の真ん中の金のリング
+  const BTNS = BIKINI ? [{ a: [581, 536], b: [621, 458] }, { a: [825, 536], b: [786, 458] }, { c: [702, 655], w: 28, h: 28, ring: 1 }]
+    : [{ c: [700, 663], w: 54, h: 54 }, { c: [700, 725], w: 30, h: 36 }, { c: [700, 775], w: 26, h: 30 }];
+  const segD = (p, a, b) => { const ab = [b[0] - a[0], b[1] - a[1]], t = Math.max(0, Math.min(1, ((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / (ab[0] ** 2 + ab[1] ** 2))); return Math.hypot(p[0] - a[0] - ab[0] * t, p[1] - a[1] - ab[1] * t); };
+  const hitPart = (b, ix, iy) => b.a ? segD([ix, iy], b.a, b.b) < 10 : Math.abs(ix - b.c[0]) < Math.max(26, b.w * 0.7) && Math.abs(iy - b.c[1]) < Math.max(24, b.h * 0.65);
   const COVERS = [[700, 677, 27, 29], [700, 725, 16, 19], [700, 775, 14, 16]];   // 1つ目は飾り石の下（両脇の小さいひし形・大きいひし形・下の玉）   // 外れた金具を隠す範囲（中心・半分の幅・半分の高さ。飾りまで含めて測った）
   // out/down＝止まる位置が外・下へずれる量、kx＝横のばねの硬さ、lx＝外へ揺れられる幅の上乗せ
   const LV = [{ push: 1, damp: 1, rs: 1, out: 0, down: 0, sag: 1, kx: 1, lx: 0 }, { push: 1.2, damp: 0.86, rs: 1.04, out: 14, down: 10, sag: 1.04, kx: 0.82, lx: 4 },
     { push: 1.4, damp: 0.74, rs: 1.08, out: 28, down: 20, sag: 1.08, kx: 0.66, lx: 8 }, { push: 1.65, damp: 0.62, rs: 1.12, out: 66, down: 31, sag: 1.12, kx: 0.5, lx: 12 }];
   const popped = [false, false, false];
   const lvNow = () => LV[popped.filter(Boolean).length];
-  const restOf = (i) => { const l = lvNow(); return [(i === 0 ? -1 : 1) * l.out, l.down]; };   // 頬（赤らむ所）
+  // 止まる位置。水着は左右別々：肩紐が外れた側は支えを失って下へ垂れ、リングが外れると左右へ大きく開く
+  const restOf = (i) => {
+    if (BIKINI) { const s = popped[i] ? 1 : 0, g = popped[2] ? 1 : 0; return [(i === 0 ? -1 : 1) * (8 * s + 52 * g), 18 * s + 12 * g]; }
+    const l = lvNow(); return [(i === 0 ? -1 : 1) * l.out, l.down];
+  };   // 頬（赤らむ所）
   const FOCUS = [701, 548];          // 寄せる時の注目点（胸の少し上）
   const cv = document.getElementById('gl');
   const gl = cv.getContext('webgl', { antialias: true, alpha: false, premultipliedAlpha: false });
@@ -61,7 +72,9 @@
 
   // ---- 設定（ボタンで切り替え） ----
   const opt = { mode: 'mesh', zoom: 1.28, amp: 1.95 };
-  document.querySelectorAll('.bar button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-outfit]').forEach(b => { b.classList.toggle('on', b.dataset.outfit === OUTFIT); b.addEventListener('click', () => { if (b.dataset.outfit !== OUTFIT) location.search = b.dataset.outfit === 'bikini' ? '?c=bikini' : ''; }); });
+  if (BIKINI) { document.getElementById('lvName').textContent = '留め'; document.querySelector('.note').textContent = '押す・連打・長押し・引っぱる・肩紐と胸のリング／寄り具合：ホイール・ピンチ・L/R'; }
+  document.querySelectorAll('.bar button[data-mode], .bar button[data-zoom], .bar button[data-amp]').forEach(b => b.addEventListener('click', () => {
     const k = b.dataset.mode ? 'mode' : b.dataset.zoom ? 'zoom' : 'amp';
     if (k === 'zoom') { setZoom(+b.dataset.zoom); return; }
     opt[k] = k === 'mode' ? b.dataset.mode : +b.dataset[k];
@@ -172,6 +185,38 @@
       col = mix(col, vec3(0.06, 0.02, 0.03), ln2 * 0.7);
       return mix(col, vec3(0.11, 0.045, 0.055), ln * 0.9 * smoothstep(0.0, 1.2, h));
     }
+    // ---- 水着：外れた肩紐とリングを消し、下の肌を見せる（肌はすぐ隣の本物の肌から写す） ----
+    uniform vec4 uBk;   // x＝左の肩紐、y＝右の肩紐、z＝胸のリングが外れたか、w＝水着か
+    vec3 tex(vec2 q) { return texture2D(uTex, q / uImgF).rgb; }
+    float skinLike(vec3 c) { return smoothstep(0.56, 0.66, c.r) * smoothstep(0.06, 0.14, c.r - c.b) * smoothstep(0.36, 0.46, c.g) * (1.0 - smoothstep(0.3, 0.38, c.r - c.g)); }   // 肌らしさ（なめらか。髪・リボンとの際で縞にならない）
+    vec3 strapOff(vec3 col, vec2 p, vec2 a, vec2 b, float on) {
+      if (on < 0.5) return col;
+      vec2 ab = b - a; float t = clamp(dot(p - a, ab) / dot(ab, ab), 0.0, 1.0); vec2 cp = a + ab * t; float d = length(p - cp);
+      if (d > 6.6) return col;
+      vec2 n = normalize(vec2(-ab.y, ab.x)); float sd = dot(p - cp, n);
+      vec3 c1 = tex(cp + n * 8.0), c2 = tex(cp - n * 8.0);                   // 紐の縁のにじみより外の、本物の肌
+      float k1 = skinLike(c1), k2 = skinLike(c2), kk = k1 + k2;
+      if (kk < 0.02) return col;                                           // 両側が肌でない所（髪・リボンの際）は触らない
+      float u = clamp(sd / 16.0 + 0.5, 0.0, 1.0);
+      vec3 fill = (c1 * k1 * u + c2 * k2 * (1.0 - u)) / max(k1 * u + k2 * (1.0 - u), 0.001);
+      fill = mix(fill, (c1 * k1 + c2 * k2) / kk, step(k1 * u + k2 * (1.0 - u), 0.02));
+      fill *= mix(vec3(1.0), vec3(0.995, 0.9, 0.885), (1.0 - smoothstep(0.4, 1.8, d)) * 0.5);   // 紐の跡がうっすら赤い
+      float m = (1.0 - smoothstep(4.6, 6.6, d)) * smoothstep(4.5, 7.0, length(p - a)) * clamp(kk, 0.0, 1.0);   // カップの角の留め輪は残す
+      return mix(col, fill, m);
+    }
+    // 胸のリング：輪とつながる帯の真ん中を、上下の本物の肌でつなぐ（輪の内側も含めて一続きに。半径の向きで写すと帯や金を拾う）
+    vec3 ringOff(vec3 col, vec2 p, float on) {
+      if (on < 0.5) return col;
+      vec2 C = vec2(702.0, 655.0); float r = length(p - C), ax = abs(p.x - C.x);
+      float ringM = 1.0 - smoothstep(16.0, 18.4, r);
+      float bandM = (1.0 - smoothstep(4.8, 6.6, abs(p.y - 656.4))) * (1.0 - smoothstep(20.0, 25.0, ax));   // カップの角の短い端は残る
+      float m = max(ringM, bandM);
+      if (m < 0.001) return col;
+      float hr = sqrt(max(0.0, 19.0 * 19.0 - ax * ax));                   // この列で、輪のにじみの外になる上下の位置
+      float y0 = min(648.0, C.y - hr), y1 = max(665.0, C.y + hr);
+      float u = clamp((p.y - y0) / (y1 - y0), 0.0, 1.0); u = u * u * (3.0 - 2.0 * u);
+      return mix(col, mix(tex(vec2(p.x, y0)), tex(vec2(p.x, y1)), u), m);
+    }
     float cheek(vec2 p, vec2 c) { vec2 q = (p - c) / vec2(48.0, 28.0); return exp(-dot(q, q) * 1.3); }
     void main() {
       vec2 p = vPix;
@@ -181,6 +226,7 @@
       // 上の端の近くは引く量を控える（裂け目が布に乗る）。カップの金の縁取りが鉤のように曲がらない
       if (h > 0.0) { e = a - h; q.x = GX + sign(p.x - GX) * max(0.0, a - h * (0.35 + 0.65 * smoothstep(GY, GY + 34.0, p.y)) * exp(-max(0.0, e) / 44.0)); }
       vec3 col = texture2D(uTex, q / uImgF).rgb;
+      if (uBk.w > 0.5) { col = strapOff(col, q, vec2(581.0, 536.0), vec2(621.0, 458.0), uBk.x); col = strapOff(col, q, vec2(825.0, 536.0), vec2(786.0, 458.0), uBk.y); col = ringOff(col, q, uBk.z); }
       col = jewel(col, q); col = cover(col, q, uB0, uPop.x); col = cover(col, q, uB1, uPop.y); col = cover(col, q, uB2, uPop.z);
       col *= 1.0 + clamp(vLit, -0.25, 0.25) * 0.35;
       if (h > 0.0 && e < 16.0) col = gapShade(col, p, h, e);
@@ -270,7 +316,7 @@
   function dirLim(i, dx, dy, sy, sx) {
     const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, out = i === 0 ? -1 : 1;
     const wide = Math.max(0, (sx || 1 / Math.sqrt(sy)) - 1), lx = (ux * out > 0 ? 115 + lvNow().lx - 40 * Math.max(0, sy - 1) : 60) - 90 * wide, ly = uy > 0 ? 88 - 45 * Math.max(0, sy - 1) : 92 - 60 * wide;
-    return Math.max(lvNow().rs / Math.hypot(ux / Math.max(20, lx), uy / Math.max(20, ly)), Math.hypot(lvNow().out, lvNow().down) + 14);   // 垂れた位置より内側にはしない（余地がマイナスになると計算が暴れる）
+    return Math.max(lvNow().rs / Math.hypot(ux / Math.max(20, lx), uy / Math.max(20, ly)), Math.hypot(...restOf(i)) + 14);   // 垂れた位置より内側にはしない（余地がマイナスになると計算が暴れる）
   }
   const LIFT_T = 0.34, LIFT_A = +(globalThis.__LIFT_A || 2600);   // 下を押した時、手で持ち上げる長さ（秒）
   const K = 150, C = 6.2, KC = 55, KS = 260, CS = 9;   // 硬さ・減衰・左右のつながり・伸び縮みの硬さと減衰
@@ -311,7 +357,7 @@
   const GAP_END = [637, 712, 762, 840], GAP_RIP = 1100;   // 外れた数ごとの裂け目の下の端（絵の座標）、走る速さ（点/秒）
   const gap = { len: 637, w: 0 };
   const gapTarget = () => {
-    const n = popped.filter(Boolean).length; if (!n) return 0;
+    const n = popped.filter(Boolean).length; if (!n || BIKINI) return 0;
     const sep = (P[1].d[0] + restOf(1)[0]) - (P[0].d[0] + restOf(0)[0]);   // 左右の胸の離れ具合（外れるほど休む位置も外）
     return Math.min(24, Math.max(1.6, sep * 0.14));
   };
@@ -328,7 +374,7 @@
     gl.uniform1f(U('uSpread'), 1); gl.uniform1f(U('uBlush'), blush);
     gl.uniform1f(U('uSurp'), surpNow()); gl.uniform1f(U('uSurpF'), faceReady ? surpNow() : 0); gl.uniform4f(U('uFaceR'), ...FACE_R); gl.uniform2f(U('uE0'), ...EYES[0]); gl.uniform2f(U('uE1'), ...EYES[1]);
     gl.uniform1f(U('uR0'), CUPS[0].r); gl.uniform1f(U('uR1'), CUPS[1].r);
-    gl.uniform2f(U('uImgF'), iw, ih); gl.uniform3f(U('uPop'), +popped[0], +popped[1], +popped[2]); gl.uniform3f(U('uGap'), gap.w, gap.len, 1 / (view.s * view.dpr));
+    gl.uniform2f(U('uImgF'), iw, ih); gl.uniform3f(U('uPop'), BIKINI ? 0 : +popped[0], BIKINI ? 0 : +popped[1], BIKINI ? 0 : +popped[2]); gl.uniform4f(U('uBk'), +(BIKINI && popped[0]), +(BIKINI && popped[1]), +(BIKINI && popped[2]), +BIKINI); gl.uniform3f(U('uGap'), gap.w, gap.len, 1 / (view.s * view.dpr));
     COVERS.forEach((b, k) => gl.uniform4f(U('uB' + k), ...b));
     const r0 = restOf(0), r1 = restOf(1);
     gl.uniform2f(U('uD0'), P[0].d[0] + r0[0], P[0].d[1] + r0[1]); gl.uniform2f(U('uD1'), P[1].d[0] + r1[0], P[1].d[1] + r1[1]);
@@ -347,20 +393,73 @@
     const before = [restOf(0), restOf(1)]; popped[k] = true;
     P.forEach((p, i) => { const a = restOf(i); p.d[0] -= a[0] - before[i][0]; p.d[1] -= a[1] - before[i][1]; });
     const b = BTNS[k], side = Math.random() < 0.5 ? -1 : 1;
-    parts.push({ k, x: b.c[0], y: b.c[1], vx: side * (260 + Math.random() * 220), vy: -(700 + Math.random() * 260), rot: 0, vr: side * (9 + Math.random() * 8), t: 0, life: 1.6 });
-    for (let n = 0; n < 16; n++) { const a = Math.random() * Math.PI * 2, sp = 140 + Math.random() * 380; parts.push({ star: 1, x: b.c[0], y: b.c[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.35 + Math.random() * 0.35, sz: 3 + Math.random() * 5 }); }
-    P.forEach((p, i) => { p.v[0] += (i === 0 ? -1 : 1) * 1500; p.v[1] += 120; p.svy -= 1.2; p.lift = 0; p.lf = 0; p.bt = 0.9; });   // ぱぁんっ：留めが外れて、左右へ一回はじける
+    if (b.a) {   // 肩紐：ぷつんと外れて、首の側の端が外・上へ跳ね、たわみながら落ちて消える。支えを失った側がずしっと垂れる
+      const out = k === 0 ? -1 : 1;
+      addRope(k, out);
+      for (let n = 0; n < 6; n++) { const a = Math.random() * Math.PI * 2, sp = 90 + Math.random() * 200; parts.push({ star: 1, x: b.a[0], y: b.a[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.3 + Math.random() * 0.25, sz: 2 + Math.random() * 3 }); }
+      const p = P[k]; p.v[1] += 420; p.v[0] += out * 260; p.svy += 1.0; p.lift = 0; p.lf = 0;
+      P[1 - k].v[1] += 60;
+    } else {
+      parts.push({ k, x: b.c[0], y: b.c[1], vx: side * (260 + Math.random() * 220), vy: -(700 + Math.random() * 260), rot: 0, vr: side * (9 + Math.random() * 8), t: 0, life: 1.6 });
+      for (let n = 0; n < 16; n++) { const a = Math.random() * Math.PI * 2, sp = 140 + Math.random() * 380; parts.push({ star: 1, x: b.c[0], y: b.c[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.35 + Math.random() * 0.35, sz: 3 + Math.random() * 5 }); }
+      P.forEach((p, i) => { p.v[0] += (i === 0 ? -1 : 1) * 1500; p.v[1] += 120; p.svy -= 1.2; p.lift = 0; p.lf = 0; p.bt = 0.9; });   // ぱぁんっ：留めが外れて、左右へ一回はじける
+    }
     blush = Math.min(1, blush + 0.35);                                   // ぽっと赤くなる
     surpT = performance.now();                                           // 少し驚く
     document.getElementById('lv').textContent = popped.filter(Boolean).length + '/3';
     CUPS.forEach(c => { c.r = 132 * lvNow().rs; }); kick();
   }
+  // ---- 外れた肩紐：首の側が外れても、カップの角にはつながったまま。節が10個の細い紐として、胸と一緒に揺れ・重さでしなって垂れる ----
+  const ropes = [], RN = 10, RG = 1700;
+  // 絵の1点が網目でどこへ動くか（頂点の計算と同じ式）。外れた紐の根元を、カップの角にぴたりと付けるため
+  const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  function meshAt(x, y) {
+    let ox = 0, oy = 0;
+    for (let i = 0; i < 2; i++) {
+      const c = CUPS[i].c, r = CUPS[i].r, rs = restOf(i), d = [P[i].d[0] + rs[0], P[i].d[1] + rs[1]], s = [P[i].sx, P[i].sy];
+      const qx = x - c[0], qy = y - c[1], w = 1 - sm(0, 1, Math.hypot(qx / (r * 1.12), qy / r));
+      const t = Math.min(1, Math.max(0, (qy + r * 0.95) / (r * 1.7))); let a = 0.18 + 0.82 * t * t * (3 - 2 * t);
+      const m = Math.min(1, Math.max(0, -d[1] / r * 2.5)); a = a * (1 - m) + (0.7 + 0.3 * a) * m;
+      const k = w * (0.35 + 0.65 * a); ox += d[0] * w * a + qx * (s[0] - 1) * k; oy += d[1] * w * a + qy * (s[1] - 1) * k;
+    }
+    return [x + ox, y + oy];
+  }
+  const anchorOf = (k) => meshAt(...BTNS[k].a);
+  function addRope(k, out) {
+    const a = BTNS[k].a, b = BTNS[k].b, len = Math.hypot(b[0] - a[0], b[1] - a[1]) * 1.05, pts = [];
+    for (let n = 0; n <= RN; n++) { const t = n / RN, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t;
+      pts.push({ x, y, px: x - out * 9 * t * t, py: y + 11 * t * t }); }   // 首の側の端ほど、外・上へぴんと跳ねる勢い
+    ropes.push({ k, pts, seg: len / RN });
+  }
+  function stepRopes(dt) {
+    const h = Math.min(dt, 1 / 60) / 2;
+    for (const r of ropes) for (let s = 0; s < 2; s++) {
+      const an = anchorOf(r.k); r.pts[0].x = an[0]; r.pts[0].y = an[1]; r.pts[0].px = an[0]; r.pts[0].py = an[1];
+      for (let n = 1; n <= RN; n++) { const q = r.pts[n], vx = (q.x - q.px) * 0.988, vy = (q.y - q.py) * 0.988; q.px = q.x; q.py = q.y; q.x += vx; q.y += vy + RG * h * h; }
+      for (let it = 0; it < 8; it++) for (let n = 0; n < RN; n++) {   // 長さを保つ（伸びない紐）
+        const A = r.pts[n], B = r.pts[n + 1], dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1, f = (L - r.seg) / L;
+        if (n === 0) { B.x -= dx * f; B.y -= dy * f; } else { A.x += dx * f * 0.5; A.y += dy * f * 0.5; B.x -= dx * f * 0.5; B.y -= dy * f * 0.5; }
+      }
+    }
+  }
+  const ropesMoving = () => ropes.some(r => r.pts.some(q => Math.hypot(q.x - q.px, q.y - q.py) > 0.02));
+  function drawRopes() {
+    for (const r of ropes) {
+      const S = r.pts.map(q => [view.ox + q.x * view.s, view.oy + q.y * view.s]);
+      const path = (o) => { fc.beginPath(); fc.moveTo(S[0][0] + o, S[0][1] + o); for (let n = 1; n < RN; n++) { const mx = (S[n][0] + S[n + 1][0]) / 2, my = (S[n][1] + S[n + 1][1]) / 2; fc.quadraticCurveTo(S[n][0] + o, S[n][1] + o, mx + o, my + o); } fc.lineTo(S[RN][0] + o, S[RN][1] + o); };
+      fc.lineCap = 'round'; fc.lineJoin = 'round';
+      fc.strokeStyle = 'rgba(60,20,20,.22)'; fc.lineWidth = 3.4 * view.s; path(1.6 * view.s); fc.stroke();   // 肌に落ちるうっすらした影
+      fc.strokeStyle = '#1b1113'; fc.lineWidth = 2.7 * view.s; path(0); fc.stroke();
+      fc.strokeStyle = 'rgba(150,95,105,.5)'; fc.lineWidth = 0.8 * view.s; path(-0.5 * view.s); fc.stroke();   // 生地のつや
+    }
+  }
   function stepParts(dt) {
+    stepRopes(dt);
     for (let n = parts.length - 1; n >= 0; n--) { const q = parts[n]; q.t += dt; if (q.t > q.life) { parts.splice(n, 1); continue; }
       q.x += q.vx * dt; q.y += q.vy * dt; if (q.star) { q.vx *= 0.9; q.vy = q.vy * 0.9 + 300 * dt; } else { q.vy += 2400 * dt; q.rot += q.vr * dt; } }
   }
   function drawParts() {
-    fc.setTransform(view.dpr, 0, 0, view.dpr, 0, 0); fc.clearRect(0, 0, view.w, view.h);
+    fc.setTransform(view.dpr, 0, 0, view.dpr, 0, 0); fc.clearRect(0, 0, view.w, view.h); drawRopes();
     for (const q of parts) {
       const x = view.ox + q.x * view.s, y = view.oy + q.y * view.s, a = 1 - Math.max(0, (q.t - q.life * 0.7) / (q.life * 0.3));
       fc.globalAlpha = a;
@@ -368,12 +467,15 @@
         fc.moveTo(x, y - r); fc.lineTo(x + r * 0.28, y); fc.lineTo(x, y + r); fc.lineTo(x - r * 0.28, y); fc.closePath(); fc.fill();
         fc.beginPath(); fc.moveTo(x - r, y); fc.lineTo(x, y + r * 0.28); fc.lineTo(x + r, y); fc.lineTo(x, y - r * 0.28); fc.closePath(); fc.fill(); }
       else { const b = BTNS[q.k], sc = view.s * (1 + q.t * 0.35); fc.save(); fc.translate(x, y); fc.rotate(q.rot);
-        fc.beginPath(); fc.moveTo(0, -b.h / 2 * sc); fc.lineTo(b.w / 2 * sc, 0); fc.lineTo(0, b.h / 2 * sc); fc.lineTo(-b.w / 2 * sc, 0); fc.closePath(); fc.clip();   // ひし形に切り抜く
+        fc.beginPath();
+        if (b.ring) fc.arc(0, 0, b.w / 2 * sc, 0, Math.PI * 2);   // リングは丸く切り抜く
+        else { fc.moveTo(0, -b.h / 2 * sc); fc.lineTo(b.w / 2 * sc, 0); fc.lineTo(0, b.h / 2 * sc); fc.lineTo(-b.w / 2 * sc, 0); fc.closePath(); }   // ひし形に切り抜く
+        fc.clip();
         fc.drawImage(img, b.c[0] - b.w / 2, b.c[1] - b.h / 2, b.w, b.h, -b.w / 2 * sc, -b.h / 2 * sc, b.w * sc, b.h * sc); fc.restore(); }
     }
     fc.globalAlpha = 1;
   }
-  document.getElementById('btnReset').addEventListener('click', () => { popped.fill(false); document.getElementById('lv').textContent = '0/3'; CUPS.forEach(c => { c.r = 132; }); resetPhys(); gap.len = GAP_END[0]; gap.w = 0; kick(); });
+  document.getElementById('btnReset').addEventListener('click', () => { popped.fill(false); ropes.length = 0; document.getElementById('lv').textContent = '0/3'; CUPS.forEach(c => { c.r = 132; }); resetPhys(); gap.len = GAP_END[0]; gap.w = 0; kick(); });
   // 動いている間だけ回す。止まったら描き直しも止める（スマホが熱くならないように）
   let raf = 0, last = 0;
   function loop(t) {
@@ -381,7 +483,7 @@
     for (let n = 0; n < 4; n++) step(dt / 4);
     stepGap(dt); stepParts(dt); draw(); drawParts();
     const h = heatNow(); stepBlush(dt, h);
-    if (energy() < 0.06 && !P.some(p => p.grab) && h < 0.04 && blush < 0.01 && !parts.length && surpNow() < 0.005 && gapSettled()) { resetPhys(); gap.w = gapTarget(); blush = 0; draw(); drawParts(); raf = 0; last = 0; return; }
+    if (energy() < 0.06 && !P.some(p => p.grab) && h < 0.04 && blush < 0.01 && !parts.length && !ropesMoving() && surpNow() < 0.005 && gapSettled()) { resetPhys(); gap.w = gapTarget(); blush = 0; draw(); drawParts(); raf = 0; last = 0; return; }
     raf = requestAnimationFrame(loop);
   }
   function kick() { if (!raf) { last = 0; raf = requestAnimationFrame(loop); } }
@@ -449,7 +551,7 @@
     noteEl.classList.add('off');   // 一番下のボタンに重ならないよう、触ったら操作の説明は消す
     if (pinch) return;
     const [ix, iy] = toImg(e.clientX, e.clientY);
-    const bk = BTNS.findIndex((b, k) => !popped[k] && Math.abs(ix - b.c[0]) < Math.max(26, b.w * 0.7) && Math.abs(iy - b.c[1]) < Math.max(24, b.h * 0.65));
+    const bk = BTNS.findIndex((b, k) => !popped[k] && hitPart(b, ix, iy));
     if (bk >= 0) { popButton(bk); return; }
     const i = hit(ix, iy); if (i < 0) return;
     try { stageEl.setPointerCapture(e.pointerId); } catch (_) {}
