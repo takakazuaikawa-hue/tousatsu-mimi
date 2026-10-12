@@ -20,32 +20,47 @@
   .bar button { min-height: 44px; min-width: 44px; padding: 0 14px; border: 1px solid rgba(243,236,224,.28); border-radius: 2px;
     background: rgba(12,9,10,.72); color: var(--ivory); font: 700 14px/1 inherit; font-family: inherit; cursor: pointer; }
   .bar button.on { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1a1206; border-color: var(--gold-hi); }
+  #fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .grp b { font-size: 16px; color: var(--gold-hi); min-width: 2.4em; text-align: center; }
   .note { position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 5; font-size: 13px; color: var(--muted);
-    background: rgba(8,4,6,.6); padding: 6px 14px; border-radius: 2px; white-space: nowrap; pointer-events: none; }
+    background: rgba(8,4,6,.6); padding: 6px 14px; border-radius: 2px; white-space: nowrap; pointer-events: none; transition: opacity .4s; }
+  .note.off { opacity: 0; }
   .err { position: fixed; inset: 0; display: none; place-items: center; z-index: 9; font-size: 15px; padding: 24px; text-align: center; }
 </style>
 </head>
 <body>
-<div id="stage"><canvas id="gl"></canvas></div>
+<div id="stage"><canvas id="gl"></canvas><canvas id="fx"></canvas></div>
 <div class="bar">
   <div class="grp"><span>動き</span><button data-mode="mesh" class="on">網目＋ばね（新）</button><button data-mode="disc">今に近い動き</button></div>
   <div class="grp"><span>構図</span><button data-zoom="1">今</button><button data-zoom="1.28" class="on">寄り</button><button data-zoom="1.5">もっと寄り</button></div>
-  <div class="grp"><span>揺れ</span><button data-amp="1.1">控えめ</button><button data-amp="1.5" class="on">標準</button><button data-amp="1.95">大きめ</button></div>
+  <div class="grp"><span>揺れ</span><button data-amp="1.1">控えめ</button><button data-amp="1.5">標準</button><button data-amp="1.95" class="on">大きめ</button></div>
+  <div class="grp"><span>ボタン</span><b id="lv">0/3</b><button id="btnReset">戻す</button></div>
 </div>
-<div class="note">押す・長押し・引っぱる／寄り具合：ホイール・ピンチ・L/R</div>
+<div class="note">押す・連打・長押し・引っぱる・お腹のボタン／寄り具合：ホイール・ピンチ・L/R</div>
 <div class="err" id="err">この端末では試作を表示できませんでした（WebGL が使えません）</div>
 <script>
 (() => {
   // 絵：本編のぱにゅぱにゅと同じ 1400x788。胸のふくらみの中心（本編の座標と同じ）
   const IMG = '../../assets/characters/panyu_reach.webp';
   const CUPS = [{ c: [607, 600], r: 132 }, { c: [795, 600], r: 132 }];
+  const CHEEK = [[636, 324], [764, 324]];
+  const EYES = [[640, 281], [762, 281]];   // 目の中心（驚いた時に少し開く）
+  // お腹のボタン（金のひし形・上から大中小）。外れるごとに揺れのレベルが上がる
+  const BTNS = [{ c: [700, 663], w: 54, h: 54 }, { c: [700, 725], w: 30, h: 36 }, { c: [700, 775], w: 26, h: 30 }];
+  const COVERS = [[700, 677, 27, 29], [700, 725, 16, 19], [700, 775, 14, 16]];   // 1つ目は飾り石の下（両脇の小さいひし形・大きいひし形・下の玉）   // 外れた金具を隠す範囲（中心・半分の幅・半分の高さ。飾りまで含めて測った）
+  // out/down＝止まる位置が外・下へずれる量、kx＝横のばねの硬さ、lx＝外へ揺れられる幅の上乗せ
+  const LV = [{ push: 1, damp: 1, rs: 1, out: 0, down: 0, sag: 1, kx: 1, lx: 0 }, { push: 1.2, damp: 0.86, rs: 1.04, out: 14, down: 10, sag: 1.04, kx: 0.82, lx: 4 },
+    { push: 1.4, damp: 0.74, rs: 1.08, out: 28, down: 20, sag: 1.08, kx: 0.66, lx: 8 }, { push: 1.65, damp: 0.62, rs: 1.12, out: 66, down: 31, sag: 1.12, kx: 0.5, lx: 12 }];
+  const popped = [false, false, false];
+  const lvNow = () => LV[popped.filter(Boolean).length];
+  const restOf = (i) => { const l = lvNow(); return [(i === 0 ? -1 : 1) * l.out, l.down]; };   // 頬（赤らむ所）
   const FOCUS = [701, 548];          // 寄せる時の注目点（胸の少し上）
   const cv = document.getElementById('gl');
   const gl = cv.getContext('webgl', { antialias: true, alpha: false, premultipliedAlpha: false });
   if (!gl) { document.getElementById('err').style.display = 'grid'; return; }
 
   // ---- 設定（ボタンで切り替え） ----
-  const opt = { mode: 'mesh', zoom: 1.28, amp: 1.5 };
+  const opt = { mode: 'mesh', zoom: 1.28, amp: 1.95 };
   document.querySelectorAll('.bar button').forEach(b => b.addEventListener('click', () => {
     const k = b.dataset.mode ? 'mode' : b.dataset.zoom ? 'zoom' : 'amp';
     if (k === 'zoom') { setZoom(+b.dataset.zoom); return; }
@@ -58,17 +73,19 @@
   const VS = `
     attribute vec2 aP;
     uniform vec2 uImg, uOff, uView; uniform float uScale, uDisc;
-    uniform vec2 uC0, uC1, uD0, uD1, uS0, uS1; uniform float uR0, uR1;
-    varying vec2 vUV; varying float vLit;
+    uniform vec2 uC0, uC1, uD0, uD1, uS0, uS1; uniform float uR0, uR1, uSpread, uSurp;
+    uniform vec2 uE0, uE1;
+    varying vec2 vUV, vPix; varying float vLit;
     vec3 cup(vec2 p, vec2 c, float r, vec2 d, vec2 s) {
       vec2 q = p - c;
-      float rr = length(q / vec2(r * 1.12, r));
+      float rr = length(q / (vec2(r * 1.12, r) * uSpread));
       float w, a;
       if (uDisc > 0.5) { w = 1.0 - smoothstep(0.78, 1.0, rr); a = 1.0; }      // 今に近い：丸い板が丸ごと動く
       else {
-        w = 1.0 - smoothstep(0.30, 1.05, rr);                                  // 中心ほど大きく、ふちは体に溶ける
-        float t = clamp((q.y + r * 0.95) / (r * 1.7), 0.0, 1.0);               // 上（付け根）は固定、下ほど自由
+        w = 1.0 - smoothstep(0.0, 1.0, rr);                                   // 中心ほど大きく、ふちへなだらかに体に溶ける（胸の外は動かさない）
+        float t = clamp((q.y + r * 0.95 * uSpread) / (r * 1.7 * uSpread), 0.0, 1.0);               // 上（付け根）は固定、下ほど自由
         a = 0.18 + 0.82 * t * t * (3.0 - 2.0 * t);
+        a = mix(a, 0.7 + 0.3 * a, clamp(-d.y / r * 2.5, 0.0, 1.0));            // 持ち上がる時は、胸全体が上がる
       }
       vec2 o = d * w * a + q * (s - 1.0) * w * (uDisc > 0.5 ? 1.0 : (0.35 + 0.65 * a));
       // つや：前へ出る向き（下へ沈む・横へ寄る）に合わせて、ほんの少し明るさを変える
@@ -78,23 +95,116 @@
     void main() {
       vec3 a = cup(aP, uC0, uR0, uD0, uS0), b = cup(aP, uC1, uR1, uD1, uS1);
       vec2 p = aP + a.xy + b.xy;
+      // 驚き：頭がわずかにのけぞる（表情は描き起こした驚き顔に切り替える）
+      if (uSurp > 0.001) {
+        float head = 1.0 - smoothstep(330.0, 400.0, aP.y); head *= 1.0 - smoothstep(170.0, 260.0, abs(aP.x - 701.0));
+        p.y -= 4.0 * uSurp * head;
+      }
       vec2 s = uOff + p * uScale;
       gl_Position = vec4(s.x / uView.x * 2.0 - 1.0, 1.0 - s.y / uView.y * 2.0, 0.0, 1.0);
-      vUV = aP / uImg; vLit = a.z + b.z;
+      vUV = aP / uImg; vPix = aP; vLit = a.z + b.z;
     }`;
   const FS = `
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+    #else
     precision mediump float;
-    uniform sampler2D uTex; varying vec2 vUV; varying float vLit;
-    void main() { vec4 c = texture2D(uTex, vUV); gl_FragColor = vec4(c.rgb * (1.0 + clamp(vLit, -0.25, 0.25) * 0.35), 1.0); }`;
+    #endif
+    uniform sampler2D uTex, uFace; uniform float uBlush, uSurpF; uniform vec4 uFaceR; uniform vec2 uImgF; uniform vec4 uB0, uB1, uB2; uniform vec3 uPop; varying vec2 vUV, vPix; varying float vLit;
+    // ボタンが外れた所：コルセットの左右の布そのものが外へ引かれて開く（模様も縁取りも本物のまま分かれる）。すき間の奥は影
+    uniform vec3 uGap;   // x＝上の端での半分の幅、y＝裂け目の下の端、z＝画面1点が絵の何点か（ふちのなめらかさ）
+    const float GX = 700.0, GY = 638.0;   // 裂け目は谷間の先から始まる（飾り石の頂点のすぐ上）
+    float gapHalf(float y) {
+      if (uGap.x < 0.05 || y < GY || y > uGap.y) return 0.0;
+      float t = (y - GY) / (uGap.y - GY);
+      // 谷間の先からとがって始まり、飾り石の幅をすぐ覆い、胸の下で一番広く、下へ細るV字
+      return (9.0 + 0.6 * uGap.x) * smoothstep(0.0, 1.0, uGap.x) * pow(1.0 - t, 0.85) * pow(clamp((y - GY) / 24.0, 0.0, 1.0), 0.85);
+    }
+    // 胸の合わせ目の赤い飾り石（1つ目と一緒に外れる）：石の外の黒い布で埋める。金の縁取りは拾わない範囲で写す
+    vec3 jewel(vec3 col, vec2 q) {
+      if (uPop.x < 0.5 || q.y < 637.0 || q.y > 656.0) return col;
+      float a = abs(q.x - GX), jw = 1.5 + 9.5 * clamp((q.y - 639.0) / 9.0, 0.0, 1.0);   // 石の半分の幅（とがった頂点から広がる）
+      if (a > jw + 1.0) return col;
+      float tin = 11.0 + (654.0 - q.y) * 0.59;                                          // 金の縁取りの内側のふち
+      float s = clamp((tin - 1.0 - jw) / jw, 0.0, 1.0);
+      vec3 fab = texture2D(uTex, vec2(GX + sign(q.x - GX + 0.001) * (jw + (jw - a) * s), q.y) / uImgF).rgb;
+      return mix(col, fab, 1.0 - smoothstep(jw, jw + 1.0, a));
+    }
+    // 外れた金具の跡：金具の形（ひし形＋飾り）に合わせた範囲を、すぐ外の布の鏡写しで埋める（b＝中心と半分の幅・高さ）
+    vec3 cover(vec3 col, vec2 p, vec4 b, float on) {
+      if (on < 0.5) return col;
+      vec2 q = abs(p - b.xy) / b.zw; float d = pow(pow(q.x, 3.0) + pow(q.y, 3.0), 1.0 / 3.0);   // 角の丸い四角（飾りまで確実に隠す）
+      float m = 1.0 - smoothstep(0.85, 1.05, d);
+      if (m <= 0.0) return col;
+      float ex = b.z * max(0.6, pow(max(0.0, 1.1 - pow(q.y, 3.0)), 1.0 / 3.0));   // この段での金具の端
+      float sx = sign(p.x - b.x + 0.001);
+      vec2 mp = vec2(b.x + sx * (2.0 * ex - abs(p.x - b.x)), p.y);   // 金具の端で折り返して、すぐ隣の布を鏡写し（質感がつながる）
+      return mix(col, texture2D(uTex, mp / uImgF).rgb, m);
+    }
+    // 開いた布の見た目：e＝布の切り口からの距離（＋は布の上、−はすき間の中）
+    vec3 gapShade(vec3 col, vec2 p, float h, float e) {
+      float aa = max(0.6, uGap.z);
+      // 布：切り口へ向かって少し奥へ回り込み（暗く）、いちばん端は厚みのつやが立つ
+      col *= 1.0 - 0.22 * smoothstep(1.2, 3.5, e) * (1.0 - smoothstep(3.5, 13.0, e));
+      col += vec3(0.04, 0.03, 0.04) * smoothstep(0.4, 1.0, e) * (1.0 - smoothstep(1.6, 2.8, e));
+      // すき間の肌：元の絵と同じアニメ塗り（明るい面と影の2段をくっきり、影の境目にほんのり赤み）。色は絵から測った値
+      float lw = clamp(h * 0.12, 0.0, 1.8);                        // 切り口が外へめくれて、裏地（深紅）が細くのぞく幅＝布の厚み
+      float u = -e - 0.9 - lw;                                      // 肌の上での、布の縁からの距離
+      bool left = p.x < GX;
+      float sw = left ? 1.3 + 0.3 * h : 0.8 + 0.12 * h;             // 光は左から：左の縁は肌に広く影を落とし、右の縁は細く
+      float yb = GY + 15.0 + 0.3 * h;                               // 胸のすぐ下は胸の影の中
+      // 元の絵の肌はなめらかなぼかしとつやの丸みで塗られている：影はやわらかく、お腹は真ん中ほど前へ出て明るい
+      float sd = max(0.9 * (1.0 - smoothstep(0.0, sw * 1.8, u)), 0.85 * (1.0 - smoothstep(yb - 9.0, yb + 7.0, p.y)));
+      float c = clamp(1.0 - pow(abs(p.x - GX) / max(h, 1.0), 2.0), 0.0, 1.0);   // お腹の丸み（真ん中が前）
+      vec3 lit = vec3(0.975, 0.835, 0.76), shd = vec3(0.9, 0.6, 0.52), ao = vec3(0.6, 0.31, 0.26);
+      vec3 inside = mix(lit * mix(0.95, 1.01, c), shd, sd);
+      inside += vec3(0.035, -0.02, -0.03) * sd * (1.0 - sd) * 4.0;           // 影の境目はほんのり赤みが差す
+      inside = mix(inside, ao, 1.0 - smoothstep(0.0, 1.0 + aa * 0.5, u));   // 布が肌に触れる所はいちばん暗い
+      float topW = 1.0 - smoothstep(GY, GY + 8.0, p.y);
+      inside = mix(inside, vec3(0.89, 0.56, 0.46), topW);            // 谷間の先から続く
+      float lu = clamp((-e - 0.9) / max(lw, 0.01), 0.0, 1.0);      // 裏地の上の位置（0＝切り口、1＝奥へ回り込む所）
+      vec3 lining = mix(vec3(0.46, 0.08, 0.1), vec3(0.24, 0.035, 0.055), lu) * (left ? 1.08 : 0.9);   // 光の来る左側の裏地は少し明るい
+      vec3 deep = mix(inside, lining, (1.0 - smoothstep(lw - aa * 0.5, lw + aa * 0.5, -e - 0.9)) * (1.0 - topW));
+      col = mix(col, deep, 1.0 - smoothstep(-0.9 - aa * 0.5, -0.9 + aa * 0.5, e));
+      // 絵と同じ濃い線画で、切り口をくっきり（裏地の奥側にも細い影の線）
+      float ln = 1.0 - smoothstep(0.55, 0.55 + aa, abs(e + 0.25));
+      float ln2 = (1.0 - smoothstep(0.35, 0.35 + aa, abs(-e - 0.9 - lw))) * smoothstep(0.8, 2.0, lw);
+      col = mix(col, vec3(0.06, 0.02, 0.03), ln2 * 0.7);
+      return mix(col, vec3(0.11, 0.045, 0.055), ln * 0.9 * smoothstep(0.0, 1.2, h));
+    }
+    float cheek(vec2 p, vec2 c) { vec2 q = (p - c) / vec2(48.0, 28.0); return exp(-dot(q, q) * 1.3); }
+    void main() {
+      vec2 p = vPix;
+      // 開いた分だけ、左右の布を外へ引く（切り口から離れるほど引かれ方は弱まり、布が伸びる）
+      float h = gapHalf(p.y), a = abs(p.x - GX), e = 99.0;
+      vec2 q = p;
+      // 上の端の近くは引く量を控える（裂け目が布に乗る）。カップの金の縁取りが鉤のように曲がらない
+      if (h > 0.0) { e = a - h; q.x = GX + sign(p.x - GX) * max(0.0, a - h * (0.35 + 0.65 * smoothstep(GY, GY + 34.0, p.y)) * exp(-max(0.0, e) / 44.0)); }
+      vec3 col = texture2D(uTex, q / uImgF).rgb;
+      col = jewel(col, q); col = cover(col, q, uB0, uPop.x); col = cover(col, q, uB1, uPop.y); col = cover(col, q, uB2, uPop.z);
+      col *= 1.0 + clamp(vLit, -0.25, 0.25) * 0.35;
+      if (h > 0.0 && e < 16.0) col = gapShade(col, p, h, e);
+      if (uSurpF > 0.001) {   // 驚き顔：顔の部分だけ、ふちをぼかして重ねる
+        vec2 fu = (p - uFaceR.xy) / uFaceR.zw;
+        vec2 fq = (p - vec2(701.0, 315.0)) / vec2(118.0, 92.0); float fm = 1.0 - smoothstep(0.72, 1.0, length(fq));
+        if (fm > 0.0 && fu.x > 0.0 && fu.y > 0.0 && fu.x < 1.0 && fu.y < 1.0) col = mix(col, texture2D(uFace, fu).rgb * (1.0 + clamp(vLit, -0.25, 0.25) * 0.35), fm * uSurpF);
+      }
+      float bl = sqrt(uBlush);
+      float b = bl * (cheek(p, vec2(CHEEK_L)) + cheek(p, vec2(CHEEK_R)));
+      vec2 fq = (p - vec2(699.0, 322.0)) / vec2(120.0, 56.0); float face = bl * exp(-dot(fq, fq) * 1.4);
+      col = mix(col, col * vec3(1.0, 0.72, 0.74) + vec3(0.06, 0.0, 0.01), clamp(face, 0.0, 1.0) * 0.38);   // 顔全体がほんのり
+      col = mix(col, col * vec3(1.0, 0.45, 0.5) + vec3(0.2, 0.01, 0.05), clamp(b, 0.0, 1.0) * 0.74);     // 頬はしっかり
+      gl_FragColor = vec4(col, 1.0);
+    }`;
   const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o; };
-  const prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); gl.useProgram(prog);
+  const prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS.replace('CHEEK_L', CHEEK[0].join('.0,') + '.0').replace('CHEEK_R', CHEEK[1].join('.0,') + '.0'))); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw gl.getProgramInfoLog(prog); gl.useProgram(prog);
   const U = n => gl.getUniformLocation(prog, n);
 
   // 網目：全体は粗く、胸のまわりだけ細かく（三角形の数を抑えて、スマホで軽く）
   const iw = 1400, ih = 788;
   const xs = [], ys = [];
   for (let x = 0; x <= iw; x += (x > 430 && x < 980 ? 8 : 40)) xs.push(Math.min(x, iw)); if (xs[xs.length - 1] !== iw) xs.push(iw);
-  for (let y = 0; y <= ih; y += (y > 420 && y < 788 ? 8 : 40)) ys.push(Math.min(y, ih)); if (ys[ys.length - 1] !== ih) ys.push(ih);
+  for (let y = 0; y <= ih; y += ((y > 420 && y < 788) || (y >= 200 && y < 372) ? 8 : 40)) ys.push(Math.min(y, ih)); if (ys[ys.length - 1] !== ih) ys.push(ih);
   const verts = [], idx = [];
   ys.forEach(y => xs.forEach(x => verts.push(x, y)));
   const W = xs.length;
@@ -116,13 +226,23 @@
     layout(); kick();
   };
   img.src = IMG;
+  // 驚き顔（ChatGPT で同じ絵の表情だけ変えたものを、元の絵に位置合わせして顔だけ切り出した）
+  const FACE_R = [560, 170, 290, 250];
+  const ftex = gl.createTexture(), fimg = new Image();
+  fimg.onload = () => { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, ftex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, fimg);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.activeTexture(gl.TEXTURE0); gl.uniform1i(U('uFace'), 1); gl.uniform1i(U('uTex'), 0); faceReady = true; };
+  let faceReady = false;
+  fimg.src = '../../assets/characters/panyu_surprise_face.webp';
 
   // ---- 画面への置き方（cover。寄せる時は注目点を画面の 56% の高さに） ----
   let view = { w: 1, h: 1, dpr: 1, s: 1, ox: 0, oy: 0 };
   function layout() {
+    CUPS.forEach(c => { c.r = 132 * lvNow().rs; });
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const w = innerWidth, h = innerHeight;
-    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); fx.width = cv.width; fx.height = cv.height;
     const s = Math.max(w / iw, h / ih) * opt.zoom;
     let ox = w / 2 - FOCUS[0] * s, oy = h * 0.56 - FOCUS[1] * s;
     ox = Math.min(0, Math.max(w - iw * s, ox)); oy = Math.min(0, Math.max(h - ih * s, oy));   // 絵の外を見せない
@@ -135,47 +255,133 @@
   addEventListener('resize', () => { layout(); });
 
   // ---- ばね（左右それぞれ：ずれ d と、縦横の伸び縮み s） ----
-  const P = CUPS.map(() => ({ d: [0, 0], v: [0, 0], sy: 1, svy: 0, sx: 1, grab: null }));
-  function resetPhys() { P.forEach(p => { p.d = [0, 0]; p.v = [0, 0]; p.sy = 1; p.svy = 0; p.sx = 1; p.grab = null; }); }
+  // ---- 連打の熱：押すたびにたまり、手を止めると冷める。熱いほど大きく・長く揺れる ----
+  const HEAT_ADD = 0.3, HEAT_TAU = 2.2, HEAT_GAIN = 1.0, HEAT_PUSH = 0.35;   // GAIN＝揺れの幅の上限、PUSH＝押す力
+  let heat = 0, heatT = 0;
+  const heatNow = () => heat * Math.exp(-(performance.now() - heatT) / 1000 / HEAT_TAU);
+  const addHeat = () => { const h = heatNow(); heat = h + HEAT_ADD * (1 - h); heatT = performance.now(); };
+  // 頬の赤み：熱を追って、じわっと赤くなり、ゆっくり引く
+  let blush = 0;
+  const stepBlush = (dt, h) => { const k = h > blush ? 1.4 : 0.35; blush += (h - blush) * Math.min(1, k * dt); };
+  const P = CUPS.map(() => ({ d: [0, 0], v: [0, 0], sy: 1, svy: 0, sx: 1, grab: null, lift: 0, lf: 0, lfA: 0, bt: 0 }));
+  window.__panyuDbg = { P, heatNow: () => heatNow(), blush: (v) => { if (v != null) { blush = v; draw(); } return blush; } };   // 検査用
+  function resetPhys() { P.forEach(p => { p.d = [0, 0]; p.v = [0, 0]; p.sy = lvNow().sag; p.svy = 0; p.sx = Math.pow(lvNow().sag, -0.5); p.grab = null; p.lift = 0; p.lf = 0; p.lfA = 0; p.bt = 0; }); }
+  // 向きごとの揺れの上限：これ以上ずらすと網目が折れる（下へ約90・上へ約100・外へ約130・内へ約70。縦に伸びている時は下を控える）
+  function dirLim(i, dx, dy, sy, sx) {
+    const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, out = i === 0 ? -1 : 1;
+    const wide = Math.max(0, (sx || 1 / Math.sqrt(sy)) - 1), lx = (ux * out > 0 ? 115 + lvNow().lx - 40 * Math.max(0, sy - 1) : 60) - 90 * wide, ly = uy > 0 ? 88 - 45 * Math.max(0, sy - 1) : 92 - 60 * wide;
+    return Math.max(lvNow().rs / Math.hypot(ux / Math.max(20, lx), uy / Math.max(20, ly)), Math.hypot(lvNow().out, lvNow().down) + 14);   // 垂れた位置より内側にはしない（余地がマイナスになると計算が暴れる）
+  }
+  const LIFT_T = 0.34, LIFT_A = +(globalThis.__LIFT_A || 2600);   // 下を押した時、手で持ち上げる長さ（秒）
   const K = 150, C = 6.2, KC = 55, KS = 260, CS = 9;   // 硬さ・減衰・左右のつながり・伸び縮みの硬さと減衰
   function step(dt) {
-    const amp = opt.amp, disc = opt.mode === 'disc';
+    const h = heatNow(), amp = opt.amp * (1 + HEAT_GAIN * h), disc = opt.mode === 'disc', Cd = C * (1 - 0.5 * h) * lvNow().damp;
     for (let i = 0; i < 2; i++) {
       const p = P[i], o = P[1 - i], r = CUPS[i].r;
       let fx, fy;
       if (p.grab) {                                       // つかんでいる間：指へ引っぱられる（離れすぎない）
-        const lim = r * Math.min(0.55, 0.32 * amp);
+        const lim = r * Math.min(0.55 + 0.15 * h, 0.32 * amp);
         let tx = p.grab.dx * 0.6, ty = p.grab.dy * 0.6; const L = Math.hypot(tx, ty); if (L > lim) { tx *= lim / L; ty *= lim / L; }
         fx = (tx - p.d[0]) * 420; fy = (ty - p.d[1]) * 420;
         fx -= p.v[0] * 18; fy -= p.v[1] * 18;
       } else {
-        fx = -K * p.d[0] - C * p.v[0]; fy = -K * p.d[1] - C * p.v[1];
-        if (!disc) { fx += KC * (o.d[0] * 0.55 - p.d[0] * 0.15); fy += KC * (o.d[1] * 0.8 - p.d[1] * 0.2); }   // もう片方の重さにつられる
+        const Ke = K * (1 - 0.3 * h) * (1 - 0.93 * p.lift), Cl = Cd * (1 - 0.85 * p.lift);   // 持ち上がっている間は、ゆっくり・ふわっと
+        fx = -Ke * lvNow().kx * p.d[0] - Cl * p.v[0]; fy = -Ke * p.d[1] - Cl * p.v[1];
+        if (p.bt > 0) { p.bt -= dt; if (p.bt < 0.76) fx -= 18 * p.v[0] * (p.bt / 0.76); }   // はじけた後は、横の揺れをすっと収める（一回だけ）
+        if (p.lf > 0) { fy -= p.lfA * Math.sin(Math.PI * (1 - p.lf / LIFT_T)); p.lf -= dt; }   // 下から手でじわっと持ち上げる
+        const rs = restOf(i), tx = p.d[0] + rs[0], ty = p.d[1] + rs[1], Ts = Math.hypot(tx, ty), Ls = Math.hypot(p.d[0], p.d[1]);
+        const ls = Math.max(6, Math.min(r * Math.min(0.56 + 0.2 * h, 0.36 * amp) * (1 + 0.15 * p.lift), 0.82 * dirLim(i, tx, ty, p.sy, p.sx) - Math.hypot(rs[0], rs[1])));   // 余地は0にしない
+        if (Ls > ls) { const k = 420 * (Ls - ls) / Ls; fx -= k * p.d[0]; fy -= k * p.d[1]; }
+        if (!disc) { const kc = KC * (1 - 0.7 * p.lift); fx += kc * (o.d[0] * 0.55 - p.d[0] * 0.15); fy += kc * (o.d[1] * 0.8 - p.d[1] * 0.2); }   // もう片方の重さにつられる
       }
       p.v[0] += fx * dt; p.v[1] += fy * dt; p.d[0] += p.v[0] * dt; p.d[1] += p.v[1] * dt;
       // 縦の伸び縮み：下へ沈む勢いで縦に縮み、横は体積を保つように広がる
-      const fs = -KS * (p.sy - 1) - CS * p.svy + (disc ? 0 : -p.v[1] * 0.012);
-      p.svy += fs * dt; p.sy += p.svy * dt; const sq = 0.16 * Math.min(1.6, amp); p.sy = Math.min(1 + sq * 0.9, Math.max(1 - sq, p.sy));
-      p.sx = disc ? p.sy : 1 / Math.sqrt(p.sy);
-      const lim = r * Math.min(0.62, 0.36 * amp), L = Math.hypot(p.d[0], p.d[1]); if (L > lim) { p.d[0] *= lim / L; p.d[1] *= lim / L; }
+      const fs = -KS * (p.sy - lvNow().sag) - CS * p.svy + (disc ? 0 : (p.v[1] > 0 ? p.v[1] * (p.lift * 0.3 - (1 - p.lift) * 0.012) : p.v[1] * (p.lift * 0.08 - (1 - p.lift) * 0.012)));
+      p.lift = Math.max(0, p.lift - dt * 0.6);
+      p.svy += fs * dt; p.sy += p.svy * dt; const sq = Math.min(0.3, 0.16 * Math.min(2.2, amp) * (1 + 0.8 * h)); if (p.sy > 1 + sq * 0.9 || p.sy < 1 - sq) p.svy *= 0.9; p.sy = Math.min(1 + sq * 1.3, Math.max(1 - sq * 1.15, p.sy));
+      p.sx = disc ? p.sy : Math.pow(p.sy, -(0.5 + 0.25 * p.lift)) * (1 + Math.max(0, -p.d[1]) / r * 0.25);
+      const rs2 = restOf(i), Tx = p.d[0] + rs2[0], Ty = p.d[1] + rs2[1], lim = dirLim(i, Tx, Ty, p.sy, p.sx), L = Math.hypot(Tx, Ty); if (L > lim) {   // 上限に当たったら、外向きの勢いを跳ね返す（張り付かない）
+        p.d[0] = Tx * lim / L - rs2[0]; p.d[1] = Ty * lim / L - rs2[1];
+        const ux = Tx / L, uy = Ty / L, vr = p.v[0] * ux + p.v[1] * uy;
+        if (vr > 0) { p.v[0] -= 1.4 * vr * ux; p.v[1] -= 1.4 * vr * uy; }
+      }
     }
   }
-  function energy() { return P.reduce((e, p) => e + Math.abs(p.d[0]) + Math.abs(p.d[1]) + Math.abs(p.v[0]) * .05 + Math.abs(p.v[1]) * .05 + Math.abs(p.sy - 1) * 40 + Math.abs(p.svy) * 2 + (p.grab ? 9 : 0), 0); }
+  // ---- お腹の開き：外れた所まで裂け目が上から一気に走り、幅は左右の胸の離れ具合に少し遅れて付いてくる ----
+  const GAP_END = [637, 712, 762, 840], GAP_RIP = 1100;   // 外れた数ごとの裂け目の下の端（絵の座標）、走る速さ（点/秒）
+  const gap = { len: 637, w: 0 };
+  const gapTarget = () => {
+    const n = popped.filter(Boolean).length; if (!n) return 0;
+    const sep = (P[1].d[0] + restOf(1)[0]) - (P[0].d[0] + restOf(0)[0]);   // 左右の胸の離れ具合（外れるほど休む位置も外）
+    return Math.min(24, Math.max(1.6, sep * 0.14));
+  };
+  function stepGap(dt) {
+    const end = GAP_END[popped.filter(Boolean).length];
+    gap.len = gap.len < end ? Math.min(end, gap.len + GAP_RIP * dt) : end;
+    gap.w += (gapTarget() - gap.w) * Math.min(1, dt * 26);   // 布は胸に少し遅れて引かれる
+  }
+  const gapSettled = () => gap.len === GAP_END[popped.filter(Boolean).length] && Math.abs(gap.w - gapTarget()) < 0.05;
+  function energy() { return P.reduce((e, p) => e + Math.abs(p.d[0]) + Math.abs(p.d[1]) + Math.abs(p.v[0]) * .05 + Math.abs(p.v[1]) * .05 + Math.abs(p.sy - lvNow().sag) * 40 + Math.abs(p.svy) * 2 + (p.grab ? 9 : 0), 0); }
 
   function draw() {
     gl.uniform1f(U('uDisc'), opt.mode === 'disc' ? 1 : 0);
-    gl.uniform2f(U('uD0'), P[0].d[0], P[0].d[1]); gl.uniform2f(U('uD1'), P[1].d[0], P[1].d[1]);
+    gl.uniform1f(U('uSpread'), 1); gl.uniform1f(U('uBlush'), blush);
+    gl.uniform1f(U('uSurp'), surpNow()); gl.uniform1f(U('uSurpF'), faceReady ? surpNow() : 0); gl.uniform4f(U('uFaceR'), ...FACE_R); gl.uniform2f(U('uE0'), ...EYES[0]); gl.uniform2f(U('uE1'), ...EYES[1]);
+    gl.uniform1f(U('uR0'), CUPS[0].r); gl.uniform1f(U('uR1'), CUPS[1].r);
+    gl.uniform2f(U('uImgF'), iw, ih); gl.uniform3f(U('uPop'), +popped[0], +popped[1], +popped[2]); gl.uniform3f(U('uGap'), gap.w, gap.len, 1 / (view.s * view.dpr));
+    COVERS.forEach((b, k) => gl.uniform4f(U('uB' + k), ...b));
+    const r0 = restOf(0), r1 = restOf(1);
+    gl.uniform2f(U('uD0'), P[0].d[0] + r0[0], P[0].d[1] + r0[1]); gl.uniform2f(U('uD1'), P[1].d[0] + r1[0], P[1].d[1] + r1[1]);
     gl.uniform2f(U('uS0'), P[0].sx, P[0].sy); gl.uniform2f(U('uS1'), P[1].sx, P[1].sy);
     gl.clearColor(0.04, 0.03, 0.035, 1); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawElements(gl.TRIANGLES, idx.length, big ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
   }
+  // ---- ボタンが弾ける：絵から切り出したボタンが回りながら飛び、金の光が散る ----
+  const fx = document.getElementById('fx'), fc = fx.getContext('2d');
+  const parts = [];
+  // 驚き：ぱっと目が開き（0.08秒）、1秒ほどでゆっくり戻る
+  let surpT = -9;
+  const surpNow = () => { const t = (performance.now() - surpT) / 1000; return t < 0 || t > 1.8 ? 0 : t < 0.06 ? t / 0.06 : t < 0.65 ? 1 : Math.exp(-(t - 0.65) / 0.3); };
+  function popButton(k) {
+    if (popped[k]) return;
+    const before = [restOf(0), restOf(1)]; popped[k] = true;
+    P.forEach((p, i) => { const a = restOf(i); p.d[0] -= a[0] - before[i][0]; p.d[1] -= a[1] - before[i][1]; });
+    const b = BTNS[k], side = Math.random() < 0.5 ? -1 : 1;
+    parts.push({ k, x: b.c[0], y: b.c[1], vx: side * (260 + Math.random() * 220), vy: -(700 + Math.random() * 260), rot: 0, vr: side * (9 + Math.random() * 8), t: 0, life: 1.6 });
+    for (let n = 0; n < 16; n++) { const a = Math.random() * Math.PI * 2, sp = 140 + Math.random() * 380; parts.push({ star: 1, x: b.c[0], y: b.c[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.35 + Math.random() * 0.35, sz: 3 + Math.random() * 5 }); }
+    P.forEach((p, i) => { p.v[0] += (i === 0 ? -1 : 1) * 1500; p.v[1] += 120; p.svy -= 1.2; p.lift = 0; p.lf = 0; p.bt = 0.9; });   // ぱぁんっ：留めが外れて、左右へ一回はじける
+    blush = Math.min(1, blush + 0.35);                                   // ぽっと赤くなる
+    surpT = performance.now();                                           // 少し驚く
+    document.getElementById('lv').textContent = popped.filter(Boolean).length + '/3';
+    CUPS.forEach(c => { c.r = 132 * lvNow().rs; }); kick();
+  }
+  function stepParts(dt) {
+    for (let n = parts.length - 1; n >= 0; n--) { const q = parts[n]; q.t += dt; if (q.t > q.life) { parts.splice(n, 1); continue; }
+      q.x += q.vx * dt; q.y += q.vy * dt; if (q.star) { q.vx *= 0.9; q.vy = q.vy * 0.9 + 300 * dt; } else { q.vy += 2400 * dt; q.rot += q.vr * dt; } }
+  }
+  function drawParts() {
+    fc.setTransform(view.dpr, 0, 0, view.dpr, 0, 0); fc.clearRect(0, 0, view.w, view.h);
+    for (const q of parts) {
+      const x = view.ox + q.x * view.s, y = view.oy + q.y * view.s, a = 1 - Math.max(0, (q.t - q.life * 0.7) / (q.life * 0.3));
+      fc.globalAlpha = a;
+      if (q.star) { const r = q.sz * view.s * (1 - q.t / q.life * 0.5); fc.fillStyle = '#ffe9a8'; fc.beginPath();
+        fc.moveTo(x, y - r); fc.lineTo(x + r * 0.28, y); fc.lineTo(x, y + r); fc.lineTo(x - r * 0.28, y); fc.closePath(); fc.fill();
+        fc.beginPath(); fc.moveTo(x - r, y); fc.lineTo(x, y + r * 0.28); fc.lineTo(x + r, y); fc.lineTo(x, y - r * 0.28); fc.closePath(); fc.fill(); }
+      else { const b = BTNS[q.k], sc = view.s * (1 + q.t * 0.35); fc.save(); fc.translate(x, y); fc.rotate(q.rot);
+        fc.beginPath(); fc.moveTo(0, -b.h / 2 * sc); fc.lineTo(b.w / 2 * sc, 0); fc.lineTo(0, b.h / 2 * sc); fc.lineTo(-b.w / 2 * sc, 0); fc.closePath(); fc.clip();   // ひし形に切り抜く
+        fc.drawImage(img, b.c[0] - b.w / 2, b.c[1] - b.h / 2, b.w, b.h, -b.w / 2 * sc, -b.h / 2 * sc, b.w * sc, b.h * sc); fc.restore(); }
+    }
+    fc.globalAlpha = 1;
+  }
+  document.getElementById('btnReset').addEventListener('click', () => { popped.fill(false); document.getElementById('lv').textContent = '0/3'; CUPS.forEach(c => { c.r = 132; }); resetPhys(); gap.len = GAP_END[0]; gap.w = 0; kick(); });
   // 動いている間だけ回す。止まったら描き直しも止める（スマホが熱くならないように）
   let raf = 0, last = 0;
   function loop(t) {
     const dt = Math.min(0.033, (t - (last || t)) / 1000) || 0.016; last = t;
     for (let n = 0; n < 4; n++) step(dt / 4);
-    draw();
-    if (energy() < 0.06 && !P.some(p => p.grab)) { resetPhys(); draw(); raf = 0; last = 0; return; }
+    stepGap(dt); stepParts(dt); draw(); drawParts();
+    const h = heatNow(); stepBlush(dt, h);
+    if (energy() < 0.06 && !P.some(p => p.grab) && h < 0.04 && blush < 0.01 && !parts.length && surpNow() < 0.005 && gapSettled()) { resetPhys(); gap.w = gapTarget(); blush = 0; draw(); drawParts(); raf = 0; last = 0; return; }
     raf = requestAnimationFrame(loop);
   }
   function kick() { if (!raf) { last = 0; raf = requestAnimationFrame(loop); } }
@@ -238,17 +444,41 @@
   const tup = (e) => { touches.delete(e.pointerId); if (touches.size < 2) pinch = null; };
   stageEl.addEventListener('pointerup', tup, true); stageEl.addEventListener('pointercancel', tup, true);
 
+  const noteEl = document.querySelector('.note');
   stageEl.addEventListener('pointerdown', (e) => {
+    noteEl.classList.add('off');   // 一番下のボタンに重ならないよう、触ったら操作の説明は消す
     if (pinch) return;
-    const [ix, iy] = toImg(e.clientX, e.clientY); const i = hit(ix, iy); if (i < 0) return;
-    stageEl.setPointerCapture(e.pointerId);
-    const p = P[i], c = CUPS[i], amp = opt.amp;
+    const [ix, iy] = toImg(e.clientX, e.clientY);
+    const bk = BTNS.findIndex((b, k) => !popped[k] && Math.abs(ix - b.c[0]) < Math.max(26, b.w * 0.7) && Math.abs(iy - b.c[1]) < Math.max(24, b.h * 0.65));
+    if (bk >= 0) { popButton(bk); return; }
+    const i = hit(ix, iy); if (i < 0) return;
+    try { stageEl.setPointerCapture(e.pointerId); } catch (_) {}
+    addHeat();
+    const p = P[i], c = CUPS[i], amp = opt.amp * (1 + HEAT_PUSH * heatNow()) * lvNow().push;
     // 押し込み：押した所から中心へ向かう向き＋下へ。中心に近いほど縦に縮む
     const qx = c.c[0] - ix, qy = c.c[1] - iy; const L = Math.hypot(qx, qy) || 1;
     const near = 1 - Math.min(1, L / c.r);
-    p.v[0] += (qx / L) * 260 * amp * (1 - near * 0.6);
-    p.v[1] += ((qy / L) * 200 + 340 * (0.4 + near * 0.6)) * amp;
-    p.svy -= 2.4 * amp * (0.5 + near * 0.5);
+    // 押す位置で変わる：上＝沈む／下＝跳ね上がる／横＝横へ振れて、もう片方にぶつかる／真ん中＝つぶれる
+    const ux = qx / L, uy = qy / L, edge = 1 - near;            // 指から中心へ押し出す向き。ふちほど大きく動く
+    const mag = 430 * amp * (0.3 + 0.7 * edge);
+    const kx = ux * mag * 1.15, ky = uy * mag + 70 * amp, km = Math.hypot(kx, ky);
+    // 揺れている最中は、ほぼ今の向きに乗せる（打ち消さない）。上限に近いほど押す力を弱める（張り付いて止まらない）
+    const hh = heatNow(), lsNow = Math.max(6, Math.min(c.r * Math.min(0.56 + 0.2 * hh, 0.36 * opt.amp * (1 + HEAT_GAIN * hh)), 0.82 * dirLim(i, p.d[0] + restOf(i)[0], p.d[1] + restOf(i)[1], p.sy, p.sx) - Math.hypot(...restOf(i))));   // 余地は0にしない（マイナスだと押す力が暴れる）
+    const room = Math.max(0.3, 1 - (Math.hypot(p.d[0], p.d[1]) / lsNow) ** 3);
+    const sp = Math.hypot(p.v[0], p.v[1]), ride = Math.min(1, sp / 60);   // 揺れている最中は、今動いている向きにだけ足す（ブランコをこぐ要領）
+    const pv1 = p.v[1];
+    const kr = Math.max(km, 300 * amp);   // こぐ力は、押す位置によらずしっかり
+    if (sp > 1) { p.v[0] += ((p.v[0] / sp) * kr * ride + kx * (1 - ride)) * room; p.v[1] += ((p.v[1] / sp) * kr * ride + ky * (1 - ride)) * room; }
+    else { p.v[0] += kx; p.v[1] += ky; }
+    const vm = 1500, vv = Math.hypot(p.v[0], p.v[1]); if (vv > vm) { p.v[0] *= vm / vv; p.v[1] *= vm / vv; }
+    const o = P[1 - i], toward = Math.sign(CUPS[1 - i].c[0] - c.c[0]);
+    if (ux * toward > 0.3) { o.v[0] += kx * 0.5; o.v[1] += ky * 0.25; o.svy -= 0.8 * amp; }   // 内へ押すと、もう片方にぶつかる
+    const sqz = (s0) => { p.svy += (Math.abs(p.svy) > 1.5 ? Math.sign(p.svy) * Math.abs(s0) * 0.8 : s0) * room; };
+    if (uy > 0) sqz(-(3.2 * near + 1.6 * uy * edge) * amp);      // 上・真ん中：縦につぶれる
+    else {   // 下：はじかずに、手で持ち上げる（勢いではなく、じわっとかかる力）。離すと重さでたっぷり落ちる
+      p.v[1] = pv1 + (p.v[1] - pv1) * ride; p.v[0] *= 0.6 + 0.4 * ride;
+      p.lf = LIFT_T; p.lfA = LIFT_A * (amp / 1.95) * (0.55 + 0.45 * edge) * room * (1 - ride * 0.5); sqz(-0.8 * (-uy) * edge * amp); p.lift = 1;
+    }
     ptrs.set(e.pointerId, { i, x0: e.clientX, y0: e.clientY, t0: performance.now() });
     kick();
   });
@@ -261,7 +491,7 @@
   });
   const up = (e) => {
     const g = ptrs.get(e.pointerId); if (!g) return; ptrs.delete(e.pointerId);
-    const p = P[g.i]; if (p.grab) { p.grab = null; p.svy += 1.2 * opt.amp; }   // 離した瞬間の弾み
+    const p = P[g.i]; if (p.grab) { p.grab = null; p.svy += 1.2 * opt.amp * (1 + HEAT_PUSH * heatNow()); }   // 離した瞬間の弾み
     kick();
   };
   stageEl.addEventListener('pointerup', up); stageEl.addEventListener('pointercancel', up);

@@ -1,0 +1,18 @@
+import { launch, sleep } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/cdp.mjs';
+import { serve } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/server.mjs';
+const REPO = 'C:/Users/takakazu/projects/mp_panyu';
+const OUT = process.argv[2];
+const server = await serve(REPO, 0); const br = await launch({ width: 1280, height: 800 }); const page = await br.newPage();
+await page.setViewport(1280, 800);
+await page.goto('about:blank', 1);
+await page.goto(`http://127.0.0.1:${server.port}/docs/design-ref/panyu-mesh.html`, 8000);
+await sleep(1500);
+const tapJs = (pts) => `(()=>{const st=document.getElementById('stage');const iw=1400,ih=788,z=1.28,w=innerWidth,h=innerHeight;const s=Math.max(w/iw,h/ih)*z;let ox=w/2-701*s,oy=h*0.56-548*s;ox=Math.min(0,Math.max(w-iw*s,ox));oy=Math.min(0,Math.max(h-ih*s,oy));
+ ${JSON.stringify(pts)}.forEach(([x,y],k)=>{const q=[ox+x*s,oy+y*s];st.dispatchEvent(new PointerEvent('pointerdown',{clientX:q[0],clientY:q[1],pointerId:50+k,bubbles:true}));st.dispatchEvent(new PointerEvent('pointerup',{clientX:q[0],clientY:q[1],pointerId:50+k,bubbles:true}));});return document.getElementById('lv').textContent;})()`;
+await page.screenshot(OUT + '-0.png');
+console.log(await page.eval(tapJs([[700, 663]])));
+await sleep(120); await page.screenshot(OUT + '-pop.png');
+await sleep(5000); await page.screenshot(OUT + '-1.png');
+console.log(await page.eval(tapJs([[700, 725], [700, 775]])));
+await sleep(6000); await page.screenshot(OUT + '-3.png');
+await br.close(); await server.close(); process.exit(0);
