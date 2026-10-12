@@ -47,22 +47,22 @@
   // covers＝外れた部品の跡を隣の布の鏡写しで埋める範囲（中心・半分の幅・半分の高さ）
   // gap＝開く裂け目（gx/gy＝始まり、ends＝外れた段ごとの下の端、lin/lin2＝切り口の裏地の色、line＝切り口の線の色）
   const OUTFITS = {
-    bunny: { name: 'バニー', img: 'panyu_reach.webp', kind: 'front', jewel: 1, feel: { k: 1, c: 1, ks: 1, cs: 1, sq: 1, kc: 1, push: 1 },   // コルセット：基準 label: 'ボタン', what: 'お腹のボタン',
+    bunny: { name: 'バニー', img: 'panyu_reach.webp', kind: 'front', jewel: 1, feel: { k: 1, c: 1, ks: 1, cs: 1, sq: 1, kc: 1, push: 1 }, label: 'ボタン', what: 'お腹のボタン',   // コルセット：基準
       parts: [{ c: [700, 663], w: 54, h: 54 }, { c: [700, 725], w: 30, h: 36 }, { c: [700, 775], w: 26, h: 30 }],
       covers: [[700, 677, 27, 29], [700, 725, 16, 19], [700, 775, 14, 16]],   // 1つ目は飾り石の下（両脇の小さいひし形・大きいひし形・下の玉）まで
       gap: { gx: 700, gy: 637, ends: [637, 712, 762, 840], lin: [0.46, 0.08, 0.1], lin2: [0.24, 0.035, 0.055], line: [0.11, 0.045, 0.055] } },
-    pajama: { name: 'パジャマ', img: 'panyu_pajama_reach.webp', kind: 'front', feel: { k: 0.7, c: 0.66, ks: 0.72, cs: 0.75, sq: 1.15, kc: 1.1, push: 0.95 },   // サテン：ゆるく、ふわっと大きく長く揺れる label: 'ボタン', what: '胸の下のボタン',
+    pajama: { name: 'パジャマ', img: 'panyu_pajama_reach.webp', kind: 'front', feel: { k: 0.7, c: 0.66, ks: 0.72, cs: 0.75, sq: 1.15, kc: 1.1, push: 0.95 }, label: 'ボタン', what: '胸の下のボタン',   // サテン：ゆるく、ふわっと大きく長く揺れる
       parts: [{ c: [697, 664], w: 22, h: 22, round: 1 }, { c: [697, 733], w: 22, h: 22, round: 1 }, { c: [697, 782], w: 22, h: 22, round: 1 }],
       covers: [[697, 664, 14.5, -14.5], [697, 733, 14.5, -14.5], [697, 782, 14.5, -14.5]],   // ボタンの影まで。上下の布で埋める
       gap: { gx: 703, gy: 640, ends: [640, 700, 758, 830], lin: [0.93, 0.7, 0.74], lin2: [0.62, 0.38, 0.44], line: [0.42, 0.2, 0.26] } },
-    santa: { name: 'サンタ', img: 'panyu_santa_reach.webp', kind: 'front', feel: { k: 0.82, c: 1.4, ks: 1.1, cs: 1.35, sq: 0.82, kc: 0.9, push: 0.88 },   // ベルベット：重く、どっしり。余韻は短い label: 'ボタン', what: '金ボタンとベルト',
+    santa: { name: 'サンタ', img: 'panyu_santa_reach.webp', kind: 'front', feel: { k: 0.82, c: 1.4, ks: 1.1, cs: 1.35, sq: 0.82, kc: 0.9, push: 0.88 }, label: 'ボタン', what: '金ボタンとベルト',   // ベルベット：重く、どっしり。余韻は短い
       parts: [{ c: [699, 649], w: 36, h: 36, round: 1 }, { c: [699, 691], w: 36, h: 36, round: 1 }, { c: [700, 757], w: 80, h: 64, rect: 1 }],
       covers: [[699, 649, 21, 21], [699, 691, 21, 21], [700, 757, -46, 38]],   // バックルの跡はベルトの続きで埋まる（横に鏡写し）
       gap: { gx: 700, gy: 632, ends: [632, 670, 708, 800], lin: [0.55, 0.06, 0.09], lin2: [0.25, 0.02, 0.04], line: [0.12, 0.02, 0.03] } },
-    bikini: { name: '水着', img: 'panyu_bikini_reach.webp', kind: 'strap', ring: 1, feel: { k: 1.4, c: 0.92, ks: 1.45, cs: 0.9, sq: 1.25, kc: 0.85, push: 1.1 },   // 伸びる生地：速く、ぷるんと細かく戻る label: '留め', what: '肩紐と胸のリング',
+    bikini: { name: '水着', img: 'panyu_bikini_reach.webp', kind: 'strap', ring: 1, feel: { k: 1.4, c: 0.92, ks: 1.45, cs: 0.9, sq: 1.25, kc: 0.85, push: 1.1 }, label: '留め', what: '肩紐と胸のリング',   // 伸びる生地：速く、ぷるんと細かく戻る
       parts: [{ a: [581, 536], b: [621, 458] }, { a: [825, 536], b: [786, 458] }, { c: [702, 655], w: 28, h: 28, ring: 1 }], covers: [], gap: null },
     dress: { name: 'ドレス', img: 'panyu_dress_reach.webp', kind: 'strap', feel: { k: 0.92, c: 0.8, ks: 0.9, cs: 0.85, sq: 1.0, kc: 1.35, push: 1.0 },   // シルク：しなやか。左右がつられて一緒に揺れる
-      label: '留め', sw: [5.6, 8.2, 10.5], what: '肩紐と胸元の宝石',
+      label: '留め', sw: [5.0, 6.8, 7.8], what: '肩紐と胸元の宝石',
       parts: [{ a: [570, 512], b: [598, 446] }, { a: [832, 512], b: [810, 446] }, { c: [700, 672], w: 56, h: 70 }],
       covers: [null, null, [700, 690, 28, 56]],   // 宝石と下の雫まで
       gap: { gx: 700, gy: 638, ends: [638, 638, 638, 760], lin: [0.6, 0.08, 0.12], lin2: [0.28, 0.03, 0.06], line: [0.12, 0.03, 0.05] } },
@@ -75,11 +75,11 @@
   OUTFITS.bikini.fly = { vx: [220, 380], vy: [950, 1200], g: 2500, spin: [18, 28], life: 1.9, bounce: 0.4, spark: '#ffe9a8', n: 14, shake: 3 };   // リングは高く回る
   OUTFITS.bikini.strapShake = 4;
   Object.assign(OUTFITS.bunny.gap, { flap: [0.12, 1.8], wk: 1, spring: 0 });
-  Object.assign(OUTFITS.pajama.gap, { flap: [0.42, 6.5], wk: 1.25, spring: 0, gy: 616, fabY: 640, ends: [616, 700, 758, 830] });   // 一番上のボタンの所でつながらない（V字からそのまま開く）   // やわらかい前立てが外へ大きくめくれ、裏地のサテンが幅広くのぞく
+  Object.assign(OUTFITS.pajama.gap, { flap: [0.42, 6.5], wk: 1.25, spring: 0, gx: 706, gy: 616, fabY: 642, vk: [0.6, 0.6, 0], ends: [616, 700, 758, 830] });   // 一番上のボタンの所でつながらない（V字からそのまま開く）   // やわらかい前立てが外へ大きくめくれ、裏地のサテンが幅広くのぞく
   Object.assign(OUTFITS.santa.gap, { flap: [0.16, 2.6], wk: 1.05, spring: 1 });     // ベルトが弾けて、一度開きすぎてから戻る
-  Object.assign(OUTFITS.dress.gap, { flap: [0.22, 3.2], wk: 1.4, spring: 0, gy: 612, fabY: 640, ends: [612, 612, 612, 760] });     // 身頃が大きく左右に分かれる
+  Object.assign(OUTFITS.dress.gap, { flap: [0.22, 3.2], wk: 1.4, spring: 0, gy: 612, fabY: 637, vk: [0.5, 0.5, 21], ct: [-4, 0], ends: [612, 612, 612, 760] });     // 身頃が大きく左右に分かれる
   OUTFITS.dress.fly = { vx: [180, 300], vy: [820, 1000], g: 2500, spin: [8, 13], life: 1.8, bounce: 0.3, spark: '#ff7a8a', n: 22, shake: 3 };   // 宝石は赤くきらめく
-  OUTFITS.dress.strapShake = 2;
+  OUTFITS.dress.strapShake = 2; OUTFITS.dress.ropeLen = 0.8; OUTFITS.dress.ropeDrape = 1;   // 外れた紐は胸の丸みに沿って外へ垂れる（腕の上までは届かない長さ）
   OUTFITS.dress.fold = { apex: [[570, 522], [832, 522]], neck: [[0.796, 0.606], [-0.796, 0.606]], out: [[-0.716, 0.698], [0.716, 0.698]], len: 30 };   // 肩紐が外れると、角が内側へ折れ返って垂れる
   const qc = new URLSearchParams(location.search).get('c'), OUTFIT = OUTFITS[qc] ? qc : 'bunny', OF = OUTFITS[OUTFIT];
   const STRAP = OF.kind === 'strap', BIKINI = OUTFIT === 'bikini';
@@ -241,6 +241,44 @@
       col = mix(col, vec3(0.06, 0.02, 0.03), ln2 * 0.7 * fab);
       return mix(col, uLine, ln * 0.9 * smoothstep(0.0, 1.2, h) * fab);
     }
+    // V字から開く衣装（パジャマ・ドレス）：V字の中は元の絵の肌を横に広げたもの（col に入っている）。V字の先より下だけ塗りの肌
+    // vs＝この行での元のV字の半分の幅（V字の先で0）。布の縁は元の絵の線からそのまま切り口へつながる
+    uniform vec3 uVk; uniform vec2 uCt; uniform float uDbg;   // V字の左右の傾き（x・y）と、V字の下の端での半分の幅（z）
+    vec3 gapShadeV(vec3 col, vec2 p, float h, float e, float vs) {
+      float aa = max(0.6, uGap.z);
+      float fab = smoothstep(uFabY - 2.0, uFabY + 6.0, p.y);                    // 布の切り口（V字の先より下）
+      if (e >= 0.0) {   // 布：切り口へ向かって少し奥へ回り込み（暗く）、いちばん端は厚みのつや
+        col *= 1.0 - 0.18 * smoothstep(1.2, 3.5, e) * (1.0 - smoothstep(3.5, 13.0, e)) * fab;
+        col += vec3(0.04, 0.03, 0.04) * smoothstep(0.4, 1.0, e) * (1.0 - smoothstep(1.6, 2.8, e)) * fab;
+      }
+      float lw = clamp(h * uFlap.x, 0.0, uFlap.y) * smoothstep(uFabY - 2.0, uFabY + 20.0, p.y);   // 裏地の幅：V字の先から少しずつ
+      float u = -e - 0.9 - lw;
+      bool left = p.x < GX;
+      float dx = abs(p.x - GX);
+      // 縁の影は左右の縁それぞれから測る（真ん中で切り替わらない）。光は左から：左の縁は肌に広く影を落とす
+      float uL = (p.x - GX) + h + vs - 0.9 - lw, uR = (GX - p.x) + h + vs - 0.9 - lw;
+      float sdE = max(0.8 * (1.0 - smoothstep(0.0, (1.6 + 0.3 * h) * 2.2, uL)), 0.8 * (1.0 - smoothstep(0.0, (1.0 + 0.14 * h) * 2.2, uR)));
+      // 胸の下：V字の先から左右下へ下がる胸の輪郭。上は胸の下側（やや影）、輪郭のすぐ下に胸の落とす影、下へ明るくなる
+      float yc = uFabY - 3.0 + uCt.x + 1.2 * dx, dy = p.y - yc;   // 胸が左右へ開くと画面では横に伸びるので、絵の上では急な傾き
+      float sdB = dy < 0.0 ? 0.12 + 0.62 * (1.0 - smoothstep(0.0, 7.0, -dy)) : 0.85 * (1.0 - smoothstep(0.0, 18.0 + 0.3 * h, dy));
+      float sd = max(sdE, sdB);
+      float c = clamp(1.0 - pow(dx / max(h, 1.0), 2.0), 0.0, 1.0);             // お腹の丸み（真ん中が前）
+      vec3 lit = vec3(0.975, 0.835, 0.76), shd = vec3(0.9, 0.6, 0.52), ao = vec3(0.7, 0.4, 0.34);
+      vec3 inside = mix(lit * mix(0.95, 1.01, c), shd, sd);
+      inside += vec3(0.035, -0.02, -0.03) * sd * (1.0 - sd) * 4.0;             // 影の境目はほんのり赤み
+      inside = mix(inside, ao, (1.0 - smoothstep(0.0, 3.0 + aa, u)) * 0.6);     // 布が肌に触れる所：やわらかく暗い（線にしない）
+      inside = mix(inside, ao * 0.9, (1.0 - smoothstep(0.3, 0.3 + aa * 1.6, abs(dy))) * uCt.y * smoothstep(1.0, 6.0, dx));   // 胸の輪郭の細い線（絵の線画ほど強くしない）
+      float lu = clamp((-e - 0.9) / max(lw, 0.01), 0.0, 1.0);                  // 裏地の上の位置（0＝切り口、1＝奥へ回り込む所）
+      vec3 lining = mix(uLin, uLin2, lu * lu) * (left ? 1.06 : 0.92);
+      lining += vec3(0.07, 0.05, 0.05) * pow(max(0.0, 1.0 - abs(lu - 0.3) / 0.25), 2.0) * fab;   // サテンのつや
+      vec3 deep = mix(inside, lining, (1.0 - smoothstep(lw - aa * 0.5, lw + aa * 0.5, -e - 0.9)) * step(0.05, lw));
+      float wp = max(1.0 - smoothstep(2.0, 12.0, vs), smoothstep(uFabY - 4.0, uFabY + 8.0, p.y));                               // V字の先の近くだけ塗りの肌へ
+      vec3 inner = mix(col, deep, wp);
+      if (uDbg > 0.5) inner = mix(mix(inner, vec3(0.0, 0.8, 0.0), 0.35), vec3(0.9, 0.0, 0.0), wp * 0.35) + vec3(0.0, 0.0, 0.8) * (1.0 - smoothstep(0.0, 1.0, abs(dy)));
+      col = mix(col, inner, 1.0 - smoothstep(-0.9 - aa * 0.5, -0.9 + aa * 0.5, e));
+      float ln = 1.0 - smoothstep(0.5, 0.5 + aa, abs(e + 0.25));               // 切り口の線（絵の線画と同じ色・太さ）
+      return mix(col, uLine, ln * 0.85 * smoothstep(0.0, 1.2, h) * fab);
+    }
     // ---- 水着：外れた肩紐とリングを消し、下の肌を見せる（肌はすぐ隣の本物の肌から写す） ----
     uniform vec4 uBk;   // x＝左の肩紐、y＝右の肩紐、z＝胸のリングが外れたか、w＝水着か
     vec3 tex(vec2 q) { return texture2D(uTex, q / uImgF).rgb; }
@@ -258,6 +296,22 @@
       fill = mix(fill, (c1 * k1 + c2 * k2) / kk, step(k1 * u + k2 * (1.0 - u), 0.02));
       fill *= mix(vec3(1.0), vec3(0.995, 0.9, 0.885), (1.0 - smoothstep(0.4, 1.8, d)) * 0.5);   // 紐の跡がうっすら赤い
       float m = (1.0 - smoothstep(uSW.x, uSW.y, d)) * smoothstep(4.5, 7.0, length(p - a)) * clamp(kk, 0.0, 1.0) * mix(1.0 - smoothstep(0.3, 0.42, dot(col, vec3(0.3, 0.59, 0.11))), 1.0, smoothstep(0.62, 0.72, min(dot(c1, vec3(0.3, 0.59, 0.11)), dot(c2, vec3(0.3, 0.59, 0.11)))));   // 両側が明るい肌の所だけ全部消す。髪にかかる所は暗い紐の色だけ消す（髪の毛は残す）   // カップの角の留め輪は残す
+      return mix(col, fill, m);
+    }
+    // ドレス：紐は髪の上に描かれている。消した所は両側の色（髪なら髪、肌なら肌）をつないで埋める。暗い線や別の紐は拾わない
+    uniform float uSF;
+    vec3 strapOff2(vec3 col, vec2 p, vec2 a, vec2 b, float on) {
+      if (on < 0.5) return col;
+      vec2 ab = b - a; float t = clamp(dot(p - a, ab) / dot(ab, ab), 0.0, 1.0); vec2 cp = a + ab * t; float d = length(p - cp);
+      if (d > uSW.y) return col;
+      vec2 n = normalize(vec2(-ab.y, ab.x)); float sd = dot(p - cp, n);
+      vec3 c1 = tex(cp + n * uSW.z), c2 = tex(cp - n * uSW.z);
+      float w1 = smoothstep(0.24, 0.36, dot(c1, vec3(0.3, 0.59, 0.11))), w2 = smoothstep(0.24, 0.36, dot(c2, vec3(0.3, 0.59, 0.11)));
+      if (w1 + w2 < 0.02) return col;
+      float u = clamp(sd / (2.0 * uSW.z) + 0.5, 0.0, 1.0); u = u * u * (3.0 - 2.0 * u);
+      vec3 fill = (c1 * w1 * u + c2 * w2 * (1.0 - u)) / max(w1 * u + w2 * (1.0 - u), 0.001);
+      fill *= mix(vec3(1.0), vec3(0.995, 0.92, 0.9), (1.0 - smoothstep(0.5, 2.5, d)) * 0.35 * skinLike(fill));   // 肌の所だけ、紐の跡がうっすら赤い
+      float m = (1.0 - smoothstep(uSW.x, uSW.y, d)) * smoothstep(4.5, 7.0, length(p - a)) * clamp(w1 + w2, 0.0, 1.0);   // カップの角の留め輪は残す
       return mix(col, fill, m);
     }
     // 胸のリング：輪とつながる帯の真ん中を、上下の本物の肌でつなぐ（輪の内側も含めて一続きに。半径の向きで写すと帯や金を拾う）
@@ -284,8 +338,8 @@
       float dn = c1 * (n1.x * v.y - n1.y * v.x);                                // 縁から布の内側への距離
       float span = 78.0;
       if (t < -2.0 || t > span || dn < -1.0) return col;
-      float k = pow(1.0 - clamp(t / span, 0.0, 1.0), 1.3);
-      float wb = (2.0 + 0.3 * L) * k + 0.6;                                     // 巻いた幅（角で最大 約11）
+      float k = (1.0 - smoothstep(0.45, 1.0, t / span)) * (0.82 + 0.18 * smoothstep(0.0, 6.0, t));   // ほぼ同じ太さの筒。先の方だけ細る（三角にしない）
+      float wb = (1.5 + 0.16 * L) * k + 0.6;                                    // 巻いた幅（約6.5）
       float aa = max(0.6, uGap.z);
       if (dn > wb + 3.0) return col;
       if (dn > wb) return col * (1.0 - 0.32 * (1.0 - smoothstep(0.0, 3.0, dn - wb)) * k);   // 巻いた下に落ちる影
@@ -295,7 +349,7 @@
       float tube = sin(3.14159 * clamp(u * 1.05, 0.0, 1.0));                    // 筒の丸み：真ん中が光り、上下が暗い
       lin *= 0.62 + 0.5 * tube;
       lin += vec3(0.16, 0.06, 0.07) * pow(max(0.0, 1.0 - abs(u - 0.35) / 0.18), 2.0);   // つやの線
-      lin = mix(lin, uLine, (1.0 - smoothstep(0.0, aa * 1.8, wb - dn)) * 0.75);   // 巻いた下の縁の線（やわらかく）
+      lin = mix(lin, uLine, (1.0 - smoothstep(0.0, aa * 2.2, wb - dn)) * 0.45);   // 巻いた下の縁の線（やわらかく）
       return mix(col, lin, smoothstep(-1.0, -1.0 + aa, dn));
     }
     float cheek(vec2 p, vec2 c) { vec2 q = (p - c) / vec2(48.0, 28.0); return exp(-dot(q, q) * 1.3); }
@@ -305,13 +359,19 @@
       float h = gapHalf(p.y), a = abs(p.x - GX), e = 99.0;
       vec2 q = p;
       // 上の端の近くは引く量を控える（裂け目が布に乗る）。カップの金の縁取りが鉤のように曲がらない
-      if (h > 0.0) { e = a - h; q.x = GX + sign(p.x - GX) * max(0.0, a - h * (0.35 + 0.65 * smoothstep(GY, GY + 34.0, p.y)) * exp(-max(0.0, e) / 44.0)); }
+      float vs = uVk.x <= 0.0 ? 0.0 : p.y < uFabY ? uVk.z + (uFabY - p.y) * mix(uVk.x, uVk.y, smoothstep(-6.0, 6.0, p.x - GX)) : uVk.z * (1.0 - smoothstep(0.0, 1.0, (p.y - uFabY) / max(uVk.z, 1.0)));   // V字の下の端に幅が残る衣装は、その下でなめらかに細らせる   // 左右の傾きは真ん中でなめらかに
+      if (h > 0.0 && uVk.x > 0.0) {   // V字から開く：V字の幅＋開いた分。V字の中は元の肌を横に広げ、外の布は開いた分だけ外へ
+        float H = h + vs; e = a - H;
+        if (e < 0.0) q.y = min(p.y, uFabY - 1.0);   // V字の下の端より下は、端の肌の行を使う（宝石などを写さない）
+        q.x = GX + sign(p.x - GX) * (e >= 0.0 ? a - h * exp(-e / 44.0) : vs * pow(a / H, mix(1.0, 0.55, h / H)));   // V字の肌を広げる。谷間の溝は細いまま、胸の肌の方を広げる（開き始めは元の絵と同じ）
+      } else if (h > 0.0) { e = a - h; q.x = GX + sign(p.x - GX) * max(0.0, a - h * (0.35 + 0.65 * smoothstep(GY, GY + 34.0, p.y)) * exp(-max(0.0, e) / 44.0)); }
       vec3 col = texture2D(uTex, q / uImgF).rgb;
-      if (uBk.w > 0.5) { col = strapOff(col, q, uSA.xy, uSA.zw, uBk.x); col = strapOff(col, q, uSB.xy, uSB.zw, uBk.y); if (uRing > 0.5) col = ringOff(col, q, uBk.z); }
+      if (uBk.w > 0.5 && uSF > 0.5) { col = strapOff2(col, q, uSA.xy, uSA.zw, uBk.x); col = strapOff2(col, q, uSB.xy, uSB.zw, uBk.y); }
+      else if (uBk.w > 0.5) { col = strapOff(col, q, uSA.xy, uSA.zw, uBk.x); col = strapOff(col, q, uSB.xy, uSB.zw, uBk.y); if (uRing > 0.5) col = ringOff(col, q, uBk.z); }
       if (uFold.y > 0.0) { col = foldCorner(col, q, uFA0.xy, uFN.xy, uFO.xy, uFold.x * uFold.y); col = foldCorner(col, q, uFA1.xy, uFN.zw, uFO.zw, uFA0.z * uFold.y); }
       col = jewel(col, q); col = cover(col, q, uB0, uPop.x); col = cover(col, q, uB1, uPop.y); col = cover(col, q, uB2, uPop.z);
       col *= 1.0 + clamp(vLit, -0.25, 0.25) * 0.35;
-      if (h > 0.0 && e < 16.0) col = gapShade(col, p, h, e);
+      if (h > 0.0 && e < 16.0) col = uVk.x > 0.0 ? gapShadeV(col, p, h, e, vs) : gapShade(col, p, h, e);
       if (uSurpF > 0.001) {   // 驚き顔：顔の部分だけ、ふちをぼかして重ねる
         vec2 fu = (p - uFaceR.xy) / uFaceR.zw;
         vec2 fq = (p - vec2(701.0, 315.0)) / vec2(118.0, 92.0); float fm = 1.0 - smoothstep(0.72, 1.0, length(fq));
@@ -464,10 +524,10 @@
     const G = OF.gap || { gx: 700, gy: 640, lin: [0, 0, 0], lin2: [0, 0, 0], line: [0, 0, 0] };
     gl.uniform2f(U('uG'), G.gx, G.gy); gl.uniform3f(U('uLin'), ...G.lin); gl.uniform3f(U('uLin2'), ...G.lin2); gl.uniform3f(U('uLine'), ...G.line);
     if (OF.fold) { const f = OF.fold; gl.uniform4f(U('uFA0'), ...f.apex[0], foldA[1], 0); gl.uniform4f(U('uFA1'), ...f.apex[1], 0, 0); gl.uniform4f(U('uFN'), ...f.neck[0], ...f.neck[1]); gl.uniform4f(U('uFO'), ...f.out[0], ...f.out[1]); gl.uniform2f(U('uFold'), foldA[0], f.len); } else gl.uniform2f(U('uFold'), 0, 0);
-    gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0);
+    gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
     gl.uniform2f(U('uFlap'), ...((OF.gap && OF.gap.flap) || [0.12, 1.8]));
     gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring);
-    gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));
+    gl.uniform1f(U('uSF'), +(OUTFIT === 'dress')); gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));
     if (STRAP) { gl.uniform4f(U('uSA'), ...BTNS[0].a, ...BTNS[0].b); gl.uniform4f(U('uSB'), ...BTNS[1].a, ...BTNS[1].b); }
     const r0 = restOf(0), r1 = restOf(1);
     gl.uniform2f(U('uD0'), P[0].d[0] + r0[0], P[0].d[1] + r0[1]); gl.uniform2f(U('uD1'), P[1].d[0] + r1[0], P[1].d[1] + r1[1]);
@@ -539,7 +599,7 @@
     fc.filter = 'none'; fc.globalAlpha = 1; fc.drawImage(ringSpr, -w / 2, -w / 2, w, w); fc.restore();
   }
   function addRope(k, out) {
-    const a = BTNS[k].a, b = BTNS[k].b, len = Math.hypot(b[0] - a[0], b[1] - a[1]) * 1.05, pts = [];
+    const a = BTNS[k].a, b = BTNS[k].b, len = Math.hypot(b[0] - a[0], b[1] - a[1]) * (OF.ropeLen || 1.05), pts = [];
     for (let n = 0; n <= RN; n++) { const t = n / RN, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t;
       pts.push({ x, y, px: x - out * 9 * t * t, py: y + 11 * t * t }); }   // 首の側の端ほど、外・上へぴんと跳ねる勢い
     ropes.push({ k, pts, seg: len / RN });
@@ -548,10 +608,12 @@
     const h = Math.min(dt, 1 / 60) / 2;
     for (const r of ropes) for (let s = 0; s < 2; s++) {
       const an = anchorOf(r.k); r.pts[0].x = an[0]; r.pts[0].y = an[1]; r.pts[0].px = an[0]; r.pts[0].py = an[1];
+      const cc = meshAt(...CUPS[r.k].c), R0 = Math.hypot((an[0] - cc[0]) / 0.55, an[1] - cc[1]) + 1.5;   // 胸の丸み：紐はその上に乗って、外側へ滑り落ちる
       for (let n = 1; n <= RN; n++) { const q = r.pts[n], vx = (q.x - q.px) * 0.988, vy = (q.y - q.py) * 0.988; q.px = q.x; q.py = q.y; q.x += vx; q.y += vy + RG * h * h; }
       for (let it = 0; it < 8; it++) for (let n = 0; n < RN; n++) {   // 長さを保つ（伸びない紐）
         const A = r.pts[n], B = r.pts[n + 1], dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1, f = (L - r.seg) / L;
         if (n === 0) { B.x -= dx * f; B.y -= dy * f; } else { A.x += dx * f * 0.5; A.y += dy * f * 0.5; B.x -= dx * f * 0.5; B.y -= dy * f * 0.5; }
+        const side = r.k === 0 ? -1 : 1; if (OF.ropeDrape) for (let m = 1; m <= RN; m++) { const q = r.pts[m], ey = q.y - cc[1]; if (Math.abs(ey) < R0) { const ox = cc[0] + side * Math.sqrt(R0 * R0 - ey * ey) * 0.55; if ((q.x - ox) * side < 0) q.x = ox; } }   // 外側へだけ押し出す
       }
     }
   }
@@ -560,10 +622,20 @@
     for (const r of ropes) {
       const S = r.pts.map(q => [view.ox + q.x * view.s, view.oy + q.y * view.s]);
       const path = (o) => { fc.beginPath(); fc.moveTo(S[0][0] + o, S[0][1] + o); for (let n = 1; n < RN; n++) { const mx = (S[n][0] + S[n + 1][0]) / 2, my = (S[n][1] + S[n + 1][1]) / 2; fc.quadraticCurveTo(S[n][0] + o, S[n][1] + o, mx + o, my + o); } fc.lineTo(S[RN][0] + o, S[RN][1] + o); };
-      fc.lineCap = 'round'; fc.lineJoin = 'round';
-      fc.strokeStyle = 'rgba(60,20,20,.22)'; fc.lineWidth = 3.4 * view.s; path(1.6 * view.s); fc.stroke();   // 肌に落ちるうっすらした影
-      fc.strokeStyle = '#1b1113'; fc.lineWidth = 2.7 * view.s; path(0); fc.stroke();
-      fc.strokeStyle = 'rgba(150,95,105,.5)'; fc.lineWidth = 0.8 * view.s; path(-0.5 * view.s); fc.stroke();   // 生地のつや
+      fc.lineJoin = 'round';
+      if (!OF.ropeDrape) {   // 水着の細い紐（承認済みの見た目）
+        fc.lineCap = 'round';
+        fc.strokeStyle = 'rgba(60,20,20,.22)'; fc.lineWidth = 3.4 * view.s; path(1.6 * view.s); fc.stroke();
+        fc.strokeStyle = '#1b1113'; fc.lineWidth = 2.7 * view.s; path(0); fc.stroke();
+        fc.strokeStyle = 'rgba(150,95,105,.5)'; fc.lineWidth = 0.8 * view.s; path(-0.5 * view.s); fc.stroke();
+        continue;
+      }
+      fc.lineCap = 'butt';   // 紐の端は切り口（丸めない）
+      // 元の紐と同じ幅（約8）の、暗い赤のサテンの帯。縁は濃く、真ん中につや
+      fc.strokeStyle = 'rgba(60,15,15,.25)'; fc.lineWidth = 9.5 * view.s; path(2.2 * view.s); fc.stroke();   // 下に落ちるうっすらした影
+      fc.strokeStyle = '#1a0609'; fc.lineWidth = 8 * view.s; path(0); fc.stroke();
+      fc.strokeStyle = '#4a121b'; fc.lineWidth = 5.6 * view.s; path(0); fc.stroke();
+      fc.strokeStyle = 'rgba(205,85,100,.5)'; fc.lineWidth = 1.6 * view.s; path(-1.1 * view.s); fc.stroke();   // 生地のつや
     }
   }
   // 画面の揺れ：重い部品が落ちた時など。すぐに減る
