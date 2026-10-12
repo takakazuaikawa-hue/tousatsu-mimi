@@ -14,6 +14,7 @@ const LVX = JSON.parse(process.env.LV || '{"push":1,"damp":1,"rs":1,"out":0,"dow
 const lvNow = () => LVX;
 const BIKINI = !!process.env.BK, STRAP = BIKINI, popped = JSON.parse(process.env.POP || '[false,false,false]');
 const sagOf = (i) => LVX.sag;
+const OF = { feel: JSON.parse(process.env.FEEL || 'null') || undefined };
 const restOf = (i) => [(i === 0 ? -1 : 1) * LVX.out, LVX.down];
 ${phys}
 function tap(i, ix, iy) { ${tapBody} }

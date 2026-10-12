@@ -47,21 +47,22 @@
   // covers＝外れた部品の跡を隣の布の鏡写しで埋める範囲（中心・半分の幅・半分の高さ）
   // gap＝開く裂け目（gx/gy＝始まり、ends＝外れた段ごとの下の端、lin/lin2＝切り口の裏地の色、line＝切り口の線の色）
   const OUTFITS = {
-    bunny: { name: 'バニー', img: 'panyu_reach.webp', kind: 'front', jewel: 1, label: 'ボタン', what: 'お腹のボタン',
+    bunny: { name: 'バニー', img: 'panyu_reach.webp', kind: 'front', jewel: 1, feel: { k: 1, c: 1, ks: 1, cs: 1, sq: 1, kc: 1, push: 1 },   // コルセット：基準 label: 'ボタン', what: 'お腹のボタン',
       parts: [{ c: [700, 663], w: 54, h: 54 }, { c: [700, 725], w: 30, h: 36 }, { c: [700, 775], w: 26, h: 30 }],
       covers: [[700, 677, 27, 29], [700, 725, 16, 19], [700, 775, 14, 16]],   // 1つ目は飾り石の下（両脇の小さいひし形・大きいひし形・下の玉）まで
       gap: { gx: 700, gy: 637, ends: [637, 712, 762, 840], lin: [0.46, 0.08, 0.1], lin2: [0.24, 0.035, 0.055], line: [0.11, 0.045, 0.055] } },
-    pajama: { name: 'パジャマ', img: 'panyu_pajama_reach.webp', kind: 'front', label: 'ボタン', what: '胸の下のボタン',
+    pajama: { name: 'パジャマ', img: 'panyu_pajama_reach.webp', kind: 'front', feel: { k: 0.7, c: 0.66, ks: 0.72, cs: 0.75, sq: 1.15, kc: 1.1, push: 0.95 },   // サテン：ゆるく、ふわっと大きく長く揺れる label: 'ボタン', what: '胸の下のボタン',
       parts: [{ c: [697, 664], w: 22, h: 22, round: 1 }, { c: [697, 733], w: 22, h: 22, round: 1 }, { c: [697, 782], w: 22, h: 22, round: 1 }],
       covers: [[697, 664, 14.5, -14.5], [697, 733, 14.5, -14.5], [697, 782, 14.5, -14.5]],   // ボタンの影まで。上下の布で埋める
       gap: { gx: 703, gy: 640, ends: [640, 700, 758, 830], lin: [0.93, 0.7, 0.74], lin2: [0.62, 0.38, 0.44], line: [0.42, 0.2, 0.26] } },
-    santa: { name: 'サンタ', img: 'panyu_santa_reach.webp', kind: 'front', label: 'ボタン', what: '金ボタンとベルト',
+    santa: { name: 'サンタ', img: 'panyu_santa_reach.webp', kind: 'front', feel: { k: 0.82, c: 1.4, ks: 1.1, cs: 1.35, sq: 0.82, kc: 0.9, push: 0.88 },   // ベルベット：重く、どっしり。余韻は短い label: 'ボタン', what: '金ボタンとベルト',
       parts: [{ c: [699, 649], w: 36, h: 36, round: 1 }, { c: [699, 691], w: 36, h: 36, round: 1 }, { c: [700, 757], w: 80, h: 64, rect: 1 }],
       covers: [[699, 649, 21, 21], [699, 691, 21, 21], [700, 757, -46, 38]],   // バックルの跡はベルトの続きで埋まる（横に鏡写し）
       gap: { gx: 700, gy: 632, ends: [632, 670, 708, 800], lin: [0.55, 0.06, 0.09], lin2: [0.25, 0.02, 0.04], line: [0.12, 0.02, 0.03] } },
-    bikini: { name: '水着', img: 'panyu_bikini_reach.webp', kind: 'strap', ring: 1, label: '留め', what: '肩紐と胸のリング',
+    bikini: { name: '水着', img: 'panyu_bikini_reach.webp', kind: 'strap', ring: 1, feel: { k: 1.4, c: 0.92, ks: 1.45, cs: 0.9, sq: 1.25, kc: 0.85, push: 1.1 },   // 伸びる生地：速く、ぷるんと細かく戻る label: '留め', what: '肩紐と胸のリング',
       parts: [{ a: [581, 536], b: [621, 458] }, { a: [825, 536], b: [786, 458] }, { c: [702, 655], w: 28, h: 28, ring: 1 }], covers: [], gap: null },
-    dress: { name: 'ドレス', img: 'panyu_dress_reach.webp', kind: 'strap', label: '留め', sw: [5.6, 8.2, 10.5], what: '肩紐と胸元の宝石',
+    dress: { name: 'ドレス', img: 'panyu_dress_reach.webp', kind: 'strap', feel: { k: 0.92, c: 0.8, ks: 0.9, cs: 0.85, sq: 1.0, kc: 1.35, push: 1.0 },   // シルク：しなやか。左右がつられて一緒に揺れる
+      label: '留め', sw: [5.6, 8.2, 10.5], what: '肩紐と胸元の宝石',
       parts: [{ a: [570, 512], b: [598, 446] }, { a: [832, 512], b: [810, 446] }, { c: [700, 672], w: 56, h: 70 }],
       covers: [null, null, [700, 690, 28, 56]],   // 宝石と下の雫まで
       gap: { gx: 700, gy: 638, ends: [638, 638, 638, 760], lin: [0.6, 0.08, 0.12], lin2: [0.28, 0.03, 0.06], line: [0.12, 0.03, 0.05] } },
@@ -350,7 +351,8 @@
     return Math.max(lvNow().rs / Math.hypot(ux / Math.max(20, lx), uy / Math.max(20, ly)), Math.hypot(...restOf(i)) + 14);   // 垂れた位置より内側にはしない（余地がマイナスになると計算が暴れる）
   }
   const LIFT_T = 0.34, LIFT_A = +(globalThis.__LIFT_A || 2600);   // 下を押した時、手で持ち上げる長さ（秒）
-  const K = 150, C = 6.2, KC = 55, KS = 260, CS = 9;   // 硬さ・減衰・左右のつながり・伸び縮みの硬さと減衰
+  const FEEL = (typeof OF !== 'undefined' && OF.feel) || { k: 1, c: 1, ks: 1, cs: 1, sq: 1, kc: 1, push: 1 };   // 衣装の布の性格
+  const K = 150 * FEEL.k, C = 6.2 * FEEL.c, KC = 55 * FEEL.kc, KS = 260 * FEEL.ks, CS = 9 * FEEL.cs;   // 硬さ・減衰・左右のつながり・伸び縮みの硬さと減衰
   function step(dt) {
     const h = heatNow(), amp = opt.amp * (1 + HEAT_GAIN * h), disc = opt.mode === 'disc', Cd = C * (1 - 0.5 * h) * lvNow().damp;
     for (let i = 0; i < 2; i++) {
@@ -375,7 +377,7 @@
       // 縦の伸び縮み：下へ沈む勢いで縦に縮み、横は体積を保つように広がる
       const fs = -KS * (p.sy - sagOf(i)) - CS * p.svy + (disc ? 0 : (p.v[1] > 0 ? p.v[1] * (p.lift * 0.3 - (1 - p.lift) * 0.012) : p.v[1] * (p.lift * 0.08 - (1 - p.lift) * 0.012)));
       p.lift = Math.max(0, p.lift - dt * 0.6);
-      p.svy += fs * dt; p.sy += p.svy * dt; const sq = Math.min(0.3, 0.16 * Math.min(2.2, amp) * (1 + 0.8 * h)); if (p.sy > 1 + sq * 0.9 || p.sy < 1 - sq) p.svy *= 0.9; p.sy = Math.min(1 + sq * 1.3, Math.max(1 - sq * 1.15, p.sy));
+      p.svy += fs * dt; p.sy += p.svy * dt; const sq = Math.min(0.3, 0.16 * FEEL.sq * Math.min(2.2, amp) * (1 + 0.8 * h)); if (p.sy > 1 + sq * 0.9 || p.sy < 1 - sq) p.svy *= 0.9; p.sy = Math.min(1 + sq * 1.3, Math.max(1 - sq * 1.15, p.sy));
       p.sx = disc ? p.sy : Math.pow(p.sy, -(0.5 + 0.25 * p.lift)) * (1 + Math.max(0, -p.d[1]) / r * 0.25);
       const rs2 = restOf(i), Tx = p.d[0] + rs2[0], Ty = p.d[1] + rs2[1], lim = dirLim(i, Tx, Ty, p.sy, p.sx), L = Math.hypot(Tx, Ty); if (L > lim) {   // 上限に当たったら、外向きの勢いを跳ね返す（張り付かない）
         p.d[0] = Tx * lim / L - rs2[0]; p.d[1] = Ty * lim / L - rs2[1];
@@ -612,7 +614,7 @@
     const i = hit(ix, iy); if (i < 0) return;
     try { stageEl.setPointerCapture(e.pointerId); } catch (_) {}
     addHeat();
-    const p = P[i], c = CUPS[i], amp = opt.amp * (1 + HEAT_PUSH * heatNow()) * lvNow().push;
+    const p = P[i], c = CUPS[i], amp = opt.amp * (1 + HEAT_PUSH * heatNow()) * lvNow().push * FEEL.push;
     // 押し込み：押した所から中心へ向かう向き＋下へ。中心に近いほど縦に縮む
     const qx = c.c[0] - ix, qy = c.c[1] - iy; const L = Math.hypot(qx, qy) || 1;
     const near = 1 - Math.min(1, L / c.r);
