@@ -12,6 +12,8 @@ const opt = { mode: 'mesh', zoom: 1.28, amp: 1.95 };
 const CUPS = [{ c: [607, 600], r: 132 * (+process.env.RS || 1) }, { c: [795, 600], r: 132 * (+process.env.RS || 1) }];
 const LVX = JSON.parse(process.env.LV || '{"push":1,"damp":1,"rs":1,"out":0,"down":0,"kx":1,"lx":0}');
 const lvNow = () => LVX;
+const BIKINI = !!process.env.BK, popped = JSON.parse(process.env.POP || '[false,false,false]');
+const sagOf = (i) => LVX.sag;
 const restOf = (i) => [(i === 0 ? -1 : 1) * LVX.out, LVX.down];
 ${phys}
 function tap(i, ix, iy) { ${tapBody} }
