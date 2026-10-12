@@ -67,6 +67,10 @@
       gap: { gx: 700, gy: 632, ends: [632, 670, 708, 800], lin: [0.55, 0.06, 0.09], lin2: [0.25, 0.02, 0.04], line: [0.12, 0.02, 0.03] } },
     bikini: { name: '水着', img: 'panyu_bikini_reach.webp', kind: 'strap', ring: 1, feel: { k: 1.4, c: 0.92, ks: 1.45, cs: 0.9, sq: 1.25, kc: 0.85, push: 1.1 }, label: '留め', what: '肩紐と胸のリング',   // 伸びる生地：速く、ぷるんと細かく戻る
       parts: [{ a: [581, 536], b: [621, 458] }, { a: [825, 536], b: [786, 458] }, { c: [702, 655], w: 28, h: 28, ring: 1 }], covers: [], gap: null },
+    halter: { name: 'ホルター', img: 'panyu_halter_reach.webp', kind: 'strap', ring: 1, ringG: [700.4, 664.4, 1.65, 17], bkSkin: 1, strapFill: 1, sw: [6.5, 9.0, 11.0],   /* リングは細く穴が大きい（穴の半径17） */ feel: { k: 1.3, c: 0.95, ks: 1.35, cs: 0.92, sq: 1.2, kc: 0.9, push: 1.08 }, label: '留め', what: '紐と胸の金のリング',   // つやのある水着：少し重めの金のリング
+      parts: [{ a: [580, 541], b: [636, 420] }, { a: [825, 541], b: [767, 420] },   /* 紐は首の方まで消す */ { c: [700, 664], w: 48, h: 48, ring: 1 }], covers: [], gap: null },
+    blue: { name: '水色', img: 'panyu_blue_reach.webp', kind: 'strap', ring: 1, ringG: [701, 657, 0.95], bkSkin: 1, strapFill: 1, sw: [7.0, 9.5, 11.5], feel: { k: 1.45, c: 0.9, ks: 1.5, cs: 0.88, sq: 1.28, kc: 0.82, push: 1.12 }, label: '留め', what: '肩紐と胸の留め金',   // 薄い水着：いちばん速く、ぷるんと
+      parts: [{ a: [580, 543], b: [636, 420] }, { a: [826, 543], b: [767, 420] }, { c: [701, 657], w: 28, h: 28, ring: 1 }], covers: [], gap: null },
     dress: { name: 'ドレス', img: 'panyu_dress_reach.webp', kind: 'strap', feel: { k: 0.92, c: 0.8, ks: 0.9, cs: 0.85, sq: 1.0, kc: 1.35, push: 1.0 },   // シルク：しなやか。左右がつられて一緒に揺れる
       label: '留め', sw: [5.0, 6.8, 7.8], what: '肩紐と胸元の宝石',
       parts: [{ a: [570, 512], b: [598, 446] }, { a: [832, 512], b: [810, 446] }, { c: [700, 672], w: 56, h: 70 }],
@@ -80,6 +84,8 @@
   OUTFITS.santa.parts[2].fly = { vx: [40, 90], vy: [120, 200], g: 3300, spin: [2, 4], life: 1.8, bounce: 0.22, spark: '#ffd98a', n: 22, shake: 10 };   // バックルはどすんと落ちる
   OUTFITS.bikini.fly = { vx: [220, 380], vy: [950, 1200], g: 2500, spin: [18, 28], life: 1.9, bounce: 0.4, spark: '#ffe9a8', n: 14, shake: 3 };   // リングは高く回る
   OUTFITS.bikini.strapShake = 4;
+  OUTFITS.halter.fly = { ...OUTFITS.bikini.fly, vy: [800, 1000], g: 2800, spark: '#ffd98a', n: 18, shake: 4 }; OUTFITS.halter.strapShake = 4; OUTFITS.halter.ropeCol = ['#a8761f', 'rgba(255,226,150,.85)'];   // 大きな金のリングは少し重く
+  OUTFITS.blue.fly = { ...OUTFITS.bikini.fly, spark: '#e8f6ff' }; OUTFITS.blue.strapShake = 3; OUTFITS.blue.ropeCol = ['#4ea6dc', 'rgba(225,245,255,.85)'];
   Object.assign(OUTFITS.bunny.gap, { flap: [0.12, 1.8], wk: 1, spring: 0 });
   Object.assign(OUTFITS.pajama.gap, { flap: [0.42, 6.5], wk: 1.25, spring: 0, gx: 706, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 2.1, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.14, 1.18],   /* ボタンが外れると服が大きく開く */   /* ボタンが外れると、V字の先の襟の重なりも左右に離れる */   /* V字の中は引き伸ばさない（網目で胸が動くだけ）。開くのはV字の先から下 */ ends: [606, 700, 758, 830] });   // 一番上のボタンの所でつながらない（V字からそのまま開く）   // やわらかい前立てが外へ大きくめくれ、裏地のサテンが幅広くのぞく
   Object.assign(OUTFITS.pajama2.gap, { flap: [0.42, 6.5], wk: 1.25, spring: 0, fabY: 664, ramp: 40, vk: [0.6, 0.6, 0], ct: [0, 0], shear: 0.42, skin: [600, 445, 690, 500] });   // 合わせ目は下ほど右へ傾く（V字の先を中心に斜めに開く）
@@ -91,7 +97,7 @@
   OUTFITS.dress.strapShake = 2; OUTFITS.dress.ropeLen = 0.8; OUTFITS.dress.ropeDrape = 1; OUTFITS.dress.ropeG = 5200; OUTFITS.dress.ropeDamp = 0.955; OUTFITS.dress.ropeKick = 0.35;   // サテンの太い紐は重い：すとんと落ちて、揺れはすぐ収まる   // 外れた紐は胸の丸みに沿って外へ垂れる（腕の上までは届かない長さ）
   OUTFITS.dress.fold = { apex: [[574, 521], [828, 521]], neck: [[0.796, 0.606], [-0.796, 0.606]], out: [[-0.716, 0.698], [0.716, 0.698]], len: 30 };   // 肩紐が外れると、角が内側へ折れ返って垂れる
   const qc = new URLSearchParams(location.search).get('c'), OUTFIT = OUTFITS[qc] ? qc : 'bunny', OF = OUTFITS[OUTFIT];
-  const STRAP = OF.kind === 'strap', BIKINI = OUTFIT === 'bikini';
+  const STRAP = OF.kind === 'strap', BIKINI = !!OF.ring; const RING = OF.ringG || [702, 655, 1];   // 胸の真ん中のリング：中心と大きさ（水着を基準1）
   const IMG = '../../assets/characters/' + OF.img;
   const PZ = OF.pose || { cups: [[607, 600, 132], [795, 600, 132]], cheek: [[636, 324], [764, 324]], eyes: [[640, 281], [762, 281]], faceR: [560, 170, 290, 250], faceC: [701, 315, 118, 92], blushC: [699, 322, 120, 56], head: [701, 330, 400], focus: [701, 548], surprise: 'panyu_surprise_face.webp' };   // 構図（今までの5着は共通）
   const CUPS = PZ.cups.map(([x, y, r]) => ({ c: [x, y], r, r0: r }));
@@ -318,6 +324,24 @@
     // ---- 水着：外れた肩紐とリングを消し、下の肌を見せる（肌はすぐ隣の本物の肌から写す） ----
     uniform vec4 uBk;   // x＝左の肩紐、y＝右の肩紐、z＝胸のリングが外れたか、w＝水着か
     vec3 tex(vec2 q) { return texture2D(uTex, q / uImgF).rgb; }
+    // ---- 本物の肌の絵（水着の絵：同じ体・同じ構図）。開いた所の肌はここから写す（塗らない） ----
+    uniform sampler2D uBkTex; uniform vec3 uBkGain;
+    vec3 bkRaw(vec2 q) { return texture2D(uBkTex, q / uImgF).rgb; }
+    float sh0(float h) { return h; }
+    vec3 bkSkin(vec2 p) {   // 水着の胸のリングと帯を消した素肌（上下の肌でつなぐ）
+      vec2 C = vec2(702.0, 655.0); float r = length(p - C), ax = abs(p.x - C.x);
+      float m = max(1.0 - smoothstep(16.0, 18.4, r), (1.0 - smoothstep(6.5, 9.5, abs(p.y - 657.0))) * (1.0 - smoothstep(26.0, 31.0, ax)));
+      vec3 c = bkRaw(p);
+      if (m > 0.001) {
+        float hr = sqrt(max(0.0, 400.0 - ax * ax)); float y0 = min(646.0, C.y - hr), y1 = max(669.0, C.y + hr);
+        float u = clamp((p.y - y0) / (y1 - y0), 0.0, 1.0); u = u * u * (3.0 - 2.0 * u);
+        c = mix(c, mix(bkRaw(vec2(p.x, y0)), bkRaw(vec2(p.x, y1)), u), m);
+      }
+      return min(c * uBkGain, vec3(1.0));
+    }
+    // 水着の絵で肌が見えている半分の幅（カップの縁の内側）。開く幅はこれを超えない（カップの布を写さない）
+    float bkHalf(float y) { float f1 = 95.0 - (y - 580.0) * 0.92, f2 = 27.0 + (y - 660.0) * 1.5, k = 12.0; return k * log(exp(f1 / k) + exp(f2 / k)); }   // 2本の線をなめらかにつなぐ（くびれを角にしない）
+
     float skinLike(vec3 c) { return smoothstep(0.56, 0.66, c.r) * smoothstep(0.06, 0.14, c.r - c.b) * smoothstep(0.36, 0.46, c.g) * (1.0 - smoothstep(0.3, 0.38, c.r - c.g)); }   // 肌らしさ（なめらか。髪・リボンとの際で縞にならない）
     vec3 strapOff(vec3 col, vec2 p, vec2 a, vec2 b, float on) {
       if (on < 0.5) return col;
@@ -348,19 +372,24 @@
       vec3 fill = (c1 * w1 * u + c2 * w2 * (1.0 - u)) / max(w1 * u + w2 * (1.0 - u), 0.001);
       fill *= mix(vec3(1.0), vec3(0.995, 0.92, 0.9), (1.0 - smoothstep(0.5, 2.5, d)) * 0.35 * skinLike(fill));   // 肌の所だけ、紐の跡がうっすら赤い
       float m = (1.0 - smoothstep(uSW.x, uSW.y, d)) * smoothstep(4.5, 7.0, length(p - a)) * clamp(w1 + w2, 0.0, 1.0);   // カップの角の留め輪は残す
+      if (uDbg > 0.5) return mix(col, vec3(0.0, 1.0, 0.0), 0.3 + 0.5 * m);
       return mix(col, fill, m);
     }
     // 胸のリング：輪とつながる帯の真ん中を、上下の本物の肌でつなぐ（輪の内側も含めて一続きに。半径の向きで写すと帯や金を拾う）
+    uniform vec3 uRG;   // リングの中心と大きさ
     vec3 ringOff(vec3 col, vec2 p, float on) {
-      vec2 C = vec2(702.0, 655.0); float r = length(p - C), ax = abs(p.x - C.x);
+      float K = uRG.z; vec2 C = uRG.xy; float r = length(p - C) / K, ax = abs(p.x - C.x) / K;
       float ringM = on > 0.5 ? 1.0 - smoothstep(16.0, 18.4, r) : 1.0 - smoothstep(15.6, 17.0, r);   // 留まっている間は輪とその影だけ（帯は残す。帯の付け根は別に描く輪の絵がつなぐ）
-      float bandM = on > 0.5 ? (1.0 - smoothstep(4.8, 6.6, abs(p.y - 656.4))) * (1.0 - smoothstep(20.0, 25.0, ax)) : 0.0;   // カップの角の短い端は残る
+      float bandM = on > 0.5 ? (1.0 - smoothstep(4.8, 6.6, abs(p.y - C.y - 1.4 * K) / K)) * (1.0 - smoothstep(20.0, 25.0, ax)) : 0.0;   // カップの角の短い端は残る
       float m = max(ringM, bandM);
       if (m < 0.001) return col;
-      float rr = on > 0.5 ? 19.0 : 18.2, hr = sqrt(max(0.0, rr * rr - ax * ax));                   // この列で、輪のにじみの外になる上下の位置
-      float y0 = min(648.0, C.y - hr), y1 = max(665.0, C.y + hr);
+      float rr = on > 0.5 ? 19.0 : 18.2, hr = sqrt(max(0.0, rr * rr - ax * ax)) * K;                   // この列で、輪のにじみの外になる上下の位置
+      float y0 = min(C.y - 7.0 * K, C.y - hr), y1 = max(C.y + 10.0 * K, C.y + hr);
       float u = clamp((p.y - y0) / (y1 - y0), 0.0, 1.0); u = u * u * (3.0 - 2.0 * u);
-      return mix(col, mix(tex(vec2(p.x, y0)), tex(vec2(p.x, y1)), u), m);
+      vec3 a0 = vec3(0.0), a1 = vec3(0.0);   // 上下の肌を横に少しぼかして拾う（縦のすじにしない）
+      for (int i = -2; i <= 2; i++) { float o = float(i) * 3.0 * K; a0 += tex(vec2(p.x + o, y0)); a1 += tex(vec2(p.x + o, y1)); }
+      if (uUseBk > 0.5) return mix(col, bkSkin(p), m);   // 本物の肌の絵があれば、そこから写す
+      return mix(col, mix(a0 / 5.0, a1 / 5.0, u), m);
     }
     // ---- 身頃の角の折れ返り（ドレス）：角の三角が折れ線で裏返り、表の跡には下の肌、折れた先には裏地が見える ----
     uniform vec4 uFA0, uFA1, uFN, uFO; uniform vec2 uFold;   // 角の先（左右）、胸元の縁の向き（左xy・右zw）、脇の縁の向き、折れ具合（左・右、長さ）
@@ -398,23 +427,6 @@
       vec3 fb = tex(vec2(q.x + sd * sh, q.y));
       return fb * (1.0 - 0.32 * (1.0 - smoothstep(0.0, 5.0, dh - D)) * k);       // 筒の下に落ちる影
     }
-    // ---- 本物の肌の絵（水着の絵：同じ体・同じ構図）。開いた所の肌はここから写す（塗らない） ----
-    uniform sampler2D uBkTex; uniform vec3 uBkGain;
-    vec3 bkRaw(vec2 q) { return texture2D(uBkTex, q / uImgF).rgb; }
-    float sh0(float h) { return h; }
-    vec3 bkSkin(vec2 p) {   // 水着の胸のリングと帯を消した素肌（上下の肌でつなぐ）
-      vec2 C = vec2(702.0, 655.0); float r = length(p - C), ax = abs(p.x - C.x);
-      float m = max(1.0 - smoothstep(16.0, 18.4, r), (1.0 - smoothstep(6.5, 9.5, abs(p.y - 657.0))) * (1.0 - smoothstep(26.0, 31.0, ax)));
-      vec3 c = bkRaw(p);
-      if (m > 0.001) {
-        float hr = sqrt(max(0.0, 400.0 - ax * ax)); float y0 = min(646.0, C.y - hr), y1 = max(669.0, C.y + hr);
-        float u = clamp((p.y - y0) / (y1 - y0), 0.0, 1.0); u = u * u * (3.0 - 2.0 * u);
-        c = mix(c, mix(bkRaw(vec2(p.x, y0)), bkRaw(vec2(p.x, y1)), u), m);
-      }
-      return min(c * uBkGain, vec3(1.0));
-    }
-    // 水着の絵で肌が見えている半分の幅（カップの縁の内側）。開く幅はこれを超えない（カップの布を写さない）
-    float bkHalf(float y) { float f1 = 95.0 - (y - 580.0) * 0.92, f2 = 27.0 + (y - 660.0) * 1.5, k = 12.0; return k * log(exp(f1 / k) + exp(f2 / k)); }   // 2本の線をなめらかにつなぐ（くびれを角にしない）
     float cheek(vec2 p, vec2 c) { vec2 q = (p - c) / vec2(48.0, 28.0); return exp(-dot(q, q) * 1.3); }
     void main() {
       vec2 p0 = vPix, p = vec2(p0.x - uGs * (p0.y - uFabY), p0.y);   // 合わせ目が傾いている衣装は、傾きを戻した座標で裂け目を考える
@@ -445,7 +457,7 @@
       q.x += uGs * (q.y - uFabY);   // 傾きを戻した座標から、絵の座標へ
       vec3 col = texture2D(uTex, q / uImgF).rgb;
       if (uDbg > 0.5 && h > 0.0 && uVk.x > 0.0 && e < 0.0) col = mix(col, p.y >= uFabY ? vec3(0.0, 0.0, 1.0) : a < vs - uShift ? vec3(0.0, 1.0, 0.0) : a < vs - uShift + h ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 1.0), 0.45);
-      if (uBk.w > 0.5 && uSF > 0.5) { col = strapOff2(col, q, uSA.xy, uSA.zw, uBk.x); col = strapOff2(col, q, uSB.xy, uSB.zw, uBk.y); }
+      if (uBk.w > 0.5 && uSF > 0.5) { col = strapOff2(col, q, uSA.xy, uSA.zw, uBk.x); col = strapOff2(col, q, uSB.xy, uSB.zw, uBk.y); if (uRing > 0.5) col = ringOff(col, q, uBk.z); }
       else if (uBk.w > 0.5) { col = strapOff(col, q, uSA.xy, uSA.zw, uBk.x); col = strapOff(col, q, uSB.xy, uSB.zw, uBk.y); if (uRing > 0.5) col = ringOff(col, q, uBk.z); }
       if (uFold.y > 0.0) { col = foldCorner(col, q, uFA0.xy, uFN.xy, uFO.xy, uFold.x * uFold.y); col = foldCorner(col, q, uFA1.xy, uFN.zw, uFO.zw, uFA0.z * uFold.y); }
       col = jewel(col, q); col = cover(col, q, uB0, uPop.x); col = cover(col, q, uB1, uPop.y); col = cover(col, q, uB2, uPop.z);
@@ -523,7 +535,7 @@
   fimg.src = '../../assets/characters/' + PZ.surprise;
   // 本物の肌（水着の絵）。パジャマの開いた所に使う
   let bkReady = false;
-  if (OF.gap && OF.gap.bkSkin) { const btex = gl.createTexture(), bimg = new Image();
+  if (OF.bkSkin || (OF.gap && OF.gap.bkSkin)) { const btex = gl.createTexture(), bimg = new Image();
     bimg.onload = () => { gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, btex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, bimg);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -630,10 +642,10 @@
     const G = OF.gap || { gx: 700, gy: 640, lin: [0, 0, 0], lin2: [0, 0, 0], line: [0, 0, 0] };
     gl.uniform2f(U('uG'), G.gx, G.bkSkin && bkReady ? G.gyB : G.gy); gl.uniform3f(U('uLin'), ...G.lin); gl.uniform3f(U('uLin2'), ...G.lin2); gl.uniform3f(U('uLine'), ...G.line);
     if (OF.fold) { const f = OF.fold; gl.uniform4f(U('uFA0'), ...f.apex[0], foldA[1], 0); gl.uniform4f(U('uFA1'), ...f.apex[1], 0, 0); gl.uniform4f(U('uFN'), ...f.neck[0], ...f.neck[1]); gl.uniform4f(U('uFO'), ...f.out[0], ...f.out[1]); gl.uniform2f(U('uFold'), foldA[0], f.len); } else gl.uniform2f(U('uFold'), 0, 0);
-    gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform1f(U('uUseBk'), bkReady ? 1 : 0); gl.uniform3f(U('uBkGain'), ...((OF.gap && OF.gap.bkGain) || [1, 1, 1])); gl.uniform1f(U('uWide'), (OF.gap && OF.gap.wide) || 1); gl.uniform1f(U('uRamp'), (OF.gap && (OF.gap.bkSkin && bkReady ? OF.gap.rampB : OF.gap.ramp)) || 24); gl.uniform1f(U('uShift'), (OF.gap && OF.gap.shift) || 0); gl.uniform1f(U('uGs'), (OF.gap && OF.gap.shear) || 0); gl.uniform4f(U('uSkin'), ...((OF.gap && OF.gap.skin) || [0, 0, 0, 0])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
+    gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform1f(U('uUseBk'), bkReady ? 1 : 0); gl.uniform3f(U('uBkGain'), ...(OF.bkGain || (OF.gap && OF.gap.bkGain) || [1, 1, 1])); gl.uniform1f(U('uWide'), (OF.gap && OF.gap.wide) || 1); gl.uniform1f(U('uRamp'), (OF.gap && (OF.gap.bkSkin && bkReady ? OF.gap.rampB : OF.gap.ramp)) || 24); gl.uniform1f(U('uShift'), (OF.gap && OF.gap.shift) || 0); gl.uniform1f(U('uGs'), (OF.gap && OF.gap.shear) || 0); gl.uniform4f(U('uSkin'), ...((OF.gap && OF.gap.skin) || [0, 0, 0, 0])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
     gl.uniform2f(U('uFlap'), ...((OF.gap && OF.gap.flap) || [0.12, 1.8]));
-    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring);
-    gl.uniform1f(U('uSF'), +(OUTFIT === 'dress')); gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));
+    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING);
+    gl.uniform1f(U('uSF'), +(OUTFIT === 'dress' || !!OF.strapFill)); gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));   // 髪の上を通る紐は、両側の色（髪・肌）でつなぐ消し方
     if (STRAP) { gl.uniform4f(U('uSA'), ...BTNS[0].a, ...BTNS[0].b); gl.uniform4f(U('uSB'), ...BTNS[1].a, ...BTNS[1].b); }
     const r0 = restOf(0), r1 = restOf(1);
     gl.uniform2f(U('uD0'), P[0].d[0] + r0[0], P[0].d[1] + r0[1]); gl.uniform2f(U('uD1'), P[1].d[0] + r1[0], P[1].d[1] + r1[1]);
@@ -690,17 +702,17 @@
   // 胸のリング：網目でゆがまないよう、絵から輪だけ切り出して丸いまま描く。左右の帯に引かれる位置へ動き、左右の高さの差で傾く
   let ringSpr = null;
   function makeRing() {
-    const R0 = 20, sc = 3, c = document.createElement('canvas'); c.width = c.height = R0 * 2 * sc; const g = c.getContext('2d');
-    g.imageSmoothingQuality = 'high'; g.drawImage(img, 702 - R0, 655 - R0, R0 * 2, R0 * 2, 0, 0, c.width, c.height);
+    const K = RING[2], R0 = 20 * K, sc = 3, c = document.createElement('canvas'); c.width = c.height = R0 * 2 * sc; const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high'; g.drawImage(img, RING[0] - R0, RING[1] - R0, R0 * 2, R0 * 2, 0, 0, c.width, c.height);
     const d = g.getImageData(0, 0, c.width, c.height);
     // 外側は丸く、横だけ帯の付け根まで切り出す
-    for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) { const r = Math.hypot(x / sc - R0 + 0.5 / sc, y / sc - R0 + 0.5 / sc), dy = Math.abs(y / sc - R0), ro = 13.9 + Math.min(1, Math.max(0, (2.6 - Math.abs(y / sc - R0 - 0.9)) / 0.7)) * 5.0, a = Math.min(1, Math.max(0, (r - 7.7) / 0.6)) * Math.min(1, Math.max(0, (ro - r) / 0.6)); d.data[(y * c.width + x) * 4 + 3] *= a; }
+    for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) { const r = Math.hypot(x / sc - R0 + 0.5 / sc, y / sc - R0 + 0.5 / sc), dy = Math.abs(y / sc - R0), ro = 13.9 * K + Math.min(1, Math.max(0, (2.6 * K - Math.abs(y / sc - R0 - 0.9 * K)) / 0.7)) * 5.0 * K, a = Math.min(1, Math.max(0, (r - (RING[3] || 7.7 * K)) / 0.6)) * Math.min(1, Math.max(0, (ro - r) / 0.6)); d.data[(y * c.width + x) * 4 + 3] *= a; }
     g.putImageData(d, 0, 0); ringSpr = c;
   }
   function drawRing() {
     if (!BIKINI || popped[2] || !img.complete) return; if (!ringSpr) makeRing();
-    const C = meshAt(702, 655), L = meshAt(678, 656), Rr = meshAt(726, 656), ang = Math.atan2(Rr[1] - L[1], Rr[0] - L[0]);
-    const x = view.ox + C[0] * view.s, y = view.oy + C[1] * view.s, w = 40 * view.s;
+    const C = meshAt(RING[0], RING[1]), L = meshAt(RING[0] - 24 * RING[2], RING[1] + RING[2]), Rr = meshAt(RING[0] + 24 * RING[2], RING[1] + RING[2]), ang = Math.atan2(Rr[1] - L[1], Rr[0] - L[0]);
+    const x = view.ox + C[0] * view.s, y = view.oy + C[1] * view.s, w = 40 * RING[2] * view.s;
     fc.save(); fc.translate(x, y); fc.rotate(ang);
     fc.globalAlpha = 0.3; fc.filter = 'brightness(0) blur(' + (1.2 * view.s).toFixed(1) + 'px)'; fc.drawImage(ringSpr, -w / 2 + 0.6 * view.s, -w / 2 + 1.6 * view.s, w, w);   // 肌に落ちる影
     fc.filter = 'none'; fc.globalAlpha = 1; fc.drawImage(ringSpr, -w / 2, -w / 2, w, w); fc.restore();
@@ -733,8 +745,9 @@
       if (!OF.ropeDrape) {   // 水着の細い紐（承認済みの見た目）
         fc.lineCap = 'round';
         fc.strokeStyle = 'rgba(60,20,20,.22)'; fc.lineWidth = 3.4 * view.s; path(1.6 * view.s); fc.stroke();
-        fc.strokeStyle = '#1b1113'; fc.lineWidth = 2.7 * view.s; path(0); fc.stroke();
-        fc.strokeStyle = 'rgba(150,95,105,.5)'; fc.lineWidth = 0.8 * view.s; path(-0.5 * view.s); fc.stroke();
+        const rc = OF.ropeCol || ['#1b1113', 'rgba(150,95,105,.5)'];   // 紐の色とつや
+        fc.strokeStyle = rc[0]; fc.lineWidth = 2.7 * view.s; path(0); fc.stroke();
+        fc.strokeStyle = rc[1]; fc.lineWidth = 0.8 * view.s; path(-0.5 * view.s); fc.stroke();
         continue;
       }
       fc.lineCap = 'butt';   // 紐の端は切り口（丸めない）

@@ -10,7 +10,7 @@ window.run = async (src) => {
   const score = (s, dx, dy, step) => { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.setTransform(s, 0, 0, s, dx, dy); g.drawImage(n, 0, 0, W, H); g.setTransform(1, 0, 0, 1, 0, 0); const nd = g.getImageData(0, 0, W, H).data; let e = 0, c = 0; for (let pi = 0; pi < pts.length; pi += (step || 1)) { const [x, y] = pts[pi]; const k = (y * W + x) * 4; e += Math.abs(nd[k] - od[k]) + Math.abs(nd[k + 1] - od[k + 1]) + Math.abs(nd[k + 2] - od[k + 2]); c++; } return e / c; };
   const T = (s, dx, dy) => [s, dx - (s - 1) * 701, dy - (s - 1) * 300];
   let best = { e: 1e9 };
-  for (let s = 0.86; s <= 1.2; s += 0.02) for (let dx = -60; dx <= 60; dx += 10) for (let dy = -60; dy <= 60; dy += 10) { const e = score(...T(s, dx, dy), 3); if (e < best.e) best = { e, s, dx, dy }; }
+  for (let s = 0.94; s <= 1.06; s += 0.02) for (let dx = -30; dx <= 30; dx += 10) for (let dy = -30; dy <= 30; dy += 10) { const e = score(...T(s, dx, dy), 3); if (e < best.e) best = { e, s, dx, dy }; }
   for (let pass = 0; pass < 4; pass++) { const ss = [0.01, 0.004, 0.0015, 0.0006][pass], dd = [5, 2, 1, 0.5][pass]; const b0 = { ...best }; for (let s = b0.s - ss * 2; s <= b0.s + ss * 2 + 1e-9; s += ss) for (let dx = b0.dx - dd * 2; dx <= b0.dx + dd * 2; dx += dd) for (let dy = b0.dy - dd * 2; dy <= b0.dy + dd * 2; dy += dd) { const e = score(...T(s, dx, dy)); if (e < best.e) best = { e, s, dx, dy }; } }
   const ident = score(1, 0, 0);
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.setTransform(...[best.s, 0, 0, best.s].concat(T(best.s, best.dx, best.dy).slice(1))); g.drawImage(n, 0, 0, W, H); g.setTransform(1, 0, 0, 1, 0, 0);
