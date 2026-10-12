@@ -67,6 +67,19 @@
       covers: [null, null, [700, 690, 28, 56]],   // 宝石と下の雫まで
       gap: { gx: 700, gy: 638, ends: [638, 638, 638, 760], lin: [0.6, 0.08, 0.12], lin2: [0.28, 0.03, 0.06], line: [0.12, 0.03, 0.05] } },
   };
+  // 外れた部品の飛び方：vx/vy＝横と上への勢い（範囲）、g＝重さ、spin＝回る速さ、bounce＝画面の下で弾む強さ、shake＝画面が揺れる強さ、spark＝きらめきの色と数
+  const FLY = { vx: [260, 480], vy: [700, 960], g: 2400, spin: [9, 17], life: 1.6, bounce: 0, shake: 0, spark: '#ffe9a8', n: 16 };
+  OUTFITS.pajama.fly = { vx: [150, 300], vy: [950, 1200], g: 2700, spin: [16, 26], life: 2.4, bounce: 0.55, spark: '#fff1f5', n: 12 };   // 軽いボタンがぽんっと高く跳ね、下で弾む
+  OUTFITS.santa.fly = { vx: [200, 320], vy: [480, 640], g: 3000, spin: [6, 10], life: 1.6, bounce: 0.3, spark: '#ffd98a', n: 14, shake: 2 };   // 金ボタンは重く、短く飛ぶ
+  OUTFITS.santa.parts[2].fly = { vx: [40, 90], vy: [120, 200], g: 3300, spin: [2, 4], life: 1.8, bounce: 0.22, spark: '#ffd98a', n: 22, shake: 10 };   // バックルはどすんと落ちる
+  OUTFITS.bikini.fly = { vx: [220, 380], vy: [950, 1200], g: 2500, spin: [18, 28], life: 1.9, bounce: 0.4, spark: '#ffe9a8', n: 14, shake: 3 };   // リングは高く回る
+  OUTFITS.bikini.strapShake = 4;
+  Object.assign(OUTFITS.bunny.gap, { flap: [0.12, 1.8], wk: 1, spring: 0 });
+  Object.assign(OUTFITS.pajama.gap, { flap: [0.42, 6.5], wk: 1.25, spring: 0 });   // やわらかい前立てが外へ大きくめくれ、裏地のサテンが幅広くのぞく
+  Object.assign(OUTFITS.santa.gap, { flap: [0.16, 2.6], wk: 1.05, spring: 1 });     // ベルトが弾けて、一度開きすぎてから戻る
+  Object.assign(OUTFITS.dress.gap, { flap: [0.22, 3.2], wk: 1.4, spring: 0 });     // 身頃が大きく左右に分かれる
+  OUTFITS.dress.fly = { vx: [180, 300], vy: [820, 1000], g: 2500, spin: [8, 13], life: 1.8, bounce: 0.3, spark: '#ff7a8a', n: 22, shake: 3 };   // 宝石は赤くきらめく
+  OUTFITS.dress.strapShake = 2;
   const qc = new URLSearchParams(location.search).get('c'), OUTFIT = OUTFITS[qc] ? qc : 'bunny', OF = OUTFITS[OUTFIT];
   const STRAP = OF.kind === 'strap', BIKINI = OUTFIT === 'bikini';
   const IMG = '../../assets/characters/' + OF.img;
@@ -152,7 +165,7 @@
     uniform sampler2D uTex, uFace; uniform float uBlush, uSurpF; uniform vec4 uFaceR; uniform vec2 uImgF; uniform vec4 uB0, uB1, uB2; uniform vec3 uPop; varying vec2 vUV, vPix; varying float vLit;
     // ボタンが外れた所：コルセットの左右の布そのものが外へ引かれて開く（模様も縁取りも本物のまま分かれる）。すき間の奥は影
     uniform vec3 uGap;   // x＝上の端での半分の幅、y＝裂け目の下の端、z＝画面1点が絵の何点か（ふちのなめらかさ）
-    uniform vec2 uG; uniform vec3 uLin, uLin2, uLine; uniform float uJewel, uRing; uniform vec4 uSA, uSB; uniform vec3 uSW;   // 衣装ごとの値（裂け目の始まり・裏地と線の色・肩紐の通り道）
+    uniform vec2 uG; uniform vec3 uLin, uLin2, uLine; uniform float uJewel, uRing; uniform vec4 uSA, uSB; uniform vec3 uSW; uniform vec2 uFlap;   // 衣装ごとの値（裂け目の始まり・裏地と線の色・肩紐の通り道）
     #define GX uG.x
     #define GY uG.y
     float gapHalf(float y) {
@@ -194,7 +207,7 @@
       col *= 1.0 - 0.22 * smoothstep(1.2, 3.5, e) * (1.0 - smoothstep(3.5, 13.0, e));
       col += vec3(0.04, 0.03, 0.04) * smoothstep(0.4, 1.0, e) * (1.0 - smoothstep(1.6, 2.8, e));
       // すき間の肌：元の絵と同じアニメ塗り（明るい面と影の2段をくっきり、影の境目にほんのり赤み）。色は絵から測った値
-      float lw = clamp(h * 0.12, 0.0, 1.8);                        // 切り口が外へめくれて、裏地（深紅）が細くのぞく幅＝布の厚み
+      float lw = clamp(h * uFlap.x, 0.0, uFlap.y);                        // 切り口が外へめくれて、裏地（深紅）が細くのぞく幅＝布の厚み
       float u = -e - 0.9 - lw;                                      // 肌の上での、布の縁からの距離
       bool left = p.x < GX;
       float sw = left ? 1.3 + 0.3 * h : 0.8 + 0.12 * h;             // 光は左から：左の縁は肌に広く影を落とし、右の縁は細く
@@ -393,14 +406,15 @@
   const gapTarget = () => {
     const n = gapLv(); if (!n || !OF.gap) return 0;
     const sep = (P[1].d[0] + restOf(1)[0]) - (P[0].d[0] + restOf(0)[0]);   // 左右の胸の離れ具合（外れるほど休む位置も外）
-    return Math.min(24, Math.max(1.6, sep * 0.14));
+    const wk = OF.gap.wk || 1; return Math.min(24 * wk, Math.max(1.6, sep * 0.14 * wk));
   };
   function stepGap(dt) {
     const end = GAP_END[gapLv()];
     gap.len = gap.len < end ? Math.min(end, gap.len + GAP_RIP * dt) : end;
-    gap.w += (gapTarget() - gap.w) * Math.min(1, dt * 26);   // 布は胸に少し遅れて引かれる
+    if (OF.gap && OF.gap.spring) { gap.vw = (gap.vw || 0) + ((gapTarget() - gap.w) * 900 - (gap.vw || 0) * 16) * dt; gap.w = Math.max(0, gap.w + gap.vw * dt); }   // ばね：開きすぎてから戻る
+    else gap.w += (gapTarget() - gap.w) * Math.min(1, dt * 26);   // 布は胸に少し遅れて引かれる
   }
-  const gapSettled = () => gap.len === GAP_END[gapLv()] && Math.abs(gap.w - gapTarget()) < 0.05;
+  const gapSettled = () => gap.len === GAP_END[gapLv()] && Math.abs(gap.w - gapTarget()) < 0.05 && Math.abs(gap.vw || 0) < 0.5;
   function energy() { return P.reduce((e, p, i) => e + Math.abs(p.d[0]) + Math.abs(p.d[1]) + Math.abs(p.v[0]) * .05 + Math.abs(p.v[1]) * .05 + Math.abs(p.sy - sagOf(i)) * 40 + Math.abs(p.svy) * 2 + (p.grab ? 9 : 0), 0); }
 
   function draw() {
@@ -412,6 +426,7 @@
     COVERS.forEach((b, k) => gl.uniform4f(U('uB' + k), ...b));
     const G = OF.gap || { gx: 700, gy: 640, lin: [0, 0, 0], lin2: [0, 0, 0], line: [0, 0, 0] };
     gl.uniform2f(U('uG'), G.gx, G.gy); gl.uniform3f(U('uLin'), ...G.lin); gl.uniform3f(U('uLin2'), ...G.lin2); gl.uniform3f(U('uLine'), ...G.line);
+    gl.uniform2f(U('uFlap'), ...((OF.gap && OF.gap.flap) || [0.12, 1.8]));
     gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring);
     gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));
     if (STRAP) { gl.uniform4f(U('uSA'), ...BTNS[0].a, ...BTNS[0].b); gl.uniform4f(U('uSB'), ...BTNS[1].a, ...BTNS[1].b); }
@@ -436,11 +451,13 @@
       const out = k === 0 ? -1 : 1;
       addRope(k, out);
       for (let n = 0; n < 6; n++) { const a = Math.random() * Math.PI * 2, sp = 90 + Math.random() * 200; parts.push({ star: 1, x: b.a[0], y: b.a[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.3 + Math.random() * 0.25, sz: 2 + Math.random() * 3 }); }
-      const p = P[k]; p.v[1] += 420; p.v[0] += out * 260; p.svy += 1.0; p.lift = 0; p.lf = 0;
+      const p = P[k]; p.v[1] += 420; p.v[0] += out * 260; p.svy += 1.0; p.lift = 0; p.lf = 0; shake(OF.strapShake || 0);
       P[1 - k].v[1] += 60;
     } else {
-      parts.push({ k, x: b.c[0], y: b.c[1], vx: side * (260 + Math.random() * 220), vy: -(700 + Math.random() * 260), rot: 0, vr: side * (9 + Math.random() * 8), t: 0, life: 1.6 });
-      for (let n = 0; n < 16; n++) { const a = Math.random() * Math.PI * 2, sp = 140 + Math.random() * 380; parts.push({ star: 1, x: b.c[0], y: b.c[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.35 + Math.random() * 0.35, sz: 3 + Math.random() * 5 }); }
+      const f = Object.assign({}, FLY, OF.fly, b.fly), rr = (a) => a[0] + Math.random() * (a[1] - a[0]);
+      parts.push({ k, x: b.c[0], y: b.c[1], vx: side * rr(f.vx), vy: -rr(f.vy), rot: 0, vr: side * rr(f.spin), t: 0, life: f.life, g: f.g, bounce: f.bounce, nb: 0 });
+      shake(f.shake);
+      for (let n = 0; n < f.n; n++) { const a = Math.random() * Math.PI * 2, sp = 140 + Math.random() * 380; parts.push({ star: 1, col: f.spark, x: b.c[0], y: b.c[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.35 + Math.random() * 0.35, sz: 3 + Math.random() * 5 }); }
       P.forEach((p, i) => { p.v[0] += (i === 0 ? -1 : 1) * 1500; p.v[1] += 120; p.svy -= 1.2; p.lift = 0; p.lf = 0; p.bt = 0.9; });   // ぱぁんっ：留めが外れて、左右へ一回はじける
     }
     blush = Math.min(1, blush + 0.35);                                   // ぽっと赤くなる
@@ -510,17 +527,27 @@
       fc.strokeStyle = 'rgba(150,95,105,.5)'; fc.lineWidth = 0.8 * view.s; path(-0.5 * view.s); fc.stroke();   // 生地のつや
     }
   }
+  // 画面の揺れ：重い部品が落ちた時など。すぐに減る
+  let shk = 0; const shake = (a) => { shk = Math.max(shk, a || 0); };
+  const stageEl2 = document.getElementById('stage');
+  function stepShake(dt) {
+    if (shk < 0.2) { if (shk) { shk = 0; stageEl2.style.transform = ''; } return; }
+    stageEl2.style.transform = 'translate(' + ((Math.random() - 0.5) * shk).toFixed(1) + 'px,' + ((Math.random() - 0.5) * shk).toFixed(1) + 'px)';
+    shk *= Math.exp(-dt / 0.07);
+  }
   function stepParts(dt) {
+    stepShake(dt);
     stepRopes(dt);
     for (let n = parts.length - 1; n >= 0; n--) { const q = parts[n]; q.t += dt; if (q.t > q.life) { parts.splice(n, 1); continue; }
-      q.x += q.vx * dt; q.y += q.vy * dt; if (q.star) { q.vx *= 0.9; q.vy = q.vy * 0.9 + 300 * dt; } else { q.vy += 2400 * dt; q.rot += q.vr * dt; } }
+      q.x += q.vx * dt; q.y += q.vy * dt; if (q.star) { q.vx *= 0.9; q.vy = q.vy * 0.9 + 300 * dt; } else { q.vy += (q.g || 2400) * dt; q.rot += q.vr * dt;
+        if (q.bounce && q.vy > 0 && q.y > 772 && q.nb < 2) { q.y = 772; q.vy *= -q.bounce; q.vx *= 0.7; q.vr *= 0.6; q.nb++; } } }   // 画面の下（床）で弾む
   }
   function drawParts() {
     fc.setTransform(view.dpr, 0, 0, view.dpr, 0, 0); fc.clearRect(0, 0, view.w, view.h); drawRing(); drawRopes();
     for (const q of parts) {
       const x = view.ox + q.x * view.s, y = view.oy + q.y * view.s, a = 1 - Math.max(0, (q.t - q.life * 0.7) / (q.life * 0.3));
       fc.globalAlpha = a;
-      if (q.star) { const r = q.sz * view.s * (1 - q.t / q.life * 0.5); fc.fillStyle = '#ffe9a8'; fc.beginPath();
+      if (q.star) { const r = q.sz * view.s * (1 - q.t / q.life * 0.5); fc.fillStyle = q.col || '#ffe9a8'; fc.beginPath();
         fc.moveTo(x, y - r); fc.lineTo(x + r * 0.28, y); fc.lineTo(x, y + r); fc.lineTo(x - r * 0.28, y); fc.closePath(); fc.fill();
         fc.beginPath(); fc.moveTo(x - r, y); fc.lineTo(x, y + r * 0.28); fc.lineTo(x + r, y); fc.lineTo(x, y - r * 0.28); fc.closePath(); fc.fill(); }
       else { const b = BTNS[q.k], sc = view.s * (1 + q.t * 0.35); fc.save(); fc.translate(x, y); fc.rotate(q.rot);
