@@ -69,9 +69,9 @@
       parts: [{ a: [581, 536], b: [621, 458] }, { a: [825, 536], b: [786, 458] }, { c: [702, 655], w: 28, h: 28, ring: 1 }], covers: [], gap: null },
     halter: { name: 'ホルター', img: 'panyu_halter_reach.webp', kind: 'strap', ring: 1, ringG: [700, 656, 0.95, 9.6], inpaint: 1, ringNoSprite: 1, ringAn: [-1, -1],   /* 小さな金のリングと短い棒（絵で描き直した） */ bkSkin: 1, strapFill: 1, sw: [5.5, 8.0, 10.5],   /* リングは細く穴が大きい（穴の半径17） */ feel: { k: 1.3, c: 0.95, ks: 1.35, cs: 0.92, sq: 1.2, kc: 0.9, push: 1.08 }, label: '留め', what: '金の鎖と胸の金のリング',   // つやのある水着：少し重めの金のリング
       parts: [{ a: [581, 539], b: [650, 402] }, { a: [825, 539], b: [757, 402] },   /* 金の鎖は首の方まで消す（元の絵で測った） */ { c: [700, 656], w: 32, h: 32, ring: 1 }], covers: [], gap: null },
-    white: { name: '白サテン', img: 'panyu_white_reach.webp', kind: 'strap', ring: 1, ringG: [701, 659, 0.78, 0], inpaint: 1, ringNoSprite: 1, ringAn: [-1, -1], bkSkin: 1, strapFill: 1, sw: [4.0, 6.0, 7.5],
+    white: { name: '白サテン', img: 'panyu_white_reach.webp', kind: 'strap', ring: 1, ringG: [701, 659, 0.78, 0], inpaint: 1, ringNoSprite: 1, ringAn: [-1, -1], bkSkin: 1, strapFill: 1, sw: [5.0, 7.0, 9.0],
       feel: { k: 0.95, c: 0.85, ks: 0.95, cs: 0.88, sq: 1.05, kc: 1.2, push: 1.0 }, label: '留め', what: 'サテンの肩紐と胸の真珠',   // シルクサテン：しなやかで、とろりと揺れる
-      parts: [{ a: [581, 538], b: [612, 470] }, { a: [823, 538], b: [794, 470] }, { c: [701, 659], w: 22, h: 22, ring: 1 }], covers: [], gap: null },
+      parts: [{ a: [583, 538], b: [657, 410] }, { a: [818, 538], b: [748, 410] }, { c: [701, 659], w: 22, h: 22, ring: 1 }]   /* 紐は髪の下の首元まで（元の絵で測った） */, covers: [], gap: null },
     dress: { name: 'ドレス', img: 'panyu_dress_reach.webp', kind: 'strap', feel: { k: 0.92, c: 0.8, ks: 0.9, cs: 0.85, sq: 1.0, kc: 1.35, push: 1.0 },   // シルク：しなやか。左右がつられて一緒に揺れる
       label: '留め', sw: [5.0, 6.8, 7.8], what: '肩紐と胸元の宝石',
       parts: [{ a: [570, 512], b: [598, 446] }, { a: [832, 512], b: [810, 446] }, { c: [700, 672], w: 56, h: 70 }],
@@ -86,7 +86,7 @@
   OUTFITS.bikini.fly = { vx: [220, 380], vy: [950, 1200], g: 2500, spin: [18, 28], life: 1.9, bounce: 0.4, spark: '#ffe9a8', n: 14, shake: 3 };   // リングは高く回る
   OUTFITS.bikini.strapShake = 4;
   OUTFITS.halter.fly = { ...OUTFITS.bikini.fly, vy: [800, 1000], g: 2800, spark: '#ffd98a', n: 18, shake: 4 }; OUTFITS.halter.strapShake = 4; OUTFITS.halter.ropeCol = ['#a8761f', 'rgba(255,226,150,.85)']; OUTFITS.halter.ropeChain = 1; OUTFITS.halter.ropeG = 3400; OUTFITS.halter.ropeDamp = 0.97;   // 金の鎖は重く、じゃらっと落ちる   // 大きな金のリングは少し重く
-  OUTFITS.white.fly = { ...OUTFITS.bikini.fly, vy: [1000, 1250], spin: [10, 16], spark: '#fff7ea', n: 16 }; OUTFITS.white.strapShake = 2; OUTFITS.white.ropeCol = ['#d9d3dc', 'rgba(255,255,255,.95)'];   // 真珠は高く、くるくる
+  OUTFITS.white.fly = { ...OUTFITS.bikini.fly, vy: [1000, 1250], spin: [10, 16], spark: '#fff7ea', n: 16 }; OUTFITS.white.strapShake = 2; OUTFITS.white.ropeCol = ['#d9d3dc', 'rgba(255,255,255,.95)']; OUTFITS.white.ropeG = 3200; OUTFITS.white.ropeDamp = 0.965; OUTFITS.white.ropeKick = 0.5;   // サテンの紐はすとんと落ちて、すぐ落ち着く   // 真珠は高く、くるくる
   Object.assign(OUTFITS.bunny.gap, { flap: [0.12, 1.8], wk: 1, spring: 0 });
   Object.assign(OUTFITS.pajama.gap, { flap: [0.42, 6.5], wk: 1.25, spring: 0, gx: 706, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 2.1, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.14, 1.18],   /* ボタンが外れると服が大きく開く */   /* ボタンが外れると、V字の先の襟の重なりも左右に離れる */   /* V字の中は引き伸ばさない（網目で胸が動くだけ）。開くのはV字の先から下 */ ends: [606, 700, 758, 830] });   // 一番上のボタンの所でつながらない（V字からそのまま開く）   // やわらかい前立てが外へ大きくめくれ、裏地のサテンが幅広くのぞく
   Object.assign(OUTFITS.pajama2.gap, { flap: [0.42, 6.5], wk: 1.25, spring: 0, fabY: 664, ramp: 40, vk: [0.6, 0.6, 0], ct: [0, 0], shear: 0.42, skin: [600, 445, 690, 500] });   // 合わせ目は下ほど右へ傾く（V字の先を中心に斜めに開く）
@@ -366,7 +366,9 @@
       vec2 ab = b - a; float t = clamp(dot(p - a, ab) / dot(ab, ab), 0.0, 1.0); vec2 cp = a + ab * t; float d = length(p - cp);
       if (d > uSW.y) return col;
       vec2 n = normalize(vec2(-ab.y, ab.x)); float sd = dot(p - cp, n);
-      vec3 c1 = tex(cp + n * uSW.z), c2 = tex(cp - n * uSW.z);
+      vec2 tg = normalize(ab); vec3 c1 = vec3(0.0), c2 = vec3(0.0);   // 紐の向きに沿って5点ならして拾う（髪のすじを写さない）
+      for (int i = -2; i <= 2; i++) { vec2 o = tg * float(i) * 3.0; c1 += tex(cp + o + n * uSW.z); c2 += tex(cp + o - n * uSW.z); }
+      c1 /= 5.0; c2 /= 5.0;
       float w1 = smoothstep(0.24, 0.36, dot(c1, vec3(0.3, 0.59, 0.11))), w2 = smoothstep(0.24, 0.36, dot(c2, vec3(0.3, 0.59, 0.11)));
       if (w1 + w2 < 0.02) return col;
       float u = clamp(sd / (2.0 * uSW.z) + 0.5, 0.0, 1.0); u = u * u * (3.0 - 2.0 * u);
