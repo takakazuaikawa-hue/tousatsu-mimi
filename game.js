@@ -15121,6 +15121,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     ringFills.forEach(r => r.style.strokeDashoffset = offset);
     const nEl = overlay.querySelector('.pv2-meter-n'), fEl = overlay.querySelector('.pv2-bar-fill');
     if (nEl) nEl.textContent = tapped;
+    if (tapped > 0) overlay.classList.add('is-touched');   // 触り始めたら説明の文字は引っ込めて絵を見せる
     if (fEl) fEl.style.width = (ratio * 100).toFixed(1) + '%';
     overlay.style.setProperty('--heat', ratio.toFixed(3));
     if (ratio >= 0.5) setPanyuFace('blush');

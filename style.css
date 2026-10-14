@@ -18666,3 +18666,18 @@ html.is-compact .intro-skip-btn { font-size: calc(13px / var(--game-scale, 1)) !
 .pv2 .pv2-outfit { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 1px solid rgba(243,236,224,.3); border-radius: 2px; background: rgba(12,9,10,.62); color: #f3ece0; font: 700 14px/1 inherit; font-family: inherit; cursor: pointer; }
 .pv2 .pv2-outfit span { font-size: 12px; color: #c9bfb2; font-weight: 400; }
 .pv2 .pv2-outfit b { color: #f0d595; }
+/* 横向きスマホ（高さが低い）：メーターを左下へ寄せ、胸と留め具の上を空ける */
+@media (max-height: 500px) {
+  .pv2.is-mesh .pv2-meter { left: 16px; bottom: 10px; transform: none; width: 230px; text-align: left; }
+  .pv2.is-mesh .pv2-meter-row { justify-content: flex-start; }
+  .pv2.is-mesh .pv2-hint { font-size: 12px; line-height: 1.45; }
+}
+/* 触り始めたら文字を引っ込める：スキル名・説明は消し、数とバーだけ小さく残す。右上の道具も控えめに */
+.pv2 .pv2-skill, .pv2 .pv2-hint, .pv2 .pv2-tools { transition: opacity .5s ease; }
+.pv2.is-touched .pv2-skill, .pv2.is-touched .pv2-hint { opacity: 0; }
+.pv2.is-touched .pv2-tools { opacity: .45; }
+.pv2.is-touched .pv2-tools:hover, .pv2.is-touched .pv2-tools:focus-within { opacity: 1; }
+.pv2.is-touched .pv2-meter-k { font-size: 12px; }
+.pv2.is-touched .pv2-meter-n { font-size: 22px; }
+.pv2.is-touched .pv2-meter-of { font-size: 13px; }
+.pv2.is-touched .pv2-meter { width: min(220px, 40vw); }

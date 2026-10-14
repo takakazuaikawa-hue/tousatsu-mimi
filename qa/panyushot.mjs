@@ -3,7 +3,7 @@
 import path from 'node:path';
 import { openSession, sleep } from './lib/session.mjs';
 const [W = 1280, H = 800, out = 'qa/out/panyu'] = process.argv.slice(2);
-const { page, close } = await openSession({ width: +W, height: +H, mobile: +W < 768, speed: 1, save: { clearedStages: ['rico_tutorial', 'polka'], introPlayed: true, coins: 500 } });
+const { page, close } = await openSession({ width: +W, height: +H, mobile: +W < 768 || +H < 500, speed: 1, save: { clearedStages: ['rico_tutorial', 'polka'], introPlayed: true, coins: 500 } });
 for (let i = 0; i < 30; i++) { await sleep(1000); if (await page.eval(`typeof showPanyuClicker === 'function'`)) break; }
 await sleep(1500);
 await page.eval(`(() => { showPanyuClicker(30, () => ({ reward: 10, left: 3, mul: 1 }), { lobby: true }); return true; })()`);
@@ -14,8 +14,8 @@ await page.screenshot(path.resolve(`${out}_open.png`));
 // iframe の中の胸・留めを押す（本物と同じ pointerdown/up）
 const tapIn = (k) => page.eval(`(() => {
   const w = document.querySelector('.pv2-mesh').contentWindow, D = w.__panyuDbg;
-  const iw = 1400, ih = 788, z = 1.28, ww = w.innerWidth, hh = w.innerHeight, s = Math.max(ww / iw, hh / ih) * z, F = D.focus;
-  let ox = ww / 2 - F[0] * s, oy = hh * 0.56 - F[1] * s; ox = Math.min(0, Math.max(ww - iw * s, ox)); oy = Math.min(0, Math.max(hh - ih * s, oy));
+  let s = 1;
+  const V = D.view(), ox = V.ox, oy = V.oy; s = V.s;
   const k = ${k}, b = k >= 0 ? D.parts[k] : null;
   const p = k < 0 ? [D.cups[0][0], D.cups[0][1] + 20] : (b.c || [(b.a[0] + b.b[0]) / 2, (b.a[1] + b.b[1]) / 2]);
   const el = w.document.getElementById('stage'), q = [ox + p[0] * s, oy + p[1] * s];

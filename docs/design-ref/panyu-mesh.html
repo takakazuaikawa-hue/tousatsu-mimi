@@ -132,7 +132,7 @@
   if (!gl) { if (EMBED) tell({ t: 'nogl' }); else document.getElementById('err').style.display = 'grid'; return; }
 
   // ---- 設定（ボタンで切り替え） ----
-  const opt = { mode: 'mesh', zoom: 1.28, amp: 1.95 };   // 動きは網目＋ばねだけ、揺れは1.95が標準（2026-10-12 決定）
+  const opt = { mode: 'mesh', zoom: innerHeight < 500 ? 1 : 1.28, amp: 1.95 };   // 横向きスマホは寄ると顔が切れるので寄らない（2本指で寄れる）   // 動きは網目＋ばねだけ、揺れは1.95が標準（2026-10-12 決定）
   const ob = document.getElementById('outfits');
   Object.entries(OUTFITS).forEach(([k, o]) => { const b = document.createElement('button'); b.textContent = o.name; b.classList.toggle('on', k === OUTFIT); b.addEventListener('click', () => { if (k !== OUTFIT) location.search = k === 'bunny' ? '' : '?c=' + k; }); ob.appendChild(b); });
   document.getElementById('lvName').textContent = OF.label; document.querySelector('.note').textContent = '押す・連打・長押し・引っぱる・' + OF.what + '／寄り具合：ホイール・ピンチ・L/R';
@@ -611,7 +611,7 @@
   let blush = 0;
   const stepBlush = (dt, h) => { const k = h > blush ? 1.4 : 0.35; blush += (h - blush) * Math.min(1, k * dt); };
   const P = CUPS.map(() => ({ d: [0, 0], v: [0, 0], sy: 1, svy: 0, sx: 1, grab: null, lift: 0, lf: 0, lfA: 0, bt: 0 }));
-  window.__panyuDbg = { focus: FOCUS, cups: CUPS.map(c => c.c), ropes: () => ropes, P, parts: BTNS, meshAt: (x, y) => meshAt(x, y), heatNow: () => heatNow(), blush: (v) => { if (v != null) { blush = v; draw(); } return blush; } };   // 検査用
+  window.__panyuDbg = { view: () => view, focus: FOCUS, cups: CUPS.map(c => c.c), ropes: () => ropes, P, parts: BTNS, meshAt: (x, y) => meshAt(x, y), heatNow: () => heatNow(), blush: (v) => { if (v != null) { blush = v; draw(); } return blush; } };   // 検査用
   function resetPhys() { P.forEach((p, i) => { p.d = [0, 0]; p.v = [0, 0]; p.sy = sagOf(i); p.svy = 0; p.sx = Math.pow(sagOf(i), -0.5); p.grab = null; p.lift = 0; p.lf = 0; p.lfA = 0; p.bt = 0; }); }
   // 向きごとの揺れの上限：これ以上ずらすと網目が折れる（下へ約90・上へ約100・外へ約130・内へ約70。縦に伸びている時は下を控える）
   function dirLim(i, dx, dy, sy, sx) {
