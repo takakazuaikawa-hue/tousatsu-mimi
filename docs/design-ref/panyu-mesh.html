@@ -110,7 +110,7 @@
   Object.assign(OUTFITS.pajama2.gap, { flap: [0.42, 6.5], wk: 1.25, spring: 0, fabY: 664, ramp: 40, vk: [0.6, 0.6, 0], ct: [0, 0], shear: 0.42, skin: [600, 445, 690, 500] });   // 合わせ目は下ほど右へ傾く（V字の先を中心に斜めに開く）
   OUTFITS.pajama2.fly = OUTFITS.pajama.fly;
   OUTFITS.pajama.outK = OUTFITS.pajama2.outK = 0.5; OUTFITS.pajama.downK = OUTFITS.pajama2.downK = 1.4;   // やわらかいパジャマは左右へは開きすぎず（胸の間の布と肌が横に伸びない）、下へ垂れる
-  Object.assign(OUTFITS.gothic.gap, { flap: [0.2, 3.4], wk: 1.1, spring: 0, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 1.5, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.15, 1.19], ends: [606, 700, 750, 830] });   // 硬く重い生地：開きは中くらい、レースの前立てごと外へ
+  Object.assign(OUTFITS.gothic.gap, { inVSkin: 1, flap: [0.2, 3.4], wk: 1.1, spring: 0, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 1.5, gyB: 598, rampB: 22, bkSkin: 1, bkGain: [1.02, 1.15, 1.19], ends: [606, 700, 750, 830] });   // 硬く重い生地：開きは中くらい、レースの前立てごと外へ
   Object.assign(OUTFITS.jirai.gap, { flap: [0.45, 7], wk: 1.35, spring: 0, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 2.3, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.15, 1.2], ends: [606, 672, 715, 800] });   // 軽い生地：ふわっと大きく開く
   Object.assign(OUTFITS.vintage.gap, { flap: [0.4, 5.5], wk: 1.2, spring: 0, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 1.8, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.01, 1.15, 1.19], ends: [606, 698, 757, 830] });   // とろみのある生地：開いた布は下へすとんと垂れる
   Object.assign(OUTFITS.nurse.gap, { flap: [0.24, 3.4], wk: 1.1, spring: 1, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 1.6, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.15, 1.18], ends: [606, 700, 758, 830] });   // 張りのある綿：開きは中くらい、開いてからぴんと戻る
@@ -216,7 +216,7 @@
     // ボタンが外れた所：コルセットの左右の布そのものが外へ引かれて開く（模様も縁取りも本物のまま分かれる）。すき間の奥は影
     uniform vec3 uGap;   // x＝上の端での半分の幅、y＝裂け目の下の端、z＝画面1点が絵の何点か（ふちのなめらかさ）
     uniform vec2 uG; uniform vec3 uLin, uLin2, uLine; uniform float uJewel, uRing; uniform vec4 uSA, uSB; uniform vec3 uSW; uniform vec2 uFlap; uniform float uFabY;   // 衣装ごとの値（裂け目の始まり・裏地と線の色・肩紐の通り道）
-    uniform float uRamp, uWide, uUseBk; uniform vec3 uVk;   // V字の左右の傾き（x・y）と、V字の下の端での半分の幅（z）。x>0 でV字から開く衣装
+    uniform float uRamp, uWide, uUseBk, uInVSkin; uniform vec3 uVk;   // V字の左右の傾き（x・y）と、V字の下の端での半分の幅（z）。x>0 でV字から開く衣装
     #define GX uG.x
     #define GY uG.y
     float gapHalf(float y) {
@@ -530,19 +530,20 @@
       if (uDbg > 0.5 && uUseBk > 0.5 && h > 0.0) { gl_FragColor = vec4(e < 0.0 ? 1.0 : 0.0, clamp(W - vs, 0.0, 10.0) / 10.0, e >= 0.0 ? clamp(1.0 - e / 30.0, 0.0, 1.0) : 0.0, 1.0); return; }
       if (uUseBk > 0.5 && h > 0.0) {
         float aa = max(0.6, uGap.z);
-        if (e < 0.0) {
+        float eM = e + uInVSkin * 12.0 * (1.0 - smoothstep(GY, GY + 28.0, p.y));   // 暗い布の衣装：開いた肌の上の端は、V字の肌の縁に合わせて細く始める（布が肌に透けるもやを作らず、段差も作らない）
+        if (eM < 0.0) {
           vec3 sk = bkSkin(p);
           float inV = 1.0 - smoothstep(GY, GY + 34.0, p.y);   // 開き始めの所だけパジャマの絵の肌から、下へなめらかに本物の肌へ
           float bl0 = sqrt(uBlush);
           sk = mix(sk, sk * vec3(1.0, 0.9, 0.9) + vec3(0.025, 0.0, 0.012), 0.3 + 0.45 * bl0);   // 肌の色気：ほんのり血色、熱が上がるほど赤らむ
           sk += vec3(0.05, 0.035, 0.035) * pow(max(0.0, 1.0 - abs(-e - 10.0) / 7.0), 2.0) * (1.0 - inV);   // 布の縁の少し内側に、肌のつや
-          sk = mix(sk, col, inV);
+          sk = mix(sk, col, inV * mix(1.0, skinLike(col), uInVSkin));   // 暗い布（ゴスロリ等）が肌に透けて灰色のもやにならないよう、肌でない色は混ぜない
           float u = -e;                                                              // 布の縁からの距離
           sk *= 1.0 - 0.32 * (1.0 - smoothstep(0.0, p.x < GX ? 9.0 : 5.0, u)) * (1.0 - inV);   // 布の縁が肌に落とす影（光は左から）
           float lw = min(uFlap.y, sh0(h) * uFlap.x) * smoothstep(uFabY - 4.0, uFabY + 16.0, p.y);
           vec3 lin = mix(uLin, uLin2, clamp(u / max(lw, 0.01), 0.0, 1.0));
           sk = mix(sk, lin, (1.0 - smoothstep(lw - aa * 0.5, lw + aa * 0.5, u)) * step(0.3, lw));   // 切り口の裏地
-          col = mix(col, sk, smoothstep(-aa, 0.0, -e));
+          col = mix(col, sk, smoothstep(-aa, 0.0, -eM));
         } else col *= 1.0 - 0.16 * smoothstep(1.2, 3.5, e) * (1.0 - smoothstep(3.5, 12.0, e)) * smoothstep(0.0, 4.0, W - vs);   // 布：縁へ回り込む影（開いた分に合わせて）
         float ln = 1.0 - smoothstep(0.5, 0.5 + aa, abs(e + 0.2));
         col = mix(col, uLine, ln * 0.8 * smoothstep(0.0, 2.0, W - vs));   // 布の縁の線
@@ -708,7 +709,7 @@
     const G = OF.gap || { gx: 700, gy: 640, lin: [0, 0, 0], lin2: [0, 0, 0], line: [0, 0, 0] };
     gl.uniform2f(U('uG'), G.gx, G.bkSkin && bkReady ? G.gyB : G.gy); gl.uniform3f(U('uLin'), ...G.lin); gl.uniform3f(U('uLin2'), ...G.lin2); gl.uniform3f(U('uLine'), ...G.line);
     if (OF.fold) { const f = OF.fold; gl.uniform4f(U('uFA0'), ...f.apex[0], foldA[1], 0); gl.uniform4f(U('uFA1'), ...f.apex[1], 0, 0); gl.uniform4f(U('uFN'), ...f.neck[0], ...f.neck[1]); gl.uniform4f(U('uFO'), ...f.out[0], ...f.out[1]); gl.uniform2f(U('uFold'), foldA[0], f.len); } else gl.uniform2f(U('uFold'), 0, 0);
-    gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform1f(U('uUseBk'), bkReady ? 1 : 0); gl.uniform3f(U('uBkGain'), ...(OF.bkGain || (OF.gap && OF.gap.bkGain) || [1, 1, 1])); gl.uniform1f(U('uWide'), (OF.gap && OF.gap.wide) || 1); gl.uniform1f(U('uRamp'), (OF.gap && (OF.gap.bkSkin && bkReady ? OF.gap.rampB : OF.gap.ramp)) || 24); gl.uniform1f(U('uShift'), (OF.gap && OF.gap.shift) || 0); gl.uniform1f(U('uGs'), (OF.gap && OF.gap.shear) || 0); gl.uniform4f(U('uSkin'), ...((OF.gap && OF.gap.skin) || [0, 0, 0, 0])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
+    gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform1f(U('uUseBk'), bkReady ? 1 : 0); gl.uniform3f(U('uBkGain'), ...(OF.bkGain || (OF.gap && OF.gap.bkGain) || [1, 1, 1])); gl.uniform1f(U('uWide'), (OF.gap && OF.gap.wide) || 1); gl.uniform1f(U('uRamp'), (OF.gap && (OF.gap.bkSkin && bkReady ? OF.gap.rampB : OF.gap.ramp)) || 24); gl.uniform1f(U('uInVSkin'), (OF.gap && OF.gap.inVSkin) || 0); gl.uniform1f(U('uShift'), (OF.gap && OF.gap.shift) || 0); gl.uniform1f(U('uGs'), (OF.gap && OF.gap.shear) || 0); gl.uniform4f(U('uSkin'), ...((OF.gap && OF.gap.skin) || [0, 0, 0, 0])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
     gl.uniform2f(U('uFlap'), ...((OF.gap && OF.gap.flap) || [0.12, 1.8]));
     gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0]));
     gl.uniform1f(U('uSF'), +(OUTFIT === 'dress' || !!OF.strapFill)); gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));   // 髪の上を通る紐は、両側の色（髪・肌）でつなぐ消し方
