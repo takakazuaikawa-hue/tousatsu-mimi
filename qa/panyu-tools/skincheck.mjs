@@ -10,7 +10,7 @@ const [OF, OUT] = process.argv.slice(2);
 const server = await serve('C:/Users/takakazu/projects/mp_panyu', 0); const br = await launch({ width: 1280, height: 800 }); const page = await br.newPage();
 await page.setViewport(1280, 800); await page.goto('about:blank', 1);
 await page.goto(`http://127.0.0.1:${server.port}/docs/design-ref/panyu-mesh.html?c=${OF}`, 8000); await sleep(5000);
-const xf = `const iw=1400,ih=788,z=1.28,w=innerWidth,h=innerHeight;const s=Math.max(w/iw,h/ih)*z;const F=__panyuDbg.focus;let ox=w/2-F[0]*s,oy=h*0.56-F[1]*s;ox=Math.min(0,Math.max(w-iw*s,ox));oy=Math.min(0,Math.max(h-ih*s,oy));`;
+const xf = `const V=__panyuDbg.view(),s=V.s,ox=V.ox,oy=V.oy;`;   // 画面の今の写し方（寄りが動いている途中でも押す所がずれない）
 const tap = (ix, iy) => page.eval(`(()=>{const st=document.getElementById('stage');${xf}const q=[ox+${ix}*s,oy+${iy}*s];st.dispatchEvent(new PointerEvent('pointerdown',{clientX:q[0],clientY:q[1],pointerId:75,bubbles:true}));st.dispatchEvent(new PointerEvent('pointerup',{clientX:q[0],clientY:q[1],pointerId:75,bubbles:true}));})()`);
 const part = async (k) => JSON.parse(await page.eval(`JSON.stringify((()=>{const b=__panyuDbg.parts[${k}];return b.c||[(b.a[0]+b.b[0])/2,(b.a[1]+b.b[1])/2];})())`));
 const cups = JSON.parse(await page.eval(`JSON.stringify(__panyuDbg.cups)`));
@@ -21,7 +21,8 @@ const clip = JSON.parse(await page.eval(`(()=>{${xf}return JSON.stringify({x:ox+
 const grab = async () => (await page.send('Page.captureScreenshot', { format: 'png', clip })).data;
 console.error('clip', JSON.stringify(clip)); const shots = [];
 shots.push(['0', await grab()]);
-for (let k = 0; k < 3; k++) { const p = await part(k); await tap(p[0], p[1]); await sleep(4500); shots.push([String(k + 1), await grab()]); }
+const lv = async () => +(await page.eval("document.getElementById('lv').textContent")).split('/')[0];
+for (let k = 0; k < 3; k++) { const p = await part(k); for (let t = 0; t < 6 && await lv() <= k; t++) { await tap(p[0], p[1]); await sleep(400); } console.error('外れた数', await lv()); await sleep(4100); shots.push([String(k + 1), await grab()]); }
 // 揺らしている途中（全部外した後、左右の胸を3回ずつ）
 for (const c of cups) for (let i = 0; i < 3; i++) { await tap(c[0], c[1] + 20); await sleep(80); }
 await sleep(120); shots.push(['3揺れ', await grab()]);

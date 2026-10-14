@@ -7,7 +7,7 @@ const server = await serve('C:/Users/takakazu/projects/mp_panyu', 0); const br =
 await page.setViewport(1280, 800); await page.goto('about:blank', 1);
 await page.goto(`http://127.0.0.1:${server.port}/docs/design-ref/panyu-mesh.html?c=${OF}`, 15000); await sleep(7000);
 console.log('err:', await page.eval(`getComputedStyle(document.getElementById('err')).display`));
-const xf = `const iw=1400,ih=788,z=1.28,w=innerWidth,h=innerHeight;const s=Math.max(w/iw,h/ih)*z;const F=__panyuDbg.focus;let ox=w/2-F[0]*s,oy=h*0.56-F[1]*s;ox=Math.min(0,Math.max(w-iw*s,ox));oy=Math.min(0,Math.max(h-ih*s,oy));`;
+const xf = `const V=__panyuDbg.view(),s=V.s,ox=V.ox,oy=V.oy;`;   // 画面の今の写し方（寄りが動いている途中でも押す所がずれない）
 const tapK = (k) => page.eval(`(()=>{const st=document.getElementById('stage');${xf}const b=__panyuDbg.parts[${k}];const p=b.c||[(b.a[0]+b.b[0])/2,(b.a[1]+b.b[1])/2];const q=[ox+p[0]*s,oy+p[1]*s];st.dispatchEvent(new PointerEvent('pointerdown',{clientX:q[0],clientY:q[1],pointerId:71,bubbles:true}));st.dispatchEvent(new PointerEvent('pointerup',{clientX:q[0],clientY:q[1],pointerId:71,bubbles:true}));return document.getElementById('lv').textContent;})()`);
 const clip = JSON.parse(await page.eval(`(()=>{${xf}const x0=ox+(F[0]-161)*s,y0=oy+(F[1]-118)*s;return JSON.stringify({x:x0,y:y0,width:320*s,height:Math.min(358*s,h-y0),scale:2});})()`));
 const shot = async (n, z) => { const r = await page.send('Page.captureScreenshot', z ? { format: 'png', clip } : { format: 'png' }); fs.writeFileSync(`${OUT}-${n}.png`, Buffer.from(r.data, 'base64')); };

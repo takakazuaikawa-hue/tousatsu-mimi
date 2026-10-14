@@ -77,7 +77,7 @@
       gap: { gx: 703, gy: 640, ends: [640, 698, 757, 830], lin: [0.55, 0.22, 0.17], lin2: [0.34, 0.13, 0.1], line: [0.18, 0.06, 0.045] } },
     nurse: { name: 'ナース', img: 'panyu_nurse_reach.webp', kind: 'front', feel: { k: 1.08, c: 0.9, ks: 1.1, cs: 0.88, sq: 0.92, kc: 0.9, push: 1.02 }, label: 'ボタン', what: '白い丸ボタン',   // 張りのある綿：体に沿い、ぴんと張って戻る
       parts: [{ c: [696, 670], w: 25, h: 25, round: 1 }, { c: [696, 731], w: 25, h: 25, round: 1 }, { c: [697, 785], w: 25, h: 25, round: 1 }],
-      covers: [[696, 670, 15.5, -15.5], [696, 731, 15.5, -15.5], [697, 785, 15.5, -15.5]],
+      covers: [[696, 670, 15.5, -15.5], [696, 731, 15.5, -18.5], [697, 785, 15.5, -15.5]], coverLeft: [9, 0, 0],   // 1つ目の跡は左の白い布で埋める（上下で埋めると下の帯のピンクが上がってきて当て布に見える）。2つ目はボタンの影の外まで
       gap: { gx: 703, gy: 640, ends: [640, 700, 758, 830], lin: [0.95, 0.83, 0.86], lin2: [0.74, 0.54, 0.6], line: [0.62, 0.3, 0.38] } },
     santa: { name: 'サンタ', img: 'panyu_santa_reach.webp', kind: 'front', feel: { k: 0.82, c: 1.4, ks: 1.1, cs: 1.35, sq: 0.82, kc: 0.9, push: 0.88 }, label: 'ボタン', what: '金ボタンとベルト',   // ベルベット：重く、どっしり。余韻は短い
       parts: [{ c: [699, 649], w: 36, h: 36, round: 1 }, { c: [699, 691], w: 36, h: 36, round: 1 }, { c: [700, 757], w: 80, h: 64, rect: 1 }],
@@ -113,7 +113,7 @@
   Object.assign(OUTFITS.gothic.gap, { inVSkin: 0, flap: [0.2, 3.4], wk: 1.1, spring: 0, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 1.5, gyB: 560, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.15, 1.19], ends: [606, 700, 750, 830] });   // 硬く重い生地：開きは中くらい、レースの前立てごと外へ
   Object.assign(OUTFITS.jirai.gap, { flap: [0.45, 7], wk: 1.35, spring: 0, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 2.3, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.15, 1.2], ends: [606, 672, 715, 800] });   // 軽い生地：ふわっと大きく開く
   Object.assign(OUTFITS.vintage.gap, { flap: [0.4, 5.5], wk: 1.2, spring: 0, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 1.8, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.01, 1.15, 1.19], ends: [606, 698, 757, 830] });   // とろみのある生地：開いた布は下へすとんと垂れる
-  Object.assign(OUTFITS.nurse.gap, { flap: [0.24, 3.4], wk: 1.1, spring: 1, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 1.6, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.15, 1.18], ends: [606, 700, 758, 830] });   // 張りのある綿：開きは中くらい、開いてからぴんと戻る
+  Object.assign(OUTFITS.nurse.gap, { flap: [0.24, 3.4], wk: 1.1, spring: 1, gx: 705, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 1.6, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.15, 1.18], ends: [606, 700, 758, 830] });   // 張りのある綿：開きは中くらい、開いてからぴんと戻る
   OUTFITS.gothic.fly = { vx: [180, 300], vy: [560, 760], g: 3000, spin: [8, 14], life: 1.7, bounce: 0.3, spark: '#e8dcd0', n: 12, shake: 2 };   // 黒いくるみボタンは重く、短く飛ぶ
   OUTFITS.jirai.fly = { vx: [150, 300], vy: [950, 1200], g: 2600, spin: [16, 26], life: 2.4, bounce: 0.55, spark: '#ffd6e4', n: 12 };   // 軽いハートがぽんっと高く跳ねる
   OUTFITS.vintage.fly = { vx: [170, 300], vy: [650, 850], g: 3000, spin: [8, 14], life: 1.8, bounce: 0.35, spark: '#f0c890', n: 12, shake: 1 };   // べっ甲のボタンはころんと落ちる
@@ -212,7 +212,7 @@
     #else
     precision mediump float;
     #endif
-    uniform vec4 uFaceC, uBlushC; uniform sampler2D uTex, uFace; uniform float uBlush, uSurpF; uniform vec4 uFaceR; uniform vec2 uImgF; uniform vec4 uB0, uB1, uB2; uniform vec3 uPop; varying vec2 vUV, vPix; varying float vLit;
+    uniform vec4 uFaceC, uBlushC; uniform sampler2D uTex, uFace; uniform float uBlush, uSurpF; uniform vec4 uFaceR; uniform vec2 uImgF; uniform vec4 uB0, uB1, uB2; uniform vec3 uPop, uCovL; varying vec2 vUV, vPix; varying float vLit;
     // ボタンが外れた所：コルセットの左右の布そのものが外へ引かれて開く（模様も縁取りも本物のまま分かれる）。すき間の奥は影
     uniform vec3 uGap;   // x＝上の端での半分の幅、y＝裂け目の下の端、z＝画面1点が絵の何点か（ふちのなめらかさ）
     uniform vec2 uG; uniform vec3 uLin, uLin2, uLine; uniform float uJewel, uRing; uniform vec4 uSA, uSB; uniform vec3 uSW; uniform vec2 uFlap; uniform float uFabY;   // 衣装ごとの値（裂け目の始まり・裏地と線の色・肩紐の通り道）
@@ -236,16 +236,17 @@
       return mix(col, fab, 1.0 - smoothstep(jw, jw + 1.0, a));
     }
     // 外れた金具の跡：金具の形（ひし形＋飾り）に合わせた範囲を、すぐ外の布の鏡写しで埋める（b＝中心と半分の幅・高さ）
-    vec3 cover(vec3 col, vec2 p, vec4 b, float on) {
+    vec3 cover(vec3 col, vec2 p, vec4 b, float on, float side) {
       if (on < 0.5) return col;
+      if (side > 0.5 && p.x >= b.x + side) return col;   // side＝ボタンの中心から右へ何点まで埋めるか。その右（上の身頃の縁取り）は元の絵のまま
       float pw = b.z < 0.0 ? 10.0 : 3.0; vec2 hs = abs(b.zw);              // 幅がマイナスの時は四角（バックルの角まで）
       vec2 q = abs(p - b.xy) / hs; float d = pow(pow(q.x, pw) + pow(q.y, pw), 1.0 / pw);   // 角の丸い四角（飾りまで確実に隠す）
       float m = 1.0 - smoothstep(0.85, 1.05, d);
       if (m <= 0.0) return col;
       float ex = hs.x * max(0.6, pow(max(0.0, 1.1 - pow(q.y, pw)), 1.0 / pw));   // この段での金具の端
-      float sx = sign(p.x - b.x + 0.001);
+      float sx = side > 0.5 ? -1.0 : sign(p.x - b.x + 0.001);   // side：左の白い布だけを写す（下の帯や縁取りを拾わない）
       vec2 mp = vec2(b.x + sx * (2.0 * ex - abs(p.x - b.x)), p.y);   // 金具の端で折り返して、すぐ隣の布を鏡写し（質感がつながる）
-      if (b.w < 0.0) {   // 上下の布をつなぐ（ボタンの上と下の、ふちの外の色を縦に混ぜる）
+      if (b.w < 0.0 && side < 0.5) {   // 上下の布をつなぐ（ボタンの上と下の、ふちの外の色を縦に混ぜる）
         float ey = hs.y * 1.1, u = clamp((p.y - b.y + ey) / (2.0 * ey), 0.0, 1.0);
         return mix(col, mix(texture2D(uTex, vec2(p.x, b.y - ey) / uImgF).rgb, texture2D(uTex, vec2(p.x, b.y + ey) / uImgF).rgb, u * u * (3.0 - 2.0 * u)), m);
       }
@@ -525,7 +526,7 @@
       if (uBk.w > 0.5 && uSF > 0.5) { col = strapOff2(col, q, uSA.xy, uSA.zw, uBk.x); col = strapOff2(col, q, uSB.xy, uSB.zw, uBk.y); if (uRing > 0.5) col = ringOff(col, q, uBk.z); }
       else if (uBk.w > 0.5) { col = strapOff(col, q, uSA.xy, uSA.zw, uBk.x); col = strapOff(col, q, uSB.xy, uSB.zw, uBk.y); if (uRing > 0.5) col = ringOff(col, q, uBk.z); }
       if (uFold.y > 0.0) { col = foldCorner(col, q, uFA0.xy, uFN.xy, uFO.xy, uFold.x * uFold.y); col = foldCorner(col, q, uFA1.xy, uFN.zw, uFO.zw, uFA0.z * uFold.y); }
-      col = jewel(col, q); col = cover(col, q, uB0, uPop.x); col = cover(col, q, uB1, uPop.y); col = cover(col, q, uB2, uPop.z);
+      col = jewel(col, q); col = cover(col, q, uB0, uPop.x, uCovL.x); col = cover(col, q, uB1, uPop.y, uCovL.y); col = cover(col, q, uB2, uPop.z, uCovL.z);
       col *= 1.0 + clamp(vLit, -0.25, 0.25) * 0.35;
       if (uDbg > 0.5 && uUseBk > 0.5 && h > 0.0) { gl_FragColor = vec4(e < 0.0 ? 1.0 : 0.0, clamp(W - vs, 0.0, 10.0) / 10.0, e >= 0.0 ? clamp(1.0 - e / 30.0, 0.0, 1.0) : 0.0, 1.0); return; }
       if (uUseBk > 0.5 && h > 0.0) {
@@ -704,7 +705,7 @@
     gl.uniform1f(U('uSurp'), surpNow()); gl.uniform1f(U('uSurpF'), faceReady ? surpNow() : 0); gl.uniform4f(U('uFaceR'), ...FACE_R); gl.uniform4f(U('uFaceC'), ...PZ.faceC); gl.uniform4f(U('uBlushC'), ...PZ.blushC); gl.uniform3f(U('uHead'), ...PZ.head); gl.uniform2f(U('uMass'), ...(PZ.mass || [0, 0.18])); [0, 1, 2].forEach(k => gl.uniform4f(U('uK' + k), ...((PZ.keep || [])[k] || [0, 0, 0, 0]))); gl.uniform2f(U('uE0'), ...EYES[0]); gl.uniform2f(U('uE1'), ...EYES[1]);
     gl.uniform1f(U('uR0'), CUPS[0].r); gl.uniform1f(U('uR1'), CUPS[1].r);
     gl.uniform2f(U('uImgF'), iw, ih); gl.uniform3f(U('uPop'), STRAP ? 0 : +popped[0], STRAP ? 0 : +popped[1], +popped[2] * +!!OF.covers[2]); gl.uniform4f(U('uBk'), +(STRAP && popped[0]), +(STRAP && popped[1]), +(BIKINI && popped[2]), +STRAP); gl.uniform3f(U('uGap'), gap.w, gap.len, 1 / (view.s * view.dpr));
-    COVERS.forEach((b, k) => gl.uniform4f(U('uB' + k), ...b));
+    COVERS.forEach((b, k) => gl.uniform4f(U('uB' + k), ...b)); gl.uniform3f(U('uCovL'), ...(OF.coverLeft || [0, 0, 0]));
     const G = OF.gap || { gx: 700, gy: 640, lin: [0, 0, 0], lin2: [0, 0, 0], line: [0, 0, 0] };
     gl.uniform2f(U('uG'), G.gx, G.bkSkin && bkReady ? G.gyB : G.gy); gl.uniform3f(U('uLin'), ...G.lin); gl.uniform3f(U('uLin2'), ...G.lin2); gl.uniform3f(U('uLine'), ...G.line);
     if (OF.fold) { const f = OF.fold; gl.uniform4f(U('uFA0'), ...f.apex[0], foldA[1], 0); gl.uniform4f(U('uFA1'), ...f.apex[1], 0, 0); gl.uniform4f(U('uFN'), ...f.neck[0], ...f.neck[1]); gl.uniform4f(U('uFO'), ...f.out[0], ...f.out[1]); gl.uniform2f(U('uFold'), foldA[0], f.len); } else gl.uniform2f(U('uFold'), 0, 0);
