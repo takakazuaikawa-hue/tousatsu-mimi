@@ -63,6 +63,22 @@
       gap: { gx: 734, gy: 664, ends: [664, 664, 712, 742], lin: [0.93, 0.7, 0.74], lin2: [0.62, 0.38, 0.44], line: [0.42, 0.2, 0.26] },
       // 構図（この衣装だけ別のポーズ）：胸（中心と半径）・頬・目・驚き顔の範囲・顔の楕円・顔の赤らみ・頭ののけぞる所・寄せる注目点
       pose: { mass: [0.5, 0.72], cups: [[622, 632, 126], [852, 596, 136]],   /* 寝転んだ胸はひとかたまりで揺れる（付け根も動き、中心付近は同じ大きさで動く） */ keep: [[480, 712, 92, 62], [930, 735, 110, 48], [640, 794, 250, 42]],   /* 動かさない所：手前の手・右の胸の下の腕・胸の下を横切る腕 */   /* 動かさない所：手前の手・右の腕・胸の下を横切る腕 */ cheek: [[480, 312], [628, 272]], eyes: [[465, 280], [595, 232]], faceR: [400, 140, 300, 270], faceC: [550, 280, 128, 108], blushC: [552, 292, 120, 58], head: [550, 330, 400], focus: [740, 600], surprise: 'panyu_pajama2_surprise_face.webp' } },
+    gothic: { name: 'ゴスロリ', img: 'panyu_gothic_reach.webp', kind: 'front', feel: { k: 0.84, c: 1.25, ks: 0.95, cs: 1.2, sq: 0.88, kc: 0.95, push: 0.9 }, label: 'ボタン', what: '胸の下のくるみボタン',   // 硬く重いサテン：どっしり。余韻は短め
+      parts: [{ c: [700, 665], w: 24, h: 24, round: 1 }, { c: [698, 732], w: 24, h: 24, round: 1 }, { c: [699, 765], w: 24, h: 24, round: 1 }],
+      covers: [[700, 665, 15.5, -15.5], [698, 732, 15.5, -15.5], [699, 765, 15.5, -15.5]],
+      gap: { gx: 703, gy: 640, ends: [640, 700, 750, 830], lin: [0.2, 0.17, 0.2], lin2: [0.09, 0.08, 0.1], line: [0.03, 0.025, 0.035] } },
+    jirai: { name: '地雷系', img: 'panyu_jirai_reach.webp', kind: 'front', feel: { k: 0.68, c: 0.62, ks: 0.7, cs: 0.72, sq: 1.18, kc: 1.12, push: 0.95 }, label: 'ボタン', what: '胸の下のハートのボタン',   // 軽くやわらかい生地：ふわっと大きく長く揺れる
+      parts: [{ c: [699, 652], w: 26, h: 24, round: 1 }, { c: [699, 692], w: 26, h: 24, round: 1 }, { c: [698, 738], w: 26, h: 24, round: 1 }],
+      covers: [[699, 652, 16.5, -15.5], [699, 692, 16.5, -15.5], [698, 738, 16.5, -15.5]],
+      gap: { gx: 703, gy: 640, ends: [640, 672, 715, 800], lin: [0.3, 0.2, 0.22], lin2: [0.14, 0.09, 0.1], line: [0.05, 0.03, 0.035] } },
+    vintage: { name: '古着', img: 'panyu_vintage_reach.webp', kind: 'front', feel: { k: 0.78, c: 0.95, ks: 0.82, cs: 0.9, sq: 1.0, kc: 1.2, push: 0.92 }, label: 'ボタン', what: 'べっ甲のボタン',   // とろみのあるレーヨン：落ち感が強く、揺れは重く収まる
+      parts: [{ c: [699, 664], w: 26, h: 26, round: 1 }, { c: [699, 731], w: 26, h: 26, round: 1 }, { c: [699, 783], w: 26, h: 26, round: 1 }],
+      covers: [[699, 664, 16, -16], [699, 731, 16, -16], [699, 783, 16, -16]],
+      gap: { gx: 703, gy: 640, ends: [640, 698, 757, 830], lin: [0.55, 0.22, 0.17], lin2: [0.34, 0.13, 0.1], line: [0.18, 0.06, 0.045] } },
+    nurse: { name: 'ナース', img: 'panyu_nurse_reach.webp', kind: 'front', feel: { k: 1.08, c: 0.9, ks: 1.1, cs: 0.88, sq: 0.92, kc: 0.9, push: 1.02 }, label: 'ボタン', what: '白い丸ボタン',   // 張りのある綿：体に沿い、ぴんと張って戻る
+      parts: [{ c: [696, 670], w: 25, h: 25, round: 1 }, { c: [696, 731], w: 25, h: 25, round: 1 }, { c: [697, 785], w: 25, h: 25, round: 1 }],
+      covers: [[696, 670, 15.5, -15.5], [696, 731, 15.5, -15.5], [697, 785, 15.5, -15.5]],
+      gap: { gx: 703, gy: 640, ends: [640, 700, 758, 830], lin: [0.95, 0.83, 0.86], lin2: [0.74, 0.54, 0.6], line: [0.62, 0.3, 0.38] } },
     santa: { name: 'サンタ', img: 'panyu_santa_reach.webp', kind: 'front', feel: { k: 0.82, c: 1.4, ks: 1.1, cs: 1.35, sq: 0.82, kc: 0.9, push: 0.88 }, label: 'ボタン', what: '金ボタンとベルト',   // ベルベット：重く、どっしり。余韻は短い
       parts: [{ c: [699, 649], w: 36, h: 36, round: 1 }, { c: [699, 691], w: 36, h: 36, round: 1 }, { c: [700, 757], w: 80, h: 64, rect: 1 }],
       covers: [[699, 649, 21, 21], [699, 691, 21, 21], [700, 757, -46, 38]],   // バックルの跡はベルトの続きで埋まる（横に鏡写し）
@@ -94,6 +110,15 @@
   Object.assign(OUTFITS.pajama2.gap, { flap: [0.42, 6.5], wk: 1.25, spring: 0, fabY: 664, ramp: 40, vk: [0.6, 0.6, 0], ct: [0, 0], shear: 0.42, skin: [600, 445, 690, 500] });   // 合わせ目は下ほど右へ傾く（V字の先を中心に斜めに開く）
   OUTFITS.pajama2.fly = OUTFITS.pajama.fly;
   OUTFITS.pajama.outK = OUTFITS.pajama2.outK = 0.5; OUTFITS.pajama.downK = OUTFITS.pajama2.downK = 1.4;   // やわらかいパジャマは左右へは開きすぎず（胸の間の布と肌が横に伸びない）、下へ垂れる
+  Object.assign(OUTFITS.gothic.gap, { flap: [0.2, 3.4], wk: 1.1, spring: 0, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 1.5, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.15, 1.19], ends: [606, 700, 750, 830] });   // 硬く重い生地：開きは中くらい、レースの前立てごと外へ
+  Object.assign(OUTFITS.jirai.gap, { flap: [0.45, 7], wk: 1.35, spring: 0, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 2.3, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.15, 1.2], ends: [606, 672, 715, 800] });   // 軽い生地：ふわっと大きく開く
+  Object.assign(OUTFITS.vintage.gap, { flap: [0.4, 5.5], wk: 1.2, spring: 0, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 1.8, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.01, 1.15, 1.19], ends: [606, 698, 757, 830] });   // とろみのある生地：開いた布は下へすとんと垂れる
+  Object.assign(OUTFITS.nurse.gap, { flap: [0.24, 3.4], wk: 1.1, spring: 1, gx: 703, gy: 606, fabY: 650, ramp: 36, vk: [0.75, 0.75, 0], ct: [0, 0], shift: 4, skin: [665, 462, 740, 500], wide: 1.6, gyB: 598, rampB: 64, bkSkin: 1, bkGain: [1.02, 1.15, 1.18], ends: [606, 700, 758, 830] });   // 張りのある綿：開きは中くらい、開いてからぴんと戻る
+  OUTFITS.gothic.fly = { vx: [180, 300], vy: [560, 760], g: 3000, spin: [8, 14], life: 1.7, bounce: 0.3, spark: '#e8dcd0', n: 12, shake: 2 };   // 黒いくるみボタンは重く、短く飛ぶ
+  OUTFITS.jirai.fly = { vx: [150, 300], vy: [950, 1200], g: 2600, spin: [16, 26], life: 2.4, bounce: 0.55, spark: '#ffd6e4', n: 12 };   // 軽いハートがぽんっと高く跳ねる
+  OUTFITS.vintage.fly = { vx: [170, 300], vy: [650, 850], g: 3000, spin: [8, 14], life: 1.8, bounce: 0.35, spark: '#f0c890', n: 12, shake: 1 };   // べっ甲のボタンはころんと落ちる
+  OUTFITS.nurse.fly = { vx: [180, 320], vy: [800, 1000], g: 2700, spin: [14, 22], life: 2.0, bounce: 0.5, spark: '#ffffff', n: 12 };   // 白いボタンは軽く跳ねる
+  OUTFITS.gothic.outK = 0.8; OUTFITS.gothic.downK = 1.0; OUTFITS.jirai.outK = 0.5; OUTFITS.jirai.downK = 1.5; OUTFITS.vintage.outK = 0.5; OUTFITS.vintage.downK = 1.8; OUTFITS.nurse.outK = 0.85; OUTFITS.nurse.downK = 0.9;
   Object.assign(OUTFITS.santa.gap, { flap: [0.16, 2.6], wk: 1.05, spring: 1 });     // ベルトが弾けて、一度開きすぎてから戻る
   Object.assign(OUTFITS.dress.gap, { flap: [0.22, 3.2], wk: 1.4, spring: 0, gy: 637, fabY: 637, ramp: 10, vk: [0.5, 0.5, 0], ct: [-4, 0], skin: [640, 465, 760, 500], ends: [637, 637, 637, 760] });     // 身頃が大きく左右に分かれる
   OUTFITS.dress.fly = { vx: [180, 300], vy: [820, 1000], g: 2500, spin: [8, 13], life: 1.8, bounce: 0.3, spark: '#ff7a8a', n: 22, shake: 3 };   // 宝石は赤くきらめく

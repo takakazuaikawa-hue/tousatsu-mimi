@@ -28,7 +28,7 @@ await sleep(120); shots.push(['3揺れ', await grab()]);
 await sleep(200); shots.push(['3揺れ2', await grab()]);
 
 // 解析は別の白紙のページで（絵を読み込んで画素を数える）
-console.error('shots ok', shots.map(s => s[1].length)); const an = await br.newPage(); await an.goto('about:blank', 1);
+shots.forEach(sh=>fs.writeFileSync(OUT+'-raw-'+sh[0]+'.png',Buffer.from(sh[1],'base64'))); if(process.env.RAWONLY){await br.close();await server.close();process.exit(0);} console.error('shots ok', shots.map(s => s[1].length)); const an = await br.newPage(); await an.goto('about:blank', 1);
 const t0 = Date.now(); const res = JSON.parse(await an.eval(`(async()=>{
   const shots=${JSON.stringify(shots)};
   const load=b=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src='data:image/png;base64,'+b;});

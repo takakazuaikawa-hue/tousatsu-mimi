@@ -14918,10 +14918,10 @@ function applyPanyuBg(overlay) {
 // ぱにゅぱにゅ30タップミニゲーム
 // ぱにゅぱにゅの衣装（網目＋ばねの描画は docs/design-ref/panyu-mesh.html を埋め込んで使う）
 const PANYU_OUTFITS = [
-  { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'santa', name: 'サンタ' },
+  { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'gothic', name: 'ゴスロリ' }, { id: 'jirai', name: '地雷系' }, { id: 'vintage', name: '古着' }, { id: 'nurse', name: 'ナース' }, { id: 'santa', name: 'サンタ' },
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
 ];
-const PANYU_OUTFIT_IMG = { bunny: 'panyu_reach', pajama: 'panyu_pajama_reach', pajama2: 'panyu_pajama2_reach', santa: 'panyu_santa_reach', bikini: 'panyu_bikini_reach', halter: 'panyu_halter_reach', white: 'panyu_white_reach', dress: 'panyu_dress_reach' };
+const PANYU_OUTFIT_IMG = { bunny: 'panyu_reach', pajama: 'panyu_pajama_reach', pajama2: 'panyu_pajama2_reach', gothic: 'panyu_gothic_reach', jirai: 'panyu_jirai_reach', vintage: 'panyu_vintage_reach', nurse: 'panyu_nurse_reach', santa: 'panyu_santa_reach', bikini: 'panyu_bikini_reach', halter: 'panyu_halter_reach', white: 'panyu_white_reach', dress: 'panyu_dress_reach' };
 function panyuOutfit() { try { const v = localStorage.getItem('mimi.panyuOutfit'); if (PANYU_OUTFITS.some(o => o.id === v)) return v; } catch (_) {} return 'bunny'; }
 function setPanyuOutfit(id) { try { localStorage.setItem('mimi.panyuOutfit', id); } catch (_) {} }
 let panyuGlOk = null;
