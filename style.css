@@ -18657,3 +18657,12 @@ html.is-compact .intro-skip-btn { font-size: calc(13px / var(--game-scale, 1)) !
 .pv2 .pv2-result.has-video .pv2-res-title em { display: inline-block; }
 .pv2 .pv2-res-line span { white-space: nowrap; }
 .pv2.is-revealed .pv2-skill { opacity: 0; transition: opacity .3s; }
+
+/* ===== ぱにゅぱにゅ：網目＋ばねの胸（埋め込み）。出るまでは一枚絵、出たら差し替え ===== */
+.pv2 .pv2-mesh { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; z-index: 0; background: transparent; opacity: 0; transition: opacity .25s ease; }
+.pv2.is-mesh .pv2-mesh { opacity: 1; }
+.pv2.is-mesh .panyu-bg-char { visibility: hidden; }
+.pv2.is-mesh .panyu-clicker-pair { display: none; }
+.pv2 .pv2-outfit { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 1px solid rgba(243,236,224,.3); border-radius: 2px; background: rgba(12,9,10,.62); color: #f3ece0; font: 700 14px/1 inherit; font-family: inherit; cursor: pointer; }
+.pv2 .pv2-outfit span { font-size: 12px; color: #c9bfb2; font-weight: 400; }
+.pv2 .pv2-outfit b { color: #f0d595; }

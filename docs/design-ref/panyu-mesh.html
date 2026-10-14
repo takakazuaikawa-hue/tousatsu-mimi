@@ -25,6 +25,8 @@
   .note { position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 5; font-size: 13px; color: var(--muted);
     background: rgba(8,4,6,.6); padding: 6px 14px; border-radius: 2px; white-space: nowrap; pointer-events: none; transition: opacity .4s; }
   .note.off { opacity: 0; }
+  body.embed .bar, body.embed .note { display: none; }
+  body.embed { background: transparent; }
   .err { position: fixed; inset: 0; display: none; place-items: center; z-index: 9; font-size: 15px; padding: 24px; text-align: center; }
 </style>
 </head>
@@ -97,7 +99,10 @@
   OUTFITS.dress.fly = { vx: [180, 300], vy: [820, 1000], g: 2500, spin: [8, 13], life: 1.8, bounce: 0.3, spark: '#ff7a8a', n: 22, shake: 3 };   // 宝石は赤くきらめく
   OUTFITS.dress.strapShake = 2; OUTFITS.dress.ropeLen = 0.8; OUTFITS.dress.ropeDrape = 1; OUTFITS.dress.ropeG = 5200; OUTFITS.dress.ropeDamp = 0.955; OUTFITS.dress.ropeKick = 0.35;   // サテンの太い紐は重い：すとんと落ちて、揺れはすぐ収まる   // 外れた紐は胸の丸みに沿って外へ垂れる（腕の上までは届かない長さ）
   OUTFITS.dress.fold = { apex: [[574, 521], [828, 521]], neck: [[0.796, 0.606], [-0.796, 0.606]], out: [[-0.716, 0.698], [0.716, 0.698]], len: 30 };   // 肩紐が外れると、角が内側へ折れ返って垂れる
-  const qc = new URLSearchParams(location.search).get('c'), OUTFIT = OUTFITS[qc] ? qc : 'bunny', OF = OUTFITS[OUTFIT];
+  const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）
+  if (EMBED) document.body.classList.add('embed');
+  const tell = (m) => { if (EMBED && parent !== window) try { parent.postMessage(Object.assign({ panyu: 1 }, m), '*'); } catch (_) {} };
+  const qc = QS.get('c'), OUTFIT = OUTFITS[qc] ? qc : 'bunny', OF = OUTFITS[OUTFIT];
   const STRAP = OF.kind === 'strap', BIKINI = !!OF.ring; const RING = OF.ringG || [702, 655, 1];   // 胸の真ん中のリング：中心と大きさ（水着を基準1）
   const IMG = '../../assets/characters/' + OF.img;
   const PZ = OF.pose || { cups: [[607, 600, 132], [795, 600, 132]], cheek: [[636, 324], [764, 324]], eyes: [[640, 281], [762, 281]], faceR: [560, 170, 290, 250], faceC: [701, 315, 118, 92], blushC: [699, 322, 120, 56], head: [701, 330, 400], focus: [701, 548], surprise: 'panyu_surprise_face.webp' };   // 構図（今までの5着は共通）
@@ -124,7 +129,7 @@
   const FOCUS = PZ.focus;          // 寄せる時の注目点（胸の少し上）
   const cv = document.getElementById('gl');
   const gl = cv.getContext('webgl', { antialias: true, alpha: false, premultipliedAlpha: false });
-  if (!gl) { document.getElementById('err').style.display = 'grid'; return; }
+  if (!gl) { if (EMBED) tell({ t: 'nogl' }); else document.getElementById('err').style.display = 'grid'; return; }
 
   // ---- 設定（ボタンで切り替え） ----
   const opt = { mode: 'mesh', zoom: 1.28, amp: 1.95 };   // 動きは網目＋ばねだけ、揺れは1.95が標準（2026-10-12 決定）
@@ -552,6 +557,7 @@
   const tex = gl.createTexture();
   const img = new Image();
   img.onload = () => {
+    setTimeout(() => tell({ t: 'ready' }), 60);
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -925,8 +931,9 @@
     if (pinch) return;
     const [ix, iy] = toImg(e.clientX, e.clientY);
     const bk = BTNS.findIndex((b, k) => !popped[k] && hitPart(b, ix, iy));
-    if (bk >= 0) { popButton(bk); return; }
+    if (bk >= 0) { popButton(bk); tell({ t: 'pop', k: bk, x: e.clientX, y: e.clientY }); return; }
     const i = hit(ix, iy); if (i < 0) return;
+    tell({ t: 'tap', side: i, x: e.clientX, y: e.clientY });
     try { stageEl.setPointerCapture(e.pointerId); } catch (_) {}
     addHeat();
     const p = P[i], c = CUPS[i], amp = opt.amp * (1 + HEAT_PUSH * heatNow()) * lvNow().push * FEEL.push;

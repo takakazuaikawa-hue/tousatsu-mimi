@@ -4178,6 +4178,7 @@ const LB4_LOCK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none
 const LB6_PROFILE_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>';
 function renderLobbyV3() {
   const q = sel => document.querySelector(sel);
+  setTimeout(panyuPrefetch, 1500);   // ぱにゅぱにゅの絵を、手が空いた時に先に取っておく
   const nextId = lobbyNextStageId();
   const pre = LOBBY_PRESENT[nextId] || {};
 
@@ -14915,6 +14916,28 @@ function applyPanyuBg(overlay) {
 }
 
 // ぱにゅぱにゅ30タップミニゲーム
+// ぱにゅぱにゅの衣装（網目＋ばねの描画は docs/design-ref/panyu-mesh.html を埋め込んで使う）
+const PANYU_OUTFITS = [
+  { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'santa', name: 'サンタ' },
+  { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
+];
+const PANYU_OUTFIT_IMG = { bunny: 'panyu_reach', pajama: 'panyu_pajama_reach', pajama2: 'panyu_pajama2_reach', santa: 'panyu_santa_reach', bikini: 'panyu_bikini_reach', halter: 'panyu_halter_reach', white: 'panyu_white_reach', dress: 'panyu_dress_reach' };
+function panyuOutfit() { try { const v = localStorage.getItem('mimi.panyuOutfit'); if (PANYU_OUTFITS.some(o => o.id === v)) return v; } catch (_) {} return 'bunny'; }
+function setPanyuOutfit(id) { try { localStorage.setItem('mimi.panyuOutfit', id); } catch (_) {} }
+let panyuGlOk = null;
+function panyuCanMesh() {
+  if (panyuGlOk == null) { try { const c = document.createElement('canvas'); panyuGlOk = !!(c.getContext('webgl')); } catch (_) { panyuGlOk = false; } }
+  return panyuGlOk;
+}
+// 先読み：ロビーに来たら、今の衣装の絵と網目のページを先に取りに行く（開いた時に絵が遅れて出ないように）
+function panyuPrefetch() {
+  if (panyuPrefetch.done) return; panyuPrefetch.done = true;
+  const add = (href, as) => { const l = document.createElement('link'); l.rel = 'prefetch'; l.href = href; if (as) l.as = as; document.head.appendChild(l); };
+  add('docs/design-ref/panyu-mesh.html', 'document');
+  add('assets/characters/' + PANYU_OUTFIT_IMG[panyuOutfit()] + '.webp', 'image');
+  add('assets/characters/panyu_surprise_face.webp', 'image');
+}
+
 function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
   let count = totalTaps;
   let tapped = 0;
@@ -14954,6 +14977,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     </header>
     <div class="pv2-tools">
       <div class="panyu-bg-picker pv2-picker" role="group" aria-label="光の色">${bgPicker}</div>
+      <button type="button" class="pv2-outfit" aria-label="衣装を替える"><span>衣装</span><b>${(PANYU_OUTFITS.find(o => o.id === panyuOutfit()) || PANYU_OUTFITS[0]).name}</b></button>
       <button type="button" class="pv2-quit">やめる</button>
     </div>
     <div class="panyu-clicker-pair">
@@ -14968,6 +14992,45 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     <div class="panyu-combo pv2-combo" data-bind="panyuCombo"></div>
   `;
   document.body.appendChild(overlay);
+  // 網目＋ばねの胸（埋め込み）。絵が出るまでは今の一枚絵を見せ、出たら差し替える。WebGL が無い端末は今の玉のまま
+  let meshFrame = null;
+  const meshOn = panyuCanMesh() && !cfg.legacy;
+  const mountMesh = () => {
+    if (!meshOn) return;
+    if (meshFrame) meshFrame.remove();
+    overlay.classList.remove('is-mesh');
+    meshFrame = document.createElement('iframe');
+    meshFrame.className = 'pv2-mesh';
+    meshFrame.title = 'ぱにゅぱにゅ';
+    meshFrame.src = 'docs/design-ref/panyu-mesh.html?embed=1' + (panyuOutfit() === 'bunny' ? '' : '&c=' + panyuOutfit());
+    overlay.querySelector('.panyu-bg-char').after(meshFrame);
+  };
+  const onMeshMsg = (e) => {
+    const m = e.data;
+    if (!m || !m.panyu || !meshFrame || e.source !== meshFrame.contentWindow) return;
+    if (m.t === 'ready') overlay.classList.add('is-mesh');
+    else if (m.t === 'nogl') { meshFrame.remove(); meshFrame = null; overlay.classList.remove('is-mesh'); }
+    else if (m.t === 'tap' || m.t === 'pop') {
+      const fr = meshFrame.getBoundingClientRect();
+      doTick(blobs[m.side === 1 ? 1 : 0], { x: fr.left + (m.x || 0), y: fr.top + (m.y || 0), skipWobble: true });
+      if (m.t === 'pop') { mpSfx('milestone'); for (let i = 0; i < 6; i++) spawnPanyuParticle(overlay); }
+    }
+  };
+  window.addEventListener('message', onMeshMsg);
+  new MutationObserver((_, ob) => { if (!overlay.isConnected) { window.removeEventListener('message', onMeshMsg); ob.disconnect(); } }).observe(document.body, { childList: true });
+  mountMesh();
+  const outfitBtn = overlay.querySelector('.pv2-outfit');
+  if (outfitBtn) {
+    if (!meshOn) outfitBtn.hidden = true;
+    outfitBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const i = PANYU_OUTFITS.findIndex(o => o.id === panyuOutfit());
+      const nx = PANYU_OUTFITS[(i + 1) % PANYU_OUTFITS.length];
+      setPanyuOutfit(nx.id);
+      outfitBtn.querySelector('b').textContent = nx.name;
+      mountMesh();
+    });
+  }
   const blobs = [...overlay.querySelectorAll('.panyu-clicker-blob')];
   const countEls = [...overlay.querySelectorAll('.panyu-clicker-count')];
   const ringFills = [...overlay.querySelectorAll('.panyu-ring-fill')];

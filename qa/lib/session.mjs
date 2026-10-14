@@ -61,7 +61,7 @@ export async function openSession({ width = 1280, height = 800, mobile = false, 
     await page.send('Animation.setPlaybackRate', { playbackRate: speed }).catch(() => {});
   }
   const url = `http://127.0.0.1:${server.port}/index.html`;
-  await page.goto(url);
+  await page.goto(url, 120000);   // PC が重い時は読み込みに30秒以上かかる
   await sleep(800 / Math.min(speed, 4));
   return {
     page, browser, server, url, exceptions,
