@@ -551,7 +551,7 @@
       purse();
       await api.intro(g.group);
       if (rid !== runId || dead) return;
-      try { await g.start({ api }); } catch (e) { console.error(e); api.coach('（試作の不具合：' + e.message + '）'); }
+      try { await g.start({ api }); } catch (e) { console.error(e); api.coach('ごめん、うまく始められなかった。卓にもどって続けよう'); }
     }
     purse();
     play();

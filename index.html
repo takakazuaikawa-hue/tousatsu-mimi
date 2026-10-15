@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1d080e">
 <link rel="icon" type="image/webp" href="assets/ui/emblem_rabbit_gold.webp">
+<link rel="apple-touch-icon" href="assets/ui/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/ui/favicon-64.png">
 <title>ミミのテキサスホールデムポーカー 〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜</title>
 <!--
   ★FOUC（Flash of Unstyled Content）対策：
@@ -38,9 +40,10 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Bebas+Neue&family=Shippori+Mincho+B1:wght@600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap">
-<link rel="stylesheet" href="style.css?v=20261016a">
-<link rel="stylesheet" href="battles/core.css?v=20261016a">
-<link rel="stylesheet" href="read-compact.css?v=20261016a">
+<link rel="stylesheet" href="style.css?v=20261016b">
+<link rel="stylesheet" href="battles/core.css?v=20261016b">
+<link rel="stylesheet" href="read-compact.css?v=20261016b">
+<link rel="stylesheet" href="ui-modal.css?v=20261016b">
 <link rel="preload" as="image" href="assets/ui/home/scene.webp" fetchpriority="high">
 </head>
 <body>
@@ -173,7 +176,7 @@
 
   <button type="button" class="h15-part h15-ledger" data-action="home-ledger" aria-label="物語の台帳：進行状況・再戦・プロフィール"><img class="h15-f" src="assets/ui/home/ledger.webp" alt=""><span data-home="ledger"></span></button>
 
-  <nav class="h15-top" aria-label="ホーム操作"><button type="button" class="h15-part h15-oct" data-action="back-title" aria-label="タイトルへ戻る" title="タイトルへ戻る"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><img class="h15-oico" src="assets/ui/home/ico_title.webp" alt=""></button><button type="button" class="h15-part h15-oct" data-action="home-gift" aria-label="ログインボーナス" title="ログインボーナス"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><img class="h15-oico" src="assets/ui/home/ico_gift.webp" alt=""><i class="h15-dot" data-home="gift-dot"></i></button><button type="button" class="h15-part h15-oct" data-action="open-shop" aria-label="所持コイン・交換所" title="所持コイン・交換所"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><img class="h15-oico" src="assets/ui/home/ico_coin.webp" alt=""><span class="h15-coins" data-bind="saveCoins"></span></button><button type="button" class="h15-part h15-oct" data-action="home-settings" aria-label="音量・ゲーム設定" title="音量・ゲーム設定"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><img class="h15-oico" src="assets/ui/home/ico_gear.webp" alt=""></button></nav>
+  <nav class="h15-top" aria-label="ホーム操作"><button type="button" class="h15-part h15-oct" data-action="back-title" aria-label="タイトルへ戻る" title="タイトルへ戻る"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><img class="h15-oico" src="assets/ui/home/ico_title.webp" alt=""></button><button type="button" class="h15-part h15-oct" data-action="home-gift" aria-label="ログインボーナス" title="ログインボーナス"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><img class="h15-oico" src="assets/ui/home/ico_gift.webp" alt=""><i class="h15-dot" data-home="gift-dot"></i></button><button type="button" class="h15-part h15-oct" data-action="open-shop" aria-label="所持コイン・交換所" title="所持コイン・交換所"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><img class="h15-oico" src="assets/ui/home/ico_coin.webp" alt=""><span class="h15-coins" data-bind="saveCoins"></span></button><button type="button" class="h15-part h15-oct" data-action="home-settings" aria-label="設定（音・遊び方）" title="設定（音・遊び方）"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><img class="h15-oico" src="assets/ui/home/ico_gear.webp" alt=""></button></nav>
 
   <div class="h15-part h15-frame"><span class="h15-sub">今夜の相手</span><img class="h15-pic" src="assets/ui/face_grano.webp" alt=""><img class="h15-f" src="assets/ui/home/frame.webp" alt=""><span class="h15-lbl h15-gold-txt">グラーノ</span></div>
 
@@ -239,7 +242,7 @@
     </header>
 
     <!-- 右上：中断／役の早見表（画面直下に置く。ヘッダー内だと右寄せが効かない） -->
-    <button class="btn btn-ghost v2-pause" data-action="back-lobby"><svg class="t8-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg>中断</button>
+    <button class="btn btn-ghost v2-pause" data-action="back-lobby"><svg class="t8-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span data-pause-label>やめる</span></button>
 
     <!-- 左下：役の早見表（常設・研修中も開ける） -->
     <button class="btn btn-ghost v2-help-btn" data-action="show-hand-guide" type="button" title="役の早見表を見る"><svg class="t8-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="11" height="15" rx="1.5"/><path d="M8.5 20.5h10V8"/></svg>役の一覧</button>
@@ -470,21 +473,21 @@
   </div>
 </template>
 
-<script src="battles/core.js?v=20261016a"></script>
-<script src="battles/games/detective.js?v=20261016a"></script>
-<script src="battles/games/stare.js?v=20261016a"></script>
-<script src="battles/games/doubt.js?v=20261016a"></script>
-<script src="battles/games/objection.js?v=20261016a"></script>
-<script src="battles/games/gacha.js?v=20261016a"></script>
-<script src="battles/games/handbuild.js?v=20261016a"></script>
-<script src="battles/games/highlow.js?v=20261016a"></script>
-<script src="battles/games/danger.js?v=20261016a"></script>
-<script src="battles/games/sniper.js?v=20261016a"></script>
-<script src="battles/games/outs.js?v=20261016a"></script>
-<script src="battles/games/suspects.js?v=20261016a"></script>
-<script src="assets/manifest.js?v=20261016a"></script>
-<script src="loader.js?v=20261016a"></script>
-<script src="home.js?v=20261016a"></script>
-<script src="game.js?v=20261016a"></script>
+<script src="battles/core.js?v=20261016b"></script>
+<script src="battles/games/detective.js?v=20261016b"></script>
+<script src="battles/games/stare.js?v=20261016b"></script>
+<script src="battles/games/doubt.js?v=20261016b"></script>
+<script src="battles/games/objection.js?v=20261016b"></script>
+<script src="battles/games/gacha.js?v=20261016b"></script>
+<script src="battles/games/handbuild.js?v=20261016b"></script>
+<script src="battles/games/highlow.js?v=20261016b"></script>
+<script src="battles/games/danger.js?v=20261016b"></script>
+<script src="battles/games/sniper.js?v=20261016b"></script>
+<script src="battles/games/outs.js?v=20261016b"></script>
+<script src="battles/games/suspects.js?v=20261016b"></script>
+<script src="assets/manifest.js?v=20261016b"></script>
+<script src="loader.js?v=20261016b"></script>
+<script src="home.js?v=20261016b"></script>
+<script src="game.js?v=20261016b"></script>
 </body>
 </html>

@@ -33,7 +33,8 @@ function renderHomeLobby() {
   const root = document.querySelector('.home-stage');
   if (!root) return;
   const next = lobbyNextStageId();
-  const clearedCount = STAGE_ORDER.filter(id => save.clearedStages.includes(id)).length;
+  // 研修（リコ先輩）を飛ばしてポルカに勝った人は、研修の先へ進んだとみなして灯りと制覇の数に入れる（4人に勝っても全卓制覇に届かなかった）
+  const clearedCount = STAGE_ORDER.filter(id => save.clearedStages.includes(id) || (id === 'rico_tutorial' && save.clearedStages.includes('polka'))).length;
   const allCleared = clearedCount === STAGE_ORDER.length;
   const sid = next || STAGE_ORDER[STAGE_ORDER.length - 1];
   const opponent = OPPONENTS[sid];
@@ -43,6 +44,12 @@ function renderHomeLobby() {
   root.querySelector('.h15-frame .h15-pic').alt = opponent.name;
   root.querySelector('.h15-frame .h15-lbl').textContent = opponent.name;
   root.querySelector('.h15-frame').classList.toggle('has-long-name', opponent.name.length > 5);
+  // 額を押すと、その相手のプロフィール（名鑑）が開く。額縁の見た目なのに押せなかった
+  const frameEl = root.querySelector('.h15-frame');
+  Object.assign(frameEl.dataset, { action: 'char-profile', char: sid });
+  frameEl.setAttribute('role', 'button'); frameEl.tabIndex = 0;
+  frameEl.setAttribute('aria-label', opponent.name + 'のプロフィールを見る');
+  frameEl.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); frameEl.click(); } };
   root.querySelector('.h15-frame .h15-sub').textContent = next ? '今夜の相手' : allCleared ? '全卓制覇' : '再戦の相手';
   const ticket = root.querySelector('.h15-ticket');
   ticket.dataset.opponent = sid;
@@ -219,7 +226,7 @@ function showHomeLedger() {
   overlay.innerHTML = `<section class="home-dialog" role="dialog" aria-modal="true" aria-labelledby="home-ledger-title"><header><h2 id="home-ledger-title">物語の台帳</h2><button type="button" data-home-close aria-label="閉じる">閉じる</button></header><div class="home-ledger-rows">${STAGE_ORDER.map((id,i) => {
     const o = OPPONENTS[id], done = save.clearedStages.includes(id), unlocked = isStageUnlocked(id);
     const action = id === 'rico_tutorial' && done ? 'rico-mode-chooser' : 'battle-start';
-    return `<section class="home-ledger-row"><h3>${i+1}. ${o.name}</h3><span>${done ? '勝利済み' : id === lobbyNextStageId() ? '今夜の相手' : unlocked ? '挑戦できます' : `${OPPONENTS[STAGE_ORDER[i-1]].name}に勝つと解放`}</span>${unlocked ? `<div><button data-action="${action}" data-opponent="${id}">${done ? '再戦・受講' : id === 'rico_tutorial' ? '受講する' : '卓へ'}（${done ? rematchPreview(id) : o.rewardFirst}コイン）</button><button data-action="char-profile" data-char="${id}">プロフィール</button>${!done && id !== 'rico_tutorial' ? `<button data-action="skip-stage" data-opponent="${id}">スキップ ${skipStageCost(o)}</button>` : ''}${done && EPISODES[id] ? `<button data-action="recall-episode" data-episode="${id}">物語の回想</button>` : ''}${id === 'rico_tutorial' && !done ? '<button data-action="rico-skip-tutorial">実戦から始める</button>' : ''}</div>` : ''}</section>`;
+    return `<section class="home-ledger-row"><h3>${i+1}. ${o.name}</h3><span>${done ? '勝利済み' : id === lobbyNextStageId() ? '今夜の相手' : unlocked ? '挑戦できます' : `${OPPONENTS[STAGE_ORDER[i-1]].name}に勝つと解放`}</span>${unlocked ? `<div><button data-action="${action}" data-opponent="${id}">${done ? (id === 'rico_tutorial' ? '受講・再戦' : '再戦') : id === 'rico_tutorial' ? '受講する' : '卓へ'}（勝てば ${done ? rematchPreview(id) : o.rewardFirst} コイン）</button><button data-action="char-profile" data-char="${id}">プロフィール</button>${!done && id !== 'rico_tutorial' ? `<button data-action="skip-stage" data-opponent="${id}">スキップ（${skipStageCost(o)} コインで勝ち扱い）</button>` : ''}${done && EPISODES[id] ? `<button data-action="recall-episode" data-episode="${id}">物語の回想</button>` : ''}${id === 'rico_tutorial' && !done ? '<button data-action="rico-skip-tutorial">実戦から始める</button>' : ''}</div>` : ''}</section>`;
   }).join('')}</div></section>`;
   openHomeDialog(overlay);
 }

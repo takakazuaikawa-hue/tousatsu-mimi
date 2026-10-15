@@ -360,6 +360,9 @@ function loadProgress() {
     const data = JSON.parse(raw);
     const merged = { ...defaultSave(), ...data };
     merged.version = SAVE_VERSION;
+    // 体験ハンドより前の版のセーブ（記録そのものが無い）：もう遊んでいる人は体験ハンド済みとして扱う
+    //   （済みでないと、ホームの今夜の相手がリコ先輩に戻り、ログインボーナスの窓も出なかった）
+    if (typeof data.introPlayed !== 'boolean' && ((Array.isArray(data.clearedStages) && data.clearedStages.length) || data.coins > 0)) merged.introPlayed = true;
     return normalizeSave(merged);
   } catch (e) {
     console.warn('Save load failed; using default', e);
@@ -403,22 +406,29 @@ async function resetProgress() {
     ok: '消して最初から', cancel: 'やめる', danger: true,
   });
   if (!yes) return;
-  localStorage.removeItem(SAVE_KEY);
-  save = defaultSave();
+  wipeAllProgress();
   state = defaultState();
   render();
+}
+
+// 「すべて消えて最初から」：セーブ本体に加え、外に置いた記録（ぱにゅぱにゅの衣装・心の声の図鑑）も消し、装備の見た目を戻す
+function wipeAllProgress() {
+  localStorage.removeItem(SAVE_KEY);
+  ['mimi.panyuOutfit', 'mbGachaBook'].forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
+  save = defaultSave();
+  if (typeof reapplyAllOwnedEffects === 'function') reapplyAllOwnedEffects();
 }
 
 //=============================================================
 // 0. 画像フォールバック
 //=============================================================
 const CHAR_FALLBACK = {
-  mimi:   "[ミミ]\nうさ耳の新人バニー\n（仮表示）",
-  rico:   "[リコ先輩]\nギャル口調の頼れる先輩\n（仮表示）",
-  polka:  "[ポルカ]\n調子乗りの初心者客\n（仮表示）",
-  selina: "[セリナ]\n落ち着いた常連プレイヤー\n（仮表示）",
-  grano:  "[グラーノ]\n商人系プレイヤー\n（仮表示）",
-  velvet: "[ヴェルベット]\nVIPルームのボスディーラー\n（仮表示）",
+  mimi:   "[ミミ]\nうさ耳の新人バニー",
+  rico:   "[リコ先輩]\nギャル口調の頼れる先輩",
+  polka:  "[ポルカ]\n調子乗りの初心者客",
+  selina: "[セリナ]\n落ち着いた常連プレイヤー",
+  grano:  "[グラーノ]\n商人系プレイヤー",
+  velvet: "[ヴェルベット]\nVIPルームのボスディーラー",
 };
 
 //=============================================================
@@ -2899,7 +2909,7 @@ function defaultState() {
     logs: { actions: [], bets: [], reactions: [], psych: [] },
     // 思考UI
     mimiThought: '「ふぅ……まずは手札を見てから」',
-    ricoAdvice: '「いい？相手の言葉を、まず聞いてみな」（リコ先輩）',
+    ricoAdvice: '「いい？相手の言葉を、まず聞いてみな」',
     opponentSpeech: '',
     // 現在ハンドの状態
     currentBetPlayer: 0,
@@ -2936,7 +2946,7 @@ function render() {
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); applyTitleScene(); if (isBgmOn()) playSceneBgm('title'); break;
     case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); renderLobbyV3(); tryStartLobbyBgm(); break;
-    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyOpponentIdle(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI(); if (state.lectureMode) applyLectureUI();
+    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyOpponentIdle(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI(); if (state.lectureMode) applyLectureUI(); { const pl = document.querySelector('[data-pause-label]'); if (pl) pl.textContent = state.lectureMode ? '中断' : 'やめる'; }
       // v2 拍④「決断」：ミミの手番は卓と相手を落として札と選択肢に視線を集める
       { const scr = document.querySelector('.battle-screen.v2'); if (scr) scr.classList.toggle('is-deciding', !!(state.isPlayerTurn && state.handPhase !== 'idle' && state.handPhase !== 'showdown' && !state.psychPending)); }
       break;
@@ -3031,9 +3041,9 @@ function applyTitleButtons() {
   if (!el) return;
   const hasSave = save.clearedStages.length > 0 || save.coins > 0;
   if (hasSave) {
-    const cleared = save.clearedStages.filter(s => s !== 'rico_tutorial').length;
-    // ステージ番号はリザルト・講義完了と同じ体系：リコ先輩＝研修（番号なし）、ポルカ＝1 … ヴェルベット＝4
-    const totalStages = 4; // polka, selina, grano, velvet
+    // 数え方はホームの台帳・各話と同じ：Ⅰリコ先輩・Ⅱポルカ・Ⅲセリナ・Ⅳグラーノ・Ⅴヴェルベット（全5戦）
+    const cleared = STAGE_ORDER.filter(s => save.clearedStages.includes(s) || (s === 'rico_tutorial' && save.clearedStages.includes('polka'))).length;
+    const totalStages = STAGE_ORDER.length;
     const ending = isEndingUnlocked();
     el.innerHTML = `
       <button class="t3-btn is-primary" type="button" data-action="start"><b>続きから</b><small>${ending ? 'AFTER STORY' : `STAGE ${Math.min(cleared + 1, totalStages)} / ${totalStages}`}</small></button>
@@ -3787,7 +3797,7 @@ const INTERMISSIONS = {
     lines: [
       { speaker: 'rico',  text: 'はい、講義おしまい。……ミミ、思ったよりちゃんと聞いてたじゃん' },
       { speaker: 'mimi',  text: '聞かないと即クビにされそうな圧を感じたので……いえ、ちゃんと面白かったです' },
-      { speaker: 'rico',  text: '上出来。じゃ、次はいよいよ実戦。Stage 1 の卓に座ってもらうよ' },
+      { speaker: 'rico',  text: '上出来。じゃ、次はいよいよ実戦。ポルカの卓に座ってもらうよ' },
       { speaker: 'rico',  text: '相手はポルカ。声がでかい時ほど手が弱いタイプだから、ビビらず耳を澄ませてね' },
       { speaker: 'mimi',  text: '（声がでかい人ほど弱いって、前の職場の上司と同じ理論だ……）よし、行ってきます！' },
     ],
@@ -4690,66 +4700,83 @@ function renderLobbyBottomPanel() {
 
 // 設定モーダル（タップしやすい大きいスイッチ）
 function showSettingsModal() {
+  document.querySelectorAll('.settings-overlay').forEach(el => el.remove());
   const overlay = document.createElement('div');
   overlay.className = 'settings-overlay';
   const psy = save.psychEnabled !== false;
   const log = save.logicEnabled !== false;
+  const sw = (kind, on, label) => `
+        <button class="settings-modal-toggle ${on ? 'on' : 'off'}" data-toggle="${kind}" aria-label="${label}" aria-pressed="${on}">
+          <span class="stm-knob"></span>
+          <span class="stm-status">${on ? 'ON' : 'OFF'}</span>
+        </button>`;
+  // 設定はこの1枚にまとめる（以前はホームの「音量・設定」と「ゲーム設定」の2段で、音とその他が別の窓にあった）
   overlay.innerHTML = `
-    <div class="settings-modal">
-      <div class="settings-modal-title">${UI_ICON.gear} ゲーム設定</div>
-      <div class="settings-modal-row">
-        <span class="settings-modal-label">心理バトル</span>
-        <button class="settings-modal-toggle ${psy ? 'on' : 'off'}" data-toggle="psych">
-          <span class="stm-knob"></span>
-          <span class="stm-status">${psy ? 'ON' : 'OFF'}</span>
-        </button>
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-label="設定">
+      <div class="settings-modal-title">${UI_ICON.gear} 設定</div>
+      <div class="settings-modal-groups">
+        <section class="settings-modal-group">
+          <h3 class="settings-modal-group-title">音</h3>
+          <div class="settings-modal-row settings-modal-sound">
+            <span class="settings-modal-label">BGM</span>
+            <input class="settings-modal-volume" type="range" min="0" max="100" value="${save.bgmVolume ?? 35}" data-volume="bgm" aria-label="BGMの音量">
+            ${sw('bgm', !!save.bgmOn, 'BGM')}
+          </div>
+          <div class="settings-modal-row settings-modal-sound">
+            <span class="settings-modal-label">効果音</span>
+            <input class="settings-modal-volume" type="range" min="0" max="100" value="${save.sfxVolume ?? 60}" data-volume="sfx" aria-label="効果音の音量">
+            ${sw('sfx', !!save.sfxOn, '効果音')}
+          </div>
+          <div class="settings-modal-row">
+            <span class="settings-modal-label">端末が消音でも音を出す</span>
+            ${sw('forcesound', !!save.forceSound, '端末が消音でも音を出す')}
+          </div>
+          <div class="settings-modal-note">OFF（既定）は iPhone の消音スイッチに従います。ON にすると消音中でも鳴ります</div>
+        </section>
+        <section class="settings-modal-group">
+          <h3 class="settings-modal-group-title">遊び方</h3>
+          <div class="settings-modal-row">
+            <span class="settings-modal-label">心理バトル</span>
+            ${sw('psych', psy, '心理バトル')}
+          </div>
+          <div class="settings-modal-row">
+            <span class="settings-modal-label">論理バトル</span>
+            ${sw('logic', log, '論理バトル')}
+          </div>
+          <div class="settings-modal-note">講義の間は、この設定にかかわらず両方とも出ます</div>
+          ${save.backdoorUnlocked ? `
+          <div class="settings-modal-row settings-modal-practice">
+            <span class="settings-modal-label">練習用：相手の手札を見る</span>
+            ${sw('backdoor', !!save.backdoorOn, '練習用：相手の手札を見る')}
+          </div>
+          <div class="settings-modal-note">対戦中に相手の手札と考えを表示します（卓の左上の ✦ でも切り替え）。使っている間の対戦は、称号・ランク・初回クリア報酬の記録対象外です</div>
+          ` : ''}
+        </section>
+        <section class="settings-modal-group settings-modal-links">
+          <h3 class="settings-modal-group-title">ひらく</h3>
+          <button class="btn btn-secondary settings-modal-trophy" data-action="open-collection">${UI_ICON.trophy} コレクション</button>
+          <button class="btn btn-secondary settings-modal-trophy" data-action="open-glossary">${UI_ICON.book} ポーカー辞典</button>
+          <button class="btn btn-secondary settings-modal-trophy" data-action="equip-change">${UI_ICON.dress} 装備変更</button>
+          ${(save.ownedItems || []).includes('memory_minipoker') ? `<button class="btn btn-secondary settings-modal-trophy" data-action="play-minipoker">${UI_ICON.card} ファイブポーカー</button>` : ''}
+          <button class="btn btn-secondary settings-modal-trophy" data-action="home-fullscreen">全画面で遊ぶ</button>
+          <button class="btn btn-danger settings-modal-reset" data-action="reset-save">セーブデータをリセット</button>
+        </section>
       </div>
-      <div class="settings-modal-row">
-        <span class="settings-modal-label">論理バトル</span>
-        <button class="settings-modal-toggle ${log ? 'on' : 'off'}" data-toggle="logic">
-          <span class="stm-knob"></span>
-          <span class="stm-status">${log ? 'ON' : 'OFF'}</span>
-        </button>
-      </div>
-      <div class="settings-modal-note">※チュートリアル（講義）モード中は<br>これらの設定を無視して常時ONになります</div>
-      <div class="settings-modal-divider"></div>
-      <div class="settings-modal-row">
-        <span class="settings-modal-label">端末が消音でも音を出す</span>
-        <button class="settings-modal-toggle ${save.forceSound ? 'on' : 'off'}" data-toggle="forcesound">
-          <span class="stm-knob"></span>
-          <span class="stm-status">${save.forceSound ? 'ON' : 'OFF'}</span>
-        </button>
-      </div>
-      <div class="settings-modal-note">※OFF（既定）＝iPhoneの消音スイッチに従います<br>ONにすると消音中でも音が鳴ります</div>
-      <div class="settings-modal-divider"></div>
-      <button class="btn btn-secondary settings-modal-trophy" data-action="open-collection">${UI_ICON.trophy} トロフィー手帳を開く</button>
-      <button class="btn btn-secondary settings-modal-trophy" data-action="open-glossary">${UI_ICON.book} ポーカー辞典を開く</button>
-      <button class="btn btn-secondary settings-modal-trophy" data-action="equip-change">${UI_ICON.dress} 装備変更</button>
-      ${(save.ownedItems || []).includes('memory_minipoker') ? `
-        <button class="btn btn-secondary settings-modal-trophy" data-action="play-minipoker">${UI_ICON.card} ファイブポーカー</button>
-      ` : ''}
-      ${save.backdoorUnlocked ? `
-        <div class="settings-modal-divider"></div>
-        <div class="settings-modal-debug settings-modal-practice">
-          <span class="settings-modal-debug-label">${UI_ICON.eye} 練習用：相手の手札を見る</span>
-          <button class="settings-modal-toggle ${save.backdoorOn ? 'on' : 'off'}" data-toggle="backdoor">
-            <span class="stm-knob"></span>
-            <span class="stm-status">${save.backdoorOn ? 'ON' : 'OFF'}</span>
-          </button>
-        </div>
-        <div class="settings-modal-note">※対戦中に相手の手札と考えを表示します（バトル画面左上の ✦ でも切り替え）。<br>使っている間の対戦は、称号・ランク・初回クリア報酬の記録対象外です</div>
-      ` : ''}
-      <div class="settings-modal-divider"></div>
-      <button class="btn btn-danger settings-modal-reset" data-action="reset-save">
-        ⚠ セーブデータをリセット
-      </button>
       <button class="btn btn-primary settings-modal-close">閉じる</button>
     </div>
   `;
   document.getElementById('stage').appendChild(overlay);
+  const close = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
   overlay.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', (e) => {
-    overlay.remove(); // 設定を閉じてからトロフィー画面へ
+    close(); // 設定を閉じてから行き先へ
     onAction(e);
+  }));
+  overlay.querySelectorAll('[data-volume]').forEach(input => input.addEventListener('input', () => {
+    if (input.dataset.volume === 'bgm') { save.bgmVolume = +input.value; applyBgmVolume(); }
+    else save.sfxVolume = +input.value;
+    saveProgress();
   }));
   overlay.querySelectorAll('[data-toggle]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -4758,11 +4785,15 @@ function showSettingsModal() {
       else if (kind === 'logic') save.logicEnabled = !(save.logicEnabled !== false);
       else if (kind === 'backdoor') save.backdoorOn = !save.backdoorOn;
       else if (kind === 'forcesound') setForceSound(!save.forceSound); // 内部でsaveProgress+即反映
+      else if (kind === 'bgm') toggleLobbyBgm();
+      else if (kind === 'sfx') { toggleSfx(); mpSfx('tap'); }
       saveProgress();
       let isOn;
       if (kind === 'psych') isOn = (save.psychEnabled !== false);
       else if (kind === 'logic') isOn = (save.logicEnabled !== false);
       else if (kind === 'forcesound') isOn = !!save.forceSound;
+      else if (kind === 'bgm') isOn = !!save.bgmOn;
+      else if (kind === 'sfx') isOn = !!save.sfxOn;
       else if (kind === 'backdoor') {
         isOn = !!save.backdoorOn;
         // バトル画面の「相手の手札を見る」パネルへ即座に反映（対戦中にONにしたら、その対戦は練習扱い）
@@ -4771,13 +4802,13 @@ function showSettingsModal() {
       }
       btn.classList.toggle('on', isOn);
       btn.classList.toggle('off', !isOn);
+      btn.setAttribute('aria-pressed', String(isOn));
       btn.querySelector('.stm-status').textContent = isOn ? 'ON' : 'OFF';
+      if (typeof refreshAudioBars === 'function') refreshAudioBars();
     });
   });
-  overlay.querySelector('.settings-modal-close').addEventListener('click', () => overlay.remove());
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
+  overlay.querySelector('.settings-modal-close').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 function renderLobbySettings() {
@@ -4815,7 +4846,7 @@ function renderLobbyStats() {
   const rangeLv = (save.panyuSkills?.rangeLevel || 1);
   const gaugeMax = save.panyuGaugeMax || 100;
   return `
-    <div class="stats-title">⚔ プレイヤーステータス</div>
+    <div class="stats-title">プレイヤーステータス</div>
     <ul class="stats-list">
       <li><span class="stats-label">攻略</span><span class="stats-value">${wins} / ${totalStages}</span></li>
       <li><span class="stats-label">所持コイン</span><span class="stats-value">${save.coins}</span></li>
@@ -4908,7 +4939,7 @@ function showNoteArticle(id) {
   overlay.innerHTML = `
     <div class="note-article-panel">
       <div class="na-head">
-        <div class="na-kicker">知識ノート</div>
+        <div class="na-kicker">戦術ノート</div>
         <div class="na-title">${meta.name}</div>
         <button type="button" class="na-close" title="閉じる">✕</button>
       </div>
@@ -4959,54 +4990,54 @@ const SHOP_ITEMS = [
 
   /* ===== 追加：見た目（着替え・カード/テーブル/チップ・差分） ===== */
   /* リコ先輩の衣装（既存 RICO_OUTFITS のファイル名と一致するIDで管理） */
-  { id: 'outfit_rico_pajama',   cat: 'skin',  name: '👗 リコ・パジャマ',     price: 600,  desc: 'リコ先輩の衣装：寝起き感のあるパジャマ姿。装備変更から着替え可能' },
-  { id: 'outfit_rico_dress',    cat: 'skin',  name: '👗 リコ・ドレス',       price: 800,  desc: 'リコ先輩の衣装：VIPルーム仕様のドレス姿' },
-  { id: 'outfit_rico_kimono',   cat: 'skin',  name: '👘 リコ・和装',         price: 1000, desc: 'リコ先輩の衣装：粋な和装。しっとりとした風情' },
-  { id: 'outfit_rico_casual',   cat: 'skin',  name: '🛍 リコ・私服',         price: 700,  desc: 'リコ先輩の衣装：オフの日の私服姿' },
-  { id: 'outfit_rico_school',   cat: 'skin',  name: '🎒 リコ・学生風',       price: 900,  desc: 'リコ先輩の衣装：先輩感のある学生風制服' },
-  { id: 'outfit_rico_bunny',    cat: 'skin',  name: '🐰 リコ・バニー',       price: 1500, desc: 'リコ先輩の衣装：カジノクイーン仕様のバニーガール' },
-  { id: 'outfit_rico_gym',      cat: 'skin',  name: '💪 リコ・ジム服',       price: 700,  desc: 'リコ先輩の衣装：鍛えてる最近のジム服' },
-  { id: 'outfit_rico_swimsuit', cat: 'skin',  name: '🏖 リコ・水着',         price: 1500, desc: 'リコ先輩の衣装：夏限定の水着姿。クリア後解放', requires: 'ending' },
-  { id: 'outfit_rico_witch',    cat: 'skin',  name: '🧙 リコ・魔女',         price: 1200, desc: 'リコ先輩の衣装：ハロウィン気分の魔女姿' },
-  { id: 'outfit_rico_santa',    cat: 'skin',  name: '🎅 リコ・サンタ',       price: 1200, desc: 'リコ先輩の衣装：メリクリ仕様のサンタ姿' },
+  { id: 'outfit_rico_pajama',   cat: 'skin',  name: 'リコ・パジャマ',     price: 600,  desc: 'リコ先輩の衣装：寝起き感のあるパジャマ姿。装備変更から着替え可能' },
+  { id: 'outfit_rico_dress',    cat: 'skin',  name: 'リコ・ドレス',       price: 800,  desc: 'リコ先輩の衣装：VIPルーム仕様のドレス姿' },
+  { id: 'outfit_rico_kimono',   cat: 'skin',  name: 'リコ・和装',         price: 1000, desc: 'リコ先輩の衣装：粋な和装。しっとりとした風情' },
+  { id: 'outfit_rico_casual',   cat: 'skin',  name: 'リコ・私服',         price: 700,  desc: 'リコ先輩の衣装：オフの日の私服姿' },
+  { id: 'outfit_rico_school',   cat: 'skin',  name: 'リコ・学生風',       price: 900,  desc: 'リコ先輩の衣装：先輩感のある学生風制服' },
+  { id: 'outfit_rico_bunny',    cat: 'skin',  name: 'リコ・バニー',       price: 1500, desc: 'リコ先輩の衣装：カジノクイーン仕様のバニーガール' },
+  { id: 'outfit_rico_gym',      cat: 'skin',  name: 'リコ・ジム服',       price: 700,  desc: 'リコ先輩の衣装：鍛えてる最近のジム服' },
+  { id: 'outfit_rico_swimsuit', cat: 'skin',  name: 'リコ・水着',         price: 1500, desc: 'リコ先輩の衣装：夏限定の水着姿。クリア後解放', requires: 'ending' },
+  { id: 'outfit_rico_witch',    cat: 'skin',  name: 'リコ・魔女',         price: 1200, desc: 'リコ先輩の衣装：ハロウィン気分の魔女姿' },
+  { id: 'outfit_rico_santa',    cat: 'skin',  name: 'リコ・サンタ',       price: 1200, desc: 'リコ先輩の衣装：メリクリ仕様のサンタ姿' },
   /* カード裏 */
   { id: 'skin_blue_silver_card', cat: 'skin',  name: '🂠 蒼銀カード',          price: 400,  desc: 'カード裏：氷のように冷たい蒼と銀。霜の結晶紋入り' },
   { id: 'skin_obsidian_card',    cat: 'skin',  name: '🂠 漆黒カード',          price: 500,  desc: 'カード裏：漆黒の地に、金の紋様がうっすら浮かぶ' },
   { id: 'skin_floral_card',      cat: 'skin',  name: '🂠 花鳥カード',          price: 450,  desc: 'カード裏：深紅の地に金の桜と燕を描いた和の意匠' },
   { id: 'skin_galaxy_card',      cat: 'skin',  name: '🂠 銀河カード',          price: 700,  desc: 'カード裏：星がまたたき、深紅の星雲がゆっくり渦巻く宇宙柄（要クリア）', requires: 'ending' },
   /* テーブル */
-  { id: 'table_emerald',         cat: 'skin',  name: '🟢 エメラルド卓',        price: 600,  desc: 'テーブル：卓の羅紗が深いエメラルドグリーンに。正統派の緑卓' },
-  { id: 'table_neon',            cat: 'skin',  name: '⚡ ネオン卓',            price: 800,  desc: 'テーブル：卓を夜の暗さに沈め、上下の縁で深紅と金のネオン管が明滅する' },
-  { id: 'table_speakeasy',       cat: 'skin',  name: '🥃 スピークイージー卓',  price: 900,  desc: 'テーブル：セピアの灯りに沈む隠れバー風。縁に木目の影と真鍮の縁取り' },
+  { id: 'table_emerald',         cat: 'skin',  name: 'エメラルド卓',        price: 600,  desc: 'テーブル：卓の羅紗が深いエメラルドグリーンに。正統派の緑卓' },
+  { id: 'table_neon',            cat: 'skin',  name: 'ネオン卓',            price: 800,  desc: 'テーブル：卓を夜の暗さに沈め、上下の縁で深紅と金のネオン管が明滅する' },
+  { id: 'table_speakeasy',       cat: 'skin',  name: 'スピークイージー卓',  price: 900,  desc: 'テーブル：セピアの灯りに沈む隠れバー風。縁に木目の影と真鍮の縁取り' },
   /* チップ */
-  { id: 'chip_skin_ivory',       cat: 'skin',  name: '🪙 アイボリーチップ',    price: 500,  desc: 'チップの縁が象牙色に光る。落ち着いた高級感' },
-  { id: 'chip_skin_jade',        cat: 'skin',  name: '🪙 翡翠チップ',          price: 700,  desc: 'チップの縁が翡翠色に光る。卓上で艶やかに映える' },
-  { id: 'chip_skin_dragon',      cat: 'skin',  name: '🪙 龍紋チップ',          price: 1100, desc: 'チップの縁が龍の炎のような朱色に燃える' },
+  { id: 'chip_skin_ivory',       cat: 'skin',  name: 'アイボリーチップ',    price: 500,  desc: 'チップの縁が象牙色に光る。落ち着いた高級感' },
+  { id: 'chip_skin_jade',        cat: 'skin',  name: '翡翠チップ',          price: 700,  desc: 'チップの縁が翡翠色に光る。卓上で艶やかに映える' },
+  { id: 'chip_skin_dragon',      cat: 'skin',  name: '龍紋チップ',          price: 1100, desc: 'チップの縁が龍の炎のような朱色に燃える' },
   /* ミミの見た目（卓とプロフィールは専用の立ち絵、ミニゲームのミミは色替え） */
-  { id: 'mimi_skin_pink',        cat: 'skin',  name: '🐰 ミミ・桃色',          price: 400,  desc: '卓とプロフィールのミミが桃色のバニー衣装に（ミニゲームのミミも桃色に）' },
-  { id: 'mimi_skin_panda',       cat: 'skin',  name: '🐼 ミミ・パンダ柄',      price: 600,  desc: '卓とプロフィールのミミがパンダ耳の白黒バニー衣装に（ミニゲームのミミは白黒に）' },
-  { id: 'mimi_skin_gold',        cat: 'skin',  name: '🌟 ミミ・黄金',          price: 1500, desc: '卓とプロフィールのミミが黄金色のバニー衣装に。クリア後限定', requires: 'ending' },
+  { id: 'mimi_skin_pink',        cat: 'skin',  name: 'ミミ・桃色',          price: 400,  desc: '卓とプロフィールのミミが桃色のバニー衣装に（ミニゲームのミミも桃色に）' },
+  { id: 'mimi_skin_panda',       cat: 'skin',  name: 'ミミ・パンダ柄',      price: 600,  desc: '卓とプロフィールのミミがパンダ耳の白黒バニー衣装に（ミニゲームのミミは白黒に）' },
+  { id: 'mimi_skin_gold',        cat: 'skin',  name: 'ミミ・黄金',          price: 1500, desc: '卓とプロフィールのミミが黄金色のバニー衣装に。クリア後限定', requires: 'ending' },
   /* カットイン演出 */
-  { id: 'cutin_classic',         cat: 'skin',  name: '✨ カットイン・古典派',  price: 700,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）が集中線＆モノクロ調に' },
-  { id: 'cutin_neon',            cat: 'skin',  name: '✨ カットイン・ネオン',  price: 700,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）に深紅と金のネオン光線が走る' },
+  { id: 'cutin_classic',         cat: 'skin',  name: 'カットイン・古典派',  price: 700,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）が集中線＆モノクロ調に' },
+  { id: 'cutin_neon',            cat: 'skin',  name: 'カットイン・ネオン',  price: 700,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）に深紅と金のネオン光線が走る' },
 
   /* ===== 追加：チップ拡張 ===== */
   { id: 'chips_plus_10000',      cat: 'stack', name: '持ち込みチップ +10000',  price: 8000, desc: 'ミミのチップが+10000で始まる。VIPルーム仕様（相手の額はそのまま）' },
 
   /* ===== 追加：メモリ（お楽しみ） ===== */
-  { id: 'bgm_lobby_jazz',        cat: 'memory', name: '🎷 BGM「夜のジャズ」',   price: 350,  desc: 'ロビーBGMをしっとりジャズに切替可能' },
-  { id: 'bgm_battle_tense',      cat: 'memory', name: '🎻 BGM「緊迫の弦楽」',  price: 350,  desc: 'バトルBGMを緊張感ある弦楽四重奏に' },
-  { id: 'bgm_battle_techno',     cat: 'memory', name: '🎧 BGM「電脳テクノ」',  price: 500,  desc: 'バトルBGMをサイバーテクノに' },
-  { id: 'se_pack_casino',        cat: 'memory', name: '🔔 SEパック「カジノ」', price: 400,  desc: 'チップ音・カード音をリアル寄りに変更' },
-  { id: 'gallery_rico',          cat: 'memory', name: '🖼 リコ先輩設定資料',    price: 600,  desc: 'リコ先輩の人物設定・口調メモ・ボツ衣装の話を読める' },
-  { id: 'gallery_opponents',     cat: 'memory', name: '🖼 対戦相手図鑑',        price: 800,  desc: '対戦相手の打ち筋と口癖を読める（撃破した相手のみ）' },
-  { id: 'gallery_mimi',          cat: 'memory', name: '🖼 ミミ百態',            price: 500,  desc: 'ミミの表情メモと、ぱにゅぱにゅの裏話を読める' },
-  { id: 'omake_drama_1',         cat: 'memory', name: '🎭 おまけ寸劇「初出勤」', price: 600,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
-  { id: 'omake_drama_2',         cat: 'memory', name: '🎭 おまけ寸劇「VIPルームの前で」', price: 700, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。クリア後', requires: 'ending' },
+  { id: 'bgm_lobby_jazz',        cat: 'memory', name: 'BGM「夜のジャズ」',   price: 350,  desc: 'ロビーBGMをしっとりジャズに切替可能' },
+  { id: 'bgm_battle_tense',      cat: 'memory', name: 'BGM「緊迫の弦楽」',  price: 350,  desc: 'バトルBGMを緊張感ある弦楽四重奏に' },
+  { id: 'bgm_battle_techno',     cat: 'memory', name: 'BGM「電脳テクノ」',  price: 500,  desc: 'バトルBGMをサイバーテクノに' },
+  { id: 'se_pack_casino',        cat: 'memory', name: 'SEパック「カジノ」', price: 400,  desc: 'チップ音・カード音をリアル寄りに変更' },
+  { id: 'gallery_rico',          cat: 'memory', name: 'リコ先輩設定資料',    price: 600,  desc: 'リコ先輩の人物設定・口調メモ・ボツ衣装の話を読める' },
+  { id: 'gallery_opponents',     cat: 'memory', name: '対戦相手図鑑',        price: 800,  desc: '対戦相手の打ち筋と口癖を読める（撃破した相手のみ）' },
+  { id: 'gallery_mimi',          cat: 'memory', name: 'ミミ百態',            price: 500,  desc: 'ミミの表情メモと、ぱにゅぱにゅの裏話を読める' },
+  { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 600,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
+  { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 700, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。クリア後', requires: 'ending' },
   // 音声は無い。旧「ボイス集」（900）を実態どおりの「セリフ集」に改め値下げ。買った人の所持はそのまま
-  { id: 'omake_voice_pack',      cat: 'memory', name: '💬 リコ先輩セリフ集',    price: 300,  desc: 'リコ先輩の勝った時・負けた時・励ましなどのセリフを文字で読める（音声なし）' },
-  { id: 'omake_credit',          cat: 'memory', name: '📜 スタッフロール再生',  price: 0, clearBonus: true, desc: 'クリア特典（無料）。本編のスタッフロールをいつでも再生できる', requires: 'ending' },
-  { id: 'memory_minipoker',      cat: 'memory', name: '🎴 ミニキャラ・ファイブポーカー', price: 700, desc: 'ミミがミニキャラ仲間と5枚交換ポーカーで対戦！勝てばコインも稼げる、ふんわり楽しいミニゲーム' },
+  { id: 'omake_voice_pack',      cat: 'memory', name: 'リコ先輩セリフ集',    price: 300,  desc: 'リコ先輩の勝った時・負けた時・励ましなどのセリフを文字で読める（音声なし）' },
+  { id: 'omake_credit',          cat: 'memory', name: 'スタッフロール再生',  price: 0, clearBonus: true, desc: 'クリア特典（無料）。本編のスタッフロールをいつでも再生できる', requires: 'ending' },
+  { id: 'memory_minipoker',      cat: 'memory', name: 'ミニキャラ・ファイブポーカー', price: 700, desc: 'ミミがミニキャラ仲間と5枚交換ポーカーで対戦！勝てばコインも稼げる、ふんわり楽しいミニゲーム' },
 ];
 
 const SHOP_COMMENTS = {
@@ -5025,7 +5056,7 @@ const SHOP_COMMENTS = {
   chips_plus_5000: '+5000……ふふ、これはもう徹夜の準備が必要ですな',
 
   /* 追加：ぱにゅ強化 */
-  panyu_combo_x2:      'コンボを繋ぐ快感、倍にしませんか？　ぷにぷにが止まらなくなりますよ',
+  panyu_combo_x2:      'コンボを繋ぐ快感、倍にしませんか？　ぱにゅぱにゅが止まらなくなりますよ',
   panyu_sense_lv3:     'Lv3、これはもう「ほぼ答え」が見える領域です。中級を超えたい方に',
   panyu_range_lv3:     'ブラフの匂いまで嗅ぎ分ける逸品。ヴェルベット様には……必要かもしれませんな',
   panyu_chrono:        'もう一度だけ「ぱにゅっ」と。1バトルに1度、ゲージを使わず発動できる特権ですよ',
@@ -6379,7 +6410,7 @@ function renderSessionStats() {
     return '受け身';
   };
 
-  return `<details class="sess-stats"><summary><span class="sess-title-txt">📈 戦績 <small>(${wins}勝${losses}敗 / ${total}ハンド)</small></span></summary>
+  return `<details class="sess-stats"><summary><span class="sess-title-txt">戦績 <small>(${wins}勝${losses}敗 / ${total}ハンド)</small></span></summary>
     <div class="ss-grid">
       <div class="ss-row"><span class="ss-k">勝/負/分</span><span class="ss-v">${wins} / ${losses} / ${splits}</span></div>
       <div class="ss-row"><span class="ss-k">SD 到達率</span><span class="ss-v">${wtsdPct}%</span></div>
@@ -6830,14 +6861,14 @@ function zazazoLabel(v) {
 
 // === 相手の見た目／雰囲気（読み切り前に表示する観察情報） ===
 const OPPONENT_APPEARANCE = {
-  rico_tutorial: '🐰 ウサ耳カチューシャ／落ち着いた制服姿／優しい目線',
-  polka:   '✨ 派手な装い／いつもニヤニヤ／挑発的な視線',
-  selina:  '🌙 上品な銀髪／無表情で観察／所作が綺麗',
-  grano:   '💼 商人風スーツ／人当たり良いが目が抜け目ない',
-  velvet:  '🍷 妖艶な紫のドレス／視線で射抜く存在感／余裕の微笑',
+  rico_tutorial: 'ウサ耳カチューシャ／黒のバニースーツに赤い蝶タイ／日焼けした肌と金髪、頼れる笑顔',
+  polka:   '赤と青緑の差し色が入った黒髪／派手な上着をはおった軽装／いつもニヤニヤ、挑発的な視線',
+  selina:  '長い黒髪に眼鏡／黒のドレスに金の飾り／表情を変えずに観察、所作が綺麗',
+  grano:   'ゆるく波打つ金髪に片眼鏡／深紅と金の外套／人当たりは良いが、目が抜け目ない',
+  velvet:  '黒髪のツインテールに薔薇の髪飾り／黒と深紅のフリルのドレス／見下ろすような余裕の笑み',
 };
 function getOpponentAppearance(id) {
-  if (state.seriousRicoMode) return '🐰 ウサ耳がピンと立ち、目つきが鋭い／普段と別人の真剣さ';
+  if (state.seriousRicoMode) return 'ウサ耳がピンと立ち、目つきが鋭い／普段と別人の真剣さ';
   return OPPONENT_APPEARANCE[id] || '——';
 }
 
@@ -7574,8 +7605,7 @@ function onAction(e) {
       showNewGameModal();
       break;
     case 'new-game-full':
-      localStorage.removeItem(SAVE_KEY);
-      save = defaultSave();
+      wipeAllProgress();
       state = defaultState();
       const ovF = document.querySelector('.newgame-overlay'); if (ovF) ovF.remove();
       render();
@@ -7612,7 +7642,7 @@ function onAction(e) {
       if (state.screen === 'battle' && !state.introHandMode) {
         const inLecture = !!state.lectureMode;
         showConfirm(inLecture
-          ? { title: '講義を中断する？', body: 'ここまでの進み具合は残るよ。\n続きはロビーのリコ先輩から再開できる。', ok: '中断してロビーへ', cancel: '続ける', danger: true }
+          ? { title: '講義を中断する？', body: 'ここまでの進み具合は残るよ。\n続きはロビーの「リコの教室」から再開できる。', ok: '中断してロビーへ', cancel: '続ける', danger: true }
           : { title: '対戦をやめる？', body: `いまの対戦（${state.handNo}ハンド目）はここで終わり。\nチップは持ち帰れないけど、いつでも挑戦し直せる。`, ok: 'やめてロビーへ', cancel: '続ける', danger: true }
         ).then(yes => {
           if (!yes) return;
@@ -7820,7 +7850,7 @@ function onAction(e) {
     case 'toggle-psych':  save.psychEnabled = !(save.psychEnabled !== false); saveProgress(); applyBindings(); break;
     case 'toggle-logic':  save.logicEnabled = !(save.logicEnabled !== false); saveProgress(); applyBindings(); break;
     case 'home-ledger': showHomeLedger(); break;
-    case 'home-settings': showHomeSettings(); break;
+    case 'home-settings': showSettingsModal(); break; // 設定は1枚の窓にまとめた（音・遊び方・ひらく）
     case 'home-fullscreen': requestGameFullscreen(); break;
     case 'home-gift': {
       const today = mpTodayKey(), lb = save.loginBonus || {};
@@ -8756,6 +8786,17 @@ function injectAudioBars() {
     if (utils) utils.insertBefore(w, utils.firstChild); else titleScreen.appendChild(w);
     installInto(w, null);
   }
+  // 対戦・交換所・結果：音をまとめて切り替える四角いボタン（旧ロビーの .top-hud が無くなり、ここで止める手段が無かった）
+  const host = document.querySelector('.battle-screen.v2, .shop-screen.v2, .result-screen');
+  if (host && !host.querySelector('.sound-toggle')) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sound-toggle';
+    b.dataset.action = 'toggle-audio-all';
+    b.addEventListener('click', onAction);
+    host.appendChild(b);
+  }
+  refreshAudioBars();
 }
 
 function refreshAudioBars() {
@@ -8763,6 +8804,12 @@ function refreshAudioBars() {
   const vol = save.bgmVolume != null ? save.bgmVolume : 35;
   // 隅のバーは“音まるごと”の状態を表す（BGMだけの状態を出すと OFF表示なのにSEが鳴る）
   document.querySelectorAll('.audio-bar-toggle').forEach(t => t.innerHTML = isAnyAudioOn() ? UI_ICON.sound : UI_ICON.mute);
+  document.querySelectorAll('.sound-toggle').forEach(t => {
+    const on = isAnyAudioOn();
+    t.innerHTML = on ? UI_ICON.sound : UI_ICON.mute;
+    t.classList.toggle('is-off', !on);
+    t.title = t.ariaLabel = on ? '音を消す（BGM・効果音）' : '音を出す（BGM・効果音）';
+  });
   document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = vol);
   document.querySelectorAll('.lb-bgm-toggle').forEach(t => t.textContent = icon);
   // ★ '.lb-vol' は効果音スライダー（class="lb-vol lb-vol-sfx"）にも一致してしまい、
@@ -8840,14 +8887,14 @@ function showRicoModeChooser() {
   overlay.className = 'rico-mode-overlay';
   overlay.innerHTML = `
     <div class="rico-mode-modal">
-      <div class="rico-mode-title">🐰 リコ先輩</div>
+      <div class="rico-mode-title">リコ先輩</div>
       <div class="rico-mode-sub">「どっちで遊ぶ？」</div>
       <button class="btn btn-secondary rico-mode-opt" data-action="rico-mode-tutorial">
-        <span class="rico-mode-opt-name">📚 リコの教室で学ぶ</span>
+        <span class="rico-mode-opt-name">リコの教室で学ぶ</span>
         <span class="rico-mode-opt-desc">ルール・役・確率・読み合いを、講義で理屈から（いつでも）</span>
       </button>
       <button class="btn btn-primary rico-mode-opt" data-action="rico-mode-serious">
-        <span class="rico-mode-opt-name">🔥 本気のリコ先輩と対戦</span>
+        <span class="rico-mode-opt-name">本気のリコ先輩と対戦</span>
         <span class="rico-mode-opt-desc">チュートリアル無し、最強プロファイルで本気の読み合い</span>
       </button>
       <button class="btn btn-ghost rico-mode-opt" data-action="rico-mode-cancel">キャンセル</button>
@@ -8870,7 +8917,7 @@ const MIMI_PROFILE = {
   imgKey: 'mimi',
   icon: '🐰',
   title: '外れスキル持ちの新人ディーラー',
-  appearance: '🐰 ウサ耳カチューシャ／黒×赤のバニー衣装／茶髪お団子と赤い瞳',
+  appearance: 'ウサ耳カチューシャ／黒×赤のバニー衣装／茶髪お団子と赤い瞳',
   desc: '異世界に転生し、授かったのは「ぱにゅぱにゅ」——場を和ませるだけの外れスキル。' +
         'それでも卓に立ち、読みと度胸で伝説のディーラーたちに挑む。',
   traits: [
@@ -8934,7 +8981,7 @@ function showCharacterProfile(charId) {
     ? `<ul class="cp-traits">${traits.map(t => `<li>${t}</li>`).join('')}</ul>`
     : `<div class="cp-locked-hint">🔒 撃破すると性格・攻略法が記録されます</div>`;
   const exploitHtml = (!isMimi && cleared && persona)
-    ? `<div class="cp-exploit"><b>⚔ 攻略</b> ${persona.exploit}</div>` : '';
+    ? `<div class="cp-exploit"><b>攻略</b> ${persona.exploit}</div>` : '';
 
   // 得意分野・開始チップ（相手のみ）。実際の卓と同じ額を出す：
   //   ミミ＝卓の基本値＋持ち込みチップ／相手＝基本値の2倍（以前は基本値だけを「初期」と出していた）
@@ -8946,18 +8993,18 @@ function showCharacterProfile(charId) {
       const base = startingBaseChips(charId, isRico);
       const carry = carryInChips();
       const mimiStart = base + carry;
-      chipsMeta = `<span class="cp-meta-item cp-meta-chips">💰 ${isRico ? '本気モード：' : ''}開始チップ ミミ ${mimiStart}${carry ? `<small>（持ち込み+${carry}）</small>` : ''} ／ ${isRico ? 'リコ' : opp.name} ${base * 2}</span>`;
+      chipsMeta = `<span class="cp-meta-item cp-meta-chips">${UI_ICON.coin} ${isRico ? '本気モード：' : ''}開始チップ ミミ ${mimiStart}${carry ? `<small>（持ち込み+${carry}）</small>` : ''} ／ ${isRico ? 'リコ' : opp.name} ${base * 2}</span>`;
     }
   }
   const metaHtml = !isMimi ? `
     <div class="cp-meta">
-      <span class="cp-meta-item">🎯 ${opp.theme}</span>
+      <span class="cp-meta-item">${opp.theme}</span>
       ${chipsMeta}
       ${cleared ? '<span class="cp-meta-item cp-cleared">✓ 撃破済み</span>' : ''}
     </div>` : `
     <div class="cp-meta">
-      <span class="cp-meta-item">🎯 スキル《ぱにゅぱにゅ》</span>
-      <span class="cp-meta-item">💰 所持 ${save.coins}</span>
+      <span class="cp-meta-item">スキル《ぱにゅぱにゅ》</span>
+      <span class="cp-meta-item">${UI_ICON.coin} 所持 ${save.coins}</span>
     </div>`;
 
   // リコは衣装ギャラリーへの導線を追加（解放済みのみ）
@@ -9034,7 +9081,7 @@ function showRicoViewer(keepIndex) {
   const cur = list[state.ricoViewerIndex];
   const trivia = RICO_TRIVIA[cur.file] || {
     title: cur.label + 'のリコ先輩',
-    cards: [{ tag: 'ひとこと', text: '（このエピソードはまだ準備中）' }],
+    cards: [{ tag: 'ひとこと', text: 'リコ先輩の、ちょっとした裏話。' }],
   };
   const cardsHtml = trivia.cards.map(c => `
     <div class="rico-viewer-card">
@@ -9484,20 +9531,20 @@ function mpRollDailyMissions(seedKey) {
 // ── 大幅増量：キャラ・場面別セリフバリエーション ──
 const MP_LINES = {
   polka: {
-    start: ['えへへっ、いっぱい引いちゃおー！','よーし、ポルカいくよ〜！','じゃ、配ってね〜','次はわたしの番〜！','うん、勝負！'],
-    win:   ['やった〜！わたしの勝ち〜！','えへへっ、ポルカつよい〜！','どんなもんだいっ！','勝ったよ〜！'],
+    start: ['えへへっ、いっぱい引いちゃおー！','よーし、ポルカいくよ〜！','じゃ、配ってね〜','次はボクの番〜！','うん、勝負！'],
+    win:   ['やった〜！ボクの勝ち〜！','えへへっ、ポルカつよい〜！','どんなもんだいっ！','勝ったよ〜！'],
     lose:  ['うぐぐ……つよ……','えぇ〜まけちゃった〜','むぅ、つぎは負けないもん','もう一回！もう一回〜！'],
-    tie:   ['ふぇ〜引き分け〜！','おあいこっ！','うむむ、わたしも強い！'],
+    tie:   ['ふぇ〜引き分け〜！','おあいこっ！','うむむ、ボクだって強いもん！'],
     reach: ['おっ、なんかいい感じ？','ふふっ、来そう……？','よしっ、その手で行け〜！'],
     big:   ['うわっ、なにそれ強すぎ！','ふぇぇ、無理むり！','そんなのありー！？'],
   },
   selina: {
-    start: ['ぼ……ボード、いや、手札を、よく見て','……静かに、配って','こく……始めて','……お願い、します'],
-    win:   ['……運も、実力のうち、なんだって','こく……勝ち、ね','ふっ……ボードに従ったまで','ご……ごめんね？'],
-    lose:  ['う……強い。次は、ぼ、ぼくが……','こ、ここまで読まれたか……','ぐ、悔しい……ぼくが弱かった'],
-    tie:   ['ふ、引き分け','こく……まあ、いいわ','悪くない、結果ね'],
-    reach: ['……来そう、な、気配','こく……手札が騒いでいる','……感じる、何かが'],
-    big:   ['う、嘘……そんな手……','ぼ、ボードの神様……','……読みが、外れた'],
+    start: ['では、始めましょう。手札はよく見てくださいね','落ち着いて、配ってください','お手並み拝見します','よろしくお願いします'],
+    win:   ['確率どおりの結果です','この手なら、勝つ理由はありました','失礼。今回は私の番でしたね','運も、実力のうちですから'],
+    lose:  ['……お見事です。次は、私が取り返します','そこまで読まれていましたか','悔しいですね。計算は合っていたのですが'],
+    tie:   ['引き分けですね','五分五分。悪くない結果です','どちらも、筋の通った手でした'],
+    reach: ['……来そうな気配ですね','この並びなら、期待できます','手札が、静かに揃ってきました'],
+    big:   ['……その手は、想定外です','そこまで揃うとは……','読みが、外れましたね'],
   },
   grano: {
     start: ['期待値に従い、参りましょう','数字の前に、平等あれ','では、合理的に','計算通り、進めます'],
@@ -9508,12 +9555,12 @@ const MP_LINES = {
     big:   ['……これは、計算外でした','確率論を超越なされる','算盤が、燃えそうですな'],
   },
   velvet: {
-    start: ['ふふ、お遊びでも、本気で','ご縁ですわね、一手を','では、舞いましょうか','お相手致しますわ'],
-    win:   ['あら、私の勝ち。お小遣いを頂きますね','ふふ、楽しゅうございました','王座は、揺るがぬもの','勝負事は、こうでなくては'],
-    lose:  ['おみごと。今日は、あなたの夜','ふふ、お見事ですわ','降参いたします','次は、お手柔らかに'],
-    tie:   ['引き分け……悪くないわ','ご縁、続きますね','まあ、これも一興'],
-    reach: ['ふふ、なにか企んでいるのね？','面白い……手札が、騒ぐ','ふふっ、その瞳、知っているわ'],
-    big:   ['ま、まさか、その役……','王の手札……失敬','驚かせてくれますわね'],
+    start: ['お遊びでも、手は抜かないの♡','ほら、配りなさいよ','あたしと遊んでくれるの？ ざぁこ♡','いいわ、相手してあげる'],
+    win:   ['あたしの勝ち♡ コイン、いただくの','ざぁこ♡ 当然の結果なの','VIPルームの女王は、負けないの','ふふん、楽しかった♡'],
+    lose:  ['う、うそ……あたしが……！','……ちっ。今のは、たまたまなの','次は泣かせてあげるんだから','おぼえてなさいよ……！'],
+    tie:   ['引き分け？ つまんないの','……まあ、許してあげる','ふん、次で決めるの'],
+    reach: ['なにか企んでるの？ 顔に出てるの♡','ふふっ、その目、わかりやすいの','来そうなの？ ざぁこ♡'],
+    big:   ['う、うそ……その役……','そんな手、聞いてないの……！','……ちょっと、ずるいの'],
   },
 };
 const MP_MIMI_LINES = {
@@ -10069,21 +10116,21 @@ function showMiniPokerGame() {
   // ── 対戦相手プール ──
   const oppPool = [
     { key: 'polka',  name: 'ポルカ',
-      lines: { start: 'えへへっ、いっぱい引いちゃおー！', win: 'やった〜！わたしの勝ち〜！',
+      lines: { start: 'えへへっ、いっぱい引いちゃおー！', win: 'やった〜！ボクの勝ち〜！',
                lose: 'うぐぐ……つよ……', tie: 'ふぇ〜引き分け〜！',
                reach: 'おっ、なんかいい感じ？', big: 'うわっ、なにそれ強すぎ！' } },
     { key: 'selina', name: 'セリナ',
-      lines: { start: 'ぼ……ボード、いや、手札を、よく見て', win: '……運も、実力のうち、なんだって',
-               lose: 'う……強い。次は、ぼ、ぼくが……', tie: 'ふ、引き分け',
-               reach: '……来そう、な、気配', big: 'う、嘘……そんな手……' } },
+      lines: { start: 'では、始めましょう。手札はよく見てくださいね', win: '確率どおりの結果です',
+               lose: '……お見事です。次は、私が取り返します', tie: '引き分けですね',
+               reach: '……来そうな気配ですね', big: '……その手は、想定外です' } },
     { key: 'grano',  name: 'グラーノ',
       lines: { start: '期待値に従い、参りましょう', win: '数字は、私に微笑むものですから',
                lose: '見事。今夜の期待値は、お嬢さんに譲ります', tie: '引き分け。割り勘で如何かな',
                reach: 'ふむ、確率収束の予感が', big: '……これは、計算外でした' } },
     { key: 'velvet', name: 'ヴェルベット',
-      lines: { start: 'ふふ、お遊びでも、本気で', win: 'あら、私の勝ち。お小遣いを頂きますね',
-               lose: 'おみごと。今日は、あなたの夜', tie: '引き分け……悪くないわ',
-               reach: 'ふふ、なにか企んでいるのね？', big: 'ま、まさか、その役……' } },
+      lines: { start: 'お遊びでも、手は抜かないの♡', win: 'あたしの勝ち♡ コイン、いただくの',
+               lose: 'う、うそ……あたしが……！', tie: '引き分け？ つまんないの',
+               reach: 'なにか企んでるの？ 顔に出てるの♡', big: 'う、うそ……その役……' } },
   ];
   const cleared = save.clearedStages || [];
   const available = oppPool.filter(o => o.key === 'polka' || o.key === 'selina' || cleared.includes(o.key));
@@ -10183,9 +10230,9 @@ function showMiniPokerGame() {
       <div class="minipoker-modal">
         <button class="minipoker-close" title="やめる">×</button>
         <div class="mp-header">
-          <div class="mp-title">🎴 ファイブポーカー</div>
+          <div class="mp-title">ファイブポーカー</div>
           <div class="mp-stats">
-            <span class="mp-stat">💰 <span data-mpb="coins">${save.coins}</span></span>
+            <span class="mp-stat">${UI_ICON.coin} <span data-mpb="coins">${save.coins}</span></span>
             <span class="mp-stat mp-stat-jp" title="ロイヤルストレートフラッシュで全額獲得">💎 JP <span data-mpb="jackpot">${p.jackpot}</span></span>
             <span class="mp-stat mp-stat-session" data-mpb="sessionStat">💹 ±0</span>
             <span class="mp-stat">🔥 連勝 <span data-mpb="streak">0</span><span data-mpb="shields"></span></span>
@@ -10822,7 +10869,7 @@ function showMiniPokerGame() {
     const panel = document.createElement('div');
     panel.className = 'mp-side-panel mp-panel-history';
     panel.innerHTML = `
-      <div class="mp-panel-title">📜 履歴（直近10戦）</div>
+      <div class="mp-panel-title">履歴（直近10戦）</div>
       <div class="mp-panel-body">
         ${ctx.history.length === 0 ? '<div class="mp-panel-empty">まだプレイしてません</div>' :
           ctx.history.map(h => `
@@ -10846,7 +10893,7 @@ function showMiniPokerGame() {
     const panel = document.createElement('div');
     panel.className = 'mp-side-panel mp-panel-ach';
     panel.innerHTML = `
-      <div class="mp-panel-title">🏅 達成バッジ <small>${Object.keys(ach).length}/${MP_ACHIEVEMENTS.length}</small></div>
+      <div class="mp-panel-title">達成バッジ <small>${Object.keys(ach).length}/${MP_ACHIEVEMENTS.length}</small></div>
       <div class="mp-panel-body">
         ${MP_ACHIEVEMENTS.map(a => {
           const got = !!ach[a.id];
@@ -10885,7 +10932,7 @@ function showMiniPokerGame() {
     const panel = document.createElement('div');
     panel.className = 'mp-side-panel mp-panel-mission';
     panel.innerHTML = `
-      <div class="mp-panel-title">🎯 今日のミッション</div>
+      <div class="mp-panel-title">今日のミッション</div>
       <div class="mp-panel-body">
         ${ms.map(m => {
           const cur = Math.min(prog[m.id] || 0, m.goal);
@@ -11525,7 +11572,7 @@ function showMiniPokerGame() {
     dialog.className = 'mp-summary-dialog';
     dialog.innerHTML = `
       <div class="mp-summary-card">
-        <div class="mp-summary-title">📊 今夜のセッション</div>
+        <div class="mp-summary-title">今夜のセッション</div>
         <div class="mp-summary-stats">
           <div class="mp-sum-row"><span>プレイ回数</span><b>${ctx.sessionPlays}</b></div>
           <div class="mp-sum-row"><span>勝率</span><b>${winRate}%</b></div>
@@ -11553,7 +11600,7 @@ function showMiniPokerGame() {
     tut.className = 'mp-tutorial';
     tut.innerHTML = `
       <div class="mp-tut-card">
-        <div class="mp-tut-title">🎴 ファイブポーカー 入門</div>
+        <div class="mp-tut-title">ファイブポーカー 入門</div>
         <ol class="mp-tut-steps">
           <li>① <b>ベットを選ぶ</b>（1回 最大 ${MP_BET_MAX} 🪙まで）</li>
           <li>② DEAL → カードを <b>残すかタップで指定</b>（交換は2回まで）</li>
@@ -11810,7 +11857,7 @@ function showCollectionModal() {
     if (!itemsByCat[i.cat]) itemsByCat[i.cat] = [];
     itemsByCat[i.cat].push({ ...i, owned: ownedItems.includes(i.id) });
   });
-  const catLabels = { panyu: 'ぱにゅ強化', note: '知識ノート', skin: 'スキン', memory: 'メモリ', stack: '持ち込みチップ' };
+  const catLabels = { panyu: 'ぱにゅ強化', note: '戦術ノート', skin: '見た目', memory: 'メモリ', stack: 'チップ拡張' };
 
   // 分子も TACTIC_NOTES にあるノートだけを数える（未知のIDで 6/5 のように総数を超えないように）
   const notesCount = Object.keys(TACTIC_NOTES).filter(id => (save.unlockedNotes || []).includes(id)).length;
@@ -11847,7 +11894,7 @@ function showCollectionModal() {
       <div class="coll-stage-body">
         <div class="coll-stage-name">${s.name}</div>
         <div class="coll-stage-theme">${s.theme || ''}</div>
-        ${s.cleared ? `<div class="coll-stage-meta">${s.rank ? `Best: ${s.rank} ／ ` : ''}再戦勝利: ${s.wins}回</div>` : ''}
+        ${s.cleared ? `<div class="coll-stage-meta">${s.rank ? `最高ランク ${s.rank} ／ ` : ''}再戦勝利 ${s.wins}回</div>` : ''}
       </div>
     </div>
   `).join('');
@@ -11907,12 +11954,12 @@ function showCollectionModal() {
     <div class="collection-modal">
       <button class="collection-close" data-action="collection-close" title="閉じる">×</button>
       <div class="collection-header">
-        <div class="collection-title">🏆 トロフィー手帳</div>
+        <div class="collection-title">コレクション</div>
         <div class="collection-progress">
           <div class="collection-progress-bar"><div class="collection-progress-fill" style="width:${progressPct}%"></div></div>
           <div class="collection-progress-text">${progressPct}% （${gotScore} / ${totalScore}）</div>
         </div>
-        <div class="collection-coins">💰 所持コイン：${save.coins}</div>
+        <div class="collection-coins">${UI_ICON.coin} 所持コイン：${save.coins}</div>
       </div>
       <div class="collection-body">
         <section class="coll-section">
@@ -11932,7 +11979,7 @@ function showCollectionModal() {
           <div class="coll-items">${itemsHtml}</div>
         </section>
         <section class="coll-section">
-          <h3 class="coll-section-title">知識ノート <span class="coll-section-count">${notesCount}/${Object.keys(TACTIC_NOTES).length}</span></h3>
+          <h3 class="coll-section-title">戦術ノート <span class="coll-section-count">${notesCount}/${Object.keys(TACTIC_NOTES).length}</span></h3>
           <div class="coll-notes">${Object.keys(TACTIC_NOTES).map(function(id){var n=TACTIC_NOTES[id];var got=(save.unlockedNotes||[]).indexOf(id)>=0;var eff=(NOTE_ARTICLES[id]||{}).effect||'';return `<div class="coll-note ${got?"on":"off"}" data-action="open-note" data-note="${id}" role="button" tabindex="0"><div class="coll-note-name">${got?n.name:"？？？"}</div><div class="coll-note-desc">${got?n.desc:"対戦相手撃破やショップ購入で解放"}</div>${got&&eff?`<div class="coll-note-effect">対戦中の効果：${eff}</div>`:''}<div class="coll-note-read">${got?'▸ 本文を読む':'▸ 内容を見る（未解放）'}</div></div>`;}).join("")}</div>
         </section>
         <section class="coll-section">
@@ -12195,7 +12242,7 @@ function showGlossaryModal() {
       <button class="glossary-close" data-action="glossary-close" title="閉じる">×</button>
       <div class="glossary-header">
         <div class="glossary-top-row">
-          <div class="glossary-title">📖 ポーカー辞典</div>
+          <div class="glossary-title">ポーカー辞典</div>
           <div class="glossary-sort-toggle">
             <button class="gl-sort-btn active" data-mode="cat">カテゴリ順</button>
             <button class="gl-sort-btn" data-mode="aiueo">50音順</button>
@@ -12286,11 +12333,11 @@ function showNewGameModal() {
       <div class="newgame-title">新しく始める</div>
       <div class="newgame-sub">どのように始めますか？</div>
       <button class="btn btn-primary newgame-opt" data-action="new-game-full">
-        <span class="newgame-opt-name">🆕 完全に最初から</span>
+        <span class="newgame-opt-name">完全に最初から</span>
         <span class="newgame-opt-desc">コインも進捗も全部リセット</span>
       </button>
       <button class="btn btn-secondary newgame-opt" data-action="new-game-keep-coins">
-        <span class="newgame-opt-name">💰 コインと所持品を持って最初から</span>
+        <span class="newgame-opt-name">コインと所持品を持って最初から</span>
         <span class="newgame-opt-desc">進捗とランクはリセット、コイン・購入アイテムは保持</span>
       </button>
       <button class="btn btn-ghost newgame-opt" data-action="newgame-cancel">キャンセル</button>
@@ -12499,7 +12546,7 @@ function startBattleInternal(opponentId) {
       'ようこそミミ！まずはポーカーの基本から教えるよ。<br><br>' +
       '🃏 <b>手札2枚＋場札5枚</b>から最強の5枚役を作る<br>' +
       '🪙 <b>ポット</b>＝ハンド毎の賭け金プール。<u>勝った方が総取り</u><br>' +
-      '💰 ベットすると自分のチップが減り、ポットに入る<br>' +
+      'ベットすると自分のチップが減り、ポットに入る<br>' +
       '🏆 相手より強い役 or 相手が降りれば勝ち<br>' +
       '💀 自分のチップが0になったら負け<br><br>' +
       'まずは下の<b>「対戦開始」</b>を押して、最初の手札を見てみよう。',
@@ -12590,9 +12637,11 @@ function showHandGuide() {
   `;
   const stage = document.getElementById('stage');
   (stage || document.body).appendChild(overlay);
-  const close = () => overlay.remove();
-  overlay.querySelector('.hand-guide-close').addEventListener('click', (e) => { e.stopPropagation(); close(); });
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  // 見るだけの表なので、どこを押しても閉じる（「タップして閉じる」の通り。スマホでは紙面が画面いっぱいで外側が無い）。Esc でも閉じる
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  const close = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
+  overlay.addEventListener('click', (e) => { e.stopPropagation(); close(); });
+  document.addEventListener('keydown', onKey);
 }
 
 // ルール入門：3ステップ、各1タップ、計60秒以内。「そろえる／強さ順／賭ける」の最小限だけ教える。
@@ -14517,7 +14566,7 @@ function triggerPsychBattle(qid) {
     if (isLecture) {
       // 講義モード：内容は講義なのに「心理バトル」と出る不一致を解消
       const chapterSub = q.chapterTitle || '— ポーカーの基礎を学ぶ —';
-      titleEl.innerHTML = `📚 リコ先輩の講義<small class="battle-subtitle">${chapterSub}</small>`;
+      titleEl.innerHTML = `リコ先輩の講義<small class="battle-subtitle">${chapterSub}</small>`;
     } else if (isLogic) {
       titleEl.innerHTML = '<span class="v2p-title-en v2-disp">LOGIC BATTLE</span><span class="v2p-title-jp">論理バトル</span>';
     } else {
@@ -14723,7 +14772,7 @@ function usePanyuSense(qid, isFree) {
   const floatBtn = document.querySelector('.panyu-floating-btn');
   if (senseBtn) {
     senseBtn.disabled = true;
-    senseBtn.textContent = '⏳ ぷにぷに中…';
+    senseBtn.textContent = 'ぱにゅぱにゅ中…';
   }
   if (floatBtn) { floatBtn.disabled = true; }
 
@@ -14739,7 +14788,7 @@ function usePanyuSense(qid, isFree) {
       if (hint && !hint.dataset.boosted) {
         hint.style.background = 'rgba(245,215,122,0.3)';
         hint.style.fontWeight = '700';
-        hint.textContent += '  ←【強調】相手の動きをよく見て！';
+        hint.textContent += '  相手の動きをよく見て！';
         hint.dataset.boosted = '1';
       }
     }
@@ -14792,7 +14841,7 @@ const PANYU_RARITY = [
 ];
 const PANYU_PITY = 10;
 const PANYU_LINES = {
-  N:   ['えへへ、ありがと', 'ぷにぷに、おしまい', 'また触ってね'],
+  N:   ['えへへ、ありがと', 'ぱにゅぱにゅ、おしまい', 'また触ってね'],
   R:   ['ん……ちょっと、くすぐったい', 'ぱにゅぱにゅ、好調かも', 'もう一回、いく？'],
   SR:  ['……とろけちゃいそう', 'そんなに優しくされたら、照れる……', 'ふわぁ……しあわせ'],
   SSR: ['今日いちばんの、ぱにゅぱにゅ！', 'ミミのスキル、外れなんかじゃないよね？', 'きらきら、止まらない……！'],
@@ -15696,7 +15745,7 @@ function showHandHistoryModal() {
   overlay.innerHTML = `
     <div class="hand-history-modal">
       <button class="hh-close" data-action="history-close" title="閉じる">×</button>
-      <div class="hh-title">📜 ハンドヒストリー <small>（直近 ${hist.length} 件）</small></div>
+      <div class="hh-title">ハンドヒストリー <small>（直近 ${hist.length} 件）</small></div>
       <div class="hh-list">${listHtml}</div>
     </div>
   `;
@@ -15740,7 +15789,7 @@ function showPersonalityRevealBanner() {
   const p = state.opponentId ? getOpponentPersonality(state.opponentId) : { icon: '?', title: '?', traits: [], exploit: '' };
   banner.innerHTML = `
     <div class="prb-inner">
-      <div class="prb-title">🎯 ミミミ MAX！相手の性格を読み切った</div>
+      <div class="prb-title">ミミミ MAX！相手の性格を読み切った</div>
       <div class="prb-name">${p.icon} ${p.title}</div>
       <ul class="prb-traits">
         ${p.traits.map(t => `<li>${t}</li>`).join('')}
@@ -15908,8 +15957,8 @@ function showdownTiming(pEv, oEv, pot) {
 // === 連勝モメンタム演出 ===
 // 連勝数に応じた卓上バッジのテキスト/演出tierを決める（2連勝から表示、3連勝以上は派手化）
 function streakMomentumInfo(n) {
-  if (n >= 5) return { tier: 'big',  text: `🔥✨ ${n}連勝！！！ ✨🔥` };
-  if (n >= 3) return { tier: 'fire', text: `🔥 ${n}連勝！！ 🔥` };
+  if (n >= 5) return { tier: 'big',  text: `${n}連勝！！` };
+  if (n >= 3) return { tier: 'fire', text: `${n}連勝！` };
   if (n >= 2) return { tier: 'normal', text: `${n}連勝！` };
   return null;
 }
@@ -16387,7 +16436,7 @@ function showDominanceChoiceModal() {
   overlay.className = 'dominance-choice-overlay';
   overlay.innerHTML = `
     <div class="dominance-choice-modal">
-      <h2 class="dominance-choice-title">⚡ どう仕留める？</h2>
+      <h2 class="dominance-choice-title">どう仕留める？</h2>
       <p class="dominance-choice-sub">完勝の決め手を選ぼう</p>
       <div class="dominance-choice-list">
         <button class="dominance-choice-btn" data-choice="full">
@@ -16696,12 +16745,11 @@ function endBattle() {
   setText('bestHand', state.bestHandName);
   setText('bluffBreak', state.bluffBreakHappened ? 'あり' : 'なし');
   // ステージ帯（縦書きタイトルの脇）：STAGE 0N — 相手名（英字表記）
-  // 番号はタイトル・講義完了と同じ体系：リコ先輩＝研修（番号なし）、ポルカ＝1 … ヴェルベット＝4
+  // 番号はタイトル・ホームの台帳・各話と同じ：リコ先輩＝1 … ヴェルベット＝5
   {
     const stageIdx = STAGE_ORDER.indexOf(state.opponentId);
     const enName = (state.opponentImgKey || opp.id || '').toUpperCase();
-    const stageLabel = state.opponentId === 'rico_tutorial' ? 'TRAINING'
-      : `STAGE ${String(Math.max(1, stageIdx)).padStart(2, '0')}`;
+    const stageLabel = `STAGE ${String(Math.max(0, stageIdx) + 1).padStart(2, '0')}`;
     setText('resultStageTag', `${stageLabel} — ${enName}`);
   }
   // ランク判子の色帯：S/SS/A=金（デフォルト）、B=銀、C=銅
@@ -16804,7 +16852,7 @@ function endBattle() {
       btns.innerHTML = (firstClearForIntermission || !(save.rewardCgSeen || []).includes('velvet')) ? `
         <button class="btn btn-primary result-main-btn" data-action="go-intermission" data-opponent="velvet"><span>幕間へ</span><span>→</span></button>
       ` : `
-        <button class="btn btn-primary result-main-btn" data-action="go-ending"><span>✨ エンディングへ ✨</span></button>
+        <button class="btn btn-primary result-main-btn" data-action="go-ending"><span>エンディングへ</span></button>
         <div class="result-sub-buttons">
           <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
         </div>
@@ -16865,7 +16913,7 @@ function nextGoalText() {
     const opp = OPPONENTS[nextId];
     return `次の目標：${opp.name}に挑戦`;
   }
-  return '全ステージ制覇！再戦でSランクを狙おう';
+  return '全卓制覇！再戦でSランクを狙おう';
 }
 
 // リザルト画面の「ご褒美感」演出をまとめて起動する。
@@ -16966,7 +17014,7 @@ function triggerVelvetVictoryEffect() {
   eff.innerHTML = `
     <div class="tousatsu-glow"></div>
     <div class="tousatsu-text">闘札<br>制覇</div>
-    <div class="tousatsu-sub">— ラビリンスの女王、陥落 —</div>
+    <div class="tousatsu-sub">— VIPルームの女王、陥落 —</div>
   `;
   document.body.appendChild(eff);
   setTimeout(() => eff.classList.add('out'), 3000);
@@ -17018,7 +17066,7 @@ function updateLectureHud() {
       <span>📚 ${done}/${total}問</span>
       <span>⭐ ${state.lectureCorrect || 0}</span>
       ${combo >= 2 ? `<span class="lh-combo">🔥${combo}</span>` : ''}
-      <span>💰 +${state.lectureEarned || 0}</span>
+      <span>${UI_ICON.coin} +${state.lectureEarned || 0}</span>
     </div>
   `;
 }
@@ -17090,7 +17138,7 @@ function showLectureIntro(onContinue, savedProgress) {
   overlay.innerHTML = `
     <div class="tutorial-bubble lecture-bubble">
       <div class="tutorial-step">${savedProgress ? '講義再開' : '講義開始'}</div>
-      <h2 class="lec-title">📚 リコ先輩のポーカー講義</h2>
+      <h2 class="lec-title">リコ先輩のポーカー講義</h2>
       ${resumeMsg}
       <p class="lec-lead">よろしく〜！ ミミに <b>ポーカーの基本</b> を教えるね。${savedProgress ? '' : 'コースを選んで！'}</p>
       ${savedProgress ? '' : `
@@ -17098,7 +17146,7 @@ function showLectureIntro(onContinue, savedProgress) {
         <div class="lec-course is-lite">
           <b class="lec-course-name">⚡ ライトコース（おすすめ）</b>
           <small>基本ルール・用語・役の強さの<b>${LESSON_LITE_CHAPTERS.length}章${liteQs}問だけ</b>。5分で実戦へ！<br>
-          全章はあとでロビーのリコ先輩「もう一度受講する」から受けられる</small>
+          全章はあとでロビーの「リコの教室」から受けられる</small>
         </div>
         <div class="lec-course">
           <b class="lec-course-name">📚 フルコース</b>
@@ -17110,8 +17158,8 @@ function showLectureIntro(onContinue, savedProgress) {
         ${savedProgress
           ? `<button class="next-btn" type="button">▶ 続ける</button>
              <button class="restart-btn" type="button">最初からやり直す</button>`
-          : `<button class="lite-btn next-btn" type="button">⚡ ライトコースで始める</button>
-             <button class="full-btn" type="button">📚 フルコースで始める</button>`}
+          : `<button class="lite-btn next-btn" type="button">ライトコースで始める</button>
+             <button class="full-btn" type="button">フルコースで始める</button>`}
         <button class="skip-btn" type="button">全スキップ</button>
       </div>
     </div>
@@ -17168,7 +17216,7 @@ function showLectureIntro(onContinue, savedProgress) {
   overlay.querySelector('.skip-btn').addEventListener('click', () => {
     lectureConfirm({
       title: '講義をスキップする？',
-      body: '説明を飛ばして、すぐ実戦へ進めるよ。\n講義はあとでロビーのリコ先輩からいつでも受けられる。'
+      body: '説明を飛ばして、すぐ実戦へ進めるよ。\n講義はあとでロビーの「リコの教室」からいつでも受けられる。'
         + (firstClear ? `\n初回クリア報酬（+${clearReward}🪙）は、最後まで受けた時にもらえる。` : ''),
       ok: 'スキップする', cancel: '講義を受ける', danger: true,
     }).then(yes => {
@@ -17291,7 +17339,7 @@ function showHandsOnExercise(ex, onClose) {
       });
       // フィードバック（選び直しはできないので「もう一度考えよう」とは言わない。正解は緑で光っている）
       feedbackEl.innerHTML = `
-        <div class="ho-result ${c.correct ? 'good' : 'bad'}">${c.correct ? '⭕ 正解！' : '❌ 残念……正解は緑の選択肢'}</div>
+        <div class="ho-result ${c.correct ? 'good' : 'bad'}">${c.correct ? '正解！' : '残念……「✓ 正解」の印が付いた選択肢を確かめよう'}</div>
         <div class="ho-hint">${c.hint}</div>
       `;
       feedbackEl.style.display = '';
@@ -17354,7 +17402,7 @@ function showChapterBanner(num, title, onClose, lead) {
     if (closing) return;
     lectureConfirm({
       title: '講義を中断する？',
-      body: 'ここまでの進み具合は残るよ。\n続きはロビーのリコ先輩から再開できる。',
+      body: 'ここまでの進み具合は残るよ。\n続きはロビーの「リコの教室」から再開できる。',
       ok: '中断してロビーへ', cancel: '続ける', danger: true,
     }).then(yes => { if (yes && banner.isConnected) close('exit'); });
   });
@@ -17399,14 +17447,14 @@ function finishLecture(skipped) {
   overlay.innerHTML = `
     <div class="tutorial-bubble lecture-bubble">
       <div class="tutorial-step">講義完了</div>
-      <h2 class="lec-title">📖 講義お疲れさま！</h2>
+      <h2 class="lec-title">講義お疲れさま！</h2>
       ${skipped
-        ? '<p class="lec-lead">スキップでもOK。実戦で覚えていこ〜<br>講義はロビーのリコ先輩からいつでも受けられるよ。</p>'
+        ? '<p class="lec-lead">スキップでもOK。実戦で覚えていこ〜<br>講義はロビーの「リコの教室」からいつでも受けられるよ。</p>'
         : `
         <div class="lec-grade" style="color:${gradeColor};text-shadow:0 0 24px ${gradeColor};">${grade}</div>
         <p class="lec-score">${total}問中 <b>${state.lectureCorrect}問正解</b>（${scorePct}%）</p>
         <div class="lec-rewards">${rewardLines.join('<br>')}</div>
-        <p class="lec-lead">これで基本はバッチリ。<br>次は<b>Stage 1「ポルカ戦」</b>で実戦練習だよ。</p>`
+        <p class="lec-lead">これで基本はバッチリ。<br>次は<b>第2戦「ポルカ」</b>で実戦練習だよ。</p>`
       }
       <div class="tutorial-actions lec-actions">
         <button class="next-btn" type="button">${showStory ? '▶ 次へ' : '▶ ロビーへ'}</button>
@@ -17423,7 +17471,7 @@ function finishLecture(skipped) {
     const toLobby = () => {
       state = defaultState();
       goLobby();
-      toast(skipped ? '講義はロビーのリコ先輩からいつでも受けられるよ' : `✨ 講義完了！${gain > 0 ? ` +${gain}コイン` : ''}`);
+      toast(skipped ? '講義はロビーの「リコの教室」からいつでも受けられるよ' : `✨ 講義完了！${gain > 0 ? ` +${gain}コイン` : ''}`);
     };
     if (showStory) showIntermission('rico_tutorial', toLobby);
     else toLobby();
@@ -17439,7 +17487,7 @@ function endTutorial(isFirstClear) {
     '・<b>ぱにゅゲージ</b>：心理バトル成功で増える。ぱにゅぱにゅで相手の動きが読みやすくなる<br>' +
     '・<b>ミミミゲージ</b>：心理バトルで読みが当たるとたまる。MAXで相手の性格を読み切れる<br>' +
     '・<b>選択肢シャッフル</b>：心理バトルは毎回順番が変わるから、暗記は通じない<br>' +
-    '次は<b>Stage 1「ポルカ」</b>で本番だよ。チップが尽きるまで勝負！',
+    '次は<b>第2戦「ポルカ」</b>で本番だよ。チップが尽きるまで勝負！',
     () => {
       const goLobbyWithReward = () => {
         // リザルト画面風に表示（簡易：ステージ選択へ戻す）
@@ -18095,6 +18143,8 @@ function fitStage() {
   document.documentElement.style.setProperty('--gut-x', Math.max(0, (window.innerWidth - 1280 * scale) / 2) + 'px');
   document.documentElement.style.setProperty('--gut-y', Math.max(0, (window.innerHeight - 800 * scale) / 2) + 'px');
   document.documentElement.style.setProperty('--rb-h', window.innerHeight + 'px');
+  // スマホの小窓は中身を実寸で描く（CSS の 1px＝画面の 1px）：舞台の縮みの逆数
+  document.documentElement.style.setProperty('--inv-scale', (1 / scale).toFixed(4));
   fitHomeStage();
 }
 window.addEventListener('resize', fitStage);
@@ -18166,7 +18216,7 @@ function showIosFullscreenHelp() {
   modal.className = 'ios-help-modal';
   modal.innerHTML = `
     <div class="ios-help-inner">
-      <h3>📱 iPhone でフル画面にするには</h3>
+      <h3>iPhone でフル画面にするには</h3>
       <p>iPhone の Safari は、Web ページの全画面表示に対応していません。<br>
       ホーム画面に追加すると、アドレスバーの無い広い画面で遊べます：</p>
       <ol class="ios-help-steps">

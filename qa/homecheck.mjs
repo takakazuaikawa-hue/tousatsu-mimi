@@ -64,11 +64,13 @@ try {
   await click('.h15-ledger'); await check('ledger opens with stage actions','document.querySelectorAll(".home-ledger-row").length===5 && !!document.querySelector(".home-dialog [data-action=skip-stage]")');
   await click('[data-home-close]');
   await check('dialog focus returns to launcher','document.activeElement.matches(".h15-ledger")');
-  await click('[data-action="home-settings"]'); await click('.home-dialog [data-action="toggle-bgm"]');
+  await click('.h15-frame'); await waitCheck('frame opens opponent profile','!!document.querySelector(".char-profile-overlay")');
+  await page.eval('document.querySelectorAll(".char-profile-overlay").forEach(e=>e.remove())');
+  await click('[data-action="home-settings"]'); await click('.settings-modal [data-toggle="bgm"]');
   await check('BGM enabled and playing','save.bgmOn && !document.getElementById("lobby-bgm-audio").paused');
-  await click('.home-dialog [data-action="toggle-bgm"]'); await check('BGM stopped','!save.bgmOn && document.getElementById("lobby-bgm-audio").paused');
-  await click('.home-dialog [data-action="toggle-sfx"]'); await check('SFX toggle persists','!save.sfxOn');
-  await click('[data-home-close]');
+  await click('.settings-modal [data-toggle="bgm"]'); await check('BGM stopped','!save.bgmOn && document.getElementById("lobby-bgm-audio").paused');
+  await click('.settings-modal [data-toggle="sfx"]'); await check('SFX toggle persists','!save.sfxOn');
+  await click('.settings-modal-close');
   await page.eval('save.loginBonus={lastDate:"",streak:0};refreshHomeStatus()');
   await click('[data-action="home-gift"]'); await check('gift opens','!!document.querySelector(".login-bonus-overlay")');
   await click('.login-bonus-claim-btn'); await check('gift claim updates coins and dot','save.coins===850+loginBonusRewardForDay(1) && document.querySelector("[data-home=gift-dot]").hidden');
@@ -93,7 +95,7 @@ try {
   await click('.h15-pl[data-action="open-rico-viewer"]'); await check('outfit viewer opens','!!document.querySelector(".rico-viewer-overlay")');
   await click('[data-action="rico-viewer-next"]'); await check('viewer next respects equipped outfit','document.querySelector(".h15-costume").src.endsWith("rico_dress.webp")');
   await click('[data-action="rico-viewer-close"]');
-  await click('[data-action="home-settings"]'); await click('.home-dialog [data-action="equip-change"]');
+  await click('[data-action="home-settings"]'); await click('.settings-modal [data-action="equip-change"]');
   await check('equipment opens from settings','!!document.querySelector(".equip-overlay")');
   await click('.equip-chip[data-cat-key="equippedRicoOutfit"][data-choice-id="default"]');
   await waitCheck('equipment changes live home costume','save.equippedRicoOutfit==="default" && !document.querySelector(".home-stage").classList.contains("has-costume")');

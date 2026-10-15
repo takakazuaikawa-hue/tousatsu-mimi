@@ -18986,3 +18986,132 @@ body.home-active .home-overlay { left: calc(-1 * var(--gut-x, 0px) / var(--game-
 /* 金縁の反射は ::before に付けているので、動き軽減・タブ非表示でも止める */
 .home-stage.home-paused *::before { animation-play-state: paused !important; }
 @media (prefers-reduced-motion: reduce) { .home-stage *::before { animation: none !important; transition: none !important; } }
+
+/* ===== スマホ横（is-compact）の小窓：画面の端から端まで広げ、中の紙面は実寸で描く（2026-10-16） =====
+   舞台（1280x800）は 0.49 倍ほどに縮むので、PC の大きさのままでは文字が 6〜8px になっていた。
+   紙面に縮みの逆数の zoom を掛け、CSS の 1px が画面の 1px になるようにする（文字 12px＝画面 12px）。 */
+html.is-compact #stage > :is(.settings-overlay, .equip-overlay, .collection-overlay, .glossary-overlay, .hand-guide-overlay, .hand-history-overlay,
+  .login-bonus-overlay, .char-profile-overlay, .rico-mode-overlay, .minipoker-overlay, .ending-prompt-overlay, .episode-overlay, .newgame-overlay,
+  .mimi-confirm-overlay, .note-article-overlay, .memory-viewer-overlay, .rule-primer-overlay, .dominance-choice-overlay) {
+  left: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1)) !important; right: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1)) !important;
+  top: calc(-1 * var(--gut-y, 0px) / var(--game-scale, 1)) !important; bottom: calc(-1 * var(--gut-y, 0px) / var(--game-scale, 1)) !important;
+  padding: 0 !important;
+}
+html.is-compact #stage > :is(.settings-overlay, .equip-overlay, .collection-overlay, .glossary-overlay, .hand-guide-overlay, .hand-history-overlay,
+  .login-bonus-overlay, .char-profile-overlay, .rico-mode-overlay, .minipoker-overlay, .ending-prompt-overlay, .episode-overlay, .newgame-overlay,
+  .mimi-confirm-overlay, .note-article-overlay, .memory-viewer-overlay, .rule-primer-overlay, .dominance-choice-overlay) > * {
+  zoom: var(--inv-scale, 1); max-width: 97% !important; max-height: 95% !important; box-sizing: border-box; overflow: auto;
+}
+/* 各話の導入文：行が長い時も言葉の途中で折り返さない（文節で折る）。1文字だけ次の行に残さない */
+.episode-title .ep-line { word-break: auto-phrase; text-wrap: pretty; }
+
+/* ===== 交換所：スマホ横（is-compact）。画面の端から端まで使い、行とタブは約2倍で描く（文字は画面で 11px 以上） ===== */
+html.is-compact .shop-screen.v2 { left: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1)); right: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1)); }
+html.is-compact .shop-screen.v2 .shop-v2-owner { left: -20px; width: 560px; height: 820px; bottom: -40px; }
+html.is-compact .shop-screen.v2 .shop-v2-bubble { display: none; }
+html.is-compact .shop-v2-head { left: 40px; top: 12px; }
+html.is-compact .shop-v2-brand { font-size: 26px; }
+html.is-compact .shop-v2-title { font-size: 76px; }
+html.is-compact .shop-v2-coins { right: 44px; top: 8px; }
+html.is-compact .shop-v2-coins-label { font-size: 24px; }
+html.is-compact .shop-v2-coins-num { font-size: 92px; }
+html.is-compact .shop-screen.v2 .shop-v2-back { top: auto; bottom: auto; right: 360px; top: 30px; height: 92px; padding: 0 30px; font-size: 26px; opacity: 1; }
+html.is-compact .shop-v2-tabs { left: 520px; right: 44px; top: 150px; gap: 14px; flex-wrap: nowrap; }
+html.is-compact .shop-screen.v2 .shop-cat-btn { zoom: 1.95; flex: 1 1 auto; padding: 0 12px; }
+html.is-compact .shop-screen.v2 .shop-items { left: 520px; right: 36px; top: 260px; bottom: 20px; gap: 16px; padding-right: 8px; }
+html.is-compact .shop-screen.v2 .shop-items > .shop-item { zoom: 1.95; }
+html.is-compact .shop-screen.v2 .shop-item-desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.is-compact #app:has(> .shop-screen) { overflow: visible; }
+html.is-compact .shop-screen.v2 .shop-item-newtag, html.is-compact .shop-screen.v2 .shop-item-price small { font-size: 12px; }
+
+/* ===== 音のボタン（対戦・交換所・結果）：BGM と効果音をまとめて切り替える。止める手段が無かった（2026-10-16） ===== */
+.sound-toggle { position: absolute; z-index: 40; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; margin: 0;
+  background: rgba(12,9,10,.6); border: 1px solid rgba(217,179,90,.5); border-radius: 2px; color: #f0e2b8; cursor: pointer; }
+.sound-toggle svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sound-toggle:hover { border-color: rgba(245,215,122,.9); color: #fff; }
+.sound-toggle.is-off { color: #9b8b74; border-color: rgba(217,179,90,.3); }
+.sound-toggle:focus-visible { outline: 2px solid #f3d58e; outline-offset: 2px; }
+.battle-screen.v2.t8 > .sound-toggle { top: 18px; right: 236px; width: 44px; height: 38px; }
+.battle-screen.v2.t8 .backdoor-toggle { right: 292px !important; }
+.shop-screen.v2 > .sound-toggle { top: 100px; right: 156px; width: 40px; height: 40px; }
+.result-screen > .sound-toggle { top: 20px; right: 24px; }
+html.is-compact .sound-toggle { width: calc(44px / var(--game-scale, 1)); height: calc(44px / var(--game-scale, 1)); }
+html.is-compact .sound-toggle svg { width: calc(20px / var(--game-scale, 1)); height: calc(20px / var(--game-scale, 1)); }
+html.is-compact .battle-screen.v2.t8 > .sound-toggle { top: 6px; right: calc(18px + 140px + 260px); height: var(--fx-tap, calc(44px / var(--game-scale, 1))); }
+html.is-compact .shop-screen.v2 > .sound-toggle { top: 30px; right: 600px; }
+html.is-compact .result-screen > .sound-toggle { top: 12px; right: 24px; }
+/* 勝率の判子（開いた方）は押しても何も起きないので、押せる見た目にしない */
+.v2-seal-open { cursor: default; }
+/* ホームの額は押すとプロフィールが開く */
+.home-stage .h15-frame { cursor: pointer; }
+.home-stage .h15-frame:focus-visible { outline: 2px solid #f3d58e; outline-offset: 4px; }
+
+/* ===== 設定（1枚にまとめた窓）：音・遊び方・ひらく の3つの組を並べる ===== */
+.settings-modal { width: min(820px, 94%); max-height: 94%; overflow: auto; }
+.settings-modal-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px 22px; margin: 6px 0 12px; text-align: left; }
+.settings-modal-group { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.settings-modal-group-title { margin: 0 0 2px; padding-bottom: 4px; font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 15px; font-weight: 700; letter-spacing: .14em; color: #efcd82; border-bottom: 1px solid rgba(138,90,30,.8); }
+.settings-modal-group .settings-modal-row { margin: 0; gap: 10px; }
+.settings-modal-group .settings-modal-note { margin: 0; font-size: 12px; line-height: 1.6; text-align: left; }
+.settings-modal-sound .settings-modal-label { flex: 0 0 4.5em; }
+.settings-modal-volume { flex: 1 1 auto; min-width: 60px; height: 44px; accent-color: #c9a25a; cursor: pointer; }
+.settings-modal-links .btn { width: 100%; min-height: 44px; margin: 0; justify-content: flex-start; }
+.settings-modal-links .settings-modal-reset { margin-top: 8px; }
+
+/* ===== 全体点検の仕上げ（2026-10-16） ===== */
+/* タイトル（スマホ横）：押す所 44px・文字 11px 以上（実寸） */
+html.is-compact .title-screen.t3 .t3-btn { height: calc(46px / var(--game-scale, 1)); }
+html.is-compact .title-screen.t3 .t3-btn.is-primary { height: calc(50px / var(--game-scale, 1)); }
+html.is-compact .title-screen.t3 .t3-btn b { font-size: calc(15px / var(--game-scale, 1)); }
+html.is-compact .title-screen.t3 .t3-btn small { font-size: calc(11.5px / var(--game-scale, 1)); }
+html.is-compact .title-screen.t3 .t3-record { font-size: calc(11.5px / var(--game-scale, 1)); }
+html.is-compact .title-screen.t3 .t3-record b { font-size: calc(13px / var(--game-scale, 1)); }
+html.is-compact .title-screen.t3 .t3-icon { width: calc(44px / var(--game-scale, 1)); height: calc(44px / var(--game-scale, 1)); }
+html.is-compact .title-screen.t3 .t3-utils .audio-bar { height: calc(44px / var(--game-scale, 1)); }
+html.is-compact .title-screen.t3 .t3-utils .audio-bar-toggle { width: calc(44px / var(--game-scale, 1)) !important; height: calc(44px / var(--game-scale, 1)) !important; }
+/* 版の表記は出さない */
+.title-screen.t3 .t3-ver { display: none; }
+/* 全画面の案内：押す所 44px */
+#fullscreen-btn-group > button { min-height: 44px; min-width: 44px; }
+/* 卓（スマホ横）：音のボタンは「役の一覧」の下、勝率の判子の左に */
+html.is-compact .battle-screen.v2.t8 > .sound-toggle { top: calc(50px / var(--game-scale, 1)); right: calc(110px / var(--game-scale, 1)); width: calc(44px / var(--game-scale, 1)); height: calc(44px / var(--game-scale, 1)); }
+/* 交換所：PC の戻る・タブを 44px に、小さな文字を 11px 以上に。スマホのタブも 44px に */
+.shop-screen.v2 .shop-v2-back { height: 44px; padding: 0 18px; font-size: 13px; top: 96px; }
+.shop-screen.v2 > .sound-toggle { top: 96px; }
+.shop-screen.v2 .shop-cat-btn { height: 44px; }
+.shop-screen.v2 .shop-item-newtag, .shop-screen.v2 .shop-item-price small { font-size: 11px; }
+html.is-compact .shop-screen.v2 .shop-v2-back { top: 30px; height: 92px; font-size: 26px; }
+html.is-compact .shop-screen.v2 > .sound-toggle { top: 30px; }
+html.is-compact .shop-screen.v2 .shop-cat-btn { zoom: 2.1; height: 44px; }
+/* ぱにゅぱにゅの背景の色：押す所を 44px に（見える丸は内側に小さく、選んでいる色は金の輪） */
+.pv2 .pv2-swatch { width: 44px; height: 44px; padding: 9px; border: 0; background-clip: content-box !important; box-shadow: none; }
+.pv2 .pv2-swatch.active { box-shadow: inset 0 0 0 2px #f0d595; }
+/* スタッフロールのスキップ（スマホで 16px・文字 6px だった） */
+html.is-compact .credits-skip { font-size: calc(12px / var(--game-scale, 1)) !important; min-height: calc(44px / var(--game-scale, 1)); padding: 0 calc(14px / var(--game-scale, 1)) !important; }
+/* 結果：ボタンの文字を折り返さない（「ロビ／ーへ」になっていた） */
+.result-screen .btn { white-space: nowrap; }
+/* 終幕の前に：曲名をピンクから金へ、音量のつまみを細い溝と金の玉に */
+.ending-prompt-song { color: #efcd82; text-shadow: 0 1px 2px #000; font-style: normal; font-family: "Shippori Mincho B1", "Yu Mincho", serif; }
+.ending-prompt-vol-row { border-radius: 2px; border-color: #8a5a1e; background: #170708; min-height: 44px; }
+.ending-prompt-vol { height: 4px; border: 0; background: linear-gradient(90deg, #d9b269, #8a5a1e); border-radius: 2px; }
+/* ポーカー辞典の件数 */
+.gl-section-count, .coll-section-count { font-size: 11px; }
+/* 交換所：グラーノの台詞を白い丸い吹き出しから、深紅に金の細縁の札へ（劇場の作りにそろえる） */
+.shop-screen.v2 .shop-v2-bubble { background: linear-gradient(180deg, rgba(58,9,14,.94), rgba(26,5,8,.94)); color: #f2e6cf; border: 1px solid #8a5a1e; border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(227,185,100,.25), 0 10px 24px rgba(0,0,0,.6); font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 600; font-size: 14px; line-height: 1.65; padding: 12px 16px; }
+/* スタッフロール：役職の帯をピンクから深紅と金に。締めのボタンを四角い主ボタンに */
+.cr-section { background: linear-gradient(90deg, transparent, rgba(122,14,22,.55), transparent) !important; border-radius: 0 !important; color: #efcd82 !important; text-shadow: 0 1px 3px #000 !important; }
+.ending-final-buttons .btn { border-radius: 2px; background: linear-gradient(180deg, #7a0e16, #4e0509); border: 1px solid #d9b269; color: #f0d08a; font-family: "Shippori Mincho B1", "Yu Mincho", serif; min-height: 48px; padding: 0 32px; box-shadow: 0 8px 22px rgba(0,0,0,.6); }
+/* ホームの部品を並べる透明な板は押せないように（奥に置いた額が、この板に遮られて押せなかった）。部品だけが押せる */
+.home-stage .h15-ui { pointer-events: none; }
+.home-stage .h15-ui > :not(.h15-dialogue) { pointer-events: auto; }
+/* 全体点検の残り（2026-10-16） */
+.shop-screen.v2 .shop-item .btn.btn-primary { min-height: 44px; }
+html.is-compact .shop-screen.v2 .shop-items > .shop-item .btn.btn-primary { min-height: 48px; }
+html.is-compact .shop-screen.v2 > .sound-toggle { width: calc(44px / var(--game-scale, 1)); height: calc(44px / var(--game-scale, 1)); }
+.shop-screen.v2 .shop-item-price small { font-size: 11.5px !important; }
+.pv2 .pv2-quit, .pv2 .pv2-outfit { min-height: 44px; }
+.coll-section-count, .gl-section-count { font-size: 11.5px !important; }
+.mp-pt-note { font-size: 11.5px !important; }
+html.is-compact .shop-screen.v2 .shop-item-price small { font-size: 12.5px !important; }
+.shop-screen.v2 > .sound-toggle { width: 44px; height: 44px; top: 96px; }
