@@ -107,7 +107,7 @@
     title: () => ['assets/backgrounds/title_bg.webp', 'assets/ui/title_logo_hd.webp'],
     // ロビー：タイトルにいる間に読む
     lobby: () => [
-      ...['scene','stage-empty','nameplate','plate','plate_pic','ledger','seal','mark','lock','oct','frame','ticket'].map(k => `assets/ui/home/${k}.webp`),
+      ...['scene','stage-empty','nameplate','plate','plate_pic','ledger','seal','mark','lock','oct','frame','ticket','ico_shop','ico_collection','ico_school','ico_title','ico_gift','ico_coin','ico_gear'].map(k => `assets/ui/home/${k}.webp`),
       ...['rico_default','polka','selina','grano','velvet','mimi'].map(k => `assets/ui/face_${k}.webp`),
     ],
     // 対戦に入る瞬間に要るもの（そろうまで「準備中」で待つ）

@@ -71,7 +71,108 @@ function renderHomeLobby() {
   refreshHomeStatus();
   panyuFreeRefreshLobby();
   applyHomeCostume();
+  buildHomeArt(root);
+  // 勝ち数＝劇場の段階。前回ホームで見た段階より進んでいたら、一度だけ「開幕の儀」で変化を見せる
+  const seen = Math.min(save.homeStageSeen ?? clearedCount, clearedCount);
+  const ceremony = seen < clearedCount && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // 見た記録は、儀式を見終えた（または押して飛ばした）時に付ける。途中で描き直されたら次の描画でやり直す
+  if (!ceremony && save.homeStageSeen !== clearedCount) { save.homeStageSeen = clearedCount; saveProgress(); }
+  setHomeStage(root, ceremony ? clearedCount - 1 : clearedCount);
+  root._ceremony = ceremony ? homeCeremonyPlan(root, clearedCount, next) : null;
   mountHomeMotion(root);
+}
+
+// 舞台の絵（1672x941）の上の位置。文字盤の数字 I〜V、段階ごとに灯りが入る暗がり、燭台の炎。
+// k＝その段階で灯る（0 は最初から）。暗がりは中央のリコと時計を避け、内から外へ明るくなる。
+const HOME_ART = {
+  nums: [[1032,102],[1107,178],[1135,280],[1107,382],[1032,458]],
+  shades: [
+    { k:1, x:380, y:330, w:520, h:560 },
+    { k:2, x:1310, y:470, w:560, h:640 },
+    { k:3, x:300, y:70, w:760, h:340 }, { k:3, x:1420, y:70, w:760, h:340 },
+    { k:4, x:40, y:520, w:420, h:1000 }, { k:4, x:1640, y:500, w:420, h:1000 },
+  ],
+  flames: [
+    { k:0, x:258, y:606 }, { k:0, x:1440, y:636 },
+    { k:1, x:362, y:266 }, { k:1, x:432, y:384 },
+    { k:2, x:1336, y:270 }, { k:2, x:1262, y:414 },
+    { k:3, x:200, y:172 }, { k:3, x:1642, y:150 },
+    { k:4, x:96, y:492 }, { k:4, x:1552, y:512 },
+  ],
+};
+
+function buildHomeArt(root) {
+  const art = root.querySelector('.h15-art');
+  if (!art || art.childElementCount) return;
+  const at = (x,y) => `left:${(x/16.72).toFixed(2)}%;top:${(y/9.41).toFixed(2)}%`;
+  art.innerHTML =
+    '<div class="h15-dust"><i></i><i></i></div>' +
+    HOME_ART.shades.map(s => `<i class="h15-shade" style="${at(s.x,s.y)};width:${(s.w/16.72).toFixed(2)}%;height:${(s.h/9.41).toFixed(2)}%;--k:${s.k}"></i>`).join('') +
+    HOME_ART.flames.map((f,i) => `<i class="h15-flame${f.k >= 3 ? ' h15-far' : ''}" style="${at(f.x,f.y)};--k:${f.k};--fp:${(2.3 + (i*0.37)%1.8).toFixed(2)}s;--fd:${(-i*.53).toFixed(2)}s"></i>`).join('') +
+    '<i class="h15-dial" style="' + at(930,280) + '"></i>' +
+    HOME_ART.nums.map(([x,y],i) => `<i class="h15-num" style="${at(x,y)};--n:${i + 1}"></i>`).join('');
+}
+
+function setHomeStage(root, stage, num = stage) {
+  root.style.setProperty('--stage', stage);
+  root.style.setProperty('--num', num);
+  root.dataset.stage = stage;
+}
+
+// 開幕の儀：勝つ前の姿で入場 → 文字盤の数字が灯る → 封蝋が押される → 灯りが入り視野が開く → 額が次の相手に掛け替わる → 札が跳ねる。
+// どこかを押せば即座に終わりの姿へ。演出用の特別な見た目は作らず、段階の値を時間差で切り替えるだけ。
+function homeCeremonyPlan(root, cleared, next) {
+  const prevId = STAGE_ORDER[cleared - 1];
+  const prev = OPPONENTS[prevId];
+  const face = id => `assets/ui/face_${id === 'rico_tutorial' ? 'rico_default' : id}.webp`;
+  const frame = root.querySelector('.h15-frame');
+  const slot = root.querySelectorAll('.h15-slot')[cleared - 1];
+  const final = { src: frame.querySelector('.h15-pic').src, name: frame.querySelector('.h15-lbl').textContent, sub: frame.querySelector('.h15-sub').textContent, long: frame.classList.contains('has-long-name') };
+  frame.querySelector('.h15-pic').src = face(prevId);
+  frame.querySelector('.h15-lbl').textContent = prev.name;
+  frame.querySelector('.h15-sub').textContent = '今夜の相手';
+  frame.classList.toggle('has-long-name', prev.name.length > 5);
+  slot?.classList.add('h15-pending');
+  const timers = [];
+  let done = false;
+  const setFrame = () => {
+    frame.querySelector('.h15-pic').src = final.src;
+    frame.querySelector('.h15-lbl').textContent = final.name;
+    frame.querySelector('.h15-sub').textContent = final.sub;
+    frame.classList.toggle('has-long-name', final.long);
+  };
+  const finish = () => {
+    if (done) return;
+    done = true;
+    if (save.homeStageSeen !== cleared) { save.homeStageSeen = cleared; saveProgress(); }
+    timers.forEach(clearTimeout);
+    setHomeStage(root, cleared);
+    slot?.classList.remove('h15-pending');
+    setFrame();
+    frame.querySelector('.h15-en')?.getAnimations().forEach(a => { if (!(a instanceof CSSAnimation)) a.cancel(); });
+    root.querySelector('.h15-dialogue').textContent = cleared === STAGE_ORDER.length ? '「全部の卓に灯りが入ったわ。ここはもう、あんたの劇場よ」' : '「お見事。劇場にまた灯りが入ったわ」';
+    root.classList.remove('h15-rite');
+  };
+  const start = () => {
+    if (done || !root.isConnected) return;
+    root.classList.add('h15-rite');
+    const at = (ms, fn) => timers.push(setTimeout(() => { if (!done && root.isConnected) fn(); }, ms));
+    at(0, () => { setHomeStage(root, cleared - 1, cleared); root.querySelector('.h15-tip').classList.add('h15-on'); root.querySelectorAll('.h15-num')[cleared - 1]?.classList.add('h15-flash'); mpSfx('milestone'); });
+    at(500, () => setHomeStage(root, cleared));
+    at(1900, () => { slot?.classList.remove('h15-pending'); slot?.classList.add('h15-stamp'); mpSfx('bet'); });
+    at(2900, () => {
+      const en = frame.querySelector('.h15-en');
+      en.animate([{ transform:'none', opacity:1 }, { transform:'translateY(-70px)', opacity:0 }], { duration:340, easing:'ease-in', composite:'add', fill:'forwards' }).finished.then(() => {
+        if (done) return;
+        setFrame();
+        en.getAnimations().forEach(a => { if (a instanceof CSSAnimation) return; a.cancel(); });
+        en.animate([{ transform:'translateY(-90px)', opacity:0 }, { transform:'translateY(6px)', opacity:1, offset:.6 }, { transform:'rotate(1.2deg)', offset:.78 }, { transform:'rotate(-.6deg)', offset:.9 }, { transform:'none', opacity:1 }], { duration:900, easing:'ease-out', composite:'add' });
+      });
+    });
+    at(4600, finish);
+  };
+  const abort = () => { done = true; timers.forEach(clearTimeout); };
+  return { start, finish, abort };
 }
 
 function refreshHomeStatus() {
@@ -167,6 +268,9 @@ function fitHomeStage() {
   // cover + background-position:50% 40% と同じ計算で、実際の卓縁から手前だけを重ねる。
   const cover = Math.max((width + 48) / 1672, 828 / 941);
   root.style.setProperty('--home-rail', ((828 - 941 * cover) * .4 + 744 * cover) + 'px');
+  // 絵の上に重ねる層（数字の灯り・暗がり・炎）を、背景の cover と同じ位置・大きさに置く
+  const art = root.querySelector('.h15-art');
+  if (art) Object.assign(art.style, { left: (-24 + (width + 48 - 1672 * cover) * .5) + 'px', top: (-14 + (828 - 941 * cover) * .4) + 'px', width: 1672 * cover + 'px', height: 941 * cover + 'px' });
   root.classList.toggle('h15-sm', innerHeight < 500);
   root.style.setProperty('--depth', innerHeight < 500 ? .5 : 1);
 }
@@ -195,7 +299,8 @@ function mountHomeMotion(root) {
   });
   let frame = 0, interval = 0, hop = 0;
   let pointer = {x:0,y:0};
-  const reset = () => { root.style.setProperty('--mx',0); root.style.setProperty('--my',0); root.querySelector('.h15-bg').style.transform=''; };
+  const layers = root.querySelectorAll('.h15-bg,.h15-art');
+  const reset = () => { root.style.setProperty('--mx',0); root.style.setProperty('--my',0); layers.forEach(l => l.style.transform=''); };
   root.addEventListener('pointermove', e => {
     if (reduce.matches || innerHeight < 500 || e.pointerType !== 'mouse') return;
     pointer={x:e.clientX/innerWidth-.5,y:e.clientY/innerHeight-.5};
@@ -203,28 +308,55 @@ function mountHomeMotion(root) {
     frame=requestAnimationFrame(() => {
       frame=0;
       root.style.setProperty('--mx',pointer.x*2); root.style.setProperty('--my',pointer.y*2);
-      root.querySelector('.h15-bg').style.transform=`translate(${-pointer.x*10}px,${-pointer.y*6}px)`;
+      layers.forEach(l => l.style.transform=`translate(${-pointer.x*10}px,${-pointer.y*6}px)`);
     });
   },{signal:abort.signal});
   root.addEventListener('pointerleave',reset,{signal:abort.signal});
   const tip=root.querySelector('.h15-tip'), ticket=root.querySelector('.h15-ticket');
+  // 金縁を走る反射：額・名札・台帳・八角金具のどれか一つだけに、順番に一度ずつ
+  const glints = [...root.querySelectorAll('.h15-frame,.h15-nameplate,.h15-ledger,.h15-oct')].map(el => {
+    const g = document.createElement('i'); g.className = 'h15-gl'; el.querySelector('.h15-sw')?.append(g); return g;
+  });
+  let glintAt = 0, gust = 0, glint = 0;
+  const swayers = [...root.querySelectorAll('.h15-nameplate,.h15-pl')].map(el => el.querySelector('.h15-en'));
+  const frameEn = root.querySelector('.h15-frame .h15-en');
+  // 札の列に同じ風がひと吹き：上から順に少し遅れて同じ向きに振れ、鎖の額は遅れて応える
+  function blow() {
+    swayers.forEach((en,i) => en?.animate([{transform:'none'},{transform:'rotate(.7deg)',offset:.35},{transform:'rotate(-.3deg)',offset:.7},{transform:'none'}],{duration:1700,delay:i*80,easing:'ease-in-out',composite:'add'}));
+    frameEn?.animate([{transform:'none'},{transform:'rotate(.6deg)',offset:.4},{transform:'rotate(-.35deg)',offset:.75},{transform:'none'}],{duration:2200,delay:520,easing:'ease-in-out',composite:'add'});
+  }
   function activity() {
-    clearInterval(interval); clearTimeout(hop); interval=0;
+    clearInterval(interval); clearTimeout(hop); clearInterval(gust); clearInterval(glint); interval=0;
     root.classList.toggle('home-paused', document.hidden);
     if (reduce.matches || document.hidden) { reset(); tip.classList.remove('h15-on'); ticket.classList.remove('h15-hop'); return; }
-    interval=setInterval(() => {
-      tip.classList.remove('h15-on'); ticket.classList.remove('h15-hop');
-      void tip.offsetWidth;
-      tip.classList.add('h15-on');
-      hop=setTimeout(() => ticket.classList.add('h15-hop'),120);
-    },6000);
+    hop=setTimeout(blow, 4200);
+    gust=setInterval(blow, 19000);
+    glint=setInterval(() => {
+      const g = glints[glintAt++ % glints.length];
+      g?.classList.remove('h15-on'); void g?.offsetWidth; g?.classList.add('h15-on');
+    }, 3300);
   }
   reduce.addEventListener('change',activity,{signal:abort.signal});
   document.addEventListener('visibilitychange',activity,{signal:abort.signal});
   addEventListener('resize',reset,{signal:abort.signal});
   activity();
+  // 開幕の儀：入場が落ち着いてから。ログインボーナスの窓が出ていれば閉じるのを待つ。どこかを押せば即終わり
+  const rite = root._ceremony;
+  let riteWait = 0;
+  if (rite) {
+    root.addEventListener('pointerdown', rite.finish, {signal:abort.signal, capture:true});
+    const tryStart = (n = 0) => {
+      if (document.querySelector('[class*="login-bonus"]') && n < 150) { riteWait = setTimeout(() => tryStart(n + 1), 400); return; }
+      rite.start();
+    };
+    // 入場の動き（いちばん遅い札）が終わってから。重い端末でも重ならないように
+    const entered = ticket.querySelector('.h15-en')?.getAnimations()[0]?.finished;
+    Promise.race([entered, new Promise(r => setTimeout(r, 4000))]).catch(() => {}).then(() => {
+      if (!abort.signal.aborted) riteWait = setTimeout(tryStart, 250);
+    });
+  }
   const prefetch=setTimeout(panyuPrefetch,1500);
-  homeCleanup=() => { abort.abort(); clearInterval(interval); clearTimeout(hop); clearTimeout(prefetch); cancelAnimationFrame(frame); homeCleanup=() => {}; };
+  homeCleanup=() => { abort.abort(); clearInterval(interval); clearTimeout(hop); clearInterval(gust); clearInterval(glint); clearTimeout(riteWait); rite?.abort(); clearTimeout(prefetch); cancelAnimationFrame(frame); homeCleanup=() => {}; };
 }
 
 const HOME_PLACEMENT = [
@@ -240,5 +372,5 @@ const HOME_PLACEMENT = [
     ['.h15-top .h15-oct:nth-child(2)', { z: 34, ry: -10, dy: 4, p: 2, sa: 0, d: 240, fx: 0, fy: -30 }],
     ['.h15-top .h15-oct:nth-child(3)', { z: 28, ry: -10, dy: 1, p: 2, sa: 0, d: 280, fx: 0, fy: -30 }],
     ['.h15-top .h15-oct:nth-child(4)', { z: 22, ry: -10, dy: 6, p: 2, sa: 0, d: 320, fx: 0, fy: -30 }],
-    ['.h15-ticket', { z: 80, rx: -6, ry: -10, rz: 2, dx: -46, dy: -22, p: 8, o: '50% 100%', so: '50% 100%', sa: .3, sp: 6, d: 620, fx: 50, fy: 40, frx: -40 }],
+    ['.h15-ticket', { z: 80, rx: -6, ry: -10, rz: .5, dx: -46, dy: -22, p: 8, o: '50% 100%', so: '50% 100%', sa: .3, sp: 6, d: 620, fx: 50, fy: 40, frx: -40 }],
   ];

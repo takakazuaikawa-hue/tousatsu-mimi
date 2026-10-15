@@ -11,6 +11,7 @@ const {page}=session;
 const report={url:session.url,checks:[],sizes:[],errors:[],network:[]};
 page.on('Network.responseReceived', e => { if(e.response.status >= 400) report.network.push({url:e.response.url,status:e.response.status}); });
 await page.send('Network.enable');
+async function waitCheck(name, expression, ms=10000) { for (let t=0; t<ms; t+=300) { if (await page.eval(expression)) break; await sleep(300); } return check(name, expression); }
 async function check(name, expression) { const value=await page.eval(expression); assert.ok(value,name); report.checks.push(name); }
 async function click(selector) {
   const point=await page.eval(`(() => {const el=document.querySelector(${JSON.stringify(selector)}); if(!el) throw new Error('missing '+${JSON.stringify(selector)}); const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
@@ -80,6 +81,7 @@ try {
   for(const cleared of [[],['rico_tutorial'],['rico_tutorial','polka'],['rico_tutorial','polka','selina','grano'],['rico_tutorial','polka','selina','grano','velvet']]) {
     await lobby(cleared);
     await check('progress '+cleared.length, 'document.querySelectorAll(".h15-slot.h15-win").length===save.clearedStages.length');
+    await check('theater stage '+cleared.length, 'document.querySelector(".home-stage").dataset.stage===String(save.clearedStages.length)');
     await check('next portrait '+cleared.length,'document.querySelector(".h15-frame .h15-lbl").textContent===OPPONENTS[lobbyNextStageId()||"velvet"].name');
   }
   await check('all clear CTA remains playable','document.querySelector(".h15-ticket").dataset.opponent==="velvet"');
@@ -94,14 +96,14 @@ try {
   await click('[data-action="home-settings"]'); await click('.home-dialog [data-action="equip-change"]');
   await check('equipment opens from settings','!!document.querySelector(".equip-overlay")');
   await click('.equip-chip[data-cat-key="equippedRicoOutfit"][data-choice-id="default"]');
-  await check('equipment changes live home costume','save.equippedRicoOutfit==="default" && !document.querySelector(".home-stage").classList.contains("has-costume")');
+  await waitCheck('equipment changes live home costume','save.equippedRicoOutfit==="default" && !document.querySelector(".home-stage").classList.contains("has-costume")');
   await click('.equip-modal-close');
   await click('.h15-pl[data-action="open-rico-viewer"]'); await click('[data-action="rico-viewer-next"]'); await sleep(500);
-  await check('unlocked viewer previews alternate costume on home','!!state.homePreviewOutfit && document.querySelector(".home-stage").classList.contains("has-costume")');
+  await waitCheck('unlocked viewer previews alternate costume on home','!!state.homePreviewOutfit && document.querySelector(".home-stage").classList.contains("has-costume")');
   await click('[data-action="rico-viewer-close"]');
   await page.eval('delete state.homePreviewOutfit');
   await page.eval('save.equippedRicoOutfit="default";applyHomeCostume()'); await sleep(300);
-  await check('uniform restores approved scene','!document.querySelector(".home-stage").classList.contains("has-costume")');
+  await waitCheck('uniform restores approved scene','!document.querySelector(".home-stage").classList.contains("has-costume")');
   await lobby();
   await page.eval('save.episodesSeen=["grano"];');
   await click('.h15-ticket');await sleep(500);
@@ -110,8 +112,8 @@ try {
   await check('return rebuilds one home','document.querySelectorAll(".home-stage").length===1');
   await page.eval('save.panyuFreeDaily={date:mpTodayKey(),count:3};panyuFreeRefreshLobby()');
   await check('panyu badge follows saved count','document.querySelector("[data-bind=lobbyPanyuLeft]").textContent==="あと2回"');
-  await click('.h15-pl[data-action="panyu-free"]');await check('panyu opens','!!document.querySelector(".panyu-clicker-overlay")');await sleep(1000);
-  await click('.pv2-quit');await sleep(500);await check('panyu returns to home','!document.querySelector(".panyu-clicker-overlay") && !!document.querySelector(".home-stage")');
+  await click('.h15-pl[data-action="panyu-free"]');await check('panyu opens','!!document.querySelector(".panyu-clicker-overlay")');for (let i=0;i<30;i++) { if (await page.eval('(() => {const el=document.querySelector(".pv2-quit"); if(!el) return false; const r=el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})()')) break; await sleep(500); }
+  await click('.pv2-quit');for (let i=0;i<20 && await page.eval('!!document.querySelector(".panyu-clicker-overlay")');i++) await sleep(300);await check('panyu returns to home','!document.querySelector(".panyu-clicker-overlay") && !!document.querySelector(".home-stage")');
   await lobby([]);await page.eval('save.introPlayed=false;render()');await sleep(1300);
   await check('fresh save points to Rico','document.querySelector(".h15-ticket").dataset.opponent==="rico_tutorial" && document.querySelector(".h15-pl:nth-child(4)").dataset.action==="battle-start"');
   await click('[data-action="back-title"]'); await check('title navigation and cleanup','state.screen==="title" && !document.body.classList.contains("home-active")');
