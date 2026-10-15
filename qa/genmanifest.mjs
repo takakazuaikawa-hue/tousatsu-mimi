@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DIRS = ['assets/characters', 'assets/battle/chibi', 'assets/battle/face', 'assets/battle/motion', 'assets/motion', 'assets/ui', 'assets/backgrounds', 'assets/episodes'];
+const DIRS = ['assets/characters', 'assets/battle/chibi', 'assets/battle/face', 'assets/battle/motion', 'assets/motion', 'assets/ui', 'assets/ui/home', 'assets/backgrounds', 'assets/episodes'];
 const files = [];
 for (const d of DIRS) {
   for (const f of fs.readdirSync(path.join(REPO, d)).sort()) {

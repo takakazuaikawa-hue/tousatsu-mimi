@@ -38,3 +38,9 @@ python3 -c "import re;s=open('g.css').read();open('fonts.css','w').write(re.sub(
 ```
 
 `node qa/shotpage.mjs <page.html> <out.png>` はリポジトリ内の HTML（見本など）を1枚撮る。
+
+### ホーム v15 の検証
+
+`node qa/homecheck.mjs` は実際の本編を1280×800、844×390の順に1ブラウザで検証する。撮影・実寸測定・セーブ進行別表示・各入口・衣装・BGM・動き軽減・コンソールを `qa/out/home-build/` に保存する。
+
+`QA_BROWSER` でブラウザ実行ファイルを指定できる。制限された検証環境でレンダラが初期化できない場合のみ `QA_NO_SANDBOX=1` を指定してheadless検証を行う（配信するゲームには関係しない）。プロファイルは実行ごとの一時フォルダで、終了時にそのフォルダだけを片付ける。

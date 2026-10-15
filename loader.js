@@ -106,8 +106,10 @@
     // タイトル：ロード画面で待つ
     title: () => ['assets/backgrounds/title_bg.webp', 'assets/ui/title_logo_hd.webp'],
     // ロビー：タイトルにいる間に読む
-    lobby: () => ['assets/backgrounds/bg_lobby_clock.jpg', 'assets/motion/lobby_loop.mp4', 'assets/characters/rico_greet.webp',
-      ...['rico', 'polka', 'selina', 'grano', 'velvet'].map(k => `assets/characters/${k}_default.webp`), 'assets/ui/card_back_default.webp'],
+    lobby: () => [
+      ...['scene','stage-empty','nameplate','plate','plate_pic','ledger','seal','mark','lock','oct','frame','ticket'].map(k => `assets/ui/home/${k}.webp`),
+      ...['rico_default','polka','selina','grano','velvet','mimi'].map(k => `assets/ui/face_${k}.webp`),
+    ],
     // 対戦に入る瞬間に要るもの（そろうまで「準備中」で待つ）
     battleNow: (oppId, key) => [
       'assets/backgrounds/poker_table_bg.webp', `assets/backgrounds/table_${key}.webp`,

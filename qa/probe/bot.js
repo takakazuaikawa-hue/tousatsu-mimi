@@ -202,7 +202,7 @@
     // 4) ロビー：次の卓
     if (S && S.screen === 'lobby') {
       const next = document.querySelector('.lb8-seat .lb8-cta');
-      const hit = next && next.closest('.lb8-seat') && next.closest('.lb8-seat').querySelector('.lb8-hit');
+      const hit = document.querySelector('.h15-ticket') || (next && next.closest('.lb8-seat') && next.closest('.lb8-seat').querySelector('.lb8-hit'));
       const overlayUp = cands.some(el => !el.closest('.lobby-screen'));
       if (hit && !overlayUp && vis(hit) && hittable(hit)) return click(hit, 'lobby-next', res);
     }

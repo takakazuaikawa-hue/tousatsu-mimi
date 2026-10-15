@@ -2930,6 +2930,9 @@ function log(category, entry) {
 const app = document.getElementById('app');
 
 function render() {
+  if (state.screen === 'lobby' && !homeAssetsGate()) return;
+  homeCleanup();
+  document.body.classList.toggle('home-active', state.screen === 'lobby');
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); applyTitleScene(); if (isBgmOn()) playSceneBgm('title'); break;
     case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); renderLobbyV3(); tryStartLobbyBgm(); break;
@@ -4177,100 +4180,7 @@ const LB4_LOCK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none
 //   カードそのものを押せるボタンにし、押下→沈む→深紅スラブのワイプ→既存の onAction 経路へ渡す。
 const LB6_PROFILE_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>';
 function renderLobbyV3() {
-  const q = sel => document.querySelector(sel);
-  setTimeout(panyuPrefetch, 1500);   // ぱにゅぱにゅの絵を、手が空いた時に先に取っておく
-  const nextId = lobbyNextStageId();
-  const pre = LOBBY_PRESENT[nextId] || {};
-
-  // リコの案内：黒ガラスの「RICO'S TIP」。白い吹き出しは画面で一番明るく、NEXTより目立っていた。
-  //   助言の要の一語だけ金にして、リコ→NEXTへの視線の橋にする（全クリア後は労い）
-  const ricoLine = q('[data-bind="lb4RicoLine"]');
-  if (ricoLine) {
-    const line = nextId ? (pre.rico || '「どの卓にする？今夜も付き合うよ」') : '「全部の卓を制覇したね。今夜はどの子と遊ぶ？」';
-    const key = nextId ? pre.key : '制覇';
-    const body = key && line.includes(key) ? line.replace(key, `<b class="lb6-tip-key">${key}</b>`) : line;
-    ricoLine.innerHTML = `<span class="lb6-tip-kicker v2-disp">RICO'S TIP</span><span class="lb6-tip-body">${body}</span>`;
-  }
-
-  // v8：5人を床に立たせ、足元に♥の札（10〜A）を配る
-  const scr = q('.lobby-screen.v5');
-  if (scr) {
-    scr.classList.add('lb8');
-    scr.classList.toggle('lb8-next-first', nextId === STAGE_ORDER[0]);
-  }
-  const host = q('[data-bind="lb5Cards"]');
-  if (host && scr) {
-    renderLobbyV8(host, nextId);
-    renderLobbyStatus();
-    return;
-  }
-  // カード列：並び順の中で「次」だけが舞台中央に出る
-  // NEXTが左端（初回＝リコの講義）の時は、助言パネルを一段上げて金ラベルとぶつけない
-  if (scr) scr.classList.toggle('lb6-next-first', nextId === STAGE_ORDER[0]);
-  if (host) {
-    host.classList.add('lb6-deck');
-    host.classList.toggle('is-allclear', !nextId); // 全制覇後は「今行くべき場所」が無いので過去卓を沈めない
-    host.innerHTML = STAGE_ORDER.map((sid, i) => {
-      const o = OPPONENTS[sid];
-      const p = LOBBY_PRESENT[sid] || {};
-      const done = save.clearedStages.includes(sid);
-      const unl = isStageUnlocked(sid);
-      const isNext = sid === nextId;
-      const no = String(i).padStart(2, '0');
-      const mainAction = sid === 'rico_tutorial' ? (done ? 'rico-mode-chooser' : 'battle-start') : 'battle-start';
-      const ctaLabel = sid === 'rico_tutorial' ? (done ? '対戦／受講' : '受講する') : (done ? '再戦する' : 'この卓につく');
-      const cls = ['lb6-card', isNext ? 'is-next' : '', done ? 'is-cleared' : '', !unl ? 'is-locked' : '', o.isBoss ? 'is-vip' : ''].filter(Boolean).join(' ');
-      const prevName = i > 0 ? (OPPONENTS[STAGE_ORDER[i - 1]] || {}).name : '';
-      // 上端の札：NEXT＝金、VIP＝深紅。VIPがNEXTになったら金の札を優先し、深紅は内側の細帯へ
-      const label = isNext
-        ? '<span class="lb6-label v2-disp"><span>NEXT TABLE</span></span>'
-        : (o.isBoss ? '<span class="lb6-label is-vip v2-disp"><span>VIP ROOM</span></span>' : '');
-      const vipStrip = (isNext && o.isBoss) ? '<span class="lb6-vipstrip v2-disp">VIP ROOM</span>' : '';
-      // 下段は 名前→特徴1行→賞金→CTA の一本道（CTAの直前で勢いを止めない）
-      let info;
-      if (!unl) {
-        // 未解放は予告を一つだけ：通常卓は賞金、VIPは報酬の種類（何かすごい物がある、とだけ分かる）
-        info = (o.isBoss
-          ? '<span class="lb6-tease v2-disp">PRIVATE TABLE</span><span class="lb6-tease-sub v2-disp">SECRET CG</span>'
-          : `<span class="lb6-prize is-tease"><i class="v2-disp">PRIZE</i><b class="v2-disp">${o.rewardFirst || 500}</b></span>`)
-          + `<span class="lb6-need">${LB4_LOCK_SVG}<span>${prevName}に勝つと解放</span></span>`;
-      } else {
-        const prize = done
-          ? `<span class="lb6-prize is-rematch"><i>再戦報酬</i><b class="v2-disp">${o.rewardRematch || 50}</b></span>`
-          : `<span class="lb6-prize"><i class="v2-disp">PRIZE</i><b class="v2-disp">${o.rewardFirst || 500}</b><small>＋ご褒美CG</small></span>`;
-        info = `<span class="lb6-feat">${p.feat || o.theme || ''}</span>${prize}<span class="lb6-cta"><span>${ctaLabel}</span></span>`;
-      }
-      // カード全体が押せる（CTAだけを狙わせない）。施錠カードも disabled にせず、押すと鍵が震えて条件を返す
-      const hitAttr = unl
-        ? `data-action="${mainAction}" data-opponent="${sid}" aria-label="${no} ${o.name}：${ctaLabel}"`
-        : `aria-disabled="true" aria-label="${no} 施錠中：${prevName}に勝つと解放"`;
-      const profile = unl
-        ? `<button class="lb6-info" type="button" data-action="char-profile" data-char="${sid}" title="${o.name}のプロフィールを見る" aria-label="${o.name}のプロフィール">${LB6_PROFILE_SVG}</button>`
-        : '';
-      const skip = (unl && !done && sid !== 'rico_tutorial')
-        ? `<button class="lb6-skip" type="button" data-action="skip-stage" data-opponent="${sid}" title="コインで勝利扱いにする">スキップ ${skipStageCost(o)}</button>`
-        : '';
-      return `<div class="${cls}" style="--i:${i}">
-        <button class="lb6-hit" type="button" ${hitAttr}>
-          <span class="lb6-face"><img src="assets/characters/${o.imgKey}_default.webp" alt="${unl ? o.name : '？？？'}" onerror="window.assetFallback(this,'${o.imgKey}')"></span>
-          ${o.isBoss && !unl ? '<span class="lb6-glint"></span>' : ''}
-          ${vipStrip}
-          ${done ? '<span class="lb6-seal v2-disp">CLEAR</span>' : ''}
-          ${!unl ? `<span class="lb6-lock">${LB4_LOCK_SVG}</span>` : ''}
-          <span class="lb6-foot">
-            <span class="lb6-title"><span class="lb6-no v2-disp">${no}</span><b class="lb6-name">${unl ? o.name : '？？？'}</b></span>
-            ${info}
-          </span>
-          ${label}
-        </button>
-        ${profile}
-        ${skip}
-      </div>`;
-    }).join('');
-    lb6WireCards(host);
-  }
-
-  renderLobbyStatus();
+  renderHomeLobby();
 }
 
 // ===== ロビー v8「フロアに立つ5人 × ロイヤルフラッシュの手札」（2026-09-24 オーナー選択） =====
@@ -4417,6 +4327,7 @@ function lb8WireSeats(host) {
 // 右上：コイン／ログボ／ご褒美CG を一枚の縦パネルに集約。
 //   小さなCTAが3つ並ぶとNEXTと張り合うので「受け取れる」ことは伝えるが「今すぐ押せ」とは叫ばせない
 function renderLobbyStatus() {
+  if (document.querySelector('.home-stage')) { refreshHomeStatus(); return; }
   const slot = document.querySelector('.lobby-screen.v5 .lobby-hud .hud-right');
   if (!slot) return;
   const cg = (save.rewardCgSeen || []).length;
@@ -4750,7 +4661,7 @@ function lobbyRicoLine() {
   if (save.coins >= 500) lines.push('「コイン貯まってきたじゃない。交換所、覗いてみる？」');
   if (save.coins < 100 && cleared > 0) lines.push('「軍資金が心許ないわね。再戦で稼ぐのもアリよ」');
   // 衣装ごとの一言も混ぜる
-  const outfit = pickLobbyRico();
+  const outfit = state.screen === 'lobby' ? homeLobbyOutfit() : pickLobbyRico();
   if (outfit?.lines?.length) lines.push(pick(outfit.lines));
   return pick(lines);
 }
@@ -7791,6 +7702,8 @@ function onAction(e) {
         const img = document.querySelector('[data-bind="lobbyRicoImg"]');
         const lbl = document.querySelector('[data-bind="lobbyRicoOutfit"]');
         if (img) img.src = 'assets/characters/' + cur.file;
+        state.homePreviewOutfit = cur.file;
+        applyHomeCostume();
         if (lbl) lbl.innerHTML = lobbyCostumeBtnHtml(cur); // 「COSTUME／衣装を見る」の組み立てを崩さない
       }
       break;
@@ -7906,6 +7819,16 @@ function onAction(e) {
     case 'toggle-sfx':    toggleSfx(); mpSfx('tap'); /* 確認音 */ break;
     case 'toggle-psych':  save.psychEnabled = !(save.psychEnabled !== false); saveProgress(); applyBindings(); break;
     case 'toggle-logic':  save.logicEnabled = !(save.logicEnabled !== false); saveProgress(); applyBindings(); break;
+    case 'home-ledger': showHomeLedger(); break;
+    case 'home-settings': showHomeSettings(); break;
+    case 'home-fullscreen': requestGameFullscreen(); break;
+    case 'home-gift': {
+      const today = mpTodayKey(), lb = save.loginBonus || {};
+      const plan = loginBonusCompute(lb.lastDate || '', lb.streak || 0, today);
+      if (plan.alreadyClaimedToday) toast('今日のログインボーナスは受取済みです');
+      else showLoginBonusModal(plan, today);
+      break;
+    }
     case 'open-settings': showSettingsModal(); break;
     case 'play-ending':
       // コレクションから開いた時に、手帳が映像の上に残らないよう閉じてから
@@ -8638,6 +8561,7 @@ function showEndingFinalButtons(stage) {
 
 
 function goLobby() {
+  delete state.homePreviewOutfit;
   battleGen++;
   if (state && state.readBattle) { try { state.readBattle.inst && state.readBattle.inst.destroy(); } catch (e) {} state.readBattle = null; }
   document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
@@ -9102,7 +9026,7 @@ function ricoViewerOutfits() {
 function showRicoViewer(keepIndex) {
   const list = ricoViewerOutfits();
   if (!keepIndex || state.ricoViewerIndex == null) {
-    const lobbyCur = pickLobbyRico();
+    const lobbyCur = state.screen === 'lobby' ? homeLobbyOutfit() : pickLobbyRico();
     const at = list.findIndex(o => o.file === lobbyCur.file);
     state.ricoViewerIndex = at >= 0 ? at : 0;
   }
@@ -9437,6 +9361,8 @@ function showEquipModal() {
           img.src = `assets/characters/${o.file}`;
         }
         applyBattleRicoOutfit();
+        delete state.homePreviewOutfit;
+        applyHomeCostume();
       }
       // ロビーBGMスキンをその場で切替（ロビー滞在中に選んだ場合、即座に音が変わる）
       if (key === 'equippedBgmLobby' && state.screen === 'lobby' && typeof applyLobbyBgmSkin === 'function') {
@@ -10009,10 +9935,11 @@ function panyuFreeSubLabel() {
 }
 // ロビーのボタンに残り回数を小さく出す（帯の小見出しと、見出しが隠れる配置用の小さな札）
 function panyuFreeRefreshLobby() {
+  refreshHomeStatus();
   const left = panyuFreeRewardsLeft();
   document.querySelectorAll('[data-bind="lobbyPanyuSub"]').forEach(el => { el.textContent = panyuFreeSubLabel(); });
   document.querySelectorAll('[data-bind="lobbyPanyuLeft"]').forEach(el => {
-    el.textContent = left > 0 ? `あと${left}` : '今日は済';
+    el.textContent = left > 0 ? `あと${left}回` : '今日は済';
     el.classList.toggle('is-done', left <= 0);
     el.title = left > 0 ? `今日のコインのごほうび あと${left}回` : '今日のコインのごほうびはおしまい（あそぶのは自由）';
   });
@@ -18168,6 +18095,7 @@ function fitStage() {
   document.documentElement.style.setProperty('--gut-x', Math.max(0, (window.innerWidth - 1280 * scale) / 2) + 'px');
   document.documentElement.style.setProperty('--gut-y', Math.max(0, (window.innerHeight - 800 * scale) / 2) + 'px');
   document.documentElement.style.setProperty('--rb-h', window.innerHeight + 'px');
+  fitHomeStage();
 }
 window.addEventListener('resize', fitStage);
 window.addEventListener('orientationchange', () => setTimeout(fitStage, 100));

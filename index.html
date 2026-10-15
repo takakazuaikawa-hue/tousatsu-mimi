@@ -38,9 +38,10 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Bebas+Neue&family=Shippori+Mincho+B1:wght@600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap">
-<link rel="stylesheet" href="style.css?v=20261015a">
-<link rel="stylesheet" href="battles/core.css?v=20261015a">
-<link rel="stylesheet" href="read-compact.css?v=20261015a">
+<link rel="stylesheet" href="style.css?v=20261015b">
+<link rel="stylesheet" href="battles/core.css?v=20261015b">
+<link rel="stylesheet" href="read-compact.css?v=20261015b">
+<link rel="preload" as="image" href="assets/ui/home/scene.webp" fetchpriority="high">
 </head>
 <body>
 <div id="preload-overlay">
@@ -154,56 +155,32 @@
 </template>
 
 <template id="tpl-lobby">
-  <div class="screen lobby-screen v3 v4 v5">
-    <div class="bg-layer bg-lobby" data-motion-bg="assets/motion/lobby_loop.mp4"></div>
+<div class="screen lobby-screen home-stage" aria-label="グランドクロック・カジノシアター"><div class="h15-bg"></div><img class="h15-costume" alt="リコ先輩"><div class="h15-foreground"></div>
+  <div class="h15-glow"></div>
+  <div class="h15-vig"></div>
+  <div class="h15-tip"></div>
 
-    <header class="top-hud lobby-hud">
-      <button class="btn btn-ghost" data-action="back-title">← タイトルへ</button>
-      <h2 class="lobby-title"><span class="v2-disp lobby-title-eyebrow">VIP CASINO LOUNGE</span><span class="lobby-title-main">ロビー</span></h2>
-      <div class="hud-right">
-        <div class="lobby-coins">
-          <div class="lb3-chip-tray" aria-hidden="true"><i class="lb3-chip lb3-chip-r"></i><i class="lb3-chip lb3-chip-r"></i><i class="lb3-chip lb3-chip-r"></i><i class="lb3-chip lb3-chip-g"></i><i class="lb3-chip lb3-chip-g"></i></div>
-          <div>
-            <div class="v2-disp lobby-coins-label">COINS</div>
-            <div class="v2-disp lobby-coins-num"><span data-bind="saveCoins">0</span></div>
-          </div>
-        </div>
-      </div>
-    </header>
+  <div class="h15-ui">
+  <div class="h15-part h15-nameplate"><img class="h15-f" src="assets/ui/home/nameplate.webp" alt=""><span class="h15-lbl h15-gold-txt" data-home="name">ミミ</span></div>
 
-    <main class="lobby-main">
-      <!-- リコ先輩：左に等身大のコンシェルジュ（衣装ランダム＋衣装ビューア導線） -->
-      <div class="lobby-rico-standing lb4-rico">
-        <img data-bind="lobbyRicoImg" src="assets/characters/rico_default.webp" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
-        <button class="lobby-rico-outfit" data-bind="lobbyRicoOutfit" data-action="open-rico-viewer" title="リコ先輩を眺める"></button>
-      </div>
-      <div class="lb4-rico-bubble" data-bind="lb4RicoLine">「ようこそ。今夜の卓、案内するよ」</div>
+  <nav class="h15-places">
+    <button type="button" class="h15-part h15-pl" data-action="open-shop" style="--i:0"><img class="h15-f" src="assets/ui/home/plate.webp" alt=""><svg class="h15-ico" viewBox="0 0 24 24"><path d="M3 9l2-5h14l2 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg><span class="h15-lbl h15-gold-txt">交換所</span><span class="h15-tag" data-home="new"></span></button>
+    <button type="button" class="h15-part h15-pl" data-action="open-collection" style="--i:1"><img class="h15-f" src="assets/ui/home/plate.webp" alt=""><svg class="h15-ico" viewBox="0 0 24 24"><rect x="5" y="3" width="11" height="16" rx="1"/><path d="M9 7l10 2-3 13-9-2"/></svg><span class="h15-lbl h15-gold-txt">コレクション</span></button>
+    <button type="button" class="h15-part h15-pl h15-pic" data-action="panyu-free" style="--i:2"><img class="h15-f" src="assets/ui/home/plate_pic.webp" alt=""><img class="h15-win" src="assets/ui/face_mimi.webp" alt=""><span class="h15-lbl h15-gold-txt">ぱにゅぱにゅ</span><span class="h15-tag" data-bind="lobbyPanyuLeft"></span></button>
+    <button type="button" class="h15-part h15-pl" data-action="rico-mode-chooser" style="--i:3"><img class="h15-f" src="assets/ui/home/plate.webp" alt=""><svg class="h15-ico" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/></svg><span class="h15-lbl h15-gold-txt">リコの教室</span></button>
+    <button type="button" class="h15-part h15-pl h15-pic" data-action="open-rico-viewer" style="--i:4"><img class="h15-f" src="assets/ui/home/plate_pic.webp" alt=""><img class="h15-win" src="assets/ui/face_rico_default.webp" alt=""><span class="h15-lbl h15-gold-txt">衣装</span></button>
+  </nav>
 
-      <!-- 相手カードの一覧：どの卓につくか悩む美しさで並べる -->
-      <section class="lb5-cards" data-bind="lb5Cards"></section>
+  <button type="button" class="h15-part h15-ledger" data-action="home-ledger" aria-label="物語の台帳：進行状況・再戦・プロフィール"><img class="h15-f" src="assets/ui/home/ledger.webp" alt=""><span data-home="ledger"></span></button>
 
-      <!-- 下部オペレーションバー（黒×金で統一） -->
-      <nav class="lb3-bar lb4-bar">
-        <button class="lb3-bar-btn lb4-bar-btn lb4-ac-red" data-action="open-shop">
-          <span class="lb3-bar-name">交換所</span><span class="lb3-bar-sub">グラーノの店</span>
-          <span class="lobby-shop-newbadge" data-bind="lobbyShopNewBadge" style="display:none"></span>
-        </button>
-        <button class="lb3-bar-btn lb4-bar-btn lb4-ac-gold" data-action="open-collection">
-          <span class="lb3-bar-name">コレクション</span><span class="lb3-bar-sub">称号・ご褒美CG</span>
-        </button>
-        <button class="lb3-bar-btn lb4-bar-btn lb4-ac-pink" data-action="panyu-free" title="ぱにゅぱにゅで遊ぶ（バトル効果なし・コインのごほうびは1日5回まで）">
-          <span class="lb3-bar-name">ぱにゅぱにゅ</span><span class="lb3-bar-sub" data-bind="lobbyPanyuSub">ぷにぷにして遊ぶ</span>
-          <span class="lobby-panyu-left" data-bind="lobbyPanyuLeft"></span>
-        </button>
-        <button class="lb3-bar-btn lb4-bar-btn lb4-bar-audio" data-action="lb3-toggle-audio" title="音量・設定">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path></svg>
-        </button>
-      </nav>
+  <nav class="h15-top" aria-label="ホーム操作"><button type="button" class="h15-part h15-oct" data-action="back-title" aria-label="タイトルへ戻る" title="タイトルへ戻る"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H4v16h6M8 12h13M16 7l5 5-5 5"/></svg></button><button type="button" class="h15-part h15-oct" data-action="home-gift" aria-label="ログインボーナス" title="ログインボーナス"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v9H5v-9M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg><i class="h15-dot" data-home="gift-dot"></i></button><button type="button" class="h15-part h15-oct" data-action="open-shop" aria-label="所持コイン・交換所" title="所持コイン・交換所"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg><span class="h15-coins" data-bind="saveCoins"></span></button><button type="button" class="h15-part h15-oct" data-action="home-settings" aria-label="音量・ゲーム設定" title="音量・ゲーム設定"><img class="h15-f" src="assets/ui/home/oct.webp" alt=""><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button></nav>
 
-      <!-- 音量パネル（バーの♪でトグル） -->
-      <div class="lobby-bottom-panel lb3-audio-panel" data-bind="lobbyBottomPanel" style="display:none"></div>
-    </main>
+  <div class="h15-part h15-frame"><span class="h15-sub">今夜の相手</span><img class="h15-pic" src="assets/ui/face_grano.webp" alt=""><img class="h15-f" src="assets/ui/home/frame.webp" alt=""><span class="h15-lbl h15-gold-txt">グラーノ</span></div>
+
+  <button type="button" class="h15-part h15-ticket" data-action="battle-start"><img class="h15-f" src="assets/ui/home/ticket.webp" alt=""><span class="h15-shine"></span><span class="h15-lbl h15-gold-txt">今夜の卓へ</span><span class="h15-prize">勝てば 900 コイン＋ご褒美CG</span></button>
+  <p class="h15-dialogue" data-home="dialogue"></p>
   </div>
+</div>
 </template>
 
 <template id="tpl-shop">
@@ -493,20 +470,21 @@
   </div>
 </template>
 
-<script src="battles/core.js?v=20261015a"></script>
-<script src="battles/games/detective.js?v=20261015a"></script>
-<script src="battles/games/stare.js?v=20261015a"></script>
-<script src="battles/games/doubt.js?v=20261015a"></script>
-<script src="battles/games/objection.js?v=20261015a"></script>
-<script src="battles/games/gacha.js?v=20261015a"></script>
-<script src="battles/games/handbuild.js?v=20261015a"></script>
-<script src="battles/games/highlow.js?v=20261015a"></script>
-<script src="battles/games/danger.js?v=20261015a"></script>
-<script src="battles/games/sniper.js?v=20261015a"></script>
-<script src="battles/games/outs.js?v=20261015a"></script>
-<script src="battles/games/suspects.js?v=20261015a"></script>
-<script src="assets/manifest.js?v=20261015a"></script>
-<script src="loader.js?v=20261015a"></script>
-<script src="game.js?v=20261015a"></script>
+<script src="battles/core.js?v=20261015b"></script>
+<script src="battles/games/detective.js?v=20261015b"></script>
+<script src="battles/games/stare.js?v=20261015b"></script>
+<script src="battles/games/doubt.js?v=20261015b"></script>
+<script src="battles/games/objection.js?v=20261015b"></script>
+<script src="battles/games/gacha.js?v=20261015b"></script>
+<script src="battles/games/handbuild.js?v=20261015b"></script>
+<script src="battles/games/highlow.js?v=20261015b"></script>
+<script src="battles/games/danger.js?v=20261015b"></script>
+<script src="battles/games/sniper.js?v=20261015b"></script>
+<script src="battles/games/outs.js?v=20261015b"></script>
+<script src="battles/games/suspects.js?v=20261015b"></script>
+<script src="assets/manifest.js?v=20261015b"></script>
+<script src="loader.js?v=20261015b"></script>
+<script src="home.js?v=20261015b"></script>
+<script src="game.js?v=20261015b"></script>
 </body>
 </html>

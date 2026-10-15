@@ -6,10 +6,10 @@ import path from 'node:path';
 import os from 'node:os';
 
 const EDGE_CANDIDATES = [
+  process.env.QA_BROWSER || '',
   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
   'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  process.env.QA_BROWSER || '',
   '/opt/pw-browsers/chromium',
 ].filter(Boolean);
 export const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -106,17 +106,17 @@ export class Page {
 export async function launch({ port = 9400 + Math.floor(Math.random() * 500), width = 1280, height = 800, profileRoot } = {}) {
   const exe = EDGE_CANDIDATES.find(p => fs.existsSync(p));
   if (!exe) throw new Error('Edge/Chrome not found');
-  const root = profileRoot || process.env.QA_TMP || path.join(os.tmpdir(), 'mimi-qa');
-  const profile = path.join(root, 'edge-prof-' + port);
-  fs.rmSync(profile, { recursive: true, force: true });
-  fs.mkdirSync(profile, { recursive: true });
+  const root = path.resolve(profileRoot || process.env.QA_TMP || path.join(os.tmpdir(), 'mimi-qa'));
+  fs.mkdirSync(root, { recursive: true });
+  const profile = fs.mkdtempSync(path.join(root, 'edge-prof-' + port + '-'));
   const proc = spawn(exe, [
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
     `--window-size=${width},${height}`, '--mute-audio', '--no-first-run', '--no-default-browser-check',
     '--disable-extensions', '--disable-background-timer-throttling', '--disable-renderer-backgrounding',
     '--disable-backgrounding-occluded-windows', '--autoplay-policy=no-user-gesture-required',
+    ...(process.env.QA_NO_SANDBOX === '1' ? ['--no-sandbox', '--disable-gpu'] : []),
     ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-dev-shm-usage'] : []), 'about:blank',
-  ], { stdio: 'ignore' });
+  ], { stdio: 'ignore', windowsHide: true });
   let ver = null;
   for (let i = 0; i < 150 && !ver; i++) {
     try { ver = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json(); } catch { await sleep(100); }
@@ -131,8 +131,13 @@ export async function launch({ port = 9400 + Math.floor(Math.random() * 500), wi
       const { targetId } = await conn.send('Target.createTarget', { url: 'about:blank' });
       const { sessionId } = await conn.send('Target.attachToTarget', { targetId, flatten: true });
       const page = new Page(conn, sessionId);
-      await page.send('Page.enable');
-      await page.send('Runtime.enable');
+      try {
+        await page.send('Page.enable');
+        await page.send('Runtime.enable');
+      } catch (error) {
+        await this.close();
+        throw error;
+      }
       return page;
     },
     async close() {
@@ -141,6 +146,7 @@ export async function launch({ port = 9400 + Math.floor(Math.random() * 500), wi
       await sleep(400);
       try { proc.kill(); } catch {}
       await sleep(300);
+      if (path.dirname(path.resolve(profile)) !== root || !path.basename(profile).startsWith('edge-prof-')) throw new Error('unexpected QA profile path');
       try { fs.rmSync(profile, { recursive: true, force: true }); } catch {}
     },
   };
