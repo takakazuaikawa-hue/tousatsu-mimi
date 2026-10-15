@@ -18880,3 +18880,11 @@ body.home-active .home-overlay { left: calc(-1 * var(--gut-x, 0px) / var(--game-
 .is-compact .home-dialog h2 { font-size: 34px; }
 .is-compact .home-ledger-row h3, .is-compact .home-ledger-row > span, .is-compact .home-settings label { font-size: 24px; }
 .is-compact .home-settings input { height: 92px; }
+
+/* ホーム v15 の細部（2026-10-15）：額の上の見出しを額の外の上へ、ぱにゅぱにゅの文字の頭を飾りから離す、スマホで今夜の札が右端で欠けない */
+.h15-frame .h15-sub { top: -30px; font-size: 15px; font-weight: 700; letter-spacing: .24em; }
+.h15-pl.h15-pic .h15-lbl { left: 17%; right: 36%; }
+.home-stage.h15-sm .h15-pl.h15-pic .h15-lbl { left: 17%; right: 36%; font-size: 24px; }
+.home-stage.h15-sm .h15-frame .h15-sub { top: -40px; font-size: 24px; }
+.home-stage.h15-sm .h15-ticket { right: 130px; }
+.home-stage.h15-sm .h15-dialogue { left: 30%; right: 41%; }
