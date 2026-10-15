@@ -20,7 +20,7 @@
   .stage { position: fixed; left: 0; top: 0; width: var(--sw); height: 800px; transform: scale(var(--k)); transform-origin: 0 0; overflow: hidden; font-family: var(--serif-jp); color: var(--ivory); }
 
   /* ===== 絵の層 ===== */
-  .bg { position: absolute; left: 50%; top: -10px; width: 1460px; height: 822px; margin-left: -730px; background: url('img/home/scene.webp') center / 100% 100% no-repeat; }
+  .bg { position: absolute; left: -24px; right: -24px; top: -14px; bottom: -14px; background-size: cover !important; background-position: 50% 40% !important; background: url('img/home/scene.webp') center / 100% 100% no-repeat; }
   .fore { clip-path: inset(655px 0 0 0); }
   .glow { position: absolute; left: 50%; top: 247px; width: 620px; height: 620px; margin: -310px 0 0 -242px; border-radius: 50%; pointer-events: none; mix-blend-mode: screen;
     background: radial-gradient(circle, rgba(255,214,140,.22), rgba(255,200,120,0) 62%); animation: glow 6s ease-in-out infinite alternate; }
@@ -121,6 +121,28 @@
   @keyframes tip { 0% { opacity: 0; transform: scale(.4); } 25% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0; transform: scale(1.6); } }
   .ticket.hop .sw { animation: hop .7s cubic-bezier(.3,1.6,.5,1); }
   @keyframes hop { 0% { transform: none; } 35% { transform: translate3d(0,-10px,24px) rotateZ(2deg); } 100% { transform: none; } }
+
+  /* ===== スマホ横（高さ500未満）：実寸で押す所44px以上・文字11px以上（舞台の倍率 0.4875 → 舞台の px は約2倍） ===== */
+  .stage.sm .places { top: 104px; gap: 6px; }
+  .stage.sm .pl { width: 318px; height: 94px; }
+  .stage.sm .pl .lbl { font-size: 30px; }
+  .stage.sm .pl.pic .lbl { font-size: 25px; left: 13%; right: 37%; }
+  .stage.sm .pl .ico { width: 42px; height: 42px; }
+  .stage.sm .pl .tag { font-size: 23px; padding: 4px 12px; top: -12px; }
+  .stage.sm .nameplate { width: 300px; height: 81px; }
+  .stage.sm .nameplate .lbl { font-size: 32px; }
+  .stage.sm .top { gap: 10px; }
+  .stage.sm .oct { width: 94px; height: 94px; }
+  .stage.sm .oct svg { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
+  .stage.sm .oct .dot { width: 18px; height: 18px; right: 16px; top: 16px; }
+  .stage.sm .ledger { width: 430px; height: 171px; bottom: 14px; }
+  .stage.sm .ledger > .en .lbl, .stage.sm .ledger .lbl { display: none; }
+  .stage.sm .slot .rn { font-size: 22px; }
+  .stage.sm .frame { width: 262px; height: 346px; top: 126px; }
+  .stage.sm .frame .lbl { font-size: 30px; }
+  .stage.sm .ticket { width: 430px; height: 273px; bottom: 14px; }
+  .stage.sm .ticket .lbl { font-size: 56px; }
+  .stage.sm .ticket .prize { font-size: 23px; }
 </style>
 </head>
 <body>
@@ -165,6 +187,7 @@
   const st = document.getElementById('stage');
   function fit() { const k = innerHeight / 800; const w = Math.max(1280, innerWidth / k); document.documentElement.style.setProperty('--k', k); document.documentElement.style.setProperty('--sw', w + 'px'); }
   fit(); addEventListener('resize', fit);
+  st.classList.toggle('sm', innerHeight < 500);
   // 部品の形で光の膜を切る
   document.querySelectorAll('.part').forEach(p => { const im = p.querySelector('img.f'); if (im) p.style.setProperty('--m', 'url(' + im.getAttribute('src') + ')'); });
   // 視差：マウスで UI の層がわずかに傾き、絵は逆へ動く。光の当たる位置も動く
