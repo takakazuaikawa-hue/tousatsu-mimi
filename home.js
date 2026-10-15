@@ -48,7 +48,7 @@ function renderHomeLobby() {
   ticket.dataset.opponent = sid;
   ticket.querySelector('.h15-lbl').textContent = '今夜の卓へ';
   const firstReward = !(save.firstClearRewardClaimed || []).includes(sid);
-  ticket.querySelector('.h15-prize').innerHTML = `<span>勝てば ${firstReward ? opponent.rewardFirst : rematchPreview(sid)} コイン</span>${firstReward ? '<span>＋ご褒美CG</span>' : ''}`;
+  ticket.querySelector('.h15-prize').innerHTML = `<span><i class="h15-if">勝てば </i>${firstReward ? opponent.rewardFirst : rematchPreview(sid)} コイン</span>${firstReward ? '<span>＋ご褒美CG</span>' : ''}`;
   ticket.setAttribute('aria-label', `${opponent.name}の卓へ。${ticket.querySelector('.h15-prize').textContent}`);
   const places = root.querySelectorAll('.h15-pl');
   places[3].dataset.action = save.clearedStages.includes('rico_tutorial') ? 'rico-mode-chooser' : 'battle-start';
@@ -328,7 +328,13 @@ function mountHomeMotion(root) {
   function activity() {
     clearInterval(interval); clearTimeout(hop); clearInterval(gust); clearInterval(glint); interval=0;
     root.classList.toggle('home-paused', document.hidden);
-    if (reduce.matches || document.hidden) { reset(); tip.classList.remove('h15-on'); ticket.classList.remove('h15-hop'); return; }
+    if (reduce.matches || document.hidden) {
+      reset(); tip.classList.remove('h15-on'); ticket.classList.remove('h15-hop');
+      // 風・額の掛け替えなど JS で付けた動きも止める（CSS の動きは動き軽減の指定で止まる）
+      if (reduce.matches) root._ceremony?.finish();
+      root.getAnimations({subtree:true}).forEach(a => { if (!(a instanceof CSSAnimation) && !(a instanceof CSSTransition)) a.finish(); });
+      return;
+    }
     hop=setTimeout(blow, 4200);
     gust=setInterval(blow, 19000);
     glint=setInterval(() => {

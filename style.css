@@ -18963,3 +18963,26 @@ body.home-active .home-overlay { left: calc(-1 * var(--gut-x, 0px) / var(--game-
 .home-stage .h15-dialogue { font-family: var(--serif-jp); color: #f3e4c4; letter-spacing: .06em; }
 /* 金の反射は薄い金で弱く（白飛びさせない） */
 .h15-sw > .h15-gl::before { background: linear-gradient(90deg, rgba(255,214,140,0), rgba(255,222,160,.32), rgba(255,214,140,0)); width: 18%; }
+/* 額の上の鎖と見出しは右上の金具の並びに隠れて切れ端だけが浮いていた（見出しは一度も映っていない）。名前は額の名札、進み具合は台帳にあるので外す */
+.home-stage .h15-chain, .home-stage .h15-frame .h15-sub { display: none; }
+/* スマホ横：賞金の文は1行に、台詞は台帳と札の間いっぱいに使って1行に収める */
+.home-stage.h15-sm .h15-ticket .h15-prize { left: 5%; right: 5%; top: 66%; white-space: nowrap; }
+.home-stage.h15-sm .h15-prize span { display: inline; }
+.home-stage.h15-sm .h15-dialogue { left: 27%; right: 33.5%; font-size: 23px; line-height: 1.5; padding: 8px 10px; letter-spacing: .02em; }
+/* 台詞は字間を詰めて1行に。折り返す時も1文字だけ残らないよう行をそろえる */
+.home-stage .h15-dialogue { left: 32.5%; right: 35%; padding: 9px 6px; letter-spacing: .02em; text-wrap: balance; }
+.home-stage.h15-sm .h15-dialogue { left: 27%; right: 33.5%; padding: 8px 10px; }
+/* スマホ横の仕上げ：銘板は札の右端の外へ吊り下げ（枠と文字を隠さない）、ぱにゅぱにゅの文字を写真から離す、台詞と賞金を少し大きく */
+.home-stage.h15-sm .h15-pl .h15-tag { left: calc(100% - 22px); right: auto; top: 50%; transform: translateY(-50%); font-size: 23px; padding: 2px 10px 3px; white-space: nowrap; }
+.home-stage.h15-sm .h15-pl.h15-pic .h15-win { left: 66%; width: 22%; top: 27%; height: 46%; }
+.home-stage.h15-sm .h15-pl.h15-pic .h15-lbl { left: 15%; right: 35%; font-size: 23px; letter-spacing: -.02em; }
+.home-stage.h15-sm .h15-dialogue { font-size: 25px; }
+.home-stage.h15-sm .h15-ticket .h15-prize { font-size: 25px; left: 8%; right: 8%; }
+.home-stage.h15-sm .h15-ticket .h15-prize .h15-if { display: none; }
+.home-stage .h15-prize .h15-if { font-style: normal; }
+/* 銘板とコインの札の地は台帳と同じ深紅に（青みを抜く） */
+.home-stage .h15-pl .h15-tag { background: linear-gradient(180deg, #520d0d, #2b0606); }
+.home-stage .h15-coins { background: linear-gradient(180deg, #470b0b, #230505); }
+/* 金縁の反射は ::before に付けているので、動き軽減・タブ非表示でも止める */
+.home-stage.home-paused *::before { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) { .home-stage *::before { animation: none !important; transition: none !important; } }
