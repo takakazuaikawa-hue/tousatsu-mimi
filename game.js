@@ -3901,7 +3901,7 @@ function showIntermission(opponentId, onDone) {
         <img alt="ミミ" src="assets/characters/mimi_intermission.webp"
              onerror="this.onerror=null;this.src='assets/characters/mimi_default.webp';">
       </div>
-      <div class="ims-char ims-char-opp character-frame${oppImgKey === 'velvet' ? ' ims-char-seated' : ''}" data-ims-side="opp">
+      <div class="ims-char ims-char-opp character-frame" data-ims-side="opp">
         <img alt="${oppName}" src="assets/characters/${oppImgKey}_default.webp"
              onerror="window.assetFallback(this,'${oppImgKey}')">
       </div>
@@ -5062,7 +5062,7 @@ const SHOP_ITEMS = [
   { id: 'chip_skin_dragon',      cat: 'skin',  name: '龍紋チップ',          price: 1100, desc: 'チップの縁が龍の炎のような朱色に燃える' },
   /* ミミの見た目（卓とプロフィールは専用の立ち絵、ミニゲームのミミは色替え） */
   { id: 'mimi_skin_pink',        cat: 'skin',  name: 'ミミ・桃色',          price: 400,  desc: '卓とプロフィールのミミが桃色のバニー衣装に（ミニゲームのミミも桃色に）' },
-  { id: 'mimi_skin_panda',       cat: 'skin',  name: 'ミミ・パンダ柄',      price: 600,  desc: '卓とプロフィールのミミがパンダ耳の白黒バニー衣装に（ミニゲームのミミは白黒に）' },
+  { id: 'mimi_skin_panda',       cat: 'skin',  name: 'ミミ・パンダ柄',      price: 600,  desc: '卓とプロフィールのミミが白黒のパンダ柄のバニー衣装に（うさ耳も白黒。ミニゲームのミミは白黒に）' },
   { id: 'mimi_skin_gold',        cat: 'skin',  name: 'ミミ・黄金',          price: 1500, desc: '卓とプロフィールのミミが黄金色のバニー衣装に。撃破の報酬', requires: 'ending' },
   /* カットイン演出 */
   { id: 'cutin_classic',         cat: 'skin',  name: 'カットイン・古典派',  price: 700,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）が集中線＆モノクロ調に' },
@@ -5139,7 +5139,7 @@ const SHOP_COMMENTS = {
   chip_skin_dragon:      '龍の火の色。財を引き寄せる縁起物、と言われております',
   /* ミミの見た目 */
   mimi_skin_pink:        'ミミちゃんも、たまには違う色を。桃色、可愛らしいでしょう？',
-  mimi_skin_panda:       'パンダ耳のミミちゃん。白黒の意外性で笑いを誘いますな',
+  mimi_skin_panda:       '白黒のパンダ柄のミミちゃん。うさ耳まで白黒とは、意外性で笑いを誘いますな',
   mimi_skin_gold:        '黄金のミミちゃん。クリアされた方だけの特別仕様です',
   /* カットイン */
   cutin_classic:         '古典派の集中線。漫画の世界に飛び込んだ気分で',

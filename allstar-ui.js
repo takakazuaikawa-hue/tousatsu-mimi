@@ -14,7 +14,7 @@
   // ---- 差し替えやすい絵（ここ1か所） ----
   const ART = {
     room: 'assets/backgrounds/bg_lobby_clock.jpg', // 部屋：暗く・ぼかして卓の奥に敷く
-    opening: null,  // 六人着席の一枚絵（未完成）。出来たら 'assets/backgrounds/allstar_six.webp' などをここに入れる
+    opening: 'assets/ui/allstar_opening.webp',  // 六人着席の一枚絵（ChatGPT、2026-10-17）
     band: null,     // 入場案内の帯。null なら opening → room の順に代わりを使う
   };
   const FEE = 300;
