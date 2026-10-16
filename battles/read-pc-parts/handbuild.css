@@ -1,0 +1,56 @@
+/* ===== 役づくり（handbuild） =====
+   PC だけ（html:not(.is-compact)）。色・形・書体は battles/games/handbuild.js の CSS と core.css の部品（.mb-panel .mb-band）が持つ。ここは並べ方と大きさ。
+   並べ方：遊び本体を 2 列のグリッドにする。
+     左（1fr ＝ 約 844px）：手順 → 手札2枚＋場札5枚 → 選んだ5枚の枠 → 役の名前の帯 → 判定の一行 → 「これで勝負」
+     右（360px）          ：右上に「第N段階」の札、その下に「役の強さ順」の表（.hb-side）を縦に伸ばして置く
+   「役の強さ順」は押して開く物をやめ、PC では右の列に出しっぱなし（開くと札を覆っていた件の解消）。
+   js が同じ中身の表を .hb-side として足してあり、スマホ横では display:none（従来どおり details の「役の強さ順 ▾」を押して開く）。PC では details の方を隠す。
+   一番中身が多い状態＝答え合わせの最後：7枚から5枚を選んで「これで勝負」→賭けを選び、はずれた時（最強の5枚が光り、
+     選んだ5枚の枠に「おまけ」の札が付き、判定の行が長い理由で最大 2 行になる。ミミのカットインも重なる）。
+   高さの見積もり（遊び本体の予算 約605px）：
+     手順 28 ＋ 手札と場札 約125（ラベル 17＋札 101）＋ 選んだ5枚 約164（余白 10・ラベル 17・枠 105・「おまけ」の札の逃げ 24）
+     ＋ 役の名前の帯 約60 ＋ 判定 51（2行分を最初から取っておく）＋ ボタン 60 ＝ 約488、行間 10×5 ＝ 50 を足して 約538px。
+     残り約67pxは行の間に均等に配る（下に偏らない）。右の表は左の列の高さに合わせて縦に伸び、行の間が広がる。 */
+
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .hb-deal) {
+  flex: 1 1 auto; display: grid; grid-template-columns: minmax(0, 1fr) 360px; align-content: space-between; gap: 10px 24px;
+}
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .hb-deal) > #mb-hb-steps { grid-column: 1; grid-row: 1; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-head { grid-column: 2; grid-row: 1; justify-self: center; align-self: center; flex-wrap: nowrap; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-deal { grid-column: 1; grid-row: 2; gap: 8px 40px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-tray { grid-column: 1; grid-row: 3; margin: 0; justify-self: center; padding: 10px 18px 26px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-band { grid-column: 1; grid-row: 4; width: min(660px, 100%); justify-self: center; padding: 8px 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-verdict { grid-column: 1; grid-row: 5; min-height: 51px; font-size: 17px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-verdict.good { font-size: 21px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .hb-deal) > .actions { grid-column: 1; grid-row: 6; justify-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-go { min-width: 300px; }
+
+/* 札 72px（高さ101px）。選んだ5枚の枠も同じ大きさ。「おまけ」の札は 13px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-deal .card.big { --w: 72px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-slot,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-slot > .card { --w: 72px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-slot:empty::after { font-size: 26px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-slot .hb-tag { font-size: 13px; bottom: -22px; letter-spacing: .06em; }
+
+/* 役の名前の帯：名前 22px・補足 13px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-meter { height: 34px; gap: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-meter i { width: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-bname { font-size: 22px; letter-spacing: .06em; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-bname small { font-size: 13px; letter-spacing: .04em; }
+
+/* 第N段階の札 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-lv b { font-size: 14px; padding: 3px 16px; }
+
+/* ミミのカットイン：枠の外へはみ出さず、右下の隅に収める */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-react { right: 4px; bottom: 4px; width: 250px; height: 205px; }
+
+/* 右の「役の強さ順」：details は隠し、js が足した表（.hb-side）を右の列に縦いっぱいに出す */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-ref { display: none; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side { display: flex; flex-direction: column; grid-column: 2; grid-row: 2 / span 5; align-self: stretch; min-height: 0; overflow: hidden; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side > .mb-band { flex: none; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side ol { flex: 1 1 auto; list-style: none; margin: 0; padding: 12px 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side li { display: grid; grid-template-columns: 12px auto minmax(0, 1fr); gap: 10px; align-items: center; font-size: 13px; line-height: 1.35; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side li i { width: 12px; height: 12px; border-radius: 1px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side li b { font-family: var(--mincho); font-weight: 700; font-size: 14px; color: var(--text); white-space: nowrap; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side li span { color: var(--dim); font-size: 13px; text-align: right; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side li.hb-arrow { display: block; font-family: var(--mincho); font-weight: 700; font-size: 12px; letter-spacing: .14em; color: var(--gold); text-align: center; }

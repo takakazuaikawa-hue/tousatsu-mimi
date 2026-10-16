@@ -74,16 +74,16 @@
     .stare-cards { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; justify-content: center; }
     .stare-grp { display: flex; gap: 4px; align-items: center; }
     .stare-tag { font-family: var(--disp); letter-spacing: .14em; font-size: 14px; color: var(--gold); margin-right: 4px; line-height: 1; }
-    .stare-tag.is-vs { color: var(--red-hi); font-size: 18px; margin: 0; }
+    .stare-tag.is-vs { color: var(--gold-hi); font-size: 18px; margin: 0; }
     .stare-sit .formula { font-size: 13px; }
     .stare-sit .formula b { color: var(--gold-hi); }
     .stare-duel { display: grid; grid-template-columns: 30px minmax(0, 1fr) 30px; gap: 8px; }
-    .stare-arena { position: relative; height: clamp(236px, 31vw, 320px); overflow: hidden; border: 1px solid rgba(217,179,90,.5); background: #12040a; user-select: none; -webkit-user-select: none; --shk: 0px; }
+    .stare-arena { position: relative; height: clamp(236px, 31vw, 320px); overflow: hidden; border: 1px solid var(--line); background: #12040a; user-select: none; -webkit-user-select: none; --shk: 0px; }
     .stare-arena.is-on:not(.is-calm) { animation: mb-stare-shk .14s linear infinite; }
     @keyframes mb-stare-shk { 25% { transform: translate(var(--shk), 0); } 50% { transform: translate(0, calc(var(--shk) * -1)); } 75% { transform: translate(calc(var(--shk) * -1), 0); } }
     .stare-panel { position: absolute; top: -6px; bottom: -6px; width: calc(50% + 4px); overflow: hidden; transform: skewX(-12deg); border: 2px solid var(--gold); }
-    .stare-panel.is-mimi { left: -14px; background: linear-gradient(160deg, #6a1a2c, #22070f 72%); }
-    .stare-panel.is-opp { right: -14px; background: linear-gradient(200deg, #4a1022, #12040a 72%); }
+    .stare-panel.is-mimi { left: -14px; background: linear-gradient(160deg, #5a0b19, #22090c 72%); }
+    .stare-panel.is-opp { right: -14px; background: linear-gradient(200deg, #3e0306, #130406 72%); }
     .stare-panel img { position: absolute; left: 50%; max-width: none; width: auto; pointer-events: none; transition: opacity .12s; }
     .stare-panel.is-mimi img { height: 176%; top: -30%; transform: translateX(-50%) skewX(12deg); }
     .stare-panel.is-opp img { height: 140%; top: -13%; transform: translateX(calc(var(--ox, 62) * -1%)) skewX(12deg); }
@@ -91,34 +91,35 @@
     .stare-panel.is-alt img.alt { opacity: 1; } .stare-panel.is-alt img.main { opacity: 0; }
     .stare-panel.is-crack { animation: mb-stare-crack .45s ease; }
     @keyframes mb-stare-crack { 15% { filter: brightness(2.2); transform: skewX(-12deg) translateX(8px); } 40% { transform: skewX(-12deg) translateX(-6px); } 70% { transform: skewX(-12deg) translateX(3px); } }
-    .stare-spark { position: absolute; left: 30%; width: 40%; top: calc(40% - 22px); height: 44px; z-index: 3; opacity: 0; transition: opacity .2s; pointer-events: none; overflow: visible; filter: drop-shadow(0 0 5px #f5d77a) drop-shadow(0 0 12px rgba(255,74,96,.9)); }
+    .stare-spark { position: absolute; left: 30%; width: 40%; top: calc(40% - 22px); height: 44px; z-index: 3; opacity: 0; transition: opacity .2s; pointer-events: none; overflow: visible; filter: drop-shadow(0 0 5px #f5d77a) drop-shadow(0 0 12px rgba(200,37,58,.9)); }
     .stare-arena.is-on .stare-spark { opacity: 1; }
     .stare-spark polyline { fill: none; stroke: #fff3c2; stroke-width: 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-    .stare-spark polyline.b { stroke: #ff4a60; stroke-width: 1.6; }
+    .stare-spark polyline.b { stroke: var(--red-hi); stroke-width: 1.6; }
     .stare-clash { position: absolute; left: 50%; top: 40%; width: 34px; height: 34px; margin: -17px 0 0 -17px; z-index: 3; opacity: 0; background: radial-gradient(circle, #fff 0 18%, rgba(245,215,122,.9) 30%, transparent 68%); clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); pointer-events: none; }
     .stare-arena.is-on .stare-clash { opacity: 1; animation: mb-stare-clash .3s linear infinite; }
     @keyframes mb-stare-clash { 50% { transform: scale(1.5) rotate(45deg); } }
-    .stare-meter { position: relative; width: 20px; background: rgba(0,0,0,.6); border: 1px solid rgba(217,179,90,.6); }
+    .stare-meter { position: relative; width: 20px; background: rgba(0,0,0,.6); border: 1px solid var(--line); }
     .stare-meter.is-mimi { justify-self: end; } .stare-meter.is-opp { justify-self: start; }
     .stare-meter .fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; }
-    .stare-meter.is-mimi .fill { background: linear-gradient(0deg, #ff9fc2, #ff4a60); }
-    .stare-meter.is-opp .fill { background: linear-gradient(0deg, #b8862b, #fff3c2); }
+    .stare-meter.is-mimi .fill { background: linear-gradient(0deg, var(--pink), var(--red-hi)); }
+    .stare-meter.is-opp .fill { background: linear-gradient(0deg, #8a5a1e, var(--gold-hi)); }
     .stare-meter.is-hot { border-color: var(--red-hi); animation: mb-stare-hot .3s steps(2) infinite; }
-    @keyframes mb-stare-hot { 50% { box-shadow: 0 0 14px rgba(255,74,96,.95); } }
-    .stare-meter.is-beat { box-shadow: 0 0 10px rgba(255,159,194,.8); }
+    @keyframes mb-stare-hot { 50% { box-shadow: 0 0 14px rgba(200,37,58,.85); } }
+    .stare-meter.is-beat { box-shadow: 0 0 10px rgba(227,164,164,.75); }
     .stare-meter .lbl { position: absolute; left: 0; right: 0; bottom: 6px; width: 1em; word-break: break-all; text-align: center; margin: 0 auto; font-size: 11px; font-weight: 900; letter-spacing: 0; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; z-index: 1; line-height: 1.25; }
-    .stare-meter .tick { position: absolute; left: -4px; right: -4px; height: 2px; margin-bottom: -1px; background: rgba(255,255,255,.7); z-index: 2; }
-    .stare-meter .tick b { position: absolute; left: calc(100% + 1px); top: -8px; font-family: var(--disp); font-weight: 400; font-size: 13px; line-height: 16px; color: var(--dim); }
+    .stare-meter .tick { position: absolute; left: -4px; right: -4px; height: 2px; margin-bottom: -1px; background: rgba(244,228,189,.75); z-index: 2; }
+    .stare-meter .tick b { position: absolute; left: calc(100% + 1px); top: -8px; font-family: var(--mincho); font-weight: 700; font-size: 13px; line-height: 16px; color: var(--dim); }
     .stare-meter .tick.is-got { background: var(--gold-hi); box-shadow: 0 0 8px var(--gold-hi); } .stare-meter .tick.is-got b { color: var(--gold-hi); }
-    .stare-meter .pct { position: absolute; left: 50%; top: -20px; transform: translateX(-50%); font-family: var(--disp); font-size: 14px; line-height: 16px; color: var(--text); white-space: nowrap; }
+    .stare-meter .pct { position: absolute; left: 50%; top: -20px; transform: translateX(-50%); font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 16px; color: var(--text); white-space: nowrap; }
     .stare-duel { padding-top: 20px; }
-    .stare-pop { position: absolute; z-index: 4; right: 12px; bottom: 12px; max-width: min(62%, 340px); padding: 7px 12px 8px; background: #fff7e0; color: #2b1a10; font-weight: 800; font-size: 14px; line-height: 1.45; border-radius: 12px; box-shadow: 0 8px 18px rgba(0,0,0,.6); }
-    .stare-pop::before { content: ""; position: absolute; top: -9px; right: 32%; border: 10px solid transparent; border-top: 0; border-bottom-color: #fff7e0; }
-    .stare-pop small { display: block; font-family: var(--disp); letter-spacing: .12em; color: #a33; font-size: 13px; font-weight: 400; line-height: 1.1; }
+    /* 手がかりのポップ：白い丸い吹き出しをやめ、黒檀の札（core.css の .mb-ebony が面・線・書体を持つ。要素に mb-ebony、見出しに mb-label を付けている） */
+    .stare-pop { position: absolute; z-index: 4; right: 12px; bottom: 12px; max-width: min(62%, 340px); padding: 7px 12px 8px; font-size: 14px; line-height: 1.45; }
+    .stare-pop::before { content: none; }
+    .stare-pop small { display: block; letter-spacing: .12em; font-size: 13px; line-height: 1.1; }
     .stare-burst { position: absolute; z-index: 4; right: 16%; top: 6%; font-family: var(--disp); font-size: clamp(34px, 5vw, 50px); line-height: 1; color: var(--gold-hi); text-shadow: 0 3px 0 rgba(0,0,0,.5), 0 0 18px rgba(245,215,122,.9); transform: rotate(-8deg); pointer-events: none; animation: mb-stare-burst .9s ease forwards; }
-    .stare-burst small { display: block; font-size: .45em; letter-spacing: .2em; color: #fff; }
+    .stare-burst small { display: block; font-size: .45em; letter-spacing: .2em; color: var(--gold-pale); }
     @keyframes mb-stare-burst { 0% { opacity: 0; transform: rotate(-8deg) scale(2.2); } 18% { opacity: 1; transform: rotate(-8deg) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: rotate(-8deg) translateY(-10px); } }
-    .stare-doki { position: absolute; z-index: 4; left: 10px; top: 8px; font-weight: 900; font-size: 18px; color: var(--pink); text-shadow: 0 2px 0 #000, 0 0 10px rgba(255,74,96,.9); transform: rotate(-10deg); pointer-events: none; animation: mb-stare-burst .7s ease forwards; }
+    .stare-doki { position: absolute; z-index: 4; left: 10px; top: 8px; font-weight: 900; font-size: 18px; color: var(--pink); text-shadow: 0 2px 0 #000, 0 0 10px rgba(200,37,58,.9); transform: rotate(-10deg); pointer-events: none; animation: mb-stare-burst .7s ease forwards; }
     .stare-banner { position: absolute; z-index: 5; left: -4%; right: -4%; top: 70%; padding: 8px 6%; text-align: center; transform: skewY(-4deg); background: linear-gradient(90deg, #5a0b19, var(--red) 45%, #5a0b19); border-block: 3px solid var(--gold-hi); font-family: var(--mincho); font-weight: 800; font-size: clamp(17px, 3vw, 28px); line-height: 1.25; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.45); animation: mb-stare-ban .4s cubic-bezier(.2,1.3,.3,1) both; }
     .stare-banner small { display: block; font-family: var(--sans); font-weight: 700; font-size: 12px; color: var(--gold-pale); letter-spacing: .04em; }
     .stare-banner.is-win { background: linear-gradient(90deg, #6b4a0a, #e8c46a 45%, #6b4a0a); color: #1d080e; text-shadow: none; }
@@ -126,29 +127,34 @@
     .stare-banner.is-stop { background: linear-gradient(90deg, #1a060c, #3a0c18 45%, #1a060c); }
     @keyframes mb-stare-ban { from { transform: skewY(-4deg) translateX(-110%); } }
     .stare-ctrl { display: flex; justify-content: center; }
-    .stare-hold { position: relative; border: 0; cursor: pointer; width: min(440px, 100%); min-height: 80px; padding: 10px 20px; color: #fff; background: transparent; isolation: isolate; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
-    .stare-hold::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); background: linear-gradient(90deg, var(--red), #8a1427); border: 2px solid var(--gold-hi); box-shadow: 0 8px 20px rgba(0,0,0,.5); transition: transform .1s; }
+    .stare-hold { position: relative; border: 0; cursor: pointer; width: min(440px, 100%); min-height: 80px; padding: 10px 20px; color: #f0d08a; background: transparent; isolation: isolate; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+    /* 長押しの札：押せる物なので斜めをやめ、四角（角 2px・金の線）に。面は深紅 */
+    .stare-hold::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 2px; background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); border: 1px solid var(--gold); box-shadow: 0 8px 20px rgba(0,0,0,.5); transition: transform .1s, border-color .15s; }
+    .stare-hold:hover::before { border-color: var(--gold-hi); box-shadow: inset 0 0 0 1px rgba(227,185,100,.25), 0 8px 20px rgba(0,0,0,.5); }
     .stare-hold span { display: block; font-family: var(--mincho); font-weight: 800; font-size: 26px; letter-spacing: .14em; line-height: 1.2; }
-    .stare-hold small { display: block; font-size: 12px; font-weight: 700; color: rgba(255,255,255,.85); }
+    .stare-hold small { display: block; font-size: 12px; font-weight: 700; color: #dcc7a2; }
     .stare-hold.is-nudge::before { animation: mb-stare-nudge 1.1s ease-in-out infinite; }
-    @keyframes mb-stare-nudge { 50% { box-shadow: 0 0 0 4px rgba(245,215,122,.35), 0 0 30px rgba(245,215,122,.85); } }
-    .stare-hold.is-hint::before { animation: mb-stare-nudge .6s ease-in-out infinite; border-color: #fff; }
-    .stare-hold.is-on::before { background: linear-gradient(90deg, #ff4a60, var(--red)); box-shadow: 0 0 34px rgba(255,74,96,.9); transform: skewX(-12deg) scale(.97); }
+    @keyframes mb-stare-nudge { 50% { box-shadow: 0 0 0 3px rgba(239,205,130,.3), 0 0 26px rgba(239,205,130,.65); } }
+    .stare-hold.is-hint::before { animation: mb-stare-nudge .6s ease-in-out infinite; border-color: var(--gold-pale); }
+    .stare-hold.is-on::before { background: linear-gradient(180deg, #a8182a, var(--crimson)); border-color: var(--gold-hi); box-shadow: 0 0 30px rgba(200,37,58,.85); transform: scale(.98); }
     .stare-hold:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
     .stare-ask { font-family: var(--mincho); font-weight: 800; font-size: 17px; text-align: center; margin: 0 0 8px; }
     .stare-clues { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .stare-clue { position: relative; padding: 7px 12px 9px; border: 1px dashed rgba(217,179,90,.45); background: rgba(0,0,0,.3); color: var(--dim); font-size: 13px; line-height: 1.5; }
-    .stare-clue .h { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-family: var(--disp); letter-spacing: .12em; font-size: 15px; color: var(--gold); line-height: 1.2; }
-    .stare-clue .h em { font-style: normal; font-family: var(--sans); font-size: 11px; font-weight: 700; letter-spacing: 0; color: var(--dim); }
+    /* 手がかりの札：出る前は暗い札に破線の枠、開いたら羊皮紙（JS が mb-parchment is-flat を付ける。墨・見出し・注記の色は core.css が持つ）。
+       出なかった札（is-lost）は opacity で薄めず、暗い型の色で読めるまま。答え合わせの縁は mb-win（金の二重線）／mb-lose（灰の一重線） */
+    .stare-clue { position: relative; padding: 7px 12px 9px; border: 1px dashed var(--line); background: var(--panel); color: var(--dim); font-size: 13px; line-height: 1.5; }
+    .stare-clue .h { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; letter-spacing: .12em; font-size: 15px; line-height: 1.2; }
+    .stare-clue .h em { font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: 0; }
     .stare-clue .t { font-weight: 800; margin-top: 3px; }
-    .stare-clue.is-open { background: #fff7e0; color: #2b1a10; border: 1px solid #fff7e0; box-shadow: 0 6px 14px rgba(0,0,0,.45); animation: mb-pop .35s cubic-bezier(.2,1.6,.4,1); }
-    .stare-clue.is-open .h { color: #a33; } .stare-clue.is-open .h em { color: #7a5a30; }
-    .stare-clue.is-lost { opacity: .45; }
-    .stare-chip { display: inline-block; margin: 5px 6px 0 0; padding: 1px 8px; font-size: 12px; font-weight: 900; line-height: 1.6; }
-    .stare-chip.bluff { background: #b0182e; color: #fff; } .stare-chip.strong { background: #2b1a10; color: #ffe9a8; } .stare-chip.act { background: #ff9fc2; color: #2b1a10; }
-    .stare-chip.ok { background: #1f6b3a; color: #fff; } .stare-chip.ng { background: #555; color: #fff; }
-    .stare-clue.is-key { outline: 3px solid var(--gold-hi); } .stare-clue.is-trap { outline: 3px solid var(--red-hi); }
-    .stare-hand-name { font-size: 13px; font-weight: 900; color: var(--gold-hi); margin-left: 6px; white-space: nowrap; }
+    .stare-clue:not(.is-open) .t { color: var(--text); }
+    .stare-clue.is-open { animation: mb-pop .35s cubic-bezier(.2,1.6,.4,1); }
+    .stare-clue.is-lost { background: var(--off-bg); border-color: var(--off-line); color: var(--dim); }
+    .stare-clue.is-lost .h, .stare-clue.is-lost .h em, .stare-clue.is-lost .t { color: var(--dim); }
+    /* 読みの札：塗りの四角バッジをやめ、字と下線だけ（羊皮紙の上で読める濃い色。ブラフ＝深紅／強い手＝墨／演技＝茶の点線／本当＝金茶の二重線／外れ＝灰茶の破線） */
+    .stare-chip { display: inline-block; margin: 5px 6px 0 0; padding: 1px 2px; font-family: var(--mincho); font-size: 12px; font-weight: 800; letter-spacing: .04em; line-height: 1.6; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .stare-chip.bluff { color: var(--crimson); } .stare-chip.strong { color: var(--parch-ink); } .stare-chip.act { color: #7a4a14; text-decoration-style: dotted; }
+    .stare-chip.ok { color: #6b4306; text-decoration-style: double; text-decoration-thickness: 3px; } .stare-chip.ng { color: #5a4a36; text-decoration-style: dashed; }
+    .stare-hand-name { font-family: var(--mincho); font-size: 13px; font-weight: 800; color: var(--gold-hi); margin-left: 6px; white-space: nowrap; }
     .stare-hands { flex-wrap: wrap; justify-content: center; row-gap: 4px; }
     @media (max-width: 560px) {
       .stare-duel { grid-template-columns: 24px minmax(0, 1fr) 24px; gap: 6px; }
@@ -200,7 +206,7 @@
       <div id="mb-stare-steps">${api.steps(['見つめ合う', '読む', '賭ける', '答え合わせ'], 0)}</div>
       <div class="stare-sit">
         <div class="stare-cards">
-          <div class="stare-grp"><span class="stare-tag">BOARD</span>${board.map(c => api.cardHTML(c, 'small')).join('')}</div>
+          <div class="stare-grp"><span class="stare-tag">場札</span>${board.map(c => api.cardHTML(c, 'small')).join('')}</div>
           <div class="stare-grp stare-hands"><span class="stare-tag">MIMI</span>${mine.map(c => api.cardHTML(c, 'small')).join('')}
             <span class="stare-tag is-vs">VS</span><span class="stare-tag">${api.char.name}</span><span class="stare-grp" id="mb-stare-her">${api.backHTML('small')}${api.backHTML('small')}</span><span class="stare-hand-name" id="mb-stare-her-name"></span></div>
         </div>
@@ -221,7 +227,7 @@
         <button class="stare-hold is-nudge" id="mb-stare-hold" type="button"><span>見つめる</span><small>長押し ・ 離すと、そこで止まる</small></button>
       </div>
       <div class="stare-clues" id="mb-stare-clues">${clues.map((c, i) => `
-        <div class="stare-clue" data-i="${i}"><div class="h">段${i + 1} ${KIND[i]}<em>動揺${TH[i]}%で出る・的中${pct(ch.acc[i])}%</em></div><div class="t">？？？</div></div>`).join('')}
+        <div class="stare-clue" data-i="${i}"><div class="h mb-label">段${i + 1} ${KIND[i]}<em class="mb-note">動揺${TH[i]}%で出る・的中${pct(ch.acc[i])}%</em></div><div class="t">？？？</div></div>`).join('')}
       </div>`;
     api.coach('長押しで見つめ合い。相手が崩れるまで粘って。でも、ミミが先に崩れたら負け');
 
@@ -253,13 +259,13 @@
     const crack = (s) => {
       const c = clues[s];
       const box = root.querySelector(`.stare-clue[data-i="${s}"]`);
-      box.classList.add('is-open');
+      box.classList.add('is-open', 'mb-parchment', 'is-flat');
       box.querySelector('.t').textContent = c.text;
       if (c.acted) box.querySelector('.h em').textContent = `演技は、逆に読むと的中${pct(ACT_ACC)}%`;
       box.insertAdjacentHTML('beforeend', c.acted ? `<span class="stare-chip act">わざとらしい……演技？</span>` : `<span class="stare-chip ${c.surface}">${LEAN[c.surface]}${s === 0 ? '（あいまい）' : ''}</span>`);
       let pop = arena.querySelector('.stare-pop');
-      if (!pop) { pop = document.createElement('div'); pop.className = 'stare-pop'; arena.appendChild(pop); }
-      pop.innerHTML = `<small>段${s + 1} · ${KIND[s]}</small>${c.text}`;
+      if (!pop) { pop = document.createElement('div'); pop.className = 'stare-pop mb-ebony'; arena.appendChild(pop); }
+      pop.innerHTML = `<small class="mb-label">段${s + 1} · ${KIND[s]}</small>${c.text}`;
       pop.classList.remove('pop'); void pop.offsetWidth; pop.classList.add('pop');
       mO.querySelectorAll('.tick')[s].classList.add('is-got');
       const b = document.createElement('div'); b.className = 'stare-burst'; b.innerHTML = `BREAK!<small>段${s + 1}</small>`;
@@ -418,7 +424,7 @@
     clues.slice(0, stage).forEach((c, i) => {
       const box = root.querySelector(`.stare-clue[data-i="${i}"]`);
       const good = c.lean === truth;
-      box.classList.add(good ? 'is-key' : 'is-trap');
+      box.classList.add(good ? 'is-key' : 'is-trap', good ? 'mb-win' : 'mb-lose');
       box.insertAdjacentHTML('beforeend', c.acted ? (good ? `<span class="stare-chip ok">演技だった＝逆が本当</span>` : `<span class="stare-chip ng">裏の裏：顔のとおりだった</span>`)
         : good ? `<span class="stare-chip ok">本当だった</span>` : `<span class="stare-chip ng">外れの手がかり</span>`);
     });
@@ -444,5 +450,5 @@
     });
   }
 
-  MB.register({ id: 'stare', group: 'psych', order: 2, title: '見つめ合い', sub: 'PSYCH · 度胸', isNew: true, chars: ['polka', 'selina', 'velvet'], start });
+  MB.register({ id: 'stare', group: 'psych', order: 2, title: '見つめ合い', sub: '心理 · 度胸', isNew: true, chars: ['polka', 'selina', 'velvet'], start });
 })();

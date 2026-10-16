@@ -1,0 +1,757 @@
+/* 読み合い（battles/）の PC の並べ方と文字の大きさ（2026-10-16）
+   ・PC＝html:not(.is-compact) の時だけ効く。スマホ横（html.is-compact）は read-compact.css が受け持つので、ここでは触らない。
+   ・各遊びの CSS（battles/games/*.js の api.css()）は先頭の html が .mb-host に書き換えられるので、PC だけの指定はこのファイルに書く。
+   ・見た目（色・線・書体・共通の部品の型）は battles/core.css。ここは寸法・文字の大きさ・並べ方だけ。
+   ・読む順：style.css → battles/core.css → このファイル（read-compact.css の前後どちらでもよい）→ 各遊びの CSS（実行時に head の最後に足される）。
+
+   書き方は2通り：
+   1) 共通の既定（このすぐ下）＝ :where(html:not(.is-compact)) .mb-host …
+      詳細度は core.css と同じ（:where は 0）。後に読むので core.css には勝ち、各遊びの CSS（さらに後に足される）には負ける。
+      → 遊び側が個別に決めた大きさ（.hl-pick .btn の padding、.gc-acts .btn の幅など）を潰さない。
+   2) 遊びごとの節（いちばん下に足していく）＝ html:not(.is-compact) #stage > .read-battle-host.mb-host …
+      ID を含むので core.css と各遊びの CSS の両方に勝つ。1遊び1節。節の頭に遊びの名前と「一番中身が多い状態」を書く。
+
+   高さの予算（卓 1280x800）：財布の帯（約51px）の下の 約749px から、
+     舞台の枠 2+2px・上下の余白 12+12px・相手の行 104px・行間 10px を引いて、遊び本体（.mb-game-root）は 約605px。
+     一番中身が多い状態でもこの中に収める（はみ出すと舞台がスクロールし、下のボタンが切れる）。大きな空きを一か所に偏らせない。
+   横幅：舞台の内側は 1280 − 枠4 − 左右の余白48 ＝ 約1228px。
+   文字の下限（PC の画面上の大きさ。zoom が掛かる所は掛けた後）：読む文 13px 以上、ラベル・番号 11px 以上。
+   押す所：高さ 44px 以上（PC は最低 40px）。押せない時は core.css の暗い型（opacity で薄めない）。
+   zoom は .gc-mach（.8、core.css）だけ。ほかの遊びは zoom を使わず、並べ替え・詰めで収める。 */
+
+/* ================= 共通の既定（PC） ================= */
+
+/* 舞台：上下 12px・左右 24px の余白（二重の金線の内側に 6px 空く）。相手の行は 104px にそろえる
+   （心理の顔窓 104px、論理のミニキャラ 100px。どちらでも遊び本体の高さが同じになるように） */
+:where(html:not(.is-compact)) .mb-host .mb-stage { padding: 12px 24px; gap: 10px; }
+:where(html:not(.is-compact)) .mb-host .mb-opp-row { min-height: 104px; }
+:where(html:not(.is-compact)) .mb-host .mb-game-root { gap: 10px; }
+
+/* 財布の帯の箱：ラベルの字間（スマホ横は列が細いので付けない） */
+:where(html:not(.is-compact)) .mb-host .mb-purse > div { letter-spacing: .06em; }
+
+/* 相手の行の文字：名札 13px・台詞 15px・リコ先輩の名札 12px・一言 14px・賭けのラベル 13px */
+:where(html:not(.is-compact)) .mb-host .mb-opp-name { font-size: 13px; }
+:where(html:not(.is-compact)) .mb-host .mb-speech { font-size: 15px; line-height: 1.5; }
+:where(html:not(.is-compact)) .mb-host .mb-coach-name { font-size: 12px; letter-spacing: .12em; }
+:where(html:not(.is-compact)) .mb-host .mb-opp-row .mb-coach-line { font-size: 14px; line-height: 1.45; }
+:where(html:not(.is-compact)) .mb-host .mb-betchip .lbl { font-size: 13px; }
+
+/* 問い 20px・式 13px・段 13px（高さ 28px のまま）・場所の名前 12px・判定 19px */
+:where(html:not(.is-compact)) .mb-host .prompt { font-size: 20px; line-height: 1.4; }
+:where(html:not(.is-compact)) .mb-host .formula { font-size: 13px; line-height: 1.5; }
+:where(html:not(.is-compact)) .mb-host .steps { gap: 6px; }
+:where(html:not(.is-compact)) .mb-host .step { font-size: 13px; line-height: 18px; padding: 4px 12px; letter-spacing: .04em; }
+:where(html:not(.is-compact)) .mb-host .zone-label { font-size: 12px; line-height: 1.4; }
+:where(html:not(.is-compact)) .mb-host .verdict { font-size: 19px; line-height: 1.45; }
+
+/* 押すもの：高さ 52px（ghost は 44px）。2行のボタン（見出し＋small）も行間を詰めて 60px 前後に。
+   明朝の字間 .06em は PC だけ（スマホ横は押す札が細く、字間で折り返すと高さが変わるため） */
+:where(html:not(.is-compact)) .mb-host .btn { min-height: 52px; padding: 10px 26px; font-size: 16px; line-height: 1.35; letter-spacing: .06em; }
+:where(html:not(.is-compact)) .mb-host .btn small { font-size: 13px; line-height: 1.35; letter-spacing: .02em; }
+:where(html:not(.is-compact)) .mb-host .btn.ghost { min-height: 44px; padding: 6px 16px; font-size: 14px; }
+
+/* 結果の札・賭けの札：補足も 13px に */
+:where(html:not(.is-compact)) .mb-host .mb-result-detail { font-size: 14px; line-height: 1.6; }
+:where(html:not(.is-compact)) .mb-host .mb-result-sub { font-size: 13px; }
+:where(html:not(.is-compact)) .mb-host .mb-tally-h { font-size: 13px; }
+:where(html:not(.is-compact)) .mb-host .mb-tally-sum { font-size: 13px; }
+:where(html:not(.is-compact)) .mb-host .mb-wager-note { font-size: 13px; }
+
+/* ---------- 共通の部品の PC の大きさ（core.css の型に付く既定。遊び側の指定があればそちらが勝つ） ---------- */
+/* 見出し帯：15px の明朝・高さ 約33px。補足の <small> は 12px */
+:where(html:not(.is-compact)) .mb-host .mb-band { padding: 6px 14px; font-size: 15px; line-height: 1.4; }
+:where(html:not(.is-compact)) .mb-host .mb-band small { font-size: 12px; margin-left: .8em; }
+/* 小さな金の明朝ラベル 12px・注記 12px・金のタブ 12px */
+:where(html:not(.is-compact)) .mb-host .mb-label { font-size: 12px; line-height: 1.4; }
+:where(html:not(.is-compact)) .mb-host .mb-note { font-size: 12px; line-height: 1.6; }
+:where(html:not(.is-compact)) .mb-host .mb-tab { padding: 1px 10px; font-size: 12px; line-height: 1.5; }
+/* 四角い押す札：高さ 44px 以上。字間は PC だけ */
+:where(html:not(.is-compact)) .mb-host .mb-key { min-height: 44px; letter-spacing: .04em; }
+
+/* ================= 遊びごとの節（PC） =================
+   ここから下に、遊びの係が1遊び1節で足す。接頭辞は html:not(.is-compact) #stage > .read-battle-host.mb-host。
+   並びの順：見抜く（detective）・見つめ合う（stare）・ダウト（doubt）・ガチャ（gacha）・つきつける（objection）・
+             役づくり（handbuild）・ハイ＆ロー（highlow）・危ない場札（danger）・ねらい撃ち（sniper）・当たり札（outs）・容疑者（suspects） */
+
+/* ===== 見抜く（detective） =====
+   PC だけ（html:not(.is-compact)）。色・形は battles/games/detective.js の CSS と core.css の部品（.mb-parchment .mb-crimson .mb-key）が持つ。ここは並べ方と大きさ。
+   一番中身が多い状態＝答え合わせ：「調べる」を4枚ぜんぶ押し、「ぱにゅぱにゅで探る」で5枚目（ミミの勘）も開き、5枚ぜんぶに強い手／ブラフ／関係なしを付けて決め、
+   賭けを選んだあと。相手の手札が場札・ミミの手札と同じ段に並び、5枚すべての付箋に判定の行（決め手／ひっかけ／手がかりにならない）が付く。
+   高さの見積もり（遊び本体の予算 約605px）：
+     手順 28 ＋ 札の段 95 ＋ 問い 31 ＋ 天秤 30 ＋ 付箋 222（余白 32・種類 21・文 72（3行分）・押す所 48・判定 19・行間 30）＋ 決めるボタン 60 ＝ 466、
+     行間 12×5 ＝ 60 を足して 約526px。残り約79pxは行の間に均等に配る（下に偏らない）。
+   決めるボタンは出ていない間も場所を取っておく（visibility:hidden）。3枚目を決めた瞬間にボタンが出て、上の付箋が動いて押し間違えるのを防ぐ。
+   札の段は「場札｜ミミの手札｜相手の手札」の1本の帯。ふだんは2列で、相手の手札が出る時だけ3列になる（段の入れ子は変えない：スマホ横の CSS が段の直下を見ている）。 */
+
+/* 遊び本体：6つの行（手順・札の帯・問い・天秤・付箋・決めるボタン）を舞台の高さいっぱいに均等に配る */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) {
+  flex: 1 1 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: space-between; gap: 12px 40px;
+}
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues):has(> .dt-her) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) > * { grid-column: 1 / -1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) > .dt-board { grid-column: 1; grid-row: 2; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) > .dt-mine { grid-column: 2; grid-row: 2; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) > .dt-her { grid-column: 3; grid-row: 2; }
+
+/* 札 68px（高さ95px）。ミミの式と相手の名札は札の横に置く（式は2行までで、札の高さの中に収まる）。縮むのは式だけで、札は縮めない */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-board,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-mine,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-her { flex-wrap: nowrap; justify-content: center; gap: 8px; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-board .card.big,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-mine .card.big,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-her .card.big { --w: 68px; flex: 0 0 auto; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-mine .formula { flex: 0 1 236px; margin-left: 6px; text-align: left; font-size: 14px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-her .formula { margin-right: 6px; font-family: var(--mincho); font-weight: 700; font-size: 14px; letter-spacing: .1em; color: var(--gold); white-space: nowrap; }
+
+/* 問い 22px・天秤は横を広げる（針の上下に余白 30px） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) > .prompt { font-size: 22px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-scale { max-width: 760px; min-height: 30px; font-size: 14px; letter-spacing: .08em; gap: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-beam { height: 12px; }
+
+/* 付箋：5枚を横1列の調査票に。傾けない。文は3行分の高さを取り、調べる前後で高さが変わらない（押す所が動かない） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-clues { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-clue { padding: 16px 14px 14px; gap: 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-kind { font-size: 15px; line-height: 1.4; letter-spacing: .12em; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-text { font-size: 15px; line-height: 1.6; min-height: 4.8em; }
+/* 押す所：3つ並べて（強い手／ブラフ／関係なし）48px。「調べる」と「ぱにゅぱにゅで探る」は横いっぱい */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-acts button { min-width: 0; min-height: 48px; padding: 0; font-size: 14px; line-height: 1.2; letter-spacing: 0; white-space: nowrap; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-acts .open-btn,
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dt-panyu { grid-column: 1 / -1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-verdict { font-size: 13px; line-height: 1.45; }
+
+/* 決めるボタン：ブラフと読む／強い手と読む。出ていない間も場所は取っておく */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dt-decide { gap: 24px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dt-decide[hidden] { display: flex !important; visibility: hidden; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dt-decide .btn { min-width: 260px; min-height: 60px; }
+
+/* ===== 見つめ合う（stare） =====
+   一番中身が多い状態は2つ。
+   (a) 「見つめる」を長押しで段3まで押し切って手がかり3枚を全部開き（自動で「読む」に進む）、「ブラフと読む」を押して、
+       賭けの札（たぶん×1／確信×2／ぜったい×3）が下の操作欄に出た所。ヴェルベット卓なら手がかりの1つに「わざとらしい……演技？」の札が付く。
+   (b) そのあとの答え合わせ：手がかり3枚に「本当だった」「外れの手がかり」などの2つ目の読みの札が付く所（下の操作欄は空になる）。
+   並べ方：手順（全幅）／場札と手札（全幅）／〔顔の窓と左右のメーター ｜ 手がかり3枚（右 356px・顔の窓と同じ高さ）〕／長押し・読み・賭け（全幅）。
+   高さの見積もり（遊び本体の予算 約605px）：
+     (a) 手順 28 ＋ 場札と手札 85 ＋ 主段 336（顔の窓 312 ＋ メーターの数字の余白 24）＋ 操作欄 100 ＋ 行間 10×3 ＝ 約579px。
+         手がかりの文が3枚とも2行になっても主段は 341 で収まる（約584px）。
+     (b) 手順 28 ＋ 85 ＋ 主段 最大 419（札が折り返す最悪）＋ 行間 10×3 ＝ 約562px（操作欄は空で高さ 0）。
+   操作欄は 長押し／読み／賭け のどれでも 100px にそろえる（顔の窓が段ごとに伸び縮みしない）。
+   文字：読む文 14px・手がかりの見出し 14px・読みの札 13px・注記 12px・メーターの名前 12px（縦書き）・場札の名前 13px。
+   押す所：長押し 80px（幅 520px）・読みの札 約59px・賭けのチップ 78px。
+   顔の窓は zoom を使わず、高さ 312px 以上（手がかりが多ければその高さまで伸びる）。 */
+
+/* ---------- 並べ方 ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(.stare-duel) {
+  display: grid; grid-template-columns: minmax(0, 1fr) 356px; grid-template-rows: auto auto auto auto;
+  grid-template-areas: "steps steps" "sit sit" "duel clues" "ctrl ctrl";
+  gap: 10px 24px; align-content: start;
+}
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-stare-steps { grid-area: steps; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-sit { grid-area: sit; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-duel { grid-area: duel; grid-template-columns: 28px minmax(0, 1fr) 28px; gap: 8px; padding-top: 24px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-ctrl { grid-area: ctrl; min-height: 100px; align-items: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-ctrl:empty { min-height: 0; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-clues { grid-area: clues; grid-template-columns: minmax(0, 1fr); grid-auto-rows: 1fr; gap: 10px; }
+
+/* ---------- 場札と手札（名札は明朝の金文字、札は少し大きく） ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-sit .card.small { --w: 42px; }
+/* 名札（MIMI・相手の名前）は PC だけ明朝（スマホ横は幅が細く、明朝にすると1行に収まらなくなる小さい機種があるので Bebas のまま） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-tag { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-tag.is-vs { font-weight: 800; font-size: 17px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-hand-name { font-size: 14px; }
+
+/* ---------- 顔の窓とメーター ---------- */
+/* 窓は二重の金線（外に黒の隙間 1px ＋ 明るい金線 1px）。高さは auto（行に合わせて伸びる）で最低 312px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-arena { height: auto; min-height: 312px; border-width: 2px; box-shadow: 0 0 0 1px #190608, 0 0 0 2px var(--gild); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-meter { width: 24px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-meter .pct { font-size: 16px; line-height: 18px; top: -22px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-meter .tick b { font-size: 12px; }
+/* メーターの名前：縦書き（1文字ずつ折れるのをやめる）。メーターの真ん中に、暗い縁取りの金文字（塗りの上でも読める） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-meter .lbl {
+  writing-mode: vertical-rl; left: 50%; right: auto; top: 50%; bottom: auto; width: auto; margin: 0; transform: translate(-50%, -50%);
+  white-space: nowrap; word-break: normal; font-family: var(--mincho); font-size: 12px; font-weight: 800; letter-spacing: .2em; line-height: 1; color: var(--gold-pale);
+  text-shadow: -1px -1px 0 #130406, 1px -1px 0 #130406, -1px 1px 0 #130406, 1px 1px 0 #130406, 0 0 4px #000;
+}
+/* 窓の上に出る一言（黒檀の札）・決着の帯・ドキッ */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-pop { font-size: 15px; line-height: 1.5; padding: 8px 14px 9px 16px; max-width: min(58%, 400px); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-pop small { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-banner small { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-doki { font-size: 20px; }
+
+/* ---------- 操作欄（高さ 100px 固定：長押し／読む／賭ける） ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-hold { width: min(520px, 100%); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-hold small { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-ctrl > div { text-align: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-ask { font-size: 18px; line-height: 1.4; margin: 0 0 6px; }
+/* 賭けの札：左に問いと注記、右にチップ3つ（横に長い札にして 100px に収める。四隅の金飾りに掛からないよう幅は 1100px まで） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager {
+  width: 100%; max-width: 1100px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "q chips" "note chips";
+  align-items: center; justify-items: start; gap: 4px 32px; padding: 10px 28px; text-align: left;
+}
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager-q { grid-area: q; font-size: 18px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager-note { grid-area: note; font-size: 13px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager-chips { grid-area: chips; flex-wrap: nowrap; gap: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-ctrl .mb-wchip { width: 78px; height: 78px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-ctrl .mb-wchip span { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-ctrl .mb-wchip b { font-size: 28px; }
+
+/* ---------- 手がかり3枚（右の列。顔の窓と同じ高さに3等分） ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-clue { padding: 8px 12px 7px; font-size: 14px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-clue .h { font-size: 14px; line-height: 1.3; letter-spacing: .06em; flex-wrap: wrap; row-gap: 0; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-clue .h em { font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-clue .t { margin-top: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .stare-chip { font-size: 13px; margin: 5px 8px 0 0; }
+
+/* ===== ダウト！（doubt） =====
+   PC だけ（html:not(.is-compact)）。色・形・書体は battles/games/doubt.js の CSS と core.css の部品（.mb-ebony .mb-frame）が持つ。ここは並べ方と大きさ。
+   一番中身が多い状態＝答え合わせ：「はじめる」→ 5問に答える → 自信を賭ける → 答え合わせで 5行（1行は「例外！」の札つき）が出て、
+   相手の手札が表向きになり、手札の役の文字（「役なし（あと1枚でフラッシュ）」など）が出た時。
+   高さの見積もり（遊び本体の予算 約605px）：
+     答え合わせ：手順 28 ＋ 場札と手札の段 64 ＋ 顔の帯 116 ＋ 5行 309（1行 57×5 ＋ 行間 6×4）＋ 行間 12×3 ＝ 約553px。
+     出題中（一番高い時）：手順 28 ＋ 段 64 ＋ 顔の舞台 340 ＋ 本音／ウソのボタン 76 ＋ 行間 12×3 ＝ 約544px。
+     2つの状態の高さがほぼ同じなので、答え合わせへ移っても顔の舞台の上端は動かない。残り約50〜60pxは下の余白。
+   顔の舞台は 300 → 340px に広げた（ウソの時ほど焦り顔が出る＝顔が一番の手がかりなので、顔を大きく見せる）。
+   READY / GO! はカウントダウンの叫び（Bebas 96px）なので英語のまま残す。
+   ○×の判子は assets/ui/stamp_correct.webp・stamp_wrong.webp（確認済み・256x256 の透過 webp。元の色は赤と紺なので、型抜きにして金・灰で塗る＝js 側）。 */
+
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) { gap: 12px; }
+
+/* 場札と手札の段：札を 46px に（高さ 64px）。名札は 13px の金の明朝 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-sit { gap: 6px 32px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-sit .card.small { --w: 46px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-tag { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-hand { font-size: 14px; }
+
+/* 顔の舞台：340px（答え合わせの間は 116px の帯に縮む）。小窓と同じ二重の金線 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-area { height: 340px; border-width: 2px; box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px var(--gild); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-area.is-sum { height: 116px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-win { top: 18px; bottom: 24px; right: 8%; width: min(26%, 300px); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-area.is-sum .doubt-win { top: 12px; bottom: 12px; right: 6%; width: min(22%, 160px); }
+/* 二重の金線の内側に収める（タイマーの帯・数え・当てた数） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-timer { left: 12px; right: 12px; bottom: 12px; height: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-count { left: 30px; top: 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-count b { font-size: 34px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-count span { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-tally { left: 30px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-tally small { font-size: 15px; }
+
+/* 台詞（黒檀の札）：24px・幅 660px。判断材料なので大きさを保つ */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-bubble { left: 48px; width: min(54%, 660px); padding: 18px 24px; font-size: 24px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-last { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-stamp { right: -8px; top: -22px; font-size: 26px; }
+
+/* ルールの札（小窓の枠）：説明は 13〜14px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule { left: 48px; width: min(56%, 700px); padding: 18px 24px 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule > small { font-size: 15px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule-main { font-size: 28px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule-ex { margin-top: 10px; gap: 6px; font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule-ex span { padding: 4px 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule-note { font-size: 13px; }
+
+/* 本音／ウソ／はじめる：76px。答え合わせの間は空になる（場所を取らない） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-pad { width: min(720px, 100%); gap: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-pad:empty { display: none; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-btn { min-height: 76px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-btn .w small { font-size: 13px; }
+
+/* 答え合わせの5行：横 960px で中央。1行 57px（台詞 16px・あなた／正解 14px・例外の札 12px）。○×の判子は 34px の文字の 1.25倍（約42px） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-list { width: min(960px, 100%); margin: 0 auto; gap: 6px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row { min-height: 57px; padding: 6px 14px; grid-template-columns: 32px minmax(0, 1fr) 56px; gap: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row .n { font-size: 26px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row .q { font-size: 16px; line-height: 1.45; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row .sub { font-size: 14px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row .sub .trap { font-size: 12px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row .mark { font-size: 34px; }
+
+/* ===== 心の声ガチャ（gacha） =====
+   PC だけ（html:not(.is-compact)）。色・形・書体は battles/games/gacha.js の CSS と core.css の部品（.mb-ebony）が持つ。ここは並べ方と大きさ。
+   ガチャ台の zoom .8 は core.css（台の中の文字は 16px 以上で書いてあり、掛けた後で 12.8px 以上）。台の外は zoom なし。
+
+   並べ方：遊び本体（.mb-game-root）を 3 列のグリッドにし、.gc-wrap と .gc-right は display:contents で外して、中の部品を直接並べる。
+     左の列 300px  ：ぱにゅ残量の箱 → ガチャ台（zoom .8 で 184×275）→ 引くボタン2つ（縦積み）。判断ボタン（#mb-gc-decide）は引くボタンと同じ場所（引き終わると引くボタンは隠れる）
+     真ん中 1fr    ：場札（54px の札）→ 説明 → 心の声（最大3つ）→ 図鑑
+     右の列 380px  ：相手と自分の手札（縦置き）→ 説明 → 排出確率の表（心の声が出た後も全部の行と天井の説明を出したまま）
+   core.css は「心の声が出たら確率表を1行に畳む」としていたが、PC は専用の列ができたので畳まない（下で戻す）。
+
+   一番中身が多い状態＝心の声を3つ引いた後：「ぱにゅぱにゅ！」を3回押し、3回目（天井で R 以上確定）が SR か SSR（札の絵つきの心の声）になった時。
+     手順 28 ＋ 行間 10 ＋ 上の段 約 100（ぱにゅの箱 約 98／手札は縦置きで 約 102）＋ 行間 10 ＋ 左の列 約 407（台 275 ＋ 行間 10 ＋ ボタン 2つ 約 58×2 ＋ 行間 8）＝ 約 555px。
+     真ん中は 説明 約 40 ＋ 心の声 3つ（札つきの声は 約 92 ×3 ＋ 行間 20 ＝ 約 296）＋ 図鑑 約 38 ＋ 行間 20 ＝ 約 394 で、左の列 407 の内側に収まる（左の列が高さを決める）。
+     遊び本体の予算 約 605px に対して約 50px の余り。引く前（心の声なし）も、引き終わって判断ボタンが出た時も、高さは左の列で決まるので同じ約 555px。 */
+
+/* ---- 並べ方 ---- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) {
+  display: grid; grid-template-columns: 300px minmax(0, 1fr) 380px;
+  grid-template-areas:
+    "steps steps steps"
+    "panyu board hands"
+    "left sub sub"
+    "left voices odds"
+    "left book book"
+    "left . .";
+  grid-template-rows: auto auto auto auto auto 1fr;
+  gap: 10px 20px; align-content: start; align-items: start;
+}
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-wrap, html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-right { display: contents; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-gc-steps { grid-area: steps; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-panyu { grid-area: panyu; align-self: stretch; padding: 10px 14px; gap: 6px 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-board { grid-area: board; align-self: center; flex-wrap: nowrap; justify-content: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-hands { grid-area: hands; align-self: center; flex-wrap: nowrap; justify-content: center; align-items: flex-start; gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-sub { grid-area: sub; margin: 0; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-left { grid-area: left; gap: 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-voices { grid-area: voices; min-width: 0; min-height: 0; gap: 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-odds { grid-area: odds; min-width: 0; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-book { grid-area: book; }
+
+/* 場札：54px の札（高さ 76px） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-board .card { --w: 54px; }
+
+/* 手札：名前の札・札2枚・役の名前を縦に置く（横に置くと右の列 380px に2人分が入らない）。VS は2人の間 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-hand { flex: 1 1 0; min-width: 0; flex-direction: column; align-items: center; gap: 3px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-vs { flex: 0 0 auto; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-hn { font-size: 14px; line-height: 1.4; text-align: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-hn.is-strong, html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-hn.is-bluff { font-size: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-sub { font-size: 13px; line-height: 1.6; }
+
+/* ぱにゅの箱（左の列の一番上）：ラベル 13px・残りの説明 13px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-basebox { font-size: 13px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-basebox b { font-size: 15px; }
+
+/* ガチャ台と、引く／やめるのボタン（縦積み・幅いっぱい・58px 以上）。台の中：札の名前 16px・顔 16px（掛けた後 12.8px） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-plate span { font-size: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-face b { font-size: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-acts { flex-direction: column; align-items: stretch; gap: 8px; width: 100%; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-acts .btn { flex: 0 0 auto; width: 100%; min-width: 0; min-height: 58px; padding: 8px 10px; }
+
+/* 判断ボタン（ブラフと読む／強い手と読む）：左の列の、引くボタンのあった場所（台 275px ＋ 行間 10px の下）に縦積み */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-gc-decide { grid-area: left; align-self: start; margin-top: 285px; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-gc-decide .btn { width: 100%; min-width: 0; min-height: 58px; padding: 8px 10px; }
+
+/* 心の声（黒檀の札）：札の高さ 44px 以上・文 15px・補足 12px。希少度の札の列は 56px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-voice { grid-template-columns: 56px minmax(0, 1fr); gap: 4px 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-bub { padding: 9px 16px; min-height: 44px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-meta { font-size: 12px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-meta em { font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-empty { padding: 18px 16px; font-size: 14px; }
+
+/* 排出確率の表：心の声が出た後も、全部の行・説明・天井を出したまま（core.css の「1行に畳む」を戻す） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-odds { grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 10px 14px 12px; justify-content: stretch; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-odds > .gc-odds-h, html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-odds > .gc-ceil { grid-column: auto; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-odds > .gc-ceil { display: block; margin-top: 4px; padding-top: 8px; font-size: 13px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-odds-h { font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-odds-h small { font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-orow { grid-template-columns: 50px 44px minmax(0, 1fr); gap: 10px; font-size: 13px; line-height: 1.3; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-orow > span:last-child { display: block; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-orow small { display: block; margin-left: 0; font-size: 12px; line-height: 1.35; }
+
+/* 図鑑：/40種 と 希少度ごとの数は 12px（<small> は 10px になるので戻す） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-book { padding: 8px 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-book small { font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-book-r { font-size: 12px; }
+
+/* 結果の札の補足 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-res-extra { font-size: 13px; }
+
+/* ===== つきつける（objection） =====
+   PC だけ（html:not(.is-compact)）。色・形・書体は battles/games/objection.js の CSS と core.css の部品（.mb-ebony .mb-tab）が持つ。ここは並べ方と大きさ。
+   並べ方：左＝ヴェルベットの発言3つ（右の高さに合わせて等分）、右＝証拠4枚を 2x2。zoom は使わない。
+   一番中身が多い状態＝証拠が4枚あるシナリオ（赤い角の札／鏡）で、証拠の「賭け方の記録」を3行とも折り返す長さにして、「つきつける」を3回外した後：
+     信用ゼロの一行（ご褒美のもと 15）と「ブラフと読む／強い手と読む」の2択が出ている（証拠4枚・発言3つ・信用の駒はそのまま残る）。
+   高さの見積もり（遊び本体の予算 約605px）：
+     手順 28 ＋ 手札の行 56 ＋ 説明 21 ＋ 法廷 約335（見出し 33＋行間 8＋証拠 2段 約140×2＋行間 12） ＋ 信用の行 24 ＋ 2択の行 60 ＋ 行間 8×5 ＝ 約564px。
+     法廷の高さは右の証拠で決まり、左の発言3つは同じ高さに等分する（左右の空きが偏らない）。2択が出る前（つきつけるの帯 56px）は約 515px。
+     証拠の記録が長く折り返しても +20px 前後（約585px）で収まる。 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) { gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-hands { gap: 6px 28px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-hand .card.small { --w: 38px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-who { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-hn { font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-hn.is-strong,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-hn.is-bluff { font-size: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-sub { margin: 0; font-size: 14px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-court { grid-template-columns: minmax(0, .9fr) 40px minmax(0, 1.1fr); align-items: stretch; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-col { gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-colhead { padding: 6px 14px; font-size: 15px; line-height: 1.4; letter-spacing: .1em; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-says { gap: 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-say { flex: 1 1 0; display: flex; flex-direction: column; justify-content: center; min-height: 80px; margin: 0; padding: 10px 16px 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-say p { font-size: 15px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-say .ob-tag { font-size: 12px; line-height: 1.4; letter-spacing: .14em; background: transparent !important; border: 0 !important; padding: 0 !important; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-evs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-evs > .ob-colhead { grid-column: 1 / -1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-ev { margin: 0; padding: 12px 14px 10px; min-height: 112px; display: flex; flex-direction: column; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-ev.k-log { background: repeating-linear-gradient(180deg, var(--parch) 0 19px, var(--parch-rule) 19px 20px); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-ev.k-log.is-off { background: repeating-linear-gradient(180deg, #d3c4a3 0 19px, #c6b68f 19px 20px); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-tab { position: static; align-self: flex-start; margin: -12px 0 8px -14px; padding: 1px 12px; font-size: 12px; line-height: 1.6; border-radius: 0 0 2px 0; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-tab em { font-size: 12px; letter-spacing: .08em; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-mini-row { gap: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-ev .card.ob-mini { --w: 32px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-note { margin-top: 6px; font-size: 13px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-log { gap: 0; font-size: 13px; line-height: 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-log li { grid-template-columns: 56px auto minmax(0, 1fr); gap: 0 6px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-log .st { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-evtext { font-size: 14px; line-height: 1.55; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-stamp { top: -12px; right: 10px; font-size: 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-bar { padding-top: 0; gap: 8px 28px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-cred { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-go { min-width: 260px; min-height: 56px; font-size: 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-go small { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-ob-decide { align-items: center; gap: 8px 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-luck { width: auto; flex: 0 0 auto; font-size: 13px; text-align: right; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-res-extra { font-size: 13px; }
+
+/* ===== 役づくり（handbuild） =====
+   PC だけ（html:not(.is-compact)）。色・形・書体は battles/games/handbuild.js の CSS と core.css の部品（.mb-panel .mb-band）が持つ。ここは並べ方と大きさ。
+   並べ方：遊び本体を 2 列のグリッドにする。
+     左（1fr ＝ 約 844px）：手順 → 手札2枚＋場札5枚 → 選んだ5枚の枠 → 役の名前の帯 → 判定の一行 → 「これで勝負」
+     右（360px）          ：右上に「第N段階」の札、その下に「役の強さ順」の表（.hb-side）を縦に伸ばして置く
+   「役の強さ順」は押して開く物をやめ、PC では右の列に出しっぱなし（開くと札を覆っていた件の解消）。
+   js が同じ中身の表を .hb-side として足してあり、スマホ横では display:none（従来どおり details の「役の強さ順 ▾」を押して開く）。PC では details の方を隠す。
+   一番中身が多い状態＝答え合わせの最後：7枚から5枚を選んで「これで勝負」→賭けを選び、はずれた時（最強の5枚が光り、
+     選んだ5枚の枠に「おまけ」の札が付き、判定の行が長い理由で最大 2 行になる。ミミのカットインも重なる）。
+   高さの見積もり（遊び本体の予算 約605px）：
+     手順 28 ＋ 手札と場札 約125（ラベル 17＋札 101）＋ 選んだ5枚 約164（余白 10・ラベル 17・枠 105・「おまけ」の札の逃げ 24）
+     ＋ 役の名前の帯 約60 ＋ 判定 51（2行分を最初から取っておく）＋ ボタン 60 ＝ 約488、行間 10×5 ＝ 50 を足して 約538px。
+     残り約67pxは行の間に均等に配る（下に偏らない）。右の表は左の列の高さに合わせて縦に伸び、行の間が広がる。 */
+
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .hb-deal) {
+  flex: 1 1 auto; display: grid; grid-template-columns: minmax(0, 1fr) 360px; align-content: space-between; gap: 10px 24px;
+}
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .hb-deal) > #mb-hb-steps { grid-column: 1; grid-row: 1; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-head { grid-column: 2; grid-row: 1; justify-self: center; align-self: center; flex-wrap: nowrap; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-deal { grid-column: 1; grid-row: 2; gap: 8px 40px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-tray { grid-column: 1; grid-row: 3; margin: 0; justify-self: center; padding: 10px 18px 26px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-band { grid-column: 1; grid-row: 4; width: min(660px, 100%); justify-self: center; padding: 8px 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-verdict { grid-column: 1; grid-row: 5; min-height: 51px; font-size: 17px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-verdict.good { font-size: 21px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .hb-deal) > .actions { grid-column: 1; grid-row: 6; justify-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-go { min-width: 300px; }
+
+/* 札 72px（高さ101px）。選んだ5枚の枠も同じ大きさ。「おまけ」の札は 13px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-deal .card.big { --w: 72px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-slot,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-slot > .card { --w: 72px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-slot:empty::after { font-size: 26px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-slot .hb-tag { font-size: 13px; bottom: -22px; letter-spacing: .06em; }
+
+/* 役の名前の帯：名前 22px・補足 13px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-meter { height: 34px; gap: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-meter i { width: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-bname { font-size: 22px; letter-spacing: .06em; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-bname small { font-size: 13px; letter-spacing: .04em; }
+
+/* 第N段階の札 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-lv b { font-size: 14px; padding: 3px 16px; }
+
+/* ミミのカットイン：枠の外へはみ出さず、右下の隅に収める */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-react { right: 4px; bottom: 4px; width: 250px; height: 205px; }
+
+/* 右の「役の強さ順」：details は隠し、js が足した表（.hb-side）を右の列に縦いっぱいに出す */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-ref { display: none; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side { display: flex; flex-direction: column; grid-column: 2; grid-row: 2 / span 5; align-self: stretch; min-height: 0; overflow: hidden; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side > .mb-band { flex: none; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side ol { flex: 1 1 auto; list-style: none; margin: 0; padding: 12px 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side li { display: grid; grid-template-columns: 12px auto minmax(0, 1fr); gap: 10px; align-items: center; font-size: 13px; line-height: 1.35; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side li i { width: 12px; height: 12px; border-radius: 1px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side li b { font-family: var(--mincho); font-weight: 700; font-size: 14px; color: var(--text); white-space: nowrap; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side li span { color: var(--dim); font-size: 13px; text-align: right; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hb-side li.hb-arrow { display: block; font-family: var(--mincho); font-weight: 700; font-size: 12px; letter-spacing: .14em; color: var(--gold); text-align: center; }
+
+/* ===== ハイ＆ロー（highlow） =====
+   PC だけ（html:not(.is-compact)）。色・形・書体は battles/games/highlow.js の CSS と core.css が持つ。ここは並べ方と大きさ。zoom は使わない（core.css で外してある）。
+   並べ方：遊び本体を 3 列（1fr｜auto｜1fr）のグリッドにして、6 つの行を重ねる。
+     1 手順
+     2 賭け金の梯子（左）｜いま持っている額（真ん中）｜回戦の札（右）…… .hl-top を display:contents で外して一列に
+     3 場札（ラベル＋5枚）
+     4 ミミの手札｜VS｜相手の手札（手札の中は 左＝ミニキャラと名札、右＝札2枚、下＝役の名前）
+     5 判定（当たり／はずれと理由）…… 札の真下。2 行の理由まで最初から場所を取っておく（出ても行が動かない）
+     6 3 つの答えボタン、または 勝った後の「続ける／受け取ってやめる」（同じ行に重ねる。どちらか一方しか出ない）
+   行 6 は高さを固定（64px）にして、押す所が動かず、上の行も動かないようにする。余った高さは行の間に均等に配る（下に偏らない）。
+   一番中身が多い状態＝1〜3 回戦で当たった直後：判定が 2 行の理由つき、答えボタンが「続ける／受け取ってやめる」に替わり、
+     回戦の札と梯子が進んでいる。右端のカットイン（LOST）は外れた時、左端（×2! など）は当たった時に重なる。
+   高さの見積もり（遊び本体の予算 約605px）：
+     手順 28 ＋ 梯子の行 約56 ＋ 場札 105（ラベル 17＋札 84＋行間 4）＋ 2 人の手札 約150（余白 10・札 90・行間 6・役の名前 36・余白 10…下の行は札の高さ 90）
+     ＋ 判定 74（b 24px＋理由 2 行 15px×1.4×2）＋ ボタンの行 64 ＝ 約477、行間 10×5 ＝ 50 を足して 約527px。残り約78pxは行の間に均等に配る。 */
+
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .hl-duel) {
+  flex: 1 1 auto; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-content: space-between; gap: 10px 24px;
+}
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .hl-duel) > #mb-hl-steps { grid-column: 1 / -1; grid-row: 1; }
+
+/* 行 2：梯子｜持ち金｜回戦。zoom ではなく大きさで：梯子の数字 24px（Bebas）、持ち金 40px、小さな字 12〜13px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-top { display: contents; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-ladder { grid-column: 1; grid-row: 2; justify-self: end; gap: 6px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-pot { grid-column: 2; grid-row: 2; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-round { grid-column: 3; grid-row: 2; justify-self: start; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-rung { min-width: 62px; padding: 5px 8px 4px; font-size: 24px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-rung small { font-size: 12px; margin-bottom: 1px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-pot small { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-pot b { font-size: 40px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-round span { font-size: 15px; padding: 4px 18px 3px; }
+
+/* 行 3：場札。札 64px（高さ90px）。ラベルは 12px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-board { grid-column: 1 / -1; grid-row: 3; gap: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-cards { gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-board .hl-cards .card.big,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-hand .hl-cards .card.big { --w: 64px; }
+
+/* 行 4：2 人の手札。左＝ミニキャラ（64px）と名札、右＝札 2 枚、下＝役の名前（14px）。手札の箱は横 1040px まで */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-duel { grid-column: 1 / -1; grid-row: 4; width: min(1040px, 100%); justify-self: center; gap: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-hand { display: grid; grid-template-columns: 104px minmax(0, 1fr); grid-template-areas: "who cards" "hn hn"; align-items: center; justify-items: center; gap: 6px 14px; padding: 10px 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-who { grid-area: who; flex-direction: column; align-items: center; gap: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-who b { align-self: center; font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-chibi { height: 64px; max-width: 56px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-hand .hl-cards { grid-area: cards; justify-content: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-hn { grid-area: hn; min-height: 36px; width: 100%; font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-hn .hl-wait { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-vs { font-size: 36px; }
+
+/* 行 5：判定（理由 2 行まで取っておく）。文字は b 24px・理由 15px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-verdict { grid-column: 1 / -1; grid-row: 5; min-height: 74px; width: min(900px, 100%); justify-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-verdict span { font-size: 15px; line-height: 1.4; }
+
+/* 行 6：答えボタン（ミミ｜引き分け｜相手）と、勝った後の「続ける／受け取ってやめる」は同じ行。高さ 64px で固定 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-pick,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-next { grid-column: 1 / -1; grid-row: 6; min-height: 64px; width: min(900px, 100%); justify-self: center; align-items: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-pick { gap: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-pick .btn { min-height: 60px; padding: 8px 14px; font-size: 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-pick .btn small { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-pick .btn.hl-tie { min-width: 160px; font-size: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-next { flex-direction: row; justify-content: center; gap: 28px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-tempt { font-size: 16px; text-align: right; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-next .actions { flex-wrap: nowrap; gap: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-next .actions .btn { min-width: 0; min-height: 60px; padding: 8px 20px; }
+
+/* カットイン（LOST／×2! など）：枠の内側に収め、絵は箱より広くても切れない。
+   右（LOST）の絵は右端にそろえる。左（当たった時のミミ）は左端にそろえる */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-react { width: 240px; height: 200px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-react.left { left: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-react.right { right: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-react img { left: auto; right: 0; transform: none; width: auto; max-width: 100%; height: 100%; object-fit: contain; object-position: 100% 100%; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .hl-react.left img { left: 0; right: auto; object-position: 0 100%; }
+
+/* ===== 危ない場札（danger） =====
+   一番中身が多い状態は2つ。
+   (a) 怖い形が2種類ある問題（フラッシュとストレートが両方ある場札）で、2つとも見つけて「もう無い」を押し、
+       賭け額の読み（札＋コール／降りるのボタン）が出た所。
+   (b) そのあと「コール」か「降りる」を押し、賭けの自信（重ねて出る札）を選んで、答え合わせでセリナの手札が場札の下に並んだ所（ボタンは消える）。
+   並べ方：手順（全幅）／左の段＝場札・（答え合わせで）セリナの手札・ミミの手札、右の段＝問い・見つけた形・ボタン（賭け額の読みの札）。
+     2段は CSS の段組み（column-count:2）で作り、問い（.prompt）の前で段を切る。DOM の順（場札・手札 ｜ 問い・形・ボタン）は変えない（スマホ横の格子がこの順を使っている）。
+   高さの見積もり（遊び本体の予算 約605px）：
+     手順 46（28 ＋ 余白 18）＋ 上の余白 4 ＋ 段の高さ。
+     (b) 左の段＝場札 168 ＋ 14 ＋ セリナの手札 140 ＋ 14 ＋ ミミの手札 140 ＋ 末尾の余白 14 ＝ 489 → 全体 約539px（これが最大）。
+     (a) 右の段＝問い 64 ＋ 14 ＋ 形の札2枚 88 ＋ 14 ＋ 賭け額の読みの札 247 ＝ 427（読む文が2行になっても 446）→ 全体 約477〜496px。
+     最初の状態（怖い形をさがす）は 約386px で、残りは下の空き（論理の床の絵が下に敷いてある）。
+   文字：問い 22px・形の札 15px・読む文 13px・読みの札の見出し 20px・勝つ確率 17px・割に合う線の名前 13px・手札の名札 15px。
+   押す所：場札は幅 100px・高さ 140px（ミミ・セリナの手札は 84×118）、ボタン 約52〜59px。
+   札の大きさ：幅 1270px 以下の PC は 場札 80px・手札 72px、1070px 以下は 64px・56px（段が狭くなるので、5枚が1行に収まるように）。 */
+
+/* ---------- 段組み ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> #mb-dg-board) { display: block; column-count: 2; column-gap: 48px; padding-top: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> #mb-dg-board) > .steps { column-span: all; margin: 0 0 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board,
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ * { break-inside: avoid; margin: 0 0 14px; }
+
+/* ---------- 左の段：場札・セリナの手札・ミミの手札（札置き場の枠。場札は二重の金線） ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board { justify-content: flex-start; gap: 12px; padding: 14px 16px 12px; background: rgba(19, 4, 6, .6); border: 1px solid var(--line); border-radius: 2px; box-shadow: inset 0 0 0 3px #190608, inset 0 0 0 4px var(--gild); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board .card.big { --w: 100px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .row { justify-content: flex-start; gap: 12px; padding: 10px 16px; background: rgba(19, 4, 6, .5); border: 1px solid var(--line-dim); border-radius: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .row .card.big { --w: 84px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .row > .formula { font-family: var(--mincho); font-size: 15px; font-weight: 700; letter-spacing: .06em; color: var(--gold-pale); text-align: left; }
+
+/* ---------- 右の段：問い・見つけた形・ボタン ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .prompt { break-before: column; text-align: left; font-size: 22px; line-height: 1.45; }
+/* 見つけた形の札は縦に積む（出てもボタンが動かないよう、1枚分の高さをあらかじめ空けておく） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-pills { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; justify-content: flex-start; gap: 8px; min-height: 52px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-pills .dg-pill { font-family: var(--mincho); font-weight: 700; font-size: 15px; line-height: 1.45; min-height: 40px; padding: 8px 16px 8px 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .actions { justify-content: flex-start; }
+
+/* 賭け額の読み：内側の情報面。見出し（賭けてきた額）・これまでの傾向・勝つ確率の棒・コール／降りる */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar { max-width: none; padding: 16px 20px 18px; background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar > .prompt { text-align: left; font-size: 20px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar > .formula { text-align: left; font-size: 13px; line-height: 1.5; margin-top: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar > .dg-bar { margin-top: 32px; height: 36px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar .dg-line span { font-size: 13px; top: -22px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar .dg-val { font-size: 17px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar > .actions { justify-content: flex-start; margin-top: 16px; }
+
+/* ---------- 幅の狭い PC：段が狭くなるので、札を小さくして5枚を1行に収める ---------- */
+@media (max-width: 1270px) {
+  html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board .card.big { --w: 80px; }
+  html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .row .card.big { --w: 72px; }
+}
+@media (max-width: 1070px) {
+  html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board .card.big { --w: 64px; }
+  html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .row .card.big { --w: 56px; }
+}
+
+/* ===== ねらい撃ち（sniper） =====
+   一番中身が多い状態は2つ。
+   (a) 撃つ前：左に金の格子のグラフ（高さ370）、右に「賭け額×確率＝見込み」の札・問い・スライダー・「撃つ」。
+   (b) 答え合わせ：右の列に結果（付いてくるか・セリナの手札・3つの比べ・判定と補足）が全部出た所（ボタンと問いは消える）。
+   並べ方：手順・ミミの手札と POT（全幅）／左の段＝グラフ、右の段＝(a) 札・問い・スライダー・撃つ、(b) 結果。
+     2段は CSS の格子（左 1fr・右 380px）。DOM の順は変えない（スマホ横の格子がこの順を使っている）。
+     答え合わせでは「賭け額×確率＝見込み」の札を隠す（結果の行と比べの札に同じ数字が出るため。スマホ横も同じ扱い）。
+   高さの見積もり（遊び本体の予算 約605px）：
+     手順 28 ＋ 行間 8 ＋ ミミの手札・POT 53 ＋ 行間 8 ＋ グラフ（上の余白 26 ＋ 370 ＋ 下の余白 34 ＝ 430）＝ 約527px。
+     右の段の中身：(a) 札 199 ＋ 問い 84 ＋ スライダー 44 ＋ 撃つ 60 ＋ 行間 24 ＝ 約411（グラフより低い）。
+                  (b) 結果の行 56 ＋ 手札 56 ＋ 比べ 3つ 147 ＋ 判定 98 ＋ 行間 30 ＝ 約387（グラフより低い）。
+     ＝ 全体は (a)(b) とも約527px。残りの約78pxは下の空き（論理の床の絵が下に敷いてある）。
+     以前は答え合わせで34px はみ出して相手の行が潰れていたが、結果を右の列へ移したので縦に積まない。
+   文字：問い 20px・札の数字 38px・ラベル 13px・グラフの軸と最低額 12px・結果の行 16px・判定 19px・補足 13px。
+   押す所：撃つ 56px 以上・スライダー 44px。
+   グラフの座標は割合（%）で置いてあるので、高さ・幅を変えても照準の位置は合う（js は触っていない）。 */
+
+/* ---------- 格子 ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) { display: grid; grid-template-columns: minmax(0, 1fr) 380px; grid-template-rows: repeat(6, auto); gap: 8px 28px; align-content: start; padding-top: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > #mb-sn-steps { grid-column: 1 / -1; grid-row: 1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .sn-me { grid-column: 1 / -1; grid-row: 2; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .sn-wrap { grid-column: 1; grid-row: 3 / 7; align-self: start; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .sn-read { grid-column: 2; grid-row: 3; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .prompt { grid-column: 2; grid-row: 4; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .sn-rangebox { grid-column: 2; grid-row: 5; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .actions { grid-column: 2; grid-row: 6; align-self: end; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .sn-out { grid-column: 2; grid-row: 3 / 7; align-self: start; }
+/* 答え合わせ（スライダーが隠れた後）：「賭け額×確率＝見込み」の札は隠し、結果を右の列いっぱいに出す */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-rangebox[hidden]) > .sn-read { display: none; }
+
+/* ---------- ミミの手札と POT ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-me { gap: 6px 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-me-name { font-size: 15px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-me-name small { font-size: 13px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-pot { font-size: 13px; letter-spacing: .12em; }
+
+/* ---------- 右の段：賭け額×確率＝見込み の札（縦に積む） ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read { flex-direction: column; flex-wrap: nowrap; align-items: stretch; justify-content: flex-start; gap: 0; padding: 10px 16px 12px; background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 12px; text-align: left; line-height: 1.15; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read small { margin: 0; font-size: 13px; line-height: 1.3; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read b { font-size: 38px; text-align: right; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read .op { display: block; height: 20px; padding: 0; font-size: 24px; line-height: 20px; text-align: left; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read em { font-size: 13px; padding: 5px 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read .sn-meter { grid-column: 1 / -1; width: 100%; height: 6px; margin: 6px 0 0; }
+
+/* ---------- 右の段：問い・スライダー・撃つ ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .prompt { font-size: 20px; line-height: 1.4; text-align: left; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-rangebox { padding: 0; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-range { height: 44px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .actions { justify-content: stretch; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .actions .btn { width: 100%; min-height: 56px; }
+
+/* ---------- 左の段：グラフ ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-wrap { padding: 26px 14px 34px 52px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-chart { height: 370px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-axis-y { top: -21px; font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-ylab,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-xlab { font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-xlab { bottom: -22px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-floor { font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-area { font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-hint { top: 22px; font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-ret .num small { font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-best .lab { font-size: 18px; }
+
+/* ---------- 右の段：答え合わせの結果 ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-out:empty { display: none; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-out { gap: 10px; text-align: left; justify-items: stretch; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-out .roll { font-size: 16px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-out .roll b { font-size: 24px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-out .her { justify-content: flex-start; flex-wrap: wrap; font-size: 13px; line-height: 1.45; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-cmp { display: grid; gap: 6px; justify-content: stretch; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-cmp > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 14px; text-align: left; line-height: 1.15; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-cmp small { display: block; font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-cmp b { font-size: 26px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-verdict { font-size: 19px; line-height: 1.45; text-align: left; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-verdict small { margin-top: 4px; font-size: 13px; line-height: 1.5; }
+
+/* ===== 当たり札（outs） =====
+   一番中身が多い状態は2つ。
+   (a) 当たり札をさがす最中：52枚の一覧（13列×4段）が出ている所（札は13列。うすい札・当たりの札・ヒントの枠が混ざる）。
+   (b) スロット：当たり札を集め終えて「コール／降りる」を選び、賭けの札のあと、下に札の帯（リール）が出た所。
+   並べ方：
+     (a) 左＝52枚の一覧（枠つき）、右の300px＝手札（場札4＋裏＋手札2）・問い・集めた数・「わからない」。手順は全幅。
+     (b) 左＝手札・当たり札の数・当たり札の一覧（畳んだ札）、右＝値段くらべ（問い・金の棒・式2つ・コール／降りる）。
+         リールの帯はその下に全幅で出す（札の幅 56px・札の間 8px は js の止まる位置の計算に使われているので変えない）。
+   高さの見積もり（遊び本体の予算 約605px）：
+     (a) 手順 28 ＋ 行間 10 ＋ 一覧（上の余白 14 ＋ 札89×4 ＋ 札の間 6×3 ＋ 下の余白 14 ＋ 枠 2 ＝ 約404）＝ 約442px。
+         右の段は 手札2段 182 ＋ 問い 84 ＋ 数 34 ＋ わからない 44 ＋ 行間 30 ＝ 約374（一覧より低い）。
+     (b) 手順 28 ＋ 行間 10 ＋ 左の段（手札 87 ＋ 数 34 ＋ 畳んだ札 2段 152 ＋ 行間 20 ＝ 293）＋ 行間 10 ＋ リール（説明 20 ＋ 6 ＋ 108）＝ 約475px（これが最大）。
+         右の段（値段くらべ）は 問い 28 ＋ 棒 66 ＋ 式 40 ＋ ボタン 60 ＋ 行間 40 ＝ 約234（左より低い）。
+         降りた時や、もう一度「コール／降りる」を押したあと（ボタンが消える）はさらに低い。
+   文字：問い 20px・式 13px・集めた数 30px（数字）・ラベル 13px・札の数字 20px/マーク 15px（一覧）・18px/13px（畳んだ札）。
+   押す所：一覧の札は幅 約64px（窓を狭くしても 約48px 以上）×高さ 約89px、ボタン 約52〜60px、わからない 44px。 */
+
+/* ---------- (a) 当たり札をさがす：左＝一覧、右＝手札・問い・数・わからない ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) { display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: repeat(5, auto); gap: 10px 28px; align-content: start; padding-top: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .steps { grid-column: 1 / -1; grid-row: 1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .outs-deck { grid-column: 1; grid-row: 2 / 6; align-self: start; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .row { grid-column: 2; grid-row: 2; justify-content: flex-start; gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .prompt { grid-column: 2; grid-row: 3; align-self: center; text-align: left; font-size: 20px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .outs-count { grid-column: 2; grid-row: 4; align-self: center; text-align: left; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .actions { grid-column: 2; grid-row: 5; align-self: end; justify-content: flex-start; }
+
+/* 52枚の一覧：札置き場の枠。札は枠の幅いっぱいに13列（幅 約64px×高さ 約89px） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck { box-sizing: border-box; width: 100%; max-width: none; margin: 0; padding: 14px; gap: 6px; background: rgba(19, 4, 6, .5); border: 1px solid var(--line-dim); border-radius: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck .card b { font-size: 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck .card i { font-size: 15px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-count small { font-size: 13px; }
+
+/* ---------- (b) 値段くらべ：左＝手札・数・畳んだ札、右＝値段くらべ、下＝リール ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 32px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .row { grid-column: 1; grid-row: 2; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .prompt { display: none; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .outs-count { grid-column: 1; grid-row: 3; align-self: start; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .outs-deck { grid-column: 1; grid-row: 4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .outs-meter { grid-column: 2; grid-row: 2 / 5; align-self: start; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > div:not(.outs-meter):not(.outs-deck):not(.row):not(.outs-count):not(.steps) { grid-column: 1 / -1; grid-row: 5; }
+
+/* 畳んだ札（当たり札だけ）：枠なしで左から詰める。幅 52px×高さ 約73px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck.is-collapsed { padding: 0; background: none; border: 0; justify-content: flex-start; align-content: flex-start; gap: 6px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card.found,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card.shown { width: 52px; flex: 0 0 52px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card b { font-size: 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card i { font-size: 13px; }
+
+/* 値段くらべ（右の段） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-meter { max-width: none; margin: 0; gap: 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-meter .prompt { text-align: left; font-size: 20px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-meter .formula { text-align: left; font-size: 13px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-bar { margin-top: 30px; height: 36px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-line span { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-val { font-size: 24px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-meter .actions { justify-content: flex-start; flex-wrap: nowrap; gap: 10px; margin-top: 6px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-meter .actions .btn { flex: 1 1 0; min-width: 0; }
+
+/* リール（全幅）：札の幅 56px・札の間 8px は js のまま。窓の高さ 108px は札（約78px）を中ほどに置ける高さ */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .reel-wrap { max-width: none; height: 108px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .reel-legend { margin-bottom: 6px; font-size: 13px; line-height: 1.5; }
+
+/* ===== 容疑者しぼり（suspects） =====
+   PC だけ（html:not(.is-compact)）。色・形・書体は battles/games/suspects.js の CSS が持つ。ここは並べ方と大きさ。
+   並べ方：.mb-game-root を 2列の格子にし、左＝場札・手札の行（答え合わせでヴェルベットの札の行が下に増える）、右＝動きの記録（420px）。
+     問い・容疑者（4列×最大2段）・割に合う線・ボタンは全幅。js の構造は変えていない（格子の置き場所だけで並べる）。zoom は使わない。
+   一番中身が多い状態＝最大8枚の容疑者（シナリオ1）で、3つの動きを見終え、ひとつも外さずに「決める」場面（容疑者8枚が全部残る）：
+     手順 28 ＋ 場札と手札の行 84 ＋ 問い 2行 48（1行目は種類の数、2行目は手の組み合わせの数） ＋ 容疑者 2段 204（96×2＋行間 12） ＋ 割に合う線 56（上の余白 24＋32） ＋ コール／降りる 60 ＋ 行間 10×5 ＝ 約530px。
+     答え合わせ（ヴェルベットの札の行が増え、ボタンが消える）は 手順 28＋札 84＋札 84＋問い 48＋容疑者 204＋線 56 ＋ 行間 10×5 ＝ 約554px。どちらも予算 約605px の内側。
+     動きの記録は右の列に 3行（60px）で、左の札の行（84〜168px）の高さの中に収まる。 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) { display: grid; grid-template-columns: minmax(0, 1fr) 420px; column-gap: 24px; row-gap: 10px; align-content: start; align-items: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .steps { grid-column: 1 / -1; grid-row: 1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .row { grid-column: 1; grid-row: 2; justify-content: flex-start; gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .row + .row { grid-row: 3; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .sp-log { grid-column: 2; grid-row: 2 / span 2; max-width: none; margin: 0; gap: 4px; font-size: 13px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .prompt { grid-column: 1 / -1; grid-row: 4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .sp-tiles { grid-column: 1 / -1; grid-row: 5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .sp-bar { grid-column: 1 / -1; grid-row: 6; max-width: 720px; height: 32px; margin-top: 24px !important; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .actions { grid-column: 1 / -1; grid-row: 7; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .row .card.big { --w: 60px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .row .formula { font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-log .now { font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-p2 { display: block; margin-top: 2px; font-size: 15px; font-weight: 700; color: var(--dim); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile { min-height: 96px; padding: 14px 16px 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile b { font-size: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile span { font-size: 13px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile.out::after { inset: 0 0 0 auto; width: 56px; font-size: 44px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tag { display: block; position: absolute; right: 10px; top: 10px; padding: 0 8px; font-family: var(--mincho); font-weight: 700; font-size: 12px; line-height: 1.6; letter-spacing: .08em; border-radius: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile.win .sp-tag { background: var(--gold); color: #1d080e; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile.lose .sp-tag { background: #b9b0a2; color: #1d080e; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile.her .sp-tag { background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); color: #f0d08a; box-shadow: 0 0 0 1px var(--gold); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-line span { top: -22px; font-size: 13px; }

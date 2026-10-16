@@ -2,7 +2,7 @@
 // 相手の手の候補を「容疑者ファイル」として並べ、相手の動きに合わない容疑者を赤いバツで消していく。
 // 最後に残った容疑者のうち、ミミが勝てる割合と、払う額を比べて決める。
 MB.register({
-  id: 'suspects', group: 'logic', order: 6, title: '容疑者しぼり', sub: 'LOGIC · 手の幅',
+  id: 'suspects', group: 'logic', order: 6, title: '容疑者しぼり', sub: '論理 · 手の幅',
   chars: ['velvet'],
   async start({ api }) {
     const SCEN = [
@@ -63,18 +63,24 @@ MB.register({
       .sp-log { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--dim); max-width: 640px; margin: 0 auto; width: 100%; }
       .sp-log .now { color: var(--text); font-weight: 900; }
       .sp-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-      .sp-tile { position: relative; cursor: pointer; text-align: left; color: #2b1a10; padding: 10px 12px 10px 14px; min-height: 76px; border: 0; background: #f2e6cf; box-shadow: 0 5px 12px rgba(0,0,0,.45); }
-      .sp-tile::before { content: "SUSPECT"; position: absolute; top: 6px; right: 8px; font-family: var(--disp); font-size: 11px; letter-spacing: .14em; color: #a33; }
-      .sp-tile b { display: block; font-size: 15px; } .sp-tile span { font-size: 12px; color: #6a5440; }
-      .sp-tile.out { opacity: .5; }
-      .sp-tile.out::after { content: "×"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 64px; font-weight: 900; color: #d8283e; line-height: 1; transform: rotate(-8deg); animation: mb-pop .3s; }
-      .sp-tile.win { outline: 3px solid var(--good); } .sp-tile.lose { outline: 3px solid var(--bad); }
-      .sp-tile.her { outline: 4px solid var(--gold-hi); box-shadow: 0 0 24px rgba(245,215,122,.9); }
-      .sp-bar { position: relative; margin-top: 26px !important; height: 30px; background: rgba(0,0,0,.45); border: 1px solid var(--faint); max-width: 560px; width: 100%; margin: 0 auto; }
+      .sp-tile { position: relative; cursor: pointer; text-align: left; color: var(--parch-ink); padding: 10px 12px 10px 14px; min-height: 76px; border: 0; border-radius: 2px; background: var(--parch);
+        box-shadow: inset 0 0 0 1px var(--line), inset 0 0 0 2px rgba(255,255,255,.3), 0 5px 12px rgba(0,0,0,.45); transition: box-shadow .15s; }
+      .sp-tile:hover:not(.out) { box-shadow: inset 0 0 0 1px var(--gold-hi), inset 0 0 0 2px rgba(255,255,255,.3), 0 5px 12px rgba(0,0,0,.45); }
+      .sp-tile:focus-visible { outline: 2px solid #f3d58e; outline-offset: 2px; }
+      .sp-tile b { display: block; font-family: var(--mincho); font-size: 15px; } .sp-tile span { font-size: 12px; color: #6a5440; }
+      .sp-tile.out { cursor: default; background: linear-gradient(180deg, #d9cbab, #cbb88f); color: #5a4a36; box-shadow: inset 0 0 0 1px var(--line-dim), 0 3px 8px rgba(0,0,0,.35); }
+      .sp-tile.out span { color: #5a4a36; }
+      .sp-tile.out::after { content: "×"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 64px; font-weight: 900; color: rgba(200,37,58,.75); line-height: 1; transform: rotate(-8deg); animation: mb-pop .3s; }
+      .sp-tile.win { outline: 1px solid var(--gold-hi); outline-offset: 2px; box-shadow: inset 0 0 0 2px var(--gold-hi), 0 5px 12px rgba(0,0,0,.45); }
+      .sp-tile.lose { outline: 1px solid #8a8073; outline-offset: 2px; box-shadow: inset 0 0 0 1px #8a8073, 0 5px 12px rgba(0,0,0,.45); }
+      .sp-tile.her { outline: 3px solid var(--gold-hi); outline-offset: 1px; box-shadow: inset 0 0 0 2px var(--gold-hi), 0 0 22px rgba(239,205,130,.55); }
+      .sp-tag { display: none; font-style: normal; }
+      .sp-p2 { color: inherit; }
+      .sp-bar { position: relative; margin-top: 26px !important; height: 30px; background: rgba(0,0,0,.45); border: 1px solid var(--line-dim); max-width: 560px; width: 100%; margin: 0 auto; }
       .sp-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #a47a22, var(--gold-hi)); transition: width .9s; }
-      .sp-line { position: absolute; top: -8px; bottom: -8px; width: 3px; background: var(--red-hi); box-shadow: 0 0 10px var(--red-hi); transition: left .8s .2s; left: 0; }
-      .sp-line span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--red-hi); }
-      .sp-val { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-family: var(--disp); font-size: 20px; }
+      .sp-line { position: absolute; top: -8px; bottom: -8px; width: 3px; background: var(--red-hi); box-shadow: 0 0 6px rgba(200,37,58,.8); transition: left .8s .2s; left: 0; }
+      .sp-line span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 700; color: #e8808a; }
+      .sp-val { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-family: var(--mincho); font-weight: 800; font-size: 20px; }
     `);
     const root = api.root;
     const out = new Set(); let beat = 0, miss = 0;
@@ -115,11 +121,11 @@ MB.register({
     const winPct = Math.round(win / tot * 100);
     const need = sc.call / (sc.pot + sc.call * 2);
     root.querySelector('.steps').outerHTML = api.steps(['動きを見る', '容疑者を消す', '決める', '答え合わせ'], 2);
-    root.querySelectorAll('.sp-tile').forEach(b => { const t = sc.tiles.find(x => x.id === b.dataset.id); if (!out.has(t.id)) b.classList.add(t.win ? 'win' : 'lose'); });
-    root.querySelector('.prompt').innerHTML = `残った容疑者のうち、ミミが勝てるのは <b>${left.filter(t => t.win).length} / ${left.length}</b>（手の組み合わせの数で ${winPct}%）`;
+    root.querySelectorAll('.sp-tile').forEach(b => { const t = sc.tiles.find(x => x.id === b.dataset.id); if (!out.has(t.id)) { b.classList.add(t.win ? 'win' : 'lose'); b.insertAdjacentHTML('beforeend', `<i class="sp-tag">${t.win ? '勝てる' : '負け'}</i>`); } });
+    root.querySelector('.prompt').innerHTML = `残った容疑者のうち、ミミが勝てるのは <b>${left.filter(t => t.win).length} / ${left.length}</b><span class="sp-p2">（手の組み合わせの数で ${winPct}%）</span>`;
     root.querySelector('.actions').outerHTML = `<div class="sp-bar"><div class="sp-fill" id="mb-sp-fill"></div><div class="sp-line" id="mb-sp-line"><span>割に合う線 ${Math.round(need * 100)}%</span></div><div class="sp-val">ミミが勝つ ${winPct}%</div></div>
       <div class="actions"><button class="btn" id="mb-sp-call">コール<small>${sc.call} 払って見せ合う</small></button><button class="btn quiet" id="mb-sp-fold">降りる<small>ここまでで止める</small></button></div>`;
-    api.coach('緑の枠がミミの勝てる容疑者。何もない手（ブラフ）の分だけ勝ち目がある');
+    api.coach('金の二重線の枠がミミの勝てる容疑者（灰の枠は負ける）。何もない手（ブラフ）の分だけ勝ち目がある');
     await api.wait(200);
     root.querySelector('#mb-sp-fill').style.width = winPct + '%'; root.querySelector('#mb-sp-line').style.left = Math.round(need * 100) + '%';
     const called = await new Promise(res => { root.querySelector('#mb-sp-call').onclick = () => res(true); root.querySelector('#mb-sp-fold').onclick = () => res(false); });
@@ -132,7 +138,7 @@ MB.register({
     for (const t of left) { r -= t.w; if (r <= 0) { her = t; break; } }
     api.sfx.drum(); api.coach(called ? '見せ合い……！' : '降りた。ヴェルベットの手札は……');
     await api.wait(1000);
-    root.querySelector(`.sp-tile[data-id="${her.id}"]`).classList.add('her');
+    const herTile = root.querySelector(`.sp-tile[data-id="${her.id}"]`); herTile.classList.add('her'); const herTag = herTile.querySelector('.sp-tag'); if (herTag) herTag.textContent = '犯人・' + herTag.textContent;
     root.querySelector('.row').insertAdjacentHTML('afterend', `<div class="row"><span class="formula">ヴェルベット</span>${conv(her.hand).map(c => api.cardHTML(c, 'big flip')).join('')}</div>`);
     api.say(her.win ? (called ? 'う、うそ……っ' : 'ふふ、降りちゃった♡') : (called ? 'ざーんねん♡' : 'ちぇっ、読まれた'), her.win ? (called ? 'panic' : 'smug') : (called ? 'win' : 'panic'));
     await api.wait(800);

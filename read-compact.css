@@ -241,7 +241,7 @@ html.is-compact #stage > .read-battle-host.mb-host .gc-bub { min-height: 27px; p
 html.is-compact #stage > .read-battle-host.mb-host .gc-bub p { font-size: 14px; line-height: 1.3; flex: 1 1 6em; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-vcards .card.small { --w: 31px; margin: -8px 0; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-meta { font-size: 11px; line-height: 1.15; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-meta em { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-meta em { font-size: 11.5px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-odds { grid-area: auto; gap: 1px; padding: 3px 8px 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-odds-h { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-odds-h small { font-size: 11px; }

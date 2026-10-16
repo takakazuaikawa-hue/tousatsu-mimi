@@ -193,19 +193,20 @@
     api.css('handbuild', `
       .hb-head { display: flex; align-items: center; justify-content: center; gap: 10px 16px; flex-wrap: wrap; position: relative; }
       .hb-lv { display: inline-flex; align-items: center; gap: 8px; }
-      .hb-lv b { font-family: var(--disp); font-weight: 400; letter-spacing: .12em; font-size: 17px; color: #1d080e; background: linear-gradient(90deg, var(--gold-hi), var(--gold)); padding: 1px 14px 0; transform: skewX(-12deg); display: inline-block; }
-      .hb-lv i { width: 16px; height: 8px; transform: skewX(-12deg); background: rgba(255,255,255,.12); border: 1px solid rgba(217,179,90,.5); display: inline-block; }
-      .hb-lv i.on { background: var(--gold-hi); box-shadow: 0 0 8px rgba(245,215,122,.8); }
+      .hb-lv b { font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; font-size: 14px; color: #1d080e; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); padding: 2px 14px; border-radius: 2px; display: inline-block; }
+      .hb-lv i { width: 16px; height: 8px; border-radius: 1px; background: var(--panel-2); border: 1px solid var(--line-dim); display: inline-block; }
+      .hb-lv i.on { background: var(--gold-hi); border-color: var(--gold); box-shadow: 0 0 8px rgba(239,205,130,.6); }
       .hb-ref { position: relative; }
-      .hb-ref summary { list-style: none; cursor: pointer; font-size: 12px; font-weight: 700; color: var(--dim); padding: 3px 12px; border: 1px solid var(--faint); background: rgba(0,0,0,.3); transform: skewX(-12deg); }
-      .hb-ref summary > span { display: inline-block; transform: skewX(12deg); }
+      .hb-ref summary { list-style: none; cursor: pointer; font-family: var(--mincho); font-size: 12px; font-weight: 700; color: var(--gold); padding: 3px 12px; border: 1px solid var(--line); border-radius: 2px; background: var(--panel); }
+      .hb-ref summary > span { display: inline-block; }
       .hb-ref summary::-webkit-details-marker { display: none; }
-      .hb-ref[open] summary { color: var(--gold-hi); border-color: var(--gold); }
-      .hb-ref ol { position: absolute; right: 0; top: calc(100% + 6px); z-index: 8; margin: 0; padding: 8px 10px; list-style: none; width: min(300px, calc(100vw - 48px)); background: rgba(20,6,10,.97); border: 1px solid var(--gold); box-shadow: 0 12px 30px rgba(0,0,0,.6); display: grid; gap: 3px; }
+      .hb-ref[open] summary { color: var(--gold-hi); border-color: var(--gold-hi); background: var(--sel); box-shadow: inset 0 -2px 0 #d7b370; }
+      .hb-ref ol { position: absolute; right: 0; top: calc(100% + 6px); z-index: 8; margin: 0; padding: 8px 10px; list-style: none; width: min(300px, calc(100vw - 48px)); background: linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo)); border: 1px solid var(--line); border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(227,185,100,.18), 0 12px 30px rgba(0,0,0,.6); display: grid; gap: 3px; }
       .hb-ref li { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; font-size: 12px; }
-      .hb-ref li i { width: 10px; height: 10px; transform: skewX(-12deg); }
-      .hb-ref li b { font-weight: 900; } .hb-ref li span { color: var(--dim); font-size: 11px; }
-      .hb-ref .hb-arrow { font-family: var(--disp); letter-spacing: .14em; color: var(--gold); font-size: 11px; text-align: center; }
+      .hb-ref li i { width: 10px; height: 10px; border-radius: 1px; }
+      .hb-ref li b { font-weight: 700; } .hb-ref li span { color: var(--dim); font-size: 11px; }
+      .hb-ref .hb-arrow { font-family: var(--mincho); font-weight: 700; letter-spacing: .14em; color: var(--gold); font-size: 11px; text-align: center; }
+      .hb-side { display: none; }
       .hb-deal { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 8px 26px; }
       .hb-grp { display: flex; flex-direction: column; align-items: center; gap: 4px; }
       .hb-cards { display: flex; gap: 6px; }
@@ -216,27 +217,27 @@
       .hb-deal .card.hint:not(.hb-ghost) { animation: mb-hintPulse 1s ease-in-out infinite; border-color: var(--gold-hi); }
       @keyframes mb-hbCue { 50% { box-shadow: 0 0 0 2px rgba(245,215,122,.85), 0 0 18px rgba(245,215,122,.55); } }
       .hb-tray { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 14px 20px; margin: 0 auto; }
-      .hb-tray::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); background: linear-gradient(180deg, rgba(0,0,0,.5), rgba(40,8,16,.6)); border: 1px solid rgba(217,179,90,.45); }
+      .hb-tray::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 2px; background: var(--panel); border: 1px solid var(--line-dim); box-shadow: inset 0 0 0 4px #130406, inset 0 0 0 5px rgba(227,185,100,.18); }
       .hb-slots { display: flex; gap: 8px; }
       .hb-slot { --w: 62px; position: relative; width: calc(var(--w) + 4px); height: calc(var(--w) * 1.4 + 4px); border: 2px dashed rgba(217,179,90,.35); border-radius: 7px; display: grid; place-items: center; }
       .hb-slot > .card { position: absolute; left: 0; top: 0; --w: 62px; cursor: pointer; }
       .hb-slot.full { border-style: solid; border-color: rgba(245,215,122,.55); }
-      .hb-slot:empty::after { content: attr(data-n); font-family: var(--disp); font-size: 22px; color: rgba(217,179,90,.3); }
+      .hb-slot:empty::after { content: attr(data-n); font-family: var(--mincho); font-weight: 700; font-size: 22px; color: rgba(217,179,90,.3); }
       .hb-slot .hb-tag { position: absolute; left: -6px; right: -6px; bottom: -17px; text-align: center; font-size: 10px; font-weight: 700; color: var(--dim); white-space: nowrap; }
       .hb-snap { animation: mb-hbSnap .3s cubic-bezier(.2,1.8,.4,1); }
       @keyframes mb-hbSnap { from { transform: translateY(-30px) scale(1.2) rotate(-6deg); } 60% { transform: translateY(3px) scale(.95); } }
       .hb-band { --c: #5e4b4d; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; width: min(560px, 100%); margin: 0 auto; padding: 8px 18px; position: relative; isolation: isolate; transition: color .2s; }
-      .hb-band::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); background: linear-gradient(90deg, var(--c), rgba(0,0,0,.55) 85%); border: 1px solid var(--c); box-shadow: 0 0 18px color-mix(in srgb, var(--c) 45%, transparent); transition: background .25s, box-shadow .25s; }
+      .hb-band::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 2px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 45%, #130406), rgba(0,0,0,.6) 85%); border: 1px solid color-mix(in srgb, var(--c) 70%, var(--line)); box-shadow: inset 4px 0 0 var(--c), inset 0 0 0 1px rgba(227,185,100,.14), 0 0 18px color-mix(in srgb, var(--c) 35%, transparent); transition: background .25s, box-shadow .25s; }
       .hb-meter { display: flex; align-items: flex-end; gap: 3px; height: 30px; }
-      .hb-meter i { width: 7px; transform: skewX(-12deg); background: rgba(255,255,255,.12); transition: background .2s; }
+      .hb-meter i { width: 7px; background: rgba(255,255,255,.12); transition: background .2s; }
       .hb-meter i.on { background: var(--c); box-shadow: 0 0 6px var(--c); }
-      .hb-bname { font-family: var(--mincho); font-weight: 800; font-size: clamp(17px, 2.6vw, 22px); line-height: 1.2; text-shadow: 0 2px 0 rgba(0,0,0,.45); }
-      .hb-bname small { display: block; font-family: var(--sans); font-weight: 700; font-size: 11px; color: var(--dim); text-shadow: none; letter-spacing: .04em; }
+      .hb-bname { font-family: var(--mincho); font-weight: 700; font-size: clamp(17px, 2.6vw, 22px); line-height: 1.2; color: var(--gold-pale); text-shadow: 0 2px 0 rgba(0,0,0,.55); }
+      .hb-bname small { display: block; font-family: var(--sans); font-weight: 400; font-size: 11px; color: var(--dim); text-shadow: none; letter-spacing: .04em; }
       .hb-band.is-light .hb-bname { color: #fff; }
       .hb-band.hb-bump { animation: mb-hbBump .35s cubic-bezier(.2,1.6,.4,1); }
       @keyframes mb-hbBump { 40% { transform: scale(1.05); } }
-      .hb-verdict { text-align: center; font-weight: 900; font-size: 15px; min-height: 1.6em; text-wrap: balance; }
-      .hb-verdict.good { color: var(--good); font-family: var(--mincho); font-size: 20px; }
+      .hb-verdict { text-align: center; font-weight: 700; font-size: 15px; min-height: 1.6em; text-wrap: balance; }
+      .hb-verdict.good { color: var(--good); font-family: var(--mincho); font-weight: 800; font-size: 20px; }
       .hb-verdict.bad { color: var(--bad); }
       .hb-verdict b { color: var(--gold-hi); }
       .hb-go.is-cue::before { animation: mb-hbGo 1.1s ease-in-out infinite; }
@@ -265,17 +266,18 @@
     root.innerHTML = `
       <div id="mb-hb-steps">${api.steps(['5枚を選ぶ', '読みを賭ける', '答え合わせ'], 0)}</div>
       <div class="hb-head">
-        <span class="hb-lv"><b>STAGE ${level} · ${LV_NAME[level]}</b>${pips}</span>
-        <details class="hb-ref"><summary><span>役の強さ順 ▾</span></summary><ol><li class="hb-arrow" style="display:block">STRONG ▲</li>${refList}<li class="hb-arrow" style="display:block">▼ WEAK</li></ol></details>
+        <span class="hb-lv"><b>第${level}段階 · ${LV_NAME[level]}</b>${pips}</span>
+        <details class="hb-ref"><summary><span>役の強さ順 ▾</span></summary><ol><li class="hb-arrow" style="display:block">強い ▲</li>${refList}<li class="hb-arrow" style="display:block">▼ 弱い</li></ol></details>
       </div>
       <div class="hb-deal is-cue" id="mb-hb-deal">
-        <div class="hb-grp"><span class="zone-label">HAND · 手札</span><div class="hb-cards" data-from="0"></div></div>
-        <div class="hb-grp"><span class="zone-label">BOARD · 場札</span><div class="hb-cards" data-from="2"></div></div>
+        <div class="hb-grp"><span class="zone-label">手札</span><div class="hb-cards" data-from="0"></div></div>
+        <div class="hb-grp"><span class="zone-label">場札</span><div class="hb-cards" data-from="2"></div></div>
       </div>
-      <div class="hb-tray"><span class="zone-label">YOUR 5 · 選んだ5枚</span><div class="hb-slots" id="mb-hb-slots"></div></div>
+      <div class="hb-tray"><span class="zone-label">選んだ5枚</span><div class="hb-slots" id="mb-hb-slots"></div></div>
       <div class="hb-band" id="mb-hb-band"><div class="hb-meter">${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(k => `<i style="height:${30 + k * 8.75}%"></i>`).join('')}</div><div class="hb-bname" id="mb-hb-bname"></div></div>
       <div class="hb-verdict" id="mb-hb-verdict"></div>
-      <div class="actions"><button class="btn gold hb-go" id="mb-hb-go" disabled>これで勝負<small>5枚そろったら押せる</small></button></div>`;
+      <div class="actions"><button class="btn gold hb-go" id="mb-hb-go" disabled>これで勝負<small>5枚そろったら押せる</small></button></div>
+      <aside class="hb-side mb-panel" aria-label="役の強さ順"><div class="mb-band">役の強さ順</div><ol><li class="hb-arrow">強い ▲</li>${refList}<li class="hb-arrow">▼ 弱い</li></ol></aside>`;
     api.coach('7枚から5枚を選んで、一番強い役を作って', 'think');
 
     const deal = root.querySelector('#mb-hb-deal');
@@ -404,7 +406,7 @@
       if (!api.alive()) return;
     }
     setBand(bestCards, '7枚から作れる最強');
-    bname.insertAdjacentHTML('afterbegin', '<small style="color:var(--gold-hi)">BEST · 最強</small>');
+    bname.insertAdjacentHTML('afterbegin', '<small style="color:var(--gold-hi)">最強の答え</small>');
     await api.wait(api.reduce ? 100 : 450);
     if (!api.alive()) return;
 
@@ -445,9 +447,9 @@
       perfect: correct && api.mult === 3 && level === 3 && !assisted,
       base,
       detail: correct
-        ? `7枚の最強は「${bestName}」。あなたの5枚も同じ強さ。（STAGE ${level}）`
+        ? `7枚の最強は「${bestName}」。あなたの5枚も同じ強さ。（第${level}段階）`
         : `7枚の最強は「${bestName}」。${reason}。あなたは「${handName(api, mine)}」だった。`,
-      nextHint: level < 3 ? `次は STAGE ${level + 1}（${LV_NAME[level + 1]}）` : 'STAGE 3 をもう一回',
+      nextHint: level < 3 ? `次は第${level + 1}段階（${LV_NAME[level + 1]}）` : '第3段階をもう一回',
     });
   }
 

@@ -28,10 +28,10 @@ jobs:
         # 例外：ぱにゅぱにゅの網目＋ばね（本編が iframe で読む docs/design-ref/panyu-mesh.html）だけは配信する
         run: |
           mkdir -p _site
-          cp index.html game.js home.js loader.js style.css read-compact.css _site/
+          cp index.html game.js home.js loader.js style.css read-compact.css allstar.js allstar-ui.js allstar.css _site/
           if [ -f ui-modal.css ]; then cp ui-modal.css _site/; fi
           mkdir -p _site/battles/games
-          cp battles/core.js battles/core.css _site/battles/
+          cp battles/core.js battles/core.css battles/read-pc.css _site/battles/
           cp battles/games/*.js _site/battles/games/
           rsync -a --exclude '_source_png' --exclude '_original' --exclude '*.md' assets/ _site/assets/
           mkdir -p _site/docs/design-ref

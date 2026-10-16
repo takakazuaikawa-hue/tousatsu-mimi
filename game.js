@@ -10,48 +10,73 @@
 //=============================================================
 const SAVE_KEY = 'tousatsu_mimi_save_v1';
 
+// === 絵文字のかわりに出す金の八角の銘板（assets/ui/home/oct.webp の枠。中は漢字1字。CSS は .gold-mark） ===
+function goldMark(ch) {
+  return `<span class="gold-mark" aria-hidden="true"><i>${ch}</i></span>`;
+}
+// 製品の表記（タイトル・設定・スタッフロールはここを読む。権利表記は筆名）
+const GAME_VERSION = '1.0';
+const COPYRIGHT_TEXT = '© 2026 あいかわ';
+// 未解放の錠（assets/ui/home/lock.webp。CSS は .gold-lock）
+const GOLD_LOCK = '<img class="gold-lock" src="assets/ui/home/lock.webp" alt="未解放">';
+// 文字列の最初の漢字（なければ最初の1字）
+function firstKanji(str) {
+  const t = String(str == null ? '' : str);
+  const m = t.match(/[\u4e00-\u9fff々]/);
+  return m ? m[0] : (t.charAt(0) || '？');
+}
+// 称号の銘板：分類の漢字1字（なければ名前の最初の漢字）
+const GOLD_MARK_CAT = { '初心者': '初', '役': '役', 'ドラマ': '劇', 'プレイ': '技', '通算': '積', '心理': '読', '圧倒': '圧' };
+function achMark(a) {
+  return goldMark(GOLD_MARK_CAT[a && a.cat] || firstKanji(a && a.name));
+}
+// 性格・人物の銘板：称号名の最初の漢字
+function personaMark(p) {
+  return goldMark(firstKanji(p && p.title));
+}
+
 // === アチーブメント／称号 ===
 // 達成条件は handResult や session 単位で評価
 const ACHIEVEMENTS = [
   // 初心者
-  { id: 'first_win', icon: '🌱', name: 'はじめての1勝', desc: '初めてハンドに勝った', cat: '初心者' },
-  { id: 'first_clear', icon: '🎓', name: '卒業生', desc: '初めてキャラを撃破', cat: '初心者' },
+  { id: 'first_win', icon: '初', name: 'はじめての1勝', desc: '初めてハンドに勝った', cat: '初心者' },
+  { id: 'first_clear', icon: '初', name: '卒業生', desc: '初めてキャラを撃破', cat: '初心者' },
   // 役系
-  { id: 'win_two_pair', icon: '✌', name: 'ツーペア勝利', desc: 'ツーペアで勝利', cat: '役' },
-  { id: 'win_set',     icon: '🃏', name: 'スリーカード勝利', desc: 'スリーカードで勝利', cat: '役' },
-  { id: 'win_straight',icon: '🪜', name: 'ストレート勝利', desc: 'ストレートで勝利', cat: '役' },
-  { id: 'win_flush',   icon: '🌊', name: 'フラッシュ勝利', desc: 'フラッシュで勝利', cat: '役' },
-  { id: 'win_fh',      icon: '🏛', name: 'フルハウス勝利', desc: 'フルハウスで勝利', cat: '役' },
-  { id: 'win_quads',   icon: '💎', name: 'フォーカード勝利', desc: 'フォーカードで勝利', cat: '役' },
-  { id: 'win_sf',      icon: '⚡', name: 'ストフラ勝利', desc: 'ストレートフラッシュで勝利', cat: '役' },
-  { id: 'win_royal',   icon: '👑', name: '神の手', desc: 'ロイヤルストレートフラッシュで勝利', cat: '役' },
-  { id: 'win_wheel',   icon: '🛞', name: 'ホイール使い', desc: 'A-5ホイールで勝利', cat: '役' },
+  { id: 'win_two_pair', icon: '役', name: 'ツーペア勝利', desc: 'ツーペアで勝利', cat: '役' },
+  { id: 'win_set',     icon: '役', name: 'スリーカード勝利', desc: 'スリーカードで勝利', cat: '役' },
+  { id: 'win_straight',icon: '役', name: 'ストレート勝利', desc: 'ストレートで勝利', cat: '役' },
+  { id: 'win_flush',   icon: '役', name: 'フラッシュ勝利', desc: 'フラッシュで勝利', cat: '役' },
+  { id: 'win_fh',      icon: '役', name: 'フルハウス勝利', desc: 'フルハウスで勝利', cat: '役' },
+  { id: 'win_quads',   icon: '役', name: 'フォーカード勝利', desc: 'フォーカードで勝利', cat: '役' },
+  { id: 'win_sf',      icon: '役', name: 'ストフラ勝利', desc: 'ストレートフラッシュで勝利', cat: '役' },
+  { id: 'win_royal',   icon: '役', name: '神の手', desc: 'ロイヤルストレートフラッシュで勝利', cat: '役' },
+  { id: 'win_wheel',   icon: '役', name: 'ホイール使い', desc: 'A-5ホイールで勝利', cat: '役' },
   // ドラマ
-  { id: 'suckout',     icon: '✨', name: '神引き', desc: '勝率30%以下から逆転勝利（サックアウト）', cat: 'ドラマ' },
-  { id: 'badbeat',     icon: '💀', name: '不運の犠牲者', desc: '勝率70%以上から逆転負け（バッドビート）', cat: 'ドラマ' },
-  { id: 'cooler',      icon: '🔥', name: '激突！', desc: 'クーラー（両者ストレート以上）に勝利', cat: 'ドラマ' },
-  { id: 'cooler_lose', icon: '🥶', name: '回避不能', desc: 'クーラーで敗北', cat: 'ドラマ' },
-  { id: 'bluff_win',   icon: '🎭', name: 'ブラファー', desc: '勝率40%未満で相手をフォールドさせた', cat: 'ドラマ' },
-  { id: 'rivered',     icon: '🌊', name: 'リバーマジック', desc: 'リバーで勝率が +30 以上上昇して勝利', cat: 'ドラマ' },
+  { id: 'suckout',     icon: '劇', name: '神引き', desc: '勝率30%以下から逆転勝利（サックアウト）', cat: 'ドラマ' },
+  { id: 'badbeat',     icon: '劇', name: '不運の犠牲者', desc: '勝率70%以上から逆転負け（バッドビート）', cat: 'ドラマ' },
+  { id: 'cooler',      icon: '劇', name: '激突！', desc: 'クーラー（両者ストレート以上）に勝利', cat: 'ドラマ' },
+  { id: 'cooler_lose', icon: '劇', name: '回避不能', desc: 'クーラーで敗北', cat: 'ドラマ' },
+  { id: 'bluff_win',   icon: '劇', name: 'ブラファー', desc: '勝率40%未満で相手をフォールドさせた', cat: 'ドラマ' },
+  { id: 'rivered',     icon: '劇', name: 'リバーマジック', desc: 'リバーで勝率が +30 以上上昇して勝利', cat: 'ドラマ' },
   // プレイスタイル
-  { id: 'allin_win',   icon: '🚀', name: 'オールイン制覇', desc: 'オールインで勝利', cat: 'プレイ' },
-  { id: 'good_fold',   icon: '🛡', name: '損切りの達人', desc: '勝率30%以下で正しくフォールド（10回）', cat: 'プレイ' },
-  { id: 'fold_hero',   icon: '🦸', name: 'ヒーローコール', desc: 'マージナルコールで勝利（5回）', cat: 'プレイ' },
+  { id: 'allin_win',   icon: '技', name: 'オールイン制覇', desc: 'オールインで勝利', cat: 'プレイ' },
+  { id: 'good_fold',   icon: '技', name: '損切りの達人', desc: '勝率30%以下で正しくフォールド（10回）', cat: 'プレイ' },
+  { id: 'fold_hero',   icon: '技', name: 'ヒーローコール', desc: 'マージナルコールで勝利（5回）', cat: 'プレイ' },
   // 連続記録
   // 連勝は「相手にハンドを取られるまで」続く（対戦が変わっても途切れない）。判定は checkHandAchievements
-  { id: 'win_3streak', icon: '🔥', name: '3連勝', desc: 'ハンドに3回続けて勝つ（取られるまで対戦をまたいで数える）', cat: '記録' },
-  { id: 'win_5streak', icon: '🔥🔥', name: '5連勝', desc: 'ハンドに5回続けて勝つ（取られるまで対戦をまたいで数える）', cat: '記録' },
+  { id: 'win_3streak', icon: '連', name: '3連勝', desc: 'ハンドに3回続けて勝つ（取られるまで対戦をまたいで数える）', cat: '記録' },
+  { id: 'win_5streak', icon: '連', name: '5連勝', desc: 'ハンドに5回続けて勝つ（取られるまで対戦をまたいで数える）', cat: '記録' },
   // 通算
-  { id: 'hands_10',   icon: '🎯', name: '10ハンドプレイ', desc: '通算10ハンド', cat: '通算' },
-  { id: 'hands_50',   icon: '🎯🎯', name: '50ハンドプレイ', desc: '通算50ハンド', cat: '通算' },
-  { id: 'hands_100',  icon: '💯', name: '100ハンドプレイ', desc: '通算100ハンド', cat: '通算' },
-  { id: 'wins_10',    icon: '🏆', name: '10勝', desc: '通算10勝', cat: '通算' },
-  { id: 'wins_50',    icon: '🏆🏆', name: '50勝', desc: '通算50勝', cat: '通算' },
+  { id: 'hands_10',   icon: '積', name: '10ハンドプレイ', desc: '通算10ハンド', cat: '通算' },
+  { id: 'hands_50',   icon: '積', name: '50ハンドプレイ', desc: '通算50ハンド', cat: '通算' },
+  { id: 'hands_100',  icon: '積', name: '100ハンドプレイ', desc: '通算100ハンド', cat: '通算' },
+  { id: 'wins_10',    icon: '積', name: '10勝', desc: '通算10勝', cat: '通算' },
+  { id: 'wins_50',    icon: '積', name: '50勝', desc: '通算50勝', cat: '通算' },
   // 心理・性格
-  { id: 'read_first', icon: '👁', name: '初の読み切り', desc: 'ミミミMAXで相手の性格を読み切った', cat: '心理' },
-  { id: 'read_all',   icon: '🧠', name: '心理マスター', desc: '全キャラの性格を読み切った', cat: '心理' },
+  { id: 'read_first', icon: '読', name: '初の読み切り', desc: 'ミミミMAXで相手の性格を読み切った', cat: '心理' },
+  { id: 'read_all',   icon: '読', name: '心理マスター', desc: '全キャラの性格を読み切った', cat: '心理' },
   // 圧倒
-  { id: 'dominate',   icon: '⚡', name: '圧倒勝利', desc: '相手チップを0にして勝利', cat: '圧倒' },
+  { id: 'dominate',   icon: '圧', name: '圧倒勝利', desc: '相手チップを0にして勝利', cat: '圧倒' },
 ];
 
 // セーブに achievements を確実に存在させる
@@ -99,9 +124,9 @@ function drainAchievementToasts() {
   const t = document.createElement('div');
   t.className = 'achievement-toast';
   t.innerHTML = `
-    <div class="at-icon">${ach.icon}</div>
+    <div class="at-icon">${achMark(ach)}</div>
     <div class="at-body">
-      <div class="at-label">🏆 称号獲得</div>
+      <div class="at-label">称号獲得</div>
       <div class="at-name">${ach.name}</div>
       <div class="at-desc">${ach.desc}</div>
     </div>
@@ -209,7 +234,7 @@ function defaultSave() {
     firstClearRewardClaimed: [],
     rematchWins: {},
     chipChoice: {},
-    rewardCgSeen: [],             // 🆕幕間で開放したご褒美CGの相手ID一覧
+    rewardCgSeen: [],             // 幕間で開放したご褒美CGの相手ID一覧
 
     // ── 解放系フラグ（normalizeSaveで自動派生される。手動編集不要） ──
     endingUnlocked: false,        // = clearedStages.includes('velvet')
@@ -218,7 +243,7 @@ function defaultSave() {
 
     // ── 所持・装備 ──
     ownedItems: [],
-    shopSeenItems: [],            // 🆕新着マーク管理
+    shopSeenItems: [],            // 新着マーク管理
     unlockedNotes: ['bluff_basic'],
     equippedCardSkin: 'default',
     equippedTableSkin: 'default',
@@ -1396,17 +1421,17 @@ function opponentReadyLine() {
       '今日も商売繁盛と参りましょう。',
     ]);
     case 'velvet': return pick([
-      '始めましょう、新人。',
-      'あなたの限界、見せてもらうわ。',
-      'カードを配るわよ……',
+      'さあ、始めるのよ、新人。',
+      'あなたの限界、見せてもらうの。',
+      'カードを配るのよ……',
       '……運命の卓へ、ようこそ。',
-      '今夜が、あなたの最終試験よ。',
-      '震えなさい、新人。それが正しい反応よ。',
-      'VIPルームへようこそ。出口は……見つかるかしら？',
-      '今までの相手とは違うことを、思い知りなさい。',
-      'さあ、私の卓で踊ってみてちょうだい。',
-      '新人のくせに、ここまで来たのね。浅はかだわ。',
-      'カードはただの紙切れ。私が見ているのは……あなたよ。',
+      '今夜が、あなたの最終試験なの。',
+      '震えなさい、新人。それが正しい反応なのよ。',
+      'VIPルームへようこそ。出口は……見つけられるの？',
+      '今までの相手とは違うのよ。思い知りなさい。',
+      'さあ、あたしの卓で踊ってみなさいよ。',
+      '新人のくせに、ここまで来たのね。浅はかなのよ。',
+      'カードはただの紙切れなの。あたしが見ているのは……あなたなのよ。',
     ]);
     default: return '……';
   }
@@ -1447,20 +1472,20 @@ function opponentReactToPlayerFold() {
       // ハンド進行で煽りが変化
       const handNo = state.handNo || 1;
       if (handNo <= 2) return pick([
-        'ふふ……賢明ね、新人。',
-        'カードを見る前に折れた……それも答えよ。',
-        '初めての敗北、味わってちょうだい。',
+        'ふふ……賢明なのね、新人。',
+        'カードを見る前に折れた……それも答えなの。',
+        '初めての敗北、味わうのよ。',
       ]);
       if (handNo <= 5) return pick([
-        'また降りるの？それでは何も奪えないわよ。',
-        'いい判断。でもいつまでそれが通用するかしら。',
-        '逃げる勇気、悪くないわ。但し勝てないけれど。',
-        'ふぅん……まだ私の手の内を読めないようね。',
+        'また降りるの？それじゃ何も奪えないのよ。',
+        'いい判断なの。でも、いつまで通用するのかしらね。',
+        '逃げる勇気、悪くないの。でも、それじゃ勝てないのよ。',
+        'ふぅん……まだあたしの手の内を読めないのね。ざぁこ♡',
       ]);
       return pick([
-        '何度目かしら、その逃げ方。',
-        'もう降りても、結末は同じよ。',
-        '……つまらない。本気で来てくれない？',
+        '何度目なの、その逃げ方。',
+        'もう降りても、結末は同じなのよ。',
+        '……つまらないの。本気で来なさいよ。',
         'あなた、本当にここまで来た新人なの？',
         '降りる以外の選択肢、思い出してみて？',
       ]);
@@ -1612,28 +1637,28 @@ function opponentReactToPlayerAggression(kind, amount) {
     }
     case 'velvet': switch (kind) {
       case 'bet_small': return pick([
-        'あら、可愛いサイズね。',
-        'ふふ、様子見？いいわ、受けてあげる。',
-        'その程度で、私が揺らぐと思った？',
-        'まだ本気じゃないのね。',
+        'あら、可愛いサイズなの。',
+        'ふふ、様子見なの？いいのよ、受けてあげる。',
+        'その程度で、あたしが揺らぐと思ったの？',
+        'まだ本気じゃないの？',
       ]);
       case 'bet_big': return pick([
-        'あら、少しはやる気になったのね。面白いわ。',
+        'あら、少しはやる気になったの？面白くなってきたのよ。',
         'ふふん、いいサイズじゃない。楽しませて。',
-        'その圧、悪くないわよ、新人。',
+        'その圧、悪くないのよ、新人。',
         'あら……ちょっとは骨があるじゃない。',
       ]);
       case 'raise': return pick([
-        'レイズ……あら、牙を剥いてきたわね。',
-        'いいわ、そういうの好きよ。',
+        'レイズ……あら、牙を剥いてきたのね。',
+        'いいの、そういうの好きなのよ。',
         'ふふ、ようやく本気になったの？',
         'あら素敵。もっと見せて？',
       ]);
       case 'allin': return pick([
-        'オールイン……あら、素敵。全部賭ける覚悟、気に入ったわ。',
-        'ふふふ、いいわ。そこまでするなら、受けて立つ。',
-        '震えるどころか、笑えてきたわ。楽しませてくれるじゃない。',
-        'あら、あらあら。新人にしては上出来よ。',
+        'オールイン……あら、素敵。全部賭ける覚悟、気に入ったのよ。',
+        'ふふふ、いいのよ。そこまでするなら、受けて立つの。',
+        '震えるどころか、笑えてきたのよ。楽しませてくれるじゃない。',
+        'あら、あらあら。新人にしては上出来なのよ。',
       ]);
       default: return '……';
     }
@@ -1761,7 +1786,7 @@ const PSYCH_QUESTIONS = {
   // ===== 本気リコ先輩：勝負の核を問う上級心理戦 =====
   rico_serious_polarized: {
     id: 'rico_serious_polarized',
-    situationFn: (state) => `🔥 本気のリコがリバーでオーバーベット（ポット超）。\n場札：${renderCardsText(state.community)}　ミミの手札：${renderCardsText(state.playerHand)}`,
+    situationFn: (state) => `本気のリコがリバーでオーバーベット（ポット超）。\n場札：${renderCardsText(state.community)}　ミミの手札：${renderCardsText(state.playerHand)}`,
     speech: 'ここで降りるか、コールするか。アタシならどう打つか考えてみな？',
     zazazoHint: '上級者のリバーオーバーベット＝極化レンジ（ナッツorブラフ）',
     choices: [
@@ -1784,8 +1809,8 @@ const PSYCH_QUESTIONS = {
     id: 'rico_serious_blocker',
     situationFn: (state) => {
       const b = detectBlockerScenario(state);
-      if (!b) return `🔥 本気のリコがリバーで大ベット。場札にフラッシュ要素あり。\nミミの手札：${renderCardsText(state.playerHand)}`;
-      return `🔥 本気のリコがリバーで大ベット。場札に${b.suit}が${b.boardCount}枚（フラッシュ可能）。\n` +
+      if (!b) return `本気のリコがリバーで大ベット。場札にフラッシュ要素あり。\nミミの手札：${renderCardsText(state.playerHand)}`;
+      return `本気のリコがリバーで大ベット。場札に${b.suit}が${b.boardCount}枚（フラッシュ可能）。\n` +
         `ミミの手札：${renderCardsText(state.playerHand)}\n` +
         `→ ミミは <b>${b.rankLabel}${b.suit}</b>（ナッツ${b.suit}フラッシュをブロック）を保持`;
     },
@@ -1809,7 +1834,7 @@ const PSYCH_QUESTIONS = {
   },
   rico_serious_minmax: {
     id: 'rico_serious_minmax',
-    situationFn: (state) => `🔥 本気のリコがチェック→ミミがベット→リコが大きくチェックレイズしてきた。`,
+    situationFn: (state) => `本気のリコがチェック→ミミがベット→リコが大きくチェックレイズしてきた。`,
     speech: 'チェックレイズ。アタシが弱い手で罠を仕掛けるかな？　それとも強い手で罠を仕掛けるかな？',
     zazazoHint: '上級者のチェックレイズは ほぼナッツ寄り or 強烈なセミブラフ',
     choices: [
@@ -1945,11 +1970,11 @@ const PSYCH_QUESTIONS = {
       if (reqWin <= 25) state.__potOddsBracket = 'lo25';
       else if (reqWin <= 40) state.__potOddsBracket = 'mid';
       else state.__potOddsBracket = 'hi';
-      return `📊 状況整理\n` +
+      return `状況整理\n` +
         `・ポット：${state.pot}チップ\n` +
         `・ミミがコールに必要：${need}チップ\n` +
         `・コール後のポット総額：${potAfterCall}チップ\n\n` +
-        `🧮 計算\n` +
+        `計算\n` +
         `${need} ÷ ${potAfterCall} × 100 ≒ <b>${reqWin}%</b>\n\n` +
         `この勝率以上ならコールが期待値プラス（HU/トーナメント問わず同式）`;
     },
@@ -1976,12 +2001,12 @@ const PSYCH_QUESTIONS = {
     id: 'logic_flush_outs',
     type: 'logic',
     rule: 'アウツ計算：完成までに有効な残りカード数 × 2 ＝ 次の1枚で当たる確率(%)',
-    situationFn: (state) => `📊 状況整理\n` +
+    situationFn: (state) => `状況整理\n` +
       `・場札：${renderCardsText(state.community)}\n` +
       `・ミミの手札：${renderCardsText(state.playerHand)}\n` +
       `・既に同スートが4枚見えている＝フラッシュ完成にはあと1枚必要\n` +
       `・デッキ内に同スート札は残り <b>9枚</b>（アウツ）\n\n` +
-      `🧮 簡易公式\n` +
+      `簡易公式\n` +
       `アウツ × 2 ＝ <b>9 × 2 = 18%</b>（次1枚での完成率）`,
     speech: '【論理問題】このフラッシュドロー、リバー1枚での完成率は？',
     zazazoHint: '上の公式で計算',
@@ -2005,11 +2030,11 @@ const PSYCH_QUESTIONS = {
     id: 'logic_hand_compare',
     type: 'logic',
     rule: '完成役 vs 未完成ドロー：フロップ時点で見ると完成役の方が勝率が高い',
-    situationFn: (state) => `📊 状況整理\n` +
+    situationFn: (state) => `状況整理\n` +
       `・場札：${renderCardsText(state.community)}（フロップ）\n` +
       `・ミミ：トップペア成立（例：Aを含む1ペア、約65%の勝率）\n` +
       `・想定される相手：フラッシュドロー9アウツ（ターン+リバーで完成率約35%＝rule of 4）\n\n` +
-      `🧮 ポイント\n` +
+      `ポイント\n` +
       `「完成してる役」は確定の強さ＝65%。\n` +
       `「9アウツドロー」は2枚引いて完成35%＝負ける可能性も。\n` +
       `（ヘッズアップ・MTT問わずトッププロも同じ計算）`,
@@ -2035,11 +2060,11 @@ const PSYCH_QUESTIONS = {
     id: 'logic_position',
     type: 'logic',
     rule: 'ポジション：後にアクションする側は情報量が多くて有利',
-    situationFn: () => `📊 状況整理\n` +
+    situationFn: () => `状況整理\n` +
       `・ポーカーでは「ベットの順番」が決まっている\n` +
       `・先手：何の情報もないまま判断（暗中模索）\n` +
       `・後手：相手の動き＋ベット額を見てから判断（情報あり）\n\n` +
-      `🧮 ポイント\n` +
+      `ポイント\n` +
       `情報の差はそのまま勝率の差になる。\n` +
       `プロは「ポジションは勝率5-10%相当」と言う。\n` +
       `※ヘッズアップ（1対1）：プリフロップはSB先手、フロップ以降はSBが後手＝有利。\n` +
@@ -2070,10 +2095,10 @@ const PSYCH_QUESTIONS = {
       const stack = state.playerChips;
       const pot = state.pot || 1;
       const spr = (stack / pot).toFixed(1);
-      return `📊 状況整理\n` +
+      return `状況整理\n` +
         `・ミミの残りスタック：${stack}\n` +
         `・現在のポット：${pot}\n\n` +
-        `🧮 計算\n` +
+        `計算\n` +
         `SPR = ${stack} ÷ ${pot} ≒ <b>${spr}</b>\n\n` +
         `SPR < 3 → 完成役なら降りられない（コミット）\n` +
         `SPR > 6 → 降りる余地がある（プレイ深い）`;
@@ -2106,11 +2131,11 @@ const PSYCH_QUESTIONS = {
       const potAfterCall = state.pot + need;
       const reqWin = Math.round((need / potAfterCall) * 100);
       const betPct = Math.round((need / potBefore) * 100);
-      return `📊 状況整理\n` +
+      return `状況整理\n` +
         `・場面：リバー、相手が ${need}チップ（≒ポットの${betPct}%）ベット\n` +
         `・ミミは中位ペア（ブラフキャッチャー：相手ブラフに勝つ、バリューに負ける）\n` +
         `・必要勝率（ポットオッズ）＝ <b>${reqWin}%</b>\n\n` +
-        `🧮 ポイント\n` +
+        `ポイント\n` +
         `相手レンジに含まれる「ブラフの割合」が <b>${reqWin}%以上</b> なら、コールが期待値プラス。\n` +
         `（ヘッズアップ・MTT問わずブラフキャッチ理論の基本）`;
     },
@@ -2136,11 +2161,11 @@ const PSYCH_QUESTIONS = {
     id: 'logic_implied_odds',
     type: 'logic',
     rule: 'インプライドオッズ：完成時に追加で得られるチップも勝率計算に含める',
-    situationFn: () => `📊 状況整理\n` +
+    situationFn: () => `状況整理\n` +
       `・小ペア（66）でフロップ進出 → セット狙い\n` +
       `・セット完成率：約 12%（11.8%）= 厳しい\n` +
       `・でも完成したら相手のスタックを取れる可能性\n\n` +
-      `🧮 ポイント\n` +
+      `ポイント\n` +
       `直接のポットオッズだけでなく、<b>完成後に追加で取れる額</b>も計算に入れる。\n` +
       `相手のスタックが深いほどインプライドオッズは大きい。`,
     speech: '【論理問題】小ペアでフロップを見る価値が高い場面は？',
@@ -2165,11 +2190,11 @@ const PSYCH_QUESTIONS = {
     id: 'logic_cbet_dry',
     type: 'logic',
     rule: 'ドライボードでのCベット：相手がヒットしてない確率が高い',
-    situationFn: (state) => `📊 状況整理\n` +
+    situationFn: (state) => `状況整理\n` +
       `・場札：${renderCardsText(state.community)}（ドライボード）\n` +
       `・プリフロップでミミがレイズ → 相手はコール\n` +
       `・ドライボード＝連番なし・同スートなし・ペアなし\n\n` +
-      `🧮 ポイント\n` +
+      `ポイント\n` +
       `相手のレンジ（コールしてきた手札）は、このボードでフィットしないことが多い。\n` +
       `→ 小さめのCベット（1/3〜1/2）でも降ろせる可能性が高い。\n` +
       `※ヘッズアップ：レンジが広いのでドライボードは小ベット効果大。\n` +
@@ -2413,7 +2438,7 @@ const PSYCH_QUESTIONS = {
   // ===== ハンズオン章：実際に役を見極める =====
   lesson_hand_1: { id:'lesson_hand_1', type:'lesson', chapter:'実戦', chapterTitle:'実戦講座：役を見つけよう',
     rule:'手札2枚＋場札5枚＝7枚から最強の5枚を選ぶ',
-    situationFn: () => '🃏 ミミの手札：<b>A♥ K♥</b>\n📋 場札：<b>Q♥ J♥ 10♥ 2♣ 5♦</b>\n\nさて、ミミの最強5枚は？',
+    situationFn: () => 'ミミの手札：<b>A♥ K♥</b>\n場札：<b>Q♥ J♥ 10♥ 2♣ 5♦</b>\n\nさて、ミミの最強5枚は？',
     speech: '7枚から最強5枚を見つけよう',
     zazazoHint: '同スートのハート5枚に注目',
     choices: [
@@ -2426,7 +2451,7 @@ const PSYCH_QUESTIONS = {
   },
   lesson_hand_2: { id:'lesson_hand_2', type:'lesson', chapter:'実戦', chapterTitle:'実戦講座：役を見つけよう',
     rule:'ペアが場札にあれば「3カード」や「フルハウス」を狙える',
-    situationFn: () => '🃏 ミミの手札：<b>K♠ K♦</b>\n📋 場札：<b>K♥ 7♣ 7♠ 9♦ 2♣</b>\n\n最強の役は？',
+    situationFn: () => 'ミミの手札：<b>K♠ K♦</b>\n場札：<b>K♥ 7♣ 7♠ 9♦ 2♣</b>\n\n最強の役は？',
     speech: 'ペアが場札にあるよ',
     zazazoHint: 'K3枚と7ペアを組み合わせる',
     choices: [
@@ -2439,7 +2464,7 @@ const PSYCH_QUESTIONS = {
   },
   lesson_hand_3: { id:'lesson_hand_3', type:'lesson', chapter:'実戦', chapterTitle:'実戦講座：役を見つけよう',
     rule:'A-2-3-4-5 はストレート（ホイール）として成立',
-    situationFn: () => '🃏 ミミの手札：<b>A♠ 2♥</b>\n📋 場札：<b>3♣ 4♦ 5♠ J♥ Q♣</b>\n\n最強の役は？',
+    situationFn: () => 'ミミの手札：<b>A♠ 2♥</b>\n場札：<b>3♣ 4♦ 5♠ J♥ Q♣</b>\n\n最強の役は？',
     speech: 'Aを「1」として使えるパターン',
     zazazoHint: 'A-2-3-4-5は特殊ストレート',
     choices: [
@@ -2452,7 +2477,7 @@ const PSYCH_QUESTIONS = {
   },
   lesson_hand_4: { id:'lesson_hand_4', type:'lesson', chapter:'実戦', chapterTitle:'実戦講座：役を見つけよう',
     rule:'場札3枚同スートでも、手札に同スート2枚なければフラッシュにならない',
-    situationFn: () => '🃏 ミミの手札：<b>A♣ K♣</b>\n📋 場札：<b>2♥ 7♥ 9♥ Q♥ 3♣</b>\n\n最強の役は？\n\n<small>※場札のハートは4枚あるが、手札にハートはゼロ。</small>',
+    situationFn: () => 'ミミの手札：<b>A♣ K♣</b>\n場札：<b>2♥ 7♥ 9♥ Q♥ 3♣</b>\n\n最強の役は？\n\n<small>※場札のハートは4枚あるが、手札にハートはゼロ。</small>',
     speech: '一見フラッシュに見えるけど…',
     zazazoHint: '自分の手札のスートに注目',
     choices: [
@@ -2710,7 +2735,7 @@ const PSYCH_QUESTIONS = {
   velvet_turn: {
     id: 'velvet_turn',
     situationFn: (state) => `場札：${renderCardsText(state.community)}\nターンで新しい札が出た。ヴェルベットが急にベットサイズを上げた。`,
-    speech: '流れは最初から私のものだったわ。',
+    speech: '流れは最初から、あたしのものだったの。',
     zazazoHint: 'ミミの勘：「最初から」を強調するが、ベットの変化はターン後',
     choices: [
       { id: 'turn_changed', text: '最初から強かったのではなく、ターンの危険札で状況が変わった可能性が高い', correct: true },
@@ -2733,8 +2758,8 @@ const PSYCH_QUESTIONS = {
   velvet_river_evidence: {
     id: 'velvet_river_evidence',
     isEvidence: true,
-    situationFn: () => `— 最終心理戦：証拠突きつけ —\nヴェルベットの主張：「私は最初から完成した手だったのよ。あなたが迷っていただけ」\n\nミミ、ログから「最初から強くなかった」証拠を1つ選んで突きつけて。`,
-    speech: '私は最初から完成した手だったのよ。あなたが迷っていただけ。',
+    situationFn: () => `— 最終心理戦：証拠突きつけ —\nヴェルベットの主張：「あたしは最初から完成した手だったの。あなたが迷っていただけなのよ」\n\nミミ、ログから「最初から強くなかった」証拠を1つ選んで突きつけて。`,
+    speech: 'あたしは最初から完成した手だったの。あなたが迷っていただけなのよ。',
     zazazoHint: '勝負の中で起きた変化のタイミングを思い出して',
     choices: [
       { id: 'flop_small_bet',     text: 'フロップ時の小ベット — 序盤では大きく踏み込んでいなかった記録', correct: true },
@@ -2950,9 +2975,10 @@ function render() {
       // v2 拍④「決断」：ミミの手番は卓と相手を落として札と選択肢に視線を集める
       { const scr = document.querySelector('.battle-screen.v2'); if (scr) scr.classList.toggle('is-deciding', !!(state.isPlayerTurn && state.handPhase !== 'idle' && state.handPhase !== 'showdown' && !state.psychPending)); }
       break;
-    case 'result':      renderTemplate('tpl-result'); applyBindings(); break;
+    case 'result':      renderTemplate('tpl-result'); applyBindings(); if (isBgmOn() && state.resultWon) playSceneBgm('victory'); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
     case 'ending':      renderTemplate('tpl-ending'); stopSceneBgm(); _stopNonSceneBgm(); showEndingMusicPrompt(); break;
+    case 'allstar':     app.innerHTML = ''; if (window.AllstarUI) AllstarUI.mount(); break; // 零時の卓（allstar-ui.js が #stage に自前で描く）
   }
   bindActions();
   injectAudioBars();
@@ -3037,22 +3063,25 @@ function shareGame() {
 }
 
 function applyTitleButtons() {
+  // 下端の版と権利の表記（値は game.js 先頭の GAME_VERSION / COPYRIGHT_TEXT。設定の窓の最下行と同じ）
+  const verEl = document.querySelector('.t3-ver');
+  if (verEl) verEl.textContent = `Ver ${GAME_VERSION}　${COPYRIGHT_TEXT}`;
   const el = document.querySelector('[data-bind="titleButtons"]');
   if (!el) return;
   const hasSave = save.clearedStages.length > 0 || save.coins > 0;
   if (hasSave) {
-    // 数え方はホームの台帳・各話と同じ：Ⅰリコ先輩・Ⅱポルカ・Ⅲセリナ・Ⅳグラーノ・Ⅴヴェルベット（全5戦）
-    const cleared = STAGE_ORDER.filter(s => save.clearedStages.includes(s) || (s === 'rico_tutorial' && save.clearedStages.includes('polka'))).length;
+    // 数え方はホーム・物語の台帳・コレクションと同じ（clearedStageCount）：Ⅰリコ先輩・Ⅱポルカ・Ⅲセリナ・Ⅳグラーノ・Ⅴヴェルベット（全5戦）
+    const cleared = clearedStageCount();
     const totalStages = STAGE_ORDER.length;
     const ending = isEndingUnlocked();
     el.innerHTML = `
-      <button class="t3-btn is-primary" type="button" data-action="start"><b>続きから</b><small>${ending ? 'AFTER STORY' : `STAGE ${Math.min(cleared + 1, totalStages)} / ${totalStages}`}</small></button>
+      <button class="t3-btn is-primary" type="button" data-action="start"><b>続きから</b><small>${ending ? 'クリア後の物語' : `第${Math.min(cleared + 1, totalStages)}戦 ／ 全${totalStages}戦`}</small></button>
       <button class="t3-btn" type="button" data-action="new-game"><b>はじめから</b></button>
       <div class="t3-record"><span>クリア<b>${cleared} / ${totalStages}</b></span><span>コイン<b>${(save.coins || 0).toLocaleString('en-US')}</b></span></div>
     `;
   } else {
     el.innerHTML = `
-      <button class="t3-btn is-primary" type="button" data-action="start"><b>はじめる</b><small>NEW GAME</small></button>
+      <button class="t3-btn is-primary" type="button" data-action="start"><b>はじめる</b><small>新しい物語</small></button>
     `;
   }
 }
@@ -3171,7 +3200,7 @@ function applyBindings() {
           const p = getOpponentPersonality(state.opponentId);
           el.innerHTML = `
             <div class="opp-personality-card opp-p-revealed">
-              <div class="opp-p-title">${p.icon} ${p.title}</div>
+              <div class="opp-p-title">${personaMark(p)} ${p.title}</div>
               <ul class="opp-p-traits">
                 ${p.traits.map(t => `<li>${t}</li>`).join('')}
               </ul>
@@ -3834,10 +3863,10 @@ const INTERMISSIONS = {
     cg: 'assets/backgrounds/reward_cg_grano.jpg',
   },
   velvet: {
-    // ※ヴェルベット撃破時は既存の「エンディングへ」動線を最優先するため、
-    //   通常フロー（endBattle）からは呼ばれない。コレクション表示・将来の拡張用にデータのみ保持。
+    // ※ヴェルベットは初回クリアの結果画面の「幕間へ」から入り、見終わるとそのままエンディングへ進む。
+    //   口調は「あたし」「〜なの」「〜のよ」。結果画面の降伏の台詞（負けの一言）と同じ内容を言わせない
     lines: [
-      { speaker: 'velvet', text: '……ふふ、まさか新人に膝をつかされるなんてね。今夜は返り討ちに遭う夜みたい' },
+      { speaker: 'velvet', text: '……ふふ、膝をついたのはあたしの方だったのね。こんな夜があるなんて、思わなかったの' },
       { speaker: 'mimi',   text: 'ヴェルベットさんの圧、最後まで怖かったです……勝てたの、正直まだ信じられません' },
       { speaker: 'rico',   text: 'よく頑張ったね、ミミ。……本当に、ここまでよく来た' },
       { speaker: 'rico',   text: 'このあとはご褒美の時間。今日までの全部、ちゃんと見てたから' },
@@ -3857,6 +3886,7 @@ function showIntermission(opponentId, onDone) {
   const opp = OPPONENTS[opponentId] || {};
   const oppImgKey = opp.imgKey || opponentId;
   const oppName = opp.name || '相手';
+  if (isBgmOn()) playSceneBgm('intermission'); // 幕間とご褒美の絵は「ほころぶ頬」
 
   const overlay = document.createElement('div');
   overlay.className = 'intermission-overlay';
@@ -3871,12 +3901,12 @@ function showIntermission(opponentId, onDone) {
         <img alt="ミミ" src="assets/characters/mimi_intermission.webp"
              onerror="this.onerror=null;this.src='assets/characters/mimi_default.webp';">
       </div>
-      <div class="ims-char ims-char-opp character-frame" data-ims-side="opp">
+      <div class="ims-char ims-char-opp character-frame${oppImgKey === 'velvet' ? ' ims-char-seated' : ''}" data-ims-side="opp">
         <img alt="${oppName}" src="assets/characters/${oppImgKey}_default.webp"
              onerror="window.assetFallback(this,'${oppImgKey}')">
       </div>
     </div>
-    <button type="button" class="ims-skip-btn">スキップ ▶▶</button>
+    <button type="button" class="ims-skip-btn">スキップ</button>
     <div class="ims-dialogue">
       <div class="ims-dlg-face"><img alt=""></div>
       <div class="ims-dlg-body">
@@ -3891,7 +3921,7 @@ function showIntermission(opponentId, onDone) {
         <div class="ims-cg-fallback-name">${oppName}</div>
         <div class="ims-cg-fallback-label">ご褒美CG 開放！</div>
       </div>
-      <div class="ims-cg-hint">タップして進む</div>
+      <div class="ims-cg-hint"><span>タップして進む</span><i class="ims-cg-hint-arrow" aria-hidden="true">▼</i></div>
     </div>
   `;
   const stage = document.getElementById('stage');
@@ -4023,6 +4053,22 @@ function isStageUnlocked(stageId) {
   return false;
 }
 
+// 「何戦クリアか」の数え方は、ここの3つだけ。ホーム・物語の台帳・コレクション・タイトルは全部これを読む。
+// 研修（リコ先輩）を飛ばしてポルカに勝った人は、研修が「免除」された扱いで1戦に数える（clearedStages には入れない）。
+function isStageExempt(stageId) {
+  return stageId === 'rico_tutorial' && !save.clearedStages.includes('rico_tutorial') && save.clearedStages.includes('polka');
+}
+function isStageCleared(stageId) {
+  return save.clearedStages.includes(stageId) || isStageExempt(stageId);
+}
+function clearedStageCount() {
+  return STAGE_ORDER.filter(isStageCleared).length;
+}
+// コインで飛ばせる卓か。研修は「実戦から始める」で飛ばし、最終卓（ヴェルベット）は飛ばせない（エンディングを見ないままクリア特典が開くため）
+function canSkipStage(stageId) {
+  return stageId !== 'rico_tutorial' && stageId !== 'velvet' && !!OPPONENTS[stageId] && !save.clearedStages.includes(stageId);
+}
+
 // UI アイコン：絵文字を使わず線画SVGで統一（16pxグリッド・currentColor で色が乗る）
 const _svg = (d, extra) => `<svg class="ui-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const UI_ICON = {
@@ -4121,7 +4167,7 @@ function renderStageList() {
         <div class="lobby-door-actions">
           <button class="lobby-door-cta" data-action="${mainAction}" data-opponent="${sid}"><span>${mainLabel}</span></button>
           ${(sid === 'rico_tutorial' && !cleared) ? `<button class="lobby-door-subbtn" data-action="rico-skip-tutorial" title="講義をスキップしていきなりリコ先輩と対戦">${UI_ICON.bolt}</button>` : ''}
-          ${(sid !== 'rico_tutorial' && !cleared) ? `<button class="lobby-door-subbtn" data-action="skip-stage" data-opponent="${sid}" title="${skipStageCost(opp)}コインでスキップしてクリア扱い">${UI_ICON.skip}<b>${skipStageCost(opp)}</b></button>` : ''}
+          ${canSkipStage(sid) ? `<button class="lobby-door-subbtn" data-action="skip-stage" data-opponent="${sid}" title="${skipStageCost(opp)}コインでスキップしてクリア扱い">${UI_ICON.skip}<b>${skipStageCost(opp)}</b></button>` : ''}
           ${cleared && EPISODES[sid] ? `<button class="lobby-door-subbtn" data-action="recall-episode" data-episode="${sid}" title="エピソードタイトル回想">${UI_ICON.scroll}</button>` : ''}
         </div>
       </div>
@@ -4139,31 +4185,31 @@ const LOBBY_PRESENT = {
     rico: '「まずはアタシが基礎から叩き込む。安心してかかってきな」',
     key: '基礎', feat: `ポーカー基礎講義・全${LESSON_ORDER.length}問`,
     taunt: '「講義、始めよっか」',
-    tells: [[`基礎${LESSON_ORDER.length}問の講義`, '#c8253a'], ['実戦テスト付き', '#8a4cc4']],
+    tells: [[`基礎${LESSON_ORDER.length}問の講義`, '#c8253a'], ['実戦テスト付き', '#b8862e']],
   },
   polka: {
     rico: '「今夜の相手はポルカ。声がでかい時ほど、手は弱い。耳を澄ませな」',
     key: '手は弱い', feat: 'ブラフ入門',
     taunt: '「ボクに勝てるかな？」',
-    tells: [['大声＝弱気', '#c8253a'], ['指先が雑＝ブラフ', '#8a4cc4']],
+    tells: [['大声＝弱気', '#c8253a'], ['指先が雑＝ブラフ', '#b8862e']],
   },
   selina: {
     rico: '「セリナは理詰めの女。ベット額の"意味"を読みな」',
     key: 'ベット額', feat: 'ボード危険度・ベットサイズ',
     taunt: '「……数字は嘘をつきません」',
-    tells: [['沈黙＝自信', '#c8253a'], ['額には意味がある', '#8a4cc4']],
+    tells: [['沈黙＝自信', '#c8253a'], ['額には意味がある', '#b8862e']],
   },
   grano: {
     rico: '「グラーノは何でも値段で誘ってくる。払う価値は自分で計算しな」',
     key: '払う価値', feat: 'ポットオッズ・割に合う判断',
     taunt: '「お安くしておきますよ？」',
-    tells: [['安売り＝罠', '#c8253a'], ['オッズで殴り返せ', '#8a4cc4']],
+    tells: [['安売り＝罠', '#c8253a'], ['オッズで殴り返せ', '#b8862e']],
   },
   velvet: {
     rico: '「ヴェルベットは言葉と圧で心を折りに来る。あんたはもう全部の武器を持ってる」',
     key: '全部の武器', feat: 'レンジ読み・総合判断',
-    taunt: '「今夜は眠らせないわよ」',
-    tells: [['圧＝演出', '#c8253a'], ['飲まれたら負け', '#8a4cc4']],
+    taunt: '「今夜は眠らせないのよ」',
+    tells: [['圧＝演出', '#c8253a'], ['飲まれたら負け', '#b8862e']],
   },
 };
 const LB3_MIMI_THOUGHTS = ['（よし……今夜もやるぞ）', '（深呼吸、深呼吸……）', '（ぱにゅぱにゅ、今日も頼むね）', '（勝ったらご褒美CG……！）', '（負けたら罰ゲームとかないよね……？）'];
@@ -4216,7 +4262,7 @@ function lb8Slots(nextIdx) {
 function renderLobbyV8(host, nextId) {
   const nextIdx = STAGE_ORDER.indexOf(nextId);
   const slots = lb8Slots(nextIdx);
-  const owned = STAGE_ORDER.filter(sid => save.clearedStages.includes(sid)).length;
+  const owned = clearedStageCount();
   const allClear = !nextId;
 
   // 上：見出しの代わりに、ロイヤルフラッシュの進み具合
@@ -4278,7 +4324,7 @@ function renderLobbyV8(host, nextId) {
     const profile = unl
       ? `<button class="lb8-info" type="button" data-action="char-profile" data-char="${sid}" title="${o.name}のプロフィールを見る" aria-label="${o.name}のプロフィール">${LB6_PROFILE_SVG}</button>`
       : '';
-    const skip = (isNext && !done && sid !== 'rico_tutorial')
+    const skip = (isNext && canSkipStage(sid))
       ? `<button class="lb8-skip" type="button" data-action="skip-stage" data-opponent="${sid}" title="コインで勝利扱いにする">スキップ ${skipStageCost(o)}</button>`
       : '';
     return `<div class="${cls}" style="--cx:${s.c}px;--fx:${s.fx || s.c}px;--sw:${s.w}px;--tilt:${LB8_TILT[i]}deg">
@@ -4662,14 +4708,14 @@ function isRicoOutfitViewable(o) {
 function lobbyRicoLine() {
   const cleared = save.clearedStages.length;
   const lines = [];
-  if (cleared === 0)               lines.push('「ようこそ、ミミ。まずはチュートリアルからね」');
+  if (cleared === 0)               lines.push('「ようこそ、ミミ。まずはアタシの研修からだよ」');
   else if (!save.clearedStages.includes('polka'))   lines.push('「ポルカちゃんはブラフの入口。落ち着いて行こ」');
-  else if (!save.clearedStages.includes('selina'))  lines.push('「セリナはボードを読む練習にぴったりよ」');
-  else if (!save.clearedStages.includes('grano'))   lines.push('「グラーノ相手はポットオッズの感覚を養う卓ね」');
+  else if (!save.clearedStages.includes('selina'))  lines.push('「セリナはボードを読む練習にぴったりだよ」');
+  else if (!save.clearedStages.includes('grano'))   lines.push('「グラーノの卓は、ポットオッズの感覚を鍛える場所だよ」');
   else if (!save.clearedStages.includes('velvet'))  lines.push('「ヴェルベット……VIPルームに入る準備、できた？」');
-  else                                              lines.push('「全卓制覇、お見事。気が向いたら再戦どうぞ」');
+  else                                              lines.push('「全卓制覇、やるじゃん。零時になったら、アタシも席に着くからね」');
   if (save.coins >= 500) lines.push('「コイン貯まってきたじゃない。交換所、覗いてみる？」');
-  if (save.coins < 100 && cleared > 0) lines.push('「軍資金が心許ないわね。再戦で稼ぐのもアリよ」');
+  if (save.coins < 100 && cleared > 0) lines.push('「軍資金、心もとないじゃん。再戦で稼ぐのもアリだよ」');
   // 衣装ごとの一言も混ぜる
   const outfit = state.screen === 'lobby' ? homeLobbyOutfit() : pickLobbyRico();
   if (outfit?.lines?.length) lines.push(pick(outfit.lines));
@@ -4749,7 +4795,7 @@ function showSettingsModal() {
             <span class="settings-modal-label">練習用：相手の手札を見る</span>
             ${sw('backdoor', !!save.backdoorOn, '練習用：相手の手札を見る')}
           </div>
-          <div class="settings-modal-note">対戦中に相手の手札と考えを表示します（卓の左上の ✦ でも切り替え）。使っている間の対戦は、称号・ランク・初回クリア報酬の記録対象外です</div>
+          <div class="settings-modal-note">対戦中に相手の手札と、手の強さ・場札の注意を表示します（対戦画面の目のボタンでも切り替え）。使っている間の対戦は、称号・ランク・初回クリア報酬の記録対象外です</div>
           ` : ''}
         </section>
         <section class="settings-modal-group settings-modal-links">
@@ -4763,6 +4809,7 @@ function showSettingsModal() {
         </section>
       </div>
       <button class="btn btn-primary settings-modal-close">閉じる</button>
+      <div class="settings-modal-legal">ミミのテキサスホールデムポーカー　Ver ${GAME_VERSION}　${COPYRIGHT_TEXT}</div>
     </div>
   `;
   document.getElementById('stage').appendChild(overlay);
@@ -4836,7 +4883,7 @@ function renderLobbySettings() {
 }
 
 function renderLobbyStats() {
-  const wins = save.clearedStages.length;
+  const wins = clearedStageCount();
   const totalStages = STAGE_ORDER.length;
   const ranks = Object.values(save.bestRanks || {});
   const rankOrder = ['SS','S','A','B','C'];
@@ -4912,7 +4959,7 @@ const NOTE_ARTICLES = {
     body: [
       { h: '癖は「その人固有の偏り」', p: '同じ場面でも、人によって選ぶ行動は違います。とにかく攻めるタイプ、勝負手以外はすぐ降りるタイプ、弱い時ほど大きく賭けるタイプ。<b>相手ごとの偏りが分かれば、同じ状況でも読みの精度が変わります。</b>' },
       { h: '3つの軸で見る', p: '<b>攻撃的か受け身か</b>（賭ける頻度）、<b>ブラフ寄りかバリュー寄りか</b>（弱い手で押すか、強い手でだけ押すか）、<b>降りやすいか粘るか</b>。この3軸が分かれば、ブラフを仕掛けていい相手か、待って強い手で仕留める相手かが決まります。' },
-      { h: 'このゲームでは', p: '交換所で購入すると、対戦相手の情報欄に傾向タグが出ます。「🧊 降りやすい」相手には [[bluff_basic]] が効き、「🔥 粘り強い」相手にブラフを打っても通りません。癖と場札を組み合わせて考えるのが、このゲームの読み合いの本体です。' },
+      { h: 'このゲームでは', p: '交換所で購入すると、対戦相手の情報欄に傾向タグが出ます。「降りやすい」相手には [[bluff_basic]] が効き、「粘り強い」相手にブラフを打っても通りません。癖と場札を組み合わせて考えるのが、このゲームの読み合いの本体です。' },
     ],
   },
   bankroll: {
@@ -4968,14 +5015,14 @@ const SHOP_ITEMS = [
   { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 500, desc: 'テーブル：卓を暗く沈め、画面を金の額縁で囲み、天井から光を落としてVIPルーム風に' },
   // エンディング・主題歌・スタッフロールの見返しは有料で売らない。ヴェルベット撃破で無料になる「クリア特典」（clearBonus）。
   // 以前に買った人の所持記録はそのまま残す（返金はしない。表示はどちらも「クリア特典」で矛盾しない）
-  { id: 'memory_ending',       cat: 'memory', name: 'エンディング映像',        price: 0, clearBonus: true, desc: 'クリア特典（無料）。エンディングをいつでも見返せる', requires: 'ending' },
-  { id: 'memory_ending_theme', cat: 'memory', name: '主題歌：ポーカーフェイスの終わり〜変な件〜', price: 0, clearBonus: true, desc: 'クリア特典（無料）。エンディング主題歌をいつでも聴ける', requires: 'ending' },
-  // チップ拡張＝「持ち込みチップ」。足し算ではなく、持っている中で一番大きい1つが卓の開始時にミミへ乗る（装備変更で選べる）。
-  // 相手のチップは卓の基本値のまま（ミミの基本値の2倍）で、持ち込みでは増えない
-  { id: 'chips_plus_500',  cat: 'stack', name: '持ち込みチップ +500',  price: 400,  desc: '卓につくとミミのチップが+500で始まる。相手の額はそのまま（装備変更で「なし」も選べる）' },
-  { id: 'chips_plus_1500', cat: 'stack', name: '持ち込みチップ +1500', price: 1000, desc: 'ミミのチップが+1500で始まる。持ち込みは足し算されず、持っている中で一番大きい額が乗る' },
-  { id: 'chips_plus_3000', cat: 'stack', name: '持ち込みチップ +3000', price: 2200, desc: 'ミミのチップが+3000で始まる。腰を据えた長い読み合いに' },
-  { id: 'chips_plus_5000', cat: 'stack', name: '持ち込みチップ +5000', price: 4500, desc: 'ミミのチップが+5000で始まる。相手の額はそのまま' },
+  { id: 'memory_ending',       cat: 'memory', name: 'エンディング映像',        price: 0, clearBonus: true, desc: 'エンディングをいつでも見返せる', requires: 'ending' },
+  { id: 'memory_ending_theme', cat: 'memory', name: '主題歌：ポーカーフェイスの終わり〜変な件〜', price: 0, clearBonus: true, desc: 'エンディング主題歌をいつでも聴ける', requires: 'ending' },
+  // チップ拡張。足し算ではなく、持っている中で一番大きい1つが卓の開始時にミミへ乗る（装備変更で選べる）。
+  // 相手のチップは卓の基本値のまま（ミミの基本値の2倍）で、チップ拡張では増えない
+  { id: 'chips_plus_500',  cat: 'stack', name: 'チップ拡張 +500',  price: 400,  desc: '卓につくとミミのチップが+500で始まる。相手の額はそのまま（装備変更で「なし」も選べる）' },
+  { id: 'chips_plus_1500', cat: 'stack', name: 'チップ拡張 +1500', price: 1000, desc: 'ミミのチップが+1500で始まる。チップ拡張は足し算されず、持っている中で一番大きい額が乗る' },
+  { id: 'chips_plus_3000', cat: 'stack', name: 'チップ拡張 +3000', price: 2200, desc: 'ミミのチップが+3000で始まる。腰を据えた長い読み合いに' },
+  { id: 'chips_plus_5000', cat: 'stack', name: 'チップ拡張 +5000', price: 4500, desc: 'ミミのチップが+5000で始まる。相手の額はそのまま' },
 
   /* ===== 追加：ぱにゅ強化（中盤以降の差別化） ===== */
   { id: 'panyu_combo_x2',      cat: 'panyu', name: 'ぱにゅコンボ倍率',        price: 700,  desc: 'ロビーのぱにゅぱにゅ（30タップ）完走でもらえるコインが2倍に' },
@@ -4997,14 +5044,14 @@ const SHOP_ITEMS = [
   { id: 'outfit_rico_school',   cat: 'skin',  name: 'リコ・学生風',       price: 900,  desc: 'リコ先輩の衣装：先輩感のある学生風制服' },
   { id: 'outfit_rico_bunny',    cat: 'skin',  name: 'リコ・バニー',       price: 1500, desc: 'リコ先輩の衣装：カジノクイーン仕様のバニーガール' },
   { id: 'outfit_rico_gym',      cat: 'skin',  name: 'リコ・ジム服',       price: 700,  desc: 'リコ先輩の衣装：鍛えてる最近のジム服' },
-  { id: 'outfit_rico_swimsuit', cat: 'skin',  name: 'リコ・水着',         price: 1500, desc: 'リコ先輩の衣装：夏限定の水着姿。クリア後解放', requires: 'ending' },
+  { id: 'outfit_rico_swimsuit', cat: 'skin',  name: 'リコ・水着',         price: 1500, desc: 'リコ先輩の衣装：夏限定の水着姿。撃破の報酬', requires: 'ending' },
   { id: 'outfit_rico_witch',    cat: 'skin',  name: 'リコ・魔女',         price: 1200, desc: 'リコ先輩の衣装：ハロウィン気分の魔女姿' },
   { id: 'outfit_rico_santa',    cat: 'skin',  name: 'リコ・サンタ',       price: 1200, desc: 'リコ先輩の衣装：メリクリ仕様のサンタ姿' },
   /* カード裏 */
-  { id: 'skin_blue_silver_card', cat: 'skin',  name: '🂠 蒼銀カード',          price: 400,  desc: 'カード裏：氷のように冷たい蒼と銀。霜の結晶紋入り' },
-  { id: 'skin_obsidian_card',    cat: 'skin',  name: '🂠 漆黒カード',          price: 500,  desc: 'カード裏：漆黒の地に、金の紋様がうっすら浮かぶ' },
-  { id: 'skin_floral_card',      cat: 'skin',  name: '🂠 花鳥カード',          price: 450,  desc: 'カード裏：深紅の地に金の桜と燕を描いた和の意匠' },
-  { id: 'skin_galaxy_card',      cat: 'skin',  name: '🂠 銀河カード',          price: 700,  desc: 'カード裏：星がまたたき、深紅の星雲がゆっくり渦巻く宇宙柄（要クリア）', requires: 'ending' },
+  { id: 'skin_blue_silver_card', cat: 'skin',  name: '蒼銀カード',            price: 400, desc: 'カード裏：氷のように冷たい蒼と銀。霜の結晶紋入り' },
+  { id: 'skin_obsidian_card',    cat: 'skin',  name: '漆黒カード',            price: 500, desc: 'カード裏：漆黒の地に、金の紋様がうっすら浮かぶ' },
+  { id: 'skin_floral_card',      cat: 'skin',  name: '花鳥カード',            price: 450, desc: 'カード裏：深紅の地に金の桜と燕を描いた和の意匠' },
+  { id: 'skin_galaxy_card',      cat: 'skin',  name: '銀河カード',            price: 700,  desc: 'カード裏：星がまたたき、深紅の星雲がゆっくり渦巻く宇宙柄。撃破の報酬', requires: 'ending' },
   /* テーブル */
   { id: 'table_emerald',         cat: 'skin',  name: 'エメラルド卓',        price: 600,  desc: 'テーブル：卓の羅紗が深いエメラルドグリーンに。正統派の緑卓' },
   { id: 'table_neon',            cat: 'skin',  name: 'ネオン卓',            price: 800,  desc: 'テーブル：卓を夜の暗さに沈め、上下の縁で深紅と金のネオン管が明滅する' },
@@ -5016,13 +5063,13 @@ const SHOP_ITEMS = [
   /* ミミの見た目（卓とプロフィールは専用の立ち絵、ミニゲームのミミは色替え） */
   { id: 'mimi_skin_pink',        cat: 'skin',  name: 'ミミ・桃色',          price: 400,  desc: '卓とプロフィールのミミが桃色のバニー衣装に（ミニゲームのミミも桃色に）' },
   { id: 'mimi_skin_panda',       cat: 'skin',  name: 'ミミ・パンダ柄',      price: 600,  desc: '卓とプロフィールのミミがパンダ耳の白黒バニー衣装に（ミニゲームのミミは白黒に）' },
-  { id: 'mimi_skin_gold',        cat: 'skin',  name: 'ミミ・黄金',          price: 1500, desc: '卓とプロフィールのミミが黄金色のバニー衣装に。クリア後限定', requires: 'ending' },
+  { id: 'mimi_skin_gold',        cat: 'skin',  name: 'ミミ・黄金',          price: 1500, desc: '卓とプロフィールのミミが黄金色のバニー衣装に。撃破の報酬', requires: 'ending' },
   /* カットイン演出 */
   { id: 'cutin_classic',         cat: 'skin',  name: 'カットイン・古典派',  price: 700,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）が集中線＆モノクロ調に' },
   { id: 'cutin_neon',            cat: 'skin',  name: 'カットイン・ネオン',  price: 700,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）に深紅と金のネオン光線が走る' },
 
   /* ===== 追加：チップ拡張 ===== */
-  { id: 'chips_plus_10000',      cat: 'stack', name: '持ち込みチップ +10000',  price: 8000, desc: 'ミミのチップが+10000で始まる。VIPルーム仕様（相手の額はそのまま）' },
+  { id: 'chips_plus_10000',      cat: 'stack', name: 'チップ拡張 +10000',  price: 8000, desc: 'ミミのチップが+10000で始まる。VIPルーム仕様（相手の額はそのまま）' },
 
   /* ===== 追加：メモリ（お楽しみ） ===== */
   { id: 'bgm_lobby_jazz',        cat: 'memory', name: 'BGM「夜のジャズ」',   price: 350,  desc: 'ロビーBGMをしっとりジャズに切替可能' },
@@ -5033,10 +5080,10 @@ const SHOP_ITEMS = [
   { id: 'gallery_opponents',     cat: 'memory', name: '対戦相手図鑑',        price: 800,  desc: '対戦相手の打ち筋と口癖を読める（撃破した相手のみ）' },
   { id: 'gallery_mimi',          cat: 'memory', name: 'ミミ百態',            price: 500,  desc: 'ミミの表情メモと、ぱにゅぱにゅの裏話を読める' },
   { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 600,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
-  { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 700, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。クリア後', requires: 'ending' },
+  { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 700, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。撃破の報酬', requires: 'ending' },
   // 音声は無い。旧「ボイス集」（900）を実態どおりの「セリフ集」に改め値下げ。買った人の所持はそのまま
   { id: 'omake_voice_pack',      cat: 'memory', name: 'リコ先輩セリフ集',    price: 300,  desc: 'リコ先輩の勝った時・負けた時・励ましなどのセリフを文字で読める（音声なし）' },
-  { id: 'omake_credit',          cat: 'memory', name: 'スタッフロール再生',  price: 0, clearBonus: true, desc: 'クリア特典（無料）。本編のスタッフロールをいつでも再生できる', requires: 'ending' },
+  { id: 'omake_credit',          cat: 'memory', name: 'スタッフロール再生',  price: 0, clearBonus: true, desc: '本編のスタッフロールをいつでも再生できる', requires: 'ending' },
   { id: 'memory_minipoker',      cat: 'memory', name: 'ミニキャラ・ファイブポーカー', price: 700, desc: 'ミミがミニキャラ仲間と5枚交換ポーカーで対戦！勝てばコインも稼げる、ふんわり楽しいミニゲーム' },
 ];
 
@@ -5326,11 +5373,11 @@ function isItemOwned(itemId) {
 }
 // 買えない理由（null＝買える。コイン不足は別に見る）
 function shopItemBlock(item) {
-  if (item.requires === 'ending' && !isEndingUnlocked()) return { kind: 'lock', label: '🔒 ヴェルベット撃破で解放' };
+  if (item.requires === 'ending' && !isEndingUnlocked()) return { kind: 'lock', label: 'ヴェルベット撃破で解放' };
   const pre = SHOP_PREREQ[item.id];
   if (pre && !save.ownedItems.includes(pre)) {
     const p = SHOP_ITEMS.find(i => i.id === pre);
-    return { kind: 'lock', label: `🔒 要：${p ? p.name : pre}` };
+    return { kind: 'lock', label: `要：${p ? p.name : pre}` };
   }
   const tier = SHOP_TIERS.find(t => t.includes(item.id));
   if (tier && tier.slice(tier.indexOf(item.id) + 1).some(id => save.ownedItems.includes(id))) {
@@ -5340,11 +5387,12 @@ function shopItemBlock(item) {
 }
 // 持っている「見る・聴く・遊ぶ」品のボタン（交換所とコレクションで共通）
 function memoryItemAction(itemId) {
-  if (itemId === 'memory_ending')       return { action: 'play-ending',       label: '▶ 観る' };
-  if (itemId === 'memory_ending_theme') return { action: 'play-ending-theme', label: '▶ 聴く' };
-  if (itemId === 'memory_minipoker')    return { action: 'play-minipoker',    label: '▶ 遊ぶ' };
-  if (itemId === 'omake_credit')        return { action: 'play-credits',      label: '▶ 再生' };
-  if (MEMORY_CONTENT[itemId])           return { action: 'view-memory',       label: '▶ 読む' };
+  // ボタンの文言は記号を付けない（同じ欄に「観る」と「▶ 読む」が混ざらないよう、5つともそろえる）。主題歌は試聴中なら「停止」（描き直しても食い違わない）
+  if (itemId === 'memory_ending')       return { action: 'play-ending',       label: '観る' };
+  if (itemId === 'memory_ending_theme') return { action: 'play-ending-theme', label: isEndingThemePreviewOn() ? '停止' : '聴く' };
+  if (itemId === 'memory_minipoker')    return { action: 'play-minipoker',    label: '遊ぶ' };
+  if (itemId === 'omake_credit')        return { action: 'play-credits',      label: '再生' };
+  if (MEMORY_CONTENT[itemId])           return { action: 'view-memory',       label: '読む' };
   return null;
 }
 // 「新着」判定：解放済みかつ未閲覧
@@ -5398,9 +5446,10 @@ function renderShopItems(cat) {
     const priceHtml = i.clearBonus
       ? '<span class="shop-item-price shop-item-price-bonus">クリア特典<small>無料</small></span>'
       : `<span class="shop-item-price">${i.price}<small>コイン</small></span>`;
-    const ownedLabel = i.clearBonus ? '✓ クリア特典' : '✓ 購入済み';
+    // 「クリア特典」は値札の1か所だけ。持った後は「入手済み」（値札の隣に同じ語を重ねない）
+    const ownedLabel = i.clearBonus ? '✓ 入手済み' : '✓ 購入済み';
     return `<div class="shop-item ${owned ? 'owned' : ''} ${block ? 'locked' : ''} ${block && block.kind === 'superseded' ? 'is-superseded' : ''} ${isNew ? 'is-new' : ''}" data-item="${i.id}">
-      ${isNew ? '<span class="shop-item-newtag">NEW</span>' : ''}
+      ${isNew ? '<span class="shop-item-newtag">新入荷</span>' : ''}
       <div class="shop-item-icon shop-item-icon-${i.cat}">${shopCatIconSvg(i.cat)}</div>
       <div class="shop-item-body">
         <div class="shop-item-name">${i.name}</div>
@@ -5465,7 +5514,7 @@ function buyItem(itemId) {
   if (!isShopItemUnlocked(itemId)) return;
   // 前提の品が無い／上位を持っている／クリア条件未達は、ボタンが出ていなくてもここで止める
   const block = shopItemBlock(item);
-  if (block) { toast(block.kind === 'superseded' ? '上位の品を持っているので不要です' : block.label.replace('🔒 ', '')); return; }
+  if (block) { toast(block.kind === 'superseded' ? '上位の品を持っているので不要です' : block.label.replace('', '')); return; }
   if (save.coins < item.price) return;
   // 演出は「再描画で壊れる前」に、購入直前の実DOM要素を掴んでおく
   const boughtItemEl = document.querySelector(`.shop-item[data-item="${itemId}"]`);
@@ -5660,50 +5709,50 @@ function pickPsychQuestion() {
 function velvetSpeech(action) {
   if (action.intent === 'bluff' || action.intent === 'forced_bluff') {
     return pick([
-      'この程度のボード、怖がる理由はないわ。',
-      'あなたに見えてないものが、私には見えているの。',
-      '降りる勇気もないなら、それ相応の結果になるわよ。',
-      '震えてる？……可愛らしいわね。',
+      'この程度のボード、怖がる理由はないのよ。',
+      'あなたに見えてないものが、あたしには見えているの。',
+      '降りる勇気もないなら、それ相応の結果になるのよ。',
+      '震えてるの？……可愛いじゃない。',
       'チップに、覚悟の重さを乗せてあげる。',
-      '私のターンよ。あなたは何ができる？',
-      'ふふ……まだそんな顔ができるのね。',
-      '読み合いに、勝つ気は最初からなかったのでしょう？',
+      'あたしのターンなの。あなたは何ができるの？',
+      'ふふ……まだそんな顔ができるのね。ざぁこ♡',
+      '読み合いに勝つ気、最初からなかったんでしょ？',
     ]);
   }
   if (action.intent === 'value') {
     return pick([
       '……',
-      '静かに進めましょう',
+      '静かに進めるのよ',
       '焦らないで、ゆっくり、ね',
-      'これは、正当な対価よ。',
-      '逃さない。確実に頂くわ。',
-      '答えは、もう私の中にある。',
+      'これは、正当な対価なの。',
+      '逃さないの。確実にいただくのよ。',
+      '答えは、もうあたしの中にあるの。',
     ]);
   }
   if (action.intent === 'draw') return pick([
     'ドロー狙いには、相応の代金を。',
-    'タダで次を見られると思った？',
+    'タダで次を見られると思ったの？',
   ]);
   if (action.intent === 'trap') return pick([
     'チェック。さあ、踊って？',
-    '私の手の内、暴けるかしら？',
-    '罠を仕掛けるのは、強者の特権よ。',
+    'あたしの手の内、暴けるの？',
+    '罠を仕掛けるのは、強者の特権なのよ。',
   ]);
   if (action.type === 'fold') return pick([
-    'いいわ、今回は譲ってあげる……',
-    '面白くないわね。次に期待するわ。',
-    'あなたの圧、感じたわ。降ります。',
-    '今は引く。それも戦略よ。',
+    'いいのよ、今回は譲ってあげる……',
+    '面白くないの。次に期待するのよ。',
+    'あなたの圧、感じたの。今回は降りてあげる。',
+    '今は引くの。それも戦略なのよ。',
   ]);
   if (action.type === 'check_call') return pick([
-    '同額で構わないわ',
+    '同額で構わないのよ',
     'コール。あなたの手、見せてもらう',
-    '焦る必要はないわ',
+    '焦る必要はないのよ',
   ]);
   return pick([
     'さあ',
     '……どうする？',
-    '時間は無限ではないわよ',
+    '時間は無限じゃないのよ',
     '迷うのは弱者の特権。早く決めて？',
     'ふふ……',
   ]);
@@ -5834,8 +5883,8 @@ function renderSituationAnalysis() {
   // ボード危険度
   const danger = evaluateBoardDanger(visibleCommunity() || []);
   const dangerFlags = [];
-  if (danger.flushAlert)    dangerFlags.push('🌊フラッシュ');
-  if (danger.straightAlert) dangerFlags.push('🪜ストレート');
+  if (danger.flushAlert)    dangerFlags.push('フラッシュ');
+  if (danger.straightAlert) dangerFlags.push('ストレート');
   if (danger.pairBoard)     dangerFlags.push('♠ペアボード');
 
   // 推奨アクション
@@ -5861,29 +5910,29 @@ function renderSituationAnalysis() {
   const isPreflop = (state.community || []).length === 0;
   // プレイヤーのターンでなければアドバイス省略（次は相手次第）
   if (!state.isPlayerTurn) {
-    advice = '⌛ 相手の手番待ち……';
+    advice = '相手の手番待ち……';
     adviceClass = 'sit-neutral';
   } else if (need === 0) {
     // チェックorベットの場面（コールではない）
     if (isPreflop) {
       // プリフロップ：レイズ／チェック
-      if (effectivePct >= 65)       { advice = '💪 中レイズで圧をかけよう'; adviceClass = 'sit-aggressive'; }
-      else if (effectivePct >= 45)  { advice = '🟡 小レイズ可';            adviceClass = 'sit-neutral'; }
-      else                          { advice = '👁 チェックで様子見';        adviceClass = 'sit-neutral'; }
+      if (effectivePct >= 65)       { advice = '中レイズで圧をかけよう'; adviceClass = 'sit-aggressive'; }
+      else if (effectivePct >= 45)  { advice = '小レイズ可';            adviceClass = 'sit-neutral'; }
+      else                          { advice = 'チェックで様子見';        adviceClass = 'sit-neutral'; }
     } else {
       // ポストフロップ：ベットサイズで具体的に
-      if (effectivePct >= 65)       { advice = '💪 2/3ポット〜で圧をかけよう'; adviceClass = 'sit-aggressive'; }
-      else if (effectivePct >= 45)  { advice = '🟡 1/2ポット程度の小ベット可'; adviceClass = 'sit-neutral'; }
-      else                          { advice = '👁 チェックで様子見';            adviceClass = 'sit-neutral'; }
+      if (effectivePct >= 65)       { advice = '2/3ポット〜で圧をかけよう'; adviceClass = 'sit-aggressive'; }
+      else if (effectivePct >= 45)  { advice = '1/2ポット程度の小ベット可'; adviceClass = 'sit-neutral'; }
+      else                          { advice = 'チェックで様子見';            adviceClass = 'sit-neutral'; }
     }
   } else {
     // 相手がベットしてきた場面（コールorレイズorフォールド）
     const margin = effectivePct - reqWinRate;
-    if (margin >= 20)             { advice = `🔥 レイズ推奨（実効勝率${effectivePct}% ≫ 必要${reqWinRate}%）`; adviceClass = 'sit-aggressive'; }
-    else if (margin >= 5)         { advice = `✅ コール推奨（${effectivePct}% > ${reqWinRate}%）`; adviceClass = 'sit-aggressive'; }
-    else if (margin >= -8)        { advice = `🟡 マージナルコール（${effectivePct}% vs ${reqWinRate}%）`; adviceClass = 'sit-neutral'; }
-    else if (margin >= -20)       { advice = `🟠 微妙……ボードと相手次第`; adviceClass = 'sit-neutral'; }
-    else                          { advice = `❌ フォールド推奨（${effectivePct}% < ${reqWinRate}%）`; adviceClass = 'sit-defensive'; }
+    if (margin >= 20)             { advice = `レイズ推奨（実効勝率${effectivePct}% ≫ 必要${reqWinRate}%）`; adviceClass = 'sit-aggressive'; }
+    else if (margin >= 5)         { advice = `コール推奨（${effectivePct}% > ${reqWinRate}%）`; adviceClass = 'sit-aggressive'; }
+    else if (margin >= -8)        { advice = `マージナルコール（${effectivePct}% vs ${reqWinRate}%）`; adviceClass = 'sit-neutral'; }
+    else if (margin >= -20)       { advice = `微妙……ボードと相手次第`; adviceClass = 'sit-neutral'; }
+    else                          { advice = `フォールド推奨（${effectivePct}% < ${reqWinRate}%）`; adviceClass = 'sit-defensive'; }
   }
 
   // SPRコメント
@@ -5919,7 +5968,7 @@ function renderSituationAnalysis() {
     if (!a || !a.draws || a.draws.length === 0) return '';
     const top = a.draws[0];
     const ruleLabel = a.cardsLeft === 2 ? 'リバーまで' : '次1枚で';
-    return `<div class="sit-draw-line">🎯 ${top.name} <b>${top.outs}枚</b> → <b>${top.pct}%</b> <small>${ruleLabel}</small></div>`;
+    return `<div class="sit-draw-line">${top.name} <b>${top.outs}枚</b> → <b>${top.pct}%</b> <small>${ruleLabel}</small></div>`;
   })();
 
   // ポットオッズ要約：コール判断の場面のみ
@@ -5928,15 +5977,15 @@ function renderSituationAnalysis() {
     : `<div class="sit-odds">勝率 <b>${effectivePct}%</b>（チェック可）</div>`;
 
   const sealed = !(state.winrateRevealed || state.tutorialMode || state.introHandMode);
-  const sealedLine = `<div class="sit-advice sit-neutral">🔒 勝率と推奨は封印中。ぱにゅぱにゅで開けられる</div>`;
+  const sealedLine = `<div class="sit-advice sit-neutral">勝率と推奨は封印中。ぱにゅぱにゅで開けられる</div>`;
   return `
     ${sealed ? sealedLine : `<div class="sit-advice ${adviceClass}">${advice}</div>
     ${oddsLine}`}
     ${dangerFlags.length ? `<div class="sit-danger">⚠ ${dangerFlags.join(' / ')}</div>` : ''}
     ${sealed ? '' : drawInfo}
-    ${intentHint ? `<div class="sit-intent">🎭 ${intentHint}</div>` : ''}
+    ${intentHint ? `<div class="sit-intent">${intentHint}</div>` : ''}
     <details class="sit-stats-fold">
-      <summary>📊 詳細データ</summary>
+      <summary>詳細データ</summary>
       <div class="sit-row sit-row-stacks">
         <span class="sit-label">スタック</span>
         <span class="sit-bar"><span class="sit-bar-fill" style="width:${stackPct}%"></span></span>
@@ -5945,7 +5994,7 @@ function renderSituationAnalysis() {
       <div class="sit-grid">
         <div class="sit-stat">
           <span class="sit-stat-label">勝率</span>
-          <span class="sit-stat-val">${sealed ? '🔒' : effectivePct + '%'}</span>
+          <span class="sit-stat-val">${sealed ? GOLD_LOCK : effectivePct + '%'}</span>
         </div>
         <div class="sit-stat">
           <span class="sit-stat-label">必要</span>
@@ -5965,7 +6014,7 @@ function renderSituationAnalysis() {
       const a = analyzeDraws();
       if (!a || !a.draws || a.draws.length <= 1) return '';
       return `<details class="sit-draws-fold">
-        <summary>🎯 全ドロー候補</summary>
+        <summary>全ドロー候補</summary>
         <div class="sit-draws">
           ${a.draws.slice(0, 4).map(d => `
             <div class="sit-draw-row">
@@ -5983,7 +6032,7 @@ function renderSituationAnalysis() {
 
 function renderBackdoorPanel() {
   if (!state.opponentHand || state.opponentHand.length === 0) {
-    return '<div class="backdoor-empty">（まだハンド開始前）</div>';
+    return '<div class="bd-title">練習：相手の手札</div><div class="backdoor-empty">ハンドが始まると、ここに表示されます</div>';
   }
   const handCards = state.opponentHand.map(c => `<span class="bd-card bd-${c.suit === '♥' || c.suit === '♦' ? 'red' : 'black'}">${c.rank}${c.suit}</span>`).join(' ');
   let hsLabel = '計算中';
@@ -5998,45 +6047,38 @@ function renderBackdoorPanel() {
       const hs = opponentPreflopStrength(state.opponentHand);
       hsPct = Math.round(hs * 100);
     }
-    if (hsPct >= 75) hsLabel = '🔥 最強圏';
-    else if (hsPct >= 60) hsLabel = '💪 強い';
-    else if (hsPct >= 45) hsLabel = '🤔 普通';
-    else if (hsPct >= 30) hsLabel = '😅 微妙';
-    else hsLabel = '💧 弱い';
+    if (hsPct >= 75) hsLabel = '最強圏';
+    else if (hsPct >= 60) hsLabel = '強い';
+    else if (hsPct >= 45) hsLabel = '普通';
+    else if (hsPct >= 30) hsLabel = '微妙';
+    else hsLabel = '弱い';
   } catch(e) {}
   const danger = evaluateBoardDanger(visibleCommunity() || []);
   const dangerLabels = [];
-  if (danger.flushAlert)    dangerLabels.push('🌊フラッシュ警戒');
-  if (danger.straightAlert) dangerLabels.push('🪜ストレート警戒');
-  if (danger.pairBoard)     dangerLabels.push('♠ボードペア');
-  const dangerStr = dangerLabels.length ? dangerLabels.join(' / ') : '安全';
-  const profile = state.opponentProfile || {};
-  const prof = [
-    `ブラフ ${Math.round((profile.bluffTendency||0)*100)}%`,
-    `攻撃 ${Math.round((profile.aggression||0)*100)}%`,
-    `規律 ${Math.round((profile.foldDiscipline||0)*100)}%`,
-    `バリュー ${Math.round((profile.valueBetTendency||0)*100)}%`,
-  ].join(' / ');
+  if (danger.flushAlert)    dangerLabels.push('フラッシュに注意');
+  if (danger.straightAlert) dangerLabels.push('ストレートに注意');
+  if (danger.pairBoard)     dangerLabels.push('場にペア');
+  const dangerStr = dangerLabels.length ? dangerLabels.join('、') : '特になし';
+  // 相手の性格の数値（ブラフ%など）は出さない。見せるのは「相手の手の強さ」と「場札の注意」まで
   return `
-    <div class="bd-title">✦ 練習用：相手の手札と考え ✦</div>
+    <div class="bd-title">練習：相手の手札</div>
     <div class="bd-note">この対戦は称号・ランクの記録対象外</div>
     <div class="bd-row"><span class="bd-label">手札</span><span class="bd-value">${handCards}</span></div>
-    <div class="bd-row"><span class="bd-label">手の強さ</span><span class="bd-value">${hsPct}％ ${hsLabel}</span></div>
+    <div class="bd-row"><span class="bd-label">相手の手の強さ</span><span class="bd-value">${hsLabel}（${hsPct}％）</span></div>
     <div class="bd-bar"><div class="bd-bar-fill" style="width:${hsPct}%"></div></div>
-    <div class="bd-row"><span class="bd-label">ボード</span><span class="bd-value">${dangerStr}</span></div>
-    <div class="bd-row"><span class="bd-label">性格</span><span class="bd-value bd-prof">${prof}</span></div>
-    ${state.lastOpponentIntent ? `<div class="bd-row"><span class="bd-label">直前の意図</span><span class="bd-value">${intentLabel(state.lastOpponentIntent)}</span></div>` : ''}
+    <div class="bd-row"><span class="bd-label">場札の注意</span><span class="bd-value">${dangerStr}</span></div>
+    ${state.lastOpponentIntent ? `<div class="bd-row"><span class="bd-label">直前の狙い</span><span class="bd-value">${intentLabel(state.lastOpponentIntent)}</span></div>` : ''}
   `;
 }
 
 function intentLabel(intent) {
   return {
-    'bluff':         '🎭 ブラフ',
-    'forced_bluff':  '🎭 強制ブラフ（教材）',
-    'tutorial_bluff':'🎭 練習ブラフ',
-    'value':         '💎 バリュー（強い手で稼ぐ）',
-    'draw':          '🌊 ドロー潰し',
-    'trap':          '🪤 トラップ（チェックレイズ狙い）',
+    'bluff':         'ブラフ',
+    'forced_bluff':  '強制ブラフ（教材）',
+    'tutorial_bluff':'練習ブラフ',
+    'value':         'バリュー（強い手で稼ぐ）',
+    'draw':          'ドロー潰し',
+    'trap':          'トラップ（チェックレイズ狙い）',
   }[intent] || intent;
 }
 
@@ -6674,23 +6716,23 @@ function getPreflopNickname(h) {
   const pair = r[0] === r[1];
   // 有名なニックネーム
   const nicks = {
-    'A-A': '🔥 ポケットロケット', 'K-K': '🔥 カウボーイ', 'Q-Q': '👑 レディース',
-    'J-J': '🎣 フィッシュフック', 'T-T': '⚡ ダイムス',
-    'A-K': '🗡 ビッグスリック', 'A-Q': '💎 ビッグチック',
-    'K-Q': '🛡 ロイヤルカップル',
+    'A-A': 'ポケットロケット', 'K-K': 'カウボーイ', 'Q-Q': 'レディース',
+    'J-J': 'フィッシュフック', 'T-T': 'ダイムス',
+    'A-K': 'ビッグスリック', 'A-Q': 'ビッグチック',
+    'K-Q': 'ロイヤルカップル',
   };
   const key = pair ? `${h[0].label}-${h[0].label}` : `${r.map(x => 'A23456789TJQKA'[x===14?0:x-1])[0]}-${r.map(x => 'A23456789TJQKA'[x===14?0:x-1])[1]}`;
   const nick = nicks[key];
   if (nick) return suited ? `${nick}（スーテッド）` : nick;
   // ティア判定
-  if (pair && r[0] >= 9) return '💪 ミドルペア';
-  if (pair) return '🌱 スモールペア';
-  if (r[0] === 14 && r[1] >= 9) return suited ? '✨ Aハイ・スーテッド' : '⭐ Aハイ';
-  if (r[0] >= 11 && r[1] >= 9 && suited) return '🎯 ブロードウェイ・スーテッド';
-  if (Math.abs(r[0] - r[1]) === 1 && suited && r[1] >= 5) return '🔗 スーテッドコネクター';
-  if (Math.abs(r[0] - r[1]) === 1 && r[1] >= 5) return '🔗 コネクター';
+  if (pair && r[0] >= 9) return 'ミドルペア';
+  if (pair) return 'スモールペア';
+  if (r[0] === 14 && r[1] >= 9) return suited ? 'Aハイ・スーテッド' : 'Aハイ';
+  if (r[0] >= 11 && r[1] >= 9 && suited) return 'ブロードウェイ・スーテッド';
+  if (Math.abs(r[0] - r[1]) === 1 && suited && r[1] >= 5) return 'スーテッドコネクター';
+  if (Math.abs(r[0] - r[1]) === 1 && r[1] >= 5) return 'コネクター';
   if (suited) return '♠ スーテッド（投機）';
-  return '🍃 オフスーツ（弱め）';
+  return 'オフスーツ（弱め）';
 }
 
 // ポストフロップ：自分が持っているブロッカー情報
@@ -6876,7 +6918,7 @@ function getOpponentAppearance(id) {
 // 各キャラの「実際のAI挙動」を反映した行動傾向と、それに対する攻略法
 const OPPONENT_PERSONALITY = {
   rico_tutorial: {
-    icon: '🎓',
+    icon: '先',
     title: '先生気質',
     traits: [
       'ブラフ多めで練習相手をしてくれる',
@@ -6885,7 +6927,7 @@ const OPPONENT_PERSONALITY = {
     exploit: 'チュートリアル中。素直にコールして学ぼう',
   },
   polka: {
-    icon: '🔥',
+    icon: '自',
     title: '自信家ブラファー',
     traits: [
       'ブラフ多発（弱い手でも大きく賭ける）',
@@ -6895,7 +6937,7 @@ const OPPONENT_PERSONALITY = {
     exploit: '中程度の手でブラフキャッチを狙え。ブラフは絶対通らない、強い手は最大バリュー',
   },
   selina: {
-    icon: '🧊',
+    icon: '冷',
     title: '冷静な観察者',
     traits: [
       'ブラフ少（手が無い時はチェック）',
@@ -6905,7 +6947,7 @@ const OPPONENT_PERSONALITY = {
     exploit: 'ドライボードならブラフが通る。ウェットボードの大ベットには真の強手、降りるべし',
   },
   grano: {
-    icon: '💰',
+    icon: '商',
     title: '商人気質',
     traits: [
       '損したくない（割が合わなければ即フォールド）',
@@ -6915,7 +6957,7 @@ const OPPONENT_PERSONALITY = {
     exploit: '小ベットで降ろせる場面が多い。チェック後の大ベットは罠、降りるべし',
   },
   velvet: {
-    icon: '👁',
+    icon: '圧',
     title: '圧支配のディーラー',
     traits: [
       '常に大ベット（標準で2/3ポット以上）',
@@ -6928,7 +6970,7 @@ const OPPONENT_PERSONALITY = {
 function getOpponentPersonality(id) {
   if (state.seriousRicoMode) {
     return {
-      icon: '🐰',
+      icon: '本',
       title: '本気のリコ先輩',
       traits: [
         '全パラメータが最強水準',
@@ -7581,6 +7623,8 @@ function onAction(e) {
   if (Date.now() - lastCutInClosedAt < 400) return;
   // 研修中の行動ボタンは台本が受け取る（光っている1つだけが効く）
   if (state && state.introHandMode && /^player-/.test(action || '')) { introAct(action); return; }
+  // 零時の卓の入口（入場案内・着席・続きから・記録）は allstar-ui.js が受け取る
+  if (/^allstar-/.test(action || '')) { if (window.AllstarUI) AllstarUI.onAction(action, data, e); return; }
   switch (action) {
     case 'start':
       // P2: 初回起動（未クリア＆体験ハンド未消化）はロビーではなく体験ハンドへ直行
@@ -7662,7 +7706,7 @@ function onAction(e) {
       state.screen = 'shop';
       render();
       if (newCount > 0) {
-        toast(`🎴 新商品 ${newCount} 件入荷！`);
+        toast(`新商品 ${newCount} 件入荷！`);
       }
       // ※ markShopItemsSeen はショップを出る時に実行（NEWマークがショップ内で消えるバグの修正）
       break;
@@ -7793,6 +7837,7 @@ function onAction(e) {
           showEpisodeTitle('ending', () => { state.screen = 'ending'; render(); });
         } else {
           renderWonResultButtons();
+          if (isBgmOn()) playSceneBgm('victory');
         }
       });
       break;
@@ -7816,7 +7861,7 @@ function onAction(e) {
         if (state.__panyuClickCount >= 7) {
           save.backdoorUnlocked = true;
           saveProgress();
-          toast('練習用「相手の手札を見る」が使えるようになりました。バトル画面左上の ✦ か設定で切り替えます（使っている間の対戦は称号・ランクの記録対象外）', 'big');
+          toast('練習用「相手の手札を見る」が使えるようになりました。対戦画面の目のボタンか、設定で切り替えます（使っている間の対戦は称号・ランクの記録対象外）', 'big');
         }
       }
       // 二度押しで玉の画面が重ならないように
@@ -7860,27 +7905,21 @@ function onAction(e) {
       break;
     }
     case 'open-settings': showSettingsModal(); break;
-    case 'play-ending':
+    case 'play-ending': {
+      // 見返し：入ってきた画面（とコレクションを開いていたか）を覚えておく。確認の窓の「やめる」や締めのボタンで戻る
+      const fromCollection = !!document.querySelector('.collection-overlay');
+      stopEndingThemePreview(false); // 主題歌の試聴が鳴っていれば止める
       // コレクションから開いた時に、手帳が映像の上に残らないよう閉じてから
       document.querySelectorAll('.collection-overlay').forEach(el => el.remove());
+      state.endingReplay = { screen: state.screen, collection: fromCollection };
       state.screen = 'ending'; render(); break;
-    case 'play-ending-theme': toggleEndingThemePreview(); break;
-    case 'play-credits': {
-      // クリア特典：本編のスタッフロールだけを再生する（エンディング画面の上で、曲の確認は挟まない）
-      document.querySelectorAll('.collection-overlay').forEach(el => el.remove());
-      state.screen = 'ending';
-      render();
-      document.querySelectorAll('.ending-prompt-overlay').forEach(el => el.remove());
-      const st = document.getElementById('ending-stage');
-      if (!st) { goLobby(); break; }
-      st.innerHTML = '';
-      const lobbyA = document.getElementById('lobby-bgm-audio');
-      if (lobbyA) lobbyA.pause();
-      const endA = document.getElementById('ending-bgm-audio');
-      if (endA && isBgmOn()) { endA.currentTime = 0; endA.volume = Math.min(1, bgmVolFloat() * 1.6); endA.play().catch(() => {}); }
-      startCreditsRoll(st);
-      break;
     }
+    case 'play-ending-theme': toggleEndingThemePreview(); break;
+    case 'play-credits':
+      // クリア特典：本編のスタッフロールだけを、今の画面（コレクション・交換所）の上で流す。
+      // 終わったら／閉じたら元の画面に戻る（エピローグは挟まない）
+      playStaffRollReplay();
+      break;
     case 'play-minipoker': showMiniPokerGame(); break;
     case 'toggle-v2-detail': {
       const panel = document.querySelector('.v2-detail');
@@ -7935,23 +7974,34 @@ function showEndingMusicPrompt() {
   const overlay = document.createElement('div');
   overlay.className = 'ending-prompt-overlay';
   const curVol = save.bgmVolume != null ? save.bgmVolume : 35;
+  // 音を切っている人には「流さない」を最初の選択（主ボタン）にし、流す方は音がオンになると書く
+  const soundOn = isBgmOn();
+  const withBtn = `<button class="btn ${soundOn ? 'btn-primary' : 'btn-secondary'}" id="ending-with-music">${UI_ICON.sound}<span>${soundOn ? '流す' : '音をオンにして流す'}</span></button>`;
+  const withoutBtn = `<button class="btn ${soundOn ? 'btn-secondary' : 'btn-primary'}" id="ending-without-music">${UI_ICON.mute}<span>流さない</span></button>`;
+  // 見返し（コレクション・交換所の「観る」）で入った時だけ「やめる」＝元の画面へ戻る
+  const replay = state && state.endingReplay;
   overlay.innerHTML = `
     <div class="ending-prompt-modal">
       <div class="ending-prompt-title">— 終幕の前に —</div>
-      <div class="ending-prompt-sub">エンディングテーマを流しますか？</div>
-      <div class="ending-prompt-song">♪ ポーカーフェイスの終わり〜変な件〜</div>
+      <div class="ending-prompt-song">
+        <span class="ending-prompt-kicker">主題歌</span>
+        <span class="ending-prompt-song-name">ポーカーフェイスの終わり〜変な件〜</span>
+      </div>
+      <div class="ending-prompt-sub">${soundOn ? 'この曲を流しながら観ますか？' : 'いまは音を切っています。この曲を流しながら観ますか？'}</div>
       <div class="ending-prompt-vol-row">
-        <span class="ending-prompt-vol-label">🔊 音量</span>
-        <input class="ending-prompt-vol" type="range" min="0" max="100" step="1" value="${curVol}">
+        <span class="ending-prompt-vol-label">${UI_ICON.sound}<span>音量</span></span>
+        <input class="ending-prompt-vol" type="range" min="0" max="100" step="1" value="${curVol}" aria-label="音量">
         <span class="ending-prompt-vol-num">${curVol}</span>
       </div>
       <div class="ending-prompt-actions">
-        <button class="btn btn-primary" id="ending-with-music">▶ 流す</button>
-        <button class="btn btn-secondary" id="ending-without-music">${UI_ICON.mute} 流さない</button>
+        ${soundOn ? withBtn + withoutBtn : withoutBtn + withBtn}
+        ${replay ? '<button class="btn btn-secondary ending-prompt-cancel" id="ending-prompt-cancel">やめる</button>' : ''}
       </div>
     </div>
   `;
   stage.appendChild(overlay);
+  // 初期の選択に指を置いておく（キーボードの決定でもそのまま進める）
+  try { overlay.querySelector('.ending-prompt-actions .btn-primary').focus({ preventScroll: true }); } catch (e) {}
   const sl = overlay.querySelector('.ending-prompt-vol');
   const num = overlay.querySelector('.ending-prompt-vol-num');
   sl.addEventListener('input', (e) => {
@@ -7966,10 +8016,32 @@ function showEndingMusicPrompt() {
     if (chosen) return; // 二度押しで演出が2本走らないように
     chosen = true;
     overlay.remove();
+    // 音を切っていた人が「音をオンにして流す」を選んだら、BGM を入れる（設定の窓・隅の音の表示もそろえる）
+    if (withMusic && !isBgmOn()) { save.bgmOn = true; saveProgress(); refreshAudioBars(); }
     startEndingShow(withMusic);
   };
   overlay.querySelector('#ending-with-music').addEventListener('click', () => choose(true));
   overlay.querySelector('#ending-without-music').addEventListener('click', () => choose(false));
+  const cancel = overlay.querySelector('#ending-prompt-cancel');
+  if (cancel) cancel.addEventListener('click', () => {
+    if (chosen) return;
+    chosen = true;
+    const r = state.endingReplay;
+    state.endingReplay = null;
+    returnFromEndingReplay(r);
+  });
+}
+
+// 見返しを終えて、入ってきた画面へ戻す（コレクションから入っていたら開き直す）。
+// 戻せるのは交換所とタイトルだけ。それ以外（ロビー・対戦の途中など）はロビーへ。
+function returnFromEndingReplay(r) {
+  endingRunId++; // 走っている演出の予約を止める
+  stopEndingBgm();
+  document.querySelectorAll('.ending-prompt-overlay').forEach(el => el.remove());
+  const back = r && (r.screen === 'shop' || r.screen === 'title') ? r.screen : null;
+  if (back) { state.screen = back; render(); startBgmForScreen(); }
+  else goLobby();
+  if (r && r.collection) showCollectionModal();
 }
 
 function startEndingShow(playMusic) {
@@ -7999,24 +8071,60 @@ function startEndingShow(playMusic) {
   stars.className = 'ending-stars';
   stage.appendChild(stars);
   let cancelled = false;
+  // ロールの後に出す題字（タイトルロゴ）は、遅れて描かれないよう今のうちに読んでおく
+  try { const pre = new Image(); pre.src = 'assets/ui/title_logo_hd.webp'; } catch (e) {}
 
-  // 右上：スキップピルのみ（音量バーはエンディングでは表示しない＝没入優先）
+  // 右上：音のオン・オフ＋スキップ（角2px・深紅・金縁の四角。演出・ロール・エピローグの間ずっと同じ場所）
+  const ctlBar = document.createElement('div');
+  ctlBar.className = 'ec-bar';
+  const soundCtl = document.createElement('button');
+  soundCtl.type = 'button';
+  soundCtl.className = 'ec-btn ec-sound';
+  let themeOn = !!(playMusic && endA);
+  let themeStarted = themeOn; // 「流さない」の後に初めて流す時は曲の頭から
+  const paintSound = () => {
+    soundCtl.innerHTML = themeOn ? UI_ICON.sound : UI_ICON.mute;
+    soundCtl.title = themeOn ? '主題歌を止める' : '主題歌を流す';
+    soundCtl.setAttribute('aria-label', soundCtl.title);
+    soundCtl.classList.toggle('is-off', !themeOn);
+  };
+  paintSound();
+  soundCtl.addEventListener('click', () => {
+    if (!endA) return;
+    if (themeOn) {
+      endA.pause();
+      themeOn = false;
+    } else {
+      // 音を切っていた人が押したら BGM を入れる（流さないを選んだ後でも、ここから流せる）
+      if (!isBgmOn()) { save.bgmOn = true; saveProgress(); refreshAudioBars(); }
+      if (!themeStarted) { endA.currentTime = 0; themeStarted = true; }
+      endA.volume = Math.min(1, bgmVolFloat() * 1.6);
+      const p = endA.play();
+      if (p && p.catch) p.catch(() => { themeOn = false; if (soundCtl.isConnected) paintSound(); });
+      themeOn = true;
+    }
+    paintSound();
+  });
+  if (endA) endA.addEventListener('ended', () => { if (soundCtl.isConnected) { themeOn = false; paintSound(); } }, { once: true });
   const skipCtl = document.createElement('button');
-  skipCtl.className = 'ec-btn ec-skip ec-pill ec-pos-right';
+  skipCtl.type = 'button';
+  skipCtl.className = 'ec-btn ec-skip';
   skipCtl.title = 'スキップ';
-  skipCtl.textContent = 'スキップ ▶▶';
-  stage.appendChild(skipCtl);
+  skipCtl.innerHTML = `<span>スキップ</span>${UI_ICON.skip}`;
+  ctlBar.appendChild(soundCtl);
+  ctlBar.appendChild(skipCtl);
+  stage.appendChild(ctlBar);
   const skip = skipCtl;
   skip.addEventListener('click', () => {
-    // スキップは本編の演出とスタッフロールを飛ばし、締めのエピローグ（感謝・リコ先輩の一言・ロビーへ戻る）に着地する。
-    // 以前は即ロビーへ戻っていて、エンディングの締めを一度も見られなかった。
+    // スキップは本編の演出とスタッフロールを飛ばし、締めのエピローグ（感謝・リコ先輩の一言・ボタン）に着地する。
+    // 以前は即ロビーへ戻っていて、エンディングの締めを一度も見られなかった。スキップ後はボタンを待たせない
     if (cancelled) return;
     cancelled = true;
     skip.disabled = true;
     skip.style.display = 'none';
     stage.querySelectorAll('.ending-narration, .ending-speaker, .ending-keyart, .ending-portrait-scene, .ending-blackout, .credits-roll')
       .forEach(el => el.remove());
-    showEndingFinalButtons(stage);
+    showEndingFinalButtons(stage, { immediate: true });
   });
   const alive = () => !cancelled && runId === endingRunId && stage.isConnected;
 
@@ -8027,25 +8135,25 @@ function startEndingShow(playMusic) {
 
     // ── 第1幕：女王、玉座を降りる ──（velvet.png をキープ、セリフ2発）
     { type: 'keyart', img: 'velvet', name: 'ヴェルベット',
-      text: '……新人さんに、こんな夜をいただくとは。', wait: 6200 },
+      text: '……新人さんに、こんな夜をもらうなんてね。', wait: 6200 },
     { type: 'keyart', img: 'velvet', name: 'ヴェルベット',
-      text: '玉座は揺るがぬものと、信じていた。<br>今夜、私は知ったの。<br>——揺るがぬものなど、ない。', wait: 8000 },
+      text: '玉座は揺るがないって、信じてたの。<br>今夜、あたしは知ったの。<br>——揺るがないものなんて、ないってこと。', wait: 8000 },
 
     // ── 第2幕：敗者たちの敬意 ──
     { type: 'keyart', img: 'grano', name: 'グラーノ',
-      text: '商人として、申し上げる。<br>お嬢さんの判断は、利得を超えていた。<br>——あれは、美しかった。', wait: 7400 },
+      text: 'お嬢さん、商人として申し上げましょう。<br>あの判断は、損得を超えておりましたよ。<br>——実に、美しかった。', wait: 7400 },
 
     { type: 'keyart', img: 'selina', name: 'セリナ',
-      text: 'ボードは、嘘をつかない。<br>けれど……心は、読み切れるものね。<br>羨ましいくらいに。', wait: 7200 },
+      text: 'ボードは、嘘をつきません。<br>けれど……心まで読み切られるとは、思っていませんでした。<br>羨ましいくらいです。', wait: 7200 },
 
     { type: 'keyart', img: 'polka', name: 'ポルカ',
-      text: 'うう、悔しい！<br>でも……うん、覚えとくから。<br>あなたの強さ、ぜったい、次は超えてやるんだから！', wait: 6800 },
+      text: 'うう、悔しい！<br>でも……うん、ボク、覚えとくから。<br>ミミちゃんの強さ、ぜったい次は超えてやるんだから！', wait: 6800 },
 
     // ── 第3幕：師の祝福 ──
     { type: 'portrait', img: 'rico_ending', fallback: 'rico_default', name: 'リコ先輩',
       text: 'やるじゃん、ミミ。', wait: 3800 },
     { type: 'portrait', img: 'rico_ending', fallback: 'rico_default', name: 'リコ先輩',
-      text: 'ねえ、今日って……あなたの、初日でしょう？<br>こんな新人、聞いたこともない。',
+      text: 'ねえ、今日って……ミミの初日だよね？<br>こんな新人、アタシも聞いたことないよ。',
       wait: 6400 },
 
     // ── 第4幕：主人公の独白（外れスキルと呼ばれた力で、見る目が育ったことを肯定して締める） ──
@@ -8217,7 +8325,7 @@ function startEndingShow(playMusic) {
   }
 
   function finale() {
-    if (skip) skip.style.display = 'none';
+    // 右上のスキップと音はロールの間も残す（ロール自身のスキップは出さない＝同じ場所に2つ並ばない）
     // 余韻ナレーションが out → 透明 → 静かに片付け（一瞬の絵チラつき防止）
     const lingering = stage.querySelectorAll(
       '.ending-speaker, .ending-narration, .ending-keyart, .ending-portrait-scene'
@@ -8234,23 +8342,26 @@ function startEndingShow(playMusic) {
     blackOut.style.cssText = 'position:absolute;inset:0;background:#000;z-index:3;opacity:0;transition:opacity 1.2s ease;';
     stage.appendChild(blackOut);
     requestAnimationFrame(() => { blackOut.style.opacity = '1'; });
-    // ナレーション余韻 → 黒 → スタッフロール
-    setTimeout(() => { if (alive()) startCreditsRoll(stage); }, 1600);
+    // ナレーション余韻 → 黒 → スタッフロール → 題字（タイトルロゴ）→ エピローグ
+    setTimeout(() => {
+      if (!alive()) return;
+      startCreditsRoll(stage, {
+        noSkip: true,
+        onFinish: () => { if (alive()) showEndingTitleDrop(stage, () => { if (alive()) showEndingFinalButtons(stage); }); },
+      });
+    }, 1600);
   }
 
   // 開始
   setTimeout(nextAct, 400);
 }
 
-// スタッフロール（製品版）。役割名は一般的な表記にし、制作に使ったツール・サービスは「制作協力」に2行でまとめる。
+// スタッフロール（製品版）。役割名は一般的な表記にし、制作に使ったツール・サービスは「制作協力」に1行ずつ（役割を先に）。
 // キャラクターの締めの台詞（エピローグ）は作品世界の中のものなので、ここには入れずロールの後に出す。
+// 権利表記と版は game.js 先頭の COPYRIGHT_TEXT / GAME_VERSION を読む（タイトル・設定と同じ値）。
 const CREDITS = [
-  { type: 'title', text: 'STAFF' },
-  { type: 'section', text: '企画・原案' },
-  { type: 'line', text: 'あいかわ', cls: 'is-person' },
-  { type: 'gap' },
-
-  { type: 'section', text: 'プロデュース・監修' },
+  { type: 'title', text: 'スタッフ' },
+  { type: 'section', text: '企画・原案・プロデュース' },
   { type: 'line', text: 'あいかわ', cls: 'is-person' },
   { type: 'gap' },
 
@@ -8259,31 +8370,142 @@ const CREDITS = [
   { type: 'gap' },
 
   { type: 'section', text: '制作協力' },
-  { type: 'line', text: 'ChatGPT（イラスト・シナリオ）　Higgsfield（ムービー）' },
-  { type: 'line', text: 'Suno（音楽）　Claude Code（プログラム）' },
+  { type: 'line', role: 'イラスト・シナリオ', text: 'ChatGPT' },
+  { type: 'line', role: 'ムービー', text: 'Higgsfield' },
+  { type: 'line', role: '音楽', text: 'Suno' },
+  { type: 'line', role: 'プログラム', text: 'Claude Code' },
   { type: 'gap' },
 
   { type: 'section', text: 'スペシャルサンクス' },
-  { type: 'line', text: 'プレイしてくれたあなた' },
+  { type: 'line', text: '遊んでくださったあなた' },
   { type: 'gap' },
   { type: 'gap' },
 
   { type: 'title', text: 'ミミのテキサスホールデムポーカー' },
   { type: 'small', text: '〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜' },
+  { type: 'gap' },
+
+  { type: 'section', text: '制作・著作' },
+  { type: 'line', text: 'あいかわ', cls: 'is-person' },
+  { type: 'gap' },
+  { type: 'line', text: COPYRIGHT_TEXT, cls: 'is-legal' },
+  { type: 'line', text: 'Ver ' + GAME_VERSION, cls: 'is-legal' },
 ];
 
-// コレクションの「スタッフロール再生」：エンディングと同じスタッフロールを、今の画面の上で流す
+// コレクション・交換所の「スタッフロール再生」：エンディングと同じスタッフロールを、今の画面の上で流す。
+// 終わったら／閉じたら元の画面に戻る（エピローグは挟まない）。音を出している人には主題歌を流し、終わったら元の曲へ
 function playStaffRollReplay() {
   if (document.querySelector('.staff-roll-replay')) return; // 二重再生しない
+  stopEndingThemePreview(false); // 主題歌の試聴が鳴っていれば止める（頭から流し直す）
   const host = document.createElement('div');
   host.className = 'staff-roll-replay';
   (document.getElementById('stage') || document.body).appendChild(host);
-  startCreditsRoll(host, { onFinish: () => host.remove(), skipLabel: '閉じる' });
+  const endA = document.getElementById('ending-bgm-audio');
+  let themed = false;
+  if (endA && isBgmOn()) {
+    _stopNonSceneBgm();
+    stopSceneBgm();
+    endA.currentTime = 0;
+    endA.volume = Math.min(1, bgmVolFloat() * 1.6);
+    const p = endA.play();
+    if (p && p.catch) p.catch(() => {});
+    themed = true;
+  }
+  startCreditsRoll(host, {
+    skipLabel: '閉じる',
+    onFinish: () => {
+      host.remove();
+      if (themed) { stopEndingBgm(); startBgmForScreen(); }
+    },
+  });
+}
+
+// スタッフロールの1項目の HTML（流すロールと、動きを減らす人向けの節ごとの切り替えで共通）
+function creditsItemHtml(c) {
+  if (c.type === 'title')   return `<div class="cr-title">${c.text}</div>`;
+  if (c.type === 'section') return `<div class="cr-section">— ${c.text} —</div>`;
+  if (c.type === 'gap')     return `<div class="cr-gap"></div>`;
+  if (c.type === 'small')   return `<div class="cr-small">${c.text}</div>`;
+  if (c.type === 'line') {
+    // 制作協力は「役割　名前」の順に1行ずつ
+    if (c.role) return `<div class="cr-line has-role"><span class="cr-line-role">${c.role}</span><span class="cr-line-name">${c.text}</span></div>`;
+    return `<div class="cr-line ${c.cls || ''}">${c.text}</div>`;
+  }
+  return '';
+}
+// スタッフロールのスキップ（閉じる）ボタン。角2px・深紅・金縁の四角（エンディング右上のスキップと同じ型）
+function creditsSkipButton(opts) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'credits-skip';
+  b.innerHTML = opts && opts.skipLabel ? `<span>${opts.skipLabel}</span>` : `<span>スキップ</span>${UI_ICON.skip}`;
+  return b;
+}
+
+// 動きを減らす設定の人向け：流さずに、節ごとのフェード切り替え（1枚 約4秒）。星・ミニキャラは出さない
+function startCreditsRollPaged(stage, opts = {}) {
+  let rollFinished = false;
+  const finishRoll = () => {
+    if (rollFinished) return;
+    rollFinished = true;
+    if (typeof opts.onFinish === 'function') opts.onFinish();
+    else showEndingFinalButtons(stage);
+  };
+  // 節（見出し＋その行）ごとに1枚へ分ける。題字の直後の節は同じ1枚に入れる
+  const pages = [];
+  let cur = null;
+  CREDITS.forEach(c => {
+    if (c.type === 'gap') return;
+    const startNew = !cur || c.type === 'title' || (c.type === 'section' && !(cur.length === 1 && cur[0].type === 'title'));
+    if (startNew) { cur = []; pages.push(cur); }
+    cur.push(c);
+  });
+  const roll = document.createElement('div');
+  roll.className = 'credits-roll is-paged';
+  const topDeco = document.createElement('div');
+  topDeco.className = 'cr-deco cr-deco-top';
+  const botDeco = document.createElement('div');
+  botDeco.className = 'cr-deco cr-deco-bot';
+  roll.appendChild(topDeco);
+  roll.appendChild(botDeco);
+  const inner = document.createElement('div');
+  inner.className = 'credits-inner is-paged';
+  roll.appendChild(inner);
+  const timers = [];
+  const later = (fn, ms) => { timers.push(setTimeout(fn, ms)); };
+  if (!opts.noSkip) {
+    const skip = creditsSkipButton(opts);
+    skip.onclick = () => {
+      if (rollFinished) return;
+      skip.disabled = true;
+      timers.forEach(clearTimeout);
+      roll.remove();
+      finishRoll();
+    };
+    roll.appendChild(skip);
+  }
+  stage.appendChild(roll);
+  const PAGE_MS = 4200, FADE_MS = 700;
+  const showPage = (i) => {
+    if (!roll.parentNode) return;
+    if (i >= pages.length) {
+      roll.classList.add('roll-fadeout');
+      later(() => { if (roll.parentNode) { roll.remove(); finishRoll(); } }, 1800);
+      return;
+    }
+    inner.innerHTML = pages[i].map(creditsItemHtml).join('');
+    requestAnimationFrame(() => inner.classList.add('show'));
+    later(() => inner.classList.remove('show'), PAGE_MS - FADE_MS);
+    later(() => showPage(i + 1), PAGE_MS);
+  };
+  later(() => showPage(0), 300);
 }
 
 // opts.onFinish: 流し終えた／スキップした後の行き先（既定＝エンディングのエピローグ）
 // opts.skipLabel: スキップボタンの文言（交換所の「スタッフロール再生」では「閉じる」）
+// opts.noSkip: ロール自身のスキップを出さない（エンディング本編は右上のスキップがロールの間も残る）
 function startCreditsRoll(stage, opts = {}) {
+  if (!MOTION_OK) { startCreditsRollPaged(stage, opts); return; }
   let rollFinished = false;
   const finishRoll = () => {
     if (rollFinished) return;
@@ -8424,33 +8646,20 @@ function startCreditsRoll(stage, opts = {}) {
 
   const inner = document.createElement('div');
   inner.className = 'credits-inner';
-  inner.innerHTML = CREDITS.map(c => {
-    if (c.type === 'title')   return `<div class="cr-title">${c.text}</div>`;
-    if (c.type === 'section') return `<div class="cr-section">— ${c.text} —</div>`;
-    if (c.type === 'gap')     return `<div class="cr-gap"></div>`;
-    if (c.type === 'small')   return `<div class="cr-small">${c.text}</div>`;
-    if (c.type === 'line')    return `<div class="cr-line ${c.cls || ''}">${c.text}</div>`;
-    const tagClass = c.name === 'Claude Code' ? 'cr-claude'
-                  : c.name === 'ChatGPT' ? 'cr-gpt'
-                  : c.name === 'Suno' ? 'cr-suno'
-                  : c.name === 'あいかわ' ? 'cr-author'
-                  : '';
-    return `<div class="cr-row"><span class="cr-role">${c.role}</span><span class="cr-name ${tagClass}">${c.name}</span></div>`;
-  }).join('');
+  inner.innerHTML = CREDITS.map(creditsItemHtml).join('');
   roll.appendChild(inner);
-  // スキップボタン：エンディングでは締めのエピローグへ（以前は即ロビーへ戻り、締めを見られなかった）
-  const skip = document.createElement('button');
-  skip.type = 'button';
-  skip.className = 'credits-skip';
-  skip.textContent = opts.skipLabel || '▶▶ スキップ';
-  skip.onclick = () => {
-    if (rollFinished) return;
-    skip.disabled = true;
-    if (finaleTimer) clearTimeout(finaleTimer);
-    roll.remove();
-    finishRoll();
-  };
-  roll.appendChild(skip);
+  // スキップボタン：見返しでは「閉じる」。エンディング本編は右上のスキップがロールの間も残るので出さない
+  if (!opts.noSkip) {
+    const skip = creditsSkipButton(opts);
+    skip.onclick = () => {
+      if (rollFinished) return;
+      skip.disabled = true;
+      if (finaleTimer) clearTimeout(finaleTimer);
+      roll.remove();
+      finishRoll();
+    };
+    roll.appendChild(skip);
+  }
   stage.appendChild(roll);
 
   // ── コンテンツ実高に合わせてスクロール距離と所要時間を動的設定 ──
@@ -8556,11 +8765,33 @@ function startCreditsRoll(stage, opts = {}) {
   };
 }
 
-function showEndingFinalButtons(stage) {
+// ロールの後、エピローグの前：黒地の中央に題字（タイトルロゴ）を金のフェードで約3秒。
+// 片付けは showEndingFinalButtons（.ending-title-drop を fade-out → remove）と対になっている
+function showEndingTitleDrop(stage, next) {
+  const drop = document.createElement('div');
+  drop.className = 'ending-title-drop is-fade';
+  drop.innerHTML = `
+    <img src="assets/ui/title_logo_hd.webp" alt="ミミのテキサスホールデムポーカー"
+         onerror="this.parentElement.classList.add('logo-fallback')">
+    <div class="ending-title-fallback"><div class="ending-title-jp">ミミのテキサスホールデムポーカー</div></div>
+  `;
+  stage.appendChild(drop);
+  requestAnimationFrame(() => requestAnimationFrame(() => drop.classList.add('show')));
+  setTimeout(next, 3200);
+}
+
+// 締めのエピローグ。opts.immediate＝スキップの後（見返しの時も）はボタンを最初から出す
+function showEndingFinalButtons(stage, opts = {}) {
   if (stage.querySelector('.ending-final-buttons')) return;
-  // ── スタッフロール後の余韻シーン ── 一気にボタンを出さず、感謝メッセージで緩める
+  const replay = state && state.endingReplay;
+  // 見返し・スキップ後はボタンを待たせない。本編の初回は台詞が出そろってから（見えない間は押せない）
+  const immediate = !!(opts.immediate || replay);
+  const toShop = !!(replay && replay.screen === 'shop');
+  // 右上のスキップはもう要らない（音のオン・オフは残す：曲がエピローグの間も続くため）
+  stage.querySelectorAll('.ec-skip').forEach(b => { b.disabled = true; b.style.display = 'none'; });
+  // ── スタッフロール後の余韻シーン ── 感謝の言葉は明朝の日本語1本（英語の見出しと「ありがとう」の重ねはやめた）
   const epilogue = document.createElement('div');
-  epilogue.className = 'ending-epilogue';
+  epilogue.className = `ending-epilogue${immediate ? ' is-immediate' : ''}`;
   epilogue.innerHTML = `
     <div class="ep-img-wrap">
       <img class="ep-img" src="assets/episodes/ending.webp" alt=""
@@ -8569,19 +8800,37 @@ function showEndingFinalButtons(stage) {
       <div class="ep-vignette"></div>
     </div>
     <div class="ep-content">
-      <div class="ep-thanks">Thank you for playing</div>
-      <div class="ep-jp">プレイしてくれてありがとう</div>
+      <div class="ep-thanks">本日のご来場、まことにありがとうございました</div>
       <div class="ep-divider"></div>
-      <div class="ep-last-line">「またね、ミミ。<br>……次のハンドで、会いましょう」</div>
+      <div class="ep-last-line">「おつかれ、ミミ。<br>……次のハンドも、アタシが見ててあげる」</div>
       <div class="ep-signed">— リコ先輩</div>
+      ${replay ? '' : '<div class="ep-unlock"><span class="ep-unlock-k">解放：</span>コレクションで エンディング・主題歌・スタッフロール／交換所に新入荷</div>'}
     </div>
     <div class="ending-final-buttons">
-      <button class="btn btn-primary" data-action="back-lobby">ロビーへ戻る</button>
+      <button type="button" class="btn btn-secondary" data-ep-exit="collection">コレクションを見る</button>
+      <button type="button" class="btn btn-primary" data-ep-exit="back" data-action="back-lobby">${toShop ? '交換所へ戻る' : 'ロビーへ戻る'}</button>
     </div>
   `;
   stage.appendChild(epilogue);
-  epilogue.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
-  // 段階的フェードイン：背景→感謝→台詞→ボタン
+  let leaving = false;
+  // data-action="back-lobby" は点検の台本（qa/endingtour.mjs）が押す目印として残す。処理はここだけで行い、
+  // 後から onAction が付いても二重に動かないよう、先に登録したこの処理で止める
+  epilogue.querySelectorAll('[data-ep-exit]').forEach(b => b.addEventListener('click', (ev) => {
+    ev.stopImmediatePropagation();
+    if (leaving) return;
+    leaving = true;
+    const where = b.dataset.epExit;
+    const r = state.endingReplay;
+    state.endingReplay = null;
+    // 交換所の「観る」から来た時の「交換所へ戻る」だけは元の画面へ
+    if (where === 'back' && r && r.screen === 'shop') { returnFromEndingReplay({ screen: 'shop', collection: false }); return; }
+    endingRunId++;
+    stopEndingBgm();
+    goLobby();
+    // コレクションを見る：ロビーへ戻ってからコレクションを開く
+    if (where === 'collection') showCollectionModal();
+  }));
+  // 段階的フェードイン：背景→感謝→台詞→解放の札→ボタン
   requestAnimationFrame(() => epilogue.classList.add('show'));
   // FINとタイトルロゴが残っていたら片付ける
   const stale = stage.querySelectorAll('.ending-fin, .ending-title-drop');
@@ -8593,6 +8842,7 @@ function showEndingFinalButtons(stage) {
 function goLobby() {
   delete state.homePreviewOutfit;
   battleGen++;
+  if (window.AllstarUI) AllstarUI.teardown(); // 零時の卓：途中ならハンドの頭で保存して畳む
   if (state && state.readBattle) { try { state.readBattle.inst && state.readBattle.inst.destroy(); } catch (e) {} state.readBattle = null; }
   document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
   if (typeof dismissCutIn === 'function') dismissCutIn();
@@ -8616,37 +8866,65 @@ function goLobby() {
 function stopEndingBgm() {
   const a = document.getElementById('ending-bgm-audio');
   if (a) { a.pause(); }
+  stopEndingThemePreview(false); // 試聴中の札の「停止」も「聴く」へ戻す
 }
 
+// ── 主題歌の試聴（コレクション・交換所の「聴く」）──
+// 試聴中かどうかは音源の印（data-preview）で持つ。札の子要素（曲名・説明）は消さず、ラベル用の要素だけ書き換える
+function isEndingThemePreviewOn() {
+  const a = document.getElementById('ending-bgm-audio');
+  return !!(a && a.dataset.preview === '1' && !a.paused);
+}
+function setEndingThemeLabel(txt) {
+  document.querySelectorAll('[data-action="play-ending-theme"]').forEach(b => {
+    const lab = b.querySelector('.memory-card-play') || b;
+    lab.textContent = txt;
+  });
+}
+var _themePreviewWatch = null; // コレクションを閉じたのを見張る（読み込み順に左右されないよう var）
+// 試聴を止める。restore＝true なら今の画面の曲（ロビーなど）へ戻す
+function stopEndingThemePreview(restore) {
+  const a = document.getElementById('ending-bgm-audio');
+  if (_themePreviewWatch) { _themePreviewWatch.disconnect(); _themePreviewWatch = null; }
+  if (!a || a.dataset.preview !== '1') return;
+  delete a.dataset.preview;
+  a.onended = null;
+  a.onerror = null;
+  a.pause();
+  setEndingThemeLabel('聴く');
+  if (restore) startBgmForScreen();
+}
 function toggleEndingThemePreview() {
   const a = document.getElementById('ending-bgm-audio');
-  if (!a) { toast('音源プレイヤーを初期化できませんでした'); return; }
-  if (a.paused) {
-    const lobbyA = document.getElementById('lobby-bgm-audio');
-    if (lobbyA) lobbyA.pause();
-    a.currentTime = 0;
-    const vol = Math.min(1, bgmVolFloat() * 1.6);
-    a.volume = Math.max(0.05, vol); // 万一0でも聞こえるよう最低5%
-    const setBtnLabel = (txt) => document.querySelectorAll('[data-action="play-ending-theme"]').forEach(b => b.textContent = txt);
-    setBtnLabel('… 読込中');
-    const p = a.play();
-    if (p && p.then) {
-      p.then(() => setBtnLabel('⏹ 停止'))
-       .catch((err) => {
-         setBtnLabel('▶ 視聴');
-         toast('再生できませんでした：' + (err && err.message || err));
-       });
-    } else {
-      setBtnLabel('⏹ 停止');
-    }
-    a.onended = () => setBtnLabel('▶ 視聴');
-    a.onerror = () => {
-      setBtnLabel('▶ 視聴');
-      toast('音源を読み込めませんでした');
-    };
-  } else {
-    a.pause();
-    document.querySelectorAll('[data-action="play-ending-theme"]').forEach(b => b.textContent = '▶ 視聴');
+  if (!a) { toast('いま再生できません'); return; }
+  if (isEndingThemePreviewOn()) { stopEndingThemePreview(true); return; }
+  stopEndingThemePreview(false); // 印だけ残って止まっている時の後始末
+  const failed = () => {
+    if (a.dataset.preview !== '1') return;
+    stopEndingThemePreview(true);
+    toast('いま再生できません');
+  };
+  // ロビーの曲（シンセの曲も）とシーンの曲を止めてから、頭から流す
+  _stopNonSceneBgm();
+  stopSceneBgm();
+  a.dataset.preview = '1';
+  a.currentTime = 0;
+  const vol = Math.min(1, bgmVolFloat() * 1.6);
+  a.volume = Math.max(0.05, vol); // 万一0でも聞こえるよう最低5%
+  setEndingThemeLabel('停止');
+  a.onended = () => stopEndingThemePreview(true); // 曲の終わり：ラベルを戻し、ロビーの曲へ
+  a.onerror = failed;
+  const p = a.play();
+  if (p && p.catch) p.catch(failed);
+  // コレクションから聴いた時：コレクションを閉じたら止めて、今の画面の曲へ戻す
+  // （「観る」「再生」で画面を移る時は、そちらが主題歌を扱うので止めるだけ）
+  const ov = document.querySelector('.collection-overlay');
+  if (ov && ov.parentNode && typeof MutationObserver === 'function') {
+    _themePreviewWatch = new MutationObserver(() => {
+      if (ov.isConnected) return;
+      stopEndingThemePreview(state.screen !== 'ending');
+    });
+    _themePreviewWatch.observe(ov.parentNode, { childList: true });
   }
 }
 
@@ -8671,10 +8949,14 @@ function applyBgmVolume() {
 // 常にロビー/ED/シンセを止めてから鳴らす＝二重再生ゼロ（うるさくしない核）。
 // gain は「うるさくならない」ための曲別控えめ倍率（bgmVolFloat にさらに掛ける）。
 const SCENE_BGM = {
-  title:    { file: 'assets/bgm/title.mp3',    gain: 0.70 },
+  title:    { file: 'assets/bgm/bunny-trump.mp3', gain: 0.72 },   // 主題曲「バニーガールの切り札」
   battle:   { file: 'assets/bgm/battle.mp3',   gain: 0.60 },
   boss:     { file: 'assets/bgm/boss.mp3',     gain: 0.72 },
   minigame: { file: 'assets/bgm/minigame.mp3', gain: 0.55 },
+  velvet:   { file: 'assets/bgm/velvet-deal.mp3', gain: 0.80 },   // ヴェルベット戦「Velvet Deal」
+  intermission: { file: 'assets/bgm/hokorobu-hoho.mp3', gain: 0.75 }, // 幕間とご褒美の絵「ほころぶ頬」
+  victory:  { file: 'assets/bgm/royal-flush.mp3', gain: 0.78 },   // 勝った結果「ロイヤルフラッシュ」
+  allstar:  { file: 'assets/bgm/velvet-dice-run.mp3', gain: 0.70 }, // 零時の卓「Velvet Dice Run」
 };
 let _sceneBgmKey = null;
 // ロビー/ED/シンセを止める（シーンBGM自身には触れない＝同曲ガードを壊さない）
@@ -8714,6 +8996,7 @@ function startBgmForScreen() {
   if (sc === 'title')       playSceneBgm('title');
   else if (sc === 'battle') { if (typeof startBattleBgmSkin === 'function') startBattleBgmSkin(); }
   else if (sc === 'ending') { stopSceneBgm(); }   // ED音源はプロンプトで別途
+  else if (sc === 'allstar') playSceneBgm('allstar');
   else                      tryStartLobbyBgm();
 }
 
@@ -8800,7 +9083,7 @@ function injectAudioBars() {
 }
 
 function refreshAudioBars() {
-  const icon = save.bgmOn ? '🔊' : '🔇';
+  const icon = save.bgmOn ? '音 入' : '音 切';
   const vol = save.bgmVolume != null ? save.bgmVolume : 35;
   // 隅のバーは“音まるごと”の状態を表す（BGMだけの状態を出すと OFF表示なのにSEが鳴る）
   document.querySelectorAll('.audio-bar-toggle').forEach(t => t.innerHTML = isAnyAudioOn() ? UI_ICON.sound : UI_ICON.mute);
@@ -8817,7 +9100,7 @@ function refreshAudioBars() {
   document.querySelectorAll('.lb-vol:not(.lb-vol-sfx)').forEach(v => v.value = vol);
   // ★効果音トグル／スライダーの同期が抜けていて、押してもアイコンが変わらなかった。
   const sfxVol = save.sfxVolume != null ? save.sfxVolume : 60;
-  document.querySelectorAll('.lb-sfx-toggle').forEach(t => t.textContent = save.sfxOn ? '🔔' : '🔕');
+  document.querySelectorAll('.lb-sfx-toggle').forEach(t => t.textContent = save.sfxOn ? '効果音 入' : '効果音 切');
   document.querySelectorAll('.lb-vol-sfx').forEach(v => v.value = sfxVol);
   document.querySelectorAll('.lb-song-label').forEach(s => {
     s.textContent = save.bgmOn ? '♪ Lounge Jazz' : '♪ —（停止中）';
@@ -8895,7 +9178,7 @@ function showRicoModeChooser() {
       </button>
       <button class="btn btn-primary rico-mode-opt" data-action="rico-mode-serious">
         <span class="rico-mode-opt-name">本気のリコ先輩と対戦</span>
-        <span class="rico-mode-opt-desc">チュートリアル無し、最強プロファイルで本気の読み合い</span>
+        <span class="rico-mode-opt-desc">チュートリアル無し。開始チップ2000で、最強の打ち筋</span>
       </button>
       <button class="btn btn-ghost rico-mode-opt" data-action="rico-mode-cancel">キャンセル</button>
     </div>
@@ -8915,7 +9198,7 @@ function showRicoModeChooser() {
 const MIMI_PROFILE = {
   name: 'ミミ',
   imgKey: 'mimi',
-  icon: '🐰',
+  icon: '主',
   title: '外れスキル持ちの新人ディーラー',
   appearance: 'ウサ耳カチューシャ／黒×赤のバニー衣装／茶髪お団子と赤い瞳',
   desc: '異世界に転生し、授かったのは「ぱにゅぱにゅ」——場を和ませるだけの外れスキル。' +
@@ -8949,13 +9232,13 @@ function showCharacterProfile(charId) {
 
   // 進行度による開示段階
   const unlocked = isMimi || (typeof isStageUnlocked === 'function' ? isStageUnlocked(charId) : true);
-  const cleared  = isMimi || (save.clearedStages || []).includes(charId);
+  const cleared  = isMimi || isStageCleared(charId);
   if (!unlocked) return; // 未解放キャラは開かない（カード側でも抑止）
 
   const p = isMimi ? MIMI_PROFILE : null;
   const persona = isMimi ? null : (OPPONENT_PERSONALITY[charId] || null);
   const name = isMimi ? p.name : opp.name;
-  const icon = isMimi ? p.icon : (persona ? persona.icon : '🎴');
+  const icon = isMimi ? goldMark('主') : (persona ? personaMark(persona) : goldMark('？'));
   const title = isMimi ? p.title : (cleared && persona ? persona.title : '？？？');
   const appearance = isMimi ? p.appearance : (OPPONENT_APPEARANCE[charId] || '——');
   const desc = isMimi ? p.desc : opp.desc;
@@ -8979,21 +9262,22 @@ function showCharacterProfile(charId) {
   const traits = isMimi ? p.traits : (persona ? persona.traits : []);
   const traitsHtml = (isMimi || cleared)
     ? `<ul class="cp-traits">${traits.map(t => `<li>${t}</li>`).join('')}</ul>`
-    : `<div class="cp-locked-hint">🔒 撃破すると性格・攻略法が記録されます</div>`;
+    : `<div class="cp-locked-hint">撃破すると性格・攻略法が記録されます</div>`;
   const exploitHtml = (!isMimi && cleared && persona)
     ? `<div class="cp-exploit"><b>攻略</b> ${persona.exploit}</div>` : '';
 
   // 得意分野・開始チップ（相手のみ）。実際の卓と同じ額を出す：
-  //   ミミ＝卓の基本値＋持ち込みチップ／相手＝基本値の2倍（以前は基本値だけを「初期」と出していた）
-  //   リコ先輩は講義に賭けが無いので、クリア後の本気モードの額を出す
+  //   ミミ＝卓の基本値＋チップ拡張／相手＝基本値の2倍（以前は基本値だけを「初期」と出していた）
+  //   リコ先輩は講義に賭けが無いので、研修後に選べる「本気のリコ先輩」の額を出す
   let chipsMeta = '';
   if (!isMimi) {
     const isRico = charId === 'rico_tutorial';
-    if (!isRico || cleared) {
+    // 本気のリコ先輩を選べるのは研修を終えた人だけ（免除の人は選べないので、額も出さない）
+    if (!isRico || save.clearedStages.includes('rico_tutorial')) {
       const base = startingBaseChips(charId, isRico);
       const carry = carryInChips();
       const mimiStart = base + carry;
-      chipsMeta = `<span class="cp-meta-item cp-meta-chips">${UI_ICON.coin} ${isRico ? '本気モード：' : ''}開始チップ ミミ ${mimiStart}${carry ? `<small>（持ち込み+${carry}）</small>` : ''} ／ ${isRico ? 'リコ' : opp.name} ${base * 2}</span>`;
+      chipsMeta = `<span class="cp-meta-item cp-meta-chips">${UI_ICON.coin} ${isRico ? '本気のリコ先輩：' : ''}開始チップ ミミ ${mimiStart}${carry ? `<small>（チップ拡張+${carry}）</small>` : ''} ／ ${isRico ? 'リコ' : opp.name} ${base * 2}</span>`;
     }
   }
   const metaHtml = !isMimi ? `
@@ -9126,7 +9410,7 @@ function showRicoViewer(keepIndex) {
    ポルカは一人称「ボク」の強気ブラファー、セリナは理屈派で場札が荒れると大きく賭ける。 */
 const MEMORY_CONTENT = {
   gallery_rico: {
-    title: '🖼 リコ先輩 設定資料',
+    title: 'リコ先輩 設定資料',
     body: `
       <h4>キャラクター原案</h4>
       <p>「先輩」「軽口」「面倒見」を三原則として設計。ミミより先にこのカジノで働くバニーディーラーで、新人の教育係。<br>
@@ -9139,30 +9423,37 @@ const MEMORY_CONTENT = {
       </ul>
       <h4>口調メモ</h4>
       <p>一人称は「アタシ」。語尾は「〜じゃん」「〜しな」「〜ね〜」と軽く、面倒見のいい姉御肌。決め台詞は「まずはアタシが基礎から叩き込む。安心してかかってきな」。<br>
-      本気モードでは伸ばし棒が消えて短く締まり、「練習は終わり。ここからは試験よ」となる。</p>
+      「本気のリコ先輩」では伸ばし棒が消えて短く締まり、「練習は終わり。ここからは試験よ」となる。</p>
     `,
   },
   gallery_opponents: {
-    title: '🖼 対戦相手図鑑',
+    title: '対戦相手図鑑',
     body: () => {
       // 打ち筋は OPPONENTS の profile（実際の AI の傾向）と、口癖は本編の台詞と揃える
+      // 1人につき「打ち筋」「攻め方のヒント」「口癖」の3行。リコ先輩を含む5人
       const list = [
-        { id: 'polka',  name: 'ポルカ',     trait: '強気のブラファー。弱い手ほど大きく賭けて騒ぎ、めったに降りない',   line: '「ボクの読みは外れないんだから〜」' },
-        { id: 'selina', name: 'セリナ',     trait: '理屈派。ブラフは少なめで、場札が荒れると大きく賭けて圧をかける',   line: '「このサイズの意味、考えてください。」' },
-        { id: 'grano',  name: 'グラーノ',   trait: '商人気質。割に合わなければすぐ降り、強い手ではチェックで罠を張る', line: '「お嬢さん、この値段なら買い時ですよ。」' },
-        { id: 'velvet', name: 'ヴェルベット', trait: 'VIPルームの女王。いつも大きく賭け、言葉と圧で降ろしにくる',       line: '「あなたに見えてないものが、私には見えているの。」' },
+        { id: 'rico_tutorial', name: 'リコ先輩', trait: 'ミミの教育係。講義では、ミミがコールするのを待ってヒントを出してくれる面倒見のいい先輩',
+          tip: '研修のあとは「本気のリコ先輩」を選べる。開始チップ2000で、ブラフもバリューも隙のない最強の打ち筋', line: '「まずはアタシが基礎から叩き込む。安心してかかってきな」' },
+        { id: 'polka',  name: 'ポルカ',     trait: '強気のブラファー。弱い手ほど大きく賭けて騒ぎ、めったに降りない',
+          tip: '中くらいの手でも受けて立つと勝ちやすい。ブラフは通らないので、強い手の時はしっかり賭けて稼ぎたい', line: '「ボクの読みは外れないんだから〜」' },
+        { id: 'selina', name: 'セリナ',     trait: '理屈派。ブラフは少なめで、場札が荒れると大きく賭けて圧をかけてくる',
+          tip: '場札が落ち着いている時は消極的で、そこならブラフが通る。荒れた場札での大きな賭けは本物の手と見て、降りる勇気を', line: '「このサイズの意味、考えてください。」' },
+        { id: 'grano',  name: 'グラーノ',   trait: '商人気質。割に合わなければすぐ降り、強い手ではチェックで罠を張る',
+          tip: '小さな賭けで降ろせる場面が多い。チェックのあとの大きな賭けは罠なので、降りるのも手', line: '「お嬢さん、この値段なら買い時ですよ。」' },
+        { id: 'velvet', name: 'ヴェルベット', trait: 'VIPルームの女王。いつも大きく賭け、言葉と圧で降ろしにくる',
+          tip: '大きな賭けに動じないこと。中くらいの手で受け、再レイズが返ってきたら本物の手と見よう', line: '「あなたに見えてないものが、あたしには見えているの。」' },
       ];
       const html = list.map(o => {
-        const cleared = save.clearedStages.includes(o.id);
+        const cleared = isStageCleared(o.id);
         return cleared
-          ? `<div class="memory-opp"><div class="memory-opp-name">${o.name}</div><div class="memory-opp-trait">${o.trait}</div><div class="memory-opp-line">${o.line}</div></div>`
-          : `<div class="memory-opp locked"><div class="memory-opp-name">🔒 ？？？</div><div class="memory-opp-trait">撃破で解放</div></div>`;
+          ? `<div class="memory-opp"><div class="memory-opp-name">${o.name}</div><div class="memory-opp-trait">${o.trait}</div><div class="memory-opp-tip">${o.tip}</div><div class="memory-opp-line">${o.line}</div></div>`
+          : `<div class="memory-opp locked"><div class="memory-opp-name">？？？</div><div class="memory-opp-trait">${o.id === 'rico_tutorial' ? '研修を終えると解放' : '撃破で解放'}</div></div>`;
       }).join('');
       return html;
     },
   },
   gallery_mimi: {
-    title: '🖼 ミミ百態',
+    title: 'ミミ百態',
     body: () => {
       // 本編で使っている表情の立ち絵をそのまま並べる（以前は「ミニゲームのマスコット」という本編と違う設定の文章だけだった）
       const faces = [
@@ -9188,7 +9479,7 @@ const MEMORY_CONTENT = {
     },
   },
   omake_drama_1: {
-    title: '🎭 寸劇「リコ、初出勤」',
+    title: '寸劇「リコ、初出勤」',
     body: `
       <p class="memory-stage-note">— 店長室 —</p>
       <p><b>店長</b>「君がリコくんかね。経歴は申し分ない、が……」</p>
@@ -9203,7 +9494,7 @@ const MEMORY_CONTENT = {
     `,
   },
   omake_drama_2: {
-    title: '🎭 寸劇「VIPルームの前で」',
+    title: '寸劇「VIPルームの前で」',
     body: `
       <p class="memory-stage-note">— VIPルームの扉の前 —</p>
       <p><b>ミミ</b>「……リコ先輩、ここで待っててくれたんですか」</p>
@@ -9220,7 +9511,7 @@ const MEMORY_CONTENT = {
   // 旧「ボイス集」。音声は無いので「セリフ集」として文字で読む（開発者向けの注記と ▶ 表示は外した）。
   // 口調は本編のリコ（一人称アタシ・姉御肌のギャル口調）に揃える
   omake_voice_pack: {
-    title: '💬 リコ先輩 セリフ集',
+    title: 'リコ先輩 セリフ集',
     body: `
       <div class="memory-voice-list">
         <div class="memory-voice"><b>はじめまして</b>「まずはアタシが基礎から叩き込む。安心してかかってきな」</div>
@@ -9233,7 +9524,7 @@ const MEMORY_CONTENT = {
         <div class="memory-voice"><b>フォールド</b>「今のは降りる場面、教科書通りー。降りる勇気も実力だよ」</div>
         <div class="memory-voice"><b>おつかれ</b>「おつかれ、ミミ。反省会、付き合いな？ ジュースくらいおごるからさ」</div>
         <div class="memory-voice"><b>励まし</b>「大丈夫。ミミならできるって、アタシが一番知ってる」</div>
-        <div class="memory-voice"><b>本気モード</b>「練習は終わり。ここからは試験よ」</div>
+        <div class="memory-voice"><b>本気のリコ先輩</b>「練習は終わり。ここからは試験よ」</div>
       </div>
     `,
   },
@@ -9336,6 +9627,8 @@ function showEquipModal() {
     const current = save[cat.key] || 'default';
     const chips = cat.choices.map(c => {
       const isOwned = (c.itemId === null) || owned.includes(c.itemId);
+      // クリア後に入荷する品（水着・銀河・黄金など）は、交換所に並ぶまで・持つまで選択肢ごと隠す
+      if (!isOwned && SHOP_UNLOCK[c.itemId] === 'velvet' && !isShopItemUnlocked(c.itemId)) return '';
       const isActive = current === c.id;
       return `<button class="equip-chip ${isActive ? 'active' : ''} ${!isOwned ? 'locked' : ''}"
         data-cat-key="${cat.key}" data-choice-id="${c.id}" ${!isOwned ? 'disabled' : ''}
@@ -9349,12 +9642,12 @@ function showEquipModal() {
     `;
   }).join('');
 
-  // 持ち込みチップ：持っている額だけを並べる（既定＝所持の最大）。卓の開始時にミミのチップへ上乗せ
+  // チップ拡張：持っている額だけを並べる（既定＝所持の最大）。卓の開始時にミミのチップへ上乗せ
   const carryAmounts = ownedCarryAmounts();
   const carryNow = carryInChips();
   const carryRow = carryAmounts.length ? `
       <div class="equip-row equip-row-carry">
-        <div class="equip-row-label">持ち込みチップ</div>
+        <div class="equip-row-label">チップ拡張</div>
         <div class="equip-row-choices">${[0, ...carryAmounts].map(v => `<button class="equip-chip equip-carry-chip ${carryNow === v ? 'active' : ''}" data-carry="${v}">${v ? `+${v}` : 'なし'}</button>`).join('')}</div>
         <div class="equip-row-note">卓につくとミミのチップにこの額が乗る（相手の額は変わらない）</div>
       </div>` : '';
@@ -9369,8 +9662,8 @@ function showEquipModal() {
         ${carryRow}
         ${rows}
       </div>
-      <div class="equip-modal-footer">※ 🔒 表示の項目は交換所で購入すると選択可能になります</div>
-      <div class="equip-modal-footer equip-modal-note">⚠ 効果はバトル画面／ミニゲーム画面で反映されます</div>
+      <div class="equip-modal-footer">交換所に入荷した品を買うと選べます</div>
+      <div class="equip-modal-footer equip-modal-note">効果はバトル画面／ミニゲーム画面で反映されます</div>
     </div>
   `;
   document.getElementById('stage').appendChild(overlay);
@@ -9384,7 +9677,7 @@ function showEquipModal() {
       save.carryChips = (v === amounts[amounts.length - 1]) ? null : v;
       saveProgress();
       btn.closest('.equip-row').querySelectorAll('.equip-carry-chip').forEach(c => c.classList.toggle('active', c === btn));
-      toast(v ? `持ち込みチップ：+${v}` : '持ち込みチップ：なし');
+      toast(v ? `チップ拡張：+${v}` : 'チップ拡張：なし');
     });
   });
   overlay.querySelectorAll('.equip-chip:not(.locked):not(.equip-carry-chip)').forEach(btn => {
@@ -9586,18 +9879,18 @@ function mpMimiLine(situation) {
 
 // ── ミニポーカー達成バッジ定義 ──
 const MP_ACHIEVEMENTS = [
-  { id: 'first_win',     icon: '🏆', name: '初勝利',       cond: 'win 1' },
-  { id: 'streak_3',      icon: '🔥', name: '3連勝',        cond: '3連続勝利' },
-  { id: 'streak_5',      icon: '🔥', name: '5連勝',        cond: '5連続勝利' },
-  { id: 'streak_10',     icon: '💎', name: '10連勝',       cond: '10連続勝利' },
-  { id: 'first_fh',      icon: '🎴', name: '初フルハウス', cond: 'フルハウス達成' },
-  { id: 'first_four',    icon: '🃏', name: '初フォー',     cond: 'フォーカード達成' },
-  { id: 'first_stf',     icon: '⭐', name: '初ストフラ',   cond: 'ストフラ達成' },
-  { id: 'first_royal',   icon: '👑', name: '初ロイヤル',   cond: 'ロイヤル達成' },
-  { id: 'plays_100',     icon: '📚', name: '100戦達成',    cond: '通算100戦プレイ' },
-  { id: 'big_win_100x',  icon: '🌟', name: '100倍勝ち',    cond: '1戦で100倍以上獲得' },
-  { id: 'jackpot_win',   icon: '💰', name: 'JP獲得',       cond: 'ジャックポット獲得' },
-  { id: 'survive_shield',icon: '🛡️', name: 'シールド使用',  cond: 'シールドで連勝維持' },
+  { id: 'first_win',     icon: '初', name: '初勝利',       cond: 'win 1' },
+  { id: 'streak_3',      icon: '連', name: '3連勝',        cond: '3連続勝利' },
+  { id: 'streak_5',      icon: '連', name: '5連勝',        cond: '5連続勝利' },
+  { id: 'streak_10',     icon: '連', name: '10連勝',       cond: '10連続勝利' },
+  { id: 'first_fh',      icon: '初', name: '初フルハウス', cond: 'フルハウス達成' },
+  { id: 'first_four',    icon: '初', name: '初フォー',     cond: 'フォーカード達成' },
+  { id: 'first_stf',     icon: '初', name: '初ストフラ',   cond: 'ストフラ達成' },
+  { id: 'first_royal',   icon: '初', name: '初ロイヤル',   cond: 'ロイヤル達成' },
+  { id: 'plays_100',     icon: '戦', name: '100戦達成',    cond: '通算100戦プレイ' },
+  { id: 'big_win_100x',  icon: '倍', name: '100倍勝ち',    cond: '1戦で100倍以上獲得' },
+  { id: 'jackpot_win',   icon: '獲', name: 'JP獲得',       cond: 'ジャックポット獲得' },
+  { id: 'survive_shield',icon: '使', name: 'シールド使用',  cond: 'シールドで連勝維持' },
 ];
 
 // ── Web Audio API：効果音シンセ ──
@@ -9943,7 +10236,7 @@ function startBattleBgmSkin() {
   }
   // 既定：実音源のバトルBGM。ボス戦（ヴェルベット/裏リコ）は boss.mp3、通常は battle.mp3。
   const isBoss = !!(state && (state.isBoss || state.opponentId === 'velvet'));
-  playSceneBgm(isBoss ? 'boss' : 'battle');
+  playSceneBgm(state && state.opponentId === 'velvet' ? 'velvet' : isBoss ? 'boss' : 'battle');
 }
 // バトル退出時：バトル専用音を止める（ロビーBGMは goLobby→tryStartLobbyBgm が再開）
 function stopBattleBgmSkin() {
@@ -10079,7 +10372,7 @@ function showLoginBonusModal(plan, todayKey) {
       <div class="login-bonus-day login-bonus-day-${d.status}">
         ${tag}
         <div class="login-bonus-day-label">Day${d.day}</div>
-        <div class="login-bonus-coin">🪙</div>
+        <div class="login-bonus-coin"><img src="assets/ui/home/ico_coin.webp" alt="コイン"></div>
         <div class="login-bonus-amount">${d.reward}</div>
       </div>
     `;
@@ -10107,7 +10400,7 @@ function showLoginBonusModal(plan, todayKey) {
     // 右上パネルの「ログボ受取可」を受取済みに更新（以前は再描画されず「受取OK」のまま残っていた）
     if (state.screen === 'lobby') renderLobbyStatus();
     overlay.remove();
-    toast(`🎁 ログインボーナス Day${plan.day}：+${plan.reward} コイン！`);
+    toast(`ログインボーナス Day${plan.day}：+${plan.reward} コイン！`);
   });
 }
 
@@ -10196,7 +10489,7 @@ function showMiniPokerGame() {
   try { startAmbientParticles(); } catch (e) { console.error('[mp] particles error:', e); }
   // ボス夜のバナー表示
   if (ctx.bossNight) {
-    setTimeout(() => showBanner('🌹 今夜の特別卓！ 配当 ×3 ／ ベットも ×3'), 600);
+    setTimeout(() => showBanner('今夜の特別卓！ 配当 ×3 ／ ベットも ×3'), 600);
   }
   // overlay解除時にBGM/粒子/idleを必ず停止
   // - MutationObserver でDOMから消えた瞬間に検出（safer than wrapping .remove）
@@ -10233,10 +10526,10 @@ function showMiniPokerGame() {
           <div class="mp-title">ファイブポーカー</div>
           <div class="mp-stats">
             <span class="mp-stat">${UI_ICON.coin} <span data-mpb="coins">${save.coins}</span></span>
-            <span class="mp-stat mp-stat-jp" title="ロイヤルストレートフラッシュで全額獲得">💎 JP <span data-mpb="jackpot">${p.jackpot}</span></span>
-            <span class="mp-stat mp-stat-session" data-mpb="sessionStat">💹 ±0</span>
-            <span class="mp-stat">🔥 連勝 <span data-mpb="streak">0</span><span data-mpb="shields"></span></span>
-            <span class="mp-stat">🏆 ${p.bestStreak}</span>
+            <span class="mp-stat mp-stat-jp" title="ロイヤルストレートフラッシュで全額獲得">JP <span data-mpb="jackpot">${p.jackpot}</span></span>
+            <span class="mp-stat mp-stat-session" data-mpb="sessionStat">±0</span>
+            <span class="mp-stat">連勝 <span data-mpb="streak">0</span><span data-mpb="shields"></span></span>
+            <span class="mp-stat">最高連勝 ${p.bestStreak}</span>
             <button class="mp-history-btn" data-mp="missions" title="今日のミッション">${UI_ICON.target}</button>
             <button class="mp-history-btn" data-mp="history" title="履歴">${UI_ICON.scroll}</button>
             <button class="mp-ach-btn" data-mp="achievements" title="達成">${UI_ICON.medal}</button>
@@ -10273,7 +10566,7 @@ function showMiniPokerGame() {
         const stake = ctx.effectiveBet || ctx.bet;
         const ok = await showConfirm({
           title: '勝負の途中です',
-          body: `今やめるとサレンダー扱いになり、賭けた ${stake} 🪙 のうち半額の ${Math.floor(stake / 2)} 🪙 が戻ります。`,
+          body: `今やめるとサレンダー扱いになり、賭けた ${stake}コインのうち半額の ${Math.floor(stake / 2)}コインが戻ります。`,
           ok: 'サレンダーしてやめる', cancel: '勝負を続ける', danger: true,
         });
         if (!ok || ctx.phase !== 'choose' || !overlay.isConnected) return;
@@ -10302,7 +10595,7 @@ function showMiniPokerGame() {
     const luckyName = MP_PAYTABLE[luckyR].name;
     el.innerHTML = `
       <div class="mp-pt-title">配当表</div>
-      <div class="mp-pt-lucky">🌟 今日のラッキー役<br><b>${luckyName}</b> が ×2 倍！</div>
+      <div class="mp-pt-lucky">今日のラッキー役<br><b>${luckyName}</b> が ×2 倍！</div>
       <table class="mp-pt">
         ${MP_PAYTABLE.slice().reverse().map(p => {
           if (p.mult === 0) return '';
@@ -10310,14 +10603,14 @@ function showMiniPokerGame() {
           const eff = p.mult * (isLucky ? 2 : 1);
           return `
             <tr class="${p.rank === 9 ? 'mp-pt-royal' : ''} ${isLucky ? 'mp-pt-todaylucky' : ''}">
-              <td class="mp-pt-name">${isLucky ? '🌟' : ''}${p.name}</td>
+              <td class="mp-pt-name">${isLucky ? '★' : ''}${p.name}</td>
               <td class="mp-pt-mult">×${eff}</td>
               <td class="mp-pt-payout">${eff * cur}</td>
             </tr>
           `;
         }).join('')}
       </table>
-      <div class="mp-pt-note">相手に勝つと、役に応じて ベット×倍率 が戻ります。×1 は賭けた分が戻るだけ（差し引き0）。役なし・Jより下のペアは勝っても配当なし。🌟 はその日限定 ×2。</div>
+      <div class="mp-pt-note">相手に勝つと、役に応じて ベット×倍率 が戻ります。×1 は賭けた分が戻るだけ（差し引き0）。役なし・Jより下のペアは勝っても配当なし。★ はその日限定 ×2。</div>
     `;
   }
 
@@ -10344,7 +10637,7 @@ function showMiniPokerGame() {
           <div class="mp-status">操作してください</div>
           <div class="mp-actions">
             <button class="mp-btn mp-btn-primary" data-mp="draw">${UI_ICON.refresh} 引く</button>
-            <button class="mp-btn mp-btn-ghost" data-mp="hold-all">⏸ 全部キープ</button>
+            <button class="mp-btn mp-btn-ghost" data-mp="hold-all">全部キープ</button>
           </div>`;
       } else if (ph === 'result') {
         center.innerHTML = `
@@ -10382,7 +10675,7 @@ function showMiniPokerGame() {
     let moodBadge = '';
     if (isPlayer && cards.length === 5 && ctx.phase === 'choose') {
       const pe = evaluateHand(cards);
-      const mood = pe.rank >= 5 ? '✨' : pe.rank >= 2 ? '😃' : pe.rank === 1 ? '🤔' : '😟';
+      const mood = pe.rank >= 5 ? '上々' : pe.rank >= 2 ? 'まずまず' : pe.rank === 1 ? 'うーん' : '厳しい';
       const moodLabel = pe.rank >= 5 ? '期待大！' : pe.rank >= 2 ? '強気' : pe.rank === 1 ? '普通' : '困惑…';
       moodBadge = `<div class="mp-mood-badge" title="${moodLabel}">${mood}</div>`;
     }
@@ -10440,10 +10733,10 @@ function showMiniPokerGame() {
       const hot = renderHotCold();
       return `
         ${(showDailyBonus || hot) ? `<div class="mp-wager-tags">
-          ${showDailyBonus ? '<span class="mp-daily-bonus">🌸 今日の初戦ボーナス 配当 ×2</span>' : ''}${hot}
+          ${showDailyBonus ? '<span class="mp-daily-bonus">今日の初戦ボーナス 配当 ×2</span>' : ''}${hot}
         </div>` : ''}
         <div class="mp-status mp-status-wager">
-          ベットを選んで「DEAL」<small class="mp-cap-note">（1回 最大 ${MP_BET_MAX} 🪙）</small><br>
+          ベットを選んで「配る」<small class="mp-cap-note">（1回 最大 ${MP_BET_MAX}コイン）</small><br>
           <small>相手に勝つと 役に応じて <b>ベット×倍率</b> が戻る（J以上のペアから）</small>
         </div>
         <div class="mp-bet-row">
@@ -10452,10 +10745,10 @@ function showMiniPokerGame() {
           `).join('')}
           <button class="mp-bet-max ${!isLevel ? 'on' : ''}" data-mp-bet="${maxUnit}" ${maxUnit < 1 ? 'disabled' : ''}>最大（${tm > 1 ? `${maxUnit}×3` : maxUnit}）</button>
         </div>
-        <div class="mp-bet-display">現在のベット：<b>${ctx.bet}</b> 🪙${tm > 1 ? `<small>（💎 特別卓：×3 で ${stake} 🪙）</small>` : ''}</div>
+        <div class="mp-bet-display">現在のベット：<b>${ctx.bet}</b>コイン${tm > 1 ? `<small>（特別卓：×3 で ${stake}コイン）</small>` : ''}</div>
         <div class="mp-actions mp-actions-wager">
           <button class="mp-btn mp-btn-deal" data-mp="deal" ${canDeal ? '' : 'disabled'}>
-            🎴 DEAL${tm > 1 ? `（${stake} 🪙）` : ''}
+            配る${tm > 1 ? `（${stake}コイン）` : ''}
           </button>
           <button class="mp-btn mp-btn-auto" data-mp="autoplay" ${canAuto ? '' : 'disabled'} title="${tm > 1 ? '特別卓は1戦ずつ' : '同じベットで3戦を自動で進める'}">
             ▶▶ 3連戦自動
@@ -10483,12 +10776,12 @@ function showMiniPokerGame() {
         ${reach ? `<div class="mp-reach">${reach}${reachProb ? ` <span class="mp-reach-prob">(完成${reachProb}%)</span>` : ''}</div>` : ''}
         <div class="mp-actions">
           <button class="mp-btn mp-btn-primary" data-mp="draw">
-            ${drop > 0 ? `🔄 ${drop}枚を引く${isLastRound ? '（最終）' : ''}` : '⚡ そのまま勝負'}
+            ${drop > 0 ? `${drop}枚を引く${isLastRound ? '（最終）' : ''}` : 'そのまま勝負'}
           </button>
-          <button class="mp-btn mp-btn-ghost" data-mp="hold-all">⏸ 全部キープして勝負</button>
+          <button class="mp-btn mp-btn-ghost" data-mp="hold-all">全部キープして勝負</button>
           ${!isLastRound ? '' : ''}
           <button class="mp-btn mp-btn-surrender" data-mp="surrender" title="負け確実なら半額返却で降りる">
-            🩹 サレンダー（${surrenderReturn} 🪙 返却）
+            サレンダー（${surrenderReturn}コイン返却）
           </button>
         </div>
       `;
@@ -10505,19 +10798,19 @@ function showMiniPokerGame() {
       const net = ctx.reward - stake;
       let cls = r, head, amount, sub = '';
       if (ctx.doubleLost) {
-        cls = 'lose'; head = '💧 ダブルアップ失敗'; amount = `獲得分は没収（${signedCoins(net)} 🪙）`;
+        cls = 'lose'; head = 'ダブルアップ失敗'; amount = `獲得分は没収（${signedCoins(net)}コイン）`;
       } else if (r === 'win') {
-        head = '🏆 勝利！'; amount = `${signedCoins(net)} 🪙`; sub = `配当 ${ctx.reward} 🪙（賭け ${stake} 🪙）`;
+        head = '勝利！'; amount = `${signedCoins(net)}コイン`; sub = `配当 ${ctx.reward}コイン（賭け ${stake}コイン）`;
       } else if (r === 'push') {
-        cls = 'tie'; head = '🤝 引き分け（返金）'; amount = `賭けた ${stake} 🪙 が戻った（±0）`; sub = 'J以上のペアは ×1＝賭けた分が戻るだけ';
+        cls = 'tie'; head = '引き分け（返金）'; amount = `賭けた ${stake}コインが戻った（±0）`; sub = 'J以上のペアは ×1＝賭けた分が戻るだけ';
       } else if (r === 'tie') {
-        head = '🤝 引き分け'; amount = `賭けた ${stake} 🪙 を返金（±0）`;
+        head = '引き分け'; amount = `賭けた ${stake}コインを返金（±0）`;
       } else if (r === 'nopay') {
-        cls = 'lose'; head = '😶 勝ったけど配当なし'; amount = `${signedCoins(net)} 🪙`; sub = '配当は J以上のペアから';
+        cls = 'lose'; head = '勝ったけど配当なし'; amount = `${signedCoins(net)}コイン`; sub = '配当は J以上のペアから';
       } else if (r === 'surrender') {
-        cls = 'lose'; head = '🩹 サレンダー'; amount = `半額 ${ctx.reward} 🪙 が戻った（${signedCoins(net)} 🪙）`;
+        cls = 'lose'; head = 'サレンダー'; amount = `半額 ${ctx.reward}コインが戻った（${signedCoins(net)}コイン）`;
       } else {
-        head = `💧 ${ctx.opp.name} の勝ち`; amount = `${signedCoins(net)} 🪙`;
+        head = `${ctx.opp.name} の勝ち`; amount = `${signedCoins(net)}コイン`;
       }
       // フォーカード以上のボーナス抽選が控えている間は、次へ進むボタンを出さない
       if (ctx.garaponPending) {
@@ -10525,7 +10818,7 @@ function showMiniPokerGame() {
           <div class="mp-result-banner mp-result-${cls}">
             <div class="mp-result-headline">${head}</div><div class="mp-result-amount">${amount}</div>
           </div>
-          <div class="mp-status mp-status-bonus">🎰 ボーナスチャンス準備中…</div>`;
+          <div class="mp-status mp-status-bonus">ボーナスチャンス準備中…</div>`;
       }
       // 大きな結果バナー（操作可能までしばらく目立たせる）
       return `
@@ -10536,7 +10829,7 @@ function showMiniPokerGame() {
         </div>
         ${(r === 'win' && ctx.canDouble && ctx.doubleStack < 3) ? `
           <div class="mp-double-pitch">
-            🎲 <b>ダブルアップに挑戦？</b>
+            <b>ダブルアップに挑戦？</b>
             <small>次の1枚が見せ札より「高い」か「低い」か。当てたら <b>×2</b>（3回まで）</small>
           </div>
           <div class="mp-actions">
@@ -10546,7 +10839,7 @@ function showMiniPokerGame() {
         ` : `
           <div class="mp-actions">
             <button class="mp-btn mp-btn-primary" data-mp="next">${next}</button>
-            ${canRepeat ? `<button class="mp-btn mp-btn-repeat" data-mp="repeat">▶▶ 同ベットで連戦（${ctx.lastBetUsed} 🪙）</button>` : ''}
+            ${canRepeat ? `<button class="mp-btn mp-btn-repeat" data-mp="repeat">▶▶ 同ベットで連戦（${ctx.lastBetUsed}コイン）</button>` : ''}
             <button class="mp-btn mp-btn-ghost" data-mp="quit">やめる</button>
           </div>
         `}
@@ -10555,7 +10848,7 @@ function showMiniPokerGame() {
     if (ctx.phase === 'garapon') {
       return `
         <div class="mp-status mp-status-bonus">
-          🎰 <b>ボーナスチャンス！</b><br>
+          <b>ボーナスチャンス！</b><br>
           <small>3つのガラポンから1つ選んで！</small>
         </div>
         <div class="mp-garapon-row" data-mpb="garaponSlots">
@@ -10579,7 +10872,7 @@ function showMiniPokerGame() {
       const canLow = r > 2, canHigh = r < 14;
       return `
         <div class="mp-status mp-status-double">
-          🎲 Hi-Lo ダブルアップ（×${Math.pow(2, stack)} → ×${Math.pow(2, stack + 1)}）<br>
+          Hi-Lo ダブルアップ（×${Math.pow(2, stack)} → ×${Math.pow(2, stack + 1)}）<br>
           <small>見せ札より「高い」「低い」を予想　獲得：<b>${total}</b> → 当てれば <b>${total * 2}</b></small>
         </div>
         <div class="mp-double-cards">
@@ -10602,7 +10895,7 @@ function showMiniPokerGame() {
 
   // 負けの後に「リベンジ！」で取り返しに行かせない（本編の「降りる勇気も実力」と逆になるため）
   function nextLabel() {
-    if (ctx.streak >= 3) return `🔥 ${ctx.streak}連勝中・次へ`;
+    if (ctx.streak >= 3) return `${ctx.streak}連勝中・次へ`;
     return 'もう一回';
   }
 
@@ -10611,7 +10904,7 @@ function showMiniPokerGame() {
     if (ctx.history.length < 3) return '';
     const wins = ctx.history.filter(h => h.result === 'win').length;
     const rate = wins / ctx.history.length;
-    if (rate >= 0.7) return `<span class="mp-hotcold mp-hot">🔥 好調（直近の勝率 ${Math.round(rate*100)}%）</span>`;
+    if (rate >= 0.7) return `<span class="mp-hotcold mp-hot">好調（直近の勝率 ${Math.round(rate*100)}%）</span>`;
     return '';
   }
 
@@ -10659,23 +10952,23 @@ function showMiniPokerGame() {
     // フラッシュリーチ：同スートが4枚
     const suitCount = {};
     suits.forEach(s => suitCount[s] = (suitCount[s] || 0) + 1);
-    if (Object.values(suitCount).some(v => v === 4)) return '🌟 フラッシュ リーチ！（あと1枚で完成）';
+    if (Object.values(suitCount).some(v => v === 4)) return 'フラッシュ リーチ！（あと1枚で完成）';
     // ストレートリーチ：5枚中4枚が連続してる組み合わせ
     const uniq = [...new Set(ranks)].sort((a, b) => a - b);
     if (uniq.length >= 4) {
       for (let i = 0; i <= uniq.length - 4; i++) {
-        if (uniq[i + 3] - uniq[i] === 3) return '🌟 ストレート リーチ！（あと1枚で完成）';
+        if (uniq[i + 3] - uniq[i] === 3) return 'ストレート リーチ！（あと1枚で完成）';
       }
       // A-2-3-4 や 10-J-Q-K の wheel/high
       if (uniq.includes(14)) {
         const lowSet = uniq.filter(r => r <= 5);
-        if (lowSet.length >= 3) return '🌟 ストレート リーチ！（A-2-3-4-5 狙い）';
+        if (lowSet.length >= 3) return 'ストレート リーチ！（A-2-3-4-5 狙い）';
       }
     }
     // フォーリーチ：3 of a kind
     const rc = {};
     ranks.forEach(r => rc[r] = (rc[r] || 0) + 1);
-    if (Object.values(rc).some(v => v === 3)) return '✨ フォーカード リーチ！（あと1枚）';
+    if (Object.values(rc).some(v => v === 3)) return 'フォーカード リーチ！（あと1枚）';
     return null;
   }
 
@@ -10742,7 +11035,7 @@ function showMiniPokerGame() {
       renderPaytable();
       renderPhase();
       // 特別卓は賭けが×3になるので、黙って配らず額を見てから DEAL してもらう
-      if (ctx.bossNight) { showBanner('🌹 特別卓！ 配当 ×3 ／ ベットも ×3'); return; }
+      if (ctx.bossNight) { showBanner('特別卓！ 配当 ×3 ／ ベットも ×3'); return; }
       // 即DEAL（quick mode）
       setTimeout(() => startDeal(true), 50);
     });
@@ -10787,7 +11080,7 @@ function showMiniPokerGame() {
     updateBoardStats();
     renderPhase();
     mpSfx('lose');
-    showBanner('🩹 サレンダー');
+    showBanner('サレンダー');
     flashCharLine('player', 'ふぅ……無理せず撤退！');
   }
 
@@ -10835,7 +11128,7 @@ function showMiniPokerGame() {
         saveProgress();
         updateBoardStats();
         playFx('double-win'); mpSfx('double-win');
-        showBanner(`🎯 的中！ ×${Math.pow(2, ctx.doubleStack)} → ${ctx.reward} 🪙`);
+        showBanner(`的中！ ×${Math.pow(2, ctx.doubleStack)} → ${ctx.reward}コイン`);
         ctx.phase = 'result';
         ctx.canDouble = ctx.doubleStack < 3;
         ctx.doubleShowCard = null;
@@ -10854,7 +11147,7 @@ function showMiniPokerGame() {
         saveProgress();
         updateBoardStats();
         playFx('double-lose'); mpSfx('double-lose');
-        showBanner('💧 失敗… 没収');
+        showBanner('失敗… 没収');
         ctx.phase = 'result';
         ctx.canDouble = false;
         ctx.doubleShowCard = null;
@@ -10899,7 +11192,7 @@ function showMiniPokerGame() {
           const got = !!ach[a.id];
           return `
             <div class="mp-ach-row ${got ? 'on' : 'off'}">
-              <span class="mp-ach-icon">${got ? a.icon : '🔒'}</span>
+              <span class="mp-ach-icon">${got ? achMark(a) : GOLD_LOCK}</span>
               <span class="mp-ach-info">
                 <span class="mp-ach-name">${got ? a.name : '？？？'}</span>
                 <span class="mp-ach-cond">${a.cond}</span>
@@ -10942,7 +11235,7 @@ function showMiniPokerGame() {
             <div class="mp-mission-row ${done ? 'done' : ''}">
               <div class="mp-mission-name">${m.name}</div>
               <div class="mp-mission-progress">${cur}/${m.goal}</div>
-              <div class="mp-mission-reward">💰+${m.reward}</div>
+              <div class="mp-mission-reward">+${m.reward}コイン</div>
               ${done && !claimed ? `<button class="mp-mission-claim" data-mp-claim="${m.id}" data-reward="${m.reward}">受取</button>` : claimed ? '<span class="mp-mission-claimed">✓</span>' : ''}
             </div>
           `;
@@ -10960,7 +11253,7 @@ function showMiniPokerGame() {
         save.minipoker.missionsProgress[id + '_claimed'] = true;
         saveProgress();
         updateBoardStats();
-        showBanner(`🎯 ミッション報酬 +${reward} 🪙`);
+        showBanner(`ミッション報酬 +${reward}コイン`);
         mpSfx('milestone');
         panel.remove();
         showMissionsPanel();
@@ -10983,7 +11276,7 @@ function showMiniPokerGame() {
       }
       if (prog[m.id] >= m.goal && prev < m.goal) {
         unlocked = true;
-        setTimeout(() => showBanner(`🎯 ミッション「${m.name}」達成！`), 800);
+        setTimeout(() => showBanner(`ミッション「${m.name}」達成！`), 800);
       }
     });
     save.minipoker.missionsProgress = prog;
@@ -11045,10 +11338,12 @@ function showMiniPokerGame() {
     const tick = () => {
       const fx = overlay.querySelector('[data-mpb="fx"]');
       if (!fx) return;
-      const emojis = ['💖', '✨', '⭐', '🪙', '💕', '🌟'];
+      const sparks = ['♥', '✦', '♥', '✦', '♥', '✦'];
       const e = document.createElement('div');
       e.className = 'mp-ambient-particle';
-      e.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      const sparkIdx = Math.floor(Math.random() * sparks.length);
+      e.textContent = sparks[sparkIdx];
+      e.style.color = sparkIdx % 2 ? '#efcd82' : '#c8243a';
       e.style.left = Math.random() * 100 + '%';
       e.style.fontSize = (12 + Math.random() * 12) + 'px';
       e.style.animationDuration = (8 + Math.random() * 6) + 's';
@@ -11070,7 +11365,7 @@ function showMiniPokerGame() {
     // トースト
     const t = document.createElement('div');
     t.className = 'mp-ach-toast';
-    t.innerHTML = `<span class="mp-ach-toast-icon">${a.icon}</span><span class="mp-ach-toast-name">${a.name} 達成！</span>`;
+    t.innerHTML = `<span class="mp-ach-toast-icon">${achMark(a)}</span><span class="mp-ach-toast-name">${a.name} 達成！</span>`;
     overlay.querySelector('[data-mpb="fx"]').appendChild(t);
     setTimeout(() => t.remove(), 3000);
     mpSfx('milestone');
@@ -11241,13 +11536,13 @@ function showMiniPokerGame() {
       incrementMissionProgress('wins', 1);
       incrementMissionProgress('maxStreak', ctx.streak);
       // 5連勝でシールド獲得（上限2）
-      if (ctx.streak === 5 && ctx.shields < 2) { ctx.shields += 1; showBanner('🛡️ シールド獲得！'); mpSfx('milestone'); }
-      if (ctx.streak === 10 && ctx.shields < 2) { ctx.shields += 1; showBanner('🛡️🛡️ シールド2個目！'); mpSfx('milestone'); }
+      if (ctx.streak === 5 && ctx.shields < 2) { ctx.shields += 1; showBanner('シールド獲得！'); mpSfx('milestone'); }
+      if (ctx.streak === 10 && ctx.shields < 2) { ctx.shields += 1; showBanner('シールド2個目！'); mpSfx('milestone'); }
     } else if (result === 'lose' || result === 'nopay') {
       // シールドで連勝救済
       if (ctx.shields > 0 && ctx.streak >= 3) {
         ctx.shields -= 1;
-        showBanner('🛡️ シールド発動！連勝維持');
+        showBanner('シールド発動！連勝維持');
         mpSfx('milestone');
         unlockAchievement('survive_shield');
       } else {
@@ -11320,10 +11615,10 @@ function showMiniPokerGame() {
       setCharPose('player', 'win-pose');
       setCharPose('cpu', 'lose-pose');
       flashCharLine('cpu', mpLine(ctx.opp.key, 'big'));
-      flashCharLine('player', `ロイヤル！＋💎JP ${jackpotPayout}🪙！`);
+      flashCharLine('player', `ロイヤル！＋JP ${jackpotPayout}コイン！`);
       jumboCharCelebrate('player');
       if (jackpotPayout > 0) {
-        setTimeout(() => showBanner(`💎 JACKPOT +${jackpotPayout} 🪙`), 600);
+        setTimeout(() => showBanner(`JACKPOT +${jackpotPayout}コイン`), 600);
         rainCoins(80, 5000);
       }
     } else if (result === 'win') {
@@ -11352,7 +11647,7 @@ function showMiniPokerGame() {
           const choices = [1, 2, 5].sort(() => Math.random() - 0.5);
           ctx.garaponChoices = choices;
           renderPhase();
-          showBanner('🎰 ボーナスチャンス！');
+          showBanner('ボーナスチャンス！');
           mpSfx('garapon');
         }, 1400);
       }
@@ -11375,11 +11670,11 @@ function showMiniPokerGame() {
     const milestones = [3, 5, 10, 15, 20];
     if (!milestones.includes(streak)) return;
     const banners = {
-      3:  '🔥 3連勝！次戦 ×1.5 ボーナス',
-      5:  '🔥🔥 5連勝！絶好調 ×2.0 ボーナス',
-      10: '💎 10連勝！伝説の波',
-      15: '👑 15連勝！神域到達',
-      20: '🌌 20連勝！レジェンド',
+      3:  '3連勝！次戦 ×1.5 ボーナス',
+      5:  '5連勝！絶好調 ×2.0 ボーナス',
+      10: '10連勝！伝説の波',
+      15: '15連勝！神域到達',
+      20: '20連勝！レジェンド',
     };
     showBanner(banners[streak]);
     mpSfx('milestone');
@@ -11400,7 +11695,8 @@ function showMiniPokerGame() {
       for (let i = 0; i < 4; i++) {
         const h = document.createElement('div');
         h.className = 'mp-char-heart';
-        h.textContent = ['💖', '✨', '💕', '🌟'][i];
+        h.textContent = ['♥', '✦', '♥', '✦'][i];
+        h.style.color = i % 2 ? '#efcd82' : '#c8243a';
         h.style.left = (40 + Math.random() * 20) + 'px';
         h.style.animationDelay = (i * 0.15) + 's';
         el.appendChild(h);
@@ -11447,10 +11743,10 @@ function showMiniPokerGame() {
         saveProgress();
         updateBoardStats();
         playFx('bigwin'); mpSfx('bigwin');
-        showBanner(pick === 5 ? `🎯 大当たり！+${extra} 🪙` : `🎉 当たり！+${extra} 🪙`);
+        showBanner(pick === 5 ? `大当たり！+${extra}コイン` : `当たり！+${extra}コイン`);
         rainCoins(15, 1800);
       } else {
-        showBanner('🪙 残念！そのまま');
+        showBanner('残念！そのまま');
         mpSfx('tie');
       }
       ctx.phase = 'result';
@@ -11492,7 +11788,7 @@ function showMiniPokerGame() {
         saveProgress();
         updateBoardStats();
         playFx('double-win');
-        showBanner(`🎯 ダブルアップ成功！ ×${Math.pow(2, ctx.doubleStack)} → ${ctx.reward} 🪙`);
+        showBanner(`ダブルアップ成功！ ×${Math.pow(2, ctx.doubleStack)} → ${ctx.reward}コイン`);
         ctx.phase = 'result';
         ctx.canDouble = ctx.doubleStack < 3;
         renderPhase();
@@ -11507,7 +11803,7 @@ function showMiniPokerGame() {
         ctx.result = 'lose';
         ctx.streak = 0;
         playFx('double-lose');
-        showBanner('💧 ダブルアップ失敗… 没収');
+        showBanner('ダブルアップ失敗… 没収');
         ctx.phase = 'result';
         ctx.canDouble = false;
         renderPhase();
@@ -11534,7 +11830,7 @@ function showMiniPokerGame() {
     renderPaytable();
     renderPhase();
     if (ctx.bossNight) {
-      setTimeout(() => showBanner('🌹 今夜の特別卓！ 配当 ×3 ／ ベットも ×3'), 200);
+      setTimeout(() => showBanner('今夜の特別卓！ 配当 ×3 ／ ベットも ×3'), 200);
     }
   }
 
@@ -11547,11 +11843,11 @@ function showMiniPokerGame() {
     const sess = overlay.querySelector('[data-mpb="sessionStat"]');
     if (c) animateNumber(c, save.coins);
     if (s) s.textContent = ctx.streak;
-    if (sh) sh.textContent = ctx.shields > 0 ? ' ' + '🛡️'.repeat(ctx.shields) : '';
+    if (sh) sh.textContent = ctx.shields > 0 ? ' シールド×' + ctx.shields : '';
     if (jp) animateNumber(jp, save.minipoker.jackpot || 5000);
     if (sess) {
       const delta = save.coins - ctx.sessionStartCoins;
-      sess.textContent = `💹 ${delta >= 0 ? '+' : ''}${delta}`;
+      sess.textContent = `${delta >= 0 ? '+' : ''}${delta}`;
       sess.classList.toggle('mp-stat-plus', delta > 0);
       sess.classList.toggle('mp-stat-minus', delta < 0);
     }
@@ -11577,10 +11873,10 @@ function showMiniPokerGame() {
           <div class="mp-sum-row"><span>プレイ回数</span><b>${ctx.sessionPlays}</b></div>
           <div class="mp-sum-row"><span>勝率</span><b>${winRate}%</b></div>
           <div class="mp-sum-row"><span>最高役</span><b>${bestHandName}</b></div>
-          <div class="mp-sum-row mp-sum-${delta >= 0 ? 'plus' : 'minus'}"><span>収支</span><b>${delta >= 0 ? '+' : ''}${delta} 🪙</b></div>
+          <div class="mp-sum-row mp-sum-${delta >= 0 ? 'plus' : 'minus'}"><span>収支</span><b>${delta >= 0 ? '+' : ''}${delta}コイン</b></div>
         </div>
         <div class="mp-summary-tomorrow">
-          🌟 明日のラッキー役予告：<b>${tomorrowName}</b>
+          明日のラッキー役予告：<b>${tomorrowName}</b>
         </div>
         <div class="mp-summary-actions">
           <button class="mp-btn mp-btn-primary" data-mp-sum="continue">▶ 続ける</button>
@@ -11602,11 +11898,11 @@ function showMiniPokerGame() {
       <div class="mp-tut-card">
         <div class="mp-tut-title">ファイブポーカー 入門</div>
         <ol class="mp-tut-steps">
-          <li>① <b>ベットを選ぶ</b>（1回 最大 ${MP_BET_MAX} 🪙まで）</li>
-          <li>② DEAL → カードを <b>残すかタップで指定</b>（交換は2回まで）</li>
+          <li>① <b>ベットを選ぶ</b>（1回 最大 ${MP_BET_MAX}コインまで）</li>
+          <li>② 配る → カードを <b>残すかタップで指定</b>（交換は2回まで）</li>
           <li>③ 相手より強い手で勝つと <b>役に応じて配当</b>（J以上のペアから）</li>
         </ol>
-        <div class="mp-tut-hint">🌟 今日のラッキー役は ×2。分の悪い手は 🩹 サレンダーで半額を取り戻せます。</div>
+        <div class="mp-tut-hint">今日のラッキー役は ×2。分の悪い手は「サレンダー」で半額を取り戻せます。</div>
         <button class="mp-btn mp-btn-primary" data-mp-tut="ok">はじめる！</button>
       </div>
     `;
@@ -11709,7 +12005,7 @@ function showMiniPokerGame() {
     for (let i = 0; i < count; i++) {
       const c = document.createElement('div');
       c.className = 'mp-coin-fly';
-      c.textContent = '🪙';
+      c.innerHTML = '<img src="assets/ui/home/ico_coin.webp" alt="">';
       c.style.left = (50 + (Math.random() - 0.5) * 20) + '%';
       c.style.top = (50 + (Math.random() - 0.5) * 10) + '%';
       c.style.setProperty('--dx', dx + 'px');
@@ -11739,11 +12035,13 @@ function showMiniPokerGame() {
     const fxRect = fx.getBoundingClientRect();
     const cx = rect.left + rect.width / 2 - fxRect.left;
     const cy = rect.top  + rect.height / 2 - fxRect.top;
-    const emojis = ['💖', '✨', '⭐', '💕', 'ぱにゅ'];
+    const emojis = ['♥', '✦', '♥', '✦', 'ぱにゅ'];
     for (let i = 0; i < 3; i++) {
       const p = document.createElement('div');
       p.className = 'mp-tap-particle';
-      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      const emojiIdx = Math.floor(Math.random() * emojis.length);
+      p.textContent = emojis[emojiIdx];
+      p.style.color = emojiIdx % 2 ? '#efcd82' : '#c8243a';
       p.style.left = cx + 'px';
       p.style.top  = cy + 'px';
       const ang = (Math.PI * 2 * i / 3) + Math.random() * 0.5;
@@ -11782,7 +12080,7 @@ function showMiniPokerGame() {
     for (let i = 0; i < count; i++) {
       const c = document.createElement('div');
       c.className = 'mp-coin-drop';
-      c.textContent = '🪙';
+      c.innerHTML = '<img src="assets/ui/home/ico_coin.webp" alt="">';
       c.style.left = (Math.random() * 100) + '%';
       c.style.animationDuration = (1.4 + Math.random() * 1.6) + 's';
       c.style.animationDelay = (Math.random() * 0.8) + 's';
@@ -11842,12 +12140,15 @@ function showCollectionModal() {
   const stages = stageOrder.map(id => {
     const opp = OPPONENTS[id];
     if (!opp) return null;
-    const cleared = save.clearedStages.includes(id);
+    // 数え方はホーム・物語の台帳・タイトルと同じ（isStageCleared／clearedStageCount）。研修を飛ばしてポルカに勝った人のリコ先輩は「免除」
+    const cleared = isStageCleared(id);
+    const exempt = isStageExempt(id);
     const rank = save.bestRanks && save.bestRanks[id];
     const wins = (save.rematchWins && save.rematchWins[id]) || 0;
-    return { id, name: opp.name, theme: opp.theme, cleared, rank, wins };
+    return { id, name: opp.name, theme: opp.theme, cleared, exempt, rank, wins };
   }).filter(Boolean);
-  const stageCleared = stages.filter(s => s.cleared).length;
+  const stageCleared = clearedStageCount();
+  ensureAchievements();
 
   const allItems = SHOP_ITEMS;
   // 所持数は「今の棚にある品のうち持っているもの」で数える（クリア特典はクリアで所持扱い。廃止品は数えない）
@@ -11855,9 +12156,11 @@ function showCollectionModal() {
   const itemsByCat = {};
   allItems.forEach(i => {
     if (!itemsByCat[i.cat]) itemsByCat[i.cat] = [];
-    itemsByCat[i.cat].push({ ...i, owned: ownedItems.includes(i.id) });
+    // stocked＝交換所にもう入荷している。未入荷で持ってもいない品は、名前を出さず「？？？ × N」にまとめる（クリア後の品を先に見せない）
+    itemsByCat[i.cat].push({ ...i, owned: ownedItems.includes(i.id), stocked: isShopItemUnlocked(i.id) });
   });
-  const catLabels = { panyu: 'ぱにゅ強化', note: '戦術ノート', skin: '見た目', memory: 'メモリ', stack: 'チップ拡張' };
+  // 「戦術ノート」の欄は下にもう一つあるので、交換所の品のほうは「（交換所）」を付けて区別する
+  const catLabels = { panyu: 'ぱにゅ強化', note: '戦術ノート（交換所）', skin: '見た目', memory: 'メモリ', stack: 'チップ拡張' };
 
   // 分子も TACTIC_NOTES にあるノートだけを数える（未知のIDで 6/5 のように総数を超えないように）
   const notesCount = Object.keys(TACTIC_NOTES).filter(id => (save.unlockedNotes || []).includes(id)).length;
@@ -11877,24 +12180,31 @@ function showCollectionModal() {
     { id: 'math',        name: '算数の徒', desc: 'グラーノ撃破', ic: 'target', achieved: save.clearedStages.includes('grano') },
     { id: 'champion',    name: '圧倒の継承者', desc: 'ヴェルベット撃破', ic: 'medal', achieved: save.clearedStages.includes('velvet') },
     { id: 'ending',      name: 'エンディング', desc: '物語を見届けた', ic: 'book', achieved: isEndingUnlocked() },
-    { id: 'backdoor',    name: '練習機能の解放', desc: '7タップの秘密（相手の手札を見る練習）', ic: 'eye', achieved: !!save.backdoorUnlocked },
+    // 練習機能は、クリアするまで名前も条件も伏せる（クリア前に7回押しても何も起きない）
+    (isEndingUnlocked() || save.backdoorUnlocked)
+      ? { id: 'backdoor', name: '練習機能の解放', desc: 'クリア後、ロビーのぱにゅぱにゅを7回押す', ic: 'eye', achieved: !!save.backdoorUnlocked }
+      : { id: 'backdoor', name: '？？？', desc: 'クリア後に分かる', ic: 'eye', achieved: false },
   ];
+  // 称号（30種）と物語の達成は、下の「称号」の欄に1つにまとめた。完成度の数え方も同じ範囲にそろえる
+  const titleTotal = ACHIEVEMENTS.length;
+  const titleGot = ACHIEVEMENTS.filter(a => save.achievements[a.id]).length;
 
   // 完成度（全体％）
   const totalScore =
-    stages.length + achievements.length + allItems.length + outfits.length;
+    stages.length + achievements.length + titleTotal + allItems.length + outfits.length;
   const gotScore =
-    stageCleared + achievements.filter(a => a.achieved).length +
+    stageCleared + achievements.filter(a => a.achieved).length + titleGot +
     ownedItems.length + outfitUnlocked;
   const progressPct = Math.round((gotScore / totalScore) * 100);
 
   const stagesHtml = stages.map(s => `
     <div class="coll-stage ${s.cleared ? 'cleared' : 'locked'}">
-      <div class="coll-stage-icon">${s.cleared ? '✓' : '🔒'}</div>
+      <div class="coll-stage-icon">${s.cleared ? '✓' : GOLD_LOCK}</div>
       <div class="coll-stage-body">
         <div class="coll-stage-name">${s.name}</div>
         <div class="coll-stage-theme">${s.theme || ''}</div>
-        ${s.cleared ? `<div class="coll-stage-meta">${s.rank ? `最高ランク ${s.rank} ／ ` : ''}再戦勝利 ${s.wins}回</div>` : ''}
+        ${s.exempt ? '<div class="coll-stage-meta">研修は免除（講義はいつでも受けられます）</div>'
+          : s.cleared ? `<div class="coll-stage-meta">${s.rank ? `最高ランク ${s.rank} ／ ` : ''}再戦勝利 ${s.wins}回</div>` : ''}
       </div>
     </div>
   `).join('');
@@ -11912,7 +12222,7 @@ function showCollectionModal() {
       </button>`;
     }
     return `<div class="coll-cg-card off" title="未開放">
-      <div class="coll-cg-locked">🔒</div>
+      <div class="coll-cg-locked">${GOLD_LOCK}</div>
       <div class="coll-cg-label">？？？<br><small>（${id === 'rico_tutorial' ? `${opp.name}の講義を修了すると開放` : `${opp.name}に初勝利で開放`}）</small></div>
     </div>`;
   }).join('');
@@ -11929,11 +12239,15 @@ function showCollectionModal() {
   const itemsHtml = Object.keys(itemsByCat).map(cat => {
     const list = itemsByCat[cat];
     const have = list.filter(i => i.owned).length;
+    // 持っている品と、交換所に入荷済みの品だけ名前を出す。未入荷の品は個数だけ（名前も説明も出さない）
+    const shown = list.filter(i => i.owned || i.stocked);
+    const hiddenCount = list.length - shown.length;
     return `
       <div class="coll-itemcat">
         <div class="coll-itemcat-title">${catLabels[cat] || cat} <span class="coll-itemcat-count">${have}/${list.length}</span></div>
         <div class="coll-itemcat-list">
-          ${list.map(i => `<span class="coll-item ${i.owned ? 'on' : 'off'}" title="${i.desc}">${i.owned ? '◆' : '◇'} ${i.name}</span>`).join('')}
+          ${shown.map(i => `<span class="coll-item ${i.owned ? 'on' : 'off'}" title="${i.desc}">${i.owned ? '◆' : '◇'} ${i.name}</span>`).join('')}
+          ${hiddenCount ? `<span class="coll-item off coll-item-hidden" title="まだ入荷していません">◇ ？？？ × ${hiddenCount}</span>` : ''}
         </div>
       </div>
     `;
@@ -11943,7 +12257,7 @@ function showCollectionModal() {
     <div class="coll-outfit ${o.unlocked ? 'on' : 'off'}" title="${o.label}">
       ${o.unlocked
         ? `<img src="assets/characters/${o.file}" alt="${o.label}" onerror="this.style.display='none'">`
-        : `<div class="coll-outfit-locked">🔒</div>`}
+        : `<div class="coll-outfit-locked">${GOLD_LOCK}</div>`}
       <div class="coll-outfit-label">${o.label}</div>
     </div>
   `).join('');
@@ -11971,16 +12285,12 @@ function showCollectionModal() {
           <div class="coll-cgs">${rewardCgHtml}</div>
         </section>
         <section class="coll-section">
-          <h3 class="coll-section-title">物語の達成 <span class="coll-section-count">${achievements.filter(a => a.achieved).length}/${achievements.length}</span></h3>
-          <div class="coll-achievements">${achHtml}</div>
-        </section>
-        <section class="coll-section">
           <h3 class="coll-section-title">交換所アイテム <span class="coll-section-count">${ownedItems.length}/${allItems.length}</span></h3>
           <div class="coll-items">${itemsHtml}</div>
         </section>
         <section class="coll-section">
           <h3 class="coll-section-title">戦術ノート <span class="coll-section-count">${notesCount}/${Object.keys(TACTIC_NOTES).length}</span></h3>
-          <div class="coll-notes">${Object.keys(TACTIC_NOTES).map(function(id){var n=TACTIC_NOTES[id];var got=(save.unlockedNotes||[]).indexOf(id)>=0;var eff=(NOTE_ARTICLES[id]||{}).effect||'';return `<div class="coll-note ${got?"on":"off"}" data-action="open-note" data-note="${id}" role="button" tabindex="0"><div class="coll-note-name">${got?n.name:"？？？"}</div><div class="coll-note-desc">${got?n.desc:"対戦相手撃破やショップ購入で解放"}</div>${got&&eff?`<div class="coll-note-effect">対戦中の効果：${eff}</div>`:''}<div class="coll-note-read">${got?'▸ 本文を読む':'▸ 内容を見る（未解放）'}</div></div>`;}).join("")}</div>
+          <div class="coll-notes">${Object.keys(TACTIC_NOTES).map(function(id){var n=TACTIC_NOTES[id];var got=(save.unlockedNotes||[]).indexOf(id)>=0;var eff=(NOTE_ARTICLES[id]||{}).effect||'';return `<div class="coll-note ${got?"on":"off"}" data-action="open-note" data-note="${id}" role="button" tabindex="0"><div class="coll-note-name">${got?n.name:"？？？"}</div><div class="coll-note-desc">${got?n.desc:"対戦相手の撃破か、交換所での購入で解放"}</div>${got&&eff?`<div class="coll-note-effect">対戦中の効果：${eff}</div>`:''}<div class="coll-note-read">${got?'▸ 本文を読む':'▸ 内容を見る（未解放）'}</div></div>`;}).join("")}</div>
         </section>
         <section class="coll-section">
           <h3 class="coll-section-title">リコ衣装ギャラリー <span class="coll-section-count">${outfitUnlocked}/${outfits.length}</span></h3>
@@ -11990,7 +12300,7 @@ function showCollectionModal() {
             : ''}
           ${save.clearedStages.includes('velvet')
             ? ''
-            : `<div class="coll-locked-hint">🔒 交換所で買った衣装はここで眺められます。ヴェルベット撃破で全衣装が解放</div>`}
+            : `<div class="coll-locked-hint">交換所で買った衣装はここで眺められます。ヴェルベット撃破で全衣装が解放</div>`}
         </section>
         ${(() => {
           const memoryIds = ['gallery_rico','gallery_opponents','gallery_mimi','omake_drama_1','omake_drama_2','omake_voice_pack','omake_credit','memory_ending','memory_ending_theme','memory_minipoker'];
@@ -12021,14 +12331,19 @@ function showCollectionModal() {
           const got = unlocked.length;
           const cardOf = (a, isUnlocked) => `
             <div class="ach-card ${isUnlocked ? 'on' : 'off'}" title="${a.desc}">
-              <div class="ach-icon">${isUnlocked ? a.icon : '🔒'}</div>
+              <div class="ach-icon">${isUnlocked ? achMark(a) : GOLD_LOCK}</div>
               <div class="ach-name">${isUnlocked ? a.name : '？？？'}</div>
               <div class="ach-desc">${isUnlocked ? a.desc : a.cat}</div>
             </div>
           `;
+          // 「物語の達成」と「称号」は1つの欄にまとめた（ポルカを倒した同じ出来事が別々の欄に出ていた）。物語を上に、そのほかの称号を下に
+          const storyGot = achievements.filter(a => a.achieved).length;
           return `
             <section class="coll-section">
-              <h3 class="coll-section-title">称号 <span class="coll-section-count">${got}/${total}</span></h3>
+              <h3 class="coll-section-title">称号 <span class="coll-section-count">${got + storyGot}/${total + achievements.length}</span></h3>
+              <h4 class="coll-subtitle">物語 <span class="coll-subtitle-count">${storyGot}/${achievements.length}</span></h4>
+              <div class="coll-achievements">${achHtml}</div>
+              <h4 class="coll-subtitle">プレイの称号 <span class="coll-subtitle-count">${got}/${total}</span></h4>
               <div class="ach-grid">
                 ${unlocked.map(a => cardOf(a, true)).join('')}
                 ${locked.map(a => cardOf(a, false)).join('')}
@@ -12248,7 +12563,7 @@ function showGlossaryModal() {
             <button class="gl-sort-btn" data-mode="aiueo">50音順</button>
           </div>
         </div>
-        <input type="text" class="glossary-search" placeholder="🔍 用語を検索…" id="glossary-search-input">
+        <input type="text" class="glossary-search" placeholder="用語を検索…" id="glossary-search-input">
         <div class="glossary-cats" id="glossary-cats-row">
           ${categories.map(c => `<button class="gl-cat-pill" data-cat="${c}">${c}</button>`).join('')}
         </div>
@@ -12338,7 +12653,7 @@ function showNewGameModal() {
       </button>
       <button class="btn btn-secondary newgame-opt" data-action="new-game-keep-coins">
         <span class="newgame-opt-name">コインと所持品を持って最初から</span>
-        <span class="newgame-opt-desc">進捗とランクはリセット、コイン・購入アイテムは保持</span>
+        <span class="newgame-opt-desc">進捗とランクはリセット。コインと購入した品は残り、クリア後に手に入れた品も残ります</span>
       </button>
       <button class="btn btn-ghost newgame-opt" data-action="newgame-cancel">キャンセル</button>
     </div>
@@ -12354,7 +12669,8 @@ function skipStageCost(opp) {
 function skipStageWithCoins(opponentId) {
   const opp = OPPONENTS[opponentId];
   if (!opp) return;
-  if (save.clearedStages.includes(opponentId)) return;
+  // 研修（リコ先輩）とヴェルベットは飛ばせない。ヴェルベットを飛ばすと、結果・幕間・エンディングを一度も見ないままクリア特典が全部開いてしまう
+  if (!canSkipStage(opponentId)) return;
   const cost = skipStageCost(opp);
   if (save.coins < cost) { toast(`コインが足りません（${cost}コイン必要）`); return; }
   // ブラウザ標準の confirm をやめ、ゲーム内の確認に置き換える。文言とデータを一致させる（ランクは記録しない）
@@ -12367,7 +12683,7 @@ function skipStageWithCoins(opponentId) {
     cancel: 'やめる',
   }).then(yes => {
     if (!yes) return;
-    if (save.clearedStages.includes(opponentId) || save.coins < cost) return; // 確認中に状況が変わった
+    if (!canSkipStage(opponentId) || save.coins < cost) return; // 確認中に状況が変わった
     save.coins -= cost;
     // markStageCleared：clearedStages 追加＋velvet なら endingUnlocked も同時に立てる（派生フラグの一貫性）
     markStageCleared(opponentId);
@@ -12483,7 +12799,7 @@ function startBattleInternal(opponentId) {
   state = defaultState();
   const opp = OPPONENTS[opponentId] || OPPONENTS.polka;
   state.opponentId = opp.id;
-  state.opponentName = seriousRico ? 'リコ先輩（真剣）' : opp.name;
+  state.opponentName = seriousRico ? '本気のリコ先輩' : opp.name;
   // 真剣モードのリコ先輩は全パラメータ最強
   state.opponentProfile = seriousRico
     ? { style: 'rico_serious', bluffTendency: 0.7, aggression: 0.85, foldDiscipline: 0.7, valueBetTendency: 0.8, drawAggression: 0.85, trapTendency: 0.6 }
@@ -12506,7 +12822,7 @@ function startBattleInternal(opponentId) {
   // 持ち込みは卓についた時に短く知らせる（効いていることが見えないと、買った品が無いのと同じ）
   if (carry > 0) {
     const gen = battleGen;
-    setTimeout(() => { if (gen === battleGen && state && state.screen === 'battle') toast(`持ち込みチップ +${carry}`); }, 700);
+    setTimeout(() => { if (gen === battleGen && state && state.screen === 'battle') toast(`チップ拡張 +${carry}`); }, 700);
   }
   state.rebuysLeft = state.tutorialMode ? 0 : 1;
   state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
@@ -12544,20 +12860,20 @@ function startBattleInternal(opponentId) {
     render();
     setTimeout(() => showTutorial('intro',
       'ようこそミミ！まずはポーカーの基本から教えるよ。<br><br>' +
-      '🃏 <b>手札2枚＋場札5枚</b>から最強の5枚役を作る<br>' +
-      '🪙 <b>ポット</b>＝ハンド毎の賭け金プール。<u>勝った方が総取り</u><br>' +
+      '<b>手札2枚＋場札5枚</b>から最強の5枚役を作る<br>' +
+      '<b>ポット</b>＝ハンド毎の賭け金プール。<u>勝った方が総取り</u><br>' +
       'ベットすると自分のチップが減り、ポットに入る<br>' +
-      '🏆 相手より強い役 or 相手が降りれば勝ち<br>' +
-      '💀 自分のチップが0になったら負け<br><br>' +
+      '相手より強い役 or 相手が降りれば勝ち<br>' +
+      '自分のチップが0になったら負け<br><br>' +
       'まずは下の<b>「対戦開始」</b>を押して、最初の手札を見てみよう。',
       () => showTutorial('intro2',
         '<b>5つのアクション</b>を覚えよう：<br><br>' +
-        '🚪 <b>フォールド</b>＝降りる。手札を捨ててこのハンドを諦める。<u>場札が出る前でも、いつでも降りられる</u>。<br>' +
-        '👉 <i>弱い手の時、無理に追わずアンテだけで損切りする時に使う</i><br><br>' +
-        '✅ <b>コール</b>＝相手と同額を払って勝負を続ける<br>' +
-        '👁 <b>チェック</b>＝相手が何も賭けてない時、自分も賭けず次の場札を待つ（無料で進める）<br>' +
-        '💵 <b>ベット/レイズ</b>＝自分から仕掛ける。1/2〜ポット、強気の度合いで選ぶ<br>' +
-        '🔥 <b>オールイン</b>＝持ちチップ全部。決め手・最大の圧をかける時<br><br>' +
+        '<b>フォールド</b>＝降りる。手札を捨ててこのハンドを諦める。<u>場札が出る前でも、いつでも降りられる</u>。<br>' +
+        '<i>弱い手の時、無理に追わずアンテだけで損切りする時に使う</i><br><br>' +
+        '<b>コール</b>＝相手と同額を払って勝負を続ける<br>' +
+        '<b>チェック</b>＝相手が何も賭けてない時、自分も賭けず次の場札を待つ（無料で進める）<br>' +
+        '<b>ベット/レイズ</b>＝自分から仕掛ける。1/2〜ポット、強気の度合いで選ぶ<br>' +
+        '<b>オールイン</b>＝持ちチップ全部。決め手・最大の圧をかける時<br><br>' +
         '<u>各ボタンにマウスを乗せると詳しい説明が出るよ。</u>')
     ), 600);
   } else {
@@ -12653,7 +12969,7 @@ const RULE_PRIMER_STEPS = [
   },
   {
     key: 'ranking',
-    rico: '役の強さはこの順。ぜんぶ覚えなくてOK。困ったら左下の❓でいつでも見られるよ',
+    rico: '役の強さはこの順。ぜんぶ覚えなくてOK。困ったら右上の「役の一覧」ボタンでいつでも見られるよ',
   },
   {
     key: 'betting',
@@ -13300,7 +13616,7 @@ function showIntroHandWinScreen() {
   overlay.className = 'intro-win-overlay';
   overlay.innerHTML = `
     <div class="intro-win-modal iw2">
-      <div class="iw2-eyebrow v2-disp">TRAINING COMPLETE</div>
+      <div class="iw2-eyebrow">${skipped ? '第1戦 免除' : '第1戦 突破'}</div>
       <div class="iw2-title">${skipped ? '研修をスキップした' : '研修修了！'}</div>
       ${skipped ? '' : `<div class="iw2-sub">今日覚えたこと</div>
       <div class="iw2-stamps">${stamps.map(([k, d], i) => `<div class="iw2-stamp" style="--d:${0.25 + i * 0.35}s"><span class="iw2-seal">${k}</span><span class="iw2-desc">${d}</span></div>`).join('')}</div>`}
@@ -13476,7 +13792,7 @@ function houseRulesPages() {
     { eyebrow: 'HOUSE RULES', target: '.battle-screen .v2-stack-gauge.is-opp',
       title: `${opp}は <b>2</b> 倍のチップで始まる`,
       fig: `<div class="mk-stacks">
-          <figure class="mk-stack">${chipCol(['gold', 'red', 'gold', 'red', 'gold'])}<figcaption>ミミ <b>${P}</b>${carry ? `<small>持ち込み +${carry} を含む</small>` : ''}</figcaption></figure>
+          <figure class="mk-stack">${chipCol(['gold', 'red', 'gold', 'red', 'gold'])}<figcaption>ミミ <b>${P}</b>${carry ? `<small>チップ拡張 +${carry} を含む</small>` : ''}</figcaption></figure>
           <span class="mk-times">×2</span>
           <figure class="mk-stack is-opp">${chipCol(['red', 'white', 'blue', 'red', 'white', 'blue', 'red', 'white', 'blue', 'red'])}<figcaption>${opp} <b>${O}</b></figcaption></figure>
         </div>`,
@@ -13889,7 +14205,7 @@ function showAllInCutIn(side, amount) {
 function spawnAllInSpark(parent) {
   const s = document.createElement('div');
   s.className = 'allin-spark';
-  s.textContent = pick(['✨', '💥', '🔥', '⭐']);
+  { const k = Math.floor(rand() * 4); s.textContent = k % 2 ? '✦' : '♥'; s.style.color = k < 2 ? '#c8243a' : '#efcd82'; }
   const angle = rand() * Math.PI * 2;
   const dist = 200 + rand() * 280;
   s.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
@@ -14234,7 +14550,7 @@ function showRebuy() {
   const oppName = state.opponentName || '相手';
   const stack = state.__initialChips || OPPONENTS[state.opponentId]?.chips || 1000;
   const taunt = {
-    velvet: 'あはっ、もう終わり？ ……いいわ、もう一回座らせてあげる。泣くまでね♡',
+    velvet: 'あはっ、もう終わり？ ……いいの、もう一回座らせてあげる。泣くまで付き合ってあげるの♡',
     polka: 'やったー！ ……え、まだやるの？ いいよー、何回でもかかってきな！',
     selina: '……想定どおりです。二度目も同じ結果になると思いますが',
     grano: '損切りは早い方がいいのですが……追加の出資、ということで？',
@@ -14587,7 +14903,7 @@ function triggerPsychBattle(qid) {
     if (!ruleBox) {
       ruleBox = document.createElement('div');
       ruleBox.className = 'logic-rule-box';
-      ruleBox.innerHTML = `<div class="logic-rule-label">📘 今回のルール</div><div class="logic-rule-text">${q.rule}</div>`;
+      ruleBox.innerHTML = `<div class="logic-rule-label">今回のルール</div><div class="logic-rule-text">${q.rule}</div>`;
       titleEl.insertAdjacentElement('afterend', ruleBox);
     }
   }
@@ -15594,8 +15910,8 @@ function resolvePsych(qid, choice, btn) {
     if (rangeLv >= 2 && state.opponentProfile) {
       const bluffPct = Math.round((state.opponentProfile.bluffTendency || 0) * 100);
       const rangeText = rangeLv >= 3
-        ? `📓 相手レンジ：ブラフ確率 約${bluffPct}%`
-        : `📓 相手レンジ：${bluffPct >= 55 ? 'ブラフ寄り' : bluffPct <= 30 ? 'バリュー寄り' : '五分五分'}`;
+        ? `相手レンジ：ブラフ確率 約${bluffPct}%`
+        : `相手レンジ：${bluffPct >= 55 ? 'ブラフ寄り' : bluffPct <= 30 ? 'バリュー寄り' : '五分五分'}`;
       state.ricoAdvice += `<br><small class="range-hint">${rangeText}</small>`;
     }
     log('psych', { qid, choice: choice.id, success: true });
@@ -15672,14 +15988,14 @@ function resolvePsych(qid, choice, btn) {
         // 正解 +5🪙、3コンボ以降さらに +5。🪙はその問題に初めて正解した時だけ（再受講の周回で稼げないように）
         // ※「10秒以内で +5🪙」の早答えボーナスは撤去（長い状況文を読むほど損をする設計だった）
         if (!Array.isArray(save.lectureRewarded)) save.lectureRewarded = [];
-        const combo = state.lectureCombo >= 3 ? `🔥${state.lectureCombo}コンボ！ ` : '';
+        const combo = state.lectureCombo >= 3 ? `${state.lectureCombo}コンボ！ ` : '';
         if (!save.lectureRewarded.includes(qid)) {
           const gain = 5 + (state.lectureCombo >= 3 ? 5 : 0);
           save.lectureRewarded.push(qid);
           save.coins += gain;
           state.lectureEarned = (state.lectureEarned || 0) + gain;
           saveProgress();
-          rewardMsg = `　${combo}+${gain}🪙`;
+          rewardMsg = `　${combo}+${gain}コイン`;
         } else if (combo) {
           rewardMsg = `　${combo}`;
         }
@@ -15724,7 +16040,7 @@ function showHandHistoryModal() {
     : hist.slice().reverse().map((h, ridx) => {
         const idx = hist.length - 1 - ridx;
         const last = h.last;
-        const winnerIcon = last.winner === 'player' ? '🏆' : last.winner === 'opponent' ? '✗' : '＝';
+        const winnerIcon = last.winner === 'player' ? '勝' : last.winner === 'opponent' ? '負' : '分';
         const winnerCls  = last.winner === 'player' ? 'hh-win' : last.winner === 'opponent' ? 'hh-lose' : 'hh-draw';
         const reasonText = last.reason === 'showdown' ? `ショーダウン（${last.pEv?.name || '?'} vs ${last.oEv?.name || '?'}）`
                          : last.reason === 'fold' ? 'ミミが降伏'
@@ -15790,11 +16106,11 @@ function showPersonalityRevealBanner() {
   banner.innerHTML = `
     <div class="prb-inner">
       <div class="prb-title">ミミミ MAX！相手の性格を読み切った</div>
-      <div class="prb-name">${p.icon} ${p.title}</div>
+      <div class="prb-name">${personaMark(p)} ${p.title}</div>
       <ul class="prb-traits">
         ${p.traits.map(t => `<li>${t}</li>`).join('')}
       </ul>
-      <div class="prb-exploit">⚔ 攻略：${p.exploit}</div>
+      <div class="prb-exploit">攻略：${p.exploit}</div>
       <div class="prb-note">この対戦の心理バトルは封印されます</div>
       <button class="btn btn-primary prb-close-btn">OK（読み切った）</button>
     </div>
@@ -16409,7 +16725,7 @@ function startDominanceMode() {
 function showDominanceIntro(onContinue) {
   const overlay = document.createElement('div');
   overlay.className = 'dominance-overlay dominance-intro';
-  const titleText = '⚡ 圧倒モード ⚡';
+  const titleText = '圧倒モード';
   const subText = `${state.consecutiveWins}連勝！ 完全に流れを掴んだ！`;
   overlay.innerHTML = `
     <div class="dominance-flash"></div>
@@ -16440,17 +16756,17 @@ function showDominanceChoiceModal() {
       <p class="dominance-choice-sub">完勝の決め手を選ぼう</p>
       <div class="dominance-choice-list">
         <button class="dominance-choice-btn" data-choice="full">
-          <div class="dchoice-icon">💰</div>
+          <div class="dchoice-icon">${goldMark('全')}</div>
           <div class="dchoice-name">全取り</div>
           <div class="dchoice-desc">相手のチップを0まで削り切る。スコア +20（相手のチップを0に）</div>
         </button>
         <button class="dominance-choice-btn dchoice-mid" data-choice="break">
-          <div class="dchoice-icon">💔</div>
+          <div class="dchoice-icon">${goldMark('折')}</div>
           <div class="dchoice-name">心を折る</div>
           <div class="dchoice-desc">いちばん派手なとどめ。ほぼ削り切るが、相手のチップが少し残る（+20 は付かない）</div>
         </button>
         <button class="dominance-choice-btn dchoice-mercy" data-choice="mercy">
-          <div class="dchoice-icon">🌸</div>
+          <div class="dchoice-icon">${goldMark('赦')}</div>
           <div class="dchoice-name">見逃す</div>
           <div class="dchoice-desc">余裕の貫禄。相手のチップを7割ほど取って終わる（+20 は付かない）</div>
         </button>
@@ -16537,9 +16853,9 @@ function spawnDominanceBurst(amount, index) {
 // 完了演出（選択によって違うメッセージ）
 function showDominanceComplete(choice) {
   const messages = {
-    full:  { title: '💎 完勝！', sub: '全チップを奪い取った', color: '#ffd55a' },
-    break: { title: '💔 心折！', sub: '相手の戦意を完全に折った', color: '#ff5577' },
-    mercy: { title: '🌸 見逃し', sub: '余裕の貫禄で締めくくった', color: '#ffc1d8' },
+    full:  { title: '完勝！', sub: '全チップを奪い取った', color: '#ffd55a' },
+    break: { title: '心折！', sub: '相手の戦意を完全に折った', color: '#c8253a' },
+    mercy: { title: '見逃し', sub: '余裕の貫禄で締めくくった', color: '#f4e4bd' },
   };
   const m = messages[choice] || messages.full;
   const overlay = document.createElement('div');
@@ -16813,7 +17129,8 @@ function endBattle() {
     } else if (btns) {
       // 初回クリア時に加え、幕間を見ないままクリア済みになった古いセーブでも再戦勝利で見られるようにする
       const intermissionUnseen = !(save.rewardCgSeen || []).includes(state.opponentId);
-      const showIntermissionBtn = won && (firstClearForIntermission || intermissionUnseen) &&
+      // 本気のリコ先輩に勝った時は出さない（幕間は「講義おしまい」の台詞で、本気の読み合いの後に合わない）
+      const showIntermissionBtn = won && !state.seriousRicoMode && (firstClearForIntermission || intermissionUnseen) &&
         state.opponentId !== 'velvet' && !!INTERMISSIONS[state.opponentId];
       if (showIntermissionBtn) {
         btns.innerHTML = `
@@ -16826,39 +17143,40 @@ function endBattle() {
     }
   }
 
-  // ヴェルベット勝利 → エンディングへ進むボタン追加 + 闘札大逆転演出 + 降伏セリフ
+  // ヴェルベット勝利：初回クリアの1回だけ、降伏の台詞札と「全卓制覇」の大演出を出し、幕間→エンディングへ進む。
+  // 再戦の勝ちは、ほかの卓と同じ通常の勝利結果（再戦・ロビーへ。上の分岐で組み立て済み）のまま何も足さない。
   if (won && state.opponentId === 'velvet') {
     save.endingUnlocked = true;
     saveProgress();
-    // ヴェルベットの降伏台詞をリザルトに表示
-    const concession = pick([
-      'ふぅ……侮っていたわね。見どころがあるじゃない',
-      '新人が……まさか、私を追い詰めるなんて',
-      'いいわ、あなたの勝ち。その目、覚えておく',
-      '面白い夜だったわ。私の負けを認めてあげる',
-      '……ふふ、敗北の味、久しぶり。悪くないわね',
-    ]);
-    setTimeout(() => {
-      const reasonEl = document.querySelector('[data-bind="resultReason"]');
-      if (reasonEl) {
-        reasonEl.innerHTML = `<div class="velvet-concession">💋 ヴェルベット：「${concession}」</div>` + reasonEl.innerHTML;
+    if (firstClearForIntermission) {
+      // ヴェルベットの降伏の台詞（負けて崩れる場面：「あたし」「〜なの」「〜のよ」。「ざぁこ」は使わない）。
+      // スコア内訳（畳んである）の中ではなく、結果の札の本体に1枚の台詞札として置く
+      const concession = pick([
+        '……ふん、あたしが負けるなんて。見どころ、あるじゃないの',
+        '新人のくせに、あたしをここまで追い詰めるなんて……覚えておくのよ',
+        'いいの、今夜はあなたの勝ちなの。その目、忘れないでいてあげる',
+        '……負けの味なんて、久しぶりなの。悪くないじゃないの',
+        '面白い夜だったのよ。あたしの負け、認めてあげるの',
+      ]);
+      const card = document.createElement('div');
+      card.className = 'velvet-concession';
+      card.innerHTML = `<span class="vc-name">ヴェルベット</span><span class="vc-line">「${concession}」</span>`;
+      const goalEl = document.querySelector('.result-next-goal');
+      const panelEl = document.querySelector('.rz-panel');
+      if (goalEl) goalEl.insertAdjacentElement('afterend', card);
+      else if (panelEl) panelEl.insertBefore(card, panelEl.querySelector('.result-breakdown') || panelEl.querySelector('.result-buttons'));
+      triggerVelvetVictoryEffect();
+    }
+    // 初回クリア（または幕間を見ないままクリア済みになった古いセーブ）は、まず幕間→その足でエンディングへ
+    if (firstClearForIntermission || !(save.rewardCgSeen || []).includes('velvet')) {
+      const btns = document.querySelector('[data-bind="resultButtons"]');
+      if (btns) {
+        btns.innerHTML = `
+          <button class="btn btn-primary result-main-btn" data-action="go-intermission" data-opponent="velvet"><span>幕間へ</span><span>→</span></button>
+        `;
+        // 動的に追加したボタンを再バインド
+        btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
       }
-    }, 300);
-    triggerVelvetVictoryEffect();
-    const btns = document.querySelector('[data-bind="resultButtons"]');
-    if (btns) {
-      // 初回クリア（または幕間未見の古いセーブ）はまず幕間（ヴェルベットの敗北の美学）→ その足でエンディングへ。
-      // 幕間を見たあとの勝利は従来どおり即エンディングボタン。
-      btns.innerHTML = (firstClearForIntermission || !(save.rewardCgSeen || []).includes('velvet')) ? `
-        <button class="btn btn-primary result-main-btn" data-action="go-intermission" data-opponent="velvet"><span>幕間へ</span><span>→</span></button>
-      ` : `
-        <button class="btn btn-primary result-main-btn" data-action="go-ending"><span>エンディングへ</span></button>
-        <div class="result-sub-buttons">
-          <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
-        </div>
-      `;
-      // 動的に追加したボタンを再バインド
-      btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
     }
   }
 
@@ -16913,7 +17231,10 @@ function nextGoalText() {
     const opp = OPPONENTS[nextId];
     return `次の目標：${opp.name}に挑戦`;
   }
-  return '全卓制覇！再戦でSランクを狙おう';
+  // 全員に勝った後：次は高難度卓（ホームから入る）。SS を取った相手には「SSを狙おう」と言わない
+  const bestRank = (save.bestRanks && save.bestRanks[state.opponentId]) || '';
+  const gotSS = state.rank === 'SS' || bestRank === 'SS';
+  return gotSS ? '全卓制覇。次は高難度卓へ' : '全卓制覇。次は高難度卓へ。再戦でSSを狙おう';
 }
 
 // リザルト画面の「ご褒美感」演出をまとめて起動する。
@@ -16940,6 +17261,8 @@ function startResultFx() {
   root.querySelectorAll('.result-stats > div').forEach(row => revealTargets.push(row));
   const nextGoalEl = root.querySelector('.result-next-goal');
   if (nextGoalEl) revealTargets.push(nextGoalEl);
+  const concessionEl = root.querySelector('.velvet-concession'); // ヴェルベットの降伏の台詞札（初回クリアの時だけある）
+  if (concessionEl) revealTargets.push(concessionEl);
   const reasonEl = root.querySelector('[data-bind="resultReason"]');
   if (reasonEl) revealTargets.push(reasonEl);
   const btnsEl = root.querySelector('[data-bind="resultButtons"]');
@@ -17008,17 +17331,21 @@ function animateCoinCountUp(el, target) {
 }
 
 // ヴェルベット撃破時の勝利演出（「逆転」表現を排除：ポーカーは累積で勝つゲーム）
+// 初回クリアの1回だけ（呼ぶのは endBattle の初回クリア分岐）。明朝・金文字でゆっくり現れて消える。
+// 層は #stage の中に置く：スマホでも舞台と同じ縮みで出て、押せるものを覆わない（pointer-events: none）
 function triggerVelvetVictoryEffect() {
   const eff = document.createElement('div');
-  eff.className = 'tousatsu-effect';
+  eff.className = 'zentaku-effect';
   eff.innerHTML = `
-    <div class="tousatsu-glow"></div>
-    <div class="tousatsu-text">闘札<br>制覇</div>
-    <div class="tousatsu-sub">— VIPルームの女王、陥落 —</div>
+    <div class="zentaku-glow"></div>
+    <div class="zentaku-rule"></div>
+    <div class="zentaku-text">全卓制覇</div>
+    <div class="zentaku-rule"></div>
+    <div class="zentaku-sub">— VIPルームの女王、陥落 —</div>
   `;
-  document.body.appendChild(eff);
-  setTimeout(() => eff.classList.add('out'), 3000);
-  setTimeout(() => eff.remove(), 3800);
+  (document.getElementById('stage') || document.body).appendChild(eff);
+  setTimeout(() => eff.classList.add('out'), 3400);
+  setTimeout(() => eff.remove(), 4400);
 }
 
 //=============================================================
@@ -17063,9 +17390,9 @@ function updateLectureHud() {
   hud.innerHTML = `
     <div class="lh-bar"><div class="lh-fill" style="width:${pct}%"></div></div>
     <div class="lh-stats">
-      <span>📚 ${done}/${total}問</span>
-      <span>⭐ ${state.lectureCorrect || 0}</span>
-      ${combo >= 2 ? `<span class="lh-combo">🔥${combo}</span>` : ''}
+      <span>${done}/${total}問</span>
+      <span>${state.lectureCorrect || 0}</span>
+      ${combo >= 2 ? `<span class="lh-combo">${combo}コンボ</span>` : ''}
       <span>${UI_ICON.coin} +${state.lectureEarned || 0}</span>
     </div>
   `;
@@ -17130,11 +17457,11 @@ function showLectureIntro(onContinue, savedProgress) {
   if (savedProgress) {
     const total = (savedProgress.lite ? liteQs : LESSON_ORDER.length);
     const nextNo = Math.min(savedProgress.idx + 1, total);
-    resumeMsg = `<p class="lec-resume">📌 <b>続きから再開</b>：${savedProgress.lite ? '⚡ライトコース' : '📚フルコース'}の ${nextNo}/${total}問目から（ここまで ${savedProgress.correct}問正解）</p>`;
+    resumeMsg = `<p class="lec-resume"><b>続きから再開</b>：${savedProgress.lite ? 'ライトコース' : 'フルコース'}の ${nextNo}/${total}問目から（ここまで ${savedProgress.correct}問正解）</p>`;
   }
   const rewardNote = firstClear
-    ? `最後まで受けると、初回クリア報酬 +${clearReward}🪙 と成績ボーナス`
-    : '初回クリア報酬は受け取り済み。🪙は初めて正解した問題だけ';
+    ? `最後まで受けると、初回クリア報酬 +${clearReward}コインと成績ボーナス`
+    : '初回クリア報酬は受け取り済み。コインは初めて正解した問題だけ';
   overlay.innerHTML = `
     <div class="tutorial-bubble lecture-bubble">
       <div class="tutorial-step">${savedProgress ? '講義再開' : '講義開始'}</div>
@@ -17144,12 +17471,12 @@ function showLectureIntro(onContinue, savedProgress) {
       ${savedProgress ? '' : `
       <div class="lec-courses">
         <div class="lec-course is-lite">
-          <b class="lec-course-name">⚡ ライトコース（おすすめ）</b>
+          <b class="lec-course-name">ライトコース（おすすめ）</b>
           <small>基本ルール・用語・役の強さの<b>${LESSON_LITE_CHAPTERS.length}章${liteQs}問だけ</b>。5分で実戦へ！<br>
           全章はあとでロビーの「リコの教室」から受けられる</small>
         </div>
         <div class="lec-course">
-          <b class="lec-course-name">📚 フルコース</b>
+          <b class="lec-course-name">フルコース</b>
           <small>全 <b>${LESSON_CHAPTERS.length}章／${LESSON_ORDER.length}問</b>。確率・定石・心理戦・用語集・実戦ハンズオン・マナーまで完全網羅</small>
         </div>
       </div>`}
@@ -17217,7 +17544,7 @@ function showLectureIntro(onContinue, savedProgress) {
     lectureConfirm({
       title: '講義をスキップする？',
       body: '説明を飛ばして、すぐ実戦へ進めるよ。\n講義はあとでロビーの「リコの教室」からいつでも受けられる。'
-        + (firstClear ? `\n初回クリア報酬（+${clearReward}🪙）は、最後まで受けた時にもらえる。` : ''),
+        + (firstClear ? `\n初回クリア報酬（+${clearReward}コイン）は、最後まで受けた時にもらえる。` : ''),
       ok: 'スキップする', cancel: '講義を受ける', danger: true,
     }).then(yes => {
       if (!yes || !overlay.isConnected) return;
@@ -17234,17 +17561,17 @@ const HANDS_ON_AFTER = {
     title: '実戦演習①：チェックかベットか',
     situation: 'プリフロップ後、場札 <b>K♦ 8♣ 3♥</b>。<br>あなたの手札 <b>A♠ K♠</b>（トップペア・キッカーA）。<br>相手はチェック。あなたの番。',
     choices: [
-      { text: '🎯 ベットして主導権を取る', correct: true, hint: 'Kペアでキッカー最強。ベットでバリュー回収＋ドロー潰し' },
-      { text: '🛡 こちらもチェックして次の場札を見る', correct: false, hint: 'もったいない！強い手はベットして稼ぐのが基本' },
-      { text: '❌ フォールド', correct: false, hint: 'なんで！？ Kペアは強い手です' },
+      { text: 'ベットして主導権を取る', correct: true, hint: 'Kペアでキッカー最強。ベットでバリュー回収＋ドロー潰し' },
+      { text: 'こちらもチェックして次の場札を見る', correct: false, hint: 'もったいない！強い手はベットして稼ぐのが基本' },
+      { text: 'フォールド', correct: false, hint: 'なんで！？ Kペアは強い手です' },
     ],
   },
   4: {
     title: '実戦演習②：相手の大ベットへの対応',
     situation: '場札 <b>Q♣ 9♣ 5♦ 2♠</b>。<br>あなたの手札 <b>9♥ 9♦</b>（セット）。<br>相手がポット級の大ベットを撃ってきた。',
     choices: [
-      { text: '🚀 レイズ返し（バリュー最大化）', correct: true, hint: 'セット完成は超強い。相手の大ベットを利用してさらに乗せる' },
-      { text: '✅ コールしてリバーを見る', correct: false, hint: '悪くないが、フラッシュやストレートが完成する前に決着つけるべき' },
+      { text: 'レイズ返し（バリュー最大化）', correct: true, hint: 'セット完成は超強い。相手の大ベットを利用してさらに乗せる' },
+      { text: 'コールしてリバーを見る', correct: false, hint: '悪くないが、フラッシュやストレートが完成する前に決着つけるべき' },
       { text: '⚠ フォールド', correct: false, hint: 'セットを捨てるのはもったいない！' },
     ],
   },
@@ -17252,8 +17579,8 @@ const HANDS_ON_AFTER = {
     title: '実戦演習③：ブラフの読み合い',
     situation: 'リバー：場札 <b>J♦ 7♣ 4♥ 2♠ 8♣</b>。<br>あなたの手札 <b>10♠ 10♦</b>（オーバーペア）。<br>相手がいきなり ＜オールイン＞。<br>相手は普段ブラフが多い性格。',
     choices: [
-      { text: '🦸 ヒーローコール（ブラフ捕獲狙い）', correct: true, hint: 'ブラフ多めな相手＋自分のオーバーペア。+EVなコール' },
-      { text: '🛡 安全にフォールド', correct: false, hint: '間違いではないが、ブラフ多発派にはコールが+EV' },
+      { text: 'ヒーローコール（ブラフ捕獲狙い）', correct: true, hint: 'ブラフ多めな相手＋自分のオーバーペア。+EVなコール' },
+      { text: '安全にフォールド', correct: false, hint: '間違いではないが、ブラフ多発派にはコールが+EV' },
     ],
   },
 };
@@ -17261,7 +17588,7 @@ const HANDS_ON_AFTER = {
 function triggerLectureQuestion() {
   // HUD を毎問更新（render() で消えても復活させる）
   setTimeout(() => updateLectureHud(), 50);
-  const order = lectureOrder(); // ⚡ライトコース対応：コース別の出題順
+  const order = lectureOrder(); // ライトコース対応：コース別の出題順
   if (state.lectureIdx >= order.length) {
     finishLecture(false);
     return;
@@ -17310,7 +17637,7 @@ function showHandsOnExercise(ex, onClose) {
   overlay.className = 'hands-on-overlay';
   overlay.innerHTML = `
     <div class="ho-modal">
-      <div class="ho-tag">✋ ハンズオン演習</div>
+      <div class="ho-tag">ハンズオン演習</div>
       <h2 class="ho-title">${ex.title}</h2>
       <div class="ho-situation">${ex.situation}</div>
       <div class="ho-prompt">あなたならどうする？</div>
@@ -17376,7 +17703,7 @@ function showChapterBanner(num, title, onClose, lead) {
     ${lead ? `<div class="chapter-lead"><span class="chapter-lead-k">この章で分かること</span>${lead}</div>` : ''}
     <div class="chapter-actions">
       <button class="chapter-btn chapter-start" type="button">▶ この章を始める</button>
-      <button class="chapter-btn chapter-skip" type="button">この章をスキップ ⏭</button>
+      <button class="chapter-btn chapter-skip" type="button">この章をスキップ</button>
       <button class="chapter-btn chapter-exit" type="button">講義を中断する ✕</button>
     </div>
   `;
@@ -17439,9 +17766,9 @@ function finishLecture(skipped) {
   // 初めて最後まで受けた時は、幕間（リコ「はい、講義おしまい」）→ご褒美CG開放につなぐ。CG は幕間を見た時に開放される
   const showStory = !skipped && !!INTERMISSIONS.rico_tutorial && !(save.rewardCgSeen || []).includes('rico_tutorial');
   const rewardLines = [
-    earned > 0 ? `正解報酬：<b>+${earned}🪙</b>（獲得済み）` : '正解報酬：なし（🪙は初めて正解した問題だけ）',
+    earned > 0 ? `正解報酬：<b>+${earned}コイン</b>（獲得済み）` : '正解報酬：なし（コインは初めて正解した問題だけ）',
     ...(firstClear
-      ? [`成績ボーナス（${grade}）：<b>+${gradeBonus}🪙</b>`, `初回クリア報酬：<b>+${clearBonus}🪙</b>`]
+      ? [`成績ボーナス（${grade}）：<b>+${gradeBonus}コイン</b>`, `初回クリア報酬：<b>+${clearBonus}コイン</b>`]
       : ['成績ボーナス・初回クリア報酬は受け取り済み']),
   ];
   overlay.innerHTML = `
@@ -17471,7 +17798,7 @@ function finishLecture(skipped) {
     const toLobby = () => {
       state = defaultState();
       goLobby();
-      toast(skipped ? '講義はロビーの「リコの教室」からいつでも受けられるよ' : `✨ 講義完了！${gain > 0 ? ` +${gain}コイン` : ''}`);
+      toast(skipped ? '講義はロビーの「リコの教室」からいつでも受けられるよ' : `講義完了！${gain > 0 ? ` +${gain}コイン` : ''}`);
     };
     if (showStory) showIntermission('rico_tutorial', toLobby);
     else toLobby();
@@ -18382,48 +18709,48 @@ function preloadOne(url) {
 
 const PRELOAD_TIPS = [
   // ── 基本ルール ──
-  '🃏 ホールデムは「2枚の手札＋場の5枚」から最強の5枚を作るゲーム',
-  '🎴 ロイヤルフラッシュは同じスートのA-K-Q-J-10。出る確率は約65万分の1',
-  '🏆 強さ順：ハイカード→ペア→ツーペア→スリーカード→ストレート→フラッシュ→フルハウス→フォーカード→ストレートフラッシュ→ロイヤル',
+  'ホールデムは「2枚の手札＋場の5枚」から最強の5枚を作るゲーム',
+  'ロイヤルフラッシュは同じスートのA-K-Q-J-10。出る確率は約65万分の1',
+  '強さ順：ハイカード→ペア→ツーペア→スリーカード→ストレート→フラッシュ→フルハウス→フォーカード→ストレートフラッシュ→ロイヤル',
   '♠ ストレートとフラッシュ、強いのはフラッシュ。覚えづらいけど大事',
-  '🎲 同じ役同士はキッカー（一番強い余り札）で勝敗が決まる',
+  '同じ役同士はキッカー（一番強い余り札）で勝敗が決まる',
 
   // ── このゲームでの判断 ──
-  '🚪 降りる（フォールド）のも立派な一手。失うのは、それまでに出したチップだけ',
-  '👁 相手が賭けていない時は「チェック」でタダで次の場札を見られる。降りる必要はない',
-  '📏 賭け額は相手からの手紙。急に大きくなったら「なぜ今？」と考えてみよう',
-  '💬 セリフと賭け額が食い違ったら要注意。言葉より、チップの動きを信じて',
-  '❓ 役の強さを忘れたら、バトル中の「役の一覧」ボタンでいつでも早見表を開ける',
+  '降りる（フォールド）のも立派な一手。失うのは、それまでに出したチップだけ',
+  '相手が賭けていない時は「チェック」でタダで次の場札を見られる。降りる必要はない',
+  '賭け額は相手からの手紙。急に大きくなったら「なぜ今？」と考えてみよう',
+  'セリフと賭け額が食い違ったら要注意。言葉より、チップの動きを信じて',
+  '役の強さを忘れたら、バトル中の「役の一覧」ボタンでいつでも早見表を開ける',
 
   // ── 数学 ──
-  '🧮 アウツ × 2 ≒ 次の1枚で完成する確率(%)。フラッシュドロー9枚なら約18%',
-  '🧮 アウツ × 4 ≒ ターン＋リバー2枚で完成する確率(%)。9枚なら約36%',
-  '💰 「ポットオッズ」＝コール額 ÷ (ポット＋コール額)。完成確率がこれを上回れば「乗る」',
-  '📈 オープンエンドストレートドローはアウツ8枚 → 約32%（リバーまで）',
+  'アウツ × 2 ≒ 次の1枚で完成する確率(%)。フラッシュドロー9枚なら約18%',
+  'アウツ × 4 ≒ ターン＋リバー2枚で完成する確率(%)。9枚なら約36%',
+  '「ポットオッズ」＝コール額 ÷ (ポット＋コール額)。完成確率がこれを上回れば「乗る」',
+  'オープンエンドストレートドローはアウツ8枚 → 約32%（リバーまで）',
 
   // ── 心理戦 ──
-  '💭 強い時ほど静かに、弱い時ほど派手に振る舞う。逆も真なり',
-  '👁 相手のチップ握る手、視線、呼吸——札より雄弁',
-  '🎭 「言葉は嘘をつくが、ベットは嘘をつかない」',
-  '🤐 自分の手の話をする相手ほど、要警戒',
+  '強い時ほど静かに、弱い時ほど派手に振る舞う。逆も真なり',
+  '相手のチップ握る手、視線、呼吸——札より雄弁',
+  '「言葉は嘘をつくが、ベットは嘘をつかない」',
+  '自分の手の話をする相手ほど、要警戒',
 
   // ── ベッティング ──
-  '🪙 相手が大きく賭けてきたら、払う額とポットを比べよう。安く見えても、割に合うとは限らない',
-  '🎯 ベットサイズは「ポットの 1/2 〜 2/3」が標準的',
-  '🚫 オールインは「最後の説得」。降りる選択肢を相手から奪う',
-  '⚖ チェックは「弱さ」ではなく「罠」かもしれない',
+  '相手が大きく賭けてきたら、払う額とポットを比べよう。安く見えても、割に合うとは限らない',
+  'ベットサイズは「ポットの 1/2 〜 2/3」が標準的',
+  'オールインは「最後の説得」。降りる選択肢を相手から奪う',
+  'チェックは「弱さ」ではなく「罠」かもしれない',
 
   // ── 心構え ──
-  '🧘 良いハンドでも負けることはある。ポーカーは長期戦',
-  '🎯 「役の強さ」より「相手の手のレンジ」を考えるのが上級者',
-  '💎 強い手を引いた時こそ、相手から最大限引き出すベットを',
-  '🛡 「折るべき場面で折れる強さ」が、勝者の条件',
+  '良いハンドでも負けることはある。ポーカーは長期戦',
+  '「役の強さ」より「相手の手のレンジ」を考えるのが上級者',
+  '強い手を引いた時こそ、相手から最大限引き出すベットを',
+  '「折るべき場面で折れる強さ」が、勝者の条件',
 
   // ── 世界観セリフ ──
-  '🐰 ミミ：「えへへ、ぱにゅっとした感じで……勝てた、かも」',
-  '👩 リコ先輩：「勝つことだけ考えると負けるよ。降りるのも技術だからね」',
-  '💰 グラーノ：「数字は嘘をつかない。お嬢さん、勝算をお持ちですかな？」',
-  '🕯 ヴェルベット：「あなたの読み、見せて頂戴」',
+  'ミミ：「えへへ、ぱにゅっとした感じで……勝てた、かも」',
+  'リコ先輩：「勝つことだけ考えると負けるよ。降りるのも技術だからね」',
+  'グラーノ：「数字は嘘をつかない。お嬢さん、勝算をお持ちですかな？」',
+  'ヴェルベット：「あなたの読み、見せて頂戴」',
 ];
 
 async function startPreload() {
@@ -18509,7 +18836,7 @@ startPreload().then(() => {
     delete save.__pendingRefundNotice;
     saveProgress();
     setTimeout(() => {
-      toast(`🛍 交換所の商品整理により +${total}コインを返金しました`);
+      toast(`交換所の商品整理により +${total}コインを返金しました`);
     }, 900);
   }
 });

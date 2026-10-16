@@ -33,8 +33,8 @@ function renderHomeLobby() {
   const root = document.querySelector('.home-stage');
   if (!root) return;
   const next = lobbyNextStageId();
-  // 研修（リコ先輩）を飛ばしてポルカに勝った人は、研修の先へ進んだとみなして灯りと制覇の数に入れる（4人に勝っても全卓制覇に届かなかった）
-  const clearedCount = STAGE_ORDER.filter(id => save.clearedStages.includes(id) || (id === 'rico_tutorial' && save.clearedStages.includes('polka'))).length;
+  // 研修（リコ先輩）を飛ばしてポルカに勝った人は「免除」として灯りと制覇の数に入れる。数え方は game.js の clearedStageCount に一本化（ホーム・台帳・コレクション・タイトルで同じ）
+  const clearedCount = clearedStageCount();
   const allCleared = clearedCount === STAGE_ORDER.length;
   const sid = next || STAGE_ORDER[STAGE_ORDER.length - 1];
   const opponent = OPPONENTS[sid];
@@ -57,6 +57,8 @@ function renderHomeLobby() {
   const firstReward = !(save.firstClearRewardClaimed || []).includes(sid);
   ticket.querySelector('.h15-prize').innerHTML = `<span><i class="h15-if">勝てば </i>${firstReward ? opponent.rewardFirst : rematchPreview(sid)} コイン</span>${firstReward ? '<span>＋ご褒美CG</span>' : ''}`;
   ticket.setAttribute('aria-label', `${opponent.name}の卓へ。${ticket.querySelector('.h15-prize').textContent}`);
+  // クリア後（ヴェルベットに勝った後）は札と額が「零時の卓」の入口になる（allstar-ui.js）
+  if (window.AllstarUI) AllstarUI.decorateHome(root);
   const places = root.querySelectorAll('.h15-pl');
   places[3].dataset.action = save.clearedStages.includes('rico_tutorial') ? 'rico-mode-chooser' : 'battle-start';
   places[3].dataset.opponent = 'rico_tutorial';
@@ -68,11 +70,12 @@ function renderHomeLobby() {
   const positions = [10.2, 26.3, 42.5, 58.9, 75.1];
   const romans = ['I', 'II', 'III', 'IV', 'V'];
   root.querySelector('[data-home="ledger"]').innerHTML = `<span class="h15-lbl h15-gold-txt">${next ? `第${STAGE_ORDER.indexOf(next) + 1}戦` : allCleared ? '全卓制覇' : `${clearedCount}戦クリア`} <small>／全5戦</small></span>` + STAGE_ORDER.map((id,i) => {
-    const done = save.clearedStages.includes(id);
+    const exempt = isStageExempt(id);
+    const done = isStageCleared(id);
     const locked = !isStageUnlocked(id);
     const status = done ? 'win' : id === next ? 'now' : locked ? 'lock' : 'open';
     const mark = done ? 'seal' : id === next ? 'mark' : locked ? 'lock' : null;
-    const label = done ? '勝利済み' : id === next ? '今夜の相手' : locked ? '未解放' : '受講できます';
+    const label = exempt ? '免除' : done ? '勝利済み' : id === next ? '今夜の相手' : locked ? '未解放' : '受講できます';
     return `<span class="h15-slot h15-${status}" style="left:${positions[i]}%" title="${OPPONENTS[id].name}：${label}"><img class="h15-p" src="${face(id)}" alt="${OPPONENTS[id].name}：${label}"><span class="h15-rn">${romans[i]}</span>${mark ? `<img class="h15-st" src="assets/ui/home/${mark}.webp" alt="">` : ''}</span>`;
   }).join('');
   refreshHomeStatus();
@@ -157,7 +160,7 @@ function homeCeremonyPlan(root, cleared, next) {
     slot?.classList.remove('h15-pending');
     setFrame();
     frame.querySelector('.h15-en')?.getAnimations().forEach(a => { if (!(a instanceof CSSAnimation)) a.cancel(); });
-    root.querySelector('.h15-dialogue').textContent = cleared === STAGE_ORDER.length ? '「全部の卓に灯りが入ったわ。ここはもう、あんたの劇場よ」' : '「お見事。劇場にまた灯りが入ったわ」';
+    root.querySelector('.h15-dialogue').textContent = cleared === STAGE_ORDER.length ? '「全部の卓に灯りが入ったじゃん。ここはもう、あんたの劇場だよ」' : '「やるじゃん。劇場にまた灯りが入ったよ」';
     root.classList.remove('h15-rite');
   };
   const start = () => {
@@ -224,9 +227,13 @@ function showHomeLedger() {
   const overlay = document.createElement('div');
   overlay.className = 'home-overlay';
   overlay.innerHTML = `<section class="home-dialog" role="dialog" aria-modal="true" aria-labelledby="home-ledger-title"><header><h2 id="home-ledger-title">物語の台帳</h2><button type="button" data-home-close aria-label="閉じる">閉じる</button></header><div class="home-ledger-rows">${STAGE_ORDER.map((id,i) => {
-    const o = OPPONENTS[id], done = save.clearedStages.includes(id), unlocked = isStageUnlocked(id);
+    // done＝この卓を勝ち取った（clearedStages に入っている）。exempt＝研修を飛ばしてポルカに勝った人のリコ先輩（封蝋は押すが、勝ったとは言わない）
+    const o = OPPONENTS[id], done = save.clearedStages.includes(id), exempt = isStageExempt(id), unlocked = isStageUnlocked(id);
     const action = id === 'rico_tutorial' && done ? 'rico-mode-chooser' : 'battle-start';
-    return `<section class="home-ledger-row"><h3>${i+1}. ${o.name}</h3><span>${done ? '勝利済み' : id === lobbyNextStageId() ? '今夜の相手' : unlocked ? '挑戦できます' : `${OPPONENTS[STAGE_ORDER[i-1]].name}に勝つと解放`}</span>${unlocked ? `<div><button data-action="${action}" data-opponent="${id}">${done ? (id === 'rico_tutorial' ? '受講・再戦' : '再戦') : id === 'rico_tutorial' ? '受講する' : '卓へ'}（勝てば ${done ? rematchPreview(id) : o.rewardFirst} コイン）</button><button data-action="char-profile" data-char="${id}">プロフィール</button>${!done && id !== 'rico_tutorial' ? `<button data-action="skip-stage" data-opponent="${id}">スキップ（${skipStageCost(o)} コインで勝ち扱い）</button>` : ''}${done && EPISODES[id] ? `<button data-action="recall-episode" data-episode="${id}">物語の回想</button>` : ''}${id === 'rico_tutorial' && !done ? '<button data-action="rico-skip-tutorial">実戦から始める</button>' : ''}</div>` : ''}</section>`;
+    const stateText = exempt ? '免除（研修は飛ばしました。受講はいつでもできます）' : done ? '勝利済み' : id === lobbyNextStageId() ? '今夜の相手' : unlocked ? '挑戦できます' : `${OPPONENTS[STAGE_ORDER[i-1]].name}に勝つと解放`;
+    // コインで飛ばせるのは研修とヴェルベット以外の、まだ勝っていない卓だけ（canSkipStage）。ヴェルベットを飛ばすとエンディングを見ないままクリア特典が開いてしまうため
+    const skipBtn = canSkipStage(id) ? `<button data-action="skip-stage" data-opponent="${id}">スキップ（${skipStageCost(o)} コインで勝ち扱い）</button>` : '';
+    return `<section class="home-ledger-row"><h3>${i+1}. ${o.name}</h3><span>${stateText}</span>${unlocked ? `<div><button data-action="${action}" data-opponent="${id}">${done ? (id === 'rico_tutorial' ? '受講・再戦' : '再戦') : id === 'rico_tutorial' ? '受講する' : '卓へ'}（勝てば ${done ? rematchPreview(id) : o.rewardFirst} コイン）</button><button data-action="char-profile" data-char="${id}">プロフィール</button>${skipBtn}${done && EPISODES[id] ? `<button data-action="recall-episode" data-episode="${id}">物語の回想</button>` : ''}${id === 'rico_tutorial' && !done && !exempt ? '<button data-action="rico-skip-tutorial">実戦から始める</button>' : ''}</div>` : ''}</section>`;
   }).join('')}</div></section>`;
   openHomeDialog(overlay);
 }
@@ -234,7 +241,7 @@ function showHomeLedger() {
 function showHomeSettings() {
   const overlay = document.createElement('div');
   overlay.className = 'home-overlay';
-  overlay.innerHTML = `<section class="home-dialog home-settings" role="dialog" aria-modal="true" aria-labelledby="home-settings-title"><header><h2 id="home-settings-title">音量・設定</h2><button type="button" data-home-close>閉じる</button></header><label>BGM <button data-action="toggle-bgm">${save.bgmOn ? 'ON' : 'OFF'}</button><input aria-label="BGM音量" type="range" min="0" max="100" value="${save.bgmVolume ?? 35}" data-home-volume="bgm"></label><label>効果音 <button data-action="toggle-sfx">${save.sfxOn ? 'ON' : 'OFF'}</button><input aria-label="効果音量" type="range" min="0" max="100" value="${save.sfxVolume ?? 60}" data-home-volume="sfx"></label><button data-action="open-settings">ゲーム設定</button><button data-action="equip-change">装備変更</button><button data-action="home-fullscreen">全画面で遊ぶ</button></section>`;
+  overlay.innerHTML = `<section class="home-dialog home-settings" role="dialog" aria-modal="true" aria-labelledby="home-settings-title"><header><h2 id="home-settings-title">音量・設定</h2><button type="button" data-home-close>閉じる</button></header><label>BGM <button data-action="toggle-bgm">${save.bgmOn ? 'ON' : 'OFF'}</button><input aria-label="BGM音量" type="range" min="0" max="100" value="${save.bgmVolume ?? 35}" data-home-volume="bgm"></label><label>効果音 <button data-action="toggle-sfx">${save.sfxOn ? 'ON' : 'OFF'}</button><input aria-label="効果音量" type="range" min="0" max="100" value="${save.sfxVolume ?? 60}" data-home-volume="sfx"></label><button data-action="open-settings">ゲーム設定</button><button data-action="equip-change">装備変更</button><button data-action="home-fullscreen">全画面で遊ぶ</button><p class="home-legal">ミミのテキサスホールデムポーカー　Ver ${GAME_VERSION}　${COPYRIGHT_TEXT}</p></section>`;
   openHomeDialog(overlay, true);
   overlay.querySelectorAll('[data-home-volume]').forEach(input => input.addEventListener('input', () => {
     save[input.dataset.homeVolume === 'bgm' ? 'bgmVolume' : 'sfxVolume'] = +input.value;

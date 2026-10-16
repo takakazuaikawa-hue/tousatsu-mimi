@@ -73,7 +73,7 @@ const summarize = (m) => {
   return { small, smallTap, off, minPx: m.texts.length ? Math.min(...m.texts.map(x => x.px)) : null, scrollOver: m.scrollOver };
 };
 
-const { page, close } = await openSession({ width: W, height: H, mobile: true, speed: 1, save: { clearedStages: ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'], introPlayed: true, coins: 500, readIntroSeen: true, houseRulesSeen: true } });
+const { page, close } = await openSession({ width: W, height: H, mobile: W < 900, speed: 1, save: { clearedStages: ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'], introPlayed: true, coins: 500, readIntroSeen: true, houseRulesSeen: true } });
 for (let i = 0; i < 20 && !(await page.eval('typeof startBattle === "function"')); i++) await sleep(500);
 console.log('scale', await page.eval(`getComputedStyle(document.documentElement).getPropertyValue('--game-scale')`), 'compact', await page.eval(`document.documentElement.classList.contains('is-compact')`));
 

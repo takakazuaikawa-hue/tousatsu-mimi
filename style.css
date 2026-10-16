@@ -2542,25 +2542,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   100% { background: rgba(30, 8, 14,0.55);    box-shadow: 0 0 0 0 transparent; }
 }
 
-/* ========== ヴェルベット降伏セリフ（リザルト） ========== */
-.velvet-concession {
-  background: linear-gradient(180deg, rgba(80,10,30,0.85) 0%, rgba(30,5,15,0.92) 100%);
-  border-left: 4px solid #ff3d57;
-  border-radius: 0 8px 8px 0;
-  padding: 12px 16px;
-  margin-bottom: 14px;
-  color: #ffeef0;
-  font-size: 15px;
-  font-style: italic;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-shadow: 0 0 8px rgba(255,80,120,0.4), 0 2px 4px rgba(0,0,0,0.7);
-  animation: velvetConcessionIn 0.8s ease-out;
-}
-@keyframes velvetConcessionIn {
-  0%   { opacity: 0; transform: translateX(-20px); }
-  100% { opacity: 1; transform: translateX(0); }
-}
+/* ========== ヴェルベット降伏セリフ（リザルト）：札の見た目は末尾「製品版B」の .velvet-concession ========== */
 
 /* ========== 心理バトル統計（右パネル コンパクト表示） ========== */
 .psych-stats {
@@ -8658,67 +8640,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
   100% { transform: translateY(0); opacity: 1; }
 }
 
-/* ========== 闘札大逆転演出 ========== */
-.tousatsu-effect {
-  position: fixed;
-  inset: 0;
-  z-index: 250;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at center, rgba(245,215,122,0.4) 0%, rgba(200,37,58,0.5) 40%, rgba(0,0,0,0.85) 100%);
-  animation: tousatsuFade 0.4s ease-out forwards;
-  pointer-events: none;
-}
-.tousatsu-effect.out { animation: tousatsuOut 0.8s ease-in forwards; }
-@keyframes tousatsuFade { 0% { opacity: 0; } 100% { opacity: 1; } }
-@keyframes tousatsuOut { 0% { opacity: 1; } 100% { opacity: 0; } }
-.tousatsu-glow {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 30% 40%, rgba(245,215,122,0.6) 0%, transparent 30%),
-    radial-gradient(circle at 70% 60%, rgba(255,61,87,0.5) 0%, transparent 35%);
-  animation: glowPulse 1.5s ease-in-out infinite;
-}
-@keyframes glowPulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-.tousatsu-text {
-  position: relative;
-  font-size: 120px;
-  font-weight: 900;
-  color: var(--c-gold-bright);
-  text-align: center;
-  letter-spacing: 0.15em;
-  text-shadow:
-    0 0 30px var(--c-red),
-    0 0 60px var(--c-red),
-    0 8px 0 rgba(0,0,0,0.5);
-  animation: tousatsuPop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  line-height: 1.1;
-}
-@keyframes tousatsuPop {
-  0% { transform: scale(0.3) rotate(-12deg); opacity: 0; }
-  40% { transform: scale(1.2) rotate(3deg); opacity: 1; }
-  70% { transform: scale(1) rotate(0); }
-  100% { transform: scale(1.05); }
-}
-.tousatsu-sub {
-  position: relative;
-  margin-top: 20px;
-  font-size: 22px;
-  color: #fff;
-  letter-spacing: 0.2em;
-  text-shadow: 0 0 20px var(--c-gold-bright);
-  animation: subSlide 1s ease-out 0.5s both;
-}
-@keyframes subSlide {
-  0% { transform: translateY(20px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
-}
+/* ========== 勝利の大演出「全卓制覇」：見た目は末尾「製品版B」の .zentaku-* ========== */
 
 /* ========== エンディング画面（演出版） ========== */
 .ending-screen { grid-template-rows: 1fr; overflow: hidden; }
@@ -13850,27 +13772,28 @@ body.is-tease-hot .card.tease-card::after {
 .shop-buy-fx-wrap .shop-item > * { transform: skewX(6deg); }
 .shop-screen.v2 .shop-item:hover { box-shadow: inset 0 0 0 1px rgba(245,215,122,.55), 0 12px 26px rgba(0,0,0,.6); }
 .shop-screen.v2 .shop-item.selected { box-shadow: inset 0 0 0 2px #f5d77a, 0 0 24px rgba(245,215,122,.35), 0 10px 22px rgba(0,0,0,.5); }
-.shop-screen.v2 .shop-item.owned { opacity: .68; filter: none; background: linear-gradient(90deg, rgba(40,60,30,.55) 0%, rgba(29, 8, 14,.88) 40%); }
+.shop-screen.v2 .shop-item.owned { opacity: .72; filter: none; background: linear-gradient(90deg, rgba(58,9,14,.6) 0%, rgba(29, 8, 14,.88) 40%); }
 .shop-screen.v2 .shop-item.owned::before {
   content: '✓ 所持中'; position: absolute; top: -9px; right: 14px; transform: skewX(6deg);
-  background: linear-gradient(180deg, #8aff9a 0%, #2e7d3a 100%); color: #0a1a10;
-  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: .1em;
+  background: linear-gradient(180deg, #3e0306, #22090c); color: #efcd82; border: 1px solid #d9b269;
+  font-family: 'Shippori Mincho B1', 'Yu Mincho', serif; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 2px; letter-spacing: .1em;
 }
 .shop-screen.v2 .shop-item.locked { opacity: .55; filter: grayscale(.5); }
 
 /* アイコン：カテゴリ別 inline SVG（絵文字は使わない） */
 .shop-screen.v2 .shop-item-icon,
 .shop-buy-fx-wrap .shop-item-icon {
-  width: 52px; height: 52px; flex: 0 0 auto; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.25), rgba(255,255,255,0) 45%), #8a2a3e;
-  box-shadow: inset 0 0 0 2px rgba(245,215,122,.5);
+  width: 52px; height: 52px; flex: 0 0 auto; border-radius: 0;
+  /* 金の八角の枠（ホームの部品 oct.webp）に金の線画。色付きの丸はやめた（2026-10-16） */
+  background: url('assets/ui/home/oct.webp') center / contain no-repeat;
+  box-shadow: none; filter: drop-shadow(0 3px 4px rgba(0,0,0,.55));
   display: flex; align-items: center; justify-content: center;
 }
-.shop-screen.v2 .shop-item-icon-panyu,  .shop-buy-fx-wrap .shop-item-icon-panyu  { color: #ffc1d8; }
-.shop-screen.v2 .shop-item-icon-note,   .shop-buy-fx-wrap .shop-item-icon-note   { color: #f5d77a; }
-.shop-screen.v2 .shop-item-icon-skin,   .shop-buy-fx-wrap .shop-item-icon-skin   { color: #c44c62; }
-.shop-screen.v2 .shop-item-icon-stack,  .shop-buy-fx-wrap .shop-item-icon-stack  { color: #7fe0a0; }
-.shop-screen.v2 .shop-item-icon-memory, .shop-buy-fx-wrap .shop-item-icon-memory { color: #7ec8ff; }
+.shop-screen.v2 .shop-item-icon-panyu,  .shop-buy-fx-wrap .shop-item-icon-panyu  { color: #efcd82; }
+.shop-screen.v2 .shop-item-icon-note,   .shop-buy-fx-wrap .shop-item-icon-note   { color: #efcd82; }
+.shop-screen.v2 .shop-item-icon-skin,   .shop-buy-fx-wrap .shop-item-icon-skin   { color: #efcd82; }
+.shop-screen.v2 .shop-item-icon-stack,  .shop-buy-fx-wrap .shop-item-icon-stack  { color: #efcd82; }
+.shop-screen.v2 .shop-item-icon-memory, .shop-buy-fx-wrap .shop-item-icon-memory { color: #efcd82; }
 
 /* 本文：名前＋説明 */
 .shop-screen.v2 .shop-item-body, .shop-buy-fx-wrap .shop-item-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
@@ -14080,14 +14003,14 @@ body.is-tease-hot .card.tease-card::after {
   min-height: 140px; padding: 20px 26px;
   background: linear-gradient(180deg, rgba(11,5,16,.72) 0%, rgba(11,5,16,.92) 100%);
   border: 1px solid rgba(245,215,122,.35);
-  border-left: 6px solid #ffc1d8;
-  border-radius: 4px;
+  border-left: 6px solid #efe2c2;
+  border-radius: 2px;
   box-shadow: 0 -10px 30px rgba(0,0,0,.5);
   cursor: pointer;
   transition: opacity .25s ease, border-color .2s ease;
 }
 .ims-dialogue.ims-hide { opacity: 0; pointer-events: none; }
-.ims-dialogue.ims-speaker-mimi { border-left-color: #ffc1d8; }
+.ims-dialogue.ims-speaker-mimi { border-left-color: #efe2c2; }
 .ims-dialogue.ims-speaker-rico { border-left-color: #d9b35a; }
 .ims-dialogue.ims-speaker-opp  { border-left-color: #c8253a; }
 
@@ -14098,8 +14021,8 @@ body.is-tease-hot .card.tease-card::after {
 .ims-dlg-face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 8%; transform: scale(2.1); transform-origin: 50% 10%; }
 .ims-dlg-body { flex: 1; min-width: 0; }
 .ims-dlg-name { font-size: 15px; font-weight: 900; color: #f5d77a; margin-bottom: 6px; letter-spacing: .04em; }
-.ims-dialogue.ims-speaker-mimi .ims-dlg-name { color: #ffc1d8; }
-.ims-dialogue.ims-speaker-opp  .ims-dlg-name { color: #ff8a9a; }
+.ims-dialogue.ims-speaker-mimi .ims-dlg-name { color: #f2e6cf; }
+.ims-dialogue.ims-speaker-opp  .ims-dlg-name { color: #e0434c; }
 .ims-dlg-text { font-size: 15.5px; line-height: 1.7; color: #f7eecf; white-space: pre-line; }
 .ims-dlg-next {
   flex: 0 0 auto; align-self: flex-end; font-size: 18px; color: #f5d77a;
@@ -19069,8 +18992,7 @@ html.is-compact .title-screen.t3 .t3-record b { font-size: calc(13px / var(--gam
 html.is-compact .title-screen.t3 .t3-icon { width: calc(44px / var(--game-scale, 1)); height: calc(44px / var(--game-scale, 1)); }
 html.is-compact .title-screen.t3 .t3-utils .audio-bar { height: calc(44px / var(--game-scale, 1)); }
 html.is-compact .title-screen.t3 .t3-utils .audio-bar-toggle { width: calc(44px / var(--game-scale, 1)) !important; height: calc(44px / var(--game-scale, 1)) !important; }
-/* 版の表記は出さない */
-.title-screen.t3 .t3-ver { display: none; }
+/* （版の表記を隠す指定はやめた。版と権利は末尾「製品版C」の .t3-ver で出す） */
 /* 全画面の案内：押す所 44px */
 #fullscreen-btn-group > button { min-height: 44px; min-width: 44px; }
 /* 卓（スマホ横）：音のボタンは「役の一覧」の下、勝率の判子の左に */
@@ -19115,3 +19037,487 @@ html.is-compact .shop-screen.v2 > .sound-toggle { width: calc(44px / var(--game-
 .mp-pt-note { font-size: 11.5px !important; }
 html.is-compact .shop-screen.v2 .shop-item-price small { font-size: 12.5px !important; }
 .shop-screen.v2 > .sound-toggle { width: 44px; height: 44px; top: 96px; }
+/* 絵文字をなくす（2026-10-16）：金の八角の銘板・金の錠・金貨 */
+/* 銘板：金の八角の枠（中は黒）に、分類の漢字を1字。大きさは font-size で決める（幅高さ 1em） */
+.gold-mark { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; box-sizing: border-box; width: 1em; height: 1em; vertical-align: -0.2em; line-height: 1; background: url('assets/ui/home/oct.webp') center / contain no-repeat; }
+.gold-mark > i { font-style: normal; font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 800; font-size: .54em; line-height: 1; color: #efcd82; text-shadow: 0 1px 2px #000; }
+/* 錠：未解放の印 */
+.gold-lock { height: 1.1em; width: auto; vertical-align: -0.15em; }
+/* 称号のお知らせ・称号の一覧 */
+.at-icon { display: flex; align-items: center; flex: 0 0 auto; line-height: 1; }
+.at-icon .gold-mark { font-size: 36px; }
+.ach-icon { display: flex; align-items: center; justify-content: center; height: 34px; font-size: 30px; line-height: 1; }
+.ach-icon .gold-lock { height: 28px; }
+/* 性格の札・読み切りの帯 */
+.opp-p-title, .prb-name { display: flex; align-items: center; gap: 6px; }
+.prb-name { justify-content: center; }
+.opp-p-title .gold-mark { font-size: 1.9em; }
+.prb-name .gold-mark { font-size: 1.5em; }
+/* ファイブポーカー：実績・お知らせ・気分の札・ミッションの報酬 */
+.mp-ach-icon { display: flex; align-items: center; justify-content: center; font-size: 30px; line-height: 1; }
+.mp-ach-icon .gold-lock { height: 28px; }
+.mp-ach-toast-icon { display: inline-flex; align-items: center; font-size: 26px; line-height: 1; }
+.mp-mood-badge { width: auto; height: auto; padding: 3px 8px; right: -12px; border-radius: 2px; background: #170708; color: #efcd82; border: 1px solid #d9b269; font: 800 12px/1 "Shippori Mincho B1", "Yu Mincho", serif; letter-spacing: .05em; white-space: nowrap; }
+.mp-mission-reward { white-space: nowrap; }
+/* コレクションの錠 */
+.coll-cg-locked .gold-lock, .coll-outfit-locked .gold-lock { height: 40px; }
+/* 勝敗の印（勝・負・分） */
+.hh-icon { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 800; }
+/* 金貨：ログインボーナス・コインが飛ぶ／降る演出 */
+.login-bonus-coin img { display: block; height: 1.5em; width: auto; margin: 0 auto; }
+.mp-coin-fly img, .mp-coin-drop img { display: block; width: 1em; height: 1em; object-fit: contain; }
+/* 演出の粒（♥ と ✦、深紅と金）：光のふちは金 */
+.mp-ambient-particle { filter: drop-shadow(0 0 6px rgba(239,205,130,.45)); }
+.mp-tap-particle { text-shadow: 0 0 6px rgba(239,205,130,.7); }
+.mp-char-heart { text-shadow: 0 0 6px rgba(239,205,130,.6); }
+/* 縦持ちの案内：スマホの絵文字をやめ、金の細い縦長の枠＋回転の矢印に */
+.rotate-icon { position: relative; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 86px; margin-bottom: 26px; border: 2px solid #efcd82; border-radius: 3px; font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 30px; line-height: 1; color: #efcd82; }
+.rotate-icon::before { content: ""; position: absolute; top: 6px; left: 50%; width: 14px; height: 2px; margin-left: -7px; background: #efcd82; opacity: .7; }
+
+/* === 製品版A：エンディング・スタッフロール・エピローグ（2026-10-16） === */
+/* ---- 終幕の前に（主題歌の確認の窓）：「♪」をやめ「主題歌」の小見出し。音は線画アイコン。見返しの時だけ「やめる」 ---- */
+.ending-prompt-song { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 14px 0 10px; }
+.ending-prompt-kicker { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 12px; font-weight: 600; letter-spacing: .3em; color: #b19a74; padding-bottom: 2px; border-bottom: 1px solid #8a5a1e; }
+.ending-prompt-song-name { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 18px; font-weight: 700; letter-spacing: .05em; color: #efcd82; font-style: normal; }
+.ending-prompt-sub { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 14px; color: #ead9b8; margin-bottom: 14px; }
+.ending-prompt-vol-label { display: inline-flex; align-items: center; gap: 6px; font-family: "Shippori Mincho B1", "Yu Mincho", serif; color: #d9b269; }
+.ending-prompt-vol-label .ui-ic { width: 16px; height: 16px; }
+.ending-prompt-actions { flex-wrap: wrap; }
+.ending-prompt-actions .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.ending-prompt-actions .btn .ui-ic { width: 16px; height: 16px; }
+
+/* ---- エンディング中の右上：音のオン・オフとスキップ。丸薬型をやめ、角2px・深紅・金縁の四角（不透明） ---- */
+.ending-stage .ec-bar { position: absolute; top: 14px; right: 14px; z-index: 100; display: flex; align-items: stretch; gap: 8px; }
+.ending-stage .ec-bar .ec-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; min-width: 44px; padding: 0 16px;
+  border: 1px solid #d9b269; border-radius: 2px; background: linear-gradient(180deg, #7a0e16, #4e0509); color: #f0d08a;
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 14px; font-weight: 600; letter-spacing: .08em; line-height: 1;
+  opacity: 1; box-shadow: 0 6px 16px rgba(0,0,0,.55); backdrop-filter: none; -webkit-backdrop-filter: none; transition: background-color .15s, border-color .15s; }
+.ending-stage .ec-bar .ec-btn:hover { background: linear-gradient(180deg, #86141b, #58080c); border-color: #efcd82; color: #f0d08a; }
+.ending-stage .ec-bar .ec-btn:focus-visible { outline: 2px solid #f3d58e; outline-offset: 2px; }
+.ending-stage .ec-bar .ec-btn .ui-ic { width: 16px; height: 16px; }
+.ending-stage .ec-bar .ec-sound { width: 44px; padding: 0; }
+.ending-stage .ec-bar .ec-sound.is-off { background: #1b0d0b; border-color: #8a5a1e; color: #d9b269; }
+html.is-compact .ending-stage .ec-bar { top: calc(8px / var(--game-scale, 1)); right: calc(8px / var(--game-scale, 1)); gap: calc(6px / var(--game-scale, 1)); }
+html.is-compact .ending-stage .ec-bar .ec-btn { font-size: calc(12px / var(--game-scale, 1)); min-height: calc(44px / var(--game-scale, 1)); min-width: calc(44px / var(--game-scale, 1));
+  padding: 0 calc(14px / var(--game-scale, 1)); gap: calc(6px / var(--game-scale, 1)); }
+html.is-compact .ending-stage .ec-bar .ec-sound { width: calc(44px / var(--game-scale, 1)); padding: 0; }
+html.is-compact .ending-stage .ec-bar .ec-btn .ui-ic { width: calc(14px / var(--game-scale, 1)); height: calc(14px / var(--game-scale, 1)); }
+
+/* ---- 台詞：しっぽり明朝にそろえ、斜体をやめる。スマホ横で名札を画面 11px 以上に ---- */
+.ek-text, .ek-name, .ending-narration { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-style: normal; }
+.ek-caption.narr .ek-text { font-style: normal; }
+html.is-compact .ek-name { font-size: calc(12px / var(--game-scale, 1)); }
+/* 締めのナレーション：出現アニメの transform が translateY(-50%) を上書きして、画面の中央より下に寄っていた */
+@keyframes capFadeInNarr {
+  0%   { opacity: 0; transform: translateY(calc(-50% + 28px)); filter: blur(4px); }
+  60%  { opacity: 1; transform: translateY(-50%); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(-50%); filter: blur(0); }
+}
+.ek-caption.narr { animation: capFadeInNarr 1.4s ease .8s both !important; }
+/* 同じ絵の上で台詞を差し替える時：前の台詞を消し切ってから（cap-out）、出る時のアニメを付け直す。
+   .ek-caption の出現アニメ（!important・fill both）が cap-out の透明を上書きして、消えずに瞬間で入れ替わっていた */
+.ending-keyart .ek-caption.cap-out,
+.ending-portrait-scene .ek-caption.cap-out { animation: none !important; opacity: 0; transform: translateY(8px); transition: opacity .45s ease, transform .45s ease; }
+
+/* ---- スタッフロール：紫の夜空・紫黒の暗幕をやめ、深紅と黒。書体はしっぽり明朝、斜体なし ---- */
+.credits-roll {
+  background: radial-gradient(ellipse 70% 55% at 50% 50%, rgba(122,14,22,.28), transparent 72%),
+              linear-gradient(180deg, #130406, #2a0a0e 50%, #130406) !important;
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif;
+}
+/* 星は白をやめ、金の粉をうっすら */
+.cr-stars { opacity: .55; }
+.cr-star { background: #efcd82; box-shadow: 0 0 4px rgba(239,205,130,.7); }
+/* 上下の帯：紫黒をやめ、深紅の黒から透明へ＋二重の金線 */
+.cr-deco-top { background: linear-gradient(180deg, rgba(19,4,6,.95) 0%, transparent 100%); border-bottom: 0; box-shadow: none; }
+.cr-deco-bot { background: linear-gradient(0deg, rgba(19,4,6,.95) 0%, transparent 100%); border-top: 0; box-shadow: none; }
+.cr-deco-top::after, .cr-deco-bot::after { content: ''; position: absolute; left: 0; right: 0; height: 4px; box-sizing: border-box;
+  border-top: 1px solid rgba(217,178,105,.6); border-bottom: 1px solid rgba(217,178,105,.3); }
+.cr-deco-top::after { bottom: 0; }
+.cr-deco-bot::after { top: 0; }
+.cr-deco-top::before, .cr-deco-bot::before { color: #d9b269; text-shadow: none; }
+.credits-inner, .cr-title, .cr-section, .cr-line, .cr-small { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-style: normal; }
+.cr-section { padding: 6px 28px; }
+.cr-line { font-size: 19px; font-weight: 600; color: #f2e6cf; }
+.cr-line.is-person { color: #efcd82; text-shadow: 0 0 10px rgba(239,205,130,.4), 0 2px 6px rgba(0,0,0,.85); }
+/* 制作協力：役割を先に、名前を後に（1行ずつ） */
+.cr-line.has-role { display: flex; justify-content: center; align-items: baseline; gap: .9em; }
+.cr-line-role { color: #b19a74; font-size: .84em; letter-spacing: .12em; }
+html.is-compact .cr-line-role { font-size: max(.84em, calc(11.5px / var(--game-scale, 1))); }
+.cr-line-name { color: #f2e6cf; }
+/* 権利表記と版 */
+.cr-line.is-legal { font-size: 15px; font-weight: 500; color: #d9c39a; letter-spacing: .08em; line-height: 1.8; }
+.cr-small { font-size: 16px; color: #d9c39a; letter-spacing: .06em; line-height: 1.6; max-width: 1000px; margin: 8px auto; word-break: auto-phrase; text-wrap: balance; }
+html.is-compact .cr-section { font-size: calc(12px / var(--game-scale, 1)); }
+html.is-compact .cr-line { font-size: calc(12px / var(--game-scale, 1)); }
+html.is-compact .cr-line.is-person { font-size: calc(13px / var(--game-scale, 1)); }
+html.is-compact .cr-line.is-legal { font-size: calc(11px / var(--game-scale, 1)); }
+html.is-compact .cr-small { font-size: calc(11.5px / var(--game-scale, 1)); max-width: none; }
+/* ロールのスキップ（見返しでは「閉じる」）：エンディング右上と同じ四角 */
+.credits-skip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; top: 14px; right: 14px; min-height: 44px; min-width: 44px; padding: 0 16px;
+  border: 1px solid #d9b269; border-radius: 2px; background: linear-gradient(180deg, #7a0e16, #4e0509); color: #f0d08a;
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 14px; font-weight: 600; letter-spacing: .08em; line-height: 1; opacity: 1; box-shadow: 0 6px 16px rgba(0,0,0,.55); }
+.credits-skip:hover { background: linear-gradient(180deg, #86141b, #58080c); border-color: #efcd82; }
+.credits-skip:focus-visible { outline: 2px solid #f3d58e; outline-offset: 2px; }
+.credits-skip .ui-ic { width: 16px; height: 16px; }
+html.is-compact .credits-skip { top: calc(8px / var(--game-scale, 1)); right: calc(8px / var(--game-scale, 1)); gap: calc(6px / var(--game-scale, 1)); }
+html.is-compact .credits-skip .ui-ic { width: calc(14px / var(--game-scale, 1)); height: calc(14px / var(--game-scale, 1)); }
+/* 見返しのロールは、コレクション（スマホ横では画面の端まで広がる）の上で流すので、同じく端まで覆う */
+html.is-compact #stage > .staff-roll-replay {
+  left: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1)); right: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1));
+  top: calc(-1 * var(--gut-y, 0px) / var(--game-scale, 1)); bottom: calc(-1 * var(--gut-y, 0px) / var(--game-scale, 1));
+}
+/* 動きを減らす人向けのロール：流さず、節ごとにフェードで切り替える */
+.credits-inner.is-paged { top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity .7s ease; animation: none !important; }
+.credits-inner.is-paged.show { opacity: 1; }
+
+/* ---- ロールの後：題字（タイトルロゴ）を黒地の中央に金のフェードで約3秒。片付けは .fade-out ---- */
+.ending-title-drop.is-fade { top: 50%; width: min(760px, 70%); transform: translate(-50%, -50%); animation: none; opacity: 0; transition: opacity 1.2s ease; z-index: 5; }
+.ending-title-drop.is-fade.show { opacity: 1; }
+.ending-title-drop.is-fade.fade-out { opacity: 0 !important; transition: opacity 1s ease; }
+.ending-title-drop.is-fade img { filter: drop-shadow(0 0 18px rgba(239,205,130,.55)) drop-shadow(0 8px 20px rgba(0,0,0,.7)); }
+.ending-title-drop.logo-fallback .ending-title-fallback { background: none; padding: 0; border-radius: 0; box-shadow: none; }
+.ending-title-drop .ending-title-jp { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 44px; font-weight: 800; color: #efcd82; letter-spacing: .12em; text-shadow: 0 0 18px rgba(239,205,130,.5), 0 2px 6px rgba(0,0,0,.8); }
+
+/* ---- エピローグ：感謝は明朝の日本語1本。リコ先輩の一言のあとに「解放」の札。ボタンは2つ ---- */
+.ep-img-wrap.ep-fallback { background: linear-gradient(180deg, #2a0a0e 0%, #130406 100%); }
+.ep-content { max-width: 900px; padding: 32px 40px; }
+.ep-thanks { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 30px; font-weight: 600; letter-spacing: .08em; color: #efcd82; margin-bottom: 18px;
+  text-shadow: 0 0 18px rgba(239,205,130,.4), 0 2px 8px rgba(0,0,0,.85); }
+.ep-last-line { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-style: normal; font-weight: 600; animation-delay: 1.6s; }
+.ep-signed { font-family: "Shippori Mincho B1", "Yu Mincho", serif; margin-bottom: 18px; animation-delay: 2.6s; }
+.ep-unlock { display: inline-block; max-width: 640px; margin: 0 auto 4px; padding: 8px 18px;
+  background: linear-gradient(180deg, rgba(58,9,14,.92), rgba(26,5,8,.92)); border: 1px solid #8a5a1e; border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(227,185,100,.25);
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 14px; font-weight: 600; line-height: 1.65; letter-spacing: .04em; color: #f2e6cf;
+  animation: epLineFadeIn 1.4s ease-out 3.0s both; }
+.ep-unlock-k { color: #efcd82; font-weight: 700; }
+/* ボタン：本編の初回は台詞が出そろってから（見えない間は押せない）。スキップ・見返しの後は最初から */
+.ending-epilogue .ending-final-buttons { opacity: 1; animation: epButtonsIn .9s ease-out 3.4s both; }
+@keyframes epButtonsIn { from { opacity: 0; visibility: hidden; } to { opacity: 1; visibility: visible; } }
+.ending-epilogue.is-immediate .ending-final-buttons { animation: none; opacity: 1; visibility: visible; }
+.ending-final-buttons .btn { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
+.ending-final-buttons .btn:hover:not(:disabled) { transform: none; filter: none; background: linear-gradient(180deg, #86141b, #58080c); border-color: #efcd82; }
+.ending-final-buttons .btn.btn-secondary { background: #1b0d0b; border-color: #8a5a1e; color: #d9b269; }
+.ending-final-buttons .btn.btn-secondary:hover:not(:disabled) { background: #32100c; border-color: #efcd82; }
+html.is-compact .ep-thanks { font-size: calc(15px / var(--game-scale, 1)); }
+html.is-compact .ep-last-line { font-size: calc(13px / var(--game-scale, 1)); }
+html.is-compact .ep-signed { font-size: calc(12px / var(--game-scale, 1)); }
+html.is-compact .ep-unlock { font-size: calc(11.5px / var(--game-scale, 1)); max-width: none; padding: calc(4px / var(--game-scale, 1)) calc(10px / var(--game-scale, 1)); }
+html.is-compact .ending-epilogue .ending-final-buttons { gap: calc(10px / var(--game-scale, 1)); }
+html.is-compact .ending-final-buttons .btn { font-size: calc(13px / var(--game-scale, 1)); min-height: calc(44px / var(--game-scale, 1)); padding: 0 calc(20px / var(--game-scale, 1)); }
+
+/* ---- 動きを減らす設定：一枚絵の拡大・立ち絵の浮き・星・ミニキャラの行進・エピローグの拡大を止め、文字はフェードだけ ---- */
+@keyframes epFadeOnly { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .ek-img, .eps-portrait, .ep-img, .ending-finale-bg { animation: none !important; }
+  .ending-portrait-scene::before { animation: none; }
+  .ek-text { animation: none !important; }
+  .ek-caption, .ek-caption.narr { animation: epFadeOnly .8s ease .4s both !important; }
+  .ep-content { animation: epFadeOnly 1.6s ease-out .4s both; }
+  .ep-divider { animation: epFadeOnly 1s ease-out 1s both; }
+  .cr-star { animation: none; }
+  .cr-stars, .cr-mini-layer { display: none; }
+  .credits-inner.settle { filter: none; transition: none; }
+}
+
+/* === 製品版B：結果画面・ヴェルベット勝利・幕間（2026-10-16） === */
+
+/* ---- ヴェルベットの降伏の台詞札：交換所のグラーノの台詞札（.shop-v2-bubble）と同じ型。
+        初回クリアの1回だけ。畳んであるスコア内訳の中ではなく、結果の札の本体（次の目標の下）に置く ---- */
+.result-screen .velvet-concession {
+  flex: 0 0 auto; display: block; box-sizing: border-box; margin: 0; padding: 12px 16px;
+  background: linear-gradient(180deg, rgba(58,9,14,.94), rgba(26,5,8,.94)); color: #f2e6cf;
+  border: 1px solid #8a5a1e; border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(227,185,100,.25), 0 10px 24px rgba(0,0,0,.6);
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-style: normal; font-weight: 600;
+  font-size: 14px; line-height: 1.65; letter-spacing: .03em; text-shadow: none; text-align: left;
+}
+.result-screen .velvet-concession .vc-name { display: block; margin-bottom: 2px; font-size: 12px; font-weight: 800; letter-spacing: .14em; color: #efcd82; }
+.result-screen .velvet-concession .vc-line { display: block; }
+html.is-compact .result-screen .velvet-concession { padding: calc(8px / var(--game-scale, 1)) calc(12px / var(--game-scale, 1)); font-size: var(--fx-sub); line-height: 1.55; }
+html.is-compact .result-screen .velvet-concession .vc-name { font-size: var(--fx-cap); margin-bottom: 0; }
+
+/* ---- 結果の英字の小見出し：細い Bebas が画面で 12px 未満になる所（スマホ横）は、明朝の金文字にそろえる ---- */
+html.is-compact .result-screen :is(.result-stage-tag, .rank-label, .coins-label) { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 700; }
+html.is-compact .result-screen:not(.result-lost) :is(.result-stage-tag, .coins-label) { color: #d9b269; }
+html.is-compact .result-screen .result-next-goal::before { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 700; letter-spacing: .12em; }
+
+/* ---- 勝利の大演出「全卓制覇」（初回クリアの1回だけ。#stage の中に置く）：
+        明朝・金文字・ゆっくりフェード。傾けて跳ねる出し方はやめた ---- */
+.zentaku-effect {
+  position: absolute; inset: 0; z-index: 250; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+  background: radial-gradient(ellipse at 50% 46%, rgba(78,5,9,.74) 0%, rgba(26,5,8,.88) 55%, rgba(8,2,4,.95) 100%);
+  animation: zentakuVeilIn 1.4s ease-out both;
+}
+.zentaku-effect.out { animation: zentakuVeilOut 1s ease-in forwards; }
+@keyframes zentakuVeilIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes zentakuVeilOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes zentakuFade { from { opacity: 0; } to { opacity: 1; } }
+.zentaku-glow { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 46%, rgba(217,178,105,.22) 0%, rgba(217,178,105,0) 55%); }
+.zentaku-rule { position: relative; width: 460px; height: 5px; border-top: 1px solid #d9b269; border-bottom: 1px solid #d9b269; animation: zentakuFade 1.4s ease-out .4s both; }
+.zentaku-text {
+  position: relative; padding-left: .34em;
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 800; font-style: normal;
+  font-size: 132px; line-height: 1.1; letter-spacing: .34em; color: #efcd82;
+  text-shadow: 0 2px 0 #3a0a0e, 0 0 30px rgba(217,178,105,.4);
+  animation: zentakuFade 1.8s ease-out .8s both;
+}
+.zentaku-sub {
+  position: relative; padding-left: .2em;
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 600; font-style: normal;
+  font-size: 22px; letter-spacing: .2em; color: #f2e6cf; text-shadow: 0 1px 3px #000;
+  animation: zentakuFade 1.4s ease-out 1.8s both;
+}
+html.is-compact .zentaku-sub { font-size: calc(12px / var(--game-scale, 1)); }
+@media (prefers-reduced-motion: reduce) {
+  .zentaku-effect, .zentaku-rule, .zentaku-text, .zentaku-sub { animation: none !important; }
+  .zentaku-effect.out { opacity: 0; }
+}
+
+/* ---- 称号のお知らせ：劇場の型（角2px・深紅の面・金の細縁・明朝）。
+        置き場所は常に画面の内側（ふだんは右上、対戦中は右中、結果画面は左下）。
+        出入りは class の付け外しではなく CSS の animation だけで決める：
+        画面の外から滑り込む途中の位置で止まって左端が切れる、ということが起きない ---- */
+#stage .achievement-toast {
+  position: absolute; z-index: 95; box-sizing: border-box;
+  right: 16px !important; left: auto !important; transition: none !important;
+  min-width: 300px; max-width: 340px; padding: 10px 16px 10px 14px; gap: 12px;
+  background: linear-gradient(180deg, rgba(58,9,14,.96), rgba(26,5,8,.97));
+  border: 1px solid #8a5a1e; border-radius: 2px;
+  box-shadow: inset 0 0 0 3px #190608, inset 0 0 0 4px rgba(227,185,100,.5), 0 10px 24px rgba(0,0,0,.6);
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif; pointer-events: none;
+  opacity: 0; animation: achToastLife 3.9s ease-out both;
+}
+#stage:has(.result-screen) .achievement-toast { left: 16px !important; right: auto !important; }
+@keyframes achToastLife {
+  0%   { opacity: 0; transform: translateY(10px); }
+  10%  { opacity: 1; transform: translateY(0); }
+  82%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes achToastFade { 0% { opacity: 0; } 10% { opacity: 1; } 82% { opacity: 1; } 100% { opacity: 0; } }
+#stage .achievement-toast .at-label { font-size: 11px; letter-spacing: .22em; color: #d9b269; font-weight: 700; }
+#stage .achievement-toast .at-name { font-size: 17px; color: #f2e6cf; font-weight: 800; margin: 2px 0; letter-spacing: .04em; }
+#stage .achievement-toast .at-desc { font-size: 12px; color: #d8c8a6; line-height: 1.45; font-weight: 500; }
+html.is-compact #stage .achievement-toast { min-width: calc(260px / var(--game-scale, 1)); max-width: calc(340px / var(--game-scale, 1)); padding: calc(8px / var(--game-scale, 1)) calc(14px / var(--game-scale, 1)); gap: calc(10px / var(--game-scale, 1)); }
+html.is-compact #stage .achievement-toast .at-icon .gold-mark { font-size: calc(30px / var(--game-scale, 1)); }
+html.is-compact #stage .achievement-toast .at-label { font-size: calc(11px / var(--game-scale, 1)); }
+html.is-compact #stage .achievement-toast .at-name { font-size: calc(14px / var(--game-scale, 1)); }
+html.is-compact #stage .achievement-toast .at-desc { font-size: calc(11.5px / var(--game-scale, 1)); }
+@media (prefers-reduced-motion: reduce) { #stage .achievement-toast { animation-name: achToastFade; } }
+
+/* ---- 幕間：色を黒・深紅・金に（紫がかった黒をやめる）。台詞の札は角2px・金の細縁・明朝 ---- */
+.intermission-overlay { background: #130406; }
+.ims-bg::after { background: linear-gradient(180deg, rgba(19,4,6,.25) 0%, rgba(19,4,6,.15) 40%, rgba(19,4,6,.92) 100%); }
+.ims-dialogue {
+  background: linear-gradient(180deg, rgba(26,5,8,.78) 0%, rgba(19,4,6,.94) 100%);
+  border: 1px solid #8a5a1e; border-left: 6px solid #efe2c2; border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(227,185,100,.22), 0 -10px 30px rgba(0,0,0,.5);
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif;
+}
+/* 話者の色：ミミ＝生成り、リコ先輩＝金、相手＝深紅（ミミのピンクをやめる） */
+.ims-dialogue.ims-speaker-mimi { border-left-color: #efe2c2; }
+.ims-dialogue.ims-speaker-rico { border-left-color: #d9b269; }
+.ims-dialogue.ims-speaker-opp  { border-left-color: #b3243a; }
+.ims-dlg-name { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 15px; font-weight: 800; letter-spacing: .08em; color: #efcd82; }
+.ims-dialogue.ims-speaker-mimi .ims-dlg-name { color: #f2e6cf; }
+.ims-dialogue.ims-speaker-opp  .ims-dlg-name { color: #e0434c; }
+.ims-dlg-text { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 600; font-size: 16px; color: #f2e6cf; }
+.ims-dlg-next { color: #efcd82; }
+/* スキップ：角2px・深紅の面・金縁の四角（主ボタンの型）。押す所は 44px */
+.ims-skip-btn {
+  height: 44px; padding: 0 22px; border-radius: 2px;
+  background: linear-gradient(180deg, #7a0e16, #4e0509); border: 1px solid #d9b269; color: #f0d08a;
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 13px; font-weight: 700; letter-spacing: .14em;
+  box-shadow: 0 6px 16px rgba(0,0,0,.55);
+}
+.ims-skip-btn:hover { background: linear-gradient(180deg, #8f1119, #5c070c); }
+/* ご褒美の絵の「タップして進む」：金の小さな文字に暗い下地、ゆっくり点滅する ▼。
+   （以前は淡い灰色が絵に溶けて見えず、点滅の動きが中央寄せの位置まで動かしていた） */
+.ims-cg-hint {
+  display: flex; align-items: center; gap: 10px; bottom: 28px; padding: 7px 18px 7px 20px;
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 14px; font-weight: 700; letter-spacing: .2em; color: #efcd82;
+  text-shadow: 0 1px 3px #000; background: rgba(19,4,6,.74); border: 1px solid rgba(217,178,105,.55); border-radius: 2px;
+  animation: none;
+}
+.ims-cg-hint-arrow { font-style: normal; font-size: 13px; color: #efcd82; animation: imsHintArrow 1.8s ease-in-out infinite; }
+@keyframes imsHintArrow { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ims-cg-hint-arrow { animation: none; opacity: 1; } }
+/* ヴェルベットの絵は座った姿勢（足を上げた絵）で、立ち絵のまま置くと椅子なしで宙に浮いて見える。
+   足元を画面の下で切り、胸から上を大きく見せる（台詞の札の後ろに腰から下が隠れる） */
+.ims-char-opp.ims-char-seated { bottom: 0; width: 560px; height: 520px; }
+.ims-char-opp.ims-char-seated img { object-fit: cover; object-position: 50% 0; }
+/* スマホ横：幕間の文字は画面で11px以上、スキップは44px以上（舞台の縮み 0.4875 倍を割り戻す） */
+html.is-compact .ims-skip-btn { height: calc(44px / var(--game-scale, 1)); min-height: calc(44px / var(--game-scale, 1)); padding: 0 calc(16px / var(--game-scale, 1)); font-size: calc(12px / var(--game-scale, 1)); }
+html.is-compact .ims-dialogue { left: 24px; right: 24px; bottom: 16px; gap: 18px; min-height: 0; padding: 14px 22px; }
+html.is-compact .ims-dlg-face { width: 72px !important; height: 88px !important; }
+html.is-compact .ims-dlg-name { font-size: calc(12px / var(--game-scale, 1)); margin-bottom: 4px; }
+html.is-compact .ims-dlg-text { font-size: calc(12.5px / var(--game-scale, 1)); line-height: 1.6; }
+html.is-compact .ims-dlg-next { font-size: calc(12px / var(--game-scale, 1)); }
+html.is-compact .ims-cg-hint { bottom: 18px; padding: calc(6px / var(--game-scale, 1)) calc(16px / var(--game-scale, 1)); font-size: calc(12px / var(--game-scale, 1)); }
+html.is-compact .ims-cg-hint-arrow { font-size: calc(12px / var(--game-scale, 1)); }
+
+/* ---- 研修修了の窓の小見出し（「第1戦 突破」）：明朝の金文字 ---- */
+.iw2-eyebrow { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 700; letter-spacing: .34em; text-indent: .34em; color: #d9b269; font-size: 16px; }
+
+/* ---- ご褒美の絵の全画面ビューア：絵が読めなかった時の絵文字（額縁）はやめる。「タップして閉じる」も金の小さな文字に ---- */
+.reward-cg-viewer-body.noimg::before { content: none; }
+.reward-cg-viewer-hint { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 700; color: #efcd82; text-shadow: 0 1px 3px #000; }
+html.is-compact .reward-cg-viewer-hint { font-size: calc(12px / var(--game-scale, 1)); }
+
+/* === 製品版C：クリア後の交換所・コレクション・装備・台帳・タイトル（2026-10-16） === */
+
+/* ---- 版と権利の表記：タイトルの下端に「Ver 1.0　© 2026 あいかわ」（値は game.js の GAME_VERSION / COPYRIGHT_TEXT）。
+        以前は「版の表記は出さない」と隠していた。スマホ横は画面で 12px ---- */
+.title-screen.t3 .t3-ver {
+  display: block; left: 28px; bottom: 16px; font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-style: normal;
+  font-size: 14px; font-weight: 600; letter-spacing: .1em; color: rgba(239,205,130,.85); text-shadow: 0 1px 3px #000; white-space: nowrap;
+}
+html.is-compact .title-screen.t3 .t3-ver { left: calc(14px / var(--game-scale, 1)); bottom: calc(8px / var(--game-scale, 1)); font-size: calc(12px / var(--game-scale, 1)); }
+/* 設定の窓・ホームの設定の一番下 */
+.settings-modal .settings-modal-legal, .home-dialog .home-legal {
+  width: 100%; box-sizing: border-box; margin: 4px 0 0; padding: 8px 0 0; border-top: 1px solid #584027;
+  text-align: center; font: 600 12px/1.6 "Shippori Mincho B1", "Yu Mincho", serif; letter-spacing: .08em; color: #b19a74;
+}
+html.is-compact .home-dialog .home-legal { font-size: calc(12px * var(--inv-scale, 1)); }
+
+/* ---- 交換所：「NEW」の赤い四角をやめ、金の細縁に深紅の小さな「新入荷」の札に。持った印は緑でなく金。
+        品のアイコンの色も、ピンク・水色・緑をやめて金と生成りに ---- */
+.shop-item-newtag, .shop-screen.v2 .shop-item-newtag {
+  background: linear-gradient(180deg, #7a0e16, #4e0509); color: #f0d08a; border: 1px solid #d9b269; border-radius: 2px;
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 700; letter-spacing: .12em; padding: 2px 8px; line-height: 1.25;
+  box-shadow: 0 2px 6px rgba(0,0,0,.5); text-shadow: none;
+}
+.shop-screen.v2 .shop-item-owned { color: #efcd82; }
+.shop-screen.v2 .shop-item-icon-panyu,  .shop-buy-fx-wrap .shop-item-icon-panyu  { color: #efcd82; }
+.shop-screen.v2 .shop-item-icon-stack,  .shop-buy-fx-wrap .shop-item-icon-stack  { color: #efcd82; }
+.shop-screen.v2 .shop-item-icon-memory, .shop-buy-fx-wrap .shop-item-icon-memory { color: #efcd82; }
+
+/* ---- コレクション：「称号」の欄の中の小見出し（物語／プレイの称号）、未入荷の「？？？ × N」、称号カード ---- */
+.coll-subtitle {
+  display: flex; align-items: baseline; gap: 10px; margin: 14px 0 8px; padding: 0;
+  font: 700 14px/1.5 "Shippori Mincho B1", "Yu Mincho", serif; letter-spacing: .14em; color: #efcd82;
+}
+.coll-section-title + .coll-subtitle { margin-top: 4px; }
+.coll-subtitle-count { font-size: 12px; font-weight: 600; letter-spacing: .04em; color: #b19a74; }
+.coll-item.coll-item-hidden { border-style: dashed; color: #b19a74; background: #160c0b; }
+.ach-card { border-radius: 2px; background: #170d0b; border: 1px solid #584027; }
+.ach-card.on { background: #32100c; border-color: #a68148; box-shadow: none; }
+.ach-card.off { opacity: 1; }
+.ach-name { font-family: "Shippori Mincho B1", "Yu Mincho", serif; color: #efcd82; }
+.ach-card.off .ach-name { color: #b19a74; }
+.ach-desc { font-size: 12px; line-height: 1.5; color: #cdb99a; }
+.collection-modal .memory-grid .memory-card {
+  text-align: left; align-items: flex-start; min-height: 44px; padding: 10px 14px; border: 1px solid #8a5a1e; border-radius: 2px;
+  background: linear-gradient(180deg, #3a0a0e, #22090c); color: #ead9b8; font-family: "Shippori Mincho B1", "Yu Mincho", serif;
+  box-shadow: none; transform: none;
+}
+.collection-modal .memory-grid .memory-card:hover:not(:disabled) { background: linear-gradient(180deg, #4a1015, #2a0c10); border-color: #efcd82; transform: none; box-shadow: inset 0 0 0 1px rgba(227,185,100,.25); }
+.collection-modal .memory-card .memory-card-title { font-size: 15px; font-weight: 700; color: #efcd82; }
+.collection-modal .memory-card .memory-card-desc { font-size: 12px; line-height: 1.55; opacity: 1; color: #b19a74; }
+.collection-modal .memory-card .memory-card-play { font-size: 13px; color: #efcd82; font-weight: 700; }
+
+/* ---- メモリ閲覧（寸劇・設定資料・図鑑）の窓：ui-modal.css の劇場の型（黒・深紅・金、二重の金線、四隅の金飾り、角2px）。
+        紫の #1a0820 と画像の枠をやめ、外枠は固定で中身だけ動かす。閉じるは四角い金縁 44px ---- */
+.memory-viewer-overlay { background: rgba(8,2,4,.72); }
+.memory-viewer {
+  --um-serif: "Shippori Mincho B1", "Yu Mincho", serif; --um-corner: 44px;
+  display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden;
+  border: 2px solid #8a5a1e; border-image: none; border-radius: 2px; padding: 8px 8px 14px;
+  background-color: #130406;
+  background-image: url("assets/ui/modal_corner_tl.webp"), url("assets/ui/modal_corner_tr.webp"), url("assets/ui/modal_corner_bl.webp"), url("assets/ui/modal_corner_br.webp"), linear-gradient(180deg, #22090c, #130406);
+  background-position: left top, right top, left bottom, right bottom, center;
+  background-size: var(--um-corner) var(--um-corner), var(--um-corner) var(--um-corner), var(--um-corner) var(--um-corner), var(--um-corner) var(--um-corner), 100% 100%;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px rgba(227,185,100,.55), 0 24px 64px rgba(0,0,0,.65);
+  color: #ead9b8; font: 400 14px/1.7 "Noto Sans JP", sans-serif; text-shadow: none;
+  scrollbar-width: thin; scrollbar-color: #9b7944 #100808;
+}
+html.is-compact #stage > .memory-viewer-overlay > .memory-viewer { overflow: hidden; }
+.memory-viewer-title {
+  flex: 0 0 auto; margin: 0; padding: 12px 64px; background: #3e0306; border-bottom: 1px solid #8a5a1e; border-radius: 0;
+  font-family: var(--um-serif); font-weight: 700; font-size: 22px; line-height: 1.5; letter-spacing: .08em; color: #efcd82; text-align: center; text-shadow: none;
+}
+.memory-viewer-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 22px 4px; line-height: 1.7; font-size: 14px; color: #ead9b8; scrollbar-width: thin; scrollbar-color: #9b7944 #100808; }
+.memory-viewer-body h4 { font-family: var(--um-serif); color: #efcd82; letter-spacing: .06em; }
+.memory-viewer-close {
+  top: 12px; right: 12px; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; z-index: 4;
+  border: 1px solid #80613c; border-radius: 2px; background: #1b0d0b; color: #e8d7b7; font: 400 22px/1 sans-serif;
+  display: grid; place-items: center; cursor: pointer;
+}
+.memory-viewer-close:hover { background: #32100c; border-color: #efcd82; }
+.memory-viewer-close:focus-visible { outline: 2px solid #f3d58e; outline-offset: 2px; }
+.memory-stage-note { font-style: normal; font-family: var(--um-serif); color: #d9b269; opacity: 1; }
+.memory-opp, .memory-voice, .memory-mimi-face { border-radius: 2px; background: #170d0b; border: 1px solid #584027; }
+.memory-opp { gap: 3px; padding: 10px 14px; }
+.memory-opp.locked { opacity: 1; background: #160c0b; border-style: dashed; }
+.memory-opp.locked .memory-opp-name, .memory-opp.locked .memory-opp-trait { color: #b19a74; }
+.memory-opp-name { font-family: var(--um-serif); font-size: 16px; color: #efcd82; letter-spacing: .06em; }
+.memory-opp-trait { font-size: 13px; opacity: 1; color: #ead9b8; line-height: 1.65; }
+.memory-opp-tip { font-size: 13px; line-height: 1.65; color: #cdb99a; }
+.memory-opp-line { font-family: var(--um-serif); font-style: normal; font-size: 14px; color: #f2e6cf; }
+.memory-mimi-face figcaption span { color: #cdb99a; }
+.memory-voice b { color: #efcd82; }
+
+/* ---- 練習用「相手の手札を見る」：開くボタンは四角い金縁（44px）、小窓は劇場の型。
+        ピンクの枠・光る丸ボタン・内部パラメータの数値をやめた。スマホ横は文字 11px 以上、押す所 44px 以上 ---- */
+.backdoor-toggle {
+  width: 44px; height: 44px; border-radius: 2px; border: 1px solid #8a5a1e; background: #1b0d0b; color: #d9b269;
+  box-shadow: none; transition: background-color .15s, border-color .15s;
+}
+.backdoor-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.backdoor-toggle:hover { background: #32100c; border-color: #efcd82; transform: none; }
+.backdoor-toggle.on { background: linear-gradient(180deg, #7a0e16, #4e0509); color: #f0d08a; border-color: #d9b269; box-shadow: none; animation: none; }
+.backdoor-toggle:focus-visible { outline: 2px solid #f3d58e; outline-offset: 2px; }
+.backdoor-panel {
+  --bd-corner: 26px; box-sizing: border-box; width: 300px; padding: 14px 18px 12px; border: 2px solid #8a5a1e; border-radius: 2px;
+  font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 13px; line-height: 1.6; color: #ead9b8;
+  background-color: #130406;
+  background-image: url("assets/ui/modal_corner_tl.webp"), url("assets/ui/modal_corner_tr.webp"), url("assets/ui/modal_corner_bl.webp"), url("assets/ui/modal_corner_br.webp"), linear-gradient(180deg, #22090c, #130406);
+  background-position: left top, right top, left bottom, right bottom, center;
+  background-size: var(--bd-corner) var(--bd-corner), var(--bd-corner) var(--bd-corner), var(--bd-corner) var(--bd-corner), var(--bd-corner) var(--bd-corner), 100% 100%;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 4px #190608, inset 0 0 0 5px rgba(227,185,100,.5), 0 18px 48px rgba(0,0,0,.65);
+}
+.bd-title { font-size: 15px; letter-spacing: .12em; color: #efcd82; border-bottom: 1px solid #8a5a1e; }
+.backdoor-panel .bd-note { font-size: 12px; color: #b19a74; letter-spacing: .03em; }
+.bd-row { font-size: 13px; }
+.bd-label { font-size: 12px; color: #b19a74; letter-spacing: .04em; }
+.bd-value { color: #f2e6cf; }
+.bd-card { border-radius: 2px; background: #f2e6cf; }
+.bd-card.bd-red { color: #a8141f; }
+.bd-bar { height: 6px; border-radius: 0; background: #100808; border: 1px solid #584027; }
+.bd-bar-fill { background: linear-gradient(90deg, #8a5a1e, #d9b269); }
+.backdoor-empty { color: #b19a74; font-size: 12px; }
+html.is-compact .backdoor-toggle { width: calc(44px / var(--game-scale, 1)) !important; height: calc(44px / var(--game-scale, 1)) !important; font-size: calc(20px / var(--game-scale, 1)) !important; }
+html.is-compact .backdoor-toggle svg { width: calc(22px / var(--game-scale, 1)); height: calc(22px / var(--game-scale, 1)); }
+html.is-compact .battle-screen.v2.t8 .backdoor-toggle { top: calc(50px / var(--game-scale, 1)) !important; right: calc(170px / var(--game-scale, 1)) !important; left: auto !important; }
+html.is-compact .backdoor-panel {
+  --bd-corner: calc(18px / var(--game-scale, 1)); width: calc(270px / var(--game-scale, 1)); top: calc(100px / var(--game-scale, 1)); right: calc(8px / var(--game-scale, 1));
+  padding: calc(8px / var(--game-scale, 1)) calc(14px / var(--game-scale, 1)) calc(8px / var(--game-scale, 1)); font-size: calc(12px / var(--game-scale, 1));
+}
+html.is-compact .bd-title { font-size: calc(13px / var(--game-scale, 1)); padding-bottom: calc(3px / var(--game-scale, 1)); margin-bottom: calc(4px / var(--game-scale, 1)); }
+html.is-compact .backdoor-panel .bd-note, html.is-compact .bd-label, html.is-compact .backdoor-empty { font-size: calc(11px / var(--game-scale, 1)); }
+html.is-compact .bd-row { font-size: calc(12px / var(--game-scale, 1)); padding: calc(1px / var(--game-scale, 1)) 0; }
+html.is-compact .bd-card { font-size: calc(12px / var(--game-scale, 1)); padding: calc(1px / var(--game-scale, 1)) calc(5px / var(--game-scale, 1)); }
+
+/* 研修修了の窓：古い金の額縁画像（14px）が残って枠と紙面の間に隙間が出ていた → 小窓の型（2px 暗金＋内側の二重線＋四隅の金飾り）に一本化。ボタンも四角い深紅と黒檀に（2026-10-16） */
+#stage .intro-win-overlay .intro-win-modal.iw2 {
+  border: 2px solid #8a5a1e !important; border-image: none !important; border-radius: 2px !important;
+  background:
+    url('assets/ui/modal_corner_tl.webp') left 4px top 4px / 40px 40px no-repeat,
+    url('assets/ui/modal_corner_tr.webp') right 4px top 4px / 40px 40px no-repeat,
+    url('assets/ui/modal_corner_bl.webp') left 4px bottom 4px / 40px 40px no-repeat,
+    url('assets/ui/modal_corner_br.webp') right 4px bottom 4px / 40px 40px no-repeat,
+    linear-gradient(180deg, #22090c, #130406) !important;
+  box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px rgba(227,185,100,.55), 0 18px 48px rgba(0,0,0,.75) !important;
+  padding: 26px 34px 24px !important;
+}
+#stage .intro-win-modal.iw2 .iw2-title { font-family: "Shippori Mincho B1", "Yu Mincho", serif; color: #efcd82; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+#stage .intro-win-modal.iw2 .iw2-seal { border-color: #b8862e; color: #efcd82; background: #2a0a0e; border-radius: 2px; font-family: "Shippori Mincho B1", "Yu Mincho", serif; }
+#stage .intro-win-modal.iw2 .intro-win-buttons { display: flex; flex-direction: column; gap: 10px; width: min(360px, 100%); }
+#stage .intro-win-modal.iw2 .intro-win-buttons .btn { width: 100%; min-height: 48px; border-radius: 2px !important; font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 700; letter-spacing: .06em; box-shadow: 0 6px 16px rgba(0,0,0,.5); }
+#stage .intro-win-modal.iw2 .intro-win-buttons .btn-primary { background: linear-gradient(180deg, #7a0e16, #4e0509) !important; border: 1px solid #d9b269 !important; color: #f0d08a !important; }
+#stage .intro-win-modal.iw2 .intro-win-buttons .btn-secondary { background: #1b0d0b !important; border: 1px solid #8a5a1e !important; color: #d9b269 !important; }
+#stage .intro-win-modal.iw2 .intro-win-buttons .btn::before, #stage .intro-win-modal.iw2 .intro-win-buttons .btn::after { content: none !important; }

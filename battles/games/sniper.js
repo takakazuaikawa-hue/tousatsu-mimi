@@ -88,35 +88,35 @@
       .sn-me .plus { color: var(--dim); font-weight: 900; }
       .sn-me-name { font-weight: 900; font-size: 14px; }
       .sn-me-name small { display: block; font-weight: 700; font-size: 11px; color: var(--dim); }
-      .sn-pot { font-family: var(--disp); letter-spacing: .1em; color: var(--dim); font-size: 14px; line-height: 1; text-align: center; }
+      .sn-pot { font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; color: var(--gold); font-size: 14px; line-height: 1; text-align: center; }
       .sn-pot b { display: block; font-weight: 400; font-size: 30px; color: var(--gold-hi); letter-spacing: .04em; }
       .sn-read { display: flex; align-items: flex-end; justify-content: center; gap: 8px 14px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
       .sn-read > div { text-align: center; line-height: 1; }
       .sn-read small { display: block; font-size: 11px; font-weight: 700; color: var(--dim); margin-bottom: 3px; }
-      .sn-read b { font-family: var(--disp); font-weight: 400; font-size: 40px; color: #fff; letter-spacing: .03em; }
+      .sn-read b { font-family: var(--disp); font-weight: 400; font-size: 40px; color: var(--gold-pale); letter-spacing: .03em; }
       .sn-read .op { font-family: var(--disp); font-size: 30px; color: var(--gold); padding-bottom: 4px; }
-      .sn-read em { font-style: normal; font-weight: 900; font-size: 14px; color: var(--gold-hi); display: inline-block; padding: 6px 10px; border: 1px solid rgba(217,179,90,.6); background: rgba(217,179,90,.16); }
-      .sn-meter { display: block; width: 110px; height: 5px; margin: 4px auto 0; background: rgba(255,255,255,.12); transform: skewX(-12deg); }
-      .sn-meter i { display: block; height: 100%; background: linear-gradient(90deg, var(--red-hi), var(--gold-hi)); transition: width .08s; }
+      .sn-read em { font-style: normal; font-weight: 900; font-family: var(--mincho); font-size: 14px; color: var(--gold-hi); display: inline-block; padding: 6px 10px; border: 1px solid var(--gold); border-radius: 2px; background: rgba(217,178,105,.16); }
+      .sn-meter { display: block; width: 110px; height: 5px; margin: 4px auto 0; background: rgba(217,178,105,.16); border-radius: 1px; }
+      .sn-meter i { display: block; height: 100%; background: linear-gradient(90deg, var(--crimson), var(--gold-hi)); transition: width .08s; }
       .sn-wrap { position: relative; padding: 24px 14px 30px 46px; }
       .sn-chart { position: relative; height: 225px; touch-action: pan-y; cursor: crosshair; user-select: none; -webkit-user-select: none; }
       .sn-chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-      .sn-ylab, .sn-xlab { position: absolute; font-family: var(--disp); font-size: 13px; letter-spacing: .06em; color: var(--dim); line-height: 1; white-space: nowrap; pointer-events: none; }
+      .sn-ylab, .sn-xlab { position: absolute; font-family: var(--mincho); font-weight: 700; font-size: 13px; letter-spacing: .04em; color: var(--gold); line-height: 1; white-space: nowrap; pointer-events: none; }
       .sn-ylab { left: -8px; transform: translate(-100%, -50%); }
       .sn-xlab { bottom: -20px; transform: translateX(-50%); }
       .sn-axis-y { position: absolute; left: 0; top: -19px; font-size: 11px; font-weight: 700; color: var(--dim); pointer-events: none; white-space: nowrap; }
-      .sn-floor { position: absolute; left: 0; top: 4px; width: 12.5%; text-align: center; font-size: 10px; font-weight: 700; color: rgba(247,238,207,.5); pointer-events: none; }
+      .sn-floor { position: absolute; left: 0; top: 4px; width: 12.5%; text-align: center; font-size: 10px; font-weight: 700; color: var(--dim); pointer-events: none; }
       .sn-area { position: absolute; transform: translate(-50%, -50%); font-weight: 900; font-size: 13px; color: var(--gold-pale); text-shadow: 0 1px 3px rgba(0,0,0,.8); pointer-events: none; white-space: nowrap; transition: opacity .15s; }
       .sn-ret { position: absolute; width: 0; height: 0; pointer-events: none; z-index: 2; }
       .sn-ret .x1, .sn-ret .x2 { position: absolute; left: -44px; top: -1px; width: 88px; height: 2px; background: linear-gradient(90deg, var(--red-hi) 0 38%, transparent 38% 62%, var(--red-hi) 62%); }
       .sn-ret .x1 { transform: rotate(45deg); } .sn-ret .x2 { transform: rotate(-45deg); }
       .sn-ret .dia { position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border: 2px solid #fff; transform: rotate(45deg); box-shadow: 0 0 10px rgba(255,74,96,.9); }
       .sn-ret .dot { position: absolute; left: -2px; top: -2px; width: 4px; height: 4px; background: #fff; }
-      .sn-ret .num { position: absolute; left: 20px; bottom: 14px; font-family: var(--disp); line-height: .9; white-space: nowrap; padding: 3px 10px 2px; background: rgba(20,6,10,.85); border-left: 3px solid var(--red-hi); transform: skewX(-12deg); }
+      .sn-ret .num { position: absolute; left: 20px; bottom: 14px; font-family: var(--disp); line-height: .9; white-space: nowrap; padding: 3px 10px 2px; background: rgba(20,6,10,.85); border-left: 3px solid var(--gold); transform: skewX(-12deg); }
       .sn-ret .num > span { display: block; transform: skewX(12deg); }
       .sn-ret .num b { font-weight: 400; font-size: 28px; color: #fff; letter-spacing: .04em; }
-      .sn-ret .num small { display: block; font-size: 13px; color: var(--gold-hi); letter-spacing: .1em; }
-      .sn-ret.flip-x .num { left: auto; right: 20px; border-left: 0; border-right: 3px solid var(--red-hi); }
+      .sn-ret .num small { display: block; font-family: var(--mincho); font-weight: 700; font-size: 13px; color: var(--gold-hi); letter-spacing: .06em; }
+      .sn-ret.flip-x .num { left: auto; right: 20px; border-left: 0; border-right: 3px solid var(--gold); }
       .sn-ret.flip-y .num { bottom: auto; top: 14px; }
       .sn-ret.is-cue .dia { animation: mb-snCue 1s ease-in-out infinite; }
       @keyframes mb-snCue { 50% { transform: rotate(45deg) scale(1.45); box-shadow: 0 0 18px rgba(245,215,122,1); border-color: var(--gold-hi); } }
@@ -126,14 +126,14 @@
       .sn-ret.locked .dia { border-color: var(--red-hi); background: rgba(255,74,96,.35); }
       .sn-best { position: absolute; width: 0; height: 0; pointer-events: none; z-index: 3; }
       .sn-best .dia { position: absolute; left: -14px; top: -14px; width: 28px; height: 28px; border: 3px solid var(--gold-hi); background: rgba(245,215,122,.25); transform: rotate(45deg); box-shadow: 0 0 20px rgba(245,215,122,.9); animation: mb-snBest .6s cubic-bezier(.2,1.6,.4,1) both; }
-      .sn-best .lab { position: absolute; left: -40px; width: 80px; bottom: 22px; text-align: center; font-family: var(--disp); font-size: 18px; line-height: 1; color: #1d080e; background: linear-gradient(90deg, var(--gold-hi), var(--gold)); padding: 3px 0 1px; transform: skewX(-12deg); }
+      .sn-best .lab { position: absolute; left: -40px; width: 80px; bottom: 22px; text-align: center; font-family: var(--mincho); font-weight: 800; font-size: 18px; line-height: 1; color: #1d080e; background: linear-gradient(90deg, var(--gold-hi), var(--gold)); padding: 3px 0 1px; transform: skewX(-12deg); }
       .sn-best.below .lab { bottom: auto; top: 22px; }
       @keyframes mb-snBest { from { transform: rotate(45deg) scale(3); opacity: 0; } }
-      .sn-range { width: 100%; margin: 0; accent-color: var(--red-hi); height: 28px; cursor: pointer; }
+      .sn-range { width: 100%; margin: 0; accent-color: var(--gold); height: 28px; cursor: pointer; }
       @media (max-width: 560px) { .sn-range { height: 44px; } }
       .sn-rangebox { padding: 0 14px 0 46px; }
       .sn-fire.is-cue::before { animation: mb-snFire 1s ease-in-out infinite; }
-      @keyframes mb-snFire { 50% { box-shadow: 0 0 0 3px rgba(255,74,96,.6), 0 0 26px rgba(255,74,96,.8); } }
+      @keyframes mb-snFire { 50% { box-shadow: 0 0 0 3px rgba(239,205,130,.6), 0 0 26px rgba(217,178,105,.7); } }
       .sn-freeze, .sn-freeze * { animation-play-state: paused !important; }
       .sn-freeze .sn-wrap { filter: grayscale(1) contrast(1.4) brightness(1.2); }
       .sn-flash { position: absolute; inset: 0; z-index: 5; background: #fff; pointer-events: none; animation: mb-snFlash .45s ease-out forwards; }
@@ -142,13 +142,13 @@
       @keyframes mb-snShake { 20% { transform: translate(-6px, 3px); } 40% { transform: translate(5px, -3px); } 60% { transform: translate(-3px, 2px); } 80% { transform: translate(2px, -1px); } }
       .sn-out { text-align: center; display: grid; gap: 4px; }
       .sn-out .roll { font-weight: 900; font-size: 15px; }
-      .sn-out .roll b { font-family: var(--disp); font-weight: 400; font-size: 24px; letter-spacing: .06em; }
+      .sn-out .roll b { font-family: var(--mincho); font-weight: 800; font-size: 24px; letter-spacing: .06em; }
       .sn-out .roll .call { color: var(--good); } .sn-out .roll .fold { color: var(--bad); }
       .sn-out .her { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--dim); }
       .sn-cmp { display: flex; justify-content: center; gap: 8px 18px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
       .sn-cmp > div { text-align: center; line-height: 1.1; padding: 4px 14px; position: relative; isolation: isolate; }
-      .sn-cmp > div::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); background: rgba(0,0,0,.45); border: 1px solid var(--faint); }
-      .sn-cmp > div.best::before { border-color: var(--gold-hi); background: rgba(217,179,90,.16); }
+      .sn-cmp > div::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; }
+      .sn-cmp > div.best::before { border-color: var(--gold-hi); background: rgba(217,178,105,.16); box-shadow: inset 0 0 0 2px #190608, inset 0 0 0 3px var(--gild); }
       .sn-cmp small { display: block; font-size: 11px; color: var(--dim); font-weight: 700; }
       .sn-cmp b { font-family: var(--disp); font-weight: 400; font-size: 28px; }
       .sn-cmp .best b { color: var(--gold-hi); }
@@ -156,9 +156,9 @@
       .sn-verdict.good { color: var(--good); } .sn-verdict.bad { color: var(--bad); }
       .sn-verdict small { display: block; font-family: var(--sans); font-size: 13px; color: var(--text); font-weight: 700; }
       .sn-react { position: absolute; z-index: 6; right: -6px; top: 34%; width: 260px; height: 190px; pointer-events: none; animation: mb-snIn .4s cubic-bezier(.2,1.3,.3,1) both; }
-      .sn-react::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 56%; transform: skewX(-12deg); background: linear-gradient(90deg, #7d1022, var(--red)); border-block: 2px solid var(--gold-hi); box-shadow: 0 10px 24px rgba(0,0,0,.55); }
+      .sn-react::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 56%; transform: skewX(-12deg); background: linear-gradient(90deg, var(--crimson), var(--crimson-lo)); border-block: 2px solid var(--gold-hi); box-shadow: 0 10px 24px rgba(0,0,0,.55); }
       .sn-react img { position: absolute; bottom: 0; right: -10px; height: 100%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
-      .sn-react b { position: absolute; left: 14px; bottom: 6px; font-family: var(--disp); font-weight: 400; font-size: 40px; line-height: 1; color: #fff; letter-spacing: .06em; text-shadow: 0 3px 0 rgba(0,0,0,.5); }
+      .sn-react b { position: absolute; left: 14px; bottom: 6px; font-family: var(--mincho); font-weight: 800; font-size: 40px; line-height: 1; color: #fff; letter-spacing: .06em; text-shadow: 0 3px 0 rgba(0,0,0,.5); }
       .sn-react.out { transition: opacity .3s, transform .3s; opacity: 0; transform: translateX(40px); }
       @keyframes mb-snIn { from { transform: translateX(110%); } }
       @media (max-width: 560px) {
@@ -190,7 +190,7 @@
       <div class="sn-me">
         <span class="hl">${hole.map(c => api.cardHTML(c, 'small')).join('')}<span class="plus">＋</span>${board.map(c => api.cardHTML(c, 'small')).join('')}</span>
         <span class="sn-me-name">ミミ：${handName(api, hole.concat(board))}<small>ランダムな手への勝率 ${Math.round(eq * 100)}%（ほぼ勝てる）</small></span>
-        <span class="sn-pot">POT<b>${pot}</b></span>
+        <span class="sn-pot">ポット<b>${pot}</b></span>
       </div>
       <p class="prompt" id="mb-sn-prompt">額を上げると取り分は増える。でも付いてくる確率は下がる。掛け算が一番大きい所を狙って</p>
       <div class="sn-read">
@@ -205,7 +205,7 @@
           <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <pattern id="mb-sn-hatch" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="24" height="24" fill="rgba(0,0,0,.35)"/><rect width="6" height="24" fill="rgba(217,179,90,.12)"/></pattern>
-              <linearGradient id="mb-sn-under" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,74,96,.22)"/><stop offset="1" stop-color="rgba(255,74,96,0)"/></linearGradient>
+              <linearGradient id="mb-sn-under" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(122,14,22,.55)"/><stop offset="1" stop-color="rgba(122,14,22,0)"/></linearGradient>
             </defs>
             <rect x="0" y="0" width="1000" height="1000" fill="rgba(0,0,0,.35)" stroke="rgba(217,179,90,.45)" vector-effect="non-scaling-stroke"/>
             <rect x="0" y="0" width="${X(minBet) * 10}" height="1000" fill="url(#mb-sn-hatch)"/>
@@ -213,14 +213,14 @@
             <path d="M0,1000 L${curvePts.join(' L')} L1000,1000 Z" fill="url(#mb-sn-under)"/>
             <rect id="mb-sn-bestrect" x="0" y="0" width="0" height="0" fill="none" stroke="var(--gold-hi)" stroke-width="2" stroke-dasharray="6 5" vector-effect="non-scaling-stroke" opacity="0"/>
             <rect id="mb-sn-rect" x="0" y="0" width="0" height="0" fill="rgba(245,215,122,.30)" stroke="var(--gold-hi)" stroke-width="2" vector-effect="non-scaling-stroke"/>
-            <path d="M${curvePts.join(' L')}" fill="none" stroke="var(--red-hi)" stroke-width="3" vector-effect="non-scaling-stroke"/>
+            <path d="M${curvePts.join(' L')}" fill="none" stroke="var(--text)" stroke-width="3" vector-effect="non-scaling-stroke"/>
           </svg>
           <span class="sn-axis-y">↑ 付いてくる確率　　→ 賭け額</span>
           ${[[1, '100%'], [.5, '50%'], [0, '0%']].map(([p, t]) => `<span class="sn-ylab" style="top:${Y(p)}%">${t}</span>`).join('')}
-          ${[[minBet, '¼'], [pot / 2, '½'], [pot, 'POT'], [pot * 1.5, '1.5×'], [maxBet, '2×']].map(([b, t]) => `<span class="sn-xlab" style="left:${X(b)}%">${t}</span>`).join('')}
+          ${[[minBet, '¼'], [pot / 2, '½'], [pot, 'ポット'], [pot * 1.5, '1.5×'], [maxBet, '2×']].map(([b, t]) => `<span class="sn-xlab" style="left:${X(b)}%">${t}</span>`).join('')}
           <span class="sn-floor">最低額</span>
           <span class="sn-area" id="mb-sn-area">見込み</span>
-          <div class="sn-ret is-cue" id="mb-sn-ret"><i class="x1"></i><i class="x2"></i><i class="dia"></i><i class="dot"></i><div class="num"><span><b id="mb-sn-rb">0</b><small id="mb-sn-rp">CALL 0%</small></span></div></div>
+          <div class="sn-ret is-cue" id="mb-sn-ret"><i class="x1"></i><i class="x2"></i><i class="dia"></i><i class="dot"></i><div class="num"><span><b id="mb-sn-rb">0</b><small id="mb-sn-rp">コール 0%</small></span></div></div>
           <span class="sn-hint" id="mb-sn-hint">◀ 照準をドラッグ ▶</span>
         </div>
       </div>
@@ -245,7 +245,7 @@
       area.style.left = (x / 2) + '%'; area.style.top = ((y + 100) / 2) + '%';
       area.style.opacity = x > 14 && (100 - y) > 14 ? 1 : 0;
       $('#mb-sn-rb').textContent = Math.round(bet);
-      $('#mb-sn-rp').textContent = `CALL ${Math.round(p * 100)}%`;
+      $('#mb-sn-rp').textContent = `コール ${Math.round(p * 100)}%`;
       $('#mb-sn-bet').textContent = Math.round(bet);
       $('#mb-sn-p').textContent = Math.round(p * 100) + '%';
       $('#mb-sn-pm').style.width = (p * 100) + '%';
@@ -307,14 +307,14 @@
     };
     if (call) {
       api.say('……コール。', 'panic'); api.sfx.good(); // 強い手に付いてきてしまった：セリナが唯一、表情を崩す所
-      out.innerHTML = `<div class="roll">付いてくる確率 ${Math.round(p * 100)}% → <b class="call">CALL</b> 付いてきた！</div>
+      out.innerHTML = `<div class="roll">付いてくる確率 ${Math.round(p * 100)}% → <b class="call">コール</b> 付いてきた！</div>
         <div class="her">${api.char.jp}の手 ${her.map(c => api.cardHTML(c, 'small' + (api.reduce ? '' : ' flip'))).join('')} ${api.CAT_NAME[api.category(her.concat(board))]}。ミミの勝ちで ${pot + myBet * 2} 獲得</div>`;
-      react(api.char.panic, 'CALL');
+      react(api.char.panic, 'コール');
     } else {
       api.say('……降りるわ。', 'think'); api.sfx.nope();
-      out.innerHTML = `<div class="roll">付いてくる確率 ${Math.round(p * 100)}% → <b class="fold">FOLD</b> 降りられた</div>
+      out.innerHTML = `<div class="roll">付いてくる確率 ${Math.round(p * 100)}% → <b class="fold">フォールド</b> 降りられた</div>
         <div class="her">ミミはポットの ${pot} だけ獲得</div>`;
-      react(api.char.smug, 'FOLD');
+      react(api.char.smug, '降りた');
     }
     await api.wait(api.reduce ? 400 : 1600);
     if (!api.alive()) return;
@@ -327,8 +327,8 @@
     const br = $('#mb-sn-bestrect');
     br.setAttribute('y', Y(bp) * 10); br.setAttribute('width', X(C.bestBet) * 10); br.setAttribute('height', 1000 - Y(bp) * 10); br.setAttribute('opacity', 1);
     const below = !ret.classList.contains('flip-y') && Y(bp) < 80;
-    $('#mb-sn-rb').textContent = 'YOU ' + myBet;
-    chart.insertAdjacentHTML('beforeend', `<div class="sn-best ${below ? 'below' : ''}" style="left:${X(C.bestBet)}%;top:${Y(bp)}%"><i class="dia"></i><span class="lab">BEST ${C.bestBet}</span></div>`);
+    $('#mb-sn-rb').textContent = myBet; $('#mb-sn-rp').textContent = 'あなたの額';
+    chart.insertAdjacentHTML('beforeend', `<div class="sn-best ${below ? 'below' : ''}" style="left:${X(C.bestBet)}%;top:${Y(bp)}%"><i class="dia"></i><span class="lab">最適 ${C.bestBet}</span></div>`);
     api.sfx.tick();
     const pct = Math.round(ratio * 100);
     const correct = ratio >= .9;
@@ -355,5 +355,5 @@
     });
   }
 
-  MB.register({ id: 'sniper', group: 'logic', order: 4, title: '賭け額スナイパー', sub: 'LOGIC · 賭け額', isNew: true, chars: ['selina'], start });
+  MB.register({ id: 'sniper', group: 'logic', order: 4, title: '賭け額スナイパー', sub: '論理 · 賭け額', isNew: true, chars: ['selina'], start });
 })();

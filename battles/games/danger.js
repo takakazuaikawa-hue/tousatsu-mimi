@@ -1,7 +1,7 @@
 // 論理：危険札さがし（セリナ卓）
 // 場札の中から「相手が持っていたら怖い形」を指で見つけ、賭け額の癖と合わせて付いていくか決める。
 MB.register({
-  id: 'danger', group: 'logic', order: 3, title: '危険札さがし', sub: 'LOGIC · 場札',
+  id: 'danger', group: 'logic', order: 3, title: '危険札さがし', sub: '論理 · 場札',
   chars: ['selina'],
   async start({ api }) {
     const T = [
@@ -27,14 +27,15 @@ MB.register({
     api.css('danger', `
       .dg-board .card { cursor: pointer; }
       .dg-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 30px; }
-      .dg-pill { font-size: 13px; padding: 4px 12px; border: 1px solid rgba(255,74,96,.6); background: rgba(200,37,58,.25); }
-      .dg-pill.calm { border-color: rgba(143,227,168,.5); background: rgba(143,227,168,.1); }
+      /* 見つけた形の札：赤い塗りと緑をやめ、黒檀の札に（左に深紅の短冊。「形なし」は金）。大きさは各 CSS（PC は read-pc.css、スマホは read-compact.css） */
+      .dg-pill { font-size: 13px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 2px; background: linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo)); color: var(--text); box-shadow: inset 3px 0 0 var(--crimson); }
+      .dg-pill.calm { border-color: var(--gold); box-shadow: inset 3px 0 0 var(--gold); }
       .dg-radar { position: relative; max-width: 560px; width: 100%; margin: 0 auto; }
-      .dg-bar { position: relative; margin-top: 24px; height: 30px; background: rgba(0,0,0,.45); border: 1px solid var(--faint); }
+      .dg-bar { position: relative; margin-top: 24px; height: 30px; background: rgba(0,0,0,.45); border: 1px solid var(--line-dim); }
       .dg-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #a47a22, var(--gold-hi)); transition: width .9s cubic-bezier(.2,.8,.2,1); }
       .dg-line { position: absolute; top: -8px; bottom: -8px; width: 3px; background: var(--red-hi); box-shadow: 0 0 10px var(--red-hi); left: 0; transition: left .8s ease .2s; }
-      .dg-line span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--red-hi); }
-      .dg-val { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-family: var(--disp); font-size: 20px; }
+      .dg-line span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--gold-hi); }
+      .dg-val { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-family: var(--mincho); font-weight: 800; font-size: 20px; text-shadow: 0 1px 3px #000, 0 0 6px #000; }
     `);
     const root = api.root;
     root.innerHTML = `

@@ -42,8 +42,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Bebas+Neue&family=Shippori+Mincho+B1:wght@600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap">
 <link rel="stylesheet" href="style.css?v=20261016b">
 <link rel="stylesheet" href="battles/core.css?v=20261016b">
+<link rel="stylesheet" href="battles/read-pc.css?v=20261016b">
 <link rel="stylesheet" href="read-compact.css?v=20261016b">
 <link rel="stylesheet" href="ui-modal.css?v=20261016b">
+<link rel="stylesheet" href="allstar.css?v=20261016c">
 <link rel="preload" as="image" href="assets/ui/home/scene.webp" fetchpriority="high">
 </head>
 <body>
@@ -82,12 +84,12 @@
 <!-- 縦持ち警告：スマホ縦画面で表示 -->
 <div id="portrait-warning">
   <div class="portrait-warning-inner">
-    <div class="rotate-icon">📱↻</div>
+    <div class="rotate-icon" aria-hidden="true">↻</div>
     <div class="portrait-message">
       <h2>横向きでプレイしてください</h2>
       <p>このゲームは横向き画面に最適化されています。<br>
       端末を横にしてから「⛶ 全画面で遊ぶ」ボタンを押すと、画面いっぱいに広がります。</p>
-      <p class="portrait-tip">💡 画面回転ロックがオンの場合は解除してください<br>
+      <p class="portrait-tip">画面回転ロックがオンの場合は解除してください<br>
       iPhone は Safari の共有ボタン →「ホーム画面に追加」から起動すると、広い画面で遊べます</p>
     </div>
   </div>
@@ -153,7 +155,8 @@
     <nav class="t3-utils" aria-label="音とシェア">
       <button class="t3-icon" type="button" data-action="share-game" aria-label="シェア" title="シェア"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="17.5" cy="6" r="2.5"/><circle cx="17.5" cy="18" r="2.5"/><path d="M8.2 10.9l7-3.7M8.2 13.1l7 3.7"/></svg></button>
     </nav>
-    <div class="t3-ver">v1.0</div>
+    <!-- 版と権利の表記：game.js の GAME_VERSION / COPYRIGHT_TEXT が applyTitleButtons で同じ値に書き換える（ここは読み込み前の保険） -->
+    <div class="t3-ver">Ver 1.0　© 2026 あいかわ</div>
   </div>
 </template>
 
@@ -248,7 +251,7 @@
     <button class="btn btn-ghost v2-help-btn" data-action="show-hand-guide" type="button" title="役の早見表を見る"><svg class="t8-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="11" height="15" rx="1.5"/><path d="M8.5 20.5h10V8"/></svg>役の一覧</button>
 
     <!-- クリア後の練習用：相手の手札を見る（使っている間の対戦は称号・ランクの記録対象外） -->
-    <button class="backdoor-toggle" data-action="toggle-backdoor" data-bind="backdoorBtn" title="練習用：相手の手札を見る（使っている間の対戦は称号・ランクの記録対象外）">✦</button>
+    <button class="backdoor-toggle" data-action="toggle-backdoor" data-bind="backdoorBtn" title="練習用：相手の手札を見る（使っている間の対戦は称号・ランクの記録対象外）" aria-label="練習用：相手の手札を見る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg></button>
     <div class="backdoor-panel" data-bind="backdoorPanel"></div>
 
     <!-- 相手：卓の向こうに大きく。テルは付箋 -->
@@ -358,7 +361,7 @@
 
     <!-- 右上：ぱにゅぱにゅボタン（モーダル外配置で常時アクセス可能） -->
     <button class="panyu-floating-btn" data-action="use-panyu-sense" data-bind="panyuSenseBtn" type="button">
-      <span class="panyu-floating-icon">💖</span>
+      <span class="panyu-floating-icon">♥</span>
       <span class="panyu-floating-label">ぱにゅぱにゅ</span>
     </button>
 
@@ -489,5 +492,7 @@
 <script src="loader.js?v=20261016b"></script>
 <script src="home.js?v=20261016b"></script>
 <script src="game.js?v=20261016b"></script>
+<script src="allstar.js?v=20261016c"></script>
+<script src="allstar-ui.js?v=20261016c"></script>
 </body>
 </html>

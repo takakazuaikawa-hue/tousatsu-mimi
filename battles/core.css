@@ -1,34 +1,62 @@
 /* ミミの読み合い：心理・論理バトルの共通の見た目（組み込み版）
    すべて .mb-host の下に閉じている。ページ側の CSS を読み込んだ後にこのファイルを読むこと。
-   .mb-host に all: initial をかけて、ページから継承される文字の設定（font・letter-spacing など）を断ち切る。 */
+   .mb-host に all: initial をかけて、ページから継承される文字の設定（font・letter-spacing など）を断ち切る。
+   見た目は「グランドクロック・カジノシアター」の型（黒・深紅・金、しっぽり明朝、角 2px、二重の金線、四隅の金飾り）。
+   値は小窓の型 ui-modal.css と同じ（2026-10-16）。この下の「共通の部品」に遊びごとに使える札・帯・押す札の型がある。
+   PC だけの寸法・文字の大きさは battles/read-pc.css、スマホ横は read-compact.css。 */
 .mb-host {
   all: initial;
-  --ink: #14060a;
-  --ink-2: #2b0e18;
-  --felt-hi: #4a1422;
-  --felt-lo: #16060b;
-  --gold: #d9b35a;
-  --gold-hi: #f5d77a;
-  --gold-pale: #fff3c2;
-  --red: #c8253a;
-  --red-hi: #ff4a60;
-  --pink: #ff9fc2;
-  --text: #f7eecf;
-  --dim: #c4b89a;
-  --faint: rgba(247, 238, 207, 0.14);
+  /* ---- 劇場の型の色（小窓と同じ値） ---- */
+  --ink: #130406;
+  --ink-2: #22090c;
+  --felt-hi: #3e0306;
+  --felt-lo: #130406;
+  --gold: #d9b269;
+  --gold-hi: #efcd82;
+  --gold-pale: #f4e4bd;
+  --red: #7a0e16;
+  --red-hi: #c8253a;            /* 針・ウソ・× だけに使う明るい赤 */
+  --pink: #e3a4a4;              /* ミミの色。緊張メーターと VS の枠だけ。ほかには使わない */
+  --text: #ead9b8;
+  --dim: #b19a74;
+  --faint: rgba(217, 178, 105, 0.18);
   --card: #fffdf3;
   --card-red: #c8253a;
   --card-black: #1a1a1a;
-  --good: #8fe3a8;
-  --bad: #ff8a96;
-  --disp: "Bebas Neue", "Oswald", "Arial Narrow", sans-serif;
+  --good: #efcd82;              /* 当たり・勝ち＝金（緑はやめた） */
+  --bad: #b9b0a2;               /* 外れ・負け＝灰（ピンクはやめた） */
+  /* ---- 部品の色（遊びの係もこの名前で使う） ---- */
+  --ebony-hi: #22090c;          /* 黒檀の札・小窓の面（上） */
+  --ebony-lo: #130406;          /* 同（下） */
+  --panel: #1b0d0b;             /* 内側の情報面・ふつうの押す札 */
+  --panel-2: #170d0b;           /* 段・財布の箱 */
+  --line: #8a5a1e;              /* 外枠の金茶 */
+  --line-dim: #584027;          /* 控えめな線 */
+  --gild: rgba(227, 185, 100, .55); /* 二重線の内側の明るい金 */
+  --band: #3e0306;              /* 見出し帯の深紅 */
+  --sel: #4a1712;               /* 選ばれた面 */
+  --crimson: #7a0e16;           /* 主ボタン（上） */
+  --crimson-lo: #4e0509;        /* 主ボタン（下） */
+  --parch: #e9dcc0;             /* 羊皮紙（1色） */
+  --parch-hi: #ebdcbd;          /* 羊皮紙（上） */
+  --parch-lo: #dcc9a0;          /* 羊皮紙（下） */
+  --parch-rule: #d6c39a;        /* 羊皮紙の罫線 */
+  --parch-ink: #2b1a10;         /* 羊皮紙の上の墨 */
+  --off-bg: #241010;            /* 押せない（disabled）の面 */
+  --off-line: #6e1c24;          /* 同・線 */
+  --off-text: #8d7466;          /* 同・文字 */
+  --metal-n: #b8aa91;           /* ガチャの希少度：N 銀褐 */
+  --metal-r: #b97a47;           /* R 銅 */
+  --metal-sr: #d9b269;          /* SR 金 */
+  --metal-ssr: #f3dfaa;         /* SSR 淡金（＋二重線＋短い光沢） */
+  --disp: "Bebas Neue", "Oswald", "Arial Narrow", sans-serif; /* 24px 以上の数字と叫ぶ言葉だけ */
   --mincho: "Shippori Mincho B1", "Yu Mincho", "Hiragino Mincho ProN", serif;
   --sans: "Noto Sans JP", "Yu Gothic", "Hiragino Sans", sans-serif;
   color-scheme: dark;
   display: flex; flex-direction: column; position: relative; overflow: hidden; isolation: isolate;
   width: 100%; height: 100%; box-sizing: border-box;
   color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.6; font-weight: 400; text-align: left;
-  background: radial-gradient(120% 80% at 50% 0%, #3a0f1b 0%, #1d080e 55%, #0b0306 100%);
+  background: radial-gradient(120% 80% at 50% 0%, #3e0306 0%, #1a0608 55%, #0b0306 100%);
   touch-action: manipulation; -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
 }
 .mb-host *, .mb-host *::before, .mb-host *::after { box-sizing: border-box; }
@@ -46,15 +74,15 @@
 /* カットイン・結果・ルーレット・フィーバー・粒は、舞台が縦に長くても見える窓（host）に固定して出す */
 .mb-host .mb-layer { position: absolute; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; }
 .mb-host .mb-layer > .mb-intro, .mb-host .mb-layer > .mb-result, .mb-host .mb-layer > .mb-roulette { pointer-events: auto; }
-.mb-host .mb-purse { flex: 0 0 auto; align-items: center; padding: 6px 12px; background: rgba(0,0,0,.55); border-bottom: 1px solid rgba(217,179,90,.4); position: relative; z-index: 2; }
+.mb-host .mb-purse { flex: 0 0 auto; align-items: center; padding: 6px 12px; background: linear-gradient(180deg, #1a0709, #0d0304); border-bottom: 1px solid var(--line); position: relative; z-index: 2; }
 .mb-host .mb-purse > div { padding: 3px 12px; }
 .mb-host .mb-purse b { font-size: 20px; line-height: 1.2; }
-.mb-host.is-dev .mb-purse { background: rgba(0,0,0,.4); border: 1px solid rgba(217,179,90,.3); border-bottom: 0; }
+.mb-host.is-dev .mb-purse { background: rgba(19,4,6,.85); border: 1px solid var(--line-dim); border-bottom: 0; }
 
 /* ---------- 本編ページの .btn / .card などが混ざらないための打ち消し ----------
    本編の style.css にも .btn と .card があり、指定されていない項目（角丸・影・余白・文字の太さ…）が漏れてくる。
    ここで「この骨格が想定する素の状態」に戻す。装飾は下の .btn::before や .card の指定が担う。 */
-.mb-host .btn { background: transparent; border-radius: 0; box-shadow: none; letter-spacing: normal; overflow: visible; touch-action: auto; transition: none; user-select: auto; text-shadow: none; filter: none; padding: 12px 26px; font-weight: 900; }
+.mb-host .btn { background: transparent; border-radius: 2px; box-shadow: none; letter-spacing: normal; overflow: visible; touch-action: auto; transition: none; user-select: auto; text-shadow: none; filter: none; padding: 12px 26px; font-weight: 700; }
 .mb-host .btn::after { content: none; }
 .mb-host .btn:hover:not(:disabled), .mb-host .btn:active:not(:disabled) { transform: none; box-shadow: none; filter: none; }
 .mb-host .btn:disabled { filter: none; box-shadow: none; }
@@ -63,34 +91,41 @@
 .mb-host .card.empty, .mb-host .card.highlight { box-shadow: 0 3px 8px rgba(0,0,0,.45); }
 
 .mb-host .mb-purse { display: flex; gap: 8px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
-.mb-host .mb-purse > div { background: rgba(0,0,0,.4); border: 1px solid rgba(217,179,90,.4); padding: 6px 12px; font-size: 12px; color: var(--dim); display: flex; align-items: baseline; gap: 6px; }
+/* 財布の帯：箱は角 2px の黒檀、ラベルは明朝。数字は PC だけ明朝（下の html:not(.is-compact) の行） */
+.mb-host .mb-purse > div { background: var(--panel-2); border: 1px solid var(--line-dim); border-radius: 2px; padding: 6px 12px; font-family: var(--mincho); font-weight: 700; font-size: 12px; color: var(--dim); display: flex; align-items: baseline; gap: 6px; }
 .mb-host .mb-purse b { font-family: var(--disp); font-size: 22px; letter-spacing: .04em; color: var(--gold-hi); font-weight: 400; }
+/* PC は数字も明朝に。スマホ横は左の細い列（小さいスマホで 168px）に3つの箱が並ぶので、幅の広がる明朝の数字にせず Bebas のまま */
+html:not(.is-compact) .mb-host .mb-purse b { font-family: var(--mincho); font-size: 20px; letter-spacing: .02em; font-weight: 700; }
 .mb-host .mb-purse .mb-fever-box { position: relative; min-width: 128px; }
-.mb-host .mb-fever-bar { position: absolute; left: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--pink), var(--gold-hi)); transition: width .4s; }
-.mb-host.is-fever .mb-purse .mb-fever-box { border-color: var(--gold-hi); box-shadow: 0 0 16px rgba(245,215,122,.6); }
+.mb-host .mb-fever-bar { position: absolute; left: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--line), var(--gold-hi)); transition: width .4s; }
+.mb-host.is-fever .mb-purse .mb-fever-box { border-color: var(--gold-hi); box-shadow: 0 0 16px rgba(239,205,130,.5); }
+/* 舞台：小窓と同じ二重の金線（外の 2px の金茶の枠＋内側 5px の暗い隙間＋1px の明るい金線）。
+   四隅の金飾りは PC だけ（下の「PC の舞台の飾り」）。スマホ横は read-compact.css が枠と影を消している */
 .mb-host .mb-stage {
   position: relative; overflow: hidden; min-height: 560px;
-  background: radial-gradient(110% 90% at 50% 25%, var(--felt-hi) 0%, #2a0a13 55%, var(--felt-lo) 100%);
-  border: 2px solid rgba(217,179,90,.55);
-  box-shadow: inset 0 0 0 6px rgba(0,0,0,.35), 0 18px 40px rgba(0,0,0,.55);
+  background: radial-gradient(110% 90% at 50% 25%, var(--felt-hi) 0%, #22090c 55%, var(--felt-lo) 100%);
+  border: 2px solid var(--line); border-radius: 2px;
+  box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px var(--gild), 0 18px 40px rgba(0,0,0,.55);
   padding: 16px clamp(12px, 3vw, 26px) 0; display: flex; flex-direction: column; gap: 12px;
 }
-.mb-host.is-fever .mb-stage { border-color: var(--gold-hi); box-shadow: inset 0 0 0 6px rgba(0,0,0,.35), 0 0 40px rgba(245,215,122,.45); }
-.mb-host.is-fever .mb-stage::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(60% 50% at 50% 0%, rgba(245,215,122,.18), transparent 70%); animation: mb-feverGlow 2s ease-in-out infinite; }
+.mb-host.is-fever .mb-stage { border-color: var(--gold); box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px rgba(239,205,130,.95), 0 0 40px rgba(239,205,130,.4); }
+.mb-host.is-fever .mb-stage::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(60% 50% at 50% 0%, rgba(239,205,130,.16), transparent 70%); animation: mb-feverGlow 2s ease-in-out infinite; }
 @keyframes mb-feverGlow { 50% { opacity: .5; } }
 .mb-host .mb-opp-row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; position: relative; z-index: 1; }
-.mb-host .mb-facewin { display: inline-block; width: 58px; height: 72px; transform: skewX(-12deg); overflow: hidden; border: 2px solid var(--gold); background: #2b0e18; box-shadow: 0 6px 14px rgba(0,0,0,.5); flex: 0 0 auto; }
+.mb-host .mb-facewin { display: inline-block; width: 58px; height: 72px; transform: skewX(-12deg); overflow: hidden; border: 2px solid var(--gold); background: #22090c; box-shadow: 0 6px 14px rgba(0,0,0,.5); flex: 0 0 auto; }
 .mb-host .mb-facewin img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; transform: skewX(12deg) scale(1.3); }
-.mb-host .mb-opp-name { font-family: var(--disp); letter-spacing: .14em; color: var(--gold); font-size: 15px; line-height: 1; }
-.mb-host .mb-speech { margin-top: 4px; display: inline-block; padding: 6px 14px; font-weight: 700; font-size: 15px; background: linear-gradient(90deg, rgba(200,37,58,.85), rgba(60,10,20,.9)); transform: skewX(-8deg); max-width: 100%; }
+/* 名札：英語の名前は残し、明朝の小さな金文字に */
+.mb-host .mb-opp-name { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--gold); font-size: 13px; line-height: 1.2; }
+/* 台詞の短冊：押せない物なので斜めのまま。深紅＋左に金の細線（線は内側の影で描き、幅を変えない） */
+.mb-host .mb-speech { margin-top: 4px; display: inline-block; padding: 6px 14px; font-family: var(--mincho); font-weight: 700; font-size: 15px; color: var(--gold-pale); background: linear-gradient(90deg, var(--crimson), rgba(34,9,12,.92)); box-shadow: inset 3px 0 0 var(--gold); transform: skewX(-8deg); max-width: 100%; }
 .mb-host .mb-speech > span { display: inline-block; transform: skewX(8deg); }
 .mb-host .mb-betchip { text-align: right; font-variant-numeric: tabular-nums; }
-.mb-host .mb-betchip .lbl { font-family: var(--disp); letter-spacing: .14em; color: var(--dim); font-size: 13px; }
+.mb-host .mb-betchip .lbl { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--dim); font-size: 13px; }
 .mb-host .mb-betchip .num { font-family: var(--disp); font-size: 32px; line-height: 1; color: var(--gold-hi); }
 .mb-host .mb-game-root { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; min-height: 360px; }
-.mb-host .mb-coach { position: relative; z-index: 1; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; padding: 10px 14px; background: rgba(0,0,0,.55); border-top: 1px solid rgba(217,179,90,.45); margin: auto calc(-1 * clamp(12px, 3vw, 26px)) 0; }
+.mb-host .mb-coach { position: relative; z-index: 1; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; padding: 10px 14px; background: rgba(19,4,6,.84); border-top: 1px solid var(--line); margin: auto calc(-1 * clamp(12px, 3vw, 26px)) 0; }
 .mb-host .mb-portrait { position: relative; flex: 0 0 auto; display: block; }
-.mb-host .mb-portrait.is-face { width: 112px; height: 140px; transform: skewX(-12deg); overflow: hidden; border: 3px solid var(--gold); background: linear-gradient(180deg, #5a1424, #1c060c); box-shadow: 0 10px 22px rgba(0,0,0,.6); }
+.mb-host .mb-portrait.is-face { width: 112px; height: 140px; transform: skewX(-12deg); overflow: hidden; border: 3px solid var(--gold); background: linear-gradient(180deg, #3e0306, #130406); box-shadow: 0 10px 22px rgba(0,0,0,.6); }
 .mb-host .mb-portrait.is-face img { position: absolute; left: -18px; top: -4px; width: 148px; height: 185px; object-fit: cover; transform: skewX(12deg); }
 .mb-host .mb-portrait.is-face::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255,255,255,.3), transparent 35%); mix-blend-mode: soft-light; pointer-events: none; }
 .mb-host .mb-portrait.is-face.swap { animation: mb-faceIn .3s cubic-bezier(.2,1.4,.4,1); }
@@ -126,29 +161,40 @@
 .mb-host .mb-coach-pop[data-e="panic"] img { animation: mb-chJitter .28s linear 4; }
 .mb-host .mb-coach-pop.is-face { width: 52px; height: 64px; bottom: 8px; transform: skewX(-12deg); overflow: hidden; border: 2px solid var(--gold); }
 .mb-host .mb-coach-pop.is-face img { width: 100%; height: 100%; object-fit: cover; transform: skewX(12deg) scale(1.2); }
-.mb-host .mb-coach-name { font-family: var(--disp); letter-spacing: .14em; color: var(--gold); font-size: 12px; line-height: 1; }
+.mb-host .mb-coach-name { font-family: var(--mincho); font-weight: 700; letter-spacing: normal; color: var(--gold); font-size: 12px; line-height: 1.2; }
 .mb-host .mb-coach-line { font-weight: 700; font-size: 15px; min-height: 1.6em; }
 .mb-host .prompt { font-family: var(--mincho); font-weight: 800; font-size: clamp(17px, 2.6vw, 21px); text-align: center; text-wrap: balance; margin: 0; }
 .mb-host .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
-.mb-host .zone-label { font-family: var(--disp); letter-spacing: .18em; color: var(--dim); font-size: 12px; text-align: center; }
+/* 場所の名前（手札・場札など）：明朝の小さな金文字 */
+.mb-host .zone-label { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--gold); font-size: 12px; text-align: center; }
+/* 段（手順）：小窓の段と同じ。今の段は深紅の面＋下に金の線（高さは変えない） */
 .mb-host .steps { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
-.mb-host .step { font-size: 12px; padding: 3px 12px; color: var(--dim); border: 1px solid var(--faint); background: rgba(0,0,0,.25); }
-.mb-host .step.on { color: #fff; border-color: var(--gold); background: rgba(200,37,58,.55); }
-.mb-host .step.done { color: var(--gold); border-color: rgba(217,179,90,.45); }
+.mb-host .step { font-family: var(--mincho); font-weight: 700; font-size: 12px; padding: 3px 12px; color: #c9b89b; border: 1px solid var(--line-dim); border-radius: 2px; background: var(--panel-2); }
+.mb-host .step.on { color: #f1d69e; border-color: var(--line); border-bottom-color: #d7b370; background: var(--sel); box-shadow: inset 0 -1px 0 #d7b370; }
+.mb-host .step.done { color: var(--gold); border-color: var(--line-dim); }
 .mb-host .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
-.mb-host .btn { position: relative; border: 0; cursor: pointer; font-weight: 900; color: #fff; padding: 12px 26px; min-width: 150px; min-height: 52px; isolation: isolate; font-size: 16px; }
-.mb-host .btn::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); background: linear-gradient(90deg, var(--red), #8a1427); border: 1px solid var(--gold); box-shadow: 0 6px 16px rgba(0,0,0,.45); }
-.mb-host .btn small { display: block; font-weight: 400; font-size: 12px; color: rgba(255,255,255,.85); }
+/* 押すもの（四角）：角 2px・金の線。面は ::before が描く（遊び側の .btn.xxx::before の飾りもそのまま効く）。
+   主＝深紅に金文字／.gold＝金に黒文字／.quiet＝黒檀に金文字／.ghost＝線だけ。斜め（skew）は押せない物だけに使う */
+.mb-host .btn { position: relative; border: 0; cursor: pointer; font-family: var(--mincho); font-weight: 700; color: #f0d08a; padding: 12px 26px; min-width: 150px; min-height: 52px; isolation: isolate; font-size: 16px; }
+.mb-host .btn::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: none; border-radius: 2px; background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); border: 1px solid var(--gold); box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+.mb-host .btn small { display: block; font-family: var(--sans); font-weight: 400; font-size: 12px; letter-spacing: normal; color: #dcc7a2; }
 .mb-host .btn.gold { color: #1d080e; }
-.mb-host .btn.gold::before { background: linear-gradient(90deg, var(--gold-hi), var(--gold)); border-color: #fff3c2; }
-.mb-host .btn.gold small { color: rgba(29,8,14,.8); }
-.mb-host .btn.quiet { color: var(--text); }
-.mb-host .btn.quiet::before { background: rgba(0,0,0,.5); border-color: rgba(217,179,90,.5); }
+.mb-host .btn.gold::before { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: var(--crimson); }
+.mb-host .btn.gold small { color: rgba(29,8,14,.78); }
+.mb-host .btn.quiet { color: var(--gold); }
+.mb-host .btn.quiet::before { background: var(--panel); border-color: var(--line); }
+.mb-host .btn.quiet small { color: var(--dim); }
 .mb-host .btn.ghost { min-width: 0; min-height: 40px; padding: 6px 16px; font-size: 13px; font-weight: 700; color: var(--dim); }
-.mb-host .btn.ghost::before { background: transparent; border-color: var(--faint); box-shadow: none; }
-.mb-host .btn:hover::before { filter: brightness(1.15); }
-.mb-host .btn:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
-.mb-host .btn[disabled] { opacity: .4; cursor: default; }
+.mb-host .btn.ghost::before { background: transparent; border-color: var(--line-dim); box-shadow: none; }
+/* hover：金の線を明るく、面を少しだけ明るく（ふくらませない・光らせない） */
+.mb-host .btn:hover:not(:disabled)::before { border-color: var(--gold-hi); box-shadow: inset 0 0 0 1px rgba(227,185,100,.25), 0 4px 12px rgba(0,0,0,.4); filter: brightness(1.12); }
+.mb-host .btn.ghost:hover:not(:disabled) { color: var(--gold); }
+.mb-host .btn:active:not(:disabled) { transform: translateY(1px); }
+.mb-host .btn:focus-visible { outline: 2px solid #f3d58e; outline-offset: 3px; }
+/* 押せない：opacity で薄めず、暗い型に（小窓の disabled と同じ） */
+.mb-host .btn[disabled] { opacity: 1; cursor: default; color: var(--off-text); }
+.mb-host .btn[disabled]::before { background: var(--off-bg); border-color: var(--off-line); box-shadow: none; filter: none; }
+.mb-host .btn[disabled] small { color: var(--off-text); }
 .mb-host .formula { text-align: center; color: var(--dim); font-size: 13px; font-variant-numeric: tabular-nums; }
 .mb-host .formula b { color: var(--text); }
 .mb-host .verdict { text-align: center; font-family: var(--mincho); font-weight: 800; font-size: 19px; }
@@ -192,9 +238,9 @@
 .mb-host .mb-vs-win { position: absolute; top: 5%; width: 41%; height: 56%; animation: mb-slideL .45s cubic-bezier(.2,1.2,.3,1) both; }
 .mb-host .mb-vs-win.me { left: 5%; }
 .mb-host .mb-vs-win.opp { right: 5%; top: 9%; animation-name: mb-slideR; animation-delay: .08s; }
-.mb-host .mb-vs-pic { position: absolute; inset: 0; overflow: hidden; transform: skewX(-12deg); background: #2a0a12;
+.mb-host .mb-vs-pic { position: absolute; inset: 0; overflow: hidden; transform: skewX(-12deg); background: #22090c;
   border: 3px solid var(--gold-hi); box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 14px 40px rgba(0,0,0,.75), inset 0 0 40px rgba(0,0,0,.35); }
-.mb-host .mb-vs-win.me .mb-vs-pic { border-color: #ff8a9a; }
+.mb-host .mb-vs-win.me .mb-vs-pic { border-color: var(--pink); }
 .mb-host .mb-vs-pic img, .mb-host .mb-vs-pic video { position: absolute; left: -14%; top: 0; width: 128%; height: 100%; object-fit: cover; object-position: 50% 30%; transform: skewX(12deg); display: block; }
 .mb-host .mb-vs-pic video { opacity: 0; transition: opacity .12s; }
 .mb-host .mb-vs-pic video.is-playing { opacity: 1; }
@@ -209,12 +255,18 @@
 @keyframes mb-vsSlam { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-8deg) scale(3.2); } 60% { opacity: 1; } 100% { transform: translate(-50%, -50%) rotate(-8deg) scale(1); } }
 .mb-host .mb-vs-flash { position: absolute; left: 50%; top: 36%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 6px solid var(--gold-hi); box-shadow: 0 0 30px rgba(245,215,122,.9), inset 0 0 30px rgba(255,255,255,.6); opacity: 0; animation: mb-vsRing .55s .5s ease-out both; z-index: 1; pointer-events: none; }
 @keyframes mb-vsRing { 0% { opacity: 1; transform: scale(.3); } 100% { opacity: 0; transform: scale(4.2); border-width: 1px; } }
-.mb-host .mb-intro-slab { position: absolute; left: -10%; right: -10%; top: 75%; height: 112px; transform: skewY(-4deg); background: linear-gradient(90deg, #7d1022, var(--red) 40%, #7d1022); border-block: 3px solid var(--gold-hi); animation: mb-slab .45s .2s cubic-bezier(.2,1.2,.3,1) both; }
-.mb-host .mb-intro.is-logic .mb-intro-slab { background: linear-gradient(90deg, #0f2a44, #1f5f8a 40%, #0f2a44); }
-.mb-host .mb-intro.is-logic .mb-vs-win.opp .mb-vs-pic { border-color: #7fc4f0; }
+.mb-host .mb-intro-slab { position: absolute; left: -10%; right: -10%; top: 75%; height: 112px; transform: skewY(-4deg); background: linear-gradient(90deg, var(--crimson-lo), #8e1420 42%, var(--crimson-lo)); border-block: 3px solid var(--gold-hi); animation: mb-slab .45s .2s cubic-bezier(.2,1.2,.3,1) both; }
+/* 論理：青をやめ、黒檀に金の線（心理＝熱い深紅、論理＝冷たい黒と金） */
+.mb-host .mb-intro.is-logic .mb-intro-slab { background: linear-gradient(90deg, #0c0606, #2a1c10 42%, #0c0606); border-block-color: var(--gold); box-shadow: inset 0 6px 0 -4px rgba(239,205,130,.55), inset 0 -6px 0 -4px rgba(239,205,130,.55); }
+.mb-host .mb-intro.is-logic .mb-vs-win.opp .mb-vs-pic { border-color: var(--gold-hi); }
 @keyframes mb-slab { from { transform: skewY(-4deg) translateX(-110%); } }
 .mb-host .mb-intro-word { position: absolute; left: 0; right: 0; top: calc(75% + 10px); text-align: center; font-family: var(--disp); font-size: clamp(48px, 9vw, 92px); line-height: 1; letter-spacing: .06em; color: #fff; text-shadow: 0 4px 0 rgba(0,0,0,.4), 0 0 30px rgba(255,255,255,.4); transform: skewY(-4deg); animation: mb-word .5s .35s cubic-bezier(.2,1.4,.3,1) both; }
-.mb-host .mb-intro-word small { display: block; font-family: var(--mincho); font-size: 18px; letter-spacing: .3em; color: var(--gold-pale); }
+.mb-host .mb-intro-word small { display: block; font-family: var(--mincho); font-size: 18px; letter-spacing: .3em; color: var(--gold-pale); text-shadow: 0 2px 0 rgba(0,0,0,.45); }
+/* 「PSYCH BATTLE / LOGIC BATTLE」は core.js の文字。英語は叫ぶ言葉だけにするので、文字を透明にして
+   同じ行に明朝の「心理バトル／論理バトル」を重ねる（大きさは元の行の em に合わせるので、スマホ横の 64px 指定もそのまま効く） */
+.mb-host .mb-intro-word { color: transparent; text-shadow: none; }
+.mb-host .mb-intro-word::before { content: "心理バトル"; position: absolute; left: 0; right: 0; top: 0; font-family: var(--mincho); font-weight: 800; font-size: .78em; line-height: 1.282; letter-spacing: .14em; padding-left: .14em; color: var(--gold-pale); text-shadow: 0 4px 0 rgba(0,0,0,.45), 0 0 26px rgba(239,205,130,.4); pointer-events: none; }
+.mb-host .mb-intro.is-logic .mb-intro-word::before { content: "論理バトル"; }
 @keyframes mb-word { from { opacity: 0; transform: skewY(-4deg) scale(2.2); } }
 @keyframes mb-slideR { from { transform: translateX(70%); opacity: 0; } }
 @keyframes mb-slideL { from { transform: translateX(-70%); opacity: 0; } }
@@ -224,29 +276,38 @@
   .mb-host .mb-intro-vs { top: 34%; }
   .mb-host .mb-intro-slab { top: 64%; height: 96px; } .mb-host .mb-intro-word { top: calc(64% + 12px); }
 }
-.mb-host .mb-wager { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px; background: rgba(0,0,0,.45); border: 1px solid rgba(217,179,90,.45); }
-.mb-host .mb-wager-q { font-family: var(--mincho); font-weight: 800; font-size: 18px; }
+/* 賭けの札（遊びの中に置く時）：内側の情報面。重ねて出す時は下の .mb-wager-ov で小窓の型になる */
+.mb-host .mb-wager { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 2px; }
+.mb-host .mb-wager-q { font-family: var(--mincho); font-weight: 800; font-size: 18px; color: var(--gold-hi); letter-spacing: .04em; }
 .mb-host .mb-wager-chips { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
-.mb-host .mb-wchip { position: relative; width: 96px; height: 96px; border-radius: 50%; border: 0; cursor: pointer; color: #fff; display: grid; place-items: center; font-weight: 900;
-  background: radial-gradient(circle at 50% 45%, #c8253a 0 42%, #fff 42% 46%, #8a1427 46% 100%); box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 0 0 4px rgba(255,255,255,.2); transition: transform .15s; }
+/* 賭けのチップ：カジノのチップなので丸いまま。縁は白をやめて象牙、面は深紅・黒檀・金 */
+.mb-host .mb-wchip { position: relative; width: 96px; height: 96px; border-radius: 50%; border: 0; cursor: pointer; color: var(--gold-pale); display: grid; place-items: center; font-family: var(--mincho); font-weight: 700;
+  background: radial-gradient(circle at 50% 45%, var(--crimson) 0 42%, var(--parch) 42% 46%, var(--crimson-lo) 46% 100%); box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 0 0 3px rgba(217,178,105,.6); transition: transform .15s; }
 .mb-host .mb-wchip:hover { transform: translateY(-4px) rotate(-6deg); }
+.mb-host .mb-wchip:focus-visible { outline: 2px solid #f3d58e; outline-offset: 3px; }
 .mb-host .mb-wchip span { display: block; font-size: 13px; line-height: 1.2; text-align: center; }
 .mb-host .mb-wchip b { font-family: var(--disp); font-size: 30px; font-weight: 400; line-height: 1; display: block; }
-.mb-host .mb-wchip.x2 { background: radial-gradient(circle at 50% 45%, #2a2a2a 0 42%, #fff 42% 46%, #111 46% 100%); }
-.mb-host .mb-wchip.x3 { background: radial-gradient(circle at 50% 45%, #f5d77a 0 42%, #fff 42% 46%, #b8860b 46% 100%); color: #1d080e; animation: mb-chipShine 1.2s ease-in-out infinite; }
-@keyframes mb-chipShine { 50% { box-shadow: 0 0 26px rgba(245,215,122,.9), inset 0 0 0 4px rgba(255,255,255,.35); } }
+.mb-host .mb-wchip.x2 { background: radial-gradient(circle at 50% 45%, var(--panel) 0 42%, var(--parch) 42% 46%, #0c0606 46% 100%); }
+.mb-host .mb-wchip.x3 { background: radial-gradient(circle at 50% 45%, var(--gold-hi) 0 42%, #fff6dc 42% 46%, #a8803e 46% 100%); color: #1d080e; box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 0 0 3px rgba(122,14,22,.55); animation: mb-chipShine 1.2s ease-in-out infinite; }
+@keyframes mb-chipShine { 50% { box-shadow: 0 0 26px rgba(239,205,130,.8), inset 0 0 0 3px rgba(122,14,22,.55); } }
 .mb-host .mb-wager-note { font-size: 12px; color: var(--dim); }
 .mb-host .mb-result { position: absolute; inset: 0; z-index: 15; display: grid; place-items: center; background: rgba(8,2,4,.78); animation: mb-fadeIn .25s; }
 @keyframes mb-fadeIn { from { opacity: 0; } }
+/* 結果の札：小窓の型（金茶の 2px の枠＋二重線＋四隅の金飾り 28px） */
 .mb-host .mb-result-card { position: relative; width: min(640px, 92%); padding: 20px 22px 18px; display: grid; grid-template-columns: 170px 1fr; gap: 16px; align-items: center;
-  background: linear-gradient(180deg, rgba(80,20,34,.97), rgba(24,7,12,.98)); border: 2px solid var(--gold); box-shadow: 0 20px 50px rgba(0,0,0,.7); }
+  background: url("../assets/ui/modal_corner_tl.webp") left top / 28px 28px no-repeat, url("../assets/ui/modal_corner_tr.webp") right top / 28px 28px no-repeat,
+    url("../assets/ui/modal_corner_bl.webp") left bottom / 28px 28px no-repeat, url("../assets/ui/modal_corner_br.webp") right bottom / 28px 28px no-repeat,
+    linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo));
+  border: 2px solid var(--line); border-radius: 2px;
+  box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px var(--gild), 0 24px 64px rgba(0,0,0,.65); }
 .mb-host .mb-result-art { position: relative; height: 170px; overflow: hidden; }
 .mb-host .mb-result-art img { position: absolute; left: 50%; top: 0; height: 190px; transform: translateX(-50%); }
 .mb-host .mb-result-stamp { font-family: var(--mincho); font-weight: 800; font-size: clamp(30px, 6vw, 44px); line-height: 1.1; }
-.mb-host .mb-result.good .mb-result-stamp { color: var(--gold-hi); text-shadow: 0 0 18px rgba(245,215,122,.6); }
+.mb-host .mb-result.good .mb-result-stamp { color: var(--gold-hi); text-shadow: 0 0 18px rgba(239,205,130,.5); }
 .mb-host .mb-result.bad .mb-result-stamp { color: var(--bad); }
-.mb-host .mb-result.perfect .mb-result-card { border-color: #fff; box-shadow: 0 0 50px rgba(255,255,255,.35), 0 20px 50px rgba(0,0,0,.7); }
-.mb-host .mb-result.perfect .mb-result-stamp { background: linear-gradient(90deg, #ff9fc2, #f5d77a, #8fe3a8, #9fd0ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* PERFECT：虹をやめ、金↔白の光沢 */
+.mb-host .mb-result.perfect .mb-result-card { border-color: var(--gold-hi); box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px rgba(239,205,130,.9), 0 0 46px rgba(239,205,130,.3), 0 24px 64px rgba(0,0,0,.65); }
+.mb-host .mb-result.perfect .mb-result-stamp { background: linear-gradient(100deg, #c99a4a 0%, var(--gold-pale) 24%, #fffaf0 36%, var(--gold-hi) 54%, #fff6dc 72%, var(--gold) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
 .mb-host .mb-result-detail { font-size: 14px; color: var(--text); margin-top: 6px; }
 .mb-host .mb-result-gain { font-family: var(--disp); font-size: 40px; line-height: 1; margin-top: 8px; font-variant-numeric: tabular-nums; }
 .mb-host .mb-result.good .mb-result-gain { color: var(--gold-hi); }
@@ -256,23 +317,29 @@
 .mb-host .mb-tally { margin-top: 10px; display: grid; gap: 6px; }
 .mb-host .mb-tally-h { font-size: 12px; font-weight: 700; color: var(--dim); }
 .mb-host .mb-tally-dots { display: grid; grid-template-columns: repeat(25, 1fr); gap: 3px; max-width: 360px; }
-.mb-host .mb-tally-dots i { aspect-ratio: 1; border-radius: 50%; background: rgba(255,255,255,.08); animation: mb-dotIn .25s ease both; animation-delay: var(--d); }
-.mb-host .mb-tally-dots i.w { background: var(--gold-hi); box-shadow: 0 0 5px rgba(245,215,122,.55); }
-.mb-host .mb-tally-dots i.l { background: rgba(255,138,150,.5); }
+.mb-host .mb-tally-dots i { aspect-ratio: 1; border-radius: 1px; background: rgba(217,178,105,.1); animation: mb-dotIn .25s ease both; animation-delay: var(--d); }
+.mb-host .mb-tally-dots i.w { background: var(--gold-hi); box-shadow: 0 0 5px rgba(239,205,130,.5); }
+.mb-host .mb-tally-dots i.l { background: rgba(200,37,58,.55); }
 @keyframes mb-dotIn { from { transform: scale(0); opacity: 0; } }
 .mb-host .mb-tally-sum { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; font-variant-numeric: tabular-nums; }
-.mb-host .mb-tally-sum span { padding: 1px 8px; }
+.mb-host .mb-tally-sum span { padding: 1px 8px; border-radius: 2px; }
 .mb-host .mb-tally-sum .mine { outline: 1px solid var(--gold); }
-.mb-host .mb-tally-sum b { font-family: var(--disp); font-size: 20px; font-weight: 400; margin-left: 4px; color: var(--dim); }
+.mb-host .mb-tally-sum b { font-family: var(--mincho); font-size: 16px; font-weight: 700; margin-left: 4px; color: var(--dim); }
 .mb-host .mb-tally-sum b.pos { color: var(--good); }
 .mb-host .mb-tally-sum b.neg { color: var(--bad); }
-.mb-host .mb-combo-pop { position: absolute; top: 12px; right: 14px; font-family: var(--disp); font-size: 22px; letter-spacing: .06em; color: var(--pink); }
+/* コンボ：ピンクをやめ、金↔白の光沢文字 */
+.mb-host .mb-combo-pop { position: absolute; top: 12px; right: 14px; font-family: var(--disp); font-size: 22px; letter-spacing: .06em; color: transparent; background: linear-gradient(90deg, var(--gold), #fff6dc 50%, var(--gold)); -webkit-background-clip: text; background-clip: text; }
 .mb-host .mb-fever-banner { position: absolute; left: 0; right: 0; top: 30%; z-index: 25; text-align: center; font-family: var(--disp); font-size: clamp(54px, 10vw, 96px); color: var(--gold-hi); text-shadow: 0 0 30px rgba(245,215,122,.9); pointer-events: none; animation: mb-feverIn 1.6s ease forwards; }
 .mb-host .mb-fever-banner small { display: block; font-family: var(--mincho); font-size: 18px; color: #fff; letter-spacing: .2em; }
 @keyframes mb-feverIn { 0% { opacity: 0; transform: scale(2.4) rotate(-6deg); } 20% { opacity: 1; transform: scale(1) rotate(-6deg); } 80% { opacity: 1; } 100% { opacity: 0; transform: scale(1.1) rotate(-6deg); } }
 .mb-host .mb-roulette { position: absolute; inset: 0; z-index: 22; display: grid; place-items: center; background: rgba(8,2,4,.72); animation: mb-fadeIn .2s; }
+/* ルーレット：小窓の型を金を強めにした札（深紅の面＋二重線＋四隅の金飾り） */
 .mb-host .mb-rl-card { width: min(680px, 94%); padding: 18px 0 20px; display: grid; gap: 14px; text-align: center;
-  background: linear-gradient(180deg, #5a1424, #1c060c); border: 3px solid var(--gold-hi); box-shadow: 0 0 60px rgba(245,215,122,.45), 0 20px 50px rgba(0,0,0,.7); }
+  background: url("../assets/ui/modal_corner_tl.webp") left top / 36px 36px no-repeat, url("../assets/ui/modal_corner_tr.webp") right top / 36px 36px no-repeat,
+    url("../assets/ui/modal_corner_bl.webp") left bottom / 36px 36px no-repeat, url("../assets/ui/modal_corner_br.webp") right bottom / 36px 36px no-repeat,
+    linear-gradient(180deg, #3e0306, var(--ebony-lo));
+  border: 3px solid var(--gold-hi); border-radius: 2px;
+  box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px rgba(239,205,130,.7), 0 0 60px rgba(239,205,130,.35), 0 20px 50px rgba(0,0,0,.7); }
 .mb-host .mb-rl-title { font-family: var(--disp); font-size: clamp(40px, 7vw, 64px); line-height: 1; color: var(--gold-hi); letter-spacing: .04em; text-shadow: 0 0 24px rgba(245,215,122,.8); }
 .mb-host .mb-rl-title small { display: block; margin-top: 6px; font-family: var(--sans); font-size: 13px; font-weight: 700; letter-spacing: 0; color: var(--text); text-shadow: none; }
 .mb-host .mb-rl-window { position: relative; height: 96px; overflow: hidden; background: #0b0205; border-block: 3px solid var(--gold); box-shadow: inset 0 0 36px rgba(0,0,0,.95); }
@@ -282,7 +349,7 @@
 .mb-host .mb-rl-cell.v3 { color: var(--gold-hi); }
 .mb-host .mb-rl-cell.v5 { color: #fff; background: linear-gradient(180deg, rgba(200,37,58,.5), rgba(200,37,58,.2)); }
 .mb-host .mb-rl-cell.v10 { color: #1b0508; background: linear-gradient(180deg, #fff3c2, #d9b35a); font-size: 40px; }
-.mb-host .mb-rl-cell.hit { outline: 4px solid #fff; outline-offset: -4px; animation: mb-rlHit .6s ease 2; }
+.mb-host .mb-rl-cell.hit { outline: 4px solid #fff6dc; outline-offset: -4px; animation: mb-rlHit .6s ease 2; }
 @keyframes mb-rlHit { 50% { transform: scale(1.12); } }
 .mb-host .mb-rl-mark { position: absolute; left: 50%; top: 0; bottom: 0; width: 88px; margin-left: -44px; border: 3px solid #fff3c2; box-shadow: 0 0 22px rgba(255,243,194,.8); pointer-events: none; }
 .mb-host .mb-rl-mark::before,
@@ -294,7 +361,8 @@
 .mb-host .mb-rl-gain { font-family: var(--disp); font-size: 42px; line-height: 1; color: var(--gold-hi); }
 .mb-host .mb-rl-gain.big { font-size: 56px; text-shadow: 0 0 26px rgba(245,215,122,.9); }
 .mb-host .mb-rl-gain small { font-family: var(--sans); font-size: 14px; color: var(--dim); }
-.mb-host .mb-rl-tease { font-size: 14px; font-weight: 700; color: var(--pink); }
+/* 惜しい！の一言：ピンクをやめ、金↔白の光沢文字 */
+.mb-host .mb-rl-tease { font-size: 14px; font-weight: 700; color: transparent; background: linear-gradient(90deg, var(--gold-hi), #fffaf0 50%, var(--gold-hi)); -webkit-background-clip: text; background-clip: text; }
 .mb-host .mb-sparkle { position: absolute; width: 8px; height: 8px; background: var(--gold-hi); transform: rotate(45deg); pointer-events: none; animation: mb-spark .9s ease-out forwards; z-index: 30; }
 @keyframes mb-spark { to { transform: translate(var(--dx), var(--dy)) rotate(225deg) scale(.2); opacity: 0; } }
 @media (max-width: 560px) {
@@ -345,8 +413,8 @@
   animation: mb-fvRays 2.2s ease-out forwards; will-change: transform, opacity; }
 @keyframes mb-fvRays { 0% { opacity: 0; transform: rotate(0) scale(.6); } 15% { opacity: 1; } 75% { opacity: .9; } 100% { opacity: 0; transform: rotate(40deg) scale(1.05); } }
 .mb-host .mb-fv-slab { position: relative; padding: 14px 70px 18px; transform: skewX(-12deg); text-align: center;
-  background: linear-gradient(90deg, #7d1022, var(--red) 30%, #e8465a 50%, var(--red) 70%, #7d1022); border-block: 3px solid var(--gold-hi);
-  box-shadow: 0 0 50px rgba(245,215,122,.55), 0 18px 40px rgba(0,0,0,.6); animation: mb-fvSlab 2.2s cubic-bezier(.2,1.3,.3,1) forwards; }
+  background: linear-gradient(90deg, var(--crimson-lo), var(--crimson) 30%, #a8182a 50%, var(--crimson) 70%, var(--crimson-lo)); border-block: 3px solid var(--gold-hi);
+  box-shadow: 0 0 50px rgba(239,205,130,.5), 0 18px 40px rgba(0,0,0,.6); animation: mb-fvSlab 2.2s cubic-bezier(.2,1.3,.3,1) forwards; }
 .mb-host .mb-fv-slab > * { transform: skewX(12deg); }
 .mb-host .mb-fv-slab b { display: block; font-family: var(--disp); font-weight: 400; font-size: clamp(54px, 10vw, 104px); line-height: 1; color: #fff8dc; letter-spacing: .05em; text-shadow: 0 4px 0 #6b0a18, 0 0 26px rgba(255,233,168,.9); }
 .mb-host .mb-fv-slab small { display: block; margin-top: 4px; font-family: var(--mincho); font-size: 18px; font-weight: 800; color: #fff; letter-spacing: .2em; }
@@ -373,9 +441,9 @@
 .mb-host .mb-rl-card.is-big { animation: mb-rlShake .5s ease 1; }
 .mb-host .mb-rl-card.is-jackpot { animation: mb-rlShake .5s ease 2; }
 @keyframes mb-rlShake { 20% { transform: translate(-6px, 2px); } 40% { transform: translate(5px, -3px); } 60% { transform: translate(-4px, 1px); } 80% { transform: translate(3px, -1px); } }
-.mb-host .mb-rl-card.is-jackpot::after { content: "JACKPOT!"; position: absolute; left: 50%; top: -34px; transform: translateX(-50%) skewX(-12deg); padding: 2px 22px; font-family: var(--disp); font-size: 32px; color: #1b0508; background: linear-gradient(90deg, #d9b35a, #fff3c2, #d9b35a); border: 2px solid #fff; animation: mb-pop .4s both; }
-/* 惜しい：赤い閃き */
-.mb-host .mb-rl-card.is-tease::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 50%, rgba(255,60,90,.55), transparent 70%); opacity: 0; animation: mb-rlTease .9s ease-out 1; }
+.mb-host .mb-rl-card.is-jackpot::after { content: "JACKPOT!"; position: absolute; left: 50%; top: -34px; transform: translateX(-50%) skewX(-12deg); padding: 2px 22px; font-family: var(--disp); font-size: 32px; color: #1b0508; background: linear-gradient(90deg, var(--gold), #fff6dc, var(--gold)); border: 2px solid var(--gold-pale); animation: mb-pop .4s both; }
+/* 惜しい：深紅の閃き */
+.mb-host .mb-rl-card.is-tease::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 50%, rgba(200,37,58,.5), transparent 70%); opacity: 0; animation: mb-rlTease .9s ease-out 1; }
 @keyframes mb-rlTease { 20% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .mb-host .mb-fv-rays, .mb-host .mb-rl-bulbs, .mb-host .mb-lamps i.on::after { animation: none; } }
 
@@ -389,21 +457,28 @@
 .mb-host .mb-portrait.is-face { width: 84px; height: 104px; }
 .mb-host .mb-portrait.is-face img { left: -14px; top: -3px; width: 112px; height: 140px; }
 .mb-host .mb-portrait.is-chibi { width: 96px; height: 108px; margin-block: -6px -2px; }
-.mb-host .mb-opp-row .mb-coach { margin: 0; align-self: center; min-height: 0; padding: 8px 12px 8px 78px; border: 1px solid rgba(217,179,90,.45); border-top-color: rgba(217,179,90,.45); background: rgba(0,0,0,.5); }
+.mb-host .mb-opp-row .mb-coach { margin: 0; align-self: center; min-height: 0; padding: 8px 12px 8px 78px; border: 1px solid var(--line-dim); border-top-color: var(--line-dim); border-radius: 2px; background: rgba(19,4,6,.84); box-shadow: inset 0 0 0 1px rgba(227,185,100,.08); }
 .mb-host .mb-opp-row .mb-coach-pop { left: 4px; bottom: 0; width: 66px; height: 80px; }
 .mb-host .mb-opp-row .mb-coach-line { font-size: 14px; line-height: 1.45; min-height: 0; }
 .mb-host .mb-game-root { min-height: 0; padding-bottom: 0; }
 /* 賭けの札（重ねて出す） */
 .mb-host .mb-layer > .mb-wager-ov { pointer-events: auto; }
 .mb-host .mb-wager-ov { position: absolute; inset: 0; z-index: 21; display: grid; place-items: center; background: rgba(8,2,4,.6); animation: mb-fadeIn .18s; }
-.mb-host .mb-wager-ov .mb-wager { padding: 22px 36px 18px; background: linear-gradient(180deg, #5a1424, #1c060c); border: 2px solid var(--gold-hi); box-shadow: 0 0 40px rgba(245,215,122,.3), 0 20px 50px rgba(0,0,0,.7); }
-/* 遊びごとの詰め（1画面に収める）。zoom は中の配置ごと縮める */
-.mb-host .gc-mach { zoom: .7; } /* ぱにゅが残っている時、下の2つのボタンが切れていた（2026-10-11） */
+/* 重ねて出す賭けの札：小窓の型（金茶の 2px の枠＋二重線＋四隅の金飾り 28px） */
+.mb-host .mb-wager-ov .mb-wager { padding: 22px 36px 18px;
+  background: url("../assets/ui/modal_corner_tl.webp") left top / 28px 28px no-repeat, url("../assets/ui/modal_corner_tr.webp") right top / 28px 28px no-repeat,
+    url("../assets/ui/modal_corner_bl.webp") left bottom / 28px 28px no-repeat, url("../assets/ui/modal_corner_br.webp") right bottom / 28px 28px no-repeat,
+    linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo));
+  border: 2px solid var(--line); border-radius: 2px;
+  box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px var(--gild), 0 24px 64px rgba(0,0,0,.65); }
+/* 遊びごとの詰め（1画面に収める）。
+   2026-10-16：zoom で遊び全体を縮めるのはやめた（文字が 11px を割っていた）。残すのはガチャ台だけ（台の中の文字は 16px 以上で書く前提で .8）。
+   見つめ合う・つきつける・ハイ＆ロー・ねらい撃ちは、PC の並べ方を battles/read-pc.css の遊びごとの節で詰める。
+   スマホ横は read-compact.css が自分の zoom（.gc-mach .36、ほかは 1）を持っているので、ここを変えても変わらない */
+.mb-host .gc-mach { zoom: .8; }
 .mb-host .gc-left { gap: 8px; }
 .mb-host .gc-acts { flex-direction: row; align-items: stretch; gap: 8px; width: 100%; }
 .mb-host .gc-acts .btn { flex: 1 1 0; min-width: 0; padding-inline: 8px; }
-.mb-host .stare-duel { zoom: .83; }
-.mb-host .hl-duel { zoom: .8; }
 .mb-host .gc-odds { gap: 2px; padding: 6px 12px 8px; }
 .mb-host .gc-orow { line-height: 1.2; }
 .mb-host .gc-right { gap: 8px; }
@@ -419,7 +494,124 @@
 .mb-host .gc-right:has(.gc-voices > :not(.gc-empty)) .gc-odds > .gc-ceil { display: none; }
 .mb-host .gc-right .gc-voices { gap: 4px; }
 .mb-host .outs-meter .formula { line-height: 1.3; font-size: 13px; }
-.mb-host .ob-court { zoom: .77; } /* 証拠が4枚＋信用ゼロの一行の時、下のボタンが切れていた（2026-10-11） */
 .mb-host .mb-game-root:has(.ob-court) { gap: 6px; }
 .mb-host .mb-game-root .outs-deck { max-width: 700px; } /* 当たり札を探す一覧：札を少し小さくして、1画面に収める */
-.mb-host .sn-wrap { zoom: .86; }
+
+/* ===== 心理・論理の舞台の背景（2026-10-16） =====
+   style.css の #stage > .read-battle-host.rb-psych / .rb-logic .mb-stage を同じセレクタで上書きする（core.css は style.css の後に読む）。
+   絵は舞台の ::after に敷き、上へ向けて消えるマスクで下だけに出す（::before はフィーバーの光が使っているので使わない）。
+   心理＝深紅の幕に炎（下半分だけ）。論理＝黒い卓に金の設計図の床（今の青い格子の絵を金に転色して、下だけ薄く）。
+   ::after は z-index:0 で、相手の行と遊び本体（z-index:1）の下。動かさない（一度描くだけ）ので重くない */
+#stage > .read-battle-host.rb-psych .mb-stage { background: radial-gradient(110% 90% at 50% 18%, #3e0306 0%, #22090c 55%, #130406 100%); }
+#stage > .read-battle-host.rb-logic .mb-stage { background: radial-gradient(70% 55% at 50% 0%, rgba(217,178,105,.1), transparent 70%), linear-gradient(180deg, #1b100d 0%, #110908 62%, #0c0606 100%); }
+.mb-host .mb-stage::after { content: none; position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+#stage > .read-battle-host.rb-psych .mb-stage::after {
+  content: ""; opacity: .38;
+  background: url("../assets/ui/fx_aura_psych.webp?v=20261011a") center bottom / 100% auto no-repeat;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 20%, transparent 52%); mask-image: linear-gradient(to top, #000 0%, #000 20%, transparent 52%);
+}
+#stage > .read-battle-host.rb-logic .mb-stage::after {
+  content: ""; opacity: .5;
+  background: url("../assets/ui/fx_aura_logic.webp?v=20261004d") center bottom / 100% auto no-repeat;
+  filter: sepia(1) saturate(1.8) hue-rotate(-12deg) brightness(.75);
+  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.75) 16%, transparent 44%); mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.75) 16%, transparent 44%);
+}
+
+/* ===== PC の舞台の飾り（2026-10-16） =====
+   PC だけ：背景の絵は二重の金線の内側に収め、四隅に小窓と同じ金飾り（56px）を置く。
+   金飾りは .mb-body::after（舞台の ::before/::after はフィーバーの光と背景の絵が使う）。z-index:0 なので絵の上・中身（z-index:1）の下。
+   スマホ横（html.is-compact）は舞台の枠を消して左に細い列を出す並べ方なので、どちらも付けない */
+html:not(.is-compact) .mb-host .mb-stage::after { inset: 6px; }
+html:not(.is-compact) .mb-host .mb-body::after {
+  content: ""; position: absolute; inset: 2px; z-index: 0; pointer-events: none;
+  background: url("../assets/ui/modal_corner_tl.webp") left top / 56px 56px no-repeat, url("../assets/ui/modal_corner_tr.webp") right top / 56px 56px no-repeat,
+    url("../assets/ui/modal_corner_bl.webp") left bottom / 56px 56px no-repeat, url("../assets/ui/modal_corner_br.webp") right bottom / 56px 56px no-repeat;
+}
+
+/* 「BET」（core.js の文字）を明朝の「賭け」に：元の文字は透明にして場所だけ残し、同じ所に重ねる。
+   大きさは元の .lbl の font-size に従う（PC 12〜13px、スマホ横 11px）。min-width は「賭け」がはみ出さない幅 */
+.mb-host .mb-betchip .lbl { position: relative; color: transparent; min-width: 2.4em; }
+.mb-host .mb-betchip .lbl::before { content: "賭け"; position: absolute; right: 0; top: 0; white-space: nowrap; color: var(--dim); }
+
+/* ===== 共通の部品（遊びの係が使う型。2026-10-16） =====
+   ・ここは見た目だけ（面・線・色・書体）。大きさ（padding・font-size・高さ）は書かない。
+     PC の既定の大きさは battles/read-pc.css の「共通の部品の PC の大きさ」。スマホ横は各遊びの今の大きさのまま。
+   ・詳細度は .mb-host :is(.mb-game-root, .mb-layer) .mb-xxx（クラス3つ分）。各遊びの素の指定（.mb-host .gc-bub＝クラス2つ）には勝ち、
+     状態つきの指定（.mb-host .gc-voice.v-SR .gc-bub など、クラス4つ以上）には負ける。状態で色を変える時は遊び側でクラス4つ以上で書く。
+   ・transform と position は触らない（傾きをやめる・動かすのは遊び側で）。 */
+
+/* 小窓の枠：金茶の 2px の枠＋二重線＋四隅の金飾り 28px。大事な囲み（台・表・まとめ）に。中の余白は 12px 以上に */
+.mb-host :is(.mb-game-root, .mb-layer) .mb-frame {
+  border: 2px solid var(--line); border-radius: 2px; color: var(--text);
+  background: url("../assets/ui/modal_corner_tl.webp") left top / 28px 28px no-repeat, url("../assets/ui/modal_corner_tr.webp") right top / 28px 28px no-repeat,
+    url("../assets/ui/modal_corner_bl.webp") left bottom / 28px 28px no-repeat, url("../assets/ui/modal_corner_br.webp") right bottom / 28px 28px no-repeat,
+    linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo));
+  box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px var(--gild), 0 14px 32px rgba(0,0,0,.55);
+}
+/* 内側の情報面：控えめな線の黒檀。表・記録・説明の箱に */
+.mb-host :is(.mb-game-root, .mb-layer) .mb-panel { background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; color: var(--text); box-shadow: none; }
+
+/* 見出し帯：深紅の帯＋下に金茶の線＋左に金の太線。明朝の金文字。補足は <small> で */
+.mb-host :is(.mb-game-root, .mb-layer) .mb-band { background: var(--band); border: 0; border-bottom: 1px solid var(--line); border-left: 3px solid var(--gold); border-radius: 0; color: var(--gold-hi); font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; text-shadow: none; box-shadow: none; }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-band small { font-family: var(--sans); font-weight: 400; letter-spacing: .02em; color: var(--dim); }
+/* 小さな金の明朝ラベル（英語の見出しを日本語にした所、名前の札、メーターの名前など） */
+.mb-host :is(.mb-game-root, .mb-layer) .mb-label { font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; color: var(--gold); text-transform: none; text-shadow: none; opacity: 1; }
+/* 注記：細いゴシックの淡い金茶。opacity で薄めない */
+.mb-host :is(.mb-game-root, .mb-layer) .mb-note { font-family: var(--sans); font-weight: 400; color: var(--dim); opacity: 1; }
+
+/* 黒檀の札（白い丸い吹き出しの代わり：心の声・証言・台詞・ポップ）。左に深紅の短冊（内側の影 4px で描くので幅は変わらない。文字の左の余白は 10px 以上に）。
+   ::before/::after は消す（吹き出しの尻尾・丸い点を消すため。飾りが要る時は子要素で）。
+   .is-sel / .sel＝選んだ（二重の金線）、.is-lie＝ウソ（明るい赤の線）、.is-off＝外れた・関係ない（opacity を使わず色で） */
+.mb-host :is(.mb-game-root, .mb-layer) .mb-ebony {
+  background: linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo)); color: var(--text);
+  border: 1px solid var(--line); border-radius: 2px;
+  box-shadow: inset 4px 0 0 var(--crimson), inset 0 0 0 1px rgba(227,185,100,.18), 0 8px 18px rgba(0,0,0,.55);
+  font-family: var(--mincho); font-weight: 700; text-shadow: none;
+}
+.mb-host :is(.mb-game-root, .mb-layer) .mb-ebony::before,
+.mb-host :is(.mb-game-root, .mb-layer) .mb-ebony::after { content: none; }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-ebony:is(.sel, .is-sel) { background: linear-gradient(180deg, var(--sel), var(--ebony-hi)); border-color: var(--gold-hi); box-shadow: inset 4px 0 0 var(--crimson), inset 0 0 0 2px #130406, inset 0 0 0 3px rgba(239,205,130,.8), 0 8px 18px rgba(0,0,0,.55); }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-ebony.is-lie { border-color: var(--red-hi); }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-ebony.is-off { opacity: 1; filter: none; background: linear-gradient(180deg, #1a0709, #100304); color: var(--dim); border-color: var(--line-dim); box-shadow: inset 4px 0 0 #3a0a0e; }
+
+/* 羊皮紙（付箋・証拠の紙・容疑者の札など「紙」の物）。墨は #2b1a10。
+   .is-flat＝1色 #e9dcc0、.is-ruled＝罫線入り、.is-pinned＝上の真ん中に金の鋲（::before を使う。要素に position:relative などが要る）、
+   .is-sel / .sel＝選んだ（外に金の線）、.is-off＝外れた（少し暗い紙。opacity は使わない）。紙の上の .mb-label は深紅、.mb-note は茶 */
+.mb-host :is(.mb-game-root, .mb-layer) .mb-parchment {
+  background: linear-gradient(180deg, var(--parch-hi), var(--parch-lo)); color: var(--parch-ink);
+  border: 1px solid var(--line); border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.35), 0 6px 14px rgba(0,0,0,.45); text-shadow: none;
+}
+.mb-host :is(.mb-game-root, .mb-layer) .mb-parchment.is-flat { background: var(--parch); }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-parchment.is-ruled { background: repeating-linear-gradient(180deg, var(--parch) 0 19px, var(--parch-rule) 19px 20px); }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-parchment.is-pinned::before {
+  content: ""; position: absolute; left: 50%; top: -5px; width: 10px; height: 10px; margin: 0 0 0 -5px; z-index: 1;
+  background: linear-gradient(145deg, #f0d08a, #a68148 65%, #705024); border: 1px solid #705024; border-radius: 0;
+  box-shadow: 0 2px 3px rgba(0,0,0,.45); transform: rotate(45deg); clip-path: none; opacity: 1;
+}
+.mb-host :is(.mb-game-root, .mb-layer) .mb-parchment:is(.sel, .is-sel) { box-shadow: inset 0 0 0 1px rgba(255,255,255,.35), 0 0 0 2px #130406, 0 0 0 3px var(--gold-hi), 0 6px 14px rgba(0,0,0,.45); }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-parchment.is-off { opacity: 1; filter: none; background: linear-gradient(180deg, #d9cbab, #cbb88f); color: #5a4a36; box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-parchment .mb-label { color: var(--crimson); }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-parchment .mb-note { color: #6b5a44; }
+
+/* 深紅の札（特別な札：ぱにゅの付箋など）。金の線 */
+.mb-host :is(.mb-game-root, .mb-layer) .mb-crimson { background: linear-gradient(180deg, var(--band), var(--ebony-hi)); color: var(--text); border: 1px solid var(--gold); border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(227,185,100,.25), 0 6px 14px rgba(0,0,0,.45); text-shadow: none; }
+/* 金のタブ（証拠の札の見出しなど、紙の上に乗る小さな札）。明朝の黒文字 */
+.mb-host :is(.mb-game-root, .mb-layer) .mb-tab { background: var(--gold); color: #1d080e; border: 0; border-radius: 2px 2px 0 0; font-family: var(--mincho); font-weight: 700; letter-spacing: .08em; text-shadow: none; box-shadow: none; }
+
+/* 四角い押す札（.btn 以外のボタン：見抜くの三択、ダウトの二択、見つめ合うの長押し、容疑者の札、役の表を開く札など）。
+   ふつう＝黒檀に金文字。.on / .is-on / .sel＝選んだ（深紅＋下に金の線）、.is-primary＝主の操作（深紅）、.is-gold＝金に黒文字、
+   :disabled / .is-off＝押せない（暗い型。opacity は使わない）。元の ::before で斜めの面を描いている要素は、遊び側でその ::before を消すこと */
+.mb-host :is(.mb-game-root, .mb-layer) .mb-key { background: var(--panel); border: 1px solid var(--line); border-radius: 2px; color: var(--gold); font-family: var(--mincho); font-weight: 700; text-shadow: none; box-shadow: none; cursor: pointer; opacity: 1; transition: background-color .15s, border-color .15s; }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-key:hover:not(:disabled):not(.is-off) { background: #32100c; border-color: var(--gold-hi); box-shadow: inset 0 0 0 1px rgba(227,185,100,.25); }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-key:is(.on, .is-on, .sel, .is-primary) { background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); border-color: var(--gold); color: #f0d08a; }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-key:is(.on, .is-on, .sel) { border-color: var(--gold-hi); box-shadow: inset 0 -2px 0 #d7b370; }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-key:is(.on, .is-on, .sel, .is-primary):hover:not(:disabled):not(.is-off) { background: linear-gradient(180deg, #86141b, #58080c); }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-key.is-gold { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: var(--crimson); color: #1d080e; }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-key.is-gold:hover:not(:disabled):not(.is-off) { background: linear-gradient(180deg, #f4dc9c, #e0bd75); border-color: var(--crimson); }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-key:is(:disabled, .is-off) { background: var(--off-bg); border-color: var(--off-line); color: var(--off-text); box-shadow: none; filter: none; opacity: 1; cursor: default; }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-key:focus-visible { outline: 2px solid #f3d58e; outline-offset: 2px; }
+
+/* 答え合わせの縁：.mb-win＝金の二重線（枠＋外に1本）、.mb-lose＝灰の一重線。緑・ピンクの縁の代わり */
+.mb-host :is(.mb-game-root, .mb-layer) .mb-win { border-color: var(--gold-hi); outline: 1px solid var(--gold-hi); outline-offset: 3px; }
+.mb-host :is(.mb-game-root, .mb-layer) .mb-lose { outline: 1px solid #8a8073; outline-offset: 3px; }

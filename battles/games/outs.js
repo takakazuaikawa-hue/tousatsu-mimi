@@ -2,7 +2,7 @@
 // 残りの山から「当たり札」を指で集め、払う額と比べて付いていくか決める。
 // 最後の1枚は、当たり札だけが金色のスロットで回る＝当たる確率が目で見える。
 MB.register({
-  id: 'outs', group: 'logic', order: 5, title: 'アウツさがし＋スロット', sub: 'LOGIC · 確率', isNew: true,
+  id: 'outs', group: 'logic', order: 5, title: 'アウツさがし＋スロット', sub: '論理 · 確率', isNew: true,
   chars: ['grano'],
   async start({ api }) {
     const { deck, key, category, cardHTML, backHTML, SUITS, SYM, rn } = api;
@@ -50,14 +50,14 @@ MB.register({
       .outs-bar { position: relative; margin-top: 24px; height: 34px; background: rgba(0,0,0,.45); border: 1px solid var(--faint); }
       .outs-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #a47a22, var(--gold-hi)); transition: width 1s cubic-bezier(.2,.8,.2,1); }
       .outs-line { position: absolute; top: -8px; bottom: -8px; width: 3px; background: var(--red-hi); box-shadow: 0 0 10px var(--red-hi); left: 0; transition: left .8s ease .2s; }
-      .outs-line span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--red-hi); }
+      .outs-line span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--gold-hi); }
       .outs-val { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-family: var(--disp); font-size: 22px; }
       /* 確率スロット：当たり札だけ金色のリール */
       .reel-wrap { position: relative; max-width: 720px; width: 100%; margin: 0 auto; height: 108px; overflow: hidden; background: linear-gradient(180deg, #0c0306, #26070f 50%, #0c0306); border-block: 3px solid var(--gold); box-shadow: inset 0 0 30px rgba(0,0,0,.9); }
       .reel-wrap::before, .reel-wrap::after { content: ""; position: absolute; top: 0; bottom: 0; width: 22%; z-index: 2; pointer-events: none; }
       .reel-wrap::before { left: 0; background: linear-gradient(90deg, #0c0306, transparent); }
       .reel-wrap::after { right: 0; background: linear-gradient(-90deg, #0c0306, transparent); }
-      .reel-mark { position: absolute; left: 50%; top: 0; bottom: 0; width: 64px; margin-left: -32px; border: 3px solid #fff3c2; z-index: 3; box-shadow: 0 0 22px rgba(255,243,194,.8); pointer-events: none; }
+      .reel-mark { position: absolute; left: 50%; top: 0; bottom: 0; width: 64px; margin-left: -32px; border: 3px solid var(--gold-hi); z-index: 3; box-shadow: 0 0 22px rgba(239,205,130,.7); pointer-events: none; }
       .reel { position: absolute; top: 14px; left: 0; display: flex; gap: 8px; will-change: transform; }
       .reel .card { --w: 56px; flex: 0 0 auto; }
       .reel .card.out { background: linear-gradient(180deg, #fff7d6, #f5d77a); border-color: #b8860b; }

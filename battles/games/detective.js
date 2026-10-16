@@ -2,7 +2,7 @@
 // 相手の言葉・顔・賭け額・流れの手がかりを調べ、「強い」「ブラフ」の天秤に載せて読む。
 // 手がかりは相手の本当の手から、性格ごとの「出やすさ」で作る（読めば得をするが、外れることもある）。
 MB.register({
-  id: 'detective', group: 'psych', order: 1, title: '手がかり探偵', sub: 'PSYCH · 基本',
+  id: 'detective', group: 'psych', order: 1, title: '手がかり探偵', sub: '心理・基本',
   chars: ['polka', 'selina'],
   async start({ api }) {
     const P = {
@@ -39,29 +39,33 @@ MB.register({
 
     api.say(speech.text.replace(/[「」]/g, ''), who === 'polka' ? 'smug' : 'think'); api.bet(400);
     api.css('detective', `
-      .dt-scale { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; max-width: 560px; width: 100%; margin: 0 auto; font-size: 13px; font-weight: 900; }
+      /* 天秤：深紅（強い手）↔ 金（ブラフ）。針は淡い金 */
+      .dt-scale { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; max-width: 560px; width: 100%; margin: 0 auto; font-family: var(--mincho); font-size: 13px; font-weight: 800; }
       .dt-scale .l { color: var(--red-hi); } .dt-scale .r { color: var(--gold-hi); }
-      .dt-beam { position: relative; height: 10px; background: linear-gradient(90deg, rgba(255,74,96,.5), rgba(255,255,255,.12) 50%, rgba(245,215,122,.5)); border: 1px solid var(--faint); }
-      .dt-beam i { position: absolute; top: -9px; left: 50%; width: 4px; height: 28px; margin-left: -2px; background: #fff; box-shadow: 0 0 10px #fff; transition: left .5s cubic-bezier(.2,1.3,.4,1); }
+      .dt-beam { position: relative; height: 10px; background: linear-gradient(90deg, rgba(200,37,58,.6), rgba(217,178,105,.14) 50%, rgba(239,205,130,.6)); border: 1px solid var(--line-dim); }
+      .dt-beam i { position: absolute; top: -9px; left: 50%; width: 4px; height: 28px; margin-left: -2px; background: var(--gold-pale); box-shadow: 0 0 0 1px #130406, 0 0 10px rgba(244,228,189,.7); transition: left .5s cubic-bezier(.2,1.3,.4,1); }
       .dt-clues { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-      .dt-clue { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: #fff7e0; color: #2b1a10; transform: rotate(var(--rot, -1deg)); box-shadow: 0 6px 14px rgba(0,0,0,.45); }
-      .dt-clue::before { content: ""; position: absolute; top: -8px; left: 50%; width: 46px; height: 14px; margin-left: -23px; background: rgba(255,159,194,.7); transform: rotate(-3deg); }
-      .dt-kind { font-family: var(--disp); letter-spacing: .14em; color: #a33; font-size: 15px; }
+      /* 付箋：羊皮紙＋金の鋲（.mb-parchment .is-pinned）。傾けない。ぱにゅの付箋は深紅の札（.mb-crimson）。面・線・影は core.css の部品が描く */
+      .dt-clue { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; transform: none; }
+      .dt-kind { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--crimson); font-size: 15px; }
       .dt-text { font-weight: 800; font-size: 14px; min-height: 2.8em; }
-      .dt-clue:not(.open) .dt-text { color: #9a8a78; }
+      .dt-clue:not(.open) .dt-text { color: #7b6a55; }
       .dt-acts { display: flex; flex-wrap: wrap; gap: 6px; }
-      .dt-acts button { border: 1px solid #c9b79a; background: #fff; color: #5a4030; font-weight: 800; font-size: 13px; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
-      .dt-acts button.on { background: #2b1a10; color: #ffe9a8; border-color: #2b1a10; }
+      /* 押す所（調べる／強い手／ブラフ／関係なし／ぱにゅぱにゅで探る）は .mb-key（四角・黒檀に金文字。選んだ物は深紅に金の下線） */
+      .dt-acts button { font-size: 13px; padding: 5px 10px; }
       .dt-clue:not(.open) .lean { display: none; } .dt-clue.open .open-btn { display: none; }
-      .dt-clue.hidden-clue { background: #ffe3ef; }
-      .dt-clue.key { outline: 3px solid var(--gold-hi); } .dt-clue.trap { outline: 3px solid var(--red-hi); }
-      .dt-verdict { font-size: 12px; font-weight: 900; color: #7a5a10; } .dt-clue.trap .dt-verdict { color: #b0182e; }
+      .dt-clue.hidden-clue .dt-kind { color: var(--gold-hi); }
+      .dt-clue.hidden-clue .dt-text { color: var(--text); }
+      /* 答え合わせ：決め手＝金の二重線、ひっかけ＝赤の線（太さと内側へ寄せる指定はスマホ横の read-compact.css が持つ） */
+      .dt-clue.key { outline: 3px double var(--gold-hi); outline-offset: 2px; } .dt-clue.trap { outline: 3px solid var(--red-hi); outline-offset: 2px; }
+      .dt-verdict { font-size: 12px; font-weight: 900; color: #5e430b; } .dt-clue.trap .dt-verdict { color: var(--crimson); }
+      .dt-clue.hidden-clue .dt-verdict { color: var(--gold-hi); } .dt-clue.hidden-clue.trap .dt-verdict { color: #f0b4aa; }
     `);
     const root = api.root;
     root.innerHTML = `
       ${api.steps(['手がかりを調べる', '天秤に載せる', '読みを賭ける', '答え合わせ'], 0)}
-      <div class="row">${board.map(c => api.cardHTML(c, 'big')).join('')}${api.backHTML('big')}</div>
-      <div class="row">${mine.map(c => api.cardHTML(c, 'big')).join('')}<span class="formula">ミミ：Qのワンペア（ブラフには勝ち、フラッシュには負け）</span></div>
+      <div class="row dt-board">${board.map(c => api.cardHTML(c, 'big')).join('')}${api.backHTML('big')}</div>
+      <div class="row dt-mine">${mine.map(c => api.cardHTML(c, 'big')).join('')}<span class="formula">ミミ：Qのワンペア（ブラフには勝ち、フラッシュには負け）</span></div>
       <p class="prompt">${api.char.jp}がポットと同じ額を賭けてきた。本当に強い？ それともブラフ？</p>
       <div class="dt-scale"><span class="l">強い手</span><div class="dt-beam"><i id="mb-dt-needle"></i></div><span class="r">ブラフ</span></div>
       <div class="dt-clues" id="mb-dt-clues"></div>
@@ -72,13 +76,12 @@ MB.register({
     const placed = {};
     const clueBox = root.querySelector('#mb-dt-clues');
     const drawClue = (c, i) => {
-      const rot = [-2, 1.5, -1, 2, -1.5][i === 'p' ? 4 : i];
-      return `<div class="dt-clue ${c.open ? 'open' : ''} ${i === 'p' ? 'hidden-clue' : ''}" data-i="${i}" style="--rot:${rot}deg">
+      return `<div class="dt-clue ${i === 'p' ? 'hidden-clue mb-crimson' : 'mb-parchment is-pinned'} ${c.open ? 'open' : ''}" data-i="${i}">
         <div class="dt-kind">${c.kind}</div><div class="dt-text">${c.open ? c.text : '？？？'}</div>
-        <div class="dt-acts"><button class="open-btn">調べる</button>
-          <button class="lean" data-lean="strong">強い手</button><button class="lean" data-lean="bluff">ブラフ</button><button class="lean" data-lean="none">関係なし</button></div></div>`;
+        <div class="dt-acts"><button class="open-btn mb-key">調べる</button>
+          <button class="lean mb-key" data-lean="strong">強い手</button><button class="lean mb-key" data-lean="bluff">ブラフ</button><button class="lean mb-key" data-lean="none">関係なし</button></div></div>`;
     };
-    clueBox.innerHTML = clues.map(drawClue).join('') + `<div class="dt-clue hidden-clue" data-i="gacha" style="--rot:1deg"><div class="dt-kind">ぱにゅぱにゅ</div><div class="dt-text">ミミにしか見えない手がかりを1つ探せる</div><div class="dt-acts"><button id="mb-dt-panyu">ぱにゅぱにゅで探る</button></div></div>`;
+    clueBox.innerHTML = clues.map(drawClue).join('') + `<div class="dt-clue hidden-clue mb-crimson" data-i="gacha"><div class="dt-kind">ぱにゅぱにゅ</div><div class="dt-text">ミミにしか見えない手がかりを1つ探せる</div><div class="dt-acts"><button id="mb-dt-panyu" class="mb-key is-gold">ぱにゅぱにゅで探る</button></div></div>`;
     api.coach(who === 'polka' ? 'ポルカは顔にも言葉にも出やすい子。手がかりを<b>めくって</b>、天秤に載せてみよ' : 'セリナは表情も言葉も変わらない子。<b>変わったもの</b>を探そ');
     const refresh = () => {
       const sc = Object.values(placed).reduce((a, v) => a + (v === 'bluff' ? 1 : v === 'strong' ? -1 : 0), 0);
@@ -87,7 +90,7 @@ MB.register({
     };
     clueBox.addEventListener('click', (e) => {
       const box = e.target.closest('.dt-clue'); if (!box) return;
-      if (e.target.id === 'dt-panyu') {
+      if (e.target.closest('#mb-dt-panyu')) {
         api.sfx.jackpot();
         box.outerHTML = drawClue({ ...hidden, open: true }, 'p');
         api.coach('ぱにゅぱにゅ……！ ミミにしか見えない手がかりが出てきた');
@@ -121,7 +124,7 @@ MB.register({
     if (!api.alive()) return;
     api.coach('見せ合い……！'); api.sfx.drum();
     await api.wait(900);
-    root.querySelector('.row').insertAdjacentHTML('afterend', `<div class="row"><span class="formula">${api.char.jp}の手札</span>${her.map(c => api.cardHTML(c, 'big flip')).join('')}</div>`);
+    root.querySelector('.row').insertAdjacentHTML('afterend', `<div class="row dt-her"><span class="formula">${api.char.jp}の手札</span>${her.map(c => api.cardHTML(c, 'big flip')).join('')}</div>`);
     let hits = 0, total = 0;
     [...clues.map((c, i) => [c, String(i)]), ...(placed.p ? [[hidden, 'p']] : [])].forEach(([c, i]) => {
       const box = clueBox.querySelector(`.dt-clue[data-i="${i}"]`); if (!box) return;

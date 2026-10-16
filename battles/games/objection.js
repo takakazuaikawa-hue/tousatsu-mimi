@@ -171,7 +171,7 @@
   const TAUNT = ['ざぁこ♡ それのどこが矛盾なの？', 'え〜？ ぜんぜん読めてないの、かわいそ♡', 'ぶっぶー♡ もっと頭使いなさいよ', 'はずれ♡ あたしの言葉、ぜーんぶ本当なの'];
   let last = null;
 
-  MB.register({ id: 'objection', group: 'psych', order: 4, title: '異議あり！', sub: 'PSYCH · 証拠', isNew: true, chars: ['velvet'], start });
+  MB.register({ id: 'objection', group: 'psych', order: 4, title: '異議あり！', sub: '心理 · 証拠', isNew: true, chars: ['velvet'], start });
 
   async function start({ api }) {
     const force = (window.MB_FORCE || {}).objection;
@@ -196,16 +196,15 @@
     const root = api.root;
     const sayOrder = api.shuffle(S.says.map((t, i) => i));
     const evOrder = api.shuffle(S.ev.map((e, i) => i));
-    const rots = [-1.2, 1, -.6, 1.4];
     const stepNames = ['発言を選ぶ', '証拠を選ぶ', 'つきつける', '読みを賭ける', '答え合わせ'];
-    const evHTML = (e, i, n) => {
-      const [en, jp] = EVK[e.kind];
+    const evHTML = (e, i) => {
+      const jp = EVK[e.kind][1];
       let body;
       if (e.kind === 'board') body = `<div class="ob-mini-row">${board.map(c => api.cardHTML(c, 'ob-mini')).join('')}</div>${e.note ? `<div class="ob-note">${fill(e.note)}</div>` : ''}`;
       else if (e.kind === 'log') body = `<ol class="ob-log">${e.rows.map(r => `<li><span class="st">${r[0]}</span><span class="cs">${fill(r[1])}</span><span class="ac">${r[2]}</span></li>`).join('')}</ol>`;
       else body = `<p class="ob-evtext">${fill(e.text)}</p>`;
-      return `<div class="ob-ev k-${e.kind}" role="button" tabindex="0" data-i="${i}" style="--rot:${rots[n % 4]}deg" aria-label="証拠：${jp}">
-        <span class="ob-tab"><span class="en">${en}</span><em>${jp}</em></span>${body}</div>`;
+      return `<div class="ob-ev k-${e.kind}" role="button" tabindex="0" data-i="${i}" aria-label="証拠：${jp}">
+        <span class="ob-tab mb-tab"><em>${jp}</em></span>${body}</div>`;
     };
     root.innerHTML = `
       <div id="mb-ob-steps">${api.steps(stepNames, 0)}</div>
@@ -217,13 +216,13 @@
       <p class="ob-sub">ミミの${S.mimiName}は、<b>ブラフには勝ち</b>、<b>強い手には負ける</b>。ヴェルベットはどっち？</p>
       <div class="ob-court" id="mb-ob-court">
         <div class="ob-col ob-says is-next" id="mb-ob-says">
-          <div class="ob-colhead"><b>TESTIMONY</b>ヴェルベットの発言</div>
-          ${sayOrder.map((i, n) => `<div class="ob-say" role="button" tabindex="0" data-i="${i}"><span class="ob-tag">No.${n + 1}</span><p>「${fill(S.says[i])}」</p></div>`).join('')}
+          <div class="ob-colhead">ヴェルベットの発言</div>
+          ${sayOrder.map((i, n) => `<div class="ob-say mb-ebony" role="button" tabindex="0" data-i="${i}"><span class="ob-tag">No.${n + 1}</span><p>「${fill(S.says[i])}」</p></div>`).join('')}
         </div>
         <div class="ob-gutter" aria-hidden="true"></div>
         <div class="ob-col ob-evs" id="mb-ob-evs">
-          <div class="ob-colhead"><b>EVIDENCE</b>卓に残る証拠</div>
-          ${evOrder.map((i, n) => evHTML(S.ev[i], i, n)).join('')}
+          <div class="ob-colhead">卓に残る証拠</div>
+          ${evOrder.map((i) => evHTML(S.ev[i], i)).join('')}
         </div>
         <svg class="ob-thread" id="mb-ob-thread" aria-hidden="true"></svg>
       </div>
@@ -460,86 +459,76 @@
   const CSS = `
     .ob-hands { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 18px; }
     .ob-hand { display: flex; align-items: center; gap: 8px; }
-    .ob-who { font-family: var(--disp); letter-spacing: .14em; color: var(--gold); font-size: 15px; }
+    .ob-who { font-family: var(--mincho); font-weight: 700; letter-spacing: .14em; color: var(--gold); font-size: 15px; }
     .ob-cards { display: flex; gap: 4px; }
     .ob-hn { font-weight: 900; font-size: 13px; }
     .ob-hand.her .ob-hn { color: var(--dim); }
     .ob-hn.is-strong { color: var(--red-hi) !important; font-size: 16px; } .ob-hn.is-bluff { color: var(--good) !important; font-size: 16px; }
     .ob-vs { font-family: var(--disp); font-size: 26px; color: var(--red-hi); transform: skewX(-12deg); line-height: 1; }
-    .ob-hands.is-reveal .ob-hand.her { filter: drop-shadow(0 0 14px rgba(255,74,96,.6)); }
+    .ob-hands.is-reveal .ob-hand.her { filter: drop-shadow(0 0 14px rgba(217,178,105,.5)); }
     .ob-sub { margin: -4px 0 0; text-align: center; font-size: 13px; color: var(--dim); text-wrap: balance; }
     .ob-sub b { color: var(--text); }
 
     .ob-court { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 56px minmax(0,1fr); align-items: start; }
     .ob-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-    .ob-colhead { position: relative; isolation: isolate; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; padding: 3px 14px; font-size: 12px; font-weight: 700; color: var(--gold-pale); }
-    .ob-colhead::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); background: linear-gradient(90deg, rgba(200,37,58,.85), rgba(200,37,58,0)); border-left: 4px solid var(--gold); }
-    .ob-evs .ob-colhead::before { background: linear-gradient(90deg, rgba(217,179,90,.55), rgba(217,179,90,0)); }
-    .ob-colhead b { font-family: var(--disp); font-weight: 400; font-size: 22px; letter-spacing: .14em; color: #fff; line-height: 1.2; }
+    .ob-colhead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; padding: 3px 14px; font-family: var(--mincho); font-size: 12px; font-weight: 700; color: var(--gold-hi); background: var(--band); box-shadow: inset 3px 0 0 var(--gold), inset 0 -1px 0 var(--line); }
 
-    .ob-say { position: relative; cursor: pointer; padding: 6px 14px 9px; margin-top: 4px; background: #fff6f3; color: #2b0e18; border: 2px solid #e9c3c6; border-radius: 16px; box-shadow: 0 6px 14px rgba(0,0,0,.45); transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, opacity .2s; outline: none; }
-    .ob-say::before { content: ""; position: absolute; left: 18px; top: -11px; width: 18px; height: 12px; background: #e9c3c6; clip-path: polygon(0 0, 100% 100%, 0 100%); }
-    .ob-say::after { content: ""; position: absolute; left: 20px; top: -7px; width: 13px; height: 9px; background: #fff6f3; clip-path: polygon(0 0, 100% 100%, 0 100%); }
-    .ob-say .ob-tag { font-family: var(--disp); letter-spacing: .14em; font-size: 13px; color: #b0182e; line-height: 1.4; }
+    .ob-say { position: relative; cursor: pointer; padding: 6px 14px 9px; margin-top: 4px; color: var(--text); border-radius: 2px !important; transition: border-color .16s, box-shadow .16s; outline: none; }
+    .ob-say .ob-tag { font-family: var(--mincho); font-weight: 700; letter-spacing: .14em; font-size: 13px; color: var(--gold); line-height: 1.4; background: #130406 !important; border-color: var(--line) !important; border-radius: 2px !important; }
+    .ob-say.sel .ob-tag { background: #130406 !important; border-color: var(--gold-hi) !important; }
     .ob-say p { margin: 0; font-weight: 800; font-size: 14.5px; line-height: 1.55; }
-    .ob-say:hover, .ob-say:focus-visible { transform: translateY(-2px); border-color: var(--gold); }
-    .ob-say.sel { background: #fffbe6; border-color: var(--gold-hi); box-shadow: 0 0 0 3px rgba(245,215,122,.45), 0 0 26px rgba(245,215,122,.55); transform: translateX(4px) scale(1.02); }
-    .ob-say.sel::before { background: var(--gold-hi); } .ob-say.sel::after { background: #fffbe6; }
+    .ob-say:hover, .ob-say:focus-visible { border-color: var(--gold-hi); }
 
-    .ob-ev { position: relative; cursor: pointer; margin-top: 10px; padding: 18px 12px 10px; background: #f3e2bd; color: #2b1a10; transform: rotate(var(--rot, 0deg)); box-shadow: 0 6px 14px rgba(0,0,0,.45); transition: transform .16s ease, box-shadow .16s ease, opacity .2s; outline: none; }
-    .ob-ev:hover, .ob-ev:focus-visible { transform: rotate(0deg) translateY(-2px); }
-    .ob-tab { position: absolute; top: -12px; left: 10px; padding: 1px 10px; background: var(--gold); color: #1d080e; font-family: var(--disp); letter-spacing: .12em; font-size: 14px; line-height: 1.5; transform: skewX(-12deg); box-shadow: 0 3px 6px rgba(0,0,0,.35); white-space: nowrap; }
-    .ob-tab em { font-style: normal; font-family: var(--sans); font-weight: 900; font-size: 11px; letter-spacing: 0; margin-left: 6px; }
-    .ob-ev.k-board { background: linear-gradient(160deg, #5a1726, #2a0a13); color: var(--text); border: 1px solid rgba(217,179,90,.6); }
-    .ob-ev.k-log { background: repeating-linear-gradient(180deg, #fbf3de 0 23px, #e8d7ae 23px 24px); }
-    .ob-ev.k-tell { background: #ffdbe7; }
-    .ob-ev.k-tell .ob-tab { background: var(--pink); }
-    .ob-ev.k-memo { background: #fff1a8; }
-    .ob-ev.k-mirror { background: linear-gradient(135deg, #fbf8f0, #dcd5c4); border: 3px double var(--gold); }
-    .ob-ev.sel { transform: rotate(0deg) translateX(-4px) scale(1.02); box-shadow: 0 0 0 3px var(--gold-hi), 0 0 26px rgba(245,215,122,.65); }
+    .ob-ev { position: relative; cursor: pointer; margin-top: 10px; padding: 18px 12px 10px; background: var(--parch); color: var(--parch-ink); border-radius: 2px;
+      box-shadow: inset 0 0 0 1px var(--line), inset 0 0 0 2px rgba(255,255,255,.3), 0 6px 14px rgba(0,0,0,.45); transition: box-shadow .16s, background-color .16s; outline: none; }
+    .ob-ev:hover, .ob-ev:focus-visible { box-shadow: inset 0 0 0 1px var(--gold-hi), inset 0 0 0 2px rgba(255,255,255,.3), 0 6px 14px rgba(0,0,0,.45); }
+    .ob-ev.sel, .ob-ev.is-key { box-shadow: 0 0 0 2px #130406, 0 0 0 3px var(--gold-hi), inset 0 0 0 1px var(--line), 0 6px 14px rgba(0,0,0,.45); }
+    .ob-ev.is-off { background: #d3c4a3; color: #5a4a36; box-shadow: inset 0 0 0 1px var(--line-dim), 0 4px 10px rgba(0,0,0,.35); }
+    .ob-tab { position: absolute; top: -12px; left: 10px; padding: 1px 10px; font-size: 12px; line-height: 1.5; white-space: nowrap; }
+    .ob-tab em { font-style: normal; font-family: inherit; font-weight: 700; font-size: inherit; letter-spacing: 0; margin-left: 0; }
     .ob-mini-row { display: flex; flex-wrap: wrap; gap: 4px; }
     .ob-ev .card.ob-mini { --w: 30px; border-width: 1px; box-shadow: 0 2px 4px rgba(0,0,0,.4); }
-    .ob-note { margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--gold-pale); line-height: 1.45; }
+    .ob-note { margin-top: 6px; font-size: 12px; font-weight: 700; color: #6b5a44; line-height: 1.45; }
     .ob-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; font-size: 13px; line-height: 23px; }
     .ob-log li { display: grid; grid-template-columns: 4.6em auto minmax(0,1fr); gap: 8px; align-items: baseline; }
     .ob-log .st { font-weight: 900; font-size: 12px; color: #7d1022; }
     .ob-log .cs { white-space: nowrap; }
     .ob-log .ac { font-weight: 800; }
-    .ob-cl { font-family: var(--disp); font-weight: 400; font-size: 1.2em; letter-spacing: .02em; color: #1a1a1a; margin-right: 2px; }
-    .ob-cl.red { color: #c8253a; }
+    .ob-cl { font-family: var(--disp); font-weight: 400; font-size: 1.2em; letter-spacing: .02em; color: var(--text); margin-right: 2px; }
+    .ob-cl.red { color: #e2606d; }
+    .ob-ev .ob-cl { color: #1a1a1a; }
+    .ob-ev .ob-cl.red { color: #a8182a; }
     .ob-evtext { margin: 0; font-weight: 800; font-size: 14px; line-height: 1.55; }
-    .ob-evtext b, .ob-note b { color: #b0182e; }
+    .ob-evtext b, .ob-note b { color: #a8182a; }
 
-    .ob-col.is-next .ob-say, .ob-col.is-next .ob-ev { animation: mb-obPulse 1.3s ease-in-out infinite; }
-    @keyframes mb-obPulse { 50% { box-shadow: 0 0 0 3px rgba(245,215,122,.6), 0 0 18px rgba(245,215,122,.4); } }
-    .ob-say.is-off, .ob-ev.is-off { opacity: .38; }
-    .ob-court .ob-say.hint, .ob-court .ob-ev.hint { border-color: var(--gold-hi); animation: mb-obHint .8s ease-in-out infinite; }
-    @keyframes mb-obHint { 50% { box-shadow: 0 0 0 4px rgba(245,215,122,.85), 0 0 28px rgba(245,215,122,.9); } }
-    .ob-say.is-lie { border-color: var(--red-hi); box-shadow: 0 0 0 3px rgba(255,74,96,.5), 0 0 26px rgba(255,74,96,.5); }
-    .ob-ev.is-key { transform: rotate(0deg); box-shadow: 0 0 0 3px var(--gold-hi), 0 0 30px rgba(245,215,122,.8); }
-    .ob-stamp { position: absolute; right: 8px; top: -14px; padding: 0 8px; font-family: var(--mincho); font-weight: 800; font-size: 20px; line-height: 1.3; color: #c8253a; border: 3px solid #c8253a; background: rgba(255,255,255,.75); transform: rotate(-10deg); animation: mb-obStamp .4s cubic-bezier(.2,1.6,.4,1) both; pointer-events: none; }
-    .ob-stamp.gold { color: #7a5200; border-color: #b8860b; background: rgba(255,243,194,.9); }
-    @keyframes mb-obStamp { from { transform: rotate(-10deg) scale(2.6); opacity: 0; } }
+    .ob-col.is-next .ob-say, .ob-col.is-next .ob-ev { outline: 1px solid rgba(239,205,130,.22); outline-offset: 2px; animation: mb-obPulse 1.3s ease-in-out infinite; }
+    @keyframes mb-obPulse { 50% { outline-color: rgba(239,205,130,.95); } }
+    .ob-court .ob-say.hint, .ob-court .ob-ev.hint { border-color: var(--gold-hi); outline: 2px solid var(--gold-hi); outline-offset: 3px; animation: mb-obHint .8s ease-in-out infinite; }
+    @keyframes mb-obHint { 50% { outline-color: rgba(239,205,130,.2); } }
+    .ob-say.is-lie { outline: 2px solid var(--red-hi); outline-offset: 2px; }
+    .ob-stamp { position: absolute; right: 8px; top: -14px; padding: 0 8px; font-family: var(--mincho); font-weight: 800; font-size: 20px; line-height: 1.3; letter-spacing: .1em; color: #f0d08a; background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); border: 1px solid var(--gold); border-radius: 2px; box-shadow: 0 0 0 2px #130406, 0 4px 10px rgba(0,0,0,.5); transform: rotate(-6deg); animation: mb-obStamp .4s cubic-bezier(.2,1.6,.4,1) both; pointer-events: none; }
+    .ob-stamp.gold { color: #1d080e; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: var(--crimson); }
+    @keyframes mb-obStamp { from { transform: rotate(-6deg) scale(2.6); opacity: 0; } }
     .ob-court.is-charge .sel { animation: mb-obCharge .12s linear infinite; }
     @keyframes mb-obCharge { 50% { filter: brightness(1.25); translate: 1px 0; } }
 
     .ob-thread { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 3; }
-    .ob-thread path { fill: none; stroke: var(--red-hi); stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0 4px rgba(255,74,96,.9)); stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: mb-obDraw .35s ease-out forwards; }
-    .ob-thread.is-gold path { stroke: var(--gold-hi); stroke-width: 5; filter: drop-shadow(0 0 8px rgba(245,215,122,1)); }
-    .ob-thread circle { fill: var(--gold-hi); stroke: #fff; stroke-width: 2; }
+    .ob-thread path { fill: none; stroke: var(--red-hi); stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0 3px rgba(200,37,58,.7)); stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: mb-obDraw .35s ease-out forwards; }
+    .ob-thread.is-gold path { stroke: var(--gold-hi); stroke-width: 4; filter: drop-shadow(0 0 6px rgba(239,205,130,.8)); }
+    .ob-thread circle { fill: var(--gold-hi); stroke: #130406; stroke-width: 2; }
     @keyframes mb-obDraw { to { stroke-dashoffset: 0; } }
 
     .ob-bar { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 30px; padding-top: 4px; }
     .ob-bar.is-done .ob-go { display: none; }
     .ob-cred { display: flex; align-items: center; gap: 7px; font-weight: 900; font-size: 13px; color: var(--dim); }
-    .ob-cred i { width: 26px; height: 18px; transform: skewX(-12deg); background: linear-gradient(90deg, var(--gold-hi), var(--gold)); border: 1px solid var(--gold-pale); box-shadow: 0 0 10px rgba(245,215,122,.5); }
-    .ob-cred i.broken { background: #2b0e18; border-color: rgba(217,179,90,.3); box-shadow: none; animation: mb-obBreak .5s ease; }
-    @keyframes mb-obBreak { 0% { background: var(--red-hi); transform: skewX(-12deg) scale(1.5); } 60% { transform: skewX(-12deg) translateY(4px) rotate(8deg); } }
+    .ob-cred i { width: 26px; height: 18px; background: linear-gradient(90deg, var(--gold-hi), var(--gold)); border: 1px solid var(--gold-pale); border-radius: 2px; box-shadow: 0 0 8px rgba(217,178,105,.35); }
+    .ob-cred i.broken { background: #241010; border-color: #6e1c24; box-shadow: none; animation: mb-obBreak .5s ease; }
+    @keyframes mb-obBreak { 0% { background: var(--red-hi); transform: scale(1.5); } 60% { transform: translateY(4px) rotate(8deg); } }
     .ob-go { min-width: 230px; min-height: 60px; font-size: 22px; letter-spacing: .08em; }
-    .ob-go small { font-family: var(--disp); letter-spacing: .24em; font-size: 13px; }
+    .ob-go small { font-family: var(--mincho); letter-spacing: .24em; font-size: 13px; }
     .ob-go:not([disabled]) { animation: mb-obGo 1s ease-in-out infinite; }
-    .ob-go:not([disabled])::before { background: linear-gradient(90deg, var(--red-hi), var(--red) 50%, #8a1427); box-shadow: 0 0 24px rgba(255,74,96,.6), 0 6px 16px rgba(0,0,0,.45); }
-    @keyframes mb-obGo { 50% { transform: scale(1.05); } }
+    .ob-go:not([disabled])::before { box-shadow: 0 0 18px rgba(217,178,105,.4), 0 4px 12px rgba(0,0,0,.4); }
+    @keyframes mb-obGo { 50% { transform: scale(1.03); } }
     .ob-luck { width: 100%; margin: 0; text-align: center; font-size: 13px; color: var(--bad); font-weight: 700; }
     .ob-res-extra { margin-top: 6px; font-size: 12px; color: var(--dim); }
 
@@ -554,7 +543,7 @@
     @keyframes mb-obArt { from { transform: translateX(60%); opacity: 0; } }
     @keyframes mb-obQuake { 25% { transform: translate(-9px, 3px) rotate(-1.5deg); } 50% { transform: translate(8px, -2px) rotate(1deg); } 75% { transform: translate(-4px, 2px); } }
     .ob-band { position: absolute; left: -10%; right: -10%; top: 56%; padding: 12px 0 14px; transform: skewY(-7deg); display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background: linear-gradient(90deg, #3d0510, #c8253a 38%, #ff4a60 50%, #c8253a 62%, #3d0510); border-block: 5px solid var(--gold-hi); box-shadow: 0 0 70px rgba(200,37,58,.85); animation: mb-obBand .38s cubic-bezier(.2,1.2,.3,1) both; }
+      background: linear-gradient(90deg, #3d0510, #9a1422 38%, #c8253a 50%, #9a1422 62%, #3d0510); border-block: 5px solid var(--gold-hi); box-shadow: 0 0 70px rgba(200,37,58,.7); animation: mb-obBand .38s cubic-bezier(.2,1.2,.3,1) both; }
     @keyframes mb-obBand { from { transform: skewY(-7deg) translateX(-115%); } }
     .ob-en { font-family: var(--disp); font-size: clamp(66px, 14vw, 156px); line-height: .92; letter-spacing: .05em; color: #fff; text-shadow: 0 5px 0 #3d0510, 0 0 34px rgba(245,215,122,.85); animation: mb-obWord .45s .12s cubic-bezier(.2,1.5,.3,1) both; }
     .ob-jp { font-family: var(--mincho); font-weight: 800; font-size: clamp(20px, 3.4vw, 34px); letter-spacing: .24em; color: var(--gold-pale); text-shadow: 0 2px 0 #3d0510; animation: mb-obWord .4s .26s both; }
@@ -565,19 +554,17 @@
     .ob-peek { position: absolute; right: 0; bottom: 0; z-index: 60; pointer-events: none; width: min(64vw, 460px); animation: mb-obPeek 1.7s ease forwards; }
     .ob-peek-win { height: min(36vw, 250px); margin-right: -24px; overflow: hidden; transform: skewX(-12deg); transform-origin: 0 100%; border: 3px solid var(--gold); border-right: 0; border-bottom: 0; background: linear-gradient(160deg, #5a1726, #1d080e); box-shadow: 0 0 40px rgba(0,0,0,.7); }
     .ob-peek-win img { display: block; width: 118%; margin-left: -6%; transform: skewX(12deg); }
-    .ob-peek-say { position: absolute; left: -6px; top: -48px; max-width: 100%; padding: 7px 14px; background: #fff; color: #b0182e; font-weight: 900; font-size: 15px; line-height: 1.4; transform: skewX(-8deg); box-shadow: 0 6px 16px rgba(0,0,0,.5); border-left: 5px solid var(--red-hi); }
+    .ob-peek-say { position: absolute; left: -6px; top: -48px; max-width: 100%; padding: 7px 14px 7px 18px; background: linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo)); color: var(--text); font-family: var(--mincho); font-weight: 700; font-size: 15px; line-height: 1.4; transform: skewX(-8deg); box-shadow: inset 4px 0 0 var(--crimson), inset 0 0 0 1px rgba(227,185,100,.18), 0 6px 16px rgba(0,0,0,.5); border: 1px solid var(--line); border-radius: 2px; }
     @keyframes mb-obPeek { 0% { transform: translateX(105%); } 14% { transform: none; } 84% { transform: none; opacity: 1; } 100% { transform: translateX(30%); opacity: 0; } }
 
     @media (max-width: 560px) {
       .ob-court { grid-template-columns: minmax(0,1fr) 14px minmax(0,1fr); }
       .ob-colhead { padding: 2px 8px; font-size: 11px; }
-      .ob-colhead b { font-size: 18px; letter-spacing: .08em; }
-      .ob-say { padding: 5px 9px 7px; border-radius: 12px; }
+      .ob-say { padding: 5px 9px 7px; }
       .ob-say p { font-size: 13px; line-height: 1.5; }
       .ob-ev { padding: 16px 8px 8px; }
       .ob-tab { font-size: 12px; padding: 1px 7px; left: 6px; }
       .ob-tab em { font-size: 11px; margin-left: 0; }
-      .ob-tab .en { display: none; }
       .ob-ev .card.ob-mini { --w: 23px; }
       .ob-mini-row { gap: 3px; }
       .ob-log { font-size: 12px; line-height: 1.35; gap: 4px; }

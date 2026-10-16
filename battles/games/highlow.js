@@ -106,11 +106,11 @@
     api.css('highlow', `
       .hl-top { display: flex; align-items: center; justify-content: center; gap: 6px 22px; flex-wrap: wrap; }
       .hl-ladder { display: flex; gap: 5px; }
-      .hl-rung { position: relative; min-width: 56px; padding: 4px 8px 3px; text-align: center; font-family: var(--disp); font-size: 22px; line-height: 1; color: rgba(247,238,207,.45); isolation: isolate; transition: color .2s; }
-      .hl-rung::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); background: rgba(0,0,0,.4); border: 1px solid var(--faint); transition: background .25s, border-color .25s; }
-      .hl-rung small { display: block; font-size: 10px; letter-spacing: .12em; color: var(--dim); }
+      .hl-rung { position: relative; min-width: 56px; padding: 4px 8px 3px; text-align: center; font-family: var(--disp); font-size: 22px; line-height: 1; color: var(--dim); isolation: isolate; transition: color .2s; }
+      .hl-rung::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--line-dim); transition: background .25s, border-color .25s; }
+      .hl-rung small { display: block; font-family: var(--mincho); font-weight: 700; font-size: 10px; letter-spacing: .12em; color: var(--dim); }
       .hl-rung.won { color: var(--gold-hi); } .hl-rung.won::before { border-color: rgba(217,179,90,.7); background: rgba(217,179,90,.16); }
-      .hl-rung.now { color: #fff; } .hl-rung.now::before { background: linear-gradient(90deg, var(--red), #7d1022); border-color: var(--gold-hi); box-shadow: 0 0 14px rgba(200,37,58,.6); }
+      .hl-rung.now { color: var(--gold-pale); } .hl-rung.now small { color: var(--gold-pale); } .hl-rung.now::before { background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); border-color: var(--gold-hi); box-shadow: 0 0 14px rgba(200,37,58,.6); }
       .hl-rung.next { color: var(--gold-pale); } .hl-rung.next::before { border: 1px dashed var(--gold-hi); }
       .hl-rung.lost { color: var(--bad); text-decoration: line-through; }
       .hl-pot { text-align: center; line-height: 1; }
@@ -122,17 +122,17 @@
       .hl-jump { animation: mb-hlJump .7s cubic-bezier(.2,1.8,.4,1); }
       @keyframes mb-hlJump { 0% { transform: none; } 30% { transform: translateY(-16px) scale(1.7) rotate(-4deg); color: #fff; } 100% { transform: none; } }
       .hl-round { text-align: center; }
-      .hl-round span { display: inline-block; font-family: var(--disp); letter-spacing: .14em; font-size: 16px; padding: 1px 16px 0; color: #1d080e; background: linear-gradient(90deg, var(--gold-hi), var(--gold)); transform: skewX(-12deg); }
-      .hl-round span.final { color: #fff; background: linear-gradient(90deg, #7d1022, var(--red-hi), #7d1022); animation: mb-hlFinal 1.64s ease-in-out infinite; }
-      @keyframes mb-hlFinal { 0%, 22%, 100% { box-shadow: 0 0 0 rgba(255,74,96,0); } 8% { box-shadow: 0 0 22px rgba(255,74,96,.9); } }
+      .hl-round span { display: inline-block; font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; font-size: 14px; padding: 2px 16px 1px; color: #1d080e; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-radius: 2px; }
+      .hl-round span.final { color: var(--gold-pale); background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); box-shadow: inset 0 0 0 1px var(--gold); animation: mb-hlFinal 1.64s ease-in-out infinite; }
+      @keyframes mb-hlFinal { 0%, 22%, 100% { box-shadow: inset 0 0 0 1px var(--gold), 0 0 0 rgba(200,37,58,0); } 8% { box-shadow: inset 0 0 0 1px var(--gold), 0 0 22px rgba(200,37,58,.9); } }
       .hl-board { display: flex; flex-direction: column; align-items: center; gap: 4px; }
       .hl-cards { display: flex; gap: 6px; justify-content: center; }
       .hl-duel { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; gap: 10px; width: min(640px, 100%); margin: 0 auto; }
       .hl-hand { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 6px 10px; transition: transform .25s; }
-      .hl-hand::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-8deg); background: rgba(0,0,0,.35); border: 1px solid rgba(217,179,90,.3); transition: border-color .25s, box-shadow .25s, background .25s; }
-      .hl-hand.win::before { border-color: var(--gold-hi); background: rgba(217,179,90,.14); box-shadow: 0 0 24px rgba(245,215,122,.45); }
+      .hl-hand::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 2px; background: var(--panel); border: 1px solid var(--line-dim); transition: border-color .25s, box-shadow .25s, background .25s; }
+      .hl-hand.win::before { border-color: var(--gold-hi); background: rgba(217,179,90,.12); box-shadow: inset 0 0 0 2px #130406, inset 0 0 0 3px rgba(239,205,130,.85), 0 0 24px rgba(245,215,122,.35); }
       .hl-hand.lose { transform: scale(.97); }
-      .hl-hand.lose::before { background: rgba(0,0,0,.55); }
+      .hl-hand.lose::before { background: #130a09; border-color: #6b6256; }
       .hl-who { display: flex; align-items: center; gap: 8px; }
       .hl-who { align-items: flex-end; }
       .hl-who b { align-self: center; }
@@ -140,11 +140,11 @@
       .hl-chibi[data-e="win"] { animation: mb-chHop .62s cubic-bezier(.3,.7,.4,1) 3; }
       .hl-chibi[data-e="lose"] { animation: mb-chSob .5s ease-in-out infinite; }
       .hl-chibi.swap { animation: mb-chPop .32s cubic-bezier(.2,1.5,.4,1); }
-      .hl-who b { font-family: var(--disp); letter-spacing: .14em; color: var(--gold); font-weight: 400; font-size: 17px; line-height: 1; }
-      .hl-hn { min-height: 2.9em; display: grid; place-items: center; text-align: center; font-weight: 900; font-size: 14px; line-height: 1.3; color: var(--text); text-wrap: balance; }
-      .hl-hn span { display: inline-block; padding: 2px 10px; background: rgba(0,0,0,.5); border: 1px solid rgba(217,179,90,.4); }
-      .hl-hand.win .hl-hn span { background: linear-gradient(90deg, var(--gold-hi), var(--gold)); color: #1d080e; border-color: #fff3c2; }
-      .hl-hn .hl-wait { color: var(--dim); font-weight: 700; font-size: 12px; }
+      .hl-who b { font-family: var(--mincho); letter-spacing: .12em; color: var(--gold); font-weight: 700; font-size: 17px; line-height: 1; }
+      .hl-hn { min-height: 2.9em; display: grid; place-items: center; text-align: center; font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--text); text-wrap: balance; }
+      .hl-hn span { display: inline-block; padding: 2px 10px; background: rgba(0,0,0,.5); border: 1px solid rgba(217,179,90,.4); border-radius: 2px; }
+      .hl-hand.win .hl-hn span { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1d080e; border-color: var(--gold-pale); }
+      .hl-hn .hl-wait { color: var(--dim); font-family: var(--sans); font-weight: 700; font-size: 12px; }
       .hl-vs { align-self: center; font-family: var(--disp); font-size: 36px; color: var(--gold-hi); text-shadow: 0 0 16px rgba(245,215,122,.6); transform: rotate(-8deg); }
       .hl-pick { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; width: min(640px, 100%); margin: 0 auto; }
       .hl-pick .btn { min-width: 0; padding: 8px 10px; min-height: 54px; font-size: 17px; }
@@ -158,9 +158,9 @@
       .hl-verdict span { font-weight: 700; font-size: 14px; text-wrap: balance; }
       .hl-next { display: flex; flex-direction: column; align-items: center; gap: 8px; }
       .hl-next .actions .btn { min-width: 170px; }
-      .hl-tempt { font-family: var(--disp); letter-spacing: .1em; font-size: 18px; color: var(--pink); text-align: center; }
+      .hl-tempt { font-family: var(--mincho); font-weight: 700; letter-spacing: .06em; font-size: 18px; color: var(--gold-hi); text-align: center; }
       .hl-next .btn.gold::before { animation: mb-hlCue 1.1s ease-in-out infinite; }
-      .hl-heart { position: absolute; inset: -16px -30px; z-index: -1; pointer-events: none; background: radial-gradient(72% 68% at 50% 50%, transparent 55%, rgba(255,40,70,.5) 100%); opacity: 0; animation: mb-hlBeat .82s ease-out infinite; }
+      .hl-heart { position: absolute; inset: -16px -30px; z-index: -1; pointer-events: none; background: radial-gradient(72% 68% at 50% 50%, transparent 55%, rgba(200,37,58,.5) 100%); opacity: 0; animation: mb-hlBeat .82s ease-out infinite; }
       @keyframes mb-hlBeat { 0% { opacity: .15; } 10% { opacity: 1; } 22% { opacity: .35; } 32% { opacity: .85; } 100% { opacity: .1; } }
       .hl-react { position: absolute; z-index: 6; top: 42%; width: 200px; height: 185px; pointer-events: none; }
       .hl-react.left { left: -20px; animation: mb-hlInL .4s cubic-bezier(.2,1.3,.3,1) both; }
@@ -193,11 +193,11 @@
     root.innerHTML = `
       <div id="mb-hl-steps">${api.steps(STEPS, 0)}</div>
       <div class="hl-top">
-        <div class="hl-ladder" id="mb-hl-ladder">${LADDER.map((v, i) => `<span class="hl-rung" data-i="${i}"><small>${i === 0 ? 'START' : '×' + 2 ** i}</small>${v}</span>`).join('')}</div>
+        <div class="hl-ladder" id="mb-hl-ladder">${LADDER.map((v, i) => `<span class="hl-rung" data-i="${i}"><small>${i === 0 ? '元手' : '×' + 2 ** i}</small>${v}</span>`).join('')}</div>
         <div class="hl-pot" id="mb-hl-potbox"><small>いま持っている</small><b id="mb-hl-pot">${LADDER[0]}</b></div>
       </div>
       <div class="hl-round" id="mb-hl-round"></div>
-      <div class="hl-board"><span class="zone-label">BOARD · 場札（2人とも使える）</span><div class="hl-cards" id="mb-hl-b"></div></div>
+      <div class="hl-board"><span class="zone-label">場札（2人とも使える）</span><div class="hl-cards" id="mb-hl-b"></div></div>
       <div class="hl-duel">
         <div class="hl-hand" id="mb-hl-m"><div class="hl-who"><img class="hl-chibi" src="${api.asset('art/chibi/mimi_think.webp')}" alt=""><b>MIMI</b></div><div class="hl-cards"></div><div class="hl-hn"></div></div>
         <div class="hl-vs">VS</div>
@@ -253,7 +253,7 @@
       $('#mb-hl-steps').innerHTML = api.steps(STEPS, 0);
       setLadder(round - 1);
       api.bet(pot);
-      $('#mb-hl-round').innerHTML = `<span class="${isFinal ? 'final' : ''}">${isFinal ? 'FINAL ROUND' : `ROUND ${round} / 4`} · 当たれば ${pot * 2}</span>`;
+      $('#mb-hl-round').innerHTML = `<span class="${isFinal ? 'final' : ''}">${isFinal ? '最終戦' : `${round}回戦 / 4`} · 当たれば ${pot * 2}</span>`;
       verdict.className = 'hl-verdict'; verdict.innerHTML = '';
       nextBox.hidden = true; nextBox.innerHTML = '';
       root.querySelectorAll('.hl-hand').forEach(h => { h.classList.remove('win', 'lose'); h.querySelector('.hl-hn').innerHTML = '<span class="hl-wait">？？？</span>'; });
