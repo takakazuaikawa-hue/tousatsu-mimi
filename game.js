@@ -15282,6 +15282,8 @@ function applyPanyuBg(overlay) {
 
 // ぱにゅぱにゅ30タップミニゲーム
 // ぱにゅぱにゅの衣装（網目＋ばねの描画は docs/design-ref/panyu-mesh.html を埋め込んで使う）
+// 網目のページを直したら PANYU_MESH_V を上げる（ブラウザに残った古いページを使わせない）
+const PANYU_MESH_V = '20261018';
 const PANYU_OUTFITS = [
   { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'gothic', name: 'ゴスロリ' }, { id: 'jirai', name: '地雷系' }, { id: 'vintage', name: '古着' }, { id: 'nurse', name: 'ナース' }, { id: 'santa', name: 'サンタ' },
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
@@ -15301,7 +15303,7 @@ function panyuCanMesh() {
 function panyuPrefetch() {
   if (panyuPrefetch.done) return; panyuPrefetch.done = true;
   const add = (href, as) => { const l = document.createElement('link'); l.rel = 'prefetch'; l.href = href; if (as) l.as = as; document.head.appendChild(l); };
-  add('docs/design-ref/panyu-mesh.html', 'document');
+  add('docs/design-ref/panyu-mesh.html?embed=1&v=' + PANYU_MESH_V, 'document');
   add('assets/characters/' + PANYU_OUTFIT_IMG[panyuOutfit()] + '.webp', 'image');
   add('assets/characters/panyu_surprise_face.webp', 'image');
 }
@@ -15370,7 +15372,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     meshFrame = document.createElement('iframe');
     meshFrame.className = 'pv2-mesh';
     meshFrame.title = 'ぱにゅぱにゅ';
-    meshFrame.src = 'docs/design-ref/panyu-mesh.html?embed=1' + (panyuOutfit() === 'bunny' ? '' : '&c=' + panyuOutfit());
+    meshFrame.src = 'docs/design-ref/panyu-mesh.html?embed=1&v=' + PANYU_MESH_V + (panyuOutfit() === 'bunny' ? '' : '&c=' + panyuOutfit());
     overlay.querySelector('.panyu-bg-char').after(meshFrame);
   };
   const onMeshMsg = (e) => {

@@ -425,6 +425,7 @@
       return max(ringM, bandM);
     }
     // 穴のまわりの肌を、16の向きから拾って距離で重みづけして混ぜる（すじも継ぎ目も出ない、なめらかな埋め方）
+    #ifdef USE_INPAINT   // 24方向×40歩の繰り返しは Windows の組み立てで展開されて重い（約8秒）。使う衣装（halter・white）の時だけ組み立てる
     vec3 inpaint(vec2 p, float on) {
       vec3 acc = vec3(0.0); float ws = 0.0;
       for (int k = 0; k < 24; k++) {
@@ -440,8 +441,11 @@
       }
       return acc / ws;
     }
+    #endif
     vec3 ringOff(vec3 col, vec2 p, float on) {
+      #ifdef USE_INPAINT
       if (uInp > 0.5) { float mm = ringMask(p, on); return mm < 0.001 ? col : mix(col, inpaint(p, on), mm); }
+      #endif
       float K = uRG.z; vec2 C = uRG.xy; float r = length(p - C) / K, ax = abs(p.x - C.x) / K;
       float ringM = on > 0.5 ? 1.0 - smoothstep(16.0, 18.4, r) : 1.0 - smoothstep(15.6, 17.0, r);   // 留まっている間は輪とその影だけ（帯は残す。帯の付け根は別に描く輪の絵がつなぐ）
       float bandM = on > 0.5 ? (1.0 - smoothstep(4.8, 6.6, abs(p.y - C.y - 1.4 * K) / K)) * (1.0 - smoothstep(20.0, 25.0, ax)) : 0.0;   // カップの角の短い端は残る
@@ -523,9 +527,13 @@
       q.x += uGs * (q.y - uFabY);   // 傾きを戻した座標から、絵の座標へ
       vec3 col = texture2D(uTex, q / uImgF).rgb;
       if (uDbg > 0.5 && h > 0.0 && uVk.x > 0.0 && e < 0.0) col = mix(col, p.y >= uFabY ? vec3(0.0, 0.0, 1.0) : a < vs - uShift ? vec3(0.0, 1.0, 0.0) : a < vs - uShift + h ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 1.0), 0.45);
+      #ifdef USE_STRAP   // 肩紐・リングは strap の衣装の時だけ組み立てる（組み立て時間を減らす）
       if (uBk.w > 0.5 && uSF > 0.5) { col = strapOff2(col, q, uSA.xy, uSA.zw, uBk.x); col = strapOff2(col, q, uSB.xy, uSB.zw, uBk.y); if (uRing > 0.5) col = ringOff(col, q, uBk.z); }
       else if (uBk.w > 0.5) { col = strapOff(col, q, uSA.xy, uSA.zw, uBk.x); col = strapOff(col, q, uSB.xy, uSB.zw, uBk.y); if (uRing > 0.5) col = ringOff(col, q, uBk.z); }
+      #endif
+      #ifdef USE_FOLD
       if (uFold.y > 0.0) { col = foldCorner(col, q, uFA0.xy, uFN.xy, uFO.xy, uFold.x * uFold.y); col = foldCorner(col, q, uFA1.xy, uFN.zw, uFO.zw, uFA0.z * uFold.y); }
+      #endif
       col = jewel(col, q); col = cover(col, q, uB0, uPop.x, uCovL.x); col = cover(col, q, uB1, uPop.y, uCovL.y); col = cover(col, q, uB2, uPop.z, uCovL.z);
       col *= 1.0 + clamp(vLit, -0.25, 0.25) * 0.35;
       if (uDbg > 0.5 && uUseBk > 0.5 && h > 0.0) { gl_FragColor = vec4(e < 0.0 ? 1.0 : 0.0, clamp(W - vs, 0.0, 10.0) / 10.0, e >= 0.0 ? clamp(1.0 - e / 30.0, 0.0, 1.0) : 0.0, 1.0); return; }
@@ -561,7 +569,7 @@
       gl_FragColor = vec4(col, 1.0);
     }`;
   const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o; };
-  const prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS.replace('CHEEK_L', CHEEK[0].join('.0,') + '.0').replace('CHEEK_R', CHEEK[1].join('.0,') + '.0'))); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw gl.getProgramInfoLog(prog); gl.useProgram(prog);
+  const prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, (OF.inpaint ? '#define USE_INPAINT\n' : '') + (OF.kind === 'strap' ? '#define USE_STRAP\n' : '') + (OF.fold ? '#define USE_FOLD\n' : '') + FS.replace('CHEEK_L', CHEEK[0].join('.0,') + '.0').replace('CHEEK_R', CHEEK[1].join('.0,') + '.0'))); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw gl.getProgramInfoLog(prog); gl.useProgram(prog);
   const U = n => gl.getUniformLocation(prog, n);
 
   // 網目：全体は粗く、胸のまわりだけ細かく（三角形の数を抑えて、スマホで軽く）
