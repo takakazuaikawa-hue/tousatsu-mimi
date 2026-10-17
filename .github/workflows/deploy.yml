@@ -29,6 +29,7 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html game.js home.js loader.js style.css read-compact.css allstar.js allstar-ui.js allstar.css _site/
+          cp sw.js offline.js offline.css manifest.webmanifest _site/
           if [ -f ui-modal.css ]; then cp ui-modal.css _site/; fi
           mkdir -p _site/battles/games
           cp battles/core.js battles/core.css battles/read-pc.css _site/battles/
@@ -36,6 +37,9 @@ jobs:
           rsync -a --exclude '_source_png' --exclude '_original' --exclude '*.md' assets/ _site/assets/
           mkdir -p _site/docs/design-ref
           cp docs/design-ref/panyu-mesh.html _site/docs/design-ref/
+      - name: Write offline-files.json
+        # まとめてダウンロード用の一覧（全ファイルの相対URL・sha1先頭12桁・サイズ）。sw.js と自分自身は含めない
+        run: node tools/make-offline-files.mjs _site
       - name: Check index.html can find every file
         # index.html が読むファイル（src / href の相対パス）が配信物に全部あるか。1つでも無ければ配信を止める
         run: |

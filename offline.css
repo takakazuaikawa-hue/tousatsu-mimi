@@ -1,0 +1,62 @@
+/* まとめてダウンロード（offline.js）の窓。暗い深紅＋金。設定の窓と同じ額縁を使う */
+.pack-overlay {
+  position: absolute; inset: 0; z-index: 420;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.78);
+  animation: fadeIn 0.25s;
+  padding: 12px; box-sizing: border-box;
+}
+.pack-modal {
+  box-sizing: border-box;
+  width: min(520px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(180deg, rgba(80, 20, 34, 0.97) 0%, rgba(29, 8, 14, 0.98) 100%);
+  border: 14px solid rgba(245, 215, 122, 0.5);
+  border-image: url('assets/ui/frame_gold.webp') 96 / 14px stretch;
+  box-shadow: 0 0 30px rgba(245, 215, 122, 0.5), 0 12px 36px rgba(0, 0, 0, 0.8);
+  color: var(--c-text, #f7eecf);
+}
+.pack-title {
+  margin: 0; text-align: center;
+  font-size: 20px; letter-spacing: 0.08em;
+  color: var(--c-gold-bright, #f5d77a);
+}
+.pack-body { display: flex; flex-direction: column; gap: 8px; }
+.pack-body p { margin: 0; line-height: 1.6; }
+.pack-lead { font-size: 15px; }
+.pack-note { font-size: 13px; color: var(--c-text-dim, #c4b89a); }
+.pack-note.is-caution { color: #ffb38a; }
+.pack-size { font-size: 14px; text-align: center; font-variant-numeric: tabular-nums; color: var(--c-gold-bright, #f5d77a); }
+.pack-bar {
+  height: 12px; border-radius: 6px; overflow: hidden;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(245, 215, 122, 0.5);
+}
+.pack-bar i {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, #8c1828, #d9b35a);
+  transition: width 0.25s linear;
+}
+.pack-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.pack-actions .btn { min-width: 150px; font-size: 15px; }
+
+/* 設定の中の1行 */
+[data-pack-row] { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; }
+[data-pack-row][hidden] { display: none; }
+[data-pack-row] .pack-row-state { font-size: 12px; font-weight: 500; color: var(--c-gold-bright, #f5d77a); opacity: 0.95; }
+
+/* スマホ（横画面 844x390 など）：縦が足りないので詰める */
+@media (max-height: 520px) {
+  .pack-overlay { padding: 6px; }
+  .pack-modal { padding: 8px 14px; gap: 6px; border-width: 10px; border-image-width: 10px; max-height: 100%; }
+  .pack-title { font-size: 16px; }
+  .pack-body { gap: 4px; }
+  .pack-lead { font-size: 13px; line-height: 1.5; }
+  .pack-note { font-size: 11px; line-height: 1.45; }
+  .pack-size { font-size: 12px; }
+  .pack-actions { gap: 8px; }
+  .pack-actions .btn { min-height: 40px; min-width: 120px; padding: 6px 14px; font-size: 13px; }
+}

@@ -4835,6 +4835,7 @@ function showSettingsModal() {
           <button class="btn btn-secondary settings-modal-trophy" data-action="open-glossary">${UI_ICON.book} ポーカー辞典</button>
           <button class="btn btn-secondary settings-modal-trophy" data-action="equip-change">${UI_ICON.dress} 装備変更</button>
           ${(save.ownedItems || []).includes('memory_minipoker') ? `<button class="btn btn-secondary settings-modal-trophy" data-action="play-minipoker">${UI_ICON.card} ファイブポーカー</button>` : ''}
+          <button class="btn btn-secondary settings-modal-trophy" data-pack-row>まとめてダウンロード <span class="pack-row-state" data-pack-state></span></button>
           <button class="btn btn-secondary settings-modal-trophy" data-action="home-fullscreen">全画面で遊ぶ</button>
           <button class="btn btn-danger settings-modal-reset" data-action="reset-save">セーブデータをリセット</button>
         </section>
@@ -4844,6 +4845,7 @@ function showSettingsModal() {
     </div>
   `;
   document.getElementById('stage').appendChild(overlay);
+  if (window.MimiPack) window.MimiPack.bindRow(overlay); // まとめてダウンロードの行（offline.js）
   const close = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
   const onKey = (e) => { if (e.key === 'Escape') close(); };
   document.addEventListener('keydown', onKey);
