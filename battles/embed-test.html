@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>心理・論理バトル 組み込みテスト</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Shippori+Mincho+B1:wght@700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap">
+<!-- 本編の CSS を先に読み込む（本編の .btn / .card / button などの影響を受けても同じに見えるかの検証） -->
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="core.css">
+</head>
+<body>
+<!-- 本編と同じ id="stage" の 1280x800 の箱の中に載せる -->
+<div id="stage" style="position:relative;width:1280px;height:800px">
+  <div id="mb-host-box" style="position:absolute;left:0;top:0;width:1280px;height:800px"></div>
+</div>
+<div id="log" style="display:none;position:fixed;left:8px;top:8px;max-width:600px;max-height:70px;overflow:auto;white-space:pre-wrap;background:#000c;color:#9f9;font:11px monospace;padding:4px 8px;z-index:99999"></div>
+<script src="core.js"></script>
+<script>MB.config({ base: '../' });</script>
+<script src="games/detective.js"></script>
+<script src="games/stare.js"></script>
+<script src="games/doubt.js"></script>
+<script src="games/objection.js"></script>
+<script src="games/gacha.js"></script>
+<script src="games/handbuild.js"></script>
+<script src="games/highlow.js"></script>
+<script src="games/danger.js"></script>
+<script src="games/sniper.js"></script>
+<script src="games/outs.js"></script>
+<script src="games/suspects.js"></script>
+<script>
+  // ?game=<id>&char=<polka|selina|grano|velvet|rico>&volume=0..1
+  const q = new URLSearchParams(location.search);
+  const games = MB.games;
+  const gameId = q.get('game') || games[0].id;
+  const g = games.find(x => x.id === gameId) || games[0];
+  const charId = q.get('char') || (g.chars && g.chars[0]) || 'polka';
+  const logEl = document.getElementById('log');
+  window.MB_EXIT = [];
+  const purse = window.MB_PURSE = { coins: +(q.get('coins') || 0), combo: +(q.get('combo') || 0), fever: +(q.get('fever') || 0), best: 0, perfect: 0 };
+  // 種類と相手を選ぶ小さな選択（URL を変えて読み込み直す）
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:fixed;right:8px;top:8px;z-index:99999;font:12px sans-serif;background:#000c;color:#fff;padding:4px 8px;border-radius:6px;display:flex;gap:6px';
+  bar.innerHTML = '<select id="sel-game">' + games.map(x => '<option value="' + x.id + '"' + (x.id === g.id ? ' selected' : '') + '>' + x.id + '</option>').join('') +
+    '</select><select id="sel-char">' + ['polka', 'selina', 'grano', 'velvet', 'rico'].map(c => '<option' + (c === charId ? ' selected' : '') + '>' + c + '</option>').join('') + '</select>';
+  document.body.appendChild(bar);
+  const go = () => { location.search = '?game=' + document.getElementById('sel-game').value + '&char=' + document.getElementById('sel-char').value; };
+  document.getElementById('sel-game').onchange = go; document.getElementById('sel-char').onchange = go;
+  const clean = q.has('clean');
+  if (clean) bar.style.display = 'none';
+  const say = (t) => { logEl.textContent += t + '\n'; logEl.scrollTop = 1e9; if (!clean) logEl.style.display = 'block'; };
+  window.MB_INST = MB.mount(document.getElementById('mb-host-box'), {
+    gameId: g.id, charId, purse, exitLabel: '卓にもどる', volume: q.has('volume') ? +q.get('volume') : 0,
+    onExit(result) { window.MB_EXIT.push(result); const s = 'onExit ' + JSON.stringify(result); console.log(s); say(s); },
+  });
+</script>
+</body>
+</html>
