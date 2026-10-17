@@ -3594,8 +3594,9 @@ function showEpisodeTitle(key, onContinue) {
   probe.onload = () => {
     overlay.style.backgroundImage = `url('${imgPath}')`;
     overlay.classList.add('has-art');
-    // 各話の扉絵は一度きりのカメラワークで動かし、最後は原画に戻して止める
-    if (MOTION_EP.includes(key)) attachMotionBg(overlay, `assets/motion/ep_${key}.mp4`, { replay: true });
+    // 各話の扉絵の動画は、題字が絵を隠している間は流さない。背景をクリックして絵だけを見せた時に
+    // 頭から一度きり再生し、最後は原画に戻して止める（2026-10-18 ユーザー指摘）。ここでは先に読んでおくだけ
+    if (MOTION_EP.includes(key) && window.MimiAssets) window.MimiAssets.warm([`assets/motion/ep_${key}.mp4`]);
   };
   probe.src = imgPath;
   overlay.innerHTML = `
@@ -3630,8 +3631,13 @@ function showEpisodeTitle(key, onContinue) {
   // カード外クリックで絵だけ表示モードをトグル
   overlay.addEventListener('click', (e) => {
     if (leaving) return;
-    if (e.target === overlay) {
-      overlay.classList.toggle('art-only');
+    if (e.target === overlay || e.target.classList.contains('motion-bg')) {
+      const artOnly = overlay.classList.toggle('art-only');
+      if (artOnly && MOTION_EP.includes(key) && overlay.classList.contains('has-art')) {
+        const old = overlay.querySelector(':scope > .motion-bg');
+        if (old) old.remove();
+        attachMotionBg(overlay, `assets/motion/ep_${key}.mp4`, { replay: true });
+      }
     }
   });
 }
