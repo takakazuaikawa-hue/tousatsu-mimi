@@ -5031,6 +5031,19 @@ const SHOP_ITEMS = [
   { id: 'panyu_chrono',        cat: 'panyu', name: 'ぱにゅクロノ',             price: 1600, desc: '1バトルにつき1回、ぱにゅぱにゅをゲージ25を使わずに発動できる' },
   { id: 'panyu_gauge_plus_50', cat: 'panyu', name: 'ぱにゅゲージ上限+50',      price: 2200, desc: 'ぱにゅゲージの最大値が120→170に' },
 
+  /* ===== ぱにゅ衣装：ロビーのぱにゅぱにゅで着られる服。最初はバニーだけで、買うと衣装替えの候補に増える（2026-10-17） ===== */
+  { id: 'pwear_pajama', cat: 'panyu', name: 'ぱにゅ衣装：パジャマ', price: 400, thumb: 'assets/ui/shop/pwear_pajama.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ふわふわのパジャマ。寝る前のゆるい揺れ' },
+  { id: 'pwear_vintage', cat: 'panyu', name: 'ぱにゅ衣装：古着', price: 500, thumb: 'assets/ui/shop/pwear_vintage.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ゆったりした古着コーデ' },
+  { id: 'pwear_pajama2', cat: 'panyu', name: 'ぱにゅ衣装：パジャマ2', price: 600, thumb: 'assets/ui/shop/pwear_pajama2.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ボタンの多いパジャマ。外れるたびに揺れが増す' },
+  { id: 'pwear_santa', cat: 'panyu', name: 'ぱにゅ衣装：サンタ', price: 700, thumb: 'assets/ui/shop/pwear_santa.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。聖夜のサンタ衣装' },
+  { id: 'pwear_gothic', cat: 'panyu', name: 'ぱにゅ衣装：ゴスロリ', price: 800, thumb: 'assets/ui/shop/pwear_gothic.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。フリルたっぷりのゴスロリ' },
+  { id: 'pwear_nurse', cat: 'panyu', name: 'ぱにゅ衣装：ナース', price: 900, thumb: 'assets/ui/shop/pwear_nurse.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。白衣のナース服' },
+  { id: 'pwear_jirai', cat: 'panyu', name: 'ぱにゅ衣装：地雷系', price: 900, thumb: 'assets/ui/shop/pwear_jirai.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。甘めの地雷系コーデ' },
+  { id: 'pwear_halter', cat: 'panyu', name: 'ぱにゅ衣装：ホルター', price: 1200, thumb: 'assets/ui/shop/pwear_halter.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。首で結ぶホルターネック' },
+  { id: 'pwear_white', cat: 'panyu', name: 'ぱにゅ衣装：白サテン', price: 1200, thumb: 'assets/ui/shop/pwear_white.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。つややかな白サテン' },
+  { id: 'pwear_dress', cat: 'panyu', name: 'ぱにゅ衣装：ドレス', price: 1500, thumb: 'assets/ui/shop/pwear_dress.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。夜会のドレス' },
+  { id: 'pwear_bikini', cat: 'panyu', name: 'ぱにゅ衣装：水着', price: 1800, thumb: 'assets/ui/shop/pwear_bikini.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。いちばん大胆な水着' },
+
   /* ===== 追加：戦術ノート ===== */
   { id: 'note_tell',           cat: 'note',  name: '相手の癖メモ',             price: 500,  desc: '対戦開始時に、相手の傾向（攻撃的／受け身／ブラフ多め など）がタグで出る' },
   { id: 'note_bankroll',       cat: 'note',  name: 'バンクロール管理',         price: 450,  desc: '対戦を終えるたびにもらうコインが+10%（勝ちの報酬にも参加賞にも付く）' },
@@ -5108,6 +5121,17 @@ const SHOP_COMMENTS = {
   panyu_range_lv3:     'ブラフの匂いまで嗅ぎ分ける逸品。ヴェルベット様には……必要かもしれませんな',
   panyu_chrono:        'もう一度だけ「ぱにゅっ」と。1バトルに1度、ゲージを使わず発動できる特権ですよ',
   panyu_gauge_plus_50: '上限170、もはや別格。長丁場の決戦で物を言いますよ',
+  pwear_pajama: '寝る前のミミさん。ゆるさが良いのですよ、ゆるさが',
+  pwear_vintage: '古着の味わい。飾らない一着ほど、揺れは素直なものです',
+  pwear_pajama2: 'ボタンが多いのが肝心でしてな……いえ、何でもございません',
+  pwear_santa: '季節を問わぬ聖夜のご用意、いかがです？',
+  pwear_gothic: 'フリルの奥ゆかしさ。お目が高い',
+  pwear_nurse: '白衣の天使。卓の疲れも癒やされますよ',
+  pwear_jirai: '甘い服ほど危うい。商売と同じですな',
+  pwear_halter: '首ひとつで結ぶ潔さ。ほどけたら……私は責任を持ちません',
+  pwear_white: '光をまとう白サテン。高級品は手触りが違います',
+  pwear_dress: '夜会の一着。VIPの夜を越えた方にこそ',
+  pwear_bikini: '最上の品は最後に。……ご自身でご確認を',
 
   /* 追加：戦術ノート */
   note_tell:           '相手の癖を先に知る。これほど卑怯で、これほど合法な武器はありませんな',
@@ -5279,6 +5303,17 @@ function reapplyAllOwnedEffects() {
 const SHOP_UNLOCK = {
   // ── 最初から（基本商品のみ） ──
   panyu_sense_lv2:       'always',
+  pwear_pajama: 'always',
+  pwear_vintage: 'always',
+  pwear_pajama2: 'polka',
+  pwear_santa: 'polka',
+  pwear_gothic: 'selina',
+  pwear_nurse: 'selina',
+  pwear_jirai: 'selina',
+  pwear_halter: 'grano',
+  pwear_white: 'grano',
+  pwear_dress: 'velvet',
+  pwear_bikini: 'velvet',
   panyu_gauge_plus_20:   'always',
   note_pot_odds:         'always',
   chips_plus_500:        'always',
@@ -5450,7 +5485,7 @@ function renderShopItems(cat) {
     const ownedLabel = i.clearBonus ? '✓ 入手済み' : '✓ 購入済み';
     return `<div class="shop-item ${owned ? 'owned' : ''} ${block ? 'locked' : ''} ${block && block.kind === 'superseded' ? 'is-superseded' : ''} ${isNew ? 'is-new' : ''}" data-item="${i.id}">
       ${isNew ? '<span class="shop-item-newtag">新入荷</span>' : ''}
-      <div class="shop-item-icon shop-item-icon-${i.cat}">${shopCatIconSvg(i.cat)}</div>
+      <div class="shop-item-icon shop-item-icon-${i.cat}${i.thumb ? ' has-thumb' : ''}">${i.thumb ? `<img class="shop-item-thumb" src="${i.thumb}" alt="" loading="lazy">` : shopCatIconSvg(i.cat)}</div>
       <div class="shop-item-body">
         <div class="shop-item-name">${i.name}</div>
         <div class="shop-item-desc">${i.desc}</div>
@@ -15214,7 +15249,10 @@ const PANYU_OUTFITS = [
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
 ];
 const PANYU_OUTFIT_IMG = { bunny: 'panyu_reach', pajama: 'panyu_pajama_reach', pajama2: 'panyu_pajama2_reach', gothic: 'panyu_gothic_reach', jirai: 'panyu_jirai_reach', vintage: 'panyu_vintage_reach', nurse: 'panyu_nurse_reach', santa: 'panyu_santa_reach', bikini: 'panyu_bikini_reach', halter: 'panyu_halter_reach', white: 'panyu_white_reach', dress: 'panyu_dress_reach' };
-function panyuOutfit() { try { const v = localStorage.getItem('mimi.panyuOutfit'); if (PANYU_OUTFITS.some(o => o.id === v)) return v; } catch (_) {} return 'bunny'; }
+// バニー以外はショップの「ぱにゅ衣装」を買うと着られる
+function panyuOutfitOwned(id) { return id === 'bunny' || isItemOwned('pwear_' + id); }
+function panyuOwnedOutfits() { return PANYU_OUTFITS.filter(o => panyuOutfitOwned(o.id)); }
+function panyuOutfit() { try { const v = localStorage.getItem('mimi.panyuOutfit'); if (PANYU_OUTFITS.some(o => o.id === v) && panyuOutfitOwned(v)) return v; } catch (_) {} return 'bunny'; }
 function setPanyuOutfit(id) { try { localStorage.setItem('mimi.panyuOutfit', id); } catch (_) {} }
 let panyuGlOk = null;
 function panyuCanMesh() {
@@ -15316,8 +15354,10 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     if (!meshOn) outfitBtn.hidden = true;
     outfitBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const i = PANYU_OUTFITS.findIndex(o => o.id === panyuOutfit());
-      const nx = PANYU_OUTFITS[(i + 1) % PANYU_OUTFITS.length];
+      const list = panyuOwnedOutfits();
+      if (list.length < 2) { toast('衣装は交換所の「ぱにゅ強化」で増えます'); return; }
+      const i = list.findIndex(o => o.id === panyuOutfit());
+      const nx = list[(i + 1) % list.length];
       setPanyuOutfit(nx.id);
       outfitBtn.querySelector('b').textContent = nx.name;
       mountMesh();

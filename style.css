@@ -19521,3 +19521,11 @@ html.is-compact .bd-card { font-size: calc(12px / var(--game-scale, 1)); padding
 #stage .intro-win-modal.iw2 .intro-win-buttons .btn-primary { background: linear-gradient(180deg, #7a0e16, #4e0509) !important; border: 1px solid #d9b269 !important; color: #f0d08a !important; }
 #stage .intro-win-modal.iw2 .intro-win-buttons .btn-secondary { background: #1b0d0b !important; border: 1px solid #8a5a1e !important; color: #d9b269 !important; }
 #stage .intro-win-modal.iw2 .intro-win-buttons .btn::before, #stage .intro-win-modal.iw2 .intro-win-buttons .btn::after { content: none !important; }
+
+/* ぱにゅ衣装の商品はサムネを八角の枠の中に（2026-10-17） */
+.shop-screen.v2 .shop-item-icon.has-thumb,
+.shop-buy-fx-wrap .shop-item-icon.has-thumb { padding: 5px; }
+.shop-item-icon .shop-item-thumb {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+}
