@@ -19529,3 +19529,37 @@ html.is-compact .bd-card { font-size: calc(12px / var(--game-scale, 1)); padding
   width: 100%; height: 100%; object-fit: cover; display: block;
   clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
 }
+
+/* ===== 画面の切り替え（2026-10-18）：深紅の幕が金の縁ごと斜めに払われる。幕の模様は菱格子 =====
+   切り抜き（clip-path）を動かすと描かれないことがあったので、斜めの幕そのものを横に滑らせる */
+#stage > .scr-wipe {
+  position: absolute; inset: 0; z-index: 9000; pointer-events: none; overflow: hidden;
+  animation: scrWipeLife .8s linear forwards;
+}
+.scr-wipe-move {
+  position: absolute; top: -20%; bottom: -20%; left: -40%; width: 180%;
+  transform: skewX(-14deg) translateX(0);
+  animation: scrWipeMove .64s cubic-bezier(.72,0,.22,1) .06s forwards;
+}
+.scr-wipe-slab {
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(45deg, rgba(255,214,140,.05) 0 2px, transparent 2px 26px),
+    repeating-linear-gradient(-45deg, rgba(255,214,140,.05) 0 2px, transparent 2px 26px),
+    radial-gradient(ellipse at 45% 50%, #5a0d16 0%, #2a0509 62%, #140205 100%);
+}
+.scr-wipe-edge {
+  position: absolute; top: 0; bottom: 0; left: -5px; width: 5px;
+  background: linear-gradient(90deg, #f3d58e, #b9852f 50%, #f3d58e);
+  box-shadow: 0 0 10px rgba(255,210,120,.7), 0 0 26px rgba(255,190,90,.35);
+}
+.scr-wipe-glint {
+  position: absolute; top: 0; bottom: 0; left: -70px; width: 140px;
+  background: linear-gradient(90deg, transparent, rgba(255,236,190,.35), transparent);
+}
+@keyframes scrWipeMove { from { transform: skewX(-14deg) translateX(0); } to { transform: skewX(-14deg) translateX(100%); } }
+@keyframes scrWipeLife { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
+/* 次の画面はわずかに寄った所から落ち着く */
+#app.scr-enter > .screen { animation: scrSettle .7s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes scrSettle { from { transform: scale(1.025); filter: brightness(.82); } to { transform: none; filter: none; } }
+@media (prefers-reduced-motion: reduce) { #stage > .scr-wipe { display: none; } #app.scr-enter > .screen { animation: none; } }

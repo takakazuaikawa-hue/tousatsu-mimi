@@ -2979,7 +2979,7 @@ function playScreenWipe(to) {
   const w = document.createElement('div');
   w.className = 'scr-wipe';
   w.setAttribute('aria-hidden', 'true');
-  w.innerHTML = '<i class="scr-wipe-slab"></i><i class="scr-wipe-edge"></i><i class="scr-wipe-glint"></i>';
+  w.innerHTML = '<div class="scr-wipe-move"><i class="scr-wipe-slab"></i><i class="scr-wipe-glint"></i><i class="scr-wipe-edge"></i></div>';
   stage.appendChild(w);
   const appEl = document.getElementById('app');
   if (appEl) { appEl.classList.remove('scr-enter'); void appEl.offsetWidth; appEl.classList.add('scr-enter'); clearTimeout(playScreenWipe._t); playScreenWipe._t = setTimeout(() => appEl.classList.remove('scr-enter'), 800); }
