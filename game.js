@@ -8415,6 +8415,7 @@ const CREDITS = [
   { type: 'line', role: 'イラスト・シナリオ', text: 'ChatGPT' },
   { type: 'line', role: 'ムービー', text: 'Higgsfield' },
   { type: 'line', role: '音楽', text: 'Suno' },
+  { type: 'line', role: 'キャラクターボイス', text: 'Irodori-TTS（Aratako）' },
   { type: 'line', role: 'プログラム', text: 'Claude Code' },
   { type: 'gap' },
 
@@ -8432,6 +8433,8 @@ const CREDITS = [
   { type: 'gap' },
   { type: 'line', text: COPYRIGHT_TEXT, cls: 'is-legal' },
   { type: 'line', text: 'Ver ' + GAME_VERSION, cls: 'is-legal' },
+  // 声の合成に使った Irodori-TTS（と同梱の DACVAE・SilentCipher）は MIT ライセンス。著作権表示を残す義務がある
+  { type: 'line', text: 'Irodori-TTS / Semantic-DACVAE © Aratako, SilentCipher © Sony Research — MIT License', cls: 'is-legal' },
 ];
 
 // コレクション・交換所の「スタッフロール再生」：エンディングと同じスタッフロールを、今の画面の上で流す。
