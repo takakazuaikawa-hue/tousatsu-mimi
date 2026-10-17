@@ -442,6 +442,8 @@ function wipeAllProgress() {
   ['mimi.panyuOutfit', 'mbGachaBook'].forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
   save = defaultSave();
   if (typeof reapplyAllOwnedEffects === 'function') reapplyAllOwnedEffects();
+  // 鳴っているロビー・場面の曲も止める（止めないと表示は「音 切」なのに鳴り続けた）
+  try { if (typeof _stopNonSceneBgm === 'function') _stopNonSceneBgm(); if (typeof stopSceneBgm === 'function') stopSceneBgm(); } catch (_) {}
 }
 
 //=============================================================
@@ -2965,8 +2967,30 @@ function log(category, entry) {
 //=============================================================
 const app = document.getElementById('app');
 
+// 画面の切り替え：深紅の幕（金の縁）が斜めに払われて次の画面が現れる。中身は即座に差し替え、
+// 幕は上に乗るだけなので、render() の直後に DOM を触る呼び出し側には影響しない。
+// 同じ画面の描き直し（対戦中の更新など）では出さない。エンディングは自前の演出があるので出さない。
+let __lastRenderedScreen = null;
+function playScreenWipe(to) {
+  if (!MOTION_OK || to === 'ending') return;
+  const stage = document.getElementById('stage');
+  if (!stage) return;
+  stage.querySelectorAll(':scope > .scr-wipe').forEach(e => e.remove());
+  const w = document.createElement('div');
+  w.className = 'scr-wipe';
+  w.setAttribute('aria-hidden', 'true');
+  w.innerHTML = '<i class="scr-wipe-slab"></i><i class="scr-wipe-edge"></i><i class="scr-wipe-glint"></i>';
+  stage.appendChild(w);
+  const appEl = document.getElementById('app');
+  if (appEl) { appEl.classList.remove('scr-enter'); void appEl.offsetWidth; appEl.classList.add('scr-enter'); clearTimeout(playScreenWipe._t); playScreenWipe._t = setTimeout(() => appEl.classList.remove('scr-enter'), 800); }
+  const done = () => w.remove();
+  w.addEventListener('animationend', (e) => { if (e.target === w) done(); });
+  setTimeout(done, 1200);
+}
 function render() {
   if (state.screen === 'lobby' && !homeAssetsGate()) return;
+  if (__lastRenderedScreen && __lastRenderedScreen !== state.screen) playScreenWipe(state.screen);
+  __lastRenderedScreen = state.screen;
   homeCleanup();
   document.body.classList.toggle('home-active', state.screen === 'lobby');
   switch (state.screen) {
@@ -5410,6 +5434,8 @@ const SHOP_PREREQ = {
 // 持っているか。クリア特典（clearBonus）はヴェルベット撃破で自動的に持っている扱い
 function isItemOwned(itemId) {
   if (save.ownedItems.includes(itemId)) return true;
+  // ポットオッズ入門はグラーノ撃破でも無料で手に入る（unlockedNotes の 'pot_odds'）。その時は交換所でも入手済み扱い
+  if (itemId === 'note_pot_odds' && Array.isArray(save.unlockedNotes) && save.unlockedNotes.includes('pot_odds')) return true;
   const it = SHOP_ITEMS.find(i => i.id === itemId);
   return !!(it && it.clearBonus && isEndingUnlocked());
 }
@@ -7705,7 +7731,7 @@ function onAction(e) {
         'coins', 'ownedItems', 'shopSeenItems', 'unlockedNotes', 'panyuGaugeMax', 'panyuSkills', 'panyuComboMultiplier', 'carryChips',
         'equippedCardSkin', 'equippedTableSkin', 'equippedRicoOutfit', 'equippedChipSkin', 'equippedMimiSkin', 'equippedCutin',
         'equippedBgmLobby', 'equippedBgmBattle', 'equippedSePack',
-        'loginBonus', 'bgmVolume', 'bgmOn', 'sfxVolume', 'sfxOn', 'forceSound', 'psychEnabled', 'logicEnabled',
+        'loginBonus', 'panyuFreeDaily', 'bgmVolume', 'bgmOn', 'sfxVolume', 'sfxOn', 'forceSound', 'psychEnabled', 'logicEnabled',
       ];
       save = defaultSave();
       KEEP_KEYS.forEach(k => { if (prev[k] !== undefined) save[k] = JSON.parse(JSON.stringify(prev[k])); });
