@@ -19121,7 +19121,10 @@ html.is-compact .ek-name { font-size: calc(12px / var(--game-scale, 1)); }
 
 /* ---- スタッフロール：紫の夜空・紫黒の暗幕をやめ、深紅と黒。書体はしっぽり明朝、斜体なし ---- */
 .credits-roll {
-  background: radial-gradient(ellipse 70% 55% at 50% 50%, rgba(122,14,22,.28), transparent 72%),
+  /* 背景の絵：紫の夜景（staffroll.webp）は使わず、舞台の時計台劇場を暗く沈めて敷く（2026-10-18 背景が無くなっていた） */
+  background: linear-gradient(180deg, rgba(14,3,5,.88) 0%, rgba(20,4,7,.66) 32%, rgba(20,4,7,.66) 68%, rgba(14,3,5,.9) 100%),
+              radial-gradient(ellipse 70% 55% at 50% 50%, rgba(122,14,22,.22), transparent 72%),
+              url('assets/backgrounds/bg_lobby_clock.jpg') center / cover no-repeat,
               linear-gradient(180deg, #130406, #2a0a0e 50%, #130406) !important;
   font-family: "Shippori Mincho B1", "Yu Mincho", serif;
 }
@@ -19563,3 +19566,16 @@ html.is-compact .bd-card { font-size: calc(12px / var(--game-scale, 1)); padding
 #app.scr-enter > .screen { animation: scrSettle .7s cubic-bezier(.2,.7,.2,1) both; }
 @keyframes scrSettle { from { transform: scale(1.025); filter: brightness(.82); } to { transform: none; filter: none; } }
 @media (prefers-reduced-motion: reduce) { #stage > .scr-wipe { display: none; } #app.scr-enter > .screen { animation: none; } }
+
+/* ぱにゅぱにゅの寄りのメーター（2026-10-18）：スマホは両手の親指で左右を叩くので、寄りはピンチではなく右端の縦のメーター */
+.pv2 .pv2-zoom {
+  position: absolute; z-index: 4; right: max(14px, 2.4vw); top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px;
+  background: rgba(12,9,10,.62); border: 1px solid rgba(214,170,90,.45); border-radius: 2px;
+}
+.pv2 .pv2-zoom span { color: #f0d79a; font: 700 12px/1 inherit; font-family: inherit; letter-spacing: .1em; }
+.pv2 .pv2-zoom input {
+  writing-mode: vertical-lr; direction: rtl; appearance: slider-vertical;
+  width: 34px; height: min(46vh, 260px); margin: 0; accent-color: #d9b25a; cursor: pointer; touch-action: none;
+}
+html.is-compact .pv2 .pv2-zoom span { font-size: calc(12px / var(--game-scale, 1)); }

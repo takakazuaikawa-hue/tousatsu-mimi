@@ -946,7 +946,7 @@
   const tdist = () => { const [a, b] = [...touches.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
   stageEl.addEventListener('pointerdown', (e) => {
     touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (touches.size === 2) {
+    if (touches.size === 2 && !EMBED) {   // 本編の中では2本指は「両手で叩く」なのでピンチにしない（寄りはメーター）
       pinch = { d0: tdist(), z0: zTarget };
       ptrs.forEach((g) => { P[g.i].grab = null; }); ptrs.clear();
     }
@@ -959,6 +959,8 @@
   const tup = (e) => { touches.delete(e.pointerId); if (touches.size < 2) pinch = null; };
   stageEl.addEventListener('pointerup', tup, true); stageEl.addEventListener('pointercancel', tup, true);
 
+  // 本編のメーターから寄り具合を受け取る（{panyuZoom: 倍率}）。今の倍率は ready の時に知らせる
+  addEventListener('message', (ev) => { const d = ev.data || {}; if (typeof d.panyuZoom === 'number') setZoom(Math.max(1, Math.min(1.7, d.panyuZoom))); });
   const noteEl = document.querySelector('.note');
   stageEl.addEventListener('pointerdown', (e) => {
     noteEl.classList.add('off');   // 一番下のボタンに重ならないよう、触ったら操作の説明は消す

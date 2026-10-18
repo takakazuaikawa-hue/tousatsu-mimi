@@ -15346,10 +15346,10 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
       <div class="pv2-skill-name">《ぱにゅぱにゅ》<b>Lv.${panyuSkillLevel()}</b></div>
     </header>
     <div class="pv2-tools">
-      <div class="panyu-bg-picker pv2-picker" role="group" aria-label="光の色">${bgPicker}</div>
       <button type="button" class="pv2-outfit" aria-label="衣装を替える"><span>衣装</span><b>${(PANYU_OUTFITS.find(o => o.id === panyuOutfit()) || PANYU_OUTFITS[0]).name}</b></button>
       <button type="button" class="pv2-quit">やめる</button>
     </div>
+    <label class="pv2-zoom" aria-label="寄り具合"><span>寄り</span><input type="range" min="1" max="1.7" step="0.01" value="${window.innerHeight < 500 ? 1 : 1.28}"></label>
     <div class="panyu-clicker-pair">
       ${blobTemplate('panyu-blob-l')}
       ${blobTemplate('panyu-blob-r')}
@@ -15716,7 +15716,13 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     overlay.classList.add('is-out');
     setTimeout(() => overlay.remove(), 260);
   });
-  // 背景テーマ切替
+  // 寄りのメーター（スマホは両手の親指で叩くので、寄りはピンチではなくメーターで）
+  const zoomIn = overlay.querySelector('.pv2-zoom input');
+  if (zoomIn) {
+    ['pointerdown', 'touchstart', 'click'].forEach(t => zoomIn.addEventListener(t, e => e.stopPropagation()));
+    zoomIn.addEventListener('input', () => { const f = overlay.querySelector('iframe.pv2-mesh'); if (f && f.contentWindow) f.contentWindow.postMessage({ panyuZoom: +zoomIn.value }, '*'); });
+  }
+  // 背景テーマ切替（ボタンは出していないが、保存済みの設定は applyPanyuBg で反映される）
   overlay.querySelectorAll('.panyu-bg-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
