@@ -537,3 +537,11 @@ html.is-compact .home-settings input { height: calc(44px * var(--inv-scale, 1));
       .dominance-choice-modal, .ho-modal, .home-dialog) { animation: none; }
   .settings-modal .stm-knob { transition: none; }
 }
+
+/* スマホ版の基準（2026-10-18）：小さいスマホ（安全域の内側が 600px 未満）では設定を2列に（3列だと切り替えが文字に重なっていた） */
+@media (max-width: 760px) {
+  html.is-compact .settings-modal-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.is-compact .settings-modal-groups > :nth-child(3) { grid-column: 1 / -1; }
+  html.is-compact .settings-modal-groups > .settings-modal-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; align-content: start; }
+  html.is-compact .settings-modal-links > h3 { grid-column: 1 / -1; }
+}

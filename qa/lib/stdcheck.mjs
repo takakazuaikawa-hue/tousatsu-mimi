@@ -33,6 +33,8 @@ export function stdCheck({ minText = 12, bodyMin = 14, safe = 47, phone = true }
     const r = e.getBoundingClientRect(); if (r.width < 4 || r.height < 4) continue;
     if (r.right <= 0 || r.bottom <= 0 || r.left >= VW || r.top >= VH) { continue; }
     if (getComputedStyle(e).pointerEvents === 'none') continue;
+    // 縦や横に流せる箱の中で、流した先にある物（今は箱の外）は数えない
+    { let away = false; for (let x = e.parentElement; x && x !== document.body; x = x.parentElement) { const c = getComputedStyle(x); if (!/auto|scroll/.test(c.overflowY + c.overflowX)) continue; if (x.scrollHeight <= x.clientHeight + 2 && x.scrollWidth <= x.clientWidth + 2) continue; const b = x.getBoundingClientRect(); if (r.bottom > b.bottom + 1 || r.top < b.top - 1 || r.right > b.right + 1 || r.left < b.left - 1) { away = true; break; } } if (away) continue; }
     const cx = Math.min(VW - 1, Math.max(0, r.left + r.width / 2)), cy = Math.min(VH - 1, Math.max(0, r.top + r.height / 2));
     const t = document.elementFromPoint(cx, cy);
     if (underModal(e, cx, cy)) continue;
