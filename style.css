@@ -19768,3 +19768,15 @@ html.is-compact body:has(#app > .shop-screen, #app > .result-screen) #fullscreen
   html.is-compact .result-screen .result-main-btn { flex: 1.15 1 0; font-size: calc(14px / var(--game-scale, 1)); }
   html.is-compact .result-screen .result-sub-buttons .btn { font-size: calc(14px / var(--game-scale, 1)); padding: 0 4px; letter-spacing: 0; }
 }
+/* 三択の心理・論理バトル（スマホ）：状況・ルールの本文を 14px に（スマホの基準 2026-10-18） */
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-situation,
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal.logic-mode .psych-situation,
+html.is-compact #app > .battle-modal-overlay.v2psych .logic-rule-text { font-size: 14px !important; line-height: 1.4 !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .choice-btn { font-size: 14px !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-choices:has(> :nth-child(4)) .choice-btn { font-size: 13px !important; }
+/* 選択肢が5つの時は、状況を2行に畳み、選択肢の間を詰める（下の賭け金の行が画面の外へ出ていた） */
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal:has(.psych-choices > :nth-child(5)) .psych-situation { display: -webkit-box !important; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal:has(.psych-choices > :nth-child(5)) .psych-choices { row-gap: 4px !important; }
+html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal:has(.psych-choices > :nth-child(5)) { row-gap: 4px; }
+/* ハイ＆ローの倍率の小さい字 */
+html.is-compact #stage > .read-battle-host.mb-host .hl-mult small, html.is-compact #stage > .read-battle-host.mb-host [class^="hl-"] small { font-size: 12.5px; }

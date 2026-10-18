@@ -624,4 +624,14 @@ html.is-compact #stage > .read-battle-host.mb-host .sp-val { font-size: 17px; }
 html.is-compact #stage > .read-battle-host.mb-host .card i { font-size: max(12px, calc(var(--w, 34px) * .36)); }
 html.is-compact #stage > .read-battle-host.mb-host :is(.gc-orow small, .gc-meta, .hb-ref li span, .hb-ref .hb-arrow, .hb-slot .hb-tag, .hb-bname small,
   .hl-pot small, .ob-colhead, .sn-me-name small, .sn-axis-y, .sn-floor, .stare-meter .lbl) { font-size: 12px; }
-html.is-compact #stage > .read-battle-host.mb-host .hl-rung small { font-size: 12px; }
+html.is-compact #stage > .read-battle-host.mb-host .hl-rung small { font-size: 12.5px !important; }
+/* 安全域の枠の分だけ横が狭くなった所：アウツの答え合わせで場札7枚が1列に収まるよう、札を一回り小さく */
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .row .card.big { --w: 29px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .row { gap: 2px; }
+html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card.found, html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card.shown { width: 33px; flex-basis: 33px; }
+/* 本文（説明・証言・状況）は 14px に */
+html.is-compact #stage > .read-battle-host.mb-host :is(.ob-evtext, .formula, .prompt) { font-size: 14px; line-height: 1.35; }
+html.is-compact #stage > .read-battle-host.mb-host :is(.sn-wrap small, [class^="sn-"] small, .hl-wrap small) { font-size: 12px; }
+html.is-compact #stage > .read-battle-host.mb-host .sn-xlab { font-size: 12.5px; }
+html.is-compact #stage > .read-battle-host.mb-host small { font-size: max(12px, .8em); }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root .formula { font-size: 14px !important; line-height: 1.35; }
