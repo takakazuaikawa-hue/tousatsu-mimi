@@ -3100,7 +3100,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .preload-count { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; letter-spacing: 0.2em; color: #a59c90; }
 .preload-count b { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; color: #f3ece0; font-variant-numeric: tabular-nums; margin-right: 2px; }
 .preload-tip-box { border-left: 2px solid #d8b56c; padding: 2px 0 2px 14px; }
-.preload-tip-label { font-size: 11px; letter-spacing: 0.24em; color: #d8b56c; margin-bottom: 4px; }
+.preload-tip-label { font-size: 12px; letter-spacing: 0.24em; color: #d8b56c; margin-bottom: 4px; }
 .preload-tip { font-size: clamp(13px, 1.5vw, 15px); line-height: 1.75; color: #f3ece0; min-height: 3.5em; transition: opacity 0.3s ease; }
 .preload-tip.is-swapping { opacity: 0; }
 /* 縦持ち：ミミを上に、文字は下にまとめる */
@@ -19606,7 +19606,7 @@ html.is-compact .minipoker-overlay .minipoker-close { top: 2px; right: 4px; widt
 html.is-compact .minipoker-overlay .mp-header { flex-wrap: nowrap; gap: 8px; padding: 0 50px 4px 0; margin-bottom: 4px; min-height: 44px; }
 html.is-compact .minipoker-overlay .mp-title { font-size: 15px; letter-spacing: .04em; white-space: nowrap; }
 html.is-compact .minipoker-overlay .mp-stats { flex-wrap: nowrap; gap: 4px; font-size: 12px; overflow: hidden; }
-html.is-compact .minipoker-overlay .mp-stat { font-size: 12px; padding: 2px 6px; }
+html.is-compact .minipoker-overlay .mp-stat { font-size: 12.6px; padding: 2px 6px; }
 html.is-compact .minipoker-overlay .mp-stat:nth-of-type(5) { display: none; }
 html.is-compact .minipoker-overlay :is(.mp-history-btn, .mp-ach-btn) { width: 44px; height: 44px; min-width: 44px; padding: 0; flex: none; }
 html.is-compact .minipoker-overlay .minipoker-board { flex-direction: row !important; gap: 8px; min-height: 0; }
@@ -19698,6 +19698,7 @@ html.is-compact .shop-v2-coins { right: calc(44px + var(--bleed)); }
 html.is-compact .shop-screen.v2 .shop-v2-back { right: calc(360px + var(--bleed)); }
 html.is-compact .shop-v2-tabs { right: calc(44px + var(--bleed)); }
 html.is-compact .shop-screen.v2 .shop-items { right: calc(36px + var(--bleed)); }
+html.is-compact .shop-screen.v2 .shop-items { padding-top: 10px; }
 html.is-compact .shop-v2-coins-label { font-size: 26px; }
 html.is-compact .shop-screen.v2 .shop-item-desc { font-size: 14.8px; }
 html.is-compact .shop-screen.v2 .shop-item-price small { font-size: 13px; }

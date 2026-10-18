@@ -635,3 +635,21 @@ html.is-compact #stage > .read-battle-host.mb-host :is(.sn-wrap small, [class^="
 html.is-compact #stage > .read-battle-host.mb-host .sn-xlab { font-size: 12.5px; }
 html.is-compact #stage > .read-battle-host.mb-host small { font-size: max(12px, .8em); }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root .formula { font-size: 14px !important; line-height: 1.35; }
+
+/* ===== 最小のスマホ（幅720px未満・667x375）：左の列を細くして、遊びの横幅を取り戻す ===== */
+@media (max-width: 719px) {
+  html.is-compact #stage > .read-battle-host.mb-host { --rail: 140px; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-stage { gap: 0 8px; padding-right: 6px; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row { padding: 62px 6px 6px; gap: 4px; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row > .mb-portrait { right: 6px; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-portrait.is-face { width: 50px; height: 62px; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-portrait.is-face img { left: -8px; top: -2px; width: 68px; height: 86px; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-portrait.is-chibi { width: 56px; height: 66px; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row > div:not(.mb-coach):not(.mb-betchip) { min-height: 62px; padding-right: 56px; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach { padding: 4px 6px; min-height: 0; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-pop,
+  html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-name { display: none; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-purse .mb-lamps { display: none; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-game-root .steps { gap: 3px; flex-wrap: wrap; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-game-root .steps .step { padding-left: 5px; padding-right: 5px; }
+}
