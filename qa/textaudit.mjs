@@ -49,7 +49,7 @@ const MEASURE = (rootSel) => `(() => {
     let clipped = false; for (let x = el.parentElement; x && x !== document.body; x = x.parentElement) { const c = getComputedStyle(x); if (c.overflow !== 'visible' || c.overflowY !== 'visible') { const b = x.getBoundingClientRect(); if (r.bottom <= b.top + 1 || r.top >= b.bottom - 1 || r.right <= b.left + 1 || r.left >= b.right - 1) { clipped = true; break; } } }
     if (clipped) continue;
     const L = Math.min(...rs.map(q => q.left)), R = Math.max(...rs.map(q => q.right));
-    texts.push({ t: t.slice(0, 24), px: +px.toFixed(1), sel: selOf(el), off, y: Math.round(r.top), L: Math.round(L), R: Math.round(R), body: !!el.closest(BODY_SEL) || t.length >= 30 });
+    texts.push({ t: t.slice(0, 24), px: +px.toFixed(1), sel: selOf(el), off, y: Math.round(r.top), L: Math.round(L), R: Math.round(R), body: !!el.closest(BODY_SEL) || (t.length >= 30 && el.tagName !== 'SMALL' && !/note|hint|cap|sub|tag|legal|small/i.test(typeof el.className === 'string' ? el.className : '')) });
   }
   const isTap = (e) => e.tagName === 'BUTTON' || e.getAttribute('role') === 'button' || (getComputedStyle(e).cursor === 'pointer' && !(e.parentElement && getComputedStyle(e.parentElement).cursor === 'pointer'));
   const taps = [...root.querySelectorAll('*')].filter(isTap).filter(e => effOpacity(e) >= 0.3 && !e.disabled).map(e => { const r = e.getBoundingClientRect(); return { t: (e.textContent || e.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim().slice(0, 16), sel: selOf(e), w: Math.round(r.width), h: Math.round(r.height), off: r.left < -1 || r.top < -1 || r.right > VW + 1 || r.bottom > VH + 1, L: Math.round(r.left), R: Math.round(r.right), full: r.width >= VW * 0.7 }; }).filter(b => b.w >= 4 && b.h >= 4);

@@ -7301,7 +7301,7 @@ function renderOpponentHand(el) {
 //=============================================================
 function juiceScale() {
   const st = document.getElementById('stage');
-  return st ? Math.max(0.35, st.getBoundingClientRect().width / 1280) : 1;
+  return st ? Math.max(0.35, st.getBoundingClientRect().width / (st.offsetWidth || 1280)) : 1;
 }
 function juiceRect(sel) {
   const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
@@ -13780,7 +13780,7 @@ function showMustKnow(pages, opts = {}) {
       if (done) return;
       const p = pages[idx];
       const sr = stage.getBoundingClientRect();
-      const k = sr.width / 1280 || 1;
+      const k = sr.width / (stage.offsetWidth || 1280) || 1;
       const els = p.target ? [...document.querySelectorAll(p.target)].filter(e => e.getBoundingClientRect().width > 0) : [];
       let H = null;
       if (els.length) {
@@ -13794,7 +13794,7 @@ function showMustKnow(pages, opts = {}) {
         if (H.b + 18 + ch <= 788) top = H.b + 18;
         else if (H.t - 18 - ch >= 12) top = H.t - 18 - ch;
         // 札が照らした所の大半を隠してしまう時（スマホで札が大きい時など）は、照らさずに全体を暗くする
-        const cw = card.offsetWidth, cl = (1280 - cw) / 2;
+        const cw = card.offsetWidth, cl = ((stage.offsetWidth || 1280) - cw) / 2;
         const ox = Math.max(0, Math.min(cl + cw, H.r) - Math.max(cl, H.l)), oy = Math.max(0, Math.min(top + ch, H.b) - Math.max(top, H.t));
         if (ox * oy > (H.r - H.l) * (H.b - H.t) * 0.2) H = null;
       }
@@ -18545,19 +18545,38 @@ function toast(msg, variant) {
 //=============================================================
 // 19. 固定アスペクト比スケーリング
 //=============================================================
+// 実機の安全域（env(safe-area-inset-left/right) の大きい方、CSS px）
+let _safeProbe = null;
+function safeAreaInsetX() {
+  try {
+    if (!_safeProbe) { _safeProbe = document.createElement('div'); _safeProbe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)'; document.body.appendChild(_safeProbe); }
+    const cs = getComputedStyle(_safeProbe);
+    return Math.max(parseFloat(cs.paddingLeft) || 0, parseFloat(cs.paddingRight) || 0);
+  } catch (e) { return 0; }
+}
 function fitStage() {
   const sx = window.innerWidth / 1280;
   const sy = window.innerHeight / 800;
   const scale = Math.min(sx, sy);
   document.documentElement.style.setProperty('--game-scale', scale);
   // スマホ（舞台が 0.62 倍より小さい）：文字の基準に合わせて、画面ごとに詰めた配置に切り替える
-  document.documentElement.classList.toggle('is-compact', scale < 0.62);
-  // 舞台の左右・上下に空く黒い帯の幅（画面の px）。スマホの読み合いは、この帯まで広げて画面いっぱいに使う
-  document.documentElement.style.setProperty('--gut-x', Math.max(0, (window.innerWidth - 1280 * scale) / 2) + 'px');
+  const compact = scale < 0.62;
+  document.documentElement.classList.toggle('is-compact', compact);
+  // スマホ：左右の安全域（ノッチ付き iPhone の横画面で欠ける約47px。実機の env() が大きければそちら）を除いた幅いっぱいまで
+  // 舞台を横に広げる（高さは 800 のまま）。中央に 1280 幅で縮こまらせて左右に黒い帯を作らない。docs/design-ref/mobile-standard.md
+  const safeX = compact ? Math.max(47, safeAreaInsetX()) : 0;
+  const stageW = compact ? Math.max(1280, Math.floor((window.innerWidth - 2 * safeX) / scale)) : 1280;
+  document.documentElement.style.setProperty('--stage-w', stageW + 'px');
+  document.documentElement.style.setProperty('--safe-x', safeX + 'px');
+  // 全画面の小窓の紙面を寄せる幅（画面の px）：舞台の外の帯か安全域の広い方
+  document.documentElement.style.setProperty('--pad-x', Math.max(safeX, (window.innerWidth - stageW * scale) / 2) + 'px');
+  // 舞台の左右・上下に空く帯の幅（画面の px）。全画面の小窓・読み合いは、この帯まで広げて背景を端まで敷く
+  document.documentElement.style.setProperty('--gut-x', Math.max(0, (window.innerWidth - stageW * scale) / 2) + 'px');
   document.documentElement.style.setProperty('--gut-y', Math.max(0, (window.innerHeight - 800 * scale) / 2) + 'px');
   document.documentElement.style.setProperty('--rb-h', window.innerHeight + 'px');
+  document.documentElement.style.setProperty('--rb-w', window.innerWidth + 'px');
   // スマホの小窓は中身を実寸で描く（CSS の 1px＝画面の 1px）：舞台の縮みの逆数
-  document.documentElement.style.setProperty('--inv-scale', (1 / scale).toFixed(4));
+  document.documentElement.style.setProperty('--inv-scale', (1 / scale).toFixed(6));
   fitHomeStage();
 }
 window.addEventListener('resize', fitStage);

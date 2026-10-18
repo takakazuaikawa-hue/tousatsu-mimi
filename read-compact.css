@@ -11,7 +11,7 @@ html.is-compact #stage > .read-battle-host.mb-host {
 }
 /* 財布：左の列の上に小さく */
 html.is-compact #stage > .read-battle-host.mb-host .mb-purse { position: absolute; left: 0; top: 0; width: var(--rail); z-index: 3; padding: 4px 6px; gap: 4px; background: rgba(0,0,0,.6); border-bottom: 1px solid rgba(217,179,90,.4); border-right: 1px solid rgba(217,179,90,.25); }
-html.is-compact #stage > .read-battle-host.mb-host .mb-purse > div { padding: 1px 6px; font-size: 11px; gap: 3px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-purse > div { padding: 1px 6px; font-size: 12px; gap: 3px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-purse b { font-size: 16px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-purse .mb-fever-box { min-width: 0; flex: 1 1 100%; }
 /* 舞台：左の列（相手・リコ先輩）＋右の遊び */
@@ -23,15 +23,15 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-portrait.is-face img { le
 html.is-compact #stage > .read-battle-host.mb-host .mb-portrait.is-chibi { width: 72px; height: 84px; margin: 0; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row > div:not(.mb-coach):not(.mb-betchip) { min-height: 84px; padding-right: 76px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-opp-name { font-size: 13px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-speech { font-size: 13px; line-height: 1.4; padding: 4px 8px; transform: none; margin-top: 4px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-speech { font-size: 14px; line-height: 1.35; padding: 4px 8px; transform: none; margin-top: 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-speech > span { transform: none; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-betchip { display: flex; align-items: baseline; justify-content: flex-start; gap: 8px; text-align: left; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-betchip .lbl { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-betchip .lbl { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-betchip .num { font-size: 22px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach { order: 3; margin-top: auto; padding: 6px 8px 6px 54px; min-height: 64px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-pop { width: 48px; height: 60px; left: 2px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-coach-name { font-size: 11px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-line { font-size: 12px; line-height: 1.4; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-coach-name { font-size: 12px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-line { font-size: 14px; line-height: 1.35; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root { grid-column: 2; grid-row: 1; padding: 8px 0 10px; gap: 8px; min-height: 0; }
 
 /* 小さいスマホ（幅720px未満）：左の列を細く */
@@ -51,9 +51,9 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-result-art img { height: 
 html.is-compact #stage > .read-battle-host.mb-host .mb-result-stamp { font-size: 28px; line-height: 1.15; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-result-detail { font-size: 13px; line-height: 1.45; margin-top: 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-result-gain { font-size: 30px; margin-top: 4px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-result-sub { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-result-sub { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-tally { margin-top: 6px; gap: 4px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-tally-h { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-tally-h { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-tally-dots { grid-template-columns: repeat(50, 1fr); gap: 2px; max-width: 520px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-tally-sum { font-size: 12px; gap: 4px 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-tally-sum b { font-size: 16px; }
@@ -66,20 +66,20 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-result-actions .btn { min
 /* 縦に積まず、札・決めるボタン・説明を1〜2行にまとめ、手がかりは「1件＝1行」の帯にする。 */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) { flex-direction: row; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: 3px 4px; padding: 4px 0; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .steps { order: 0; flex: 0 0 100%; gap: 4px; flex-wrap: nowrap; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .step { font-size: 11.5px; padding: 0 8px; line-height: 16px; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .step { font-size: 12px; padding: 0 8px; line-height: 16px; white-space: nowrap; }
 /* 札の行は箱を消し、札・文を同じ線の上に並べる */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .row { display: contents; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .row > * { order: 1; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .row ~ .row > .card:first-child { margin-left: 10px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .card { --w: 30px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .card b { font-size: 14px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .card i { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .card i { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .row > .formula { order: 2; flex: 0 0 100%; text-align: left; font-size: 12px; line-height: 1.25; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .row:has(.flip) > .formula { order: 1; flex: 0 0 auto; margin-left: 10px; white-space: nowrap; }
 /* 決めるボタン：札の右（出ていない間は場所を取らない） */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > #mb-dt-decide:not([hidden]) { order: 1; flex: 1 1 228px; min-width: 0; gap: 6px; flex-wrap: nowrap; justify-content: stretch; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > #mb-dt-decide .btn { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 2px 6px; font-size: 15px; line-height: 1.15; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > #mb-dt-decide .btn small { font-size: 11.5px; line-height: 1.15; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > #mb-dt-decide .btn small { font-size: 12px; line-height: 1.15; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .prompt { order: 3; flex: 0 0 100%; font-size: 14px; line-height: 1.25; text-align: left; text-wrap: wrap; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .dt-scale { order: 4; flex: 0 0 100%; max-width: none; margin: 0; gap: 8px; font-size: 13px; line-height: 1.2; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .dt-beam i { top: -4px; height: 18px; }
@@ -92,7 +92,7 @@ html.is-compact #stage > .read-battle-host.mb-host .dt-text { font-size: 14px; l
 html.is-compact #stage > .read-battle-host.mb-host .dt-acts { flex-wrap: nowrap; gap: 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .dt-acts button { min-width: 44px; min-height: 44px; padding: 0 6px; font-size: 13px; line-height: 1.1; }
 html.is-compact #stage > .read-battle-host.mb-host .dt-clue:has(.dt-verdict) .dt-acts button:not(.on) { display: none; }
-html.is-compact #stage > .read-battle-host.mb-host .dt-verdict { width: 92px; font-size: 11px; line-height: 1.2; }
+html.is-compact #stage > .read-battle-host.mb-host .dt-verdict { width: 92px; font-size: 12px; line-height: 1.2; }
 html.is-compact #stage > .read-battle-host.mb-host .dt-clue.key, html.is-compact #stage > .read-battle-host.mb-host .dt-clue.trap { outline-width: 2px; outline-offset: -2px; }
 /* ----- detective ここまで ----- */
 
@@ -102,49 +102,49 @@ html.is-compact #stage > .read-battle-host.mb-host .dt-clue.key, html.is-compact
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.stare-duel) { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-areas: "duel sit" "duel clues" "ctrl clues" "steps clues"; gap: 4px 10px; padding: 6px 0 8px; align-content: start; }
 html.is-compact #stage > .read-battle-host.mb-host #mb-stare-steps { grid-area: steps; }
 html.is-compact #stage > .read-battle-host.mb-host #mb-stare-steps .steps { gap: 3px; flex-wrap: wrap; justify-content: center; }
-html.is-compact #stage > .read-battle-host.mb-host #mb-stare-steps .step { padding: 1px 6px; font-size: 11.5px; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host #mb-stare-steps .step { padding: 1px 6px; font-size: 12px; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-sit { grid-area: sit; align-items: flex-start; gap: 2px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-cards { gap: 2px 6px; justify-content: flex-start; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-grp { gap: 2px; flex-wrap: wrap; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-tag { font-size: 11.5px; margin-right: 2px; letter-spacing: .06em; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-tag { font-size: 12px; margin-right: 2px; letter-spacing: .06em; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-tag.is-vs { font-size: 13px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-sit .card.small { --w: 33px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-sit .formula { font-size: 11.5px; line-height: 1.35; text-align: left; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-hand-name { font-size: 11.5px; margin-left: 2px; white-space: normal; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-sit .formula { font-size: 12px; line-height: 1.35; text-align: left; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-hand-name { font-size: 12px; margin-left: 2px; white-space: normal; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-duel { grid-area: duel; zoom: 1; padding-top: 18px; grid-template-columns: 22px minmax(0, 1fr) 22px; gap: 6px; align-self: stretch; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-arena { height: auto; min-height: 150px; max-height: 250px; align-self: stretch; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-meter { width: 18px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-meter .lbl { font-size: 11.5px; line-height: 12px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-meter .tick b { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-meter .lbl { font-size: 12px; line-height: 12px; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-meter .tick b { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-meter .pct { font-size: 13px; top: -17px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-pop { font-size: 12px; line-height: 1.35; padding: 4px 8px 5px; right: 6px; bottom: 6px; max-width: 70%; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-pop small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-pop small { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-doki { font-size: 14px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-banner { padding: 4px 6%; font-size: 15px; top: 62%; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-banner small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-banner small { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl { grid-area: ctrl; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-hold { width: 100%; min-height: 52px; padding: 4px 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-hold span { font-size: 22px; letter-spacing: .1em; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-hold small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-hold small { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl > div { width: 100%; display: flex; align-items: center; gap: 8px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-ask { font-size: 13px; margin: 0; flex: 0 0 82px; text-align: left; line-height: 1.3; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .actions { flex: 1 1 0; gap: 6px; flex-wrap: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .actions .btn { flex: 1 1 0; min-width: 0; min-height: 48px; padding: 4px 6px; font-size: 14px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .actions .btn small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .actions .btn small { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-clues { grid-area: clues; grid-template-columns: 1fr; gap: 4px; align-content: start; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-clue { padding: 3px 8px 4px; font-size: 12px; line-height: 1.35; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-clue .h { font-size: 13px; flex-wrap: wrap; row-gap: 0; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-clue .h em { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-clue .h em { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-clue .t { margin-top: 1px; display: inline; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-chip { font-size: 11.5px; line-height: 1.4; margin: 2px 4px 0 0; padding: 0 6px; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-chip { font-size: 12px; line-height: 1.4; margin: 2px 4px 0 0; padding: 0 6px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-meter .tick b { width: 18px; }
 /* 賭け：左下の枠に、文字（左）と3つの札（右）を横に並べる */
 html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "q chips" "note chips"; gap: 2px 8px; padding: 4px 8px; align-items: center; justify-items: start; text-align: left; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager-q { grid-area: q; font-size: 14px; line-height: 1.3; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager-note { grid-area: note; font-size: 11.5px; line-height: 1.3; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager-note { grid-area: note; font-size: 12px; line-height: 1.3; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager-chips { grid-area: chips; gap: 4px; flex-wrap: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wchip { width: 62px; height: 62px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wchip span { font-size: 11.5px; line-height: 1.1; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wchip span { font-size: 12px; line-height: 1.1; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wchip b { font-size: 20px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.stare-duel):has(.mb-wager) { grid-template-areas: "duel sit" "duel clues" "steps clues" "ctrl ctrl"; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.stare-duel):has(.mb-wager) .stare-sit .formula { display: none; }
@@ -155,10 +155,10 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.stare-duel
 /* 手順・札の行・ボタンを細くし、舞台（顔と吹き出し）を残りの高さいっぱいに伸ばす。答え合わせは5行の帯。 */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) { gap: 4px; padding: 4px 0; box-sizing: border-box; height: var(--rb-h, 390px); }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .steps { gap: 4px; flex-wrap: nowrap; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .step { font-size: 11.5px; padding: 0 8px; line-height: 16px; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .step { font-size: 12px; padding: 0 8px; line-height: 16px; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .card { --w: 28px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .card b { font-size: 13px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .card i { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .card i { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-sit { gap: 2px 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-tag { font-size: 12px; margin-right: 2px; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-hand { font-size: 12px; margin-left: 4px; }
@@ -179,7 +179,7 @@ html.is-compact #stage > .read-battle-host.mb-host .doubt-rule-note { margin-top
 html.is-compact #stage > .read-battle-host.mb-host .doubt-pad { gap: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-btn { min-height: 48px; padding: 2px 12px; gap: 8px; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-btn .w span { font-size: 22px; }
-html.is-compact #stage > .read-battle-host.mb-host .doubt-btn .w small { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host .doubt-btn .w small { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-btn kbd { font-size: 24px; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-tally small { font-size: 13px; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-tally b { font-size: 40px; }
@@ -198,7 +198,7 @@ html.is-compact #stage > .read-battle-host.mb-host .doubt-row .mark { font-size:
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) { --gcl: 150px; position: relative; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; align-items: start; gap: 3px; min-height: var(--rb-h, 390px); box-sizing: border-box; padding: 4px 0 6px calc(var(--gcl) + 8px); }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) > #mb-gc-steps { margin-left: calc(-1 * (var(--gcl) + 8px)); }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) .steps { flex-wrap: nowrap; gap: 4px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) .step { font-size: 11.5px; padding: 1px 8px; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) .step { font-size: 12px; padding: 1px 8px; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-wrap, html.is-compact #stage > .read-battle-host.mb-host .gc-right { display: contents; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-left { position: absolute; left: 0; top: 126px; width: var(--gcl); display: flex; flex-direction: column; align-items: center; gap: 5px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) > .gc-board { grid-area: auto; justify-content: flex-start; gap: 3px; }
@@ -209,21 +209,21 @@ html.is-compact #stage > .read-battle-host.mb-host .gc-hand .card.small { --w: 3
 html.is-compact #stage > .read-battle-host.mb-host .gc-cards { gap: 2px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-plate, html.is-compact #stage > .read-battle-host.mb-host .gc-face { display: none; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-in .q { font-size: 34px; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-who { font-size: 11.5px; letter-spacing: .04em; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-who { font-size: 12px; letter-spacing: .04em; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-hn { font-size: 12.5px; text-align: left; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-hn.is-strong, html.is-compact #stage > .read-battle-host.mb-host .gc-hn.is-bluff { font-size: 13px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-vs { font-size: 18px; }
 @media (max-width: 719px) { html.is-compact #stage > .read-battle-host.mb-host .gc-hands.is-reveal .gc-who { display: none; } }
-html.is-compact #stage > .read-battle-host.mb-host .gc-sub { grid-area: auto; margin: 0; text-align: left; font-size: 11px; line-height: 1.3; text-wrap: pretty; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-sub { grid-area: auto; margin: 0; text-align: left; font-size: 12px; line-height: 1.3; text-wrap: pretty; }
 /* ガチャ台：絵だけ小さく。中の文字は演出（一瞬）だけ */
 html.is-compact #stage > .read-battle-host.mb-host .gc-mach { zoom: .36; flex: 0 0 auto; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-acts { flex-direction: column; gap: 5px; width: 100%; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-acts .btn { flex: 0 0 auto; width: 100%; min-width: 0; min-height: 44px; padding: 4px 6px; font-size: 15px; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-acts .btn small { font-size: 11.5px; line-height: 1.25; white-space: normal; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-acts .btn small { font-size: 12px; line-height: 1.25; white-space: normal; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-pull { font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host #mb-gc-decide { grid-area: auto; position: absolute; left: 0; top: 256px; width: var(--gcl); flex-direction: column; gap: 5px; }
 html.is-compact #stage > .read-battle-host.mb-host #mb-gc-decide .btn { width: 100%; min-width: 0; min-height: 48px; padding: 4px 6px; font-size: 15px; }
-html.is-compact #stage > .read-battle-host.mb-host #mb-gc-decide .btn small { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host #mb-gc-decide .btn small { font-size: 12px; }
 /* ぱにゅ・心の声・確率表・図鑑 */
 html.is-compact #stage > .read-battle-host.mb-host .gc-panyu { position: absolute; left: 0; top: 28px; width: var(--gcl); box-sizing: border-box; gap: 2px 0; padding: 3px 8px; flex-wrap: wrap; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-pn { gap: 5px; white-space: nowrap; flex: 0 0 auto; }
@@ -231,7 +231,7 @@ html.is-compact #stage > .read-battle-host.mb-host .gc-pn > span:first-child { f
 html.is-compact #stage > .read-battle-host.mb-host .gc-pn > b { font-size: 22px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-segs { gap: 2px; margin-left: 2px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-segs i { width: 13px; height: 12px; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-basebox { font-size: 11px; line-height: 1.25; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-basebox { font-size: 12px; line-height: 1.25; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-basebox b { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-voices { grid-area: auto; gap: 4px; min-height: min-content; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-empty { padding: 4px; font-size: 12px; }
@@ -240,21 +240,21 @@ html.is-compact #stage > .read-battle-host.mb-host .gc-voice > .gc-rar { font-si
 html.is-compact #stage > .read-battle-host.mb-host .gc-bub { min-height: 27px; padding: 1px 10px; gap: 2px 8px; border-radius: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-bub p { font-size: 14px; line-height: 1.3; flex: 1 1 6em; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-vcards .card.small { --w: 31px; margin: -8px 0; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-meta { font-size: 11px; line-height: 1.15; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-meta em { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-meta { font-size: 12px; line-height: 1.15; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-meta em { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-odds { grid-area: auto; gap: 1px; padding: 3px 8px 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-odds-h { font-size: 12px; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-odds-h small { font-size: 11px; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-orow { grid-template-columns: 34px 38px minmax(0, 1fr); gap: 6px; font-size: 11px; line-height: 1.15; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-odds-h small { font-size: 12px; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-orow { grid-template-columns: 34px 38px minmax(0, 1fr); gap: 6px; font-size: 12px; line-height: 1.15; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-orow > b { font-size: 16px; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-orow small { display: inline; font-size: 11px; margin-left: 6px; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-orow small { display: inline; font-size: 12px; margin-left: 6px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-rar { font-size: 13px; padding: 0 4px; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-ceil { margin-top: 0; padding-top: 2px; font-size: 11px; line-height: 1.25; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-book { grid-area: auto; padding: 2px 8px; font-size: 11px; gap: 2px 6px; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-book-h { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-ceil { margin-top: 0; padding-top: 2px; font-size: 12px; line-height: 1.25; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-book { grid-area: auto; padding: 2px 8px; font-size: 12px; gap: 2px 6px; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-book-h { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-book > b { font-size: 16px; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-book small { font-size: 11.5px; }
-html.is-compact #stage > .read-battle-host.mb-host .gc-book-r { margin-left: 2px; gap: 0 8px; font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-book small { font-size: 12px; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-book-r { margin-left: 2px; gap: 0 8px; font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.gc-voices > :not(.gc-empty)) .gc-ceil { display: none; }
 @media (max-width: 719px) {
   html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) { --gcl: 138px; }
@@ -275,14 +275,14 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.gc-voices 
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto minmax(0, 1fr) auto; align-content: start; align-items: start; gap: 2px 8px; min-height: var(--rb-h, 390px); box-sizing: border-box; padding: 3px 0 3px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) > #mb-ob-steps { grid-column: 1 / -1; grid-row: 1; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) .steps { flex-wrap: nowrap; gap: 4px; justify-content: flex-start; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) .step { font-size: 11.5px; padding: 0 8px; white-space: nowrap; }
-html.is-compact #stage > .read-battle-host.mb-host .ob-sub { grid-column: 1 / -1; grid-row: 2; margin: 0; text-align: left; font-size: 11.5px; line-height: 1.25; text-wrap: pretty; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) .step { font-size: 12px; padding: 0 8px; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-sub { grid-column: 1 / -1; grid-row: 2; margin: 0; text-align: left; font-size: 12px; line-height: 1.25; text-wrap: pretty; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) > .ob-court { grid-column: 1 / -1; grid-row: 3; zoom: 1; grid-template-columns: minmax(0, .8fr) 12px minmax(0, 1.2fr); }
 html.is-compact #stage > .read-battle-host.mb-host .ob-hands { grid-column: 1; grid-row: 4; flex-wrap: nowrap; justify-content: flex-start; align-self: center; gap: 4px 8px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-hand { flex-direction: row; gap: 4px; min-width: 0; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-hand .card.small { --w: 31px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-cards { gap: 2px; }
-html.is-compact #stage > .read-battle-host.mb-host .ob-who { font-size: 11.5px; letter-spacing: .04em; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-who { font-size: 12px; letter-spacing: .04em; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-hn { font-size: 12.5px; text-align: left; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-hn.is-strong, html.is-compact #stage > .read-battle-host.mb-host .ob-hn.is-bluff { font-size: 13px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-vs { font-size: 18px; }
@@ -290,38 +290,38 @@ html.is-compact #stage > .read-battle-host.mb-host .ob-hands:not(.is-reveal) .ob
 html.is-compact #stage > .read-battle-host.mb-host .ob-hands.is-reveal .ob-who { display: none; }
 /* 証言（左）・証拠（右） */
 html.is-compact #stage > .read-battle-host.mb-host .ob-col { gap: 3px; }
-html.is-compact #stage > .read-battle-host.mb-host .ob-colhead { padding: 0 10px; gap: 0 6px; font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-colhead { padding: 0 10px; gap: 0 6px; font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-colhead b { display: none; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-colhead { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-say { font-size: 14px; line-height: 1.28; padding: 3px 9px 4px; margin-top: 5px; border-width: 2px; border-radius: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-say::before { top: -9px; height: 9px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-say::after { top: -6px; height: 7px; }
-html.is-compact #stage > .read-battle-host.mb-host .ob-say .ob-tag { position: absolute; right: 10px; top: -9px; padding: 0 6px; font-size: 11.5px; letter-spacing: .06em; line-height: 1.3; background: #fff6f3; border: 1px solid #e9c3c6; border-radius: 8px; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-say .ob-tag { position: absolute; right: 10px; top: -9px; padding: 0 6px; font-size: 12px; letter-spacing: .06em; line-height: 1.3; background: #fff6f3; border: 1px solid #e9c3c6; border-radius: 8px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-say.sel .ob-tag { background: #fffbe6; border-color: var(--gold-hi); }
 html.is-compact #stage > .read-battle-host.mb-host .ob-say p { display: inline; font-size: 14px; line-height: 1.28; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-ev { margin-top: 5px; padding: 7px 10px 3px; min-height: 44px; box-sizing: border-box; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-tab { top: -9px; left: 8px; padding: 0 8px; font-size: 12px; line-height: 1.4; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-tab .en { display: none; }
-html.is-compact #stage > .read-battle-host.mb-host .ob-tab em { font-size: 11.5px; margin-left: 0; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-tab em { font-size: 12px; margin-left: 0; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-ev .card.ob-mini { --w: 31px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-mini-row { gap: 3px; flex-wrap: nowrap; }
-html.is-compact #stage > .read-battle-host.mb-host .ob-note { margin-top: 1px; font-size: 11.5px; line-height: 1.25; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-note { margin-top: 1px; font-size: 12px; line-height: 1.25; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-log { font-size: 12px; line-height: 1.2; gap: 1px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-log li { grid-template-columns: auto auto minmax(0, 1fr); gap: 0 6px; }
-html.is-compact #stage > .read-battle-host.mb-host .ob-log .st { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-log .st { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-evtext { font-size: 12px; line-height: 1.3; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-stamp { font-size: 16px; top: -12px; right: 6px; }
 /* 下の帯 */
 html.is-compact #stage > .read-battle-host.mb-host .ob-bar { grid-column: 2; grid-row: 4; flex-wrap: nowrap; gap: 8px; padding: 0; justify-content: flex-end; }
-html.is-compact #stage > .read-battle-host.mb-host .ob-cred { gap: 4px; font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-cred { gap: 4px; font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-cred i { width: 18px; height: 14px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-go { min-width: 0; min-height: 44px; padding: 2px 14px; font-size: 17px; letter-spacing: .04em; }
-html.is-compact #stage > .read-battle-host.mb-host .ob-go small { font-size: 11.5px; letter-spacing: .12em; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-go small { font-size: 12px; letter-spacing: .12em; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) > #mb-ob-decide { position: relative; grid-column: 2; grid-row: 4; display: flex; flex-wrap: nowrap; gap: 8px; justify-content: flex-end; align-items: stretch; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) > #mb-ob-decide .btn { flex: 0 0 auto; width: auto; min-width: 0; min-height: 46px; padding: 3px 12px; font-size: 15px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) > #mb-ob-decide .btn small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) > #mb-ob-decide .btn small { font-size: 12px; }
 @media (min-width: 720px) { html.is-compact #stage > .read-battle-host.mb-host .ob-ev { margin-top: 9px; } }
-html.is-compact #stage > .read-battle-host.mb-host .ob-luck { position: absolute; right: 0; bottom: 100%; width: max-content; white-space: nowrap; margin: 0 0 2px; font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-luck { position: absolute; right: 0; bottom: 100%; width: max-content; white-space: nowrap; margin: 0 0 2px; font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-ob-decide:not([hidden])) .ob-bar { display: none; }
 /* ----- objection ここまで ----- */
 
@@ -331,10 +331,10 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-ob-deci
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .hb-deal) { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-content: start; gap: 6px 10px; padding: 6px 0 8px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > #mb-hb-steps { grid-column: 1; grid-row: 1; align-self: center; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > #mb-hb-steps .steps { flex-wrap: nowrap; gap: 4px; justify-content: flex-start; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > #mb-hb-steps .step { font-size: 11.5px; padding: 2px 7px; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > #mb-hb-steps .step { font-size: 12px; padding: 2px 7px; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-head { grid-column: 2; grid-row: 1; flex-wrap: nowrap; justify-content: space-between; gap: 6px; min-width: 0; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-lv { gap: 4px; }
-html.is-compact #stage > .read-battle-host.mb-host .hb-lv b { font-size: 11.5px; padding: 1px 6px 0; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .hb-lv b { font-size: 12px; padding: 1px 6px 0; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-lv i { display: none; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-ref summary { box-sizing: border-box; display: flex; align-items: center; min-height: 44px; min-width: 44px; font-size: 13px; padding: 0 8px; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-ref ol { width: 250px; gap: 2px; padding: 6px 10px; }
@@ -347,17 +347,17 @@ html.is-compact #stage > .read-battle-host.mb-host .hb-tray { grid-column: 1; gr
 html.is-compact #stage > .read-battle-host.mb-host .hb-slots { gap: 3px; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-slot, html.is-compact #stage > .read-battle-host.mb-host .hb-slot > .card { --w: 44px; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-slot:empty::after { font-size: 20px; }
-html.is-compact #stage > .read-battle-host.mb-host .hb-slot .hb-tag { font-size: 11.5px; bottom: -15px; }
+html.is-compact #stage > .read-battle-host.mb-host .hb-slot .hb-tag { font-size: 12px; bottom: -15px; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-band { grid-column: 2; grid-row: 3; width: auto; margin: 0; padding: 4px 10px; gap: 8px; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-meter { height: 22px; gap: 2px; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-meter i { width: 3px; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-bname { font-size: 14px; line-height: 1.2; }
-html.is-compact #stage > .read-battle-host.mb-host .hb-bname small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .hb-bname small { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-verdict { grid-column: 2; grid-row: 4; font-size: 14px; line-height: 1.3; min-height: 0; text-align: left; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-verdict.good { font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .actions { grid-column: 2; grid-row: 5; gap: 0; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .actions .btn { min-width: 0; min-height: 46px; padding: 4px 14px; width: 100%; font-size: 15px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .actions .btn small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .actions .btn small { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-react { width: 120px; height: 100px; right: 0; bottom: 6px; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-react b { font-size: 20px; }
 /* 幅720px以上の画面は札を少し大きく */
@@ -377,7 +377,7 @@ html.is-compact #stage > .read-battle-host.mb-host .hb-react b { font-size: 20px
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .hl-duel) { display: grid; grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr); align-content: start; gap: 4px 6px; padding: 4px 0 6px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > #mb-hl-steps { grid-column: 1 / 3; grid-row: 1; align-self: center; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > #mb-hl-steps .steps { flex-wrap: nowrap; gap: 4px; justify-content: flex-start; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > #mb-hl-steps .step { font-size: 11.5px; padding: 2px 6px; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > #mb-hl-steps .step { font-size: 12px; padding: 2px 6px; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-top { display: contents; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-pot { grid-column: 3; grid-row: 1; justify-self: end; display: flex; align-items: baseline; gap: 6px; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-pot small { display: inline; margin: 0; }
@@ -391,7 +391,7 @@ html.is-compact #stage > .read-battle-host.mb-host .hl-rung small { display: non
 html.is-compact #stage > .read-battle-host.mb-host .hl-round { grid-column: 3; grid-row: 3; text-align: right; align-self: start; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-round span { font-size: 12px; letter-spacing: .04em; padding: 1px 8px 0; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-board { grid-column: 1 / 3; grid-row: 2 / span 2; align-items: flex-start; gap: 2px; }
-html.is-compact #stage > .read-battle-host.mb-host .hl-board .zone-label { font-size: 11.5px; letter-spacing: .08em; }
+html.is-compact #stage > .read-battle-host.mb-host .hl-board .zone-label { font-size: 12px; letter-spacing: .08em; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-cards { gap: 4px; justify-content: flex-start; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-board .hl-cards .card { --w: 40px; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-duel { display: contents; zoom: 1; }
@@ -409,7 +409,7 @@ html.is-compact #stage > .read-battle-host.mb-host .hl-hn .hl-wait { font-size: 
 html.is-compact #stage > .read-battle-host.mb-host .hl-vs { grid-column: 2; grid-row: 4; font-size: 20px; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-pick { display: contents; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-pick .btn { min-height: 46px; padding: 4px 4px; font-size: 15px; min-width: 0; }
-html.is-compact #stage > .read-battle-host.mb-host .hl-pick .btn small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .hl-pick .btn small { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-pick .btn.hl-tie { min-width: 0; font-size: 13px; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-pick [data-p="m"] { grid-column: 1; grid-row: 5; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-pick .hl-tie { grid-column: 2; grid-row: 5; }
@@ -421,7 +421,7 @@ html.is-compact #stage > .read-battle-host.mb-host .hl-next:not([hidden]) { grid
 html.is-compact #stage > .read-battle-host.mb-host .hl-tempt { flex: 1 1 100px; font-size: 13px; letter-spacing: .04em; text-align: left; line-height: 1.3; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-next .actions { flex: 2 1 0; flex-wrap: nowrap; gap: 6px; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-next .actions .btn { min-width: 0; flex: 1 1 0; min-height: 46px; padding: 4px 8px; font-size: 15px; }
-html.is-compact #stage > .read-battle-host.mb-host .hl-next .actions .btn small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .hl-next .actions .btn small { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-react { width: 110px; height: 96px; top: 24px; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-react.left { left: 0; } html.is-compact #stage > .read-battle-host.mb-host .hl-react.right { right: 0; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-react b { font-size: 20px; left: 8px; }
@@ -433,7 +433,7 @@ html.is-compact #stage > .read-battle-host.mb-host .hl-react b { font-size: 20px
   html.is-compact #stage > .read-battle-host.mb-host .hl-chibi { height: 72px; max-width: 56px; }
   html.is-compact #stage > .read-battle-host.mb-host .hl-pot b { font-size: 32px; }
   html.is-compact #stage > .read-battle-host.mb-host .hl-rung { padding: 3px 7px 2px; font-size: 17px; }
-  html.is-compact #stage > .read-battle-host.mb-host .hl-rung small { display: block; font-size: 11.5px; letter-spacing: .06em; }
+  html.is-compact #stage > .read-battle-host.mb-host .hl-rung small { display: block; font-size: 12px; letter-spacing: .06em; }
   html.is-compact #stage > .read-battle-host.mb-host .hl-round span { font-size: 14px; }
   html.is-compact #stage > .read-battle-host.mb-host .hl-who b { font-size: 15px; }
   html.is-compact #stage > .read-battle-host.mb-host .hl-vs { font-size: 26px; }
@@ -445,7 +445,7 @@ html.is-compact #stage > .read-battle-host.mb-host .hl-react b { font-size: 20px
 /* 格子：左＝場札・手札（縦に並ぶ）、右＝問い・見つけた形・ボタン。下に賭け額の読み（横長） */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> #mb-dg-board) { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-content: start; gap: 4px 10px; padding: 4px 0 6px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .steps { grid-column: 1 / -1; grid-row: 1; flex-wrap: nowrap; gap: 4px; justify-content: flex-start; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .steps .step { font-size: 11.5px; padding: 2px 6px; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .steps .step { font-size: 12px; padding: 2px 6px; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .row { grid-column: 1; flex-wrap: nowrap; justify-content: flex-start; gap: 6px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .dg-board { grid-row: 2; gap: 5px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .row .card.big { --w: 38px; }
@@ -460,11 +460,11 @@ html.is-compact #stage > .read-battle-host.mb-host .dg-radar { grid-column: 1 / 
 html.is-compact #stage > .read-battle-host.mb-host .dg-radar > .prompt { grid-column: 1; text-align: left; font-size: 14px; }
 html.is-compact #stage > .read-battle-host.mb-host .dg-radar > .formula { grid-column: 1; text-align: left; font-size: 12px; line-height: 1.35; }
 html.is-compact #stage > .read-battle-host.mb-host .dg-radar > .dg-bar { grid-column: 1; margin-top: 20px; height: 26px; }
-html.is-compact #stage > .read-battle-host.mb-host .dg-line span { font-size: 11.5px; top: -18px; }
+html.is-compact #stage > .read-battle-host.mb-host .dg-line span { font-size: 12px; top: -18px; }
 html.is-compact #stage > .read-battle-host.mb-host .dg-val { font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host .dg-radar > .actions { grid-column: 2; grid-row: 1 / span 3; flex-direction: column; flex-wrap: nowrap; gap: 6px; align-self: center; }
 html.is-compact #stage > .read-battle-host.mb-host .dg-radar > .actions .btn { min-width: 0; width: 100%; min-height: 46px; padding: 4px 8px; font-size: 15px; }
-html.is-compact #stage > .read-battle-host.mb-host .dg-radar > .actions .btn small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .dg-radar > .actions .btn small { font-size: 12px; }
 /* 幅720px以上の画面は札を少し大きく */
 @media (min-width: 720px) {
   html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .row .card.big { --w: 46px; }
@@ -480,14 +480,14 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap)
 @media (max-width: 719px) { html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) { --sn-r: 146px; } }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > #mb-sn-steps { grid-area: 1 / 1 / 2 / 3; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) .steps { flex-wrap: nowrap; gap: 4px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) .step { font-size: 11.5px; padding: 1px 8px; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) .step { font-size: 12px; padding: 1px 8px; white-space: nowrap; }
 /* ミミの手札・名前・ポット：1行 */
 html.is-compact #stage > .read-battle-host.mb-host .sn-me { grid-area: 2 / 1 / 3 / 3; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 10px; align-items: center; justify-content: stretch; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-me .hl { gap: 3px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-me .card.small { --w: 31px; }
-html.is-compact #stage > .read-battle-host.mb-host .sn-me .plus { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .sn-me .plus { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-me-name { font-size: 13px; line-height: 1.25; }
-html.is-compact #stage > .read-battle-host.mb-host .sn-me-name small { font-size: 11.5px; line-height: 1.25; }
+html.is-compact #stage > .read-battle-host.mb-host .sn-me-name small { font-size: 12px; line-height: 1.25; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-pot { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-pot b { font-size: 24px; }
 /* 数式：賭け額 × 確率 ＝ 見込み */
@@ -503,17 +503,17 @@ html.is-compact #stage > .read-battle-host.mb-host .sn-rangebox { grid-area: 5 /
 html.is-compact #stage > .read-battle-host.mb-host .sn-range { height: 44px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .actions { grid-area: 6 / 2; align-self: end; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .actions .btn { width: 100%; min-width: 0; min-height: 48px; padding: 4px 8px; font-size: 16px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .actions .btn small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .actions .btn small { font-size: 12px; }
 /* グラフ：残りの高さいっぱい。縮める zoom は戻す */
 html.is-compact #stage > .read-battle-host.mb-host .sn-wrap { zoom: 1; grid-area: 4 / 1 / 7 / 2; box-sizing: border-box; height: 100%; min-height: 0; padding: 20px 8px 22px 40px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-chart { height: 100%; }
-html.is-compact #stage > .read-battle-host.mb-host .sn-axis-y { top: -17px; font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .sn-axis-y { top: -17px; font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-ylab { font-size: 12px; left: -6px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-xlab { font-size: 12px; bottom: -17px; }
-html.is-compact #stage > .read-battle-host.mb-host .sn-floor { font-size: 11.5px; letter-spacing: -.03em; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .sn-floor { font-size: 12px; letter-spacing: -.03em; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-hint { top: 12px; font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-ret .num b { font-size: 22px; }
-html.is-compact #stage > .read-battle-host.mb-host .sn-ret .num small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .sn-ret .num small { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-best .lab { font-size: 15px; }
 /* 答え合わせ（撃った後）：右列を広げて結果を縦に並べ、手札の行は消す */
 html.is-compact #stage > .read-battle-host.mb-host .sn-out:empty { display: none; }
@@ -529,7 +529,7 @@ html.is-compact #stage > .read-battle-host.mb-host .sn-out .her { font-size: 13p
 html.is-compact #stage > .read-battle-host.mb-host .sn-out .her .card.small { --w: 30px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-cmp { display: grid; gap: 4px; justify-content: stretch; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-cmp > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 3px 12px; text-align: left; }
-html.is-compact #stage > .read-battle-host.mb-host .sn-cmp small { display: block; font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .sn-cmp small { display: block; font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-cmp b { font-size: 20px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-verdict { font-size: 17px; text-align: left; line-height: 1.25; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-verdict small { font-size: 12px; }
@@ -542,20 +542,20 @@ html.is-compact #stage > .read-battle-host.mb-host .sn-react b { font-size: 30px
 /* 札を探す間は「手札・問い」「52枚の一覧」「数・わからない」の3段。決める段は左に手札と当たり札、右に値段くらべ（とスロット）の2列 */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "steps steps" "hand prompt" "deck deck" "count give"; gap: 4px 12px; padding: 4px 0; align-content: start; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .steps { grid-area: steps; flex-wrap: nowrap; gap: 4px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) .step { font-size: 11.5px; padding: 1px 8px; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) .step { font-size: 12px; padding: 1px 8px; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .row { grid-area: hand; flex-wrap: wrap; justify-content: flex-start; gap: 3px; align-content: center; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .row .card.big { --w: 32px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .row > span[style] { display: none; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .prompt { grid-area: prompt; font-size: 14px; line-height: 1.35; text-align: left; align-self: center; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .outs-count { grid-area: count; font-size: 24px; text-align: left; align-self: center; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .outs-count small { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .outs-count small { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .actions { grid-area: give; justify-content: flex-end; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .actions .btn.ghost { min-height: 44px; font-size: 13px; padding: 4px 12px; }
 /* 52枚の一覧：高さ46px・幅は入るだけ（約34〜36px）。札の数字とマークは画面上 15px / 11.5px */
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck { grid-area: deck; max-width: none; gap: 3px 2px; grid-auto-rows: 46px; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card { aspect-ratio: auto; height: 46px; border-radius: 3px; flex-shrink: 0; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card b { font-size: 15px; }
-html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card i { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card i { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card.found { transform: none; }
 /* 探し終えた後：左に手札と当たり札、右に値段くらべ */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) { grid-template-columns: minmax(0, 9fr) minmax(0, 11fr); grid-template-areas: none; grid-template-rows: auto auto auto auto auto; }
@@ -568,16 +568,16 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-met
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed { gap: 4px; justify-content: flex-start; align-content: flex-start; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card.found, html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card.shown { width: 36px; flex: 0 0 36px; cursor: default; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card b { font-size: 15px; }
-html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card i { font-size: 11.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card i { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-meter { grid-area: 2 / 2 / 5 / 3; max-width: none; margin: 0; gap: 6px; align-content: start; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-meter .prompt { font-size: 14px; line-height: 1.3; text-align: left; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-bar { margin-top: 18px; height: 28px; }
-html.is-compact #stage > .read-battle-host.mb-host .outs-line span { font-size: 11.5px; top: -17px; }
+html.is-compact #stage > .read-battle-host.mb-host .outs-line span { font-size: 12px; top: -17px; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-val { font-size: 18px; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-meter .formula { font-size: 13px; line-height: 1.3; text-align: left; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-meter .actions { gap: 8px; flex-wrap: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-meter .actions .btn { flex: 1 1 0; min-width: 0; min-height: 48px; padding: 4px 6px; font-size: 16px; line-height: 1.15; }
-html.is-compact #stage > .read-battle-host.mb-host .outs-meter .actions .btn small { font-size: 11.5px; line-height: 1.2; }
+html.is-compact #stage > .read-battle-host.mb-host .outs-meter .actions .btn small { font-size: 12px; line-height: 1.2; }
 /* スロット：右の列の、値段くらべの下。札の幅は JS の計算と同じ 56px のまま */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > div:not(.outs-meter):not(.outs-deck):not(.row):not(.outs-count):not(.steps) { grid-area: 5 / 2 / 6 / 3; }
 html.is-compact #stage > .read-battle-host.mb-host .reel-wrap { max-width: none; height: 100px; }
@@ -594,17 +594,17 @@ html.is-compact #stage > .read-battle-host.mb-host .reel-legend { font-size: 12p
 /* 札・動きの記録・問い・容疑者・ボタンを詰める。容疑者は3〜4列。決める場面では動きの記録をたたんで場所をあける。 */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) { gap: 4px; padding: 4px 0; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .steps { gap: 4px; flex-wrap: nowrap; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .step { font-size: 11.5px; padding: 0 8px; line-height: 16px; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .step { font-size: 12px; padding: 0 8px; line-height: 16px; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .row { gap: 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .row > span:not(.formula):empty { width: 6px !important; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .card { --w: 30px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .card b { font-size: 14px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .card i { font-size: 11px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .card i { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .formula { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .prompt { font-size: 14px; line-height: 1.25; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .actions { gap: 8px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .actions .btn { min-height: 44px; min-width: 0; padding: 2px 16px; font-size: 15px; line-height: 1.15; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .actions .btn small { font-size: 11px; line-height: 1.15; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .actions .btn small { font-size: 12px; line-height: 1.15; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles):has(.sp-bar) .sp-log { display: none; }
 html.is-compact #stage > .read-battle-host.mb-host .sp-log { gap: 1px; font-size: 13px; line-height: 1.25; max-width: none; margin: 0; }
 html.is-compact #stage > .read-battle-host.mb-host .sp-tiles { grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 4px; }
@@ -619,3 +619,9 @@ html.is-compact #stage > .read-battle-host.mb-host .sp-bar { margin-top: 20px !i
 html.is-compact #stage > .read-battle-host.mb-host .sp-line span { top: -17px; font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .sp-val { font-size: 17px; }
 /* ----- suspects ここまで ----- */
+
+/* スマホ版の基準（2026-10-18）：12px 未満が残っていた所（遊びごとの JS の中の CSS・札の大きさに比例するマーク）を 12px に */
+html.is-compact #stage > .read-battle-host.mb-host .card i { font-size: max(12px, calc(var(--w, 34px) * .36)); }
+html.is-compact #stage > .read-battle-host.mb-host :is(.gc-orow small, .gc-meta, .hb-ref li span, .hb-ref .hb-arrow, .hb-slot .hb-tag, .hb-bname small,
+  .hl-pot small, .ob-colhead, .sn-me-name small, .sn-axis-y, .sn-floor, .stare-meter .lbl) { font-size: 12px; }
+html.is-compact #stage > .read-battle-host.mb-host .hl-rung small { font-size: 12px; }

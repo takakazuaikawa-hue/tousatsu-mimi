@@ -476,7 +476,7 @@ html.is-compact .mp-tut-title { font-size: 18px; padding: 8px; margin-bottom: 8p
   html.is-compact .settings-modal-title { font-size: 18px; padding: 6px 12px; }
   html.is-compact .settings-modal-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 18px; margin: 0; }
   html.is-compact .settings-modal-row { min-height: 44px; padding: 0 4px; }
-  html.is-compact .settings-modal-note { font-size: 11px; padding: 0; text-align: left; }
+  html.is-compact .settings-modal-note { font-size: 12px; padding: 0; text-align: left; }
   html.is-compact .settings-modal-divider { display: none; }
   html.is-compact .settings-modal-trophy { min-height: 44px; padding: 6px 10px; }
   html.is-compact .settings-modal-reset { margin: 6px 0 0; }
@@ -488,7 +488,7 @@ html.is-compact .mp-tut-title { font-size: 18px; padding: 8px; margin-bottom: 8p
   html.is-compact .rp-step1-cards { gap: 6px; }
   html.is-compact .rp-card .rp-mini-card { width: 40px; height: 56px; padding: 2px 4px; }
   html.is-compact .rp-card .rp-mini-card .rank { font-size: 12px; }
-  html.is-compact .rp-card .rp-mini-card .suit { font-size: 11px; }
+  html.is-compact .rp-card .rp-mini-card .suit { font-size: 12px; }
   html.is-compact .rp-card .rp-mini-card .center-suit { font-size: 22px; }
 
   html.is-compact .hand-guide-body { padding: 6px 12px; }
@@ -501,11 +501,11 @@ html.is-compact .mp-tut-title { font-size: 18px; padding: 8px; margin-bottom: 8p
   }
   html.is-compact .hand-guide-panel .rp-ladder-row { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 6px; padding: 4px 8px; }
   html.is-compact .hand-guide-panel .rp-ladder-name { font-size: 12px !important; line-height: 1.4; }
-  html.is-compact .hand-guide-panel .rp-ladder-desc { grid-column: 1; font-size: 11px; line-height: 1.4; }
+  html.is-compact .hand-guide-panel .rp-ladder-desc { grid-column: 1; font-size: 12px; line-height: 1.4; }
   html.is-compact .hand-guide-panel .rp-ladder-cards { grid-column: 2; grid-row: 1 / 3; gap: 2px; }
   html.is-compact .hand-guide-panel .rp-ladder-cards .card { width: 24px; height: 34px; padding: 1px 2px; border-radius: 2px; }
   html.is-compact .hand-guide-panel .rp-ladder-cards .center-suit { font-size: 15px; }
-  html.is-compact .hand-guide-hint { padding: 2px 0 8px; font-size: 11px; }
+  html.is-compact .hand-guide-hint { padding: 2px 0 8px; font-size: 12px; }
 }
 
 html.is-compact .home-dialog {

@@ -11,7 +11,7 @@
 //   broken   壊れた画像
 export const BODY_SEL = [
   '.opponent-speech', '.rico-bubble', '.v2-com-text', '.status-note', '.rb-quote', '.rb-rico-line', '.hr-line', '.result-next-goal',
-  '.psych-question', '.psych-situation', '.v2p-speech', '.v2p-sit', '.mb-say', '.mb-line', '.mb-rule', '.mb-desc', '.mb-body',
+  '.psych-question', '.psych-situation', '.psych-speech', '.mb-speech', '.mb-coach-line', '.ob-evtext',
   '.dialogue-text', '.ep-text', '.story-text', '.modal-desc', '.shop-desc', '.item-desc', '.profile-desc', '.glossary-desc',
   '.mp-msg', '.as-sub', '.as-say', '.settings-desc', '.tut-text', '.hint-text',
 ].join(',');
@@ -66,9 +66,11 @@ export function stdCheck({ minText = 12, bodyMin = 14, safe = 47, phone = true }
     const px = parseFloat(getComputedStyle(el).fontSize) * scaleOf(el);
     const lab = t.slice(0, 16) + ' ' + px.toFixed(1) + ' ' + cls(el);
     if (px < MIN - 0.15) tiny.push(lab);
-    else if (BODY && px < BODY - 0.15 && (el.closest(BODY_SEL) || t.length >= 30)) body.push(lab);
+    else if (BODY && px < BODY - 0.15 && (el.closest(BODY_SEL) || (t.length >= 30 && el.tagName !== 'SMALL' && !/note|hint|cap|sub|tag|legal|small/i.test(typeof el.className === 'string' ? el.className : '')))) body.push(lab);
     if (part) clip.push(lab);
-    const L = Math.min(...rs.map(r => r.left)), R = Math.max(...rs.map(r => r.right)), T = rr.top, B = Math.max(...rs.map(r => r.bottom));
+    let L = Math.min(...rs.map(r => r.left)), R = Math.max(...rs.map(r => r.right)), T = rr.top, B = Math.max(...rs.map(r => r.bottom));
+    // 自分か親が overflow で切っている所（… で省いた文字など）は、その箱の中だけを見る
+    for (let x = el; x && x !== document.body; x = x.parentElement) { const c = getComputedStyle(x); if (c.overflowX === 'visible' && c.overflowY === 'visible') continue; const b = x.getBoundingClientRect(); L = Math.max(L, b.left); R = Math.min(R, b.right); T = Math.max(T, b.top); B = Math.min(B, b.bottom); }
     if (L < -1 || T < -1 || R > VW + 1 || B > VH + 1) offText.push(t.slice(0, 16) + ' ' + Math.round(L) + ',' + Math.round(T) + '-' + Math.round(R) + ',' + Math.round(B));
     if (SAFE && (L < SAFE - 1 || R > VW - SAFE + 1) && px < 40) safeHit.push('[字] ' + t.slice(0, 16) + ' x' + Math.round(L) + '-' + Math.round(R));
   }

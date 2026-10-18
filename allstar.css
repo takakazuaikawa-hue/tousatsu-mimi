@@ -458,7 +458,7 @@
 .as-rec-hist li { display: grid; grid-template-columns: 96px 46px 76px minmax(0, 1fr) auto; gap: 8px; padding: 4px; border-bottom: 1px solid rgba(216,181,108,.15); font-size: 13px; color: #b19a74; }
 .as-rec-hist li b { color: #efcd82; font-family: "Barlow Condensed", sans-serif; font-size: 16px; }
 .h15-ticket .as-lock { display: block; font-size: 12px; opacity: .85; }
-html.is-compact .h15-ticket .as-lock { font-size: calc(11.5px / var(--game-scale, 1)); line-height: 1.2; opacity: 1; }
+html.is-compact .h15-ticket .as-lock { font-size: calc(12px / var(--game-scale, 1)); line-height: 1.2; opacity: 1; }
 
 /* ---- 動き ---- */
 @keyframes asWipe { 0% { clip-path: inset(0 100% 0 0); opacity: 1; } 20% { clip-path: inset(0 0 0 0); opacity: 1; } 75% { opacity: 1; } 100% { clip-path: inset(0 0 0 0); opacity: 0; } }
@@ -495,13 +495,13 @@ html.is-compact #stage > .as-host .as-felt::before { -webkit-mask: radial-gradie
 html.is-compact #stage > .as-host .as-head { left: 8px; top: 4px; width: min(330px, calc(50% - 60px)); height: 38px; gap: 0; }
 html.is-compact #stage > .as-host .as-head-1 { font-size: 13px; letter-spacing: .1em; white-space: nowrap; }
 html.is-compact #stage > .as-host .as-hand-no { margin-left: 8px; font-size: 14px; }
-html.is-compact #stage > .as-host .as-head-2 { font-size: 11.5px; white-space: nowrap; }
+html.is-compact #stage > .as-host .as-head-2 { font-size: 12px; white-space: nowrap; }
 html.is-compact #stage > .as-host .as-clock { left: calc(50% - 50px); top: 0; width: 100px; height: 44px; padding: 0 4px 5px; gap: 0; justify-content: center; border-radius: 0 0 40px 40px / 0 0 22px 22px; }
 html.is-compact #stage > .as-host .as-dial { display: none; }
 html.is-compact #stage > .as-host .as-clock-t { align-items: center; }
 html.is-compact #stage > .as-host .as-lv { gap: 3px; font-size: 13px; }
 html.is-compact #stage > .as-host .as-lv-n { font-size: 12px; }
-html.is-compact #stage > .as-host .as-left { font-size: 11.5px; }
+html.is-compact #stage > .as-host .as-left { font-size: 12px; }
 html.is-compact #stage > .as-host .as-tools { left: auto; right: 8px; top: 0; width: 144px; height: 44px; }
 html.is-compact #stage > .as-host .as-tool { font-size: 13px !important; padding: 0 4px; letter-spacing: 0; white-space: nowrap; }
 html.is-compact #stage > .as-host .as-tool[data-as="guide"] { width: 84px; }
@@ -522,17 +522,17 @@ html.is-compact #stage > .as-host .as-seat .as-plate { height: 75px; display: bl
 html.is-compact #stage > .as-host .as-seat .as-plate::before, html.is-compact #stage > .as-host .as-seat .as-plate::after { top: 6px; margin-top: 0; }
 html.is-compact #stage > .as-host .as-seat .as-plate::before { left: auto; right: 3px; }
 html.is-compact #stage > .as-host .as-seat .as-plate::after { display: none; }
-html.is-compact #stage > .as-host .as-name { display: block; font-size: 11.5px; line-height: 14px; letter-spacing: -.03em; overflow: hidden; white-space: nowrap; }
+html.is-compact #stage > .as-host .as-name { display: block; font-size: 12px; line-height: 14px; letter-spacing: -.03em; overflow: hidden; white-space: nowrap; }
 html.is-compact #stage > .as-host .as-seat .as-plate { padding-left: 5px; padding-right: 4px; }
 html.is-compact #stage > .as-host .as-stack { display: block; margin: 0; font-size: 16px; line-height: 18px; }
-html.is-compact #stage > .as-host .as-rank { left: auto; right: 4px; top: 16px; height: 16px; padding: 0 3px; font-size: 11.5px; line-height: 16px; background: none; border: 0; color: #3a240c; text-shadow: 0 1px 0 rgba(255,235,190,.5); }
-html.is-compact #stage > .as-host .as-seat .as-pos { left: 20px; right: auto; top: 57px; height: 16px; padding: 0 3px; font-size: 11.5px; line-height: 15px; background: #24160a; color: var(--as-gold-hi); border: 0; }
+html.is-compact #stage > .as-host .as-rank { left: auto; right: 4px; top: 16px; height: 16px; padding: 0 3px; font-size: 12px; line-height: 16px; background: none; border: 0; color: #3a240c; text-shadow: 0 1px 0 rgba(255,235,190,.5); }
+html.is-compact #stage > .as-host .as-seat .as-pos { left: 20px; right: auto; top: 57px; height: 16px; padding: 0 3px; font-size: 12px; line-height: 15px; background: #24160a; color: var(--as-gold-hi); border: 0; }
 html.is-compact #stage > .as-host .as-fuse { bottom: -3px; }
 html.is-compact #stage > .as-host .as-seat .as-bet { left: 70px; top: 34px; width: 80px; height: 18px; padding: 0 4px 0 7px; background: rgba(12,7,8,.82); border-left-width: 2px; box-shadow: none; }
 html.is-compact #stage > .as-host .as-bet .as-chips { display: none; }
-html.is-compact #stage > .as-host .as-verb { font-size: 11.5px; }
+html.is-compact #stage > .as-host .as-verb { font-size: 12px; }
 html.is-compact #stage > .as-host .as-amt { font-size: 13px; }
-html.is-compact #stage > .as-host .as-bet[data-kind="show"] .as-verb { font-size: 11.5px; }
+html.is-compact #stage > .as-host .as-bet[data-kind="show"] .as-verb { font-size: 12px; }
 html.is-compact #stage > .as-host .as-seat .as-hole { left: 113px; top: 54px; z-index: 4; }
 html.is-compact #stage > .as-host .as-hole[data-mode="back"] .as-card, html.is-compact #stage > .as-host .as-seat:is([data-slot="bl"], [data-slot="bc"], [data-slot="br"]) .as-hole[data-mode="back"] .as-card { width: 18px; height: 25px; }
 html.is-compact #stage > .as-host .as-hole[data-mode="back"] .as-card + .as-card { margin-left: -4px; }
@@ -541,8 +541,8 @@ html.is-compact #stage > .as-host .as-hole:is([data-mode="face"], [data-mode="dr
 html.is-compact #stage > .as-host .as-hole .as-card:not(.is-back) .r { left: 2px; top: 2px; font-size: 13px; }
 html.is-compact #stage > .as-host .as-hole .as-card:not(.is-back) .s { display: none; }
 html.is-compact #stage > .as-host .as-hole .as-card:not(.is-back) .c { left: auto; right: 2px; top: auto; bottom: 1px; transform: none; font-size: 13px; }
-html.is-compact #stage > .as-host .as-seat .as-d { left: 72px; top: 56px; width: 16px; height: 16px; font-size: 11.5px; box-shadow: none; }
-html.is-compact #stage > .as-host .as-out b { height: 22px; padding: 0 4px; font-size: 11.5px; line-height: 22px; letter-spacing: 0; }
+html.is-compact #stage > .as-host .as-seat .as-d { left: 72px; top: 56px; width: 16px; height: 16px; font-size: 12px; box-shadow: none; }
+html.is-compact #stage > .as-host .as-out b { height: 22px; padding: 0 4px; font-size: 12px; line-height: 22px; letter-spacing: 0; }
 html.is-compact #stage > .as-host .as-seat[data-slot="right"] .as-win { left: 90px; }
 html.is-compact #stage > .as-host .as-seat[data-slot="right"] :is(.as-plate, .as-out, .as-bet) { left: 0; }
 html.is-compact #stage > .as-host .as-seat[data-slot="right"] .as-hole { left: 44px; }
@@ -564,7 +564,7 @@ html.is-compact #stage > .as-host .as-seat[data-final] .as-pos { left: 4px; top:
 
 /* ポット・場札・字幕 */
 html.is-compact #stage > .as-host .as-pot { left: calc(50% - 122px); top: 146px; width: 244px; height: 20px; gap: 6px; pointer-events: none; }
-html.is-compact #stage > .as-host .as-pot-l { font-size: 11.5px; letter-spacing: .1em; }
+html.is-compact #stage > .as-host .as-pot-l { font-size: 12px; letter-spacing: .1em; }
 html.is-compact #stage > .as-host .as-pot-n { font-size: 15px; }
 html.is-compact #stage > .as-host .as-pot-n::before { width: 11px; height: 11px; margin-right: 3px; }
 html.is-compact #stage > .as-host .as-side { display: inline; font: 600 12px/1 var(--as-num); color: var(--as-ivory); white-space: nowrap; }
@@ -572,31 +572,31 @@ html.is-compact #stage > .as-host .as-sides { display: none; }
 html.is-compact #stage > .as-host .as-board { left: calc(50% - 122px); top: 168px; width: 244px; height: 62px; gap: 6px; }
 html.is-compact #stage > .as-host .as-board :is(.as-slot, .as-card) { width: 44px; height: 62px; }
 html.is-compact #stage > .as-host .as-board .as-card .r { left: 4px; top: 3px; font-size: 16px; }
-html.is-compact #stage > .as-host .as-board .as-card .s { left: 5px; top: 20px; font-size: 11.5px; }
+html.is-compact #stage > .as-host .as-board .as-card .s { left: 5px; top: 20px; font-size: 12px; }
 html.is-compact #stage > .as-host .as-board .as-card .c { top: 62%; font-size: 22px; }
 html.is-compact #stage > .as-host .as-sub { left: 50%; top: auto; bottom: 132px; width: min(452px, calc(100% - 330px)); height: 22px; transform: translateX(-50%); }
 html.is-compact #stage > .as-host .as-sub-in { gap: 6px; padding: 0 12px; }
-html.is-compact #stage > .as-host .as-sub-name { font-size: 11.5px; letter-spacing: .04em; flex: none; }
+html.is-compact #stage > .as-host .as-sub-name { font-size: 12px; letter-spacing: .04em; flex: none; }
 html.is-compact #stage > .as-host .as-sub-text { font-size: 12px; }
 
 /* ミミ（下寄せ） */
 html.is-compact #stage > .as-host .as-bust { left: 0; top: auto; bottom: 0; width: 196px; height: 178px; }
 html.is-compact #stage > .as-host .as-made { left: calc(50% - 122px); top: auto; bottom: 112px; width: 190px; height: 16px; justify-content: flex-start; gap: 6px; }
-html.is-compact #stage > .as-host .as-made span { font-size: 11.5px; }
+html.is-compact #stage > .as-host .as-made span { font-size: 12px; }
 html.is-compact #stage > .as-host .as-made b { font-size: 12px; }
 html.is-compact #stage > .as-host .as-mbet { left: calc(50% - 122px); top: auto; bottom: 92px; width: auto; min-width: 64px; height: 18px; padding: 0 5px 0 6px; box-shadow: none; }
 html.is-compact #stage > .as-host .as-mbet .as-amt { margin-left: 4px; }
 html.is-compact #stage > .as-host .as-mstack { left: calc(50% - 122px); top: auto; bottom: 46px; width: 64px; height: 44px; }
-html.is-compact #stage > .as-host .as-mstack span { font-size: 11.5px; letter-spacing: .04em; }
+html.is-compact #stage > .as-host .as-mstack span { font-size: 12px; letter-spacing: .04em; }
 html.is-compact #stage > .as-host .as-mstack b { font-size: 17px; }
-html.is-compact #stage > .as-host .as-mstack .as-pos { left: 2px; right: auto; top: -16px; height: 15px; font-size: 11.5px; line-height: 15px; }
+html.is-compact #stage > .as-host .as-mstack .as-pos { left: 2px; right: auto; top: -16px; height: 15px; font-size: 12px; line-height: 15px; }
 html.is-compact #stage > .as-host .as-hand { left: calc(50% - 50px); top: auto; bottom: 32px; width: 118px; height: 78px; gap: 6px; }
 html.is-compact #stage > .as-host .as-hand .as-card { width: 56px; height: 78px; border-radius: 4px; }
 html.is-compact #stage > .as-host .as-hand .as-card .r { left: 5px; top: 4px; font-size: 20px; }
 html.is-compact #stage > .as-host .as-hand .as-card .s { left: 6px; top: 25px; font-size: 12px; }
 html.is-compact #stage > .as-host .as-hand .as-card .c { font-size: 30px; top: 60%; }
 html.is-compact #stage > .as-host .as-hand[data-mode="draw"] .as-card { width: 44px; height: 62px; }
-html.is-compact #stage > .as-host .as-md { left: calc(50% + 76px); top: auto; bottom: 114px; width: 16px; height: 16px; font-size: 11.5px; }
+html.is-compact #stage > .as-host .as-md { left: calc(50% + 76px); top: auto; bottom: 114px; width: 16px; height: 16px; font-size: 12px; }
 html.is-compact #stage > .as-host .as-mimi-allin { left: calc(50% - 60px); top: auto; bottom: 50px; width: 120px; height: 26px; }
 
 /* 操作（右下） */
@@ -617,7 +617,7 @@ html.is-compact #stage > .as-host .as-size b { font-size: 15px; }
 html.is-compact #stage > .as-host .as-size em { font-size: 14px; }
 html.is-compact #stage > .as-host .as-ff { left: auto; right: 8px; top: auto; bottom: 0; width: 316px; height: 48px; gap: 10px; }
 html.is-compact #stage > .as-host .as-ff b { font-size: 15px; }
-html.is-compact #stage > .as-host .as-ff span { font-size: 11.5px; }
+html.is-compact #stage > .as-host .as-ff span { font-size: 12px; }
 html.is-compact #stage > .as-host .as-fly.is-card .as-card { width: 18px; height: 25px; }
 html.is-compact #stage > .as-host .as-chip, html.is-compact #stage > .as-host .as-fly.is-chips { width: 12px; height: 12px; }
 
@@ -625,7 +625,7 @@ html.is-compact #stage > .as-host .as-chip, html.is-compact #stage > .as-host .a
 html.is-compact #stage > .as-host .as-banner { top: 112px; min-width: 240px; padding: 8px 20px 6px; }
 html.is-compact #stage > .as-host .as-banner-k { font-size: 12px; }
 html.is-compact #stage > .as-host .as-banner b { font-size: 26px; }
-html.is-compact #stage > .as-host .as-banner-lv { font-size: 11.5px; }
+html.is-compact #stage > .as-host .as-banner-lv { font-size: 12px; }
 html.is-compact #stage > .as-host .as-banner.is-calc b { font-size: 16px; }
 html.is-compact #stage > .as-host .as-light { width: 80px; height: 80px; }
 html.is-compact #stage > .as-host .as-cut-band { top: 10%; height: 62%; }
@@ -652,20 +652,20 @@ html.is-compact #stage > .as-host .as-res-mimi { left: 0; top: 0; width: 200px; 
 html.is-compact #stage > .as-host .as-res-mimi img { left: -20px; bottom: -20px; width: 250px; }
 html.is-compact #stage > .as-host .as-res-big { left: 206px; top: 20px; width: 56px; gap: 6px; }
 html.is-compact #stage > .as-host .as-res-big b { font-size: 40px; }
-html.is-compact #stage > .as-host .as-res-big > span { font-size: 11.5px; letter-spacing: .2em; }
+html.is-compact #stage > .as-host .as-res-big > span { font-size: 12px; letter-spacing: .2em; }
 html.is-compact #stage > .as-host .as-res-board { left: 272px; right: 8px; width: auto; top: 30px; height: 252px; padding: 2px 0; }
 html.is-compact #stage > .as-host .as-res-row { grid-template-columns: 34px 36px minmax(0, 1fr) minmax(0, 104px) 56px 24px; gap: 6px; height: 41px; padding: 0 2px 0 4px; }
 html.is-compact #stage > .as-host .as-res-pl { font-size: 18px; }
-html.is-compact #stage > .as-host .as-res-pl small { font-size: 11.5px; }
+html.is-compact #stage > .as-host .as-res-pl small { font-size: 12px; }
 html.is-compact #stage > .as-host .as-res-face { width: 28px; height: 34px; margin-left: 4px; }
 html.is-compact #stage > .as-host .as-res-name { font-size: 13px; }
-html.is-compact #stage > .as-host .as-res-hand { font-size: 11.5px; }
+html.is-compact #stage > .as-host .as-res-hand { font-size: 12px; }
 html.is-compact #stage > .as-host .as-res-prize { font-size: 15px; }
 html.is-compact #stage > .as-host .as-res-seal { width: 24px; height: 24px; }
 html.is-compact #stage > .as-host .as-res-pay { left: 272px; right: 8px; width: auto; top: 288px; height: 42px; column-gap: 6px; }
 html.is-compact #stage > .as-host .as-res-pay > span { font-size: 12px; }
 html.is-compact #stage > .as-host .as-res-coins { font-size: 26px; }
-html.is-compact #stage > .as-host .as-res-pay em { font-size: 11.5px; margin-top: 0; }
+html.is-compact #stage > .as-host .as-res-pay em { font-size: 12px; margin-top: 0; }
 html.is-compact #stage > .as-host .as-res-btns { left: 272px; right: 8px; width: auto; top: auto; bottom: 8px; height: 44px; gap: 10px; }
 html.is-compact #stage > .as-host .as-res-btns button { height: 44px; font-size: 15px; letter-spacing: .14em; }
 
@@ -702,29 +702,29 @@ html.is-compact .home-dialog.as-dialog header { min-height: 44px; padding: 0 0 0
 html.is-compact .home-dialog.as-dialog h2 { font-size: 16px; }
 html.is-compact .home-dialog.as-dialog button { min-width: 44px; min-height: 44px; padding: 0 12px; font-size: 14px; }
 html.is-compact .home-dialog.as-dialog .as-band { height: 58px; gap: 2px; }
-html.is-compact .home-dialog.as-dialog .as-band-en { font-size: 11.5px; letter-spacing: .3em; }
+html.is-compact .home-dialog.as-dialog .as-band-en { font-size: 12px; letter-spacing: .3em; }
 html.is-compact .home-dialog.as-dialog .as-band b { font-size: 24px; }
 html.is-compact .home-dialog.as-dialog .as-band-sub { display: none; }
 html.is-compact .home-dialog.as-dialog .as-efaces { gap: 10px; padding: 0; }
 html.is-compact .home-dialog.as-dialog .as-ef { gap: 2px; }
 html.is-compact .home-dialog.as-dialog .as-ef-w { width: 34px; height: 42px; }
-html.is-compact .home-dialog.as-dialog .as-ef b { font-size: 11.5px; }
+html.is-compact .home-dialog.as-dialog .as-ef b { font-size: 12px; }
 html.is-compact .home-dialog.as-dialog .as-ecols { grid-template-columns: minmax(0, 1fr) minmax(0, 250px); gap: 12px; }
 html.is-compact .home-dialog.as-dialog .as-rules li { padding: 2px 0 2px 16px; font-size: 12px; line-height: 1.45; }
-html.is-compact .home-dialog.as-dialog .as-prizes-h { font-size: 11.5px; line-height: 1.3; }
+html.is-compact .home-dialog.as-dialog .as-prizes-h { font-size: 12px; line-height: 1.3; }
 html.is-compact .home-dialog.as-dialog :is(.as-prizes, .as-rec-vs) ol { grid-template-columns: 1fr 1fr 1fr; gap: 0 8px; }
 html.is-compact .home-dialog.as-dialog .as-rec-vs ol { grid-template-columns: 1fr; }
 html.is-compact .home-dialog.as-dialog :is(.as-prizes, .as-rec-vs) li { padding: 1px 2px; }
-html.is-compact .home-dialog.as-dialog :is(.as-prizes, .as-rec-vs) li span { font-size: 11.5px; }
+html.is-compact .home-dialog.as-dialog :is(.as-prizes, .as-rec-vs) li span { font-size: 12px; }
 html.is-compact .home-dialog.as-dialog :is(.as-prizes, .as-rec-vs) li b { font-size: 13px; }
-html.is-compact .home-dialog.as-dialog .as-emeta { font-size: 11.5px; }
+html.is-compact .home-dialog.as-dialog .as-emeta { font-size: 12px; }
 html.is-compact .home-dialog.as-dialog .as-ebtns button { min-width: 200px; min-height: 44px !important; font-size: 15px !important; }
 html.is-compact .home-dialog.as-dialog .as-rec-top { gap: 16px; }
 html.is-compact .home-dialog.as-dialog .as-rec-top dd { font-size: 18px; }
-html.is-compact .home-dialog.as-dialog .as-rec-top dt { font-size: 11.5px; }
+html.is-compact .home-dialog.as-dialog .as-rec-top dt { font-size: 12px; }
 html.is-compact .home-dialog.as-dialog .as-rec-cols { grid-template-columns: 200px minmax(0, 1fr); gap: 10px; }
 html.is-compact .home-dialog.as-dialog .as-rec-hist { max-height: 150px; }
-html.is-compact .home-dialog.as-dialog .as-rec-hist li { grid-template-columns: 72px 30px 56px minmax(0, 1fr) auto; font-size: 11.5px; padding: 2px; }
+html.is-compact .home-dialog.as-dialog .as-rec-hist li { grid-template-columns: 72px 30px 56px minmax(0, 1fr) auto; font-size: 12px; padding: 2px; }
 html.is-compact .home-dialog.as-dialog .as-rec-hist li b { font-size: 13px; }
 
 /* ホームの額：零時の卓が開いたら「現王者」の札を肖像の上端に出す（ホームの型では .h15-sub を隠している） */
@@ -734,3 +734,5 @@ html.is-compact .home-dialog.as-dialog .as-rec-hist li b { font-size: 13px; }
 
 /* 卓の間は「全画面で遊ぶ」の札を出さない（ミミの胸像と手札を隠すため。対戦の卓と同じ扱い） */
 #stage:has(> .as-host) ~ #fullscreen-btn-group, body:has(#stage > .as-host) #fullscreen-btn-group { display: none !important; }
+/* スマホ版の基準（2026-10-18）：zoom の丸めで 12px を割っていた所を一段上げる */
+html.is-compact #stage > .as-host :is(.as-lv-n, .as-verb, .as-size span) { font-size: 12.5px; }
