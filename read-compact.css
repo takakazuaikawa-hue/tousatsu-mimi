@@ -735,4 +735,10 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root .formula { font
   html.is-compact #stage > .read-battle-host.mb-host .hb-head { flex-wrap: wrap; justify-content: flex-end; align-content: flex-start; gap: 2px 6px; }
   html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row > .mb-portrait.is-chibi + div .mb-speech { margin-top: 62px; }
   html.is-compact #stage > .read-battle-host.mb-host .mb-opp-name { letter-spacing: 0; }
+  /* 役作り：役の札は目盛りを上、名前を下にして、名前を1行に収める */
+  html.is-compact #stage > .read-battle-host.mb-host .hb-band { grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 4px 8px; }
+  html.is-compact #stage > .read-battle-host.mb-host .hb-bname { white-space: nowrap; }
+  html.is-compact #stage > .read-battle-host.mb-host .hb-bname small { white-space: normal; }
+  /* 見つめ合い：右の目盛りの数字（3・2・1）が右の列の文字に重ならないよう、窓の右に余白 */
+  html.is-compact #stage > .read-battle-host.mb-host .stare-duel { padding-right: 8px; }
 }
