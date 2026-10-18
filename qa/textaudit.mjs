@@ -1,21 +1,23 @@
 // スマホの文字の基準の監査（コードは変更しない）。画面上（CSS px）の文字の大きさ・押す所の高さ・画面外へのはみ出しを測る。
-// 基準（docs: 見本ページ G）：補足11px／小見出し13px／本文14px／主文16px／数字18px、押す所44px。ここでは「11px 未満」と「押す所 44px 未満」を不合格として数える。
+// 基準（docs/design-ref/mobile-standard.md 2026-10-18）：文字 12px 未満・本文（台詞・説明・ルール）14px 未満・押す所 44px 未満・左右 47px の安全域・画面外を不合格として数える。
 // node qa/textaudit.mjs [--size 844x390] [result] [read] [read:<gameId>...]
 // 出力: qa/out/textaudit/<size>/report.json / report.md / <scene>_<n>.png
 import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, sleep } from './lib/session.mjs';
+import { BODY_SEL } from './lib/stdcheck.mjs';
 
 const args = process.argv.slice(2);
 const sizeArg = (args.find((a, i) => args[i - 1] === '--size') || '844x390');
 const [W, H] = sizeArg.split('x').map(Number);
-const want = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--size');
+const want = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--size' && args[i - 1] !== '--out');
 const doResult = !want.length || want.includes('result');
 const readOnly = want.filter(a => a.startsWith('read:')).map(a => a.slice(5));
 const doRead = !want.length || want.includes('read') || readOnly.length;
-const OUT = path.resolve('qa/out/textaudit', sizeArg);
+const outArg = args.find((a, i) => args[i - 1] === '--out');
+const OUT = path.resolve(outArg || path.join('qa/out/textaudit', sizeArg));
 fs.mkdirSync(OUT, { recursive: true });
-const MIN_TEXT = 11, MIN_TAP = 44;
+const MIN_TEXT = 12, MIN_BODY = 14, MIN_TAP = 44, SAFE = 47;   // docs/design-ref/mobile-standard.md（2026-10-18）
 
 const GAMES = [
   ['detective', 'polka', 'psych'], ['stare', 'polka', 'psych'], ['doubt', 'polka', 'psych'], ['gacha', 'polka', 'psych'], ['objection', 'velvet', 'psych'],
@@ -29,6 +31,7 @@ const MEASURE = (rootSel) => `(() => {
   const effOpacity = (e) => { let o = 1; for (let x = e; x && x !== document.documentElement; x = x.parentElement) { const cs = getComputedStyle(x); if (cs.display === 'none' || cs.visibility === 'hidden') return 0; o *= +cs.opacity; } return o; };
   const scaleOf = (e) => { let x = e; while (x && !(x.offsetWidth > 0)) x = x.parentElement; if (!x) return 1; return x.getBoundingClientRect().width / x.offsetWidth; };
   const selOf = (e) => (e.tagName.toLowerCase() + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\\s+/).slice(0, 2).join('.') : '')).slice(0, 48);
+  const BODY_SEL = ${JSON.stringify(BODY_SEL)};
   const texts = []; const seen = new Set();
   const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let n;
@@ -45,12 +48,13 @@ const MEASURE = (rootSel) => `(() => {
     // 見えない所に隠れている（親が overflow で切っている）文字は数えない
     let clipped = false; for (let x = el.parentElement; x && x !== document.body; x = x.parentElement) { const c = getComputedStyle(x); if (c.overflow !== 'visible' || c.overflowY !== 'visible') { const b = x.getBoundingClientRect(); if (r.bottom <= b.top + 1 || r.top >= b.bottom - 1 || r.right <= b.left + 1 || r.left >= b.right - 1) { clipped = true; break; } } }
     if (clipped) continue;
-    texts.push({ t: t.slice(0, 24), px: +px.toFixed(1), sel: selOf(el), off, y: Math.round(r.top) });
+    const L = Math.min(...rs.map(q => q.left)), R = Math.max(...rs.map(q => q.right));
+    texts.push({ t: t.slice(0, 24), px: +px.toFixed(1), sel: selOf(el), off, y: Math.round(r.top), L: Math.round(L), R: Math.round(R), body: !!el.closest(BODY_SEL) || t.length >= 30 });
   }
   const isTap = (e) => e.tagName === 'BUTTON' || e.getAttribute('role') === 'button' || (getComputedStyle(e).cursor === 'pointer' && !(e.parentElement && getComputedStyle(e.parentElement).cursor === 'pointer'));
-  const taps = [...root.querySelectorAll('*')].filter(isTap).filter(e => effOpacity(e) >= 0.3 && !e.disabled).map(e => { const r = e.getBoundingClientRect(); return { t: (e.textContent || e.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim().slice(0, 16), sel: selOf(e), w: Math.round(r.width), h: Math.round(r.height), off: r.left < -1 || r.top < -1 || r.right > VW + 1 || r.bottom > VH + 1 }; }).filter(b => b.w >= 4 && b.h >= 4);
+  const taps = [...root.querySelectorAll('*')].filter(isTap).filter(e => effOpacity(e) >= 0.3 && !e.disabled).map(e => { const r = e.getBoundingClientRect(); return { t: (e.textContent || e.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim().slice(0, 16), sel: selOf(e), w: Math.round(r.width), h: Math.round(r.height), off: r.left < -1 || r.top < -1 || r.right > VW + 1 || r.bottom > VH + 1, L: Math.round(r.left), R: Math.round(r.right), full: r.width >= VW * 0.7 }; }).filter(b => b.w >= 4 && b.h >= 4);
   const sc = root.querySelector('.mb-scroll'); const k = sc ? scaleOf(sc) : 1;
-  return { texts, taps, scrollOver: sc ? Math.round((sc.scrollHeight - sc.clientHeight) * k) : 0 };
+  return { VW, texts, taps, scrollOver: sc ? Math.round((sc.scrollHeight - sc.clientHeight) * k) : 0 };
 })()`;
 
 const PICK = `(() => {
@@ -67,10 +71,13 @@ const PICK = `(() => {
 })()`;
 
 const summarize = (m) => {
-  const small = m.texts.filter(x => x.px < MIN_TEXT - 0.05);
+  const small = m.texts.filter(x => x.px < MIN_TEXT - 0.15);
+  const bodySmall = m.texts.filter(x => x.body && x.px >= MIN_TEXT - 0.15 && x.px < MIN_BODY - 0.15);
+  // 左右の安全域（各 47px）に入っている文字・押す所（画面いっぱいの層は除く）
+  const safe = [...m.texts.filter(x => x.px < 40 && (x.L < SAFE - 1 || x.R > m.VW - SAFE + 1)), ...m.taps.filter(b => !b.full && (b.L < SAFE - 1 || b.R > m.VW - SAFE + 1))];
   const smallTap = m.taps.filter(b => b.h < MIN_TAP - 0.5 || b.w < MIN_TAP - 0.5);
   const off = [...m.texts.filter(x => x.off), ...m.taps.filter(b => b.off)];
-  return { small, smallTap, off, minPx: m.texts.length ? Math.min(...m.texts.map(x => x.px)) : null, scrollOver: m.scrollOver };
+  return { small, bodySmall, safe, smallTap, off, minPx: m.texts.length ? Math.min(...m.texts.map(x => x.px)) : null, scrollOver: m.scrollOver };
 };
 
 const { page, close } = await openSession({ width: W, height: H, mobile: W < 900, speed: 1, save: { clearedStages: ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'], introPlayed: true, coins: 500, readIntroSeen: true, houseRulesSeen: true } });
@@ -162,7 +169,7 @@ if (doRead) {
     }
     const worst = steps.reduce((a, s) => Math.max(a, s.small.length), 0);
     const minPx = Math.min(...steps.map(s => s.minPx ?? 99));
-    console.log(gameId, res, 'steps', steps.length, 'worstSmall', worst, 'minPx', minPx, 'maxScroll', Math.max(0, ...steps.map(s => s.scrollOver)));
+    console.log(gameId, res, 'steps', steps.length, 'worstSmall', worst, 'worstBody', steps.reduce((a, s) => Math.max(a, s.bodySmall.length), 0), 'worstSafe', steps.reduce((a, s) => Math.max(a, s.safe.length), 0), 'minPx', minPx, 'maxScroll', Math.max(0, ...steps.map(s => s.scrollOver)));
     report['read_' + gameId] = { result: res, steps };
     await sleep(600);
     await page.eval(`(() => { document.querySelectorAll('.read-battle-host').forEach(e => e.remove()); state.psychPending = false; return true; })()`);
@@ -170,15 +177,19 @@ if (doRead) {
 }
 
 fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(report, null, 1));
-const L = [`# 文字の基準の監査 ${sizeArg}（11px 未満の文字・44px 未満の押す所・画面外）`, ''];
+const L = [`# 文字の基準の監査 ${sizeArg}（12px 未満の文字・本文 14px 未満・44px 未満の押す所・安全域・画面外）`, ''];
 for (const [k, r] of Object.entries(report)) {
-  L.push(`## ${k}${r.result ? ' (' + r.result + ')' : ''}`, '', '| # | 最小px | 11px未満 | 押す所<44 | 画面外 | 読み合いのスクロール | 例 | 画像 |', '|--|--|--|--|--|--|--|--|');
+  L.push(`## ${k}${r.result ? ' (' + r.result + ')' : ''}`, '', '| # | 最小px | 12px未満 | 本文<14 | 安全域 | 押す所<44 | 画面外 | 読み合いのスクロール | 例 | 画像 |', '|--|--|--|--|--|--|--|--|--|--|');
   r.steps.forEach((s, i) => {
-    const ex = [...new Map(s.small.map(x => [x.sel, x])).values()].slice(0, 4).map(x => `${x.sel} ${x.px}「${x.t}」`).join(' / ');
-    L.push(`| ${s.n || i + 1} | ${s.minPx} | ${s.small.length} | ${s.smallTap.length} | ${s.off.length} | ${s.scrollOver} | ${ex} | ${s.shot || ''} |`);
+    const ex = [...new Map([...s.small, ...s.bodySmall].map(x => [x.sel, x])).values()].slice(0, 4).map(x => `${x.sel} ${x.px}「${x.t}」`).join(' / ');
+    L.push(`| ${s.n || i + 1} | ${s.minPx} | ${s.small.length} | ${s.bodySmall.length} | ${s.safe.length} | ${s.smallTap.length} | ${s.off.length} | ${s.scrollOver} | ${ex} | ${s.shot || ''} |`);
   });
   L.push('');
 }
+const TOT = { small: 0, bodySmall: 0, safe: 0, smallTap: 0, off: 0 };
+for (const r of Object.values(report)) for (const st of r.steps) for (const k of Object.keys(TOT)) TOT[k] += st[k].length;
+L.splice(1, 0, '', '合計（全場面の延べ）: ' + JSON.stringify(TOT));
+console.log('TOTAL', JSON.stringify(TOT));
 fs.writeFileSync(path.join(OUT, 'report.md'), L.join('\n'));
 console.log('errors', await page.eval(`JSON.stringify((window.__QA && window.__QA.errors || []).slice(0, 3))`));
 await close();

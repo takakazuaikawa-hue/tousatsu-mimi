@@ -1,43 +1,22 @@
-// 全部の画面と小窓を順に開いて撮り、各場面で「見えているのに押せない（他の物に隠れている）ボタン」「押す所 44px 未満」
-// 「文字 11px 未満」「画面からのはみ出し」「壊れた画像」を数える。node qa/fulltour.mjs [pc|phone] [outDir]
+// 全部の画面と小窓を順に開いて撮り、スマホ版の基準（docs/design-ref/mobile-standard.md）で数える（qa/lib/stdcheck.mjs）：
+// 隠れて押せない・押す所44px未満・文字12px未満（PCは11px）・本文14px未満・左右47pxの安全域・はみ出し・切れ・黒い帯・壊れた画像。
+// node qa/fulltour.mjs [pc|phone] [outDir] [--size 844x390]
 import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, sleep } from './lib/session.mjs';
+import { stdCheck, countsOf } from './lib/stdcheck.mjs';
 const mode = process.argv[2] || 'pc';
 const phone = mode === 'phone';
-const OUT = path.resolve(process.argv[3] || `qa/out/fulltour/${mode}`);
+const sizeArg = process.argv.find((a, i) => process.argv[i - 1] === '--size') || (phone ? '844x390' : '1280x800');
+const OUT = path.resolve(process.argv[3] && !process.argv[3].startsWith('--') ? process.argv[3] : `qa/out/fulltour/${mode}${phone ? '-' + sizeArg : ''}`);
 fs.mkdirSync(OUT, { recursive: true });
-const W = phone ? 844 : 1280, H = phone ? 390 : 800;
+const [W, H] = sizeArg.split('x').map(Number);
 const ALL = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
 const session = await openSession({ width: W, height: H, mobile: phone, speed: 1 });
 const { page } = session;
 for (let i = 0; i < 40 && !(await page.eval('typeof startBattle === "function"')); i++) await sleep(500);
 
-const CHECK = `(() => {
-  const VW = innerWidth, VH = innerHeight;
-  const vis = (e) => { for (let x = e; x && x !== document.documentElement; x = x.parentElement) { const cs = getComputedStyle(x); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.05) return false; } return true; };
-  const scaleOf = (e) => { let x = e; while (x && !(x.offsetWidth > 0)) x = x.parentElement; if (!x) return 1; return x.getBoundingClientRect().width / x.offsetWidth; };
-  const label = (e) => ((e.getAttribute('aria-label') || e.textContent || e.title || e.className || '').replace(/\\s+/g, ' ').trim()).slice(0, 24);
-  const taps = [...document.querySelectorAll('button, [data-action], [role=button], a[href], input, select')].filter(e => !e.disabled && vis(e));
-  const covered = [], small = [], off = [];
-  for (const e of taps) {
-    const r = e.getBoundingClientRect(); if (r.width < 4 || r.height < 4) continue;
-    if (r.right <= 0 || r.bottom <= 0 || r.left >= VW || r.top >= VH) { continue; }
-    if (getComputedStyle(e).pointerEvents === 'none') continue;
-    const cx = Math.min(VW - 1, Math.max(0, r.left + r.width / 2)), cy = Math.min(VH - 1, Math.max(0, r.top + r.height / 2));
-    const t = document.elementFromPoint(cx, cy);
-    if (t && t !== e && !e.contains(t) && !t.contains(e)) covered.push(label(e) + ' ← ' + ((t.className && typeof t.className === 'string') ? t.className.split(' ')[0] : t.tagName));
-    if (r.width < 43.5 || r.height < 43.5) small.push(label(e) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height));
-    if (r.left < -1 || r.top < -1 || r.right > VW + 1 || r.bottom > VH + 1) off.push(label(e));
-  }
-  const tiny = []; const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n; const seen = new Set();
-  while ((n = tw.nextNode())) { const t = n.textContent.trim(); const el = n.parentElement; if (!t || !el || seen.has(el) || !vis(el)) continue; seen.add(el);
-    const rg = document.createRange(); rg.selectNodeContents(n); const rr = rg.getClientRects()[0]; if (!rr || rr.width < 2) continue;
-    if (rr.right <= 0 || rr.bottom <= 0 || rr.left >= VW || rr.top >= VH) continue;
-    const px = parseFloat(getComputedStyle(el).fontSize) * scaleOf(el); if (px < 10.95) tiny.push(t.slice(0, 16) + ' ' + px.toFixed(1)); }
-  const broken = [...document.images].filter(im => im.src && vis(im) && im.complete && !im.naturalWidth).map(im => im.src.split('/').slice(-2).join('/'));
-  return { screen: state.screen, covered, small, off, tiny, broken, scrollX: document.documentElement.scrollWidth > VW };
-})()`;
+const CHECK = stdCheck({ phone, minText: phone ? 12 : 11 });
 const report = [];
 let idx = 0;
 async function snap(name) {
@@ -49,11 +28,11 @@ async function snap(name) {
   try { r = await page.eval(CHECK); } catch (e) { r = { error: String(e.message).slice(0, 120) }; }
   await page.screenshot(path.join(OUT, file));
   r.name = name; r.file = file; report.push(r);
-  console.log(name, JSON.stringify({ covered: r.covered?.length, small: r.small?.length, tiny: r.tiny?.length, off: r.off?.length, broken: r.broken?.length }));
+  console.log(name, JSON.stringify(countsOf(r)));
 }
 const ev = (js) => page.eval(`(() => { ${js}; return true; })()`).catch(e => console.log('ERR', js.slice(0, 60), e.message.slice(0, 120)));
 const act = (action, data = {}) => ev(`onAction({ currentTarget: { dataset: ${JSON.stringify({ action, ...data })} }, preventDefault(){}, stopPropagation(){}, target: document.body })`);
-const closeAll = () => ev(`document.querySelectorAll('[class*="-overlay"], .home-overlay, .modal-overlay, .read-battle-host').forEach(e => { if (!e.closest('.home-stage') && e.id !== 'preload-overlay') e.remove(); })`);
+const closeAll = () => ev(`document.querySelectorAll('[class*="-overlay"], .home-overlay, .modal-overlay, .read-battle-host, .credits-roll, [class*="credits-"], .as-host, .pv2-root').forEach(e => { if (!e.closest('.home-stage') && e.id !== 'preload-overlay') e.remove(); })`);
 const setSave = (cleared, extra = '') => ev(`save = defaultSave(); save.introPlayed = true; save.clearedStages = ${JSON.stringify(cleared)}; save.firstClearRewardClaimed = [...save.clearedStages]; save.rewardCgSeen = [...save.clearedStages]; save.episodesSeen = [...save.clearedStages]; save.readIntroSeen = true; save.houseRulesSeen = true; save.coins = 2400; save.homeStageSeen = save.clearedStages.length; save.loginBonus = { lastDate: mpTodayKey(), streak: 1 }; ${extra}; saveProgress()`);
 const lobby = async () => { await closeAll(); await ev(`state = defaultState(); state.screen = 'lobby'; render()`); for (let i = 0; i < 30 && !(await page.eval('!!document.querySelector(".h15-ticket .h15-en")')); i++) await sleep(500); await sleep(1500); };
 
@@ -98,13 +77,34 @@ for (const won of [true, false]) {
 // 幕間・回想・エンディング
 await closeAll(); await setSave(ALL); await lobby();
 await act('recall-episode', { episode: 'polka' }); await sleep(3500); await snap('recall_polka');
-await closeAll(); await ev(`state = defaultState(); state.screen = 'ending'; render()`); await sleep(4000); await snap('ending');
-await act('play-credits'); await sleep(4000); await snap('credits');
 await closeAll(); await lobby(); await act('play-minipoker'); await sleep(2500); await snap('minipoker');
+
+// ファイブポーカー：配る → 交換を選ぶ → 交換 → 結果
+const clickSel = (sel) => ev(`document.querySelector(${JSON.stringify(sel)})?.click()`);
+await ev(`document.querySelectorAll('[class*="mp-tut"]').forEach(e => e.remove())`);
+await clickSel('.minipoker-overlay [data-mp="deal"]'); await sleep(3500); await snap('minipoker_choose');
+await clickSel('.minipoker-overlay [data-mp="hold-all"]'); await sleep(6000); await snap('minipoker_result');
+await clickSel('.minipoker-overlay [data-mp="missions"]'); await sleep(900); await snap('minipoker_missions');
+// 零時の卓：入場案内 → 着席 → ミミの手番 → 額の選択 → ブラインド表 → メニュー
+await closeAll(); await setSave(ALL, 'save.bestRanks = { rico_tutorial:"A", polka:"A", selina:"B", grano:"A", velvet:"A" }; save.endingUnlocked = true; save.allstarUnlocked = true; save.allstar = { unlockSeen: true }'); await lobby();
+await act('allstar-open'); await sleep(1200); await snap('allstar_entry');
+await clickSel('.as-entry [data-action="allstar-seat"]');
+for (let i = 0; i < 160 && !(await page.eval('!!(window.AllstarUI && AllstarUI._qa && AllstarUI._qa.waiting())').catch(() => false)); i++) await sleep(250);
+await sleep(600); await snap('allstar_turn');
+await clickSel('.as-raise:not(:disabled)'); await sleep(700); await snap('allstar_sizer');
+await clickSel('.as-sizer .as-back'); await clickSel('.as-clock'); await sleep(600); await snap('allstar_levels');
+await ev('AllstarUI._qa.closePops()'); await clickSel('.as-tool[data-as="menu"]'); await sleep(600); await snap('allstar_menu');
+await clickSel('.as-menu [data-as="leave"]'); await sleep(1500);
 // 衣装を替えたホーム
 await closeAll(); await setSave(ALL, 'save.ownedItems = RICO_OUTFITS.map(o => o.id).filter(Boolean); save.equippedRicoOutfit = (RICO_OUTFITS.find(o => o.file !== "rico_default.webp") || {}).id || "default"'); await lobby(); await sleep(1500); await snap('home_costume');
+// エンディング・スタッフロール（終わりの演出が後の場面に残らないよう最後に）
+await closeAll(); await ev(`state = defaultState(); state.screen = 'ending'; render()`); await sleep(4000); await snap('ending');
+await act('play-credits'); await sleep(4000); await snap('credits');
 
 const errors = await page.eval('window.__QA ? window.__QA.errors : []').catch(() => []);
 fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify({ errors: [...errors, ...session.exceptions], report }, null, 1));
+const tot = {}; for (const r of report) for (const [k, v] of Object.entries(countsOf(r))) tot[k] = (tot[k] || 0) + v;
+fs.writeFileSync(path.join(OUT, 'summary.md'), [`# ${mode} ${sizeArg}`, '', '| 場面 | ' + Object.keys(tot).join(' | ') + ' |', '|--|' + Object.keys(tot).map(() => '--').join('|') + '|', ...report.map(r => `| ${r.name} | ${Object.values(countsOf(r)).join(' | ')} |`), `| 合計 | ${Object.values(tot).join(' | ')} |`].join('\n'));
+console.log('TOTAL', JSON.stringify(tot));
 console.log('errors', JSON.stringify([...errors, ...session.exceptions]).slice(0, 800));
 await session.close();
