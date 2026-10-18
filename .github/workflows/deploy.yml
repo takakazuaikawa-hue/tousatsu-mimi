@@ -28,7 +28,7 @@ jobs:
         # 例外：ぱにゅぱにゅの網目＋ばね（本編が iframe で読む docs/design-ref/panyu-mesh.html）だけは配信する
         run: |
           mkdir -p _site
-          cp index.html game.js home.js loader.js style.css read-compact.css allstar.js allstar-ui.js allstar.css _site/
+          cp index.html game.js home.js home-live.js loader.js style.css read-compact.css allstar.js allstar-ui.js allstar.css _site/
           cp sw.js offline.js offline.css manifest.webmanifest _site/
           if [ -f ui-modal.css ]; then cp ui-modal.css _site/; fi
           mkdir -p _site/battles/games

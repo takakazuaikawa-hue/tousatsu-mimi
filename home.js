@@ -215,6 +215,8 @@ async function applyHomeCostume() {
     if (!root.isConnected || root._costumeRequest !== request) return;
     image.src = uniform ? 'assets/ui/home/scene.webp' : urls[1];
     root.classList.toggle('has-costume', !uniform);
+    // 制服の時は、リコ先輩を Live2D 風に動かす層を重ねる（home-live.js）。ほかの衣装の時は止める
+    if (window.HomeLive) { if (uniform) window.HomeLive.start(root.querySelector('.h15-bg'), 'assets/ui/home/scene.webp'); else window.HomeLive.stop(); }
     root.querySelector('.h15-dialogue').textContent = uniform ? lobbyRicoLine() : outfit.lines[Math.floor(rand() * outfit.lines.length)];
   } catch {
     if (!root.isConnected || root._costumeRequest !== request) return;

@@ -19579,3 +19579,7 @@ html.is-compact .bd-card { font-size: calc(12px / var(--game-scale, 1)); padding
   width: 34px; height: min(46vh, 260px); margin: 0; accent-color: #d9b25a; cursor: pointer; touch-action: none;
 }
 html.is-compact .pv2 .pv2-zoom span { font-size: calc(12px / var(--game-scale, 1)); }
+
+/* ホームの制服リコを Live2D 風に動かす層（home-live.js）。背景の絵と同じ置き方で上に重ねる */
+.home-stage .h15-bg > .h15-live { position: absolute; inset: 0; display: block; pointer-events: none; }
+.home-stage.has-costume .h15-bg > .h15-live { display: none; }
