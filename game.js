@@ -3961,7 +3961,8 @@ function showIntermission(opponentId, onDone, voiceReady) {
   const data = INTERMISSIONS[opponentId];
   if (!data || !data.lines || !data.lines.length) { if (onDone) onDone(); return; }
   // 二重表示を防ぐ：幕間が出ている間に「幕間へ」がもう一度押されても、2枚目は作らない
-  if (document.querySelector('.intermission-overlay:not(.out)')) return;
+  // （消えかけの .out も数える：終わる時の400msの間に「幕間へ」がもう一度押されると、2枚目が開いて声も二重に鳴っていた）
+  if (document.querySelector('.intermission-overlay')) return;
   // 声は表示の前に読む（相手の1行目だけ。最長2.5秒）
   if (!voiceReady && window.MimiVoice && MimiVoice.enabled()) {
     if (_imsVoiceWait) return;

@@ -545,3 +545,37 @@ html.is-compact .home-settings input { height: calc(44px * var(--inv-scale, 1));
   html.is-compact .settings-modal-groups > .settings-modal-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; align-content: start; }
   html.is-compact .settings-modal-links > h3 { grid-column: 1 / -1; }
 }
+
+/* 設定の「音」の行（BGM・効果音・キャラの声）：トグルが行の右端からはみ出さない（2026-10-20）。
+   音の列を広く取り、ラベルは折り返さず、スライダーが余りを使って縮む（トグル 80×44 は固定） */
+.settings-modal-groups { grid-template-columns: 1.5fr 1fr 1fr; }
+.settings-modal-sound { flex-wrap: nowrap; }
+.settings-modal-sound .settings-modal-label { flex: 0 0 5.2em; white-space: nowrap; }
+.settings-modal-sound .settings-modal-volume { flex: 1 1 0; min-width: 0; }
+.settings-modal-sound .settings-modal-toggle { flex: 0 0 80px; }
+@media (orientation: landscape) {
+  /* スマホ横（幅 761px 以上＝844・932）：音を広く、ひらくは2列にして縦スクロールなしで収める */
+  html.is-compact .settings-modal-groups { grid-template-columns: 1.35fr 1fr 1.28fr; gap: 4px 12px; }
+  html.is-compact .settings-modal-groups > .settings-modal-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 8px; align-content: start; }
+  html.is-compact .settings-modal-links > h3, html.is-compact .settings-modal-links > .settings-modal-reset, html.is-compact .settings-modal-links > [data-pack-row] { grid-column: 1 / -1; }
+  html.is-compact .settings-modal-links .btn[data-pack-row] { white-space: normal; }
+  html.is-compact .settings-modal-links .pack-row-state { margin-left: 6px; font-size: 12px; }
+  html.is-compact .settings-modal-links .btn { padding: 4px 6px; font-size: 13px; line-height: 1.25; white-space: nowrap; text-align: left; gap: 4px; }
+  html.is-compact .settings-modal-note { line-height: 1.4; }
+  html.is-compact .settings-modal-links .settings-modal-reset { margin-top: 2px; }
+  html.is-compact .settings-modal-group .settings-modal-row { min-height: 44px; }
+  html.is-compact .settings-modal-group { gap: 4px; }
+  html.is-compact .settings-modal-title { padding: 3px 12px; }
+  html.is-compact .settings-modal-group-title { padding-bottom: 2px; }
+  html.is-compact .settings-modal { gap: 2px; padding: 8px 18px 6px; }
+  html.is-compact .settings-modal-legal { margin: 0; line-height: 1.2; }
+  /* スクロールが要る時は、そうと分かる金の細いバーを出す */
+  html.is-compact .settings-modal { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #c9a25a rgba(0,0,0,.35); overscroll-behavior: contain; }
+}
+@media (max-width: 760px) and (orientation: landscape) {
+  /* 667（iPhone SE）：音と遊び方の2列、ひらくは下に3列で並べる */
+  html.is-compact .settings-modal-groups { grid-template-columns: 1.4fr 1fr; }
+  html.is-compact .settings-modal-groups > .settings-modal-links { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* 縦に収まらない：下にまだあると分かる帯（金の矢印）を窓の下に重ねる */
+  html.is-compact .settings-modal::after { content: "▼ スクロールできます"; position: sticky; bottom: -6px; display: block; flex: 0 0 auto; margin-top: -4px; padding-top: 14px; text-align: center; font: 700 12px/22px var(--um-serif, serif); color: #efcd82; background: linear-gradient(rgba(18,10,9,0), #120a09 55%); pointer-events: none; }
+}
