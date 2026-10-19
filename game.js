@@ -273,6 +273,8 @@ function defaultSave() {
     sfxVolume: 60,       // SFX 音量（0-100）
     sfxOn: true,         // SFX 全体 ON/OFF（minipoker SFX 等すべて従う）
     forceSound: false,   // 端末が消音でも音を出す（iOS消音スイッチより優先）。既定OFF＝端末を尊重
+    voiceVolume: 80,     // キャラの声の音量（0-100）。効果音の音量は掛けない（声が効果音より小さいと聞こえない）
+    voiceOn: true,       // キャラの声 ON/OFF。効果音OFF・音まるごとOFFの時も鳴らさない（voice.js）
 
     // ── ミニポーカー（mpEnsureSaveで初期化される） ──
     minipoker: null,
@@ -320,6 +322,9 @@ function normalizeSave(s) {
   s.sfxVolume = Math.max(0, Math.min(100, s.sfxVolume));
   if (typeof s.sfxOn !== 'boolean') s.sfxOn = true;
   if (typeof s.forceSound !== 'boolean') s.forceSound = false;
+  if (typeof s.voiceVolume !== 'number' || isNaN(s.voiceVolume)) s.voiceVolume = 80;
+  s.voiceVolume = Math.max(0, Math.min(100, s.voiceVolume));
+  if (typeof s.voiceOn !== 'boolean') s.voiceOn = true;
   if (typeof s.introPlayed !== 'boolean') s.introPlayed = false;
   // 死蔵フィールドの整理：extraInitialChips は起動のたびに加算されるだけでどこからも読まれず、
   // panyuChronoBonus は書くだけだった（クロノの効果は ownedItems で判定している）
@@ -365,6 +370,38 @@ function isSfxOn() { return !!(save && save.sfxOn); }
 function sfxVolFloat() {
   const v = save && save.sfxVolume != null ? save.sfxVolume : 60;
   return Math.max(0, Math.min(1, v / 100));
+}
+
+// ── キャラの声（voice.js）の呼び出しヘルパ。声が無い・読めていない・OFF の時は何も起きない ──
+// 声の ID：相手は state.opponentId（リコ先輩は本気モードなら rico_serious）。ミミは mimi。
+function oppVoiceId() {
+  if (!state) return 'polka';
+  if (state.opponentId === 'rico_tutorial') return state.seriousRicoMode ? 'rico_serious' : 'rico';
+  return state.opponentId;
+}
+// 掛け声を鳴らす確率（docs/design-ref/voice-lines.md §3）
+const VOICE_PROB = { allin: 1, raise: 0.6, bet: 0.6, fold: 0.5, win: 0.5, lose: 0.5, call: 0.35, check: 0.3 };
+const VOICE_KEY = { check: 'bark_check', call: 'bark_call', bet: 'bark_bet', raise: 'bark_raise_1', allin: 'bark_allin_1', fold: 'bark_fold_1', win: 'bark_win_1', lose: 'bark_lose_1' };
+// who: 'mimi' | 'opp'。掛け声は合いの手（吹き出しの文字は変えない）。ミミの掛け声は字幕なしで音だけ
+function voiceBark(who, kind, extra) {
+  if (!window.playVoice || !state) return;
+  playVoice(who === 'mimi' ? 'mimi' : oppVoiceId(), VOICE_KEY[kind],
+    Object.assign({ prob: VOICE_PROB[kind], prio: kind === 'allin' ? 2 : 0, queue: true }, extra || {}));
+}
+// 台詞（吹き出し）を、その声の録音がある文言になるまで引き直す。録音が無い・読めていない時は引いたまま
+function voicedLine(fn, voice, key) {
+  let line = fn();
+  const id = voice + '/' + key;
+  if (!window.MimiVoice || !MimiVoice.enabled() || !MimiVoice.has(id)) return line;
+  for (let i = 0; i < 40 && MimiVoice.idForText(voice, line) !== id; i++) line = fn();
+  return line;
+}
+// ショーダウンの声：勝った側の win か負けた側の lose のどちらか1本
+function voiceShowdown(winner) {
+  if (winner !== 'player' && winner !== 'opponent') return;
+  const pw = winner === 'player';
+  const useWin = rand() < 0.5;
+  voiceBark(useWin ? (pw ? 'mimi' : 'opp') : (pw ? 'opp' : 'mimi'), useWin ? 'win' : 'lose', { queue: false, prio: 1 });
 }
 
 // 解放フラグの一元ヘルパ
@@ -3680,33 +3717,41 @@ const STORY_WHO = {
 };
 const PROLOGUES = {
   rico_tutorial: [
-    { k: 'mono', t: '三日目の徹夜明け。終電は、とっくに出たあとだった。' },
-    { k: 'mono', t: 'ふらつく足で渡った、深夜の横断歩道。' },
-    { k: 'mono', t: '目の前いっぱいのライト。鳴りやまないクラクション。' },
-    { k: 'mono', t: '――そこで、私の記憶は途切れている。' },
+    { k: 'mono', t: '三日目の徹夜明け。終電は、とっくに出たあとだった。', voice: 'mimi/pro_01' },
+    { k: 'mono', t: 'ふらつく足で渡った、深夜の横断歩道。', voice: 'mimi/pro_02' },
+    { k: 'mono', t: '目の前いっぱいのライト。鳴りやまないクラクション。', voice: 'mimi/pro_03' },
+    { k: 'mono', t: '――そこで、私の記憶は途切れている。', voice: 'mimi/pro_04' },
     { k: 'voice', who: 'goddess', t: 'この子のスキルは……《ぱ●ぱ●》。\nなにこれ、外れスキルだね' },
     { k: 'title' },
-    { k: 'say', who: 'mimi', t: '……え？　なにこれ。うさぎの耳？　しっぽ？' },
-    { k: 'say', who: 'mimi', t: 'あったかい……ぴくぴく動く……。これ、本物！？' },
+    { k: 'say', who: 'mimi', t: '……え？　なにこれ。うさぎの耳？　しっぽ？', voice: 'mimi/pro_05' },
+    { k: 'say', who: 'mimi', t: 'あったかい……ぴくぴく動く……。これ、本物！？', voice: 'mimi/pro_06' },
     { k: 'think', who: 'mimi', t: 'トラック、知らない部屋、うさぎの耳。……まさか、異世界転生ってやつ！？' },
-    { k: 'say', who: 'rico', t: 'おはよ、新人ちゃん。鏡に見とれてないで、そろそろ開店だよ' },
-    { k: 'say', who: 'mimi', t: 'あ、あの！　ここどこですか！？　私、会社の帰りで……' },
-    { k: 'say', who: 'rico', t: 'ここはカジノ。あんたは今日から、うちの新人バニー。名簿にもちゃんと「ミミ」って載ってたよ' },
-    { k: 'say', who: 'mimi', t: '登録したの誰ですか！？　契約書は！？　この耳の説明は！？' },
-    { k: 'say', who: 'rico', t: '登録されてるなら働けるっしょ。細かいことは、あと、あと' },
-    { k: 'say', who: 'rico', t: 'ここのバニーの仕事はね、お客さんとポーカーで勝負すること' },
-    { k: 'say', who: 'mimi', t: 'ポーカー……！？　ルールも知らないです……' },
-    { k: 'say', who: 'rico', t: 'だから研修。今日はアタシと3回だけ勝負して、遊びながら覚えよ' },
-    { k: 'say', who: 'rico', t: '覚えるのはひとつだけ。ポーカーはチップの取り合い。相手のチップを全部もらったら勝ち' },
+    { k: 'say', who: 'rico', t: 'おはよ、新人ちゃん。鏡に見とれてないで、そろそろ開店だよ', voice: 'rico/pro_07' },
+    { k: 'say', who: 'mimi', t: 'あ、あの！　ここどこですか！？　私、会社の帰りで……', voice: 'mimi/pro_08' },
+    { k: 'say', who: 'rico', t: 'ここはカジノ。あんたは今日から、うちの新人バニー。名簿にもちゃんと「ミミ」って載ってたよ', voice: 'rico/pro_09' },
+    { k: 'say', who: 'mimi', t: '登録したの誰ですか！？　契約書は！？　この耳の説明は！？', voice: 'mimi/pro_10' },
+    { k: 'say', who: 'rico', t: '登録されてるなら働けるっしょ。細かいことは、あと、あと', voice: 'rico/pro_11' },
+    { k: 'say', who: 'rico', t: 'ここのバニーの仕事はね、お客さんとポーカーで勝負すること', voice: 'rico/pro_12' },
+    { k: 'say', who: 'mimi', t: 'ポーカー……！？　ルールも知らないです……', voice: 'mimi/pro_13' },
+    { k: 'say', who: 'rico', t: 'だから研修。今日はアタシと3回だけ勝負して、遊びながら覚えよ', voice: 'rico/pro_14' },
+    { k: 'say', who: 'rico', t: '覚えるのはひとつだけ。ポーカーはチップの取り合い。相手のチップを全部もらったら勝ち', voice: 'rico/pro_15' },
     { k: 'think', who: 'mimi', t: '……耳が勝手にぴくっと動いた。どうやら、逃げ道はないらしい' },
-    { k: 'say', who: 'rico', t: 'さ、卓へ行こ。大丈夫、最初はちゃんと教えるから' },
+    { k: 'say', who: 'rico', t: 'さ、卓へ行こ。大丈夫、最初はちゃんと教えるから', voice: 'rico/pro_16' },
   ],
 };
 
-function showStoryScene(key, onDone) {
+let _storyVoiceWait = false;
+function showStoryScene(key, onDone, voiceReady) {
   const steps = PROLOGUES[key];
   const done = () => { if (onDone) onDone(); };
   if (!steps || document.querySelector('.story-overlay')) { done(); return; }
+  // 声は表示の前にその場面の分を読む（遅れて鳴ると興ざめ）。読み終わる（最長2.5秒）まで出さない
+  if (!voiceReady && window.MimiVoice && MimiVoice.enabled()) {
+    if (_storyVoiceWait) return;
+    _storyVoiceWait = true;
+    MimiVoice.preload(steps.map(s => s.voice), { group: 'story', timeout: 2500 }).then(() => { _storyVoiceWait = false; showStoryScene(key, onDone, true); });
+    return;
+  }
   const ep = EPISODES[key] || {};
   const art = `assets/episodes/${key}.webp`;
   if (window.MimiAssets) window.MimiAssets.warm([art]);
@@ -3767,6 +3812,7 @@ function showStoryScene(key, onDone) {
   };
 
   const showStep = (s) => {
+    if (window.MimiVoice) { if (s.voice) MimiVoice.playId(s.voice, { prio: 1, noRepeat: false, maxLateMs: 1500 }); else stopVoice(); }
     if (s.k === 'mono') {
       const line = document.createElement('p');
       line.textContent = s.t;
@@ -3834,6 +3880,7 @@ function showStoryScene(key, onDone) {
     finished = true;
     cancelAnimationFrame(raf);
     window.removeEventListener('keydown', onKey, true);
+    if (window.MimiVoice) { stopVoice(); MimiVoice.release('story'); }
     ov.classList.add('out');
     setTimeout(() => { ov.remove(); done(); }, reduce ? 0 : 520);
   }
@@ -3855,7 +3902,7 @@ function showStoryScene(key, onDone) {
 const INTERMISSIONS = {
   rico_tutorial: {
     lines: [
-      { speaker: 'rico',  text: 'はい、講義おしまい。……ミミ、思ったよりちゃんと聞いてたじゃん' },
+      { speaker: 'rico',  text: 'はい、講義おしまい。……ミミ、思ったよりちゃんと聞いてたじゃん', voice: 'rico/ims_rico_tutorial_1' },
       { speaker: 'mimi',  text: '聞かないと即クビにされそうな圧を感じたので……いえ、ちゃんと面白かったです' },
       { speaker: 'rico',  text: '上出来。じゃ、次はいよいよ実戦。ポルカの卓に座ってもらうよ' },
       { speaker: 'rico',  text: '相手はポルカ。声がでかい時ほど手が弱いタイプだから、ビビらず耳を澄ませてね' },
@@ -3865,7 +3912,7 @@ const INTERMISSIONS = {
   },
   polka: {
     lines: [
-      { speaker: 'polka', text: 'うわー、新人に負けるとはなー……でも今日のミミちゃん、ちゃんとボクの指先見てたでしょ' },
+      { speaker: 'polka', text: 'うわー、新人に負けるとはなー……でも今日のミミちゃん、ちゃんとボクの指先見てたでしょ', voice: 'polka/ims_polka_1' },
       { speaker: 'mimi',  text: '正直かなり分かりやすかったです……あ、責めてるわけじゃなくて！' },
       { speaker: 'rico',  text: 'ふふ、初勝利おめでとう。でも、これで満足しないでよね？' },
       { speaker: 'rico',  text: '次はセリナ。声も態度も崩さない、理屈で殴ってくるタイプ。ベット額の"意味"に耳を澄ませな' },
@@ -3875,7 +3922,7 @@ const INTERMISSIONS = {
   },
   selina: {
     lines: [
-      { speaker: 'selina', text: '……お見事です。ボードの危険度、あの短時間でよく仕上げましたね' },
+      { speaker: 'selina', text: '……お見事です。ボードの危険度、あの短時間でよく仕上げましたね', voice: 'selina/ims_selina_1' },
       { speaker: 'mimi',   text: 'セリナさんが理由をちゃんと説明してくれたので……それ、褒めてくれてますよね？' },
       { speaker: 'rico',   text: 'うんうん、成長したね。場の危なさが分かるようになったのは大きいよ' },
       { speaker: 'rico',   text: '次はグラーノ。商人気質で、何でも値段で誘ってくる。安く見えても払う価値があるかは自分で計算するんだよ' },
@@ -3885,7 +3932,7 @@ const INTERMISSIONS = {
   },
   grano: {
     lines: [
-      { speaker: 'grano', text: 'いや実に見事な商談でした、お嬢さん。今回は私の負け……そういうことにしておきましょう' },
+      { speaker: 'grano', text: 'いや実に見事な商談でした、お嬢さん。今回は私の負け……そういうことにしておきましょう', voice: 'grano/ims_grano_1' },
       { speaker: 'mimi',  text: '「安いですよ」攻撃、途中から怖くなってきました……でも計算したら見合ってなかったので、勝ちです！' },
       { speaker: 'rico',  text: 'その調子。……ミミ、次でいよいよ最後の卓だよ' },
       { speaker: 'rico',  text: 'VIPルームのヴェルベット。言葉と圧で先に心を折りにくるタイプ。でも、あんたはもう全部の武器を持ってる' },
@@ -3897,7 +3944,7 @@ const INTERMISSIONS = {
     // ※ヴェルベットは初回クリアの結果画面の「幕間へ」から入り、見終わるとそのままエンディングへ進む。
     //   口調は「あたし」「〜なの」「〜のよ」。結果画面の降伏の台詞（負けの一言）と同じ内容を言わせない
     lines: [
-      { speaker: 'velvet', text: '……ふふ、膝をついたのはあたしの方だったのね。こんな夜があるなんて、思わなかったの' },
+      { speaker: 'velvet', text: '……ふふ、膝をついたのはあたしの方だったのね。こんな夜があるなんて、思わなかったの', voice: 'velvet/ims_velvet_1' },
       { speaker: 'mimi',   text: 'ヴェルベットさんの圧、最後まで怖かったです……勝てたの、正直まだ信じられません' },
       { speaker: 'rico',   text: 'よく頑張ったね、ミミ。……本当に、ここまでよく来た' },
       { speaker: 'rico',   text: 'このあとはご褒美の時間。今日までの全部、ちゃんと見てたから' },
@@ -3909,11 +3956,19 @@ const INTERMISSIONS = {
 
 // 幕間画面を表示する。render() は使わず #stage に overlay を直接 append/remove する
 // （showEpisodeTitle と同じ作法）。背景・立ち絵・CG はすべて生成中の前提で onerror フォールバック必須。
-function showIntermission(opponentId, onDone) {
+let _imsVoiceWait = false;
+function showIntermission(opponentId, onDone, voiceReady) {
   const data = INTERMISSIONS[opponentId];
   if (!data || !data.lines || !data.lines.length) { if (onDone) onDone(); return; }
   // 二重表示を防ぐ：幕間が出ている間に「幕間へ」がもう一度押されても、2枚目は作らない
   if (document.querySelector('.intermission-overlay:not(.out)')) return;
+  // 声は表示の前に読む（相手の1行目だけ。最長2.5秒）
+  if (!voiceReady && window.MimiVoice && MimiVoice.enabled()) {
+    if (_imsVoiceWait) return;
+    _imsVoiceWait = true;
+    MimiVoice.preload(data.lines.map(l => l.voice), { group: 'ims', timeout: 2500 }).then(() => { _imsVoiceWait = false; showIntermission(opponentId, onDone, true); });
+    return;
+  }
   const opp = OPPONENTS[opponentId] || {};
   const oppImgKey = opp.imgKey || opponentId;
   const oppName = opp.name || '相手';
@@ -3984,6 +4039,7 @@ function showIntermission(opponentId, onDone) {
   function renderLine() {
     const line = data.lines[idx];
     if (!line) { showCg(); return; }
+    if (window.MimiVoice) { if (line.voice) MimiVoice.playId(line.voice, { prio: 1, noRepeat: false, maxLateMs: 1500 }); else stopVoice(); }
     const meta = speakerMeta(line.speaker);
     dlgName.textContent = meta.name;
     dlgText.textContent = line.text;
@@ -4005,6 +4061,7 @@ function showIntermission(opponentId, onDone) {
     if (phase !== 'dialogue') return;
     phase = 'cg';
     cgShownAt = Date.now();
+    if (window.MimiVoice) stopVoice();   // スキップ・最後の台詞のあと：声を止める
     dialogueBox.classList.add('ims-hide');
     skipBtn.classList.add('ims-hide');
     // ご褒美CG開放記録（コレクションの「ご褒美CG」で閲覧できるようになる）
@@ -4033,6 +4090,7 @@ function showIntermission(opponentId, onDone) {
     // 再入を防ぐ：CG の2回タップで onDone（エンディングの題字など）が2回走っていた
     if (phase !== 'cg') return;
     phase = 'done';
+    if (window.MimiVoice) { stopVoice(); MimiVoice.release('ims'); }
     overlay.classList.add('out');
     setTimeout(() => { overlay.remove(); if (onDone) onDone(); }, 400);
   }
@@ -4804,6 +4862,11 @@ function showSettingsModal() {
             <input class="settings-modal-volume" type="range" min="0" max="100" value="${save.sfxVolume ?? 60}" data-volume="sfx" aria-label="効果音の音量">
             ${sw('sfx', !!save.sfxOn, '効果音')}
           </div>
+          <div class="settings-modal-row settings-modal-sound">
+            <span class="settings-modal-label">キャラの声</span>
+            <input class="settings-modal-volume" type="range" min="0" max="100" value="${save.voiceVolume ?? 80}" data-volume="voice" aria-label="キャラの声の音量">
+            ${sw('voice', save.voiceOn !== false, 'キャラの声')}
+          </div>
           <div class="settings-modal-row">
             <span class="settings-modal-label">端末が消音でも音を出す</span>
             ${sw('forcesound', !!save.forceSound, '端末が消音でも音を出す')}
@@ -4855,9 +4918,16 @@ function showSettingsModal() {
   }));
   overlay.querySelectorAll('[data-volume]').forEach(input => input.addEventListener('input', () => {
     if (input.dataset.volume === 'bgm') { save.bgmVolume = +input.value; applyBgmVolume(); }
+    else if (input.dataset.volume === 'voice') save.voiceVolume = +input.value;
     else save.sfxVolume = +input.value;
     saveProgress();
   }));
+  // 声の音量は、スライダーを離した時にミミの声で確かめられる（その場で読み込む。声ON・効果音ONの時だけ）
+  const voiceSlider = overlay.querySelector('[data-volume="voice"]');
+  if (voiceSlider) voiceSlider.addEventListener('change', () => {
+    if (!window.playVoice) return;
+    playVoice('mimi', 'bark_win_1', { noRepeat: false, prio: 2, maxLateMs: 2500 });
+  });
   overlay.querySelectorAll('[data-toggle]').forEach(btn => {
     btn.addEventListener('click', () => {
       const kind = btn.dataset.toggle;
@@ -4867,6 +4937,7 @@ function showSettingsModal() {
       else if (kind === 'forcesound') setForceSound(!save.forceSound); // 内部でsaveProgress+即反映
       else if (kind === 'bgm') toggleLobbyBgm();
       else if (kind === 'sfx') { toggleSfx(); mpSfx('tap'); }
+      else if (kind === 'voice') { save.voiceOn = !(save.voiceOn !== false); if (!save.voiceOn && window.stopVoice) stopVoice(); }
       saveProgress();
       let isOn;
       if (kind === 'psych') isOn = (save.psychEnabled !== false);
@@ -4874,6 +4945,7 @@ function showSettingsModal() {
       else if (kind === 'forcesound') isOn = !!save.forceSound;
       else if (kind === 'bgm') isOn = !!save.bgmOn;
       else if (kind === 'sfx') isOn = !!save.sfxOn;
+      else if (kind === 'voice') isOn = save.voiceOn !== false;
       else if (kind === 'backdoor') {
         isOn = !!save.backdoorOn;
         // バトル画面の「相手の手札を見る」パネルへ即座に反映（対戦中にONにしたら、その対戦は練習扱い）
@@ -7733,7 +7805,7 @@ function onAction(e) {
         'coins', 'ownedItems', 'shopSeenItems', 'unlockedNotes', 'panyuGaugeMax', 'panyuSkills', 'panyuComboMultiplier', 'carryChips',
         'equippedCardSkin', 'equippedTableSkin', 'equippedRicoOutfit', 'equippedChipSkin', 'equippedMimiSkin', 'equippedCutin',
         'equippedBgmLobby', 'equippedBgmBattle', 'equippedSePack',
-        'loginBonus', 'panyuFreeDaily', 'bgmVolume', 'bgmOn', 'sfxVolume', 'sfxOn', 'forceSound', 'psychEnabled', 'logicEnabled',
+        'loginBonus', 'panyuFreeDaily', 'bgmVolume', 'bgmOn', 'sfxVolume', 'sfxOn', 'voiceVolume', 'voiceOn', 'forceSound', 'psychEnabled', 'logicEnabled',
       ];
       save = defaultSave();
       KEEP_KEYS.forEach(k => { if (prev[k] !== undefined) save[k] = JSON.parse(JSON.stringify(prev[k])); });
@@ -8190,6 +8262,7 @@ function startEndingShow(playMusic) {
     // 以前は即ロビーへ戻っていて、エンディングの締めを一度も見られなかった。スキップ後はボタンを待たせない
     if (cancelled) return;
     cancelled = true;
+    if (window.MimiVoice) stopVoice();
     skip.disabled = true;
     skip.style.display = 'none';
     stage.querySelectorAll('.ending-narration, .ending-speaker, .ending-keyart, .ending-portrait-scene, .ending-blackout, .credits-roll')
@@ -8205,39 +8278,39 @@ function startEndingShow(playMusic) {
 
     // ── 第1幕：女王、玉座を降りる ──（velvet.png をキープ、セリフ2発）
     { type: 'keyart', img: 'velvet', name: 'ヴェルベット',
-      text: '……新人さんに、こんな夜をもらうなんてね。', wait: 6200 },
+      voice: 'velvet/end_01', text: '……新人さんに、こんな夜をもらうなんてね。', wait: 6200 },
     { type: 'keyart', img: 'velvet', name: 'ヴェルベット',
-      text: '玉座は揺るがないって、信じてたの。<br>今夜、あたしは知ったの。<br>——揺るがないものなんて、ないってこと。', wait: 8000 },
+      voice: 'velvet/end_02', text: '玉座は揺るがないって、信じてたの。<br>今夜、あたしは知ったの。<br>——揺るがないものなんて、ないってこと。', wait: 8000 },
 
     // ── 第2幕：敗者たちの敬意 ──
     { type: 'keyart', img: 'grano', name: 'グラーノ',
-      text: 'お嬢さん、商人として申し上げましょう。<br>あの判断は、損得を超えておりましたよ。<br>——実に、美しかった。', wait: 7400 },
+      voice: 'grano/end_03', text: 'お嬢さん、商人として申し上げましょう。<br>あの判断は、損得を超えておりましたよ。<br>——実に、美しかった。', wait: 7400 },
 
     { type: 'keyart', img: 'selina', name: 'セリナ',
-      text: 'ボードは、嘘をつきません。<br>けれど……心まで読み切られるとは、思っていませんでした。<br>羨ましいくらいです。', wait: 7200 },
+      voice: 'selina/end_04', text: 'ボードは、嘘をつきません。<br>けれど……心まで読み切られるとは、思っていませんでした。<br>羨ましいくらいです。', wait: 7200 },
 
     { type: 'keyart', img: 'polka', name: 'ポルカ',
-      text: 'うう、悔しい！<br>でも……うん、ボク、覚えとくから。<br>ミミちゃんの強さ、ぜったい次は超えてやるんだから！', wait: 6800 },
+      voice: 'polka/end_05', text: 'うう、悔しい！<br>でも……うん、ボク、覚えとくから。<br>ミミちゃんの強さ、ぜったい次は超えてやるんだから！', wait: 6800 },
 
     // ── 第3幕：師の祝福 ──
     { type: 'portrait', img: 'rico_ending', fallback: 'rico_default', name: 'リコ先輩',
-      text: 'やるじゃん、ミミ。', wait: 3800 },
+      voice: 'rico/end_06', text: 'やるじゃん、ミミ。', wait: 3800 },
     { type: 'portrait', img: 'rico_ending', fallback: 'rico_default', name: 'リコ先輩',
-      text: 'ねえ、今日って……ミミの初日だよね？<br>こんな新人、アタシも聞いたことないよ。',
+      voice: 'rico/end_07', text: 'ねえ、今日って……ミミの初日だよね？<br>こんな新人、アタシも聞いたことないよ。',
       wait: 6400 },
 
     // ── 第4幕：主人公の独白（外れスキルと呼ばれた力で、見る目が育ったことを肯定して締める） ──
     { type: 'portrait', img: 'mimi_ending', fallback: 'mimi_default', name: 'ミミ',
-      text: '「外れスキル《ぱにゅぱにゅ》」<br>——それが、今朝のわたしに与えられた、評価でした。',
+      voice: 'mimi/end_08', text: '「外れスキル《ぱにゅぱにゅ》」<br>——それが、今朝のわたしに与えられた、評価でした。',
       wait: 6200 },
     { type: 'portrait', img: 'mimi_ending', fallback: 'mimi_default', name: 'ミミ',
-      text: 'ぱにゅぱにゅ……一生懸命、発動したんですよ？',
+      voice: 'mimi/end_09', text: 'ぱにゅぱにゅ……一生懸命、発動したんですよ？',
       wait: 4400 },
     { type: 'portrait', img: 'mimi_ending', fallback: 'mimi_default', name: 'ミミ',
-      text: '……でも、振り返ってみて、気づきました。<br>このスキルが見せてくれたのは、カードじゃなくて、<br>相手の声と、指先と、賭け方だったんだって。',
+      voice: 'mimi/end_10', text: '……でも、振り返ってみて、気づきました。<br>このスキルが見せてくれたのは、カードじゃなくて、<br>相手の声と、指先と、賭け方だったんだって。',
       wait: 7000 },
     { type: 'portrait', img: 'mimi_ending', fallback: 'mimi_default', name: 'ミミ',
-      text: '外れスキルでも、ちゃんと育つんですね。<br>……明日も、卓に座ってみます。', wait: 6200, afterglow: 5200, keepCaption: true },
+      voice: 'mimi/end_11', text: '外れスキルでも、ちゃんと育つんですね。<br>……明日も、卓に座ってみます。', wait: 6200, afterglow: 5200, keepCaption: true },
 
     // ── 終章：余韻ナレーション ──
     { type: 'keyart', img: 'ending', name: null,
@@ -8254,6 +8327,7 @@ function startEndingShow(playMusic) {
   }
 
   function runAct(a, done) {
+    if (a.voice && window.MimiVoice) MimiVoice.playId(a.voice, { prio: 1, noRepeat: false, delay: 500, maxLateMs: 2000 });
     if (a.type === 'fade-text' || a.type === 'black-fade') {
       const el = document.createElement('div');
       el.className = `ending-narration ${a.cls || ''} ${a.type === 'black-fade' ? 'black-fade' : ''}`;
@@ -8422,8 +8496,14 @@ function startEndingShow(playMusic) {
     }, 1600);
   }
 
-  // 開始
-  setTimeout(nextAct, 400);
+  // 開始：声はその場面の分を先に読む（最長3.5秒）。台詞は声が言い終わるまで出したままにする（wait を声の長さ以上に）
+  const ids = acts.map(a => a.voice).concat(['rico/end_12']).filter(Boolean);
+  const startShow = () => {
+    if (window.MimiVoice && MimiVoice.enabled()) acts.forEach(a => { if (a.voice) a.wait = Math.max(a.wait, MimiVoice.durMs(a.voice) + 1300); });
+    setTimeout(nextAct, 400);
+  };
+  if (window.MimiVoice && MimiVoice.enabled()) MimiVoice.preload(ids, { group: 'ending', timeout: 3500 }).then(startShow);
+  else startShow();
 }
 
 // スタッフロール（製品版）。役割名は一般的な表記にし、制作に使ったツール・サービスは「制作協力」に1行ずつ（役割を先に）。
@@ -8885,6 +8965,8 @@ function showEndingFinalButtons(stage, opts = {}) {
     </div>
   `;
   stage.appendChild(epilogue);
+  // 締めの一言（リコ先輩）は、台詞が出るころに鳴らす
+  if (window.MimiVoice) MimiVoice.playId('rico/end_12', { prio: 1, noRepeat: false, delay: immediate ? 400 : 2200, maxLateMs: 2000 });
   let leaving = false;
   // data-action="back-lobby" は点検の台本（qa/endingtour.mjs）が押す目印として残す。処理はここだけで行い、
   // 後から onAction が付いても二重に動かないよう、先に登録したこの処理で止める
@@ -8898,6 +8980,7 @@ function showEndingFinalButtons(stage, opts = {}) {
     // 交換所の「観る」から来た時の「交換所へ戻る」だけは元の画面へ
     if (where === 'back' && r && r.screen === 'shop') { returnFromEndingReplay({ screen: 'shop', collection: false }); return; }
     endingRunId++;
+    if (window.MimiVoice) { stopVoice(); MimiVoice.release('ending'); }
     stopEndingBgm();
     goLobby();
     // コレクションを見る：ロビーへ戻ってからコレクションを開く
@@ -8913,6 +8996,7 @@ function showEndingFinalButtons(stage, opts = {}) {
 
 
 function goLobby() {
+  if (window.MimiVoice) stopVoice();   // 場面を出たら声は止める
   delete state.homePreviewOutfit;
   battleGen++;
   if (window.AllstarUI) AllstarUI.teardown(); // 零時の卓：途中ならハンドの頭で保存して畳む
@@ -9003,7 +9087,9 @@ function toggleEndingThemePreview() {
 
 function bgmVolFloat() {
   const v = save && save.bgmVolume != null ? save.bgmVolume : 35;
-  return Math.max(0, Math.min(1, v / 100));
+  // 声が鳴っている間だけ3割下げる（voice.js のダッキング。終わると applyBgmVolume() で戻る）
+  const dk = (window.MimiVoice && MimiVoice.duckFactor()) || 1;
+  return Math.max(0, Math.min(1, v / 100)) * dk;
 }
 function applyBgmVolume() {
   const lobbyA = document.getElementById('lobby-bgm-audio');
@@ -9943,6 +10029,16 @@ function mpLine(charKey, situation) {
   const arr = set[situation];
   if (!arr || arr.length === 0) return '';
   return arr[Math.floor(Math.random() * arr.length)];
+}
+// ミニポーカーの勝ち負けの声（掛け声クリップの流用）。player が勝った: ミミの win か相手の lose。負けた: 相手の win かミミの lose
+function miniVoice(oppKey, outcome) {
+  if (!outcome || !window.MimiVoice || !MimiVoice.enabled()) return;
+  const ids = ['mimi', oppKey].map(v => [v + '/bark_win_1', v + '/bark_lose_1']).flat();
+  MimiVoice.preload(ids, { group: 'mini' });   // 2戦目からは読み済み
+  const pw = outcome === 'win';
+  const useWin = rand() < 0.5;
+  const voice = useWin ? (pw ? 'mimi' : oppKey) : (pw ? oppKey : 'mimi');
+  playVoice(voice, useWin ? 'bark_win_1' : 'bark_lose_1', { prob: 0.5, prio: 1, maxLateMs: 1500 });
 }
 function mpMimiLine(situation) {
   const arr = MP_MIMI_LINES[situation];
@@ -11681,6 +11777,9 @@ function showMiniPokerGame() {
     // ── 演出（音＋画像姿勢＋エフェクト） ──
     setCharPose('player', null);
     setCharPose('cpu', null);
+    // 声：勝った側の win か負けた側の lose を1本（その相手の声がある時だけ。引き分けは鳴らさない）
+    miniVoice(ctx.opp.key, ((pe.rank === 9 && showdown === 'win') || result === 'win') ? 'win'
+      : (result === 'push' || result === 'tie' || result === 'nopay') ? null : 'lose');
     if (pe.rank === 9 && showdown === 'win') {
       // ロイヤル：超特別＋ジャックポット獲得
       playFx('royal');
@@ -12839,6 +12938,14 @@ function warmNextBattle() {
   const next = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'].find(id => !(save.clearedStages || []).includes(id)) || 'velvet';
   const key = (OPPONENTS[next] || {}).imgKey || next;
   MA.warm([...MA.sets.battleNow(next, key), ...(idleMotionOk() ? MA.sets.battleIdle(next) : [])], { set: 'battle:' + next });
+  preloadBattleVoice(next, false);
+}
+// 対戦の前に、その相手とミミの掛け声・初手の出会い台詞・オールインへの反応を読んでおく（遅れて鳴ると興ざめ）。
+// 起動時には読まない。声が OFF の人には読まない
+function preloadBattleVoice(opponentId, serious) {
+  if (!window.MimiVoice || !MimiVoice.enabled()) return;
+  const v = opponentId === 'rico_tutorial' ? (serious ? 'rico_serious' : 'rico') : opponentId;
+  MimiVoice.preloadBattle(['mimi', v]);
 }
 function startBattle(opponentId) {
   if (!battleAssetsGate(opponentId, () => startBattle(opponentId))) return;
@@ -12873,6 +12980,7 @@ function startBattleInternal(opponentId) {
   const opp = OPPONENTS[opponentId] || OPPONENTS.polka;
   state.opponentId = opp.id;
   state.opponentName = seriousRico ? '本気のリコ先輩' : opp.name;
+  preloadBattleVoice(opp.id, seriousRico);   // ロビーで読めていれば何もしない。直接入った時の保険
   // 真剣モードのリコ先輩は全パラメータ最強
   state.opponentProfile = seriousRico
     ? { style: 'rico_serious', bluffTendency: 0.7, aggression: 0.85, foldDiscipline: 0.7, valueBetTendency: 0.8, drawAggression: 0.85, trapTendency: 0.6 }
@@ -14018,7 +14126,13 @@ function startHand() {
   state.bossPsychFiredThisHand = false; // ボス戦の1ハンド1回制限リセット
   state.handPhase = 'preflop';
   state.isPlayerTurn = true;
-  state.opponentSpeech = opponentReadyLine();
+  if (state.handNo === 1) {
+    // 初手の出会い台詞だけ声が付く。吹き出しの文言をその声の録音があるものにして、卓が落ち着いてから鳴らす
+    state.opponentSpeech = voicedLine(opponentReadyLine, oppVoiceId(), 'ready_1');
+    if (window.playVoiceForText) playVoiceForText(oppVoiceId(), state.opponentSpeech, { prio: 1, noRepeat: false, delay: 450, maxLateMs: 1500 });
+  } else {
+    state.opponentSpeech = opponentReadyLine();
+  }
   state.mimiThought = mimiThoughtPreflop(state.playerHand);
   state.ricoAdvice = `「Hand ${state.handNo}、いっくよー。参加費は${ante}ずつ。まずは手札確認ね」`;
   log('actions', { phase: 'preflop_start', playerHand: state.playerHand.map(c => c.label + c.suit) });
@@ -14123,6 +14237,7 @@ function playerFold() {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
   state.isPlayerTurn = false;
   mpSfx('fold');
+  voiceBark('mimi', 'fold');
   // 降りた判断の質：ランダムな手に対してすら払う額に見合わない強さなら「ナイス撤退」
   const needF = Math.max(0, state.currentBetOpponent - state.currentBetPlayer);
   let eqF = null;
@@ -14144,6 +14259,7 @@ function playerFold() {
 function playerCall() {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
   mpSfx('call');
+  voiceBark('mimi', 'call');
   const need = state.currentBetOpponent - state.currentBetPlayer;
   const pay = Math.max(0, Math.min(need, state.playerChips));
   state.playerChips = Math.max(0, state.playerChips - pay);
@@ -14162,6 +14278,7 @@ function playerCheckCall() {
   const need = state.currentBetOpponent - state.currentBetPlayer;
   if (need > 0) return playerCall();
   mpSfx('check');
+  voiceBark('mimi', 'check');
   // 両者チェック → 次ストリートへ
   log('actions', { actor: 'player', type: 'check' });
   state.isPlayerTurn = false;
@@ -14172,6 +14289,7 @@ function playerCheckCall() {
 function playerRaise(bb) {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
   mpSfx('battle-bet');
+  voiceBark('mimi', 'raise');
   const amount = Math.max(0, Math.min(50 * bb, state.playerChips));
   state.playerChips = Math.max(0, state.playerChips - amount);
   state.currentBetPlayer += amount;
@@ -14193,6 +14311,7 @@ function playerBet(size) {
   mpSfx('battle-bet');
   // ベットされた後にサイズを選んだら「コール額＋上乗せ」を払うレイズになる（以前は上乗せ分だけを払い、コール額にも届かないことがあった）
   const needNow = Math.max(0, state.currentBetOpponent - state.currentBetPlayer);
+  voiceBark('mimi', needNow > 0 ? 'raise' : 'bet');
   const sized = betSizeToChips(size, state.pot, state.playerChips);
   const amount = needNow > 0
     ? Math.min(state.playerChips, needNow + Math.max(sized, needNow, 50))
@@ -14225,7 +14344,10 @@ function playerAllIn() {
   log('bets', { actor: 'player', type: 'allin', amount });
   state.isPlayerTurn = false;
   state.mimiThought = '「オールイン！」';
-  state.opponentSpeech = opponentReactToPlayerAggression('allin', amount);
+  voiceBark('mimi', 'allin');
+  // 相手の驚き（react_allin）：吹き出しをその声の録音がある文言にして、ミミの掛け声のあとに続けて鳴らす
+  state.opponentSpeech = voicedLine(() => opponentReactToPlayerAggression('allin', amount), oppVoiceId(), 'react_allin');
+  if (window.playVoiceForText) playVoiceForText(oppVoiceId(), state.opponentSpeech, { queue: true, prio: 1, noRepeat: false });
   if (!state.introHandMode && !state.tutorialMode) {
     setOpponentExpression(state.opponentId === 'velvet' ? 'pleased' : 'rattled');
   }
@@ -14380,6 +14502,7 @@ function opponentTurnDecide() {
   // フォールド処理
   if (action.type === 'fold' && need > 0) {
     state.opponentSpeech = opponentSpeech(action);
+    voiceBark('opp', 'fold');
     log('actions', { actor: 'opponent', type: 'fold' });
     state.handResults.push({ hand: state.handNo, winner: 'player', reason: 'opponentFold', pot: state.pot, by: '相手降伏' });
     const potWon = state.pot;
@@ -14403,6 +14526,7 @@ function opponentTurnDecide() {
     // 今ストリートで相手がチェックした事実を記録（次のレイズで check-raise 検出に使う）
     if (pay === 0) state.opponentCheckedThisStreet = true;
     mpSfx(pay > 0 ? 'call' : 'check');
+    voiceBark('opp', pay > 0 ? 'call' : 'check');
     render();
     if (pay > 0) flyChips('.char-opponent', '.bu-pot-physical', pay);
     if (pay > 0) {
@@ -14437,6 +14561,7 @@ function opponentTurnDecide() {
       state.opponentSpeech = opponentSpeech({ type: 'check_call', intent: 'reluctant_call' });
       log('actions', { actor: 'opponent', type: 'call_fallback', amount: pay });
       mpSfx('call');
+      voiceBark('opp', 'call');
       render();
       flyChips('.char-opponent', '.bu-pot-physical', pay);
       battleTimeout(advanceAfterCall, 900);
@@ -14454,6 +14579,7 @@ function opponentTurnDecide() {
   log('bets', { actor: 'opponent', type: 'bet', size: action.size, amount, intent: action.intent });
   log('reactions', { intent: action.intent, speech: state.opponentSpeech });
   mpSfx(action.size === 'allin' ? 'battle-allin' : 'battle-bet');
+  voiceBark('opp', (amount > 0 && (action.size === 'allin' || state.opponentChips === 0)) ? 'allin' : need > 0 ? 'raise' : 'bet');
   flyChips('.char-opponent', '.bu-pot-physical', amount);
   // オールイン特別演出：実際にチップが動き、かつ残スタックが0になった瞬間のみ
   if (amount > 0 && (action.size === 'allin' || state.opponentChips === 0)) {
@@ -16302,6 +16428,7 @@ function showdown() {
     setOpponentExpression(winner === 'opponent' ? 'pleased' : winner === 'player' ? 'defeat' : 'default');
     render();
     showShowdownCallout(winner, pEv, oEv);
+    voiceShowdown(winner);
     if (winner === 'player') mpSfx(pot >= 800 ? 'bigwin' : 'hand-win');
     else if (winner === 'opponent') mpSfx('hand-lose');
     else mpSfx('tie');

@@ -425,6 +425,8 @@
   let subTimer = 0;
   function say(k, text, ms = 1800) {
     if (!live()) return Promise.resolve();
+    // 声：その相手の録音がある文言だけ鳴る（動作の台詞は掛け声と同じ文言なので、ここで鳴る）。読めていなければ鳴らさない
+    if (window.playVoiceForText) playVoiceForText(k, text, { prio: 0, noRepeat: false, queue: true, maxLateMs: 0 });
     ui['sub-name'].textContent = NAMES[k] || '';
     ui['sub-text'].textContent = `「${text}」`;
     ui.sub.dataset.on = '1';
@@ -991,6 +993,7 @@
   async function opening() {
     // 一枚絵（今は部屋）→ 溶けて卓へ → 文字盤が落ちる → ミミから時計回りに席へ灯り → 台詞2つ → 第1ハンド
     skippable(800);
+    if (window.MimiVoice && MimiVoice.enabled()) MimiVoice.preloadBattle(['rico', 'polka', 'selina', 'grano', 'velvet']);   // 決勝の5人の掛け声（演出の間に読む）
     host.dataset.op = 'title';
     const art = ART.opening;
     const ov = layerEl('as-open', `${art ? `<img class="as-open-art" src="${art}" alt="">` : ''}<div class="as-open-t"><span class="as-open-en">THE MIDNIGHT TABLE</span><b>零時の卓</b><span class="as-open-sub">六席の決勝卓</span></div>`);

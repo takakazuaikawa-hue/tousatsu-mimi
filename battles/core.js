@@ -374,6 +374,8 @@
         setOpp(id, line, bet, expr) {
           const c = CHARS[id] || CHARS.polka;
           api.char = c; api.charId = id;
+          // 勝ち負けの声（掛け声クリップの流用）を先に読んでおく。組み込み（voice.js がある時）だけ
+          if (window.MimiVoice && MimiVoice.enabled() && CHARS[id]) MimiVoice.preload(['mimi', id].map(v => [v + '/bark_win_1', v + '/bark_lose_1']).flat(), { group: 'readgame' });
           $('#mb-opp-name').textContent = c.name;
           api.emote(expr || 'think');
           api.say(line || '……'); $('#mb-opp-bet').textContent = bet == null ? '—' : bet;
@@ -395,7 +397,21 @@
           if (expr || !api.coachExpr) { api.coachExpr = expr || 'think'; setPortrait(A, $('#mb-coach-pop'), $('#mb-coach-img'), 'rico', api.coachExpr, 'chibi'); }
         },
         // 手順の帯：番号入りの菱形を並べる。済んだ段は塗り、先の段は枠だけ、今の段だけ名前を出す
-        steps(names, on) { return `<div class="steps is-dia" role="list" aria-label="手順">${names.map((n, i) => `<span class="dia ${i < on ? 'done' : i === on ? 'on' : 'todo'}" role="listitem" aria-label="${i + 1} ${n}" title="${n}"><i>${i + 1}</i>${i === on ? `<b>${n}</b>` : ''}</span>`).join('')}</div>`; },
+        steps(names, on) { return `<div class="steps is-dia" role="list" aria-label="手順">${names.map((n, i) => `<span class="dia ${i < on ? 'done' : i === on ? 'on' : 'todo'}" role="listitem" aria-label="${i + 1} ${n}" XX
+        // 今やること（T1 指示）：手順の帯のすぐ下に 1 行。段が変わるたびに文を渡して差し替える（空文字なら場所を取ったまま隠す）。
+        // 帯（.steps）の子として描く（帯の下に空きを取り、そこに重ねる）ので、遊び側の格子・段組みの行は増えない。帯が作り直されても api.steps が今の文を入れ直す。
+        // 文が変わった時だけ、短く光る
+        mission(text) {
+          if (!live()) return;
+          const t = text || '';
+          if (t === api.missionText) return;
+          api.missionText = t;
+          gameRoot.querySelectorAll('.steps > .mb-mission').forEach(m => {
+            m.classList.toggle('is-off', !t);
+            m.innerHTML = '<span></span>'; m.firstChild.textContent = t || ' ';
+            if (t) { m.classList.remove('flash'); void m.offsetWidth; m.classList.add('flash'); }
+          });
+        },
         // ミミの手の札：役名の札＋「対ブラフ ○」「対強い手 ×」（金の○・赤の×は CSS で描く）
         handTag(name, vsBluff = true, vsStrong = false) {
           const mk = (ok, t) => `<span class="vs ${ok ? 'ok' : 'ng'}" aria-label="${t}に${ok ? '勝ち' : '負け'}"><i class="mk"></i>${t}</span>`;
@@ -455,6 +471,7 @@
         wager(o = {}) {
           return new Promise(res => {
             const b = o.base || 20;
+            api.mission(o.mission || '読みの自信を選ぶ');
             const box = document.createElement('div');
             box.className = 'mb-wager mb-pop';
             box.innerHTML = `<div class="mb-wager-q">${o.question || 'その読み、どのくらい自信ある？'}</div>
@@ -481,6 +498,7 @@
         // 答え合わせとご褒美。correct / perfect / base / title / detail / art('win'|'lose')
         async finish(o) {
           if (!live()) return;
+          api.mission('答え合わせ');
           const mult = api.mult || 1;
           const b = o.base || 20;
           const coins0 = P.coins;
@@ -499,6 +517,11 @@
           }
           P.coins = Math.max(0, P.coins + gain);
           // 結果の前に、相手とリコ先輩の反応を一拍見せる
+          if (window.playVoice && api.charId) {
+            // 勝った側の win か負けた側の lose を1本（その声がある相手だけ）
+            const useWin = Math.random() < 0.5, voice = useWin ? (o.correct ? 'mimi' : api.charId) : (o.correct ? api.charId : 'mimi');
+            playVoice(voice, useWin ? 'bark_win_1' : 'bark_lose_1', { prob: 0.5, prio: 1, maxLateMs: 1500 });
+          }
           if (o.correct) { api.emote('busted'); api.coach(o.perfect ? 'パーフェクト！ さすがミミ！' : '読み勝ち！', o.perfect ? 'win' : 'smug'); }
           else { api.emote('win'); api.coach('あちゃー……次は取り返そ', 'panic'); }
           await wait(reduce ? 0 : 750);

@@ -18986,7 +18986,7 @@ html.is-compact .result-screen > .sound-toggle { top: 12px; right: 24px; }
 .settings-modal-group-title { margin: 0 0 2px; padding-bottom: 4px; font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 15px; font-weight: 700; letter-spacing: .14em; color: #efcd82; border-bottom: 1px solid rgba(138,90,30,.8); }
 .settings-modal-group .settings-modal-row { margin: 0; gap: 10px; }
 .settings-modal-group .settings-modal-note { margin: 0; font-size: 12px; line-height: 1.6; text-align: left; }
-.settings-modal-sound .settings-modal-label { flex: 0 0 4.5em; }
+.settings-modal-sound .settings-modal-label { flex: 0 0 5.5em; white-space: nowrap; }
 .settings-modal-volume { flex: 1 1 auto; min-width: 60px; height: 44px; accent-color: #c9a25a; cursor: pointer; }
 .settings-modal-links .btn { width: 100%; min-height: 44px; margin: 0; justify-content: flex-start; }
 .settings-modal-links .settings-modal-reset { margin-top: 8px; }
