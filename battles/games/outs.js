@@ -70,11 +70,11 @@ MB.register({
     root.innerHTML = `
       ${api.steps(['当たり札をさがす', '値段とくらべる', '決める', 'スロット'], 0)}
       <div class="row">${s.board.map(c => cardHTML(c, 'big')).join('')}${backHTML('big')}<span style="width:14px"></span>${s.hole.map(c => cardHTML(c, 'big')).join('')}</div>
-      <p class="prompt">最後の1枚で「ストレート」か「フラッシュ」になる札は、残りの山に何枚ある？</p>
-      <div class="outs-count" id="mb-o-count">0 / ${s.outs.length}<small>タップして集めよう</small></div>
+      <div class="prompt mb-ask"><span class="mb-legend" aria-label="最後の1枚でストレートかフラッシュになる札は、残りの山に何枚？"><span class="mb-threat"><span class="tc"><span>5 6 7 8</span><span class="q">?</span></span></span><span class="mb-threat"><span class="tc"><span class="rd">♥♥♥♥</span><span class="q">?</span></span></span></span><span class="q">何枚？</span></div>
+      <div class="outs-count" id="mb-o-count">0 / ${s.outs.length}</div>
       <div class="outs-deck" id="mb-o-deck">${grid.map(c => cardHTML(c, known.has(key(c)) ? 'known' : 'tap')).join('')}</div>
       <div class="actions"><button class="btn ghost" id="mb-o-give">わからない（答えを見る）</button></div>`;
-    api.coach('グラーノは計算の子。まずは当たり札を<b>全部</b>見つけてみよ。うすい札は場とミミの手札');
+    api.tipOnce('outs', 'うすい札は場とミミの手札');
     const outKeys = new Set(s.outs.map(key));
     const found = new Set(); let miss = 0, gaveUp = false;
     await new Promise(res => {
@@ -84,15 +84,15 @@ MB.register({
         if (outKeys.has(el.dataset.k)) {
           el.classList.add('found'); found.add(el.dataset.k); api.sfx.good();
           root.querySelector('#mb-o-count').firstChild.textContent = `${found.size} / ${s.outs.length}`;
-          if (found.size === s.outs.length) { api.emote('panic'); api.coach('全部見つけた！', 'smug'); res(); } else if (found.size === Math.ceil(s.outs.length / 2)) api.emote('think');
+          if (found.size === s.outs.length) { api.emote('panic'); api.coach(''); res(); } else if (found.size === Math.ceil(s.outs.length / 2)) api.emote('think');
         } else {
           el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); api.sfx.nope(); miss++;
-          api.coach('それだと役がそろわない。狙いは<b>ストレート</b>か<b>フラッシュ</b>！', 'panic');
+          api.coach('');
           if (miss === 2) {
             const outSuit = SUITS.find(su => s.outs.filter(c => c.s === su).length >= 9);
             const ranks = new Set(s.outs.map(c => c.r));
             root.querySelectorAll('#mb-o-deck .card.tap').forEach(x => { const r = +x.dataset.k.slice(0, -1), su = x.dataset.k.slice(-1); if ((outSuit && su === outSuit) || (!outSuit && ranks.has(r))) x.classList.add('hint'); });
-            api.coach(outSuit ? `ヒント：手札と場札、<b>${SYM[outSuit]}</b>は何枚？` : 'ヒント：数字を順に並べて。<b>両はし</b>が空いてる');
+            api.coach(outSuit ? `ヒント：<b>${SYM[outSuit]}</b>は何枚？` : 'ヒント：<b>両はし</b>');
           }
         }
       });
@@ -104,16 +104,14 @@ MB.register({
     root.querySelector('.actions').remove();
     // 探し終えたら 52 枚の一覧は畳み、当たり札だけを1列に並べる（1画面に収めるため。何が当たりかも一目で分かる）
     root.querySelector('#mb-o-deck').classList.add('is-collapsed');
-    const cnt = root.querySelector('#mb-o-count'); if (cnt) cnt.innerHTML = `当たり札 ${s.outs.length}枚<small>この札が最後に来れば勝ち</small>`;
+    const cnt = root.querySelector('#mb-o-count'); if (cnt) cnt.innerHTML = `当たり札 ${s.outs.length}枚`;
     const meter = document.createElement('div');
     meter.className = 'outs-meter pop';
-    meter.innerHTML = `<p class="prompt">${s.outs.length}枚！ じゃあ、この値段は割に合う？</p>
+    meter.innerHTML = `<div class="prompt mb-ask"><span class="mb-bet"><b>当たり ${s.outs.length}枚</b></span>${api.betTag('払う ' + s.B, 3)}</div>
       <div class="outs-bar"><div class="outs-fill" id="mb-o-fill"></div><div class="outs-line" id="mb-o-line"><span>割に合う線 ${pct(s.need)}%</span></div><div class="outs-val">約 ${s.outs.length * 2}%</div></div>
-      <div class="formula">当たり札 ${s.outs.length}枚 × 2 ＝ <b>約${s.outs.length * 2}%</b>（正確には ${s.outs.length}÷${s.rest.length}＝${pct(s.eq)}%）</div>
-      <div class="formula">払う ${s.B} ÷（もらえる ${s.P + s.B} ＋ 払う ${s.B}）＝ <b>${pct(s.need)}%</b> 以上当たれば得</div>
-      <div class="actions"><button class="btn" id="mb-o-call">コール<small>${s.B} 払って最後の1枚へ</small></button><button class="btn quiet" id="mb-o-fold">降りる<small>ここまでの分をあきらめる</small></button></div>`;
+      <div class="actions"><button class="btn" id="mb-o-call">コール<small>${s.B} 払って最後の1枚へ</small></button><button class="btn quiet" id="mb-o-fold">降りる<small>ここまでの分をあきらめる</small></button>${api.more(`当たり札 ${s.outs.length}枚 × 2 ＝ <b>約${s.outs.length * 2}%</b>（正確には ${s.outs.length}÷${s.rest.length}＝${pct(s.eq)}%）<br>払う ${s.B} ÷（もらえる ${s.P + s.B} ＋ 払う ${s.B}）＝ <b>${pct(s.need)}%</b> 以上当たれば得`)}</div>`;
     root.querySelector('#mb-o-deck').after(meter);
-    api.coach('当たり札の枚数に<b>2をかける</b>と、最後の1枚で当たる確率（%）。金の棒が赤い線をこえてる？');
+    api.coach('');
     await api.wait(250);
     meter.querySelector('#mb-o-fill').style.width = pct(s.eq) + '%';
     meter.querySelector('#mb-o-line').style.left = pct(s.need) + '%';
@@ -134,7 +132,7 @@ MB.register({
     // ニアミス：外れの時は、隣に当たり札を置いて「あと1枚」を見せる
     if (!hit && Math.random() < 0.7) strip[stopIdx + 1] = api.pick(s.outs);
     const reelBox = document.createElement('div');
-    reelBox.innerHTML = `<div class="reel-legend">${called ? '最後の1枚……！' : '降りた。でも、もし付いていったら……'}　金色＝当たり札 <b>${s.outs.length}</b> / ${s.rest.length}枚</div>
+    reelBox.innerHTML = `<div class="reel-legend">${called ? '' : '<span class="mb-bet"><b>降りた・もしも</b></span> '}<span class="mb-bet"><b>金＝当たり ${s.outs.length} / ${s.rest.length}</b></span></div>
       <div class="reel-wrap"><div class="reel-mark"></div><div class="reel" id="mb-o-reel">${strip.map(c => cardHTML(c, outKeys.has(key(c)) ? 'out' : '')).join('')}</div></div>`;
     meter.after(reelBox);
     api.reveal(reelBox, 'center');

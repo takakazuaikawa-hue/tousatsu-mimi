@@ -110,6 +110,8 @@ html.is-compact #stage > .read-battle-host.mb-host #mb-stare-steps { grid-area: 
 html.is-compact #stage > .read-battle-host.mb-host #mb-stare-steps .steps { gap: 3px; flex-wrap: wrap; justify-content: center; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-sit { grid-area: sit; align-items: flex-start; gap: 2px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-cards { gap: 2px 6px; justify-content: flex-start; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-duel { padding-right: 8px; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-sit { padding-left: 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-grp { gap: 2px; flex-wrap: wrap; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-tag { font-size: 12px; margin-right: 2px; letter-spacing: .06em; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-tag.is-vs { font-size: 13px; }
@@ -139,6 +141,7 @@ html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .actions .btn sma
 html.is-compact #stage > .read-battle-host.mb-host .stare-clues { grid-area: clues; grid-template-columns: 1fr; gap: 4px; align-content: start; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-clue { padding: 3px 8px 4px; font-size: 12px; line-height: 1.35; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-clue .h { font-size: 13px; flex-wrap: wrap; row-gap: 0; }
+html.is-compact #stage > .read-battle-host.mb-host .stare-clue:not(.is-open) .t { display: none; }
 html.is-compact #stage > .read-battle-host.mb-host .stare-clue .st-gg { gap: 0 10px; margin-top: 0; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-handtag { gap: 2px 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-handtag .nm { font-size: 13px; line-height: 1.25; padding: 0 6px; }
@@ -318,6 +321,8 @@ html.is-compact #stage > .read-battle-host.mb-host .ob-tab em { font-size: 12px;
 html.is-compact #stage > .read-battle-host.mb-host .ob-ev .card.ob-mini { --w: 31px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-mini-row { gap: 3px; flex-wrap: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-note { margin-top: 1px; font-size: 12px; line-height: 1.25; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-chip { margin-left: 2px; align-self: center; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-chip .tc { font-size: 13px; padding: 0 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-log { font-size: 12px; line-height: 1.2; gap: 1px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-log li { grid-template-columns: auto auto minmax(0, 1fr); gap: 0 6px; }
 html.is-compact #stage > .read-battle-host.mb-host .ob-log .st { font-size: 12px; }
@@ -628,6 +633,21 @@ html.is-compact #stage > .read-battle-host.mb-host .sp-val { font-size: 17px; }
 
 /* スマホ版の基準（2026-10-18）：12px 未満が残っていた所（遊びごとの JS の中の CSS・札の大きさに比例するマーク）を 12px に */
 html.is-compact #stage > .read-battle-host.mb-host .card i { font-size: max(12px, calc(var(--w, 34px) * .36)); }
+html.is-compact #stage > .read-battle-host.mb-host .card b { font-size: max(12.5px, calc(var(--w, 34px) * .46)); }
+html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card b { font-size: 14px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:is(:has(> .outs-deck), :has(> .outs-meter)) > .row .card b { font-size: 13.5px !important; }
+html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card b { font-size: 17px; }
+html.is-compact #stage > .read-battle-host.mb-host .outs-deck:not(.is-collapsed) { width: calc(100% - 12px); }
+html.is-compact #stage > .read-battle-host.mb-host .sp-tile span { font-size: 12.5px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-ask .mb-bet { padding: 0 8px 0 6px; gap: 6px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-ask .mb-bet b { font-size: 14px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-ask .mb-stk { width: 22px; height: 19px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-ask .mb-stk i { width: 22px; height: 9px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-ask .mb-stk i:nth-child(2) { bottom: 3px; } html.is-compact #stage > .read-battle-host.mb-host .mb-ask .mb-stk i:nth-child(3) { bottom: 6px; } html.is-compact #stage > .read-battle-host.mb-host .mb-ask .mb-stk i:nth-child(4) { bottom: 9px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-ask .q { font-size: 15px; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-sub { line-height: 1; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-sub .mb-handtag { gap: 0 4px; }
+html.is-compact #stage > .read-battle-host.mb-host .ob-sub .mb-handtag .nm, html.is-compact #stage > .read-battle-host.mb-host .ob-sub .mb-handtag .vs { line-height: 1.15; }
 html.is-compact #stage > .read-battle-host.mb-host :is(.gc-meta, .hb-ref li span, .hb-ref .hb-arrow, .hb-slot .hb-tag, .hb-bname small,
   .hl-pot small, .ob-colhead, .sn-me-name small, .sn-axis-y, .sn-floor, .stare-meter .lbl) { font-size: 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .hl-rung small { font-size: 12.5px !important; }

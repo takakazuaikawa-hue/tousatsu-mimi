@@ -155,7 +155,11 @@
       .hl-verdict { text-align: center; min-height: 3.2em; display: grid; gap: 2px; align-content: center; }
       .hl-verdict b { font-family: var(--mincho); font-weight: 800; font-size: 24px; line-height: 1.2; }
       .hl-verdict.good b { color: var(--good); } .hl-verdict.bad b { color: var(--bad); } .hl-verdict.draw b { color: var(--gold-hi); }
-      .hl-verdict span { font-weight: 700; font-size: 14px; text-wrap: balance; }
+      .hl-verdict span { font-weight: 700; font-size: 14px; display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 6px; }
+      .hl-verdict span i { font-style: normal; }
+      .hl-verdict span .wn { padding: 0 8px; color: var(--gold-pale); background: linear-gradient(90deg, var(--crimson), rgba(34,9,12,.92)); box-shadow: inset 2px 0 0 var(--gold); }
+      .hl-verdict span .ln { padding: 0 8px; color: var(--dim); border: 1px solid var(--line-dim); }
+      .hl-verdict span .gt { color: var(--gold); } .hl-verdict span .pre { color: var(--dim); font-weight: 400; }
       .hl-next { display: flex; flex-direction: column; align-items: center; gap: 8px; }
       .hl-next .actions .btn { min-width: 170px; }
       .hl-tempt { font-family: var(--mincho); font-weight: 700; letter-spacing: .06em; font-size: 18px; color: var(--gold-hi); text-align: center; }
@@ -197,7 +201,7 @@
         <div class="hl-pot" id="mb-hl-potbox"><small>いま持っている</small><b id="mb-hl-pot">${LADDER[0]}</b></div>
       </div>
       <div class="hl-round" id="mb-hl-round"></div>
-      <div class="hl-board"><span class="zone-label">場札（2人とも使える）</span><div class="hl-cards" id="mb-hl-b"></div></div>
+      <div class="hl-board"><span class="zone-label">場札</span><div class="hl-cards" id="mb-hl-b"></div></div>
       <div class="hl-duel">
         <div class="hl-hand" id="mb-hl-m"><div class="hl-who"><img class="hl-chibi" src="${api.asset('art/chibi/mimi_think.webp')}" alt=""><b>MIMI</b></div><div class="hl-cards"></div><div class="hl-hn"></div></div>
         <div class="hl-vs">VS</div>
@@ -210,7 +214,7 @@
       </div>
       <div class="hl-verdict" id="mb-hl-verdict"></div>
       <div class="hl-next" id="mb-hl-next" hidden></div>`;
-    api.coach('場札5枚は2人とも使える。強い5枚を作れる方が勝ち', 'think');
+    api.tipOnce('highlow', '場札5枚は2人で共有', 'think');
 
     const $ = (s) => root.querySelector(s);
     const potEl = $('#mb-hl-pot');
@@ -277,7 +281,7 @@
         if (!api.alive()) return;
       }
       api.say(round === 1 ? (isGrano ? 'さて、どちらが上でしょう' : 'さあ、どっちだ？') : isFinal ? (isGrano ? '……最後の一番ですな' : 'これで最後だよ……！') : (isGrano ? '次の一番です' : 'まだ続ける？ 強気だね〜'));
-      api.coach(round === 1 ? 'それぞれ「手札2枚＋場札5枚」の中の一番強い5枚で比べる' : isFinal ? `当たれば ${pot * 2}。外せば全部なくなる` : `今は ${pot}。当たれば ${pot * 2}`);
+      api.coach('');
       pickBox.querySelectorAll('.btn').forEach(b => { b.disabled = false; });
       pickBox.classList.add('is-cue');
       // 4回目は心音
@@ -303,7 +307,7 @@
       const A = api.score(mAll), B = api.score(oAll);
       const truth = A > B ? 'm' : A < B ? 'o' : 't';
       const m5 = best5(api, mAll), o5 = best5(api, oAll);
-      api.coach('見せ合い……！'); api.sfx.drum();
+      api.coach(''); api.sfx.drum();
       await api.wait(api.reduce ? 200 : 800);
       if (!api.alive()) return;
       $('#mb-hl-m .hl-hn').innerHTML = `<span>${handName(api, m5)}</span>`; api.sfx.tick();
@@ -325,16 +329,16 @@
       let why;
       if (truth === 't') {
         const same = m5.every(c => o5.some(x => api.key(x) === api.key(c)));
-        why = same ? `どちらも場の5枚がそのまま一番強い（${handName(api, m5)}）。手札は関係なく引き分け` : `どちらも同じ強さの「${handName(api, m5)}」。引き分け`;
+        why = `<i class="wn">${handName(api, m5)}</i><i class="gt">＝</i><i class="ln">${same ? '場の5枚' : handName(api, o5)}</i>`;
       } else {
         const w5 = truth === 'm' ? m5 : o5, l5 = truth === 'm' ? o5 : m5;
         const lh = truth === 'm' ? D.o : D.m;
         const sw = sig(api, w5), sl = sig(api, l5);
-        if (sw.cat === sl.cat) why = `${tieWhy(api, sw, sl)} で、${wName}が上`;
+        if (sw.cat === sl.cat) { const di = firstDiff(sw, sl); why = `<i class="wn">${handName(api, w5)}</i><i class="gt">＝</i><i class="ln">${handName(api, l5)}</i><i class="gt">→</i><i class="wn">${api.rn(sw.ranks[di])}</i><i class="gt">＞</i><i class="ln">${api.rn(sl.ranks[di])}</i>`; }
         else {
           const hi = Math.max(lh[0].r, lh[1].r);
           const pre = lh[0].r === lh[1].r ? `${R(lh[0].r)}のペアを持っていても、` : hi >= 13 && D.type === 'fake' ? `${R(hi)}を持っていても、` : '';
-          why = `${pre}${api.CAT_NAME[sw.cat]}（${CAT_DESC[sw.cat]}）は${api.CAT_NAME[sl.cat]}より強い`;
+          why = `${pre ? `<i class="pre">${pre.replace(/、$/, '')}</i>` : ''}<i class="wn">${api.CAT_NAME[sw.cat]}</i><i class="gt">＞</i><i class="ln">${api.CAT_NAME[sl.cat]}</i>`;
         }
       }
       const ok = choice === truth;
@@ -346,7 +350,7 @@
         api.sfx.good();
         react(api.MIMI.win, 'left', `×${2 ** round}!`);
         api.say(isGrano ? (round >= 3 ? 'ほう……！ これは参りましたな' : 'お見事です') : (round >= 3 ? 'うそっ、また当てた……！' : 'むむっ、当たりか〜'), round >= 3 ? 'panic' : 'think');
-        api.coach(round >= 3 ? 'すごい、まだ当たってる！' : 'いい読み！', round >= 3 ? 'win' : 'smug');
+        api.coach('');
         setLadder(round);
         await countTo(pot, now);
         if (!api.alive()) return;
@@ -355,7 +359,7 @@
         api.bet(now);
         if (isFinal) {
           api.sfx.jackpot();
-          api.coach('4連続正解！ 320 を持ち帰り！');
+          api.coach('');
           await api.wait(api.reduce ? 500 : 1500);
           if (!api.alive()) return;
           api.finish({ correct: true, perfect: true, base: now, title: '4連続 的中！', detail: `4回続けて当てて、20 を 320 まで増やした。最後は「${why}」。` });
@@ -365,14 +369,14 @@
         $('#mb-hl-steps').innerHTML = api.steps(STEPS, 2);
         await api.wait(api.reduce ? 100 : 500);
         if (!api.alive()) return;
-        const tempt = round === 3 ? `次が最後。当たれば 320 ＆ PERFECT` : `あと${4 - round}回当てれば 320`;
+        const tempt = round === 3 ? `最後 → 320 ＆ PERFECT` : `あと${4 - round}回 → 320`;
         nextBox.innerHTML = `<div class="hl-tempt">${tempt}</div>
           <div class="actions">
             <button class="btn gold" data-a="go">続ける<small>当たれば ${now * 2}／外せば 0</small></button>
             <button class="btn quiet" data-a="take">受け取ってやめる<small>${now} を持ち帰る</small></button>
           </div>`;
         nextBox.hidden = false; pickBox.hidden = true;
-        api.coach(`${now} を持ち帰るか、${now * 2} を狙うか`, 'think');
+        api.coach('');
         const act = await new Promise(res => { nextBox.onclick = (e) => { const b = e.target.closest('.btn[data-a]'); if (b) res(b.dataset.a); }; });
         if (!api.alive()) return;
         api.sfx.tap();
@@ -392,14 +396,14 @@
       api.sfx.nope();
       react(opp.smug, 'right', 'LOST');
       api.say(isGrano ? '……勝負とは、厳しいものですな' : 'へへーん、残念でした！', 'smug');
-      api.coach('あちゃー、次は光る5枚をよく見よ', 'panic');
+      api.coach('光る5枚を見よう', 'panic');
       setLadder(round - 1, true);
       $('#mb-hl-potbox').classList.add('is-lost');
       await api.wait(api.reduce ? 600 : 2300);
       if (!api.alive()) return;
       api.finish({
         correct: false, perfect: false, base: pot * 2,
-        detail: `${why}。持っていた ${pot} はなくなった。${streak ? `（ここまで${streak}回当てたのは見事）` : ''}`,
+        detail: `${why.replace(/<[^>]+>/g, ' ').replace(/s+/g, ' ').trim()}。持っていた ${pot} はなくなった。${streak ? `（ここまで${streak}回当てたのは見事）` : ''}`,
       });
       return;
     }

@@ -139,14 +139,15 @@
     // 場札の意味は文で説明せず、当てはまる場札を赤く光らせ、相手の伏せ札に小さな札と短い名札を重ねる
     const redS = (c) => (c === 'h' || c === 'd' ? 'rd' : '');
     const threatName = tpl === 'flush' ? 'フラッシュの危険' : 'スリーカードの危険';
+    const dangerRank = Math.max(...board.filter(c => c.r !== D.top).map(c => c.r));   // 伏せ札と重なると危ない数字（ミミのペア以外で一番大きい場札の数字）
     const threatChip = tpl === 'flush'
       ? `<span class="${redS(X)}">${api.SYM[X]}</span><span class="${redS(X)}">${api.SYM[X]}</span><span class="q">?</span>`
-      : `<span>同数</span><span class="q">?</span>`;
+      : `<span>${api.rn(dangerRank)}</span><span>${api.rn(dangerRank)}</span><span class="q">?</span>`;
     const detailHtml = `<div class="gc-det"><p>確率はそのまま表示。N 6割・R 8割は本当の手に沿い、SR・SSR は正確。</p><p><b>天井</b>：3回目は <b>R以上が確定</b>（R ${pct(CEIL.R)}・SR ${pct(CEIL.SR)}・SSR ${pct(CEIL.SSR)}）</p><p>残したぱにゅは1あたりコイン2枚（ご褒美のもと＝20＋ぱにゅ×2）</p></div>`;
     const balls = [['n', 12, 6], ['r', 44, 2], ['n', 78, 8], ['sr', 110, 3], ['n', 140, 6], ['r', 26, 30], ['n', 60, 34], ['ssr', 94, 30], ['n', 126, 32], ['r', 150, 36], ['n', 40, 58], ['sr', 76, 60], ['n', 112, 58]];
     root.innerHTML = `
       <div id="mb-gc-steps">${api.steps(stepNames, 0)}</div>
-      <div class="row gc-board">${board.map(c => api.cardHTML(c, tpl === 'flush' && c.s === X ? 'hot' : '')).join('')}</div>
+      <div class="row gc-board">${board.map(c => api.cardHTML(c, (tpl === 'flush' ? c.s === X : c.r === dangerRank) ? 'hot' : '')).join('')}</div>
       <div class="gc-hands" id="mb-gc-hands">
         <div class="gc-hand"><span class="gc-who">${api.char.name}</span><span class="gc-herbox"><span class="gc-cards" id="mb-gc-her">${api.backHTML('small')}${api.backHTML('small')}</span><span class="mb-threat ov"><span class="tc">${threatChip}</span></span></span><span class="gc-hn is-threat" id="mb-gc-her-name">${threatName}</span></div>
         <span class="gc-vs">VS</span>

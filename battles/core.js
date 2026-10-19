@@ -411,6 +411,10 @@
         },
         // 小さな目盛り：名札（1〜4字）＋長さの棒＋小さな数字。pct は 0〜100
         gauge(label, pct, cls = '') { const v = Math.round(pct); return `<span class="gg ${cls}" aria-label="${label}${v}%"><label>${label}</label><i class="g"><u style="width:${v}%"></u></i><b>${v}</b></span>`; },
+        // 賭けの大きさ：チップの積み（n枚）＋名札。例 betTag('ポット同額', 4)
+        betTag(label, n = 3) { return `<span class="mb-bet"><span class="mb-stk" aria-hidden="true">${'<i></i>'.repeat(n)}</span><b>${label}</b></span>`; },
+        // 点の目盛り：total 個のうち on 個が点灯（例：10回中6回）
+        dots(on, total = 10) { return `<span class="mb-dots" aria-label="${total}回中${on}回">${Array.from({ length: total }, (_, i) => `<i class="${i < on ? 'on' : ''}"></i>`).join('')}</span>`; },
         // 「詳しく」：押した時だけ出る補足。本文は画面に重ねて出し、並びは動かさない
         more(html) { return `<details class="mb-more"><summary>詳しく</summary><div class="mb-more-body">${html}</div></details>`; },
         // 開始のカットイン（タップで飛ばせる）

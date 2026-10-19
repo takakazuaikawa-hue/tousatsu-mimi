@@ -143,6 +143,14 @@
     .doubt-rule > small { font-family: var(--mincho); font-weight: 700; letter-spacing: .3em; color: var(--gold); font-size: 14px; }
     .doubt-rule-main { font-family: var(--mincho); font-weight: 800; font-size: clamp(19px, 2.6vw, 26px); line-height: 1.35; }
     .doubt-rule-main b { color: var(--gold-hi); }
+    .doubt-rule-main { display: flex; align-items: flex-end; gap: 10px; }
+    .dv-end { font-family: var(--mincho); font-weight: 800; font-size: 15px; color: var(--gold-pale); padding-bottom: 2px; }
+    .dv-end.lie { color: #ff9aa6; }
+    .dv-bars { display: inline-flex; align-items: flex-end; gap: 4px; flex: 1 1 auto; max-width: 220px; }
+    .dv-bars i { flex: 1 1 0; background: linear-gradient(180deg, var(--gold-hi), #8a1a22); }
+    .dv-bars i:nth-child(1) { height: 6px; } .dv-bars i:nth-child(2) { height: 10px; } .dv-bars i:nth-child(3) { height: 14px; } .dv-bars i:nth-child(4) { height: 18px; } .dv-bars i:nth-child(5) { height: 22px; } .dv-bars i:nth-child(6) { height: 26px; }
+    .doubt-row .sub .dd { font-style: normal; padding: 0 6px; font-family: var(--mincho); font-weight: 800; background: rgba(19,4,6,.8); border: 1px solid var(--gold); color: var(--gold-pale); }
+    .doubt-row .sub .dd.lie { border-color: var(--red-hi); color: #ff9aa6; }
     .doubt-rule-ex { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 13px; font-weight: 800; }
     .doubt-rule-ex span { padding: 2px 10px; border-left: 3px solid var(--gold); }
     .doubt-rule-ex .is-lie { background: var(--band); border-left-color: var(--red-hi); color: var(--gold-pale); }
@@ -265,14 +273,14 @@
       <div class="doubt-area" id="mb-doubt-area">
         <div class="doubt-win"><img class="doubt-face main" src="${api.asset('art/face/' + api.charId + '_smug.webp')}" alt="${api.char.jp}"><img class="doubt-face alt" src="${api.asset('art/face/' + api.charId + '_panic.webp')}" alt=""></div>
         <div class="doubt-rule${document.documentElement.classList.contains('is-compact') ? '' : ' mb-frame'}" id="mb-doubt-rule"><small>ルール</small>
-          <div class="doubt-rule-main">ポルカは、ウソの時ほど<b>声が大きい</b></div>
-          <div class="doubt-rule-ex"><span class="is-lie">ウソ：「！」が多い・語尾がのびる・（棒）</span><span class="is-honest">本音：短い・「……」が多い</span></div>
-          <div class="doubt-rule-note">5つに1つくらい例外あり。5つ目は「今の賭け」の話</div>
+          <div class="doubt-rule-main" aria-label="声が大きいほどウソ"><span class="dv-end">本音</span><span class="dv-bars"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="dv-end lie">ウソ</span></div>
+          <div class="doubt-rule-ex"><span class="is-honest">……　短い</span><span class="is-lie">！！　のびる　（棒）</span></div>
+          <div class="doubt-rule-note">例外あり</div>
         </div>
       </div>
       <div class="doubt-pad" id="mb-doubt-pad"><button class="doubt-btn is-start" id="mb-doubt-start" type="button"><span class="w"><span>はじめる</span><small>本音は ← ／ ウソは →</small></span></button></div>
       <div class="doubt-list" id="mb-doubt-list" hidden></div>`;
-    api.coach('ルールはひとつ。ポルカは、ウソの時ほど声が大きい', 'think');
+    api.tipOnce('doubt', '声が大きいほどウソ', 'think');
 
     const $ = (s) => root.querySelector(s);
     const area = $('#mb-doubt-area'), pad = $('#mb-doubt-pad');
@@ -290,7 +298,7 @@
     if (!api.alive()) return;
     tone(660, .06); tone(990, .08, 'triangle', .05, .06);
     $('#mb-doubt-rule').remove();
-    api.coach('←本音 ／ ウソ→ 。迷ったら、声の大きさ！');
+    api.coach('');
 
     // READY → GO
     for (const [w, ms] of [['READY', 520], ['GO!', 420]]) {
@@ -368,11 +376,11 @@
     api.say('ふふーん、どうだった？');
     pad.classList.remove('is-live'); pad.innerHTML = '';
     $('#mb-doubt-steps').innerHTML = api.steps(STEPS, 1);
-    api.coach('何問当てたと思う？ その自信を賭けて');
+    api.coach('');
     // 賭けの札は舞台の上に重ねて出す（操作盤に継ぎ足すと画面からはみ出していた）。説明はダウト用の決まりに差し替える
     const wp = api.wager({ question: '4問以上当てた自信は？', base: 40 });
     const note = api.layer.querySelector('.mb-wager-ov .mb-wager-note');
-    if (note) note.textContent = `4問以上なら 正解数×8×倍率 がもらえる。3問以下なら 15×倍率 を失う${MB.P.fever > 0 ? '（フィーバー中は当たりがさらに2倍）' : ''}`;
+    if (note) note.textContent = `4問以上で勝ち／3問以下で負け${MB.P.fever > 0 ? '（フィーバー：当たり2倍）' : ''}`;
     await wp;
     if (!api.alive()) return;
 
@@ -381,39 +389,38 @@
     const YOU = { honest: '本音', lie: 'ウソ', miss: '見逃し' };
     const list = $('#mb-doubt-list');
     list.innerHTML = lines.map((l, i) => `<div class="doubt-row ${l.bet ? 'is-bet' : ''}" data-i="${i}"><b class="n">${i + 1}</b>
-      <span class="q">「${l.text}」<span class="sub">あなた：<em>${YOU[picks[i]]}</em><span class="ans"></span></span></span><b class="mark"></b></div>`).join('');
+      <span class="q">「${l.text}」<span class="sub"><em class="dd ${picks[i] === 'lie' ? 'lie' : ''}">${YOU[picks[i]]}</em><span class="ans"></span></span></span><b class="mark"></b></div>`).join('');
     list.hidden = false;
     list.classList.toggle('has-stamp', !!(stampOk.correct && stampOk.wrong));
     area.classList.add('is-sum');
     bubble.remove();
     area.insertAdjacentHTML('beforeend', `<div class="doubt-tally"><small>当てた数</small><b id="mb-doubt-t">0</b><i>/ 5</i></div>`);
     api.reveal(area, 'start');
-    api.coach('答え合わせ……！'); api.sfx.drum();
+    api.coach(''); api.sfx.drum();
     await api.wait(950); if (!api.alive()) return;
     let run = 0, missed = false;
     for (let i = 0; i < 5; i++) {
       const l = lines[i];
       if (l.bet) {
-        api.coach('最後は、今の賭けの話……！'); api.sfx.drum(); setFace('smug', false);
+        api.sfx.drum(); setFace('smug', false);
         await api.wait(1000); if (!api.alive()) return;
       }
       const row = list.querySelector(`.doubt-row[data-i="${i}"]`);
-      row.querySelector('.ans').innerHTML = ` → 正解：<em>${l.lie ? 'ウソ' : '本音'}</em>${l.trap ? `<span class="trap">例外！${l.lie ? '静かなウソ' : '元気な本音'}</span>` : ''}`;
+      row.querySelector('.ans').innerHTML = `${got[i] ? '' : ` → <em class="dd ${l.lie ? 'lie' : ''}">${l.lie ? 'ウソ' : '本音'}</em>`}${l.trap ? `<span class="trap">例外！${l.lie ? '静かなウソ' : '元気な本音'}</span>` : ''}`;
       const m = row.querySelector('.mark');
       m.textContent = got[i] ? '○' : '×'; m.className = 'mark is-on ' + (got[i] ? 'ok' : 'ng');
       row.classList.add(got[i] ? 'is-ok' : 'is-ng');
       if (got[i]) { run++; const tb = $('#mb-doubt-t'); tb.textContent = run; tb.classList.remove('is-bump'); void tb.offsetWidth; tb.classList.add('is-bump'); tone(660 + run * 110, .09); tone(990 + run * 110, .1, 'triangle', .05, .06); }
       else {
         api.sfx.nope();
-        if (!missed) { missed = true; api.coach(l.trap ? 'それは例外！ 引っかかりやすい所だった' : picks[i] === 'miss' ? 'あちゃー、見逃しちゃった' : 'あちゃー、惜しい！', 'panic'); }
+        if (!missed) { missed = true; api.coach(''); }
       }
       if (l.bet) setFace(got[i] ? 'panic' : 'smug', true);
       await api.wait(l.bet ? 700 : 520); if (!api.alive()) return;
-      if (i === 3 && run === 4) api.coach('ここまで全部○……！ 最後も当たれば、満点', 'smug');
     }
 
     // ポルカの手札をめくる（5つ目の答えと同じ）
-    api.coach(`5つ目は${bluff ? 'ウソ＝ブラフ' : '本音＝本当に強い'}……めくるよ！`);
+    api.coach('');
     const herBox = $('#mb-doubt-her');
     api.reveal(herBox, 'nearest');
     await api.wait(700); if (!api.alive()) return;

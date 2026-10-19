@@ -86,7 +86,13 @@
       .sn-me { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px; }
       .sn-me .hl { display: flex; gap: 4px; align-items: center; }
       .sn-me .plus { color: var(--dim); font-weight: 900; }
-      .sn-me-name { font-weight: 900; font-size: 14px; }
+      .sn-me-name { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 900; font-size: 14px; }
+      .sn-law { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 10px; }
+      .sn-law .lw { display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; font-family: var(--mincho); font-weight: 800; font-size: 15px; line-height: 1.5; background: rgba(19,4,6,.84); border: 1px solid var(--line-dim); color: var(--text); white-space: nowrap; }
+      .sn-law .lw.ok { border-color: var(--gold); color: var(--gold-hi); } .sn-law .lw.ng { border-color: #8a2231; color: #ee8a96; } .sn-law .lw.aim { border-color: var(--gold); color: var(--gold-pale); }
+      .sn-law .ar { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
+      .sn-law .ar.up { border-bottom: 9px solid currentColor; } .sn-law .ar.dn { border-top: 9px solid currentColor; }
+      .sn-law .sq { width: 13px; height: 13px; background: linear-gradient(135deg, var(--gold-hi), var(--gold)); border: 1px solid #4a2c08; }
       .sn-me-name small { display: block; font-weight: 700; font-size: 11px; color: var(--dim); }
       .sn-pot { font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; color: var(--gold); font-size: 14px; line-height: 1; text-align: center; }
       .sn-pot b { display: block; font-weight: 400; font-size: 30px; color: var(--gold-hi); letter-spacing: .04em; }
@@ -189,10 +195,10 @@
       <div id="mb-sn-steps">${api.steps(STEPS, 0)}</div>
       <div class="sn-me">
         <span class="hl">${hole.map(c => api.cardHTML(c, 'small')).join('')}<span class="plus">＋</span>${board.map(c => api.cardHTML(c, 'small')).join('')}</span>
-        <span class="sn-me-name">ミミ：${handName(api, hole.concat(board))}<small>ランダムな手への勝率 ${Math.round(eq * 100)}%（ほぼ勝てる）</small></span>
+        <span class="sn-me-name"><span class="mb-handtag"><b class="nm">${handName(api, hole.concat(board))}</b></span>${api.gauge('勝率', eq * 100)}</span>
         <span class="sn-pot">ポット<b>${pot}</b></span>
       </div>
-      <p class="prompt" id="mb-sn-prompt">額を上げると取り分は増える。でも付いてくる確率は下がる。掛け算が一番大きい所を狙って</p>
+      <div class="prompt sn-law" id="mb-sn-prompt" aria-label="額を上げると取り分は増えるが、付いてくる確率は下がる。掛け算が一番大きい所を狙う"><span class="lw">額<i class="ar up"></i></span><span class="lw ok">取り分<i class="ar up"></i></span><span class="lw ng">確率<i class="ar dn"></i></span><span class="lw aim"><i class="sq"></i>最大</span></div>
       <div class="sn-read">
         <div><small>賭け額</small><b id="mb-sn-bet">${init}</b></div>
         <span class="op">×</span>
@@ -227,7 +233,7 @@
       <div class="sn-rangebox"><input class="sn-range" id="mb-sn-range" type="range" min="${minBet}" max="${maxBet}" step="${step}" value="${init}" aria-label="賭け額"></div>
       <div class="actions" id="mb-sn-acts"><button class="btn sn-fire" id="mb-sn-fire">撃つ<small>この額で賭ける</small></button></div>
       <div class="sn-out" id="mb-sn-out"></div>`;
-    api.coach('金色の四角の広さ＝もらえる見込み。一番広くなる所を探して', 'think');
+    api.tipOnce('sniper', '金の四角が一番広い所', 'think');
 
     const $ = (s) => root.querySelector(s);
     const chart = $('#mb-sn-chart'), rect = $('#mb-sn-rect'), ret = $('#mb-sn-ret'), range = $('#mb-sn-range'), area = $('#mb-sn-area');
@@ -255,7 +261,7 @@
         if (!moved) {
           moved = true; ret.classList.remove('is-cue'); const h = $('#mb-sn-hint'); if (h) h.remove();
           fire.classList.add('is-cue');
-          api.coach('四角が一番広くなったら「撃つ」', 'smug');
+          api.coach('');
         }
       }
     };
@@ -289,14 +295,14 @@
     $('#mb-sn-acts').hidden = true;
     $('#mb-sn-prompt').hidden = true; range.closest('.sn-rangebox').hidden = true;
     $('#mb-sn-steps').innerHTML = api.steps(STEPS, 2);
-    api.coach(`${myBet} で撃った。付いてくる確率は ${Math.round(p * 100)}%`);
+    api.coach('');
     await api.wager({ question: 'ここがベストの額？', base: '20〜40' });
     if (!api.alive()) return;
     $('#mb-sn-steps').innerHTML = api.steps(STEPS, 3);
 
     // セリナが付いてくるか：画面の確率どおりに乱数で決める
     const out = $('#mb-sn-out');
-    api.say('……'); api.coach(`${api.char.jp}の番……`); api.sfx.drum();
+    api.say('……'); api.coach(''); api.sfx.drum();
     await api.wait(api.reduce ? 200 : 1100);
     if (!api.alive()) return;
     const call = Math.random() < p;
@@ -320,7 +326,7 @@
     if (!api.alive()) return;
 
     // 答え合わせ：本当のベストの額に照準マーク
-    api.coach('本当のベストの額は……'); api.sfx.drum();
+    api.coach(''); api.sfx.drum();
     await api.wait(api.reduce ? 200 : 800);
     if (!api.alive()) return;
     const bp = C.p(C.bestBet);
@@ -343,7 +349,7 @@
         <div><small>ベストとくらべて</small><b>${pct}%</b></div>
       </div>
       <div class="sn-verdict ${correct ? 'good' : 'bad'}">${verdictText}${luck ? `<small>${luck}</small>` : ''}</div>`);
-    api.coach(correct ? (ratio >= .97 ? 'ど真ん中！ さすがミミ' : 'いい狙い！ ほぼベスト') : `あちゃー、ベストは ${C.bestBet} だったね`, correct ? (ratio >= .97 ? 'win' : 'smug') : 'panic');
+    api.coach(correct ? (ratio >= .97 ? 'ど真ん中！' : 'ほぼベスト') : `ベストは ${C.bestBet}`, correct ? (ratio >= .97 ? 'win' : 'smug') : 'panic');
     if (correct) { api.sfx.good(); const r = $('.sn-verdict').getBoundingClientRect(); api.sparkles(r.left + r.width / 2, r.top + r.height / 2, 14); }
     else api.sfx.nope();
     api.reveal(out, 'nearest');

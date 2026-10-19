@@ -60,6 +60,10 @@ MB.register({
     const conv = (a) => a.map(([r, s]) => ({ r, s }));
     const mine = conv(sc.mine), board = conv(sc.board);
     api.css('suspects', `
+      .sp-log .sp-st { font-style: normal; font-family: var(--mincho); font-weight: 800; padding: 0 8px; color: var(--gold-pale); background: linear-gradient(90deg, var(--crimson), rgba(34,9,12,.92)); box-shadow: inset 2px 0 0 var(--gold); }
+      .sp-log > div { display: flex; align-items: center; gap: 8px; } .sp-log .sp-ac { color: inherit; }
+      .sp-lg { font-family: var(--mincho); font-weight: 700; font-size: 13px; padding: 0 8px; } .sp-lg.win { border: 1px solid var(--gold-hi); color: var(--gold-hi); } .sp-lg.lose { border: 1px solid #8a8073; color: #b5ab9c; }
+      .sp-log .mb-stk { width: 18px; height: 16px; } .sp-log .mb-stk i { width: 18px; height: 7px; } .sp-log .mb-stk i:nth-child(2) { bottom: 3px; } .sp-log .mb-stk i:nth-child(3) { bottom: 6px; } .sp-log .mb-stk i:nth-child(4) { bottom: 9px; }
       .sp-log { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--dim); max-width: 640px; margin: 0 auto; width: 100%; }
       .sp-log .now { color: var(--text); font-weight: 900; }
       .sp-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
@@ -84,17 +88,22 @@ MB.register({
     `);
     const root = api.root;
     const out = new Set(); let beat = 0, miss = 0;
+    // 動きは文でなく、場面の名札＋チップの積み（賭けの大きさ）＋短い動き名で見せる
+    const stName = (x) => x.street.split(' ')[0];
+    const actShort = (x) => x.act.replace(/（.*?）/g, '');
+    const stackOf = (x) => (/オールイン|ポットと同じ/.test(x.act) ? 4 : /大きく/.test(x.act) ? 3 : /小さく/.test(x.act) ? 1 : /コール|付いてきた/.test(x.act) ? 2 : 0);
+    const stk = (n) => (n ? `<span class="mb-stk" aria-hidden="true">${'<i></i>'.repeat(n)}</span>` : '');
     const draw = () => {
       const b = sc.beats[beat];
       api.say(b.line, 'smug'); api.bet(beat === sc.beats.length - 1 ? sc.call : '—');
       root.innerHTML = `
         ${api.steps(['動きを見る', '容疑者を消す', '決める', '答え合わせ'], beat === 0 ? 0 : 1)}
         <div class="row">${board.map((c, i) => i < b.board ? api.cardHTML(c, 'big') : api.backHTML('big')).join('')}<span style="width:12px"></span>${mine.map(c => api.cardHTML(c, 'big')).join('')}</div>
-        <div class="sp-log">${sc.beats.slice(0, beat + 1).map((x, i) => `<div class="${i === beat ? 'now' : ''}">${x.street}：ヴェルベットは${x.act}</div>`).join('')}</div>
-        <p class="prompt">${b.must.length ? `「${b.act}」をしない手は？ 容疑者から外そう` : `「${b.act}」。外せる容疑者はいる？`}</p>
+        <div class="sp-log">${sc.beats.slice(0, beat + 1).map((x, i) => `<div class="${i === beat ? 'now' : ''}"><i class="sp-st">${stName(x)}</i>${stk(stackOf(x))}<span class="sp-ac">${actShort(x)}</span></div>`).join('')}</div>
+        <div class="prompt mb-ask"><span class="mb-bet">${stk(stackOf(b))}<b>${actShort(b)}</b></span><span class="q">${b.must.length ? 'しない手は？' : '外せる？'}</span></div>
         <div class="sp-tiles" id="mb-sp-tiles">${sc.tiles.map(t => `<button class="sp-tile ${out.has(t.id) ? 'out' : ''}" data-id="${t.id}"><b>${t.name}</b><span>${t.sub}</span></button>`).join('')}</div>
         <div class="actions"><button class="btn quiet" id="mb-sp-next">${b.must.length ? 'これで全部外した' : '外せる人はいない'}<small>次の動きへ</small></button></div>`;
-      api.coach(beat === 0 ? 'ヴェルベットの手札は見えない。でも<b>動き</b>で容疑者を減らせる' : sc.beats[beat].street + '。この動き、どの手ならする？');
+      if (beat === 0) api.tipOnce('suspects', '<b>動き</b>で容疑者を減らす'); else api.coach('');
     };
     draw();
     await new Promise(res => {
@@ -103,13 +112,13 @@ MB.register({
         const tile = e.target.closest('.sp-tile');
         if (tile) {
           const id = tile.dataset.id; if (out.has(id)) return;
-          if (b.must.includes(id)) { out.add(id); tile.classList.add('out'); api.sfx.good(); api.coach('そう！ ' + b.teach, 'smug'); }
-          else { tile.classList.remove('nope'); void tile.offsetWidth; tile.classList.add('nope'); api.sfx.nope(); miss++; api.coach(`${sc.tiles.find(t => t.id === id).name}でも、この動きはしそう。まだ外せない`, 'panic'); }
+          if (b.must.includes(id)) { out.add(id); tile.classList.add('out'); api.sfx.good(); api.coach(b.teach, 'smug'); }
+          else { tile.classList.remove('nope'); void tile.offsetWidth; tile.classList.add('nope'); api.sfx.nope(); miss++; api.coach('まだ外せない', 'panic'); }
           return;
         }
         if (e.target.closest('#mb-sp-next')) {
           const left = b.must.filter(id => !out.has(id));
-          if (left.length) { api.sfx.nope(); miss++; api.coach('まだ外せる容疑者がいるよ。' + b.teach); return; }
+          if (left.length) { api.sfx.nope(); miss++; api.coach('まだ外せる人がいる'); return; }
           api.sfx.tap(); beat++;
           if (beat >= sc.beats.length) res(); else draw();
         }
@@ -122,10 +131,10 @@ MB.register({
     const need = sc.call / (sc.pot + sc.call * 2);
     root.querySelector('.steps').outerHTML = api.steps(['動きを見る', '容疑者を消す', '決める', '答え合わせ'], 2);
     root.querySelectorAll('.sp-tile').forEach(b => { const t = sc.tiles.find(x => x.id === b.dataset.id); if (!out.has(t.id)) { b.classList.add(t.win ? 'win' : 'lose'); b.insertAdjacentHTML('beforeend', `<i class="sp-tag">${t.win ? '勝てる' : '負け'}</i>`); } });
-    root.querySelector('.prompt').innerHTML = `残った容疑者のうち、ミミが勝てるのは <b>${left.filter(t => t.win).length} / ${left.length}</b><span class="sp-p2">（手の組み合わせの数で ${winPct}%）</span>`;
+    root.querySelector('.prompt').innerHTML = `${api.dots(left.filter(t => t.win).length, left.length)}<b class="q">${left.filter(t => t.win).length} / ${left.length}</b><span class="sp-lg win">勝てる</span><span class="sp-lg lose">負け</span>`;
     root.querySelector('.actions').outerHTML = `<div class="sp-bar"><div class="sp-fill" id="mb-sp-fill"></div><div class="sp-line" id="mb-sp-line"><span>割に合う線 ${Math.round(need * 100)}%</span></div><div class="sp-val">ミミが勝つ ${winPct}%</div></div>
       <div class="actions"><button class="btn" id="mb-sp-call">コール<small>${sc.call} 払って見せ合う</small></button><button class="btn quiet" id="mb-sp-fold">降りる<small>ここまでで止める</small></button></div>`;
-    api.coach('金の二重線の枠がミミの勝てる容疑者（灰の枠は負ける）。何もない手（ブラフ）の分だけ勝ち目がある');
+    api.coach('');
     await api.wait(200);
     root.querySelector('#mb-sp-fill').style.width = winPct + '%'; root.querySelector('#mb-sp-line').style.left = Math.round(need * 100) + '%';
     const called = await new Promise(res => { root.querySelector('#mb-sp-call').onclick = () => res(true); root.querySelector('#mb-sp-fold').onclick = () => res(false); });
@@ -136,7 +145,7 @@ MB.register({
     if (!api.alive()) return;
     let r = Math.random() * tot, her = left[0];
     for (const t of left) { r -= t.w; if (r <= 0) { her = t; break; } }
-    api.sfx.drum(); api.coach(called ? '見せ合い……！' : '降りた。ヴェルベットの手札は……');
+    api.sfx.drum(); api.coach('');
     await api.wait(1000);
     const herTile = root.querySelector(`.sp-tile[data-id="${her.id}"]`); herTile.classList.add('her'); const herTag = herTile.querySelector('.sp-tag'); if (herTag) herTag.textContent = '犯人・' + herTag.textContent;
     root.querySelector('.row').insertAdjacentHTML('afterend', `<div class="row"><span class="formula">ヴェルベット</span>${conv(her.hand).map(c => api.cardHTML(c, 'big flip')).join('')}</div>`);

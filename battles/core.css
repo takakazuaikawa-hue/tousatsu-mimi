@@ -193,7 +193,7 @@ html.is-compact .mb-host .dia i { width: 24px; height: 24px; }
 .mb-host .mb-handtag .vs.ng .mk::after { transform: rotate(-45deg); }
 /* 相手の伏せ札の上に重ねる脅しの札（♥♥? ＋ フラッシュの危険） */
 .mb-host .mb-threat { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none; }
-.mb-host .mb-threat .tc { display: inline-flex; gap: 2px; white-space: nowrap; padding: 1px 5px; font: 800 14px/1.2 var(--mincho); background: #f1e6cc; color: #17100c; border: 1px solid var(--gold); box-shadow: 0 2px 6px rgba(0,0,0,.55); }
+.mb-host .mb-threat .tc { display: inline-flex; gap: 5px; white-space: nowrap; padding: 1px 5px; font: 800 14px/1.2 var(--mincho); background: #f1e6cc; color: #17100c; border: 1px solid var(--gold); box-shadow: 0 2px 6px rgba(0,0,0,.55); }
 .mb-host .mb-threat .tc .rd { color: #b8132b; }
 .mb-host .mb-threat .tc .q { color: #7d1022; }
 .mb-host .mb-threat .tn { font-family: var(--mincho); font-weight: 800; font-size: 13px; color: #ff9aa6; text-shadow: 0 1px 0 #000, 0 0 6px rgba(200,37,58,.7); white-space: nowrap; }
@@ -210,6 +210,21 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
 .mb-host .mb-parchment .gg .g { background: #d8c79f; border-color: #8a7350; }
 .mb-host .mb-parchment .gg .g u { background: linear-gradient(90deg, #7d1022, var(--crimson)); }
 .mb-host .mb-parchment .gg b { color: var(--parch-ink, #2a1608); }
+/* 賭けの大きさ：チップの積み＋名札 */
+.mb-host .mb-bet { display: inline-flex; align-items: center; gap: 8px; padding: 2px 12px 2px 8px; background: rgba(19,4,6,.84); border: 1px solid var(--gold); vertical-align: middle; }
+.mb-host .mb-bet b { font-family: var(--mincho); font-weight: 800; font-size: 15px; color: var(--gold-pale); white-space: nowrap; }
+.mb-host .mb-stk { position: relative; width: 28px; height: 26px; flex: 0 0 auto; }
+.mb-host .mb-stk i { position: absolute; left: 0; width: 28px; height: 11px; border-radius: 50%; background: repeating-linear-gradient(90deg, #e3b964 0 5px, #8a1a22 5px 9px); border: 1.5px solid #4a2c08; box-shadow: 0 2px 0 #4a2c08; }
+.mb-host .mb-stk i:nth-child(1) { bottom: 0; } .mb-host .mb-stk i:nth-child(2) { bottom: 5px; } .mb-host .mb-stk i:nth-child(3) { bottom: 10px; } .mb-host .mb-stk i:nth-child(4) { bottom: 15px; }
+/* 点の目盛り */
+.mb-host .mb-dots { display: inline-flex; gap: 4px; align-items: center; }
+.mb-host .mb-dots i { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--gold); background: #1a0709; box-sizing: border-box; }
+.mb-host .mb-dots i.on { background: var(--gold-hi); box-shadow: 0 0 6px rgba(239,205,130,.7); }
+.mb-host .outs-meter { position: relative; }
+/* 問い：図の見本の札＋短い一言 */
+.mb-host .mb-ask { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 12px; }
+.mb-host .mb-ask .q { font-family: var(--mincho); font-weight: 800; font-size: 17px; }
+.mb-host .mb-legend { display: inline-flex; align-items: center; gap: 8px; }
 /* 光らせる場札（危険な札）：赤い縁と赤い光 */
 .mb-host .card.hot { border-color: var(--red-hi); box-shadow: 0 0 0 2px rgba(200,37,58,.55), 0 0 14px rgba(255,74,96,.8); }
 /* リコ先輩：言うことが無い時は欄ごと引っ込める */

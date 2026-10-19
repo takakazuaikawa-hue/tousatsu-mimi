@@ -197,10 +197,24 @@
     const sayOrder = api.shuffle(S.says.map((t, i) => i));
     const evOrder = api.shuffle(S.ev.map((e, i) => i));
     const stepNames = ['発言を選ぶ', '証拠を選ぶ', 'つきつける', '読みを賭ける', '答え合わせ'];
+    // 場札の説明の文は出さない。当てはまる場札を赤く光らせ、小さな札（♠×3／Q Q／9 8 7）を添える
+    const RK = { A: 14, K: 13, Q: 12, J: 11 };
+    const noteVis = (note) => {
+      const none = { chip: '', hot: () => false };
+      let m = note.match(/(ハート|スペード|ダイヤ|クラブ)が3枚/);
+      if (m) { const s = { ハート: 'h', スペード: 's', ダイヤ: 'd', クラブ: 'c' }[m[1]]; return { chip: `<span class="${s === 'h' || s === 'd' ? 'rd' : ''}">${api.SYM[s]}×3</span>`, hot: (c) => c.s === s }; }
+      m = note.match(/([AKQJ2-9])が2枚/);
+      if (m) { const r = RK[m[1]] || +m[1]; return { chip: `<span>${api.rn(r)} ${api.rn(r)}</span>`, hot: (c) => c.r === r }; }
+      m = note.match(/^([0-9])・([0-9])・([0-9])と数字が続く/);
+      if (m) { const rs = [+m[1], +m[2], +m[3]]; return { chip: `<span>${rs.join(' ')}</span>`, hot: (c) => rs.includes(c.r) }; }
+      m = note.match(/例：([0-9・]+)）/);
+      if (m) return { chip: `<span>${m[1].split('・').join(' ')}</span>`, hot: () => false };
+      return none;
+    };
     const evHTML = (e, i) => {
       const jp = EVK[e.kind][1];
       let body;
-      if (e.kind === 'board') body = `<div class="ob-mini-row">${board.map(c => api.cardHTML(c, 'ob-mini')).join('')}</div>${e.note ? `<div class="ob-note">${fill(e.note)}</div>` : ''}`;
+      if (e.kind === 'board') { const nv = noteVis(e.note || ''); body = `<div class="ob-mini-row">${board.map(c => api.cardHTML(c, 'ob-mini' + (nv.hot(c) ? ' hot' : ''))).join('')}${nv.chip ? `<span class="mb-threat ob-chip"><span class="tc">${nv.chip}</span></span>` : ''}</div>`; }
       else if (e.kind === 'log') body = `<ol class="ob-log">${e.rows.map(r => `<li><span class="st">${r[0]}</span><span class="cs">${fill(r[1])}</span><span class="ac">${r[2]}</span></li>`).join('')}</ol>`;
       else body = `<p class="ob-evtext">${fill(e.text)}</p>`;
       return `<div class="ob-ev k-${e.kind}" role="button" tabindex="0" data-i="${i}" aria-label="証拠：${jp}">
@@ -209,11 +223,11 @@
     root.innerHTML = `
       <div id="mb-ob-steps">${api.steps(stepNames, 0)}</div>
       <div class="ob-hands" id="mb-ob-hands">
-        <div class="ob-hand her"><span class="ob-who">VELVET</span><span class="ob-cards" id="mb-ob-her">${api.backHTML('small')}${api.backHTML('small')}</span><span class="ob-hn" id="mb-ob-her-name">？？？</span></div>
+        <div class="ob-hand her"><span class="ob-who">VELVET</span><span class="ob-cards" id="mb-ob-her">${api.backHTML('small')}${api.backHTML('small')}</span><span class="ob-hn" id="mb-ob-her-name"></span></div>
         <span class="ob-vs">VS</span>
-        <div class="ob-hand me"><span class="ob-who">MIMI</span><span class="ob-cards">${mimi.map(c => api.cardHTML(c, 'small')).join('')}</span><span class="ob-hn">${S.mimiName}</span></div>
+        <div class="ob-hand me"><span class="ob-who">MIMI</span><span class="ob-cards">${mimi.map(c => api.cardHTML(c, 'small')).join('')}</span></div>
       </div>
-      <p class="ob-sub">ミミの${S.mimiName}は、<b>ブラフには勝ち</b>、<b>強い手には負ける</b>。ヴェルベットはどっち？</p>
+      <div class="ob-sub">${api.handTag(S.mimiName)}</div>
       <div class="ob-court" id="mb-ob-court">
         <div class="ob-col ob-says is-next" id="mb-ob-says">
           <div class="ob-colhead">ヴェルベットの発言</div>
@@ -234,7 +248,7 @@
         <button class="btn" data-d="bluff">ブラフと読む<small>コールして勝負</small></button>
         <button class="btn quiet" data-d="strong">強い手と読む<small>降りて守る</small></button>
       </div>`;
-    api.coach('ウソの<b>発言</b>を1つ選んで、それと矛盾する<b>証拠</b>をつきつけよ！', 'think');
+    api.tipOnce('objection', '<b>発言</b>と<b>証拠</b>を糸で結ぶ', 'think');
 
     const $ = (s) => root.querySelector(s);
     const court = $('#mb-ob-court'), thread = $('#mb-ob-thread'), go = $('#mb-ob-go');
@@ -242,7 +256,7 @@
     let selS = null, selE = null, misses = 0, busy = false, done = false, stall = 0;
     const tried = new Set();
     // 段階つきの助け：外れ2回か、同じ組の押し直し2回で「ウソの発言」を光らせる。押し直し4回では「決め手の証拠」も光らせる
-    const hintSay = () => { const el = court.querySelector(`.ob-say[data-i="${S.lie}"]`); if (el && !el.classList.contains('hint')) { el.classList.add('hint'); api.coach('光っている<b>発言</b>が怪しい。それとぶつかる<b>証拠</b>を探して', 'think'); } };
+    const hintSay = () => { const el = court.querySelector(`.ob-say[data-i="${S.lie}"]`); if (el && !el.classList.contains('hint')) { el.classList.add('hint'); api.coach('光る<b>発言</b>が怪しい', 'think'); } };
     const hintEv = () => { const el = court.querySelector(`.ob-ev[data-i="${keys[0]}"]`); if (el) el.classList.add('hint'); };
 
     // 選んだ発言と証拠を、赤い糸で結ぶ
@@ -278,10 +292,10 @@
       api.sfx.tap();
       if (el.classList.contains('ob-say')) {
         selS = +el.dataset.i;
-        api.coach(selE == null ? 'この発言とぶつかる<b>証拠</b>はどれ？' : '線がつながった。<b>つきつける！</b>で勝負');
+        api.coach('');
       } else {
         selE = +el.dataset.i;
-        api.coach(selS == null ? '次は、この証拠とぶつかる<b>発言</b>を選んで' : '線がつながった。<b>つきつける！</b>で勝負');
+        api.coach('');
       }
       refresh();
     };
@@ -309,9 +323,9 @@
       go.addEventListener('click', async () => {
         if (busy || done || selS == null || selE == null || !api.alive()) return;
         const k = selS + ':' + selE;
-        if (tried.has(k)) { api.sfx.nope(); stall++; if (stall >= 2) hintSay(); if (stall >= 4) hintEv(); if (stall < 2) api.coach('その組はもう試した。別の組にしよ'); return; }
+        if (tried.has(k)) { api.sfx.nope(); stall++; if (stall >= 2) hintSay(); if (stall >= 4) hintEv(); if (stall < 2) api.coach('試した組'); return; }
         tried.add(k); busy = true; refresh();
-        api.sfx.drum(); court.classList.add('is-charge'); api.coach('……！');
+        api.sfx.drum(); court.classList.add('is-charge'); api.coach('');
         await api.wait(api.reduce ? 150 : 750);
         if (!api.alive()) return;
         court.classList.remove('is-charge');
@@ -334,7 +348,7 @@
         if (misses >= 3) {
           done = true;
           api.say('もう何を言っても信じないの♡ ざぁこ♡', 'smug');
-          api.coach('信用ゼロ……ここからは<b>勘</b>で読むしかない', 'lose');
+          api.coach('ここからは<b>勘</b>', 'lose');
           selS = null; selE = null; thread.innerHTML = '';
           court.querySelectorAll('.ob-say, .ob-ev').forEach(el => el.classList.remove('sel'));
           $('#mb-ob-says').classList.remove('is-next'); $('#mb-ob-evs').classList.remove('is-next');
@@ -343,7 +357,7 @@
           resolve('lost');
           return;
         }
-        api.coach(hitS || hitE ? '<b>惜しい！</b> 片方は合ってる。もう片方を変えてみよ' : `矛盾してない……信用はあと<b>${3 - misses}つ</b>`, 'panic');
+        api.coach(hitS || hitE ? '<b>惜しい！</b> 片方は合ってる' : '矛盾してない', 'panic');
         if (misses >= 2) hintSay();
         await api.wait(api.reduce ? 100 : 500);
         if (!api.alive()) return;
@@ -373,7 +387,7 @@
     setStep(4);
     const hands = $('#mb-ob-hands');
     api.reveal(hands, 'center');
-    api.coach('ヴェルベットの手札、めくるよ……！'); api.sfx.drum();
+    api.coach(''); api.sfx.drum();
     hands.classList.add('is-reveal');
     await api.wait(api.reduce ? 200 : 1000);
     if (!api.alive()) return;
