@@ -25,11 +25,13 @@ html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-her { flex-wrap: no
 html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-board .card.big,
 html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-mine .card.big,
 html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-her .card.big { --w: 68px; flex: 0 0 auto; }
-html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-mine .formula { flex: 0 1 236px; margin-left: 6px; text-align: left; font-size: 14px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-mine .formula { flex: 0 1 260px; margin-left: 6px; text-align: left; font-size: 14px; line-height: 1.5; }
 html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-her .formula { margin-right: 6px; font-family: var(--mincho); font-weight: 700; font-size: 14px; letter-spacing: .1em; color: var(--gold); white-space: nowrap; }
 
 /* 問い 22px・天秤は横を広げる（針の上下に余白 30px） */
 html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) > .prompt { font-size: 22px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-bet b { font-size: 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-q { font-size: 22px; }
 html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-scale { max-width: 760px; min-height: 30px; font-size: 14px; letter-spacing: .08em; gap: 16px; }
 html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-beam { height: 12px; }
 

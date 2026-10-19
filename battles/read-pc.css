@@ -41,7 +41,6 @@
 :where(html:not(.is-compact)) .mb-host .prompt { font-size: 20px; line-height: 1.4; }
 :where(html:not(.is-compact)) .mb-host .formula { font-size: 13px; line-height: 1.5; }
 :where(html:not(.is-compact)) .mb-host .steps { gap: 6px; }
-:where(html:not(.is-compact)) .mb-host .step { font-size: 13px; line-height: 18px; padding: 4px 12px; letter-spacing: .04em; }
 :where(html:not(.is-compact)) .mb-host .zone-label { font-size: 12px; line-height: 1.4; }
 :where(html:not(.is-compact)) .mb-host .verdict { font-size: 19px; line-height: 1.45; }
 

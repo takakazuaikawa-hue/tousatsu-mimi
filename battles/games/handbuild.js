@@ -194,8 +194,9 @@
       .hb-head { display: flex; align-items: center; justify-content: center; gap: 10px 16px; flex-wrap: wrap; position: relative; }
       .hb-lv { display: inline-flex; align-items: center; gap: 8px; }
       .hb-lv b { font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; font-size: 14px; color: #1d080e; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); padding: 2px 14px; border-radius: 2px; display: inline-block; }
-      .hb-lv i { width: 16px; height: 8px; border-radius: 1px; background: var(--panel-2); border: 1px solid var(--line-dim); display: inline-block; }
-      .hb-lv i.on { background: var(--gold-hi); border-color: var(--gold); box-shadow: 0 0 8px rgba(239,205,130,.6); }
+      /* 段階は菱形の数で見せる（第1〜3段階）。名前は「入門」などだけ */
+      .hb-lv i { width: 13px; height: 13px; display: inline-block; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: var(--line-dim); }
+      .hb-lv i.on { background: var(--gold-hi); }
       .hb-ref { position: relative; }
       .hb-ref summary { list-style: none; cursor: pointer; font-family: var(--mincho); font-size: 12px; font-weight: 700; color: var(--gold); padding: 3px 12px; border: 1px solid var(--line); border-radius: 2px; background: var(--panel); }
       .hb-ref summary > span { display: inline-block; }
@@ -266,7 +267,7 @@
     root.innerHTML = `
       <div id="mb-hb-steps">${api.steps(['5枚を選ぶ', '読みを賭ける', '答え合わせ'], 0)}</div>
       <div class="hb-head">
-        <span class="hb-lv"><b>第${level}段階 · ${LV_NAME[level]}</b>${pips}</span>
+        <span class="hb-lv" aria-label="第${level}段階 ${LV_NAME[level]}"><b>${LV_NAME[level]}</b>${pips}</span>
         <details class="hb-ref"><summary><span>役の強さ順 ▾</span></summary><ol><li class="hb-arrow" style="display:block">強い ▲</li>${refList}<li class="hb-arrow" style="display:block">▼ 弱い</li></ol></details>
       </div>
       <div class="hb-deal is-cue" id="mb-hb-deal">
@@ -278,7 +279,7 @@
       <div class="hb-verdict" id="mb-hb-verdict"></div>
       <div class="actions"><button class="btn gold hb-go" id="mb-hb-go" disabled>これで勝負<small>5枚そろったら押せる</small></button></div>
       <aside class="hb-side mb-panel" aria-label="役の強さ順"><div class="mb-band">役の強さ順</div><ol><li class="hb-arrow">強い ▲</li>${refList}<li class="hb-arrow">▼ 弱い</li></ol></aside>`;
-    api.coach('7枚から5枚を選んで、一番強い役を作って', 'think');
+    api.tipOnce('handbuild', '7枚から5枚、一番強い役を', 'think');
 
     const deal = root.querySelector('#mb-hb-deal');
     const slotsEl = root.querySelector('#mb-hb-slots');
@@ -382,7 +383,7 @@
     root.querySelector('#mb-hb-steps').innerHTML = api.steps(['5枚を選ぶ', '読みを賭ける', '答え合わせ'], 1);
     const mine = sel.map(i => all[i]);
     const myScore = api.score(mine);
-    api.coach(`「${handName(api, mine)}」が最強だと読んだ。自信は？`);
+    api.coach('');
     await api.wager({ question: 'これが最強の5枚？', base });
     if (!api.alive()) return;
     root.querySelector('#mb-hb-steps').innerHTML = api.steps(['5枚を選ぶ', '読みを賭ける', '答え合わせ'], 2);
@@ -391,7 +392,7 @@
     const bestIx = a.bests.slice().sort((x, y) => y.filter(i => sel.includes(i)).length - x.filter(i => sel.includes(i)).length)[0];
     const bestCards = bestIx.map(i => all[i]);
     const correct = myScore === a.best;
-    api.coach('7枚から作れる、一番強い5枚は……', 'think'); api.emote('think'); api.sfx.drum();
+    api.coach(''); api.emote('think'); api.sfx.drum();
     const dimMark = {}; all.forEach((c, i) => { dimMark[i] = 'dim'; });
     drawDeal(dimMark);
     await api.wait(api.reduce ? 200 : 950);

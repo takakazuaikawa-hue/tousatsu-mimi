@@ -49,7 +49,7 @@ const MEASURE = (rootSel) => `(() => {
     let clipped = false; for (let x = el.parentElement; x && x !== document.body; x = x.parentElement) { const c = getComputedStyle(x); if (c.overflow !== 'visible' || c.overflowY !== 'visible') { const b = x.getBoundingClientRect(); if (r.bottom <= b.top + 1 || r.top >= b.bottom - 1 || r.right <= b.left + 1 || r.left >= b.right - 1) { clipped = true; break; } } }
     if (clipped) continue;
     const L = Math.min(...rs.map(q => q.left)), R = Math.max(...rs.map(q => q.right));
-    texts.push({ t: t.slice(0, 24), px: +px.toFixed(1), sel: selOf(el), off, y: Math.round(r.top), L: Math.round(L), R: Math.round(R), body: !!el.closest(BODY_SEL) || (t.length >= 30 && el.tagName !== 'SMALL' && !/note|hint|cap|sub|tag|legal|small/i.test(typeof el.className === 'string' ? el.className : '')) });
+    texts.push({ t: t.slice(0, 24), n: t.length, px: +px.toFixed(1), sel: selOf(el), off, y: Math.round(r.top), L: Math.round(L), R: Math.round(R), body: !!el.closest(BODY_SEL) || (t.length >= 30 && el.tagName !== 'SMALL' && !/note|hint|cap|sub|tag|legal|small/i.test(typeof el.className === 'string' ? el.className : '')) });
   }
   const isTap = (e) => e.tagName === 'BUTTON' || e.getAttribute('role') === 'button' || (getComputedStyle(e).cursor === 'pointer' && !(e.parentElement && getComputedStyle(e.parentElement).cursor === 'pointer'));
   const taps = [...root.querySelectorAll('*')].filter(isTap).filter(e => effOpacity(e) >= 0.3 && !e.disabled).map(e => { const r = e.getBoundingClientRect(); return { t: (e.textContent || e.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim().slice(0, 16), sel: selOf(e), w: Math.round(r.width), h: Math.round(r.height), off: r.left < -1 || r.top < -1 || r.right > VW + 1 || r.bottom > VH + 1, L: Math.round(r.left), R: Math.round(r.right), full: r.width >= VW * 0.7 }; }).filter(b => b.w >= 4 && b.h >= 4);
@@ -77,7 +77,7 @@ const summarize = (m) => {
   const safe = [...m.texts.filter(x => x.px < 40 && (x.L < SAFE - 1 || x.R > m.VW - SAFE + 1)), ...m.taps.filter(b => !b.full && (b.L < SAFE - 1 || b.R > m.VW - SAFE + 1))];
   const smallTap = m.taps.filter(b => b.h < MIN_TAP - 0.5 || b.w < MIN_TAP - 0.5);
   const off = [...m.texts.filter(x => x.off), ...m.taps.filter(b => b.off)];
-  return { small, bodySmall, safe, smallTap, off, minPx: m.texts.length ? Math.min(...m.texts.map(x => x.px)) : null, scrollOver: m.scrollOver };
+  return { small, bodySmall, safe, smallTap, off, chars: m.texts.reduce((a, x) => a + (x.n || x.t.length), 0), minPx: m.texts.length ? Math.min(...m.texts.map(x => x.px)) : null, scrollOver: m.scrollOver };
 };
 
 const { page, close } = await openSession({ width: W, height: H, mobile: W < 900, speed: 1, save: { clearedStages: ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'], introPlayed: true, coins: 500, readIntroSeen: true, houseRulesSeen: true } });
@@ -159,17 +159,24 @@ if (doRead) {
           const s = summarize(m); s.sig = sig; s.n = steps.length + 1;
           if (s.n <= 12) { s.shot = `${gameId}_${s.n}.png`; try { await page.screenshot(path.join(OUT, s.shot)); } catch {} }
           steps.push(s);
+          // 「詳しく」（details.mb-more）が畳んである時は、開いた状態も測る
+          if (await page.eval(`!!document.querySelector('.read-battle-host details.mb-more:not([open])')`)) {
+            await page.eval(`document.querySelectorAll('.read-battle-host details.mb-more').forEach(d => d.open = true); true`); await sleep(250);
+            const m2 = await page.eval(MEASURE('.read-battle-host'));
+            if (m2) { const o = summarize(m2); o.n = s.n + 'o'; o.opened = true; o.shot = `${gameId}_${s.n}_open.png`; try { await page.screenshot(path.join(OUT, o.shot)); } catch {} steps.push(o); }
+            await page.eval(`document.querySelectorAll('.read-battle-host details.mb-more').forEach(d => d.open = false); true`); await sleep(150);
+          }
         }
       }
-      const w = await page.eval(PICK);
+      const w = await page.eval(PICK); if (process.env.TA_DEBUG && i < 6) console.log('pick', i, w);
       if (w && w[0] === '{') { const o = JSON.parse(w); await page.click(o.x, o.y); }
-      if (w === 'exit') { res = 'OK'; break; }
+      if (w === 'exit') { if (process.env.TA_DEBUG) console.log('EXIT at', i, await page.eval(`document.querySelector('.read-battle-host') ? document.querySelector('.read-battle-host').innerText.replace(/s+/g,' ').slice(0,200) : 'nohost'`)); res = 'OK'; break; }
       if (w === 'gone') { res = 'GONE'; break; }
       await sleep(220);
     }
     const worst = steps.reduce((a, s) => Math.max(a, s.small.length), 0);
     const minPx = Math.min(...steps.map(s => s.minPx ?? 99));
-    console.log(gameId, res, 'steps', steps.length, 'worstSmall', worst, 'worstBody', steps.reduce((a, s) => Math.max(a, s.bodySmall.length), 0), 'worstSafe', steps.reduce((a, s) => Math.max(a, s.safe.length), 0), 'minPx', minPx, 'maxScroll', Math.max(0, ...steps.map(s => s.scrollOver)));
+    console.log(gameId, res, 'steps', steps.length, 'worstSmall', worst, 'worstBody', steps.reduce((a, s) => Math.max(a, s.bodySmall.length), 0), 'worstSafe', steps.reduce((a, s) => Math.max(a, s.safe.length), 0), 'minPx', minPx, 'maxScroll', Math.max(0, ...steps.map(s => s.scrollOver)), 'chars', steps.map(s => s.chars).join(','));
     report['read_' + gameId] = { result: res, steps };
     await sleep(600);
     await page.eval(`(() => { document.querySelectorAll('.read-battle-host').forEach(e => e.remove()); state.psychPending = false; return true; })()`);
@@ -179,10 +186,10 @@ if (doRead) {
 fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(report, null, 1));
 const L = [`# 文字の基準の監査 ${sizeArg}（12px 未満の文字・本文 14px 未満・44px 未満の押す所・安全域・画面外）`, ''];
 for (const [k, r] of Object.entries(report)) {
-  L.push(`## ${k}${r.result ? ' (' + r.result + ')' : ''}`, '', '| # | 最小px | 12px未満 | 本文<14 | 安全域 | 押す所<44 | 画面外 | 読み合いのスクロール | 例 | 画像 |', '|--|--|--|--|--|--|--|--|--|--|');
+  L.push(`## ${k}${r.result ? ' (' + r.result + ')' : ''}`, '', '| # | 文字数 | 最小px | 12px未満 | 本文<14 | 安全域 | 押す所<44 | 画面外 | 読み合いのスクロール | 例 | 画像 |', '|--|--|--|--|--|--|--|--|--|--|--|');
   r.steps.forEach((s, i) => {
     const ex = [...new Map([...s.small, ...s.bodySmall].map(x => [x.sel, x])).values()].slice(0, 4).map(x => `${x.sel} ${x.px}「${x.t}」`).join(' / ');
-    L.push(`| ${s.n || i + 1} | ${s.minPx} | ${s.small.length} | ${s.bodySmall.length} | ${s.safe.length} | ${s.smallTap.length} | ${s.off.length} | ${s.scrollOver} | ${ex} | ${s.shot || ''} |`);
+    L.push(`| ${s.n || i + 1} | ${s.chars} | ${s.minPx} | ${s.small.length} | ${s.bodySmall.length} | ${s.safe.length} | ${s.smallTap.length} | ${s.off.length} | ${s.scrollOver} | ${ex} | ${s.shot || ''} |`);
   });
   L.push('');
 }

@@ -168,10 +168,58 @@ html:not(.is-compact) .mb-host .mb-purse b { font-family: var(--mincho); font-si
 /* 場所の名前（手札・場札など）：明朝の小さな金文字 */
 .mb-host .zone-label { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--gold); font-size: 12px; text-align: center; }
 /* 段（手順）：小窓の段と同じ。今の段は深紅の面＋下に金の線（高さは変えない） */
-.mb-host .steps { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
-.mb-host .step { font-family: var(--mincho); font-weight: 700; font-size: 12px; padding: 3px 12px; color: #c9b89b; border: 1px solid var(--line-dim); border-radius: 2px; background: var(--panel-2); }
-.mb-host .step.on { color: #f1d69e; border-color: var(--line); border-bottom-color: #d7b370; background: var(--sel); box-shadow: inset 0 -1px 0 #d7b370; }
-.mb-host .step.done { color: var(--gold); border-color: var(--line-dim); }
+/* 手順の帯（菱形）：番号入りの菱形を並べ、今の段だけ名前を出す。済んだ段＝金で塗り／先の段＝枠だけ／今の段＝深紅に金の枠と光 */
+html.is-compact .mb-host .dia i { width: 24px; height: 24px; }
+.mb-host .steps.is-dia { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 8px; }
+.mb-host .dia { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; white-space: nowrap; }
+.mb-host .dia i { position: relative; isolation: isolate; width: 26px; height: 26px; display: grid; place-items: center; font: 700 12px/1 var(--mincho); font-style: normal; background: var(--gold); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); color: var(--gold-hi); }
+.mb-host .dia i::before { content: ""; position: absolute; inset: 2px; z-index: -1; background: #1a0709; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.mb-host .dia.todo i { background: var(--line-dim); color: #b79c6b; }
+.mb-host .dia.done i { color: #1d080e; }
+.mb-host .dia.done i::before { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+.mb-host .dia.on i { background: var(--gold-hi); color: var(--gold-pale); }
+.mb-host .dia.on i::before { background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); }
+.mb-host .dia.on { filter: drop-shadow(0 0 5px rgba(239,205,130,.5)); }
+.mb-host .dia b { font-family: var(--mincho); font-weight: 800; font-size: 14px; color: var(--gold-pale); letter-spacing: .04em; }
+/* ミミの手の札：役名の札＋「対ブラフ ○」「対強い手 ×」。○は金の輪、×は赤の斜め線2本（絵文字は使わない） */
+.mb-host .mb-handtag { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 5px; vertical-align: middle; }
+.mb-host .mb-handtag .nm { font-family: var(--mincho); font-weight: 800; font-size: 14px; color: var(--gold-pale); padding: 1px 8px; background: linear-gradient(90deg, var(--crimson), rgba(34,9,12,.92)); box-shadow: inset 2px 0 0 var(--gold); white-space: nowrap; }
+.mb-host .mb-handtag .vs { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px 1px 4px; font-family: var(--mincho); font-weight: 700; font-size: 13px; line-height: 1.5; white-space: nowrap; background: rgba(19,4,6,.78); border: 1px solid var(--line-dim); }
+.mb-host .mb-handtag .vs.ok { color: var(--gold-hi); border-color: var(--gold); }
+.mb-host .mb-handtag .vs.ng { color: #ee8a96; border-color: #8a2231; }
+.mb-host .mb-handtag .mk { position: relative; flex: 0 0 auto; width: 13px; height: 13px; }
+.mb-host .mb-handtag .vs.ok .mk::before { content: ""; position: absolute; inset: 1px; border-radius: 50%; border: 2.5px solid var(--gold-hi); }
+.mb-host .mb-handtag .vs.ng .mk::before, .mb-host .mb-handtag .vs.ng .mk::after { content: ""; position: absolute; left: 5px; top: -1px; width: 3px; height: 15px; background: var(--red-hi); border-radius: 1px; transform: rotate(45deg); }
+.mb-host .mb-handtag .vs.ng .mk::after { transform: rotate(-45deg); }
+/* 相手の伏せ札の上に重ねる脅しの札（♥♥? ＋ フラッシュの危険） */
+.mb-host .mb-threat { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none; }
+.mb-host .mb-threat .tc { display: inline-flex; gap: 2px; white-space: nowrap; padding: 1px 5px; font: 800 14px/1.2 var(--mincho); background: #f1e6cc; color: #17100c; border: 1px solid var(--gold); box-shadow: 0 2px 6px rgba(0,0,0,.55); }
+.mb-host .mb-threat .tc .rd { color: #b8132b; }
+.mb-host .mb-threat .tc .q { color: #7d1022; }
+.mb-host .mb-threat .tn { font-family: var(--mincho); font-weight: 800; font-size: 13px; color: #ff9aa6; text-shadow: 0 1px 0 #000, 0 0 6px rgba(200,37,58,.7); white-space: nowrap; }
+/* 小さな目盛り（名札＋棒＋小さな数字） */
+.mb-host .gg { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; line-height: 1.3; white-space: nowrap; }
+.mb-host .gg label { font-family: var(--mincho); font-weight: 700; font-size: 12px; color: var(--gold); }
+.mb-host .gg .g { display: block; width: 46px; height: 8px; background: #0d0405; border: 1px solid var(--line-dim); box-sizing: border-box; }
+.mb-host .gg .g u { display: block; height: 100%; text-decoration: none; background: linear-gradient(90deg, var(--gold), var(--gold-hi)); }
+.mb-host .gg b { font-weight: 700; font-size: 12px; color: var(--text); font-variant-numeric: tabular-nums; }
+html:not(.is-compact) .mb-host .gg, html:not(.is-compact) .mb-host .gg label, html:not(.is-compact) .mb-host .gg b { font-size: 13px; }
+html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
+.mb-host .gg.bad .g u { background: linear-gradient(90deg, #8a2231, var(--red-hi)); }
+.mb-host .mb-parchment .gg label { color: var(--crimson); }
+.mb-host .mb-parchment .gg .g { background: #d8c79f; border-color: #8a7350; }
+.mb-host .mb-parchment .gg .g u { background: linear-gradient(90deg, #7d1022, var(--crimson)); }
+.mb-host .mb-parchment .gg b { color: var(--parch-ink, #2a1608); }
+/* 光らせる場札（危険な札）：赤い縁と赤い光 */
+.mb-host .card.hot { border-color: var(--red-hi); box-shadow: 0 0 0 2px rgba(200,37,58,.55), 0 0 14px rgba(255,74,96,.8); }
+/* リコ先輩：言うことが無い時は欄ごと引っ込める */
+.mb-host .mb-coach.is-quiet { display: none; }
+/* 詳しく：押した時だけ補足を重ねて出す（並びは動かさない）。押す所は 44px */
+.mb-host details.mb-more { display: inline-block; }
+.mb-host details.mb-more > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 12px; font-family: var(--mincho); font-weight: 700; font-size: 13px; color: var(--gold); border: 1px solid var(--line-dim); background: var(--panel); box-sizing: border-box; }
+.mb-host details.mb-more > summary::-webkit-details-marker { display: none; }
+.mb-host details.mb-more[open] > summary { color: var(--gold-pale); border-color: var(--gold); background: var(--sel); }
+.mb-host details.mb-more > .mb-more-body { position: absolute; z-index: 40; left: 0; right: 0; bottom: calc(100% + 4px); padding: 8px 12px; font-size: 14px; line-height: 1.5; color: var(--text); background: #120406; border: 1px solid var(--gold); box-shadow: 0 8px 24px rgba(0,0,0,.7); }
 .mb-host .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
 /* 押すもの（四角）：角 2px・金の線。面は ::before が描く（遊び側の .btn.xxx::before の飾りもそのまま効く）。
    主＝深紅に金文字／.gold＝金に黒文字／.quiet＝黒檀に金文字／.ghost＝線だけ。斜め（skew）は押せない物だけに使う */

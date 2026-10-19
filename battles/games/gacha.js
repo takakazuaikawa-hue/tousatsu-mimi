@@ -4,10 +4,10 @@
 // 心の声はすべて、裏で決めた相手の本当の手札から作る（N と R は書いてある割合で外れる。SR・SSR は正確）。
 (() => {
   const RAR = {
-    N: { p: 55, name: '気分のかけら', acc: '6割で本当の手に沿う' },
-    R: { p: 30, name: '手の強さのヒント', acc: '8割で本当の手に沿う' },
-    SR: { p: 12, name: '相手の札を1枚見抜く', acc: '正確' },
-    SSR: { p: 3, name: '両方の札が見える', acc: '正確・大当たり' },
+    N: { p: 55, name: '気分のかけら', short: '気分', acc: '6割で本当の手に沿う' },
+    R: { p: 30, name: '手の強さのヒント', short: 'ヒント', acc: '8割で本当の手に沿う' },
+    SR: { p: 12, name: '相手の札を1枚見抜く', short: '1枚', acc: '正確' },
+    SSR: { p: 3, name: '両方の札が見える', short: '両方', acc: '正確・大当たり' },
   };
   const ORDER = ['N', 'R', 'SR', 'SSR'];
   // 天井（3回目）は R 以上だけを、同じ比率で引き直す
@@ -136,19 +136,23 @@
     api.css('gacha', CSS);
     const root = api.root;
     const stepNames = ['心の声を引く', '読む', '読みを賭ける', '答え合わせ'];
-    const explain = tpl === 'flush'
-      ? `場に${api.SYM[X]}が3枚。${jp}が${api.SYM[X]}を2枚持っていれば<b>フラッシュ</b>（同じマーク5枚）`
-      : `${jp}の札が場の数字と重なれば<b>スリーカード</b>（同じ数字3枚）`;
+    // 場札の意味は文で説明せず、当てはまる場札を赤く光らせ、相手の伏せ札に小さな札と短い名札を重ねる
+    const redS = (c) => (c === 'h' || c === 'd' ? 'rd' : '');
+    const threatName = tpl === 'flush' ? 'フラッシュの危険' : 'スリーカードの危険';
+    const threatChip = tpl === 'flush'
+      ? `<span class="${redS(X)}">${api.SYM[X]}</span><span class="${redS(X)}">${api.SYM[X]}</span><span class="q">?</span>`
+      : `<span>同数</span><span class="q">?</span>`;
+    const detailHtml = `<div class="gc-det"><p>確率はそのまま表示。N 6割・R 8割は本当の手に沿い、SR・SSR は正確。</p><p><b>天井</b>：3回目は <b>R以上が確定</b>（R ${pct(CEIL.R)}・SR ${pct(CEIL.SR)}・SSR ${pct(CEIL.SSR)}）</p><p>残したぱにゅは1あたりコイン2枚（ご褒美のもと＝20＋ぱにゅ×2）</p></div>`;
     const balls = [['n', 12, 6], ['r', 44, 2], ['n', 78, 8], ['sr', 110, 3], ['n', 140, 6], ['r', 26, 30], ['n', 60, 34], ['ssr', 94, 30], ['n', 126, 32], ['r', 150, 36], ['n', 40, 58], ['sr', 76, 60], ['n', 112, 58]];
     root.innerHTML = `
       <div id="mb-gc-steps">${api.steps(stepNames, 0)}</div>
-      <div class="row gc-board">${board.map(c => api.cardHTML(c)).join('')}</div>
+      <div class="row gc-board">${board.map(c => api.cardHTML(c, tpl === 'flush' && c.s === X ? 'hot' : '')).join('')}</div>
       <div class="gc-hands" id="mb-gc-hands">
-        <div class="gc-hand"><span class="gc-who">${api.char.name}</span><span class="gc-cards" id="mb-gc-her">${api.backHTML('small')}${api.backHTML('small')}</span><span class="gc-hn" id="mb-gc-her-name">？？？</span></div>
+        <div class="gc-hand"><span class="gc-who">${api.char.name}</span><span class="gc-herbox"><span class="gc-cards" id="mb-gc-her">${api.backHTML('small')}${api.backHTML('small')}</span><span class="mb-threat ov"><span class="tc">${threatChip}</span></span></span><span class="gc-hn is-threat" id="mb-gc-her-name">${threatName}</span></div>
         <span class="gc-vs">VS</span>
-        <div class="gc-hand"><span class="gc-who">MIMI</span><span class="gc-cards">${mimi.map(c => api.cardHTML(c, 'small')).join('')}</span><span class="gc-hn">${mimiName}</span></div>
+        <div class="gc-hand"><span class="gc-who">MIMI</span><span class="gc-cards">${mimi.map(c => api.cardHTML(c, 'small')).join('')}</span></div>
       </div>
-      <p class="gc-sub">${explain}。ミミの${mimiName}は、ブラフには勝ち、強い手には負ける。</p>
+      <div class="gc-sub">${api.handTag(mimiName)}</div>
       <div class="gc-wrap">
         <div class="gc-left">
           <div class="gc-mach" id="mb-gc-mach" role="button" tabindex="0" aria-label="ガチャのレバーを引く">
@@ -163,21 +167,22 @@
             <div class="gc-lever"><i class="stick"></i><i class="pivot"></i></div>
             <i class="gc-feet"></i>
           </div>
+          <div class="gc-ceilg" id="mb-gc-ceilg" aria-label="天井：3回目はR以上が確定"><span class="gc-ceilg-t">天井</span><i></i><i></i><i class="last"></i></div>
           <div class="gc-acts" id="mb-gc-acts">
-            <button class="btn gold gc-pull" id="mb-gc-pull">ぱにゅぱにゅ！<small>心の声を1回引く（ぱにゅ10）</small></button>
+            <button class="btn gold gc-pull" id="mb-gc-pull">ぱにゅぱにゅ！<small>ぱにゅ −10</small></button>
             <button class="btn quiet gc-stop" id="mb-gc-stop">もう引かない<small>読みに進む</small></button>
           </div>
         </div>
         <div class="gc-right">
           <div class="gc-panyu">
             <div class="gc-pn"><span>ぱにゅ</span><b id="mb-gc-pn">30</b><span class="gc-segs" id="mb-gc-segs"><i></i><i></i><i></i></span></div>
-            <div class="gc-basebox">残したぱにゅは1あたりコイン2枚。ご褒美のもと <b>20＋<span id="mb-gc-left">30</span>×2＝<span id="mb-gc-bv">80</span></b></div>
+            <div class="gc-basebox" aria-label="残したぱにゅは1あたりコイン2枚"><i class="gc-arr"></i><i class="gc-coin"></i><b>+<span id="mb-gc-bv">60</span></b></div>
           </div>
-          <div class="gc-voices" id="mb-gc-voices"><div class="gc-empty">まだ心の声は聞こえない……</div></div>
+          <div class="gc-voices" id="mb-gc-voices"><div class="gc-empty" aria-label="まだ心の声は聞こえない"><span>心の声</span></div></div>
           <div class="gc-odds">
-            <div class="gc-odds-h">排出確率<small>（そのまま表示）</small></div>
-            ${ORDER.map(k => `<div class="gc-orow"><span class="gc-rar r-${k}">${k}</span><b>${RAR[k].p}%</b><span>${RAR[k].name}<small>${RAR[k].acc}</small></span></div>`).join('')}
-            <div class="gc-ceil"><b>天井</b>：3回目は <b>R以上が確定</b>（R ${pct(CEIL.R)}・SR ${pct(CEIL.SR)}・SSR ${pct(CEIL.SSR)}）</div>
+            <div class="gc-odds-h">排出確率</div>
+            ${ORDER.map(k => `<div class="gc-or"><span class="gc-rar r-${k}">${k}</span><i class="gc-bar"><u class="r-${k}" style="width:${(RAR[k].p / 55 * 100).toFixed(1)}%"></u></i><b>${RAR[k].p}%</b><em>${RAR[k].short}</em></div>`).join('')}
+            ${api.more(detailHtml)}
           </div>
           <div class="gc-book" id="mb-gc-book"></div>
         </div>
@@ -186,7 +191,7 @@
         <button class="btn" data-d="bluff">ブラフと読む<small>コールして勝負</small></button>
         <button class="btn quiet" data-d="strong">強い手と読む<small>降りて守る</small></button>
       </div>`;
-    api.coach('《ぱにゅぱにゅ》で心の声を引ける。1回10、残せばコインに', 'think');
+    api.tipOnce('gacha', '3回目は、R以上が確定', 'think');
 
     const $ = (s) => root.querySelector(s);
     const mach = $('#mb-gc-mach');
@@ -194,14 +199,14 @@
     const got = [];
     const drawBook = () => {
       const n = (k) => [...book].filter(x => x.split(':')[1] === k).length;
-      $('#mb-gc-book').innerHTML = `<span class="gc-book-h">心の声図鑑</span><b>${book.size}</b><small>/${ALL}種</small>
-        <span class="gc-book-r">${ORDER.map(k => `<span class="r-${k}">${k} ${n(k)}/${TOTAL[k]}</span>`).join('')}</span>`;
+      $('#mb-gc-book').innerHTML = `<span class="gc-book-h" title="心の声図鑑 ${book.size}/${ALL}種">図鑑</span>${ORDER.map(k => `<span class="r-${k}" title="${k} ${n(k)}/${TOTAL[k]}"><b>${n(k)}</b><small>/${TOTAL[k]}</small></span>`).join('')}`;
     };
     const drawPanyu = () => {
-      $('#mb-gc-pn').textContent = panyu; $('#mb-gc-left').textContent = panyu; $('#mb-gc-bv').textContent = 20 + panyu * 2;
+      $('#mb-gc-pn').textContent = panyu; $('#mb-gc-bv').textContent = panyu * 2;
+      root.querySelectorAll('#mb-gc-ceilg i').forEach((el, i) => el.classList.toggle('on', i < pulls));
       $('#mb-gc-segs').querySelectorAll('i').forEach((el, i) => el.classList.toggle('used', i >= panyu / 10));
       const p = $('#mb-gc-pull');
-      if (p) p.innerHTML = pulls === 2 ? 'ぱにゅぱにゅ！<small>3回目は R以上 確定！（ぱにゅ10）</small>' : 'ぱにゅぱにゅ！<small>心の声を1回引く（ぱにゅ10）</small>';
+      if (p) p.innerHTML = pulls === 2 ? 'ぱにゅぱにゅ！<small>天井・R以上 確定</small>' : 'ぱにゅぱにゅ！<small>ぱにゅ −10</small>';
       $('#mb-gc-acts').classList.toggle('is-ceil', pulls === 2);
     };
     drawBook(); drawPanyu();
@@ -219,9 +224,8 @@
       return { rar, lean: truth, cards: her, text: V.SSR.replace('{a}', api.label(her[0])).replace('{b}', api.label(her[1])), key: `${who}:SSR` };
     };
     const ricoOn = (v) => {
-      if (v.rar === 'N') return '気分のかけら。当たるのは6割、参考ていどにね';
-      if (v.rar === 'R') return '手の強さのヒント。8割は本当のことだよ';
-      if (v.rar === 'SSR') return `両方見えた！ ${herCat}だよ。もう迷わないね`;
+      if (v.rar === 'N' || v.rar === 'R') return '';   // 気分・ヒントは声と表が語る。リコは黙る（相手の台詞と同じことを言わない）
+      if (v.rar === 'SSR') return `${herCat}。もう迷わないね`;
       const c = v.cards[0], L = `<b>${api.label(c)}</b>`;
       if (tpl === 'flush') return c.s === X ? `${L}は場と同じマーク。フラッシュの匂い…！` : `${L}は場のマークと違う。フラッシュは無いね`;
       return board.some(b => b.r === c.r) ? `${L}は場の数字と同じ！ スリーカードだ` : `${L}は場のどれとも合わない。空振りっぽい`;
@@ -233,7 +237,7 @@
       busy = true; pulls++; panyu -= 10; drawPanyu();
       $('#mb-gc-pull').disabled = true; $('#mb-gc-stop').disabled = true;
       const rar = roll(); const v = voiceOf(rar);
-      api.sfx.tap(); api.coach('ぱにゅぱにゅ……！');
+      api.sfx.tap(); api.coach('');
       mach.classList.remove('is-pull'); void mach.offsetWidth; mach.classList.add('is-pull');
       const R = api.reduce;
       await api.wait(R ? 60 : 480); if (!api.alive()) return;
@@ -279,7 +283,7 @@
       list.insertAdjacentHTML('afterbegin', `<div class="gc-voice v-${rar} pop">
         <span class="gc-rar r-${rar}">${rar}</span>
         <div class="gc-bub mb-ebony"><p>「${v.text}」</p>${v.cards ? `<div class="gc-vcards">${v.cards.map(c => api.cardHTML(c, 'small')).join('')}</div>` : ''}</div>
-        <div class="gc-meta">${pulls}回目・${RAR[rar].name}（${RAR[rar].acc}）${isNew ? '<em>初入手</em>' : ''}</div></div>`);
+        <div class="gc-meta">${pulls}回目・${RAR[rar].short}${isNew ? '<em>初入手</em>' : ''}</div></div>`);
       drawBook();
       if (window.innerWidth <= 720) api.reveal(list.firstElementChild, 'nearest');
       api.coach(ricoOn(v), rar === 'SSR' ? 'win' : rar === 'SR' ? 'smug' : 'think');
@@ -296,8 +300,7 @@
     const finishPulls = (out) => {
       if (over) return; over = true;
       $('#mb-gc-acts').hidden = true; mach.classList.add('is-over');
-      if (out) api.coach('ぱにゅ切れ！ 集めた心の声で読もう');
-      else api.coach(pulls === 0 ? 'ぱにゅは全部とっておく作戦。さあ、どっち？' : 'ここで止める。残したぱにゅはコインになるよ');
+      api.coach('');
       endPulls();
     };
     $('#mb-gc-pull').addEventListener('click', pull);
@@ -325,14 +328,14 @@
     const hands = $('#mb-gc-hands');
     api.reveal(hands, 'center');
     hands.classList.add('is-reveal');
-    api.coach(`${jp}の手札、めくるよ……！`); api.sfx.drum();
+    api.coach(''); api.sfx.drum();
     await api.wait(api.reduce ? 200 : 1000); if (!api.alive()) return;
     const herEl = $('#mb-gc-her');
     herEl.children[0].outerHTML = api.cardHTML(her[0], 'small flip'); api.sfx.tick();
     await api.wait(api.reduce ? 150 : 750); if (!api.alive()) return;
     herEl.children[1].outerHTML = api.cardHTML(her[1], 'small flip'); api.sfx.tick();
     await api.wait(api.reduce ? 150 : 500); if (!api.alive()) return;
-    const nm = $('#mb-gc-her-name'); nm.textContent = herCat; nm.classList.add(truth === 'strong' ? 'is-strong' : 'is-bluff', 'pop');
+    const nm = $('#mb-gc-her-name'); nm.textContent = herCat; nm.classList.remove('is-threat'); nm.classList.add(truth === 'strong' ? 'is-strong' : 'is-bluff', 'pop');
     const correct = decide === truth;
     api.say(truth === 'bluff' ? (correct ? V.end.winBluff : V.end.loseBluff) : (correct ? V.end.winStrong : V.end.loseStrong),
       truth === 'bluff' ? (correct ? 'busted' : 'smug') : (who === 'selina' ? 'think' : 'smug'));
@@ -372,8 +375,11 @@
     .gc-hn.is-strong { color: var(--red-hi); font-size: 16px; } .gc-hn.is-bluff { color: var(--good); font-size: 16px; }
     .gc-vs { font-family: var(--disp); font-size: 26px; color: var(--red-hi); transform: skewX(-12deg); line-height: 1; }
     .gc-hands.is-reveal .gc-hand:first-child { filter: drop-shadow(0 0 14px rgba(200,37,58,.55)); }
-    .gc-sub { margin: -4px 0 0; text-align: center; font-size: 13px; color: var(--dim); text-wrap: balance; }
-    .gc-sub b { color: var(--text); }
+    .gc-sub { margin: -4px 0 0; text-align: center; }
+    .gc-herbox { position: relative; display: inline-flex; }
+    .gc-herbox .mb-threat.ov { position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%); z-index: 2; }
+    .gc-hn.is-threat { color: #ff9aa6; font-family: var(--mincho); font-size: 13px; text-shadow: 0 0 6px rgba(200,37,58,.6); }
+    .gc-hands.is-reveal .mb-threat { display: none; }
 
     .gc-wrap { display: grid; grid-template-columns: 280px minmax(0,1fr); gap: 18px; align-items: start; }
     .gc-left { display: flex; flex-direction: column; align-items: center; gap: 12px; }
@@ -482,18 +488,33 @@
     .gc-segs { display: flex; gap: 5px; }
     .gc-segs i { width: 26px; height: 16px; transform: skewX(-12deg); background: linear-gradient(90deg, var(--gold-hi), var(--gold)); border: 1px solid var(--gold-pale); box-shadow: 0 0 10px rgba(217,178,105,.5); transition: all .3s; }
     .gc-segs i.used { background: var(--off-bg); border-color: var(--off-line); box-shadow: none; }
-    .gc-basebox { font-size: 12px; color: var(--dim); line-height: 1.5; }
-    .gc-basebox b { color: var(--gold-hi); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    /* ぱにゅ → コイン：矢印とコインの図柄＋数字。式の文は出さない */
+    .gc-basebox { display: inline-flex; align-items: center; gap: 6px; }
+    .gc-basebox b { color: var(--gold-hi); font-family: var(--mincho); font-size: 20px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .gc-arr { position: relative; width: 22px; height: 12px; flex: 0 0 auto; }
+    .gc-arr::before { content: ""; position: absolute; left: 0; right: 4px; top: 5px; height: 2px; background: var(--gold); }
+    .gc-arr::after { content: ""; position: absolute; right: 0; top: 1px; width: 0; height: 0; border-left: 8px solid var(--gold); border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+    .gc-coin { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 36% 30%, #fff3c2, #e3b964 52%, #a87a1a); border: 2px solid #7a5410; box-shadow: inset 0 0 0 2px rgba(255,243,194,.55), 0 1px 3px rgba(0,0,0,.6); }
+    /* 天井の目盛り：3つの点（引いた数だけ点灯）＋「天井」の札。最後の点が天井 */
+    .gc-ceilg { display: inline-flex; align-items: center; gap: 7px; }
+    .gc-ceilg-t { font-family: var(--mincho); font-weight: 800; font-size: 13px; letter-spacing: .08em; color: #1d080e; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); padding: 0 8px; line-height: 1.5; }
+    .gc-ceilg i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--gold); background: #1a0709; box-sizing: border-box; transition: all .3s; }
+    .gc-ceilg i.last { width: 18px; height: 18px; border-width: 3px; }
+    .gc-ceilg i.on { background: var(--gold-hi); box-shadow: 0 0 9px rgba(239,205,130,.85); }
 
-    .gc-odds { padding: 8px 12px 10px; background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; display: grid; gap: 5px; }
+    .gc-odds { position: relative; padding: 6px 12px 8px; background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; display: grid; grid-template-columns: minmax(0,1fr) auto; column-gap: 10px; row-gap: 4px; align-items: center; }
+    .gc-odds > .gc-odds-h, .gc-odds > .gc-or { grid-column: 1; }
     .gc-odds-h { font-family: var(--mincho); font-weight: 700; letter-spacing: .06em; font-size: 13px; color: var(--gold-hi); }
-    .gc-odds-h small { font-family: var(--sans); font-weight: 400; letter-spacing: 0; color: var(--dim); margin-left: 4px; }
-    .gc-orow { display: grid; grid-template-columns: 50px 44px minmax(0,1fr); gap: 10px; align-items: center; font-size: 13px; }
-    .gc-orow > b { font-family: var(--mincho); font-weight: 700; font-size: 20px; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
-    .gc-orow > span:last-child { font-weight: 700; line-height: 1.35; }
-    .gc-orow small { display: inline-block; margin-left: 8px; font-weight: 400; font-size: 11.5px; color: var(--dim); }
-    .gc-ceil { margin-top: 2px; padding-top: 6px; border-top: 1px dashed rgba(217,178,105,.35); font-size: 12px; color: var(--dim); }
-    .gc-ceil b { color: var(--gold-hi); }
+    .gc-odds > details.mb-more { position: static; grid-column: 2; grid-row: 1 / span 5; align-self: center; }
+    /* 確率＝札＋棒の長さ＋数字＋2〜4字の名前 */
+    .gc-or { display: grid; grid-template-columns: 50px minmax(0,1fr) 46px 52px; gap: 8px; align-items: center; font-size: 13px; }
+    .gc-or > b { font-family: var(--mincho); font-weight: 700; font-size: 16px; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+    .gc-or > em { font-style: normal; font-weight: 700; color: var(--text); white-space: nowrap; }
+    .gc-bar { display: block; height: 10px; background: #0d0405; border: 1px solid var(--line-dim); }
+    .gc-bar u { display: block; height: 100%; text-decoration: none; background: var(--metal-n); }
+    .gc-bar u.r-R { background: var(--metal-r); } .gc-bar u.r-SR { background: linear-gradient(90deg, var(--gold-hi), var(--gold)); } .gc-bar u.r-SSR { background: linear-gradient(90deg, #d9b269, #fff6d8); box-shadow: 0 0 6px rgba(243,223,170,.7); }
+    .gc-det p { margin: 0 0 3px; } .gc-det p:last-child { margin: 0; } .gc-det b { color: var(--gold-hi); }
+    .gc-det .gc-rar { font-size: 14px; margin-right: 8px; min-width: 2.4em; }
     /* 希少度の札は金属の段：N 銀褐・R 銅・SR 金・SSR 淡金（二重線＋短い光沢） */
     .gc-rar { display: inline-block; text-align: center; font-family: var(--disp); font-weight: 400; font-size: 17px; letter-spacing: .06em; line-height: 1.4; padding: 0 6px; transform: skewX(-12deg); color: #1d080e; }
     .gc-rar.r-N { background: var(--metal-n); } .gc-rar.r-R { background: var(--metal-r); } .gc-rar.r-SR { background: linear-gradient(90deg, var(--gold-hi), var(--gold)); }
@@ -502,7 +523,8 @@
     @keyframes mb-gcSheen { from { background-position: -100% 0, 0 0; } to { background-position: 200% 0, 0 0; } }
 
     .gc-voices { display: flex; flex-direction: column; gap: 10px; min-height: 60px; }
-    .gc-empty { padding: 16px; text-align: center; font-size: 13px; color: var(--dim); border: 1px dashed var(--line-dim); }
+    .gc-empty { display: grid; place-items: center; min-height: 40px; border: 1.5px dashed var(--line); }
+    .gc-empty span { font-family: var(--mincho); font-weight: 700; font-size: 12px; letter-spacing: .2em; color: #8a7350; }
     .gc-voice { display: grid; grid-template-columns: 50px minmax(0,1fr); gap: 3px 12px; align-items: center; }
     .gc-voice > .gc-rar { grid-row: span 2; align-self: center; font-size: 20px; }
     /* 心の声の札＝黒檀の札（白い丸い吹き出しの代わり。core.css の .mb-ebony を HTML で付ける）。
@@ -521,11 +543,12 @@
     .gc-meta { font-size: 11.5px; color: var(--dim); }
     .gc-meta em { font-style: normal; font-family: var(--mincho); font-weight: 700; letter-spacing: .08em; font-size: 13px; margin-left: 6px; padding: 0 5px; background: var(--gold-hi); color: #1d080e; }
 
-    .gc-book { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 6px 12px; font-size: 12px; color: var(--dim); background: linear-gradient(90deg, rgba(217,178,105,.16), rgba(0,0,0,0)); border-left: 3px solid var(--gold); }
+    /* 図鑑：レア度の色の小さな数字だけ（集めた数／全部の数） */
+    .gc-book { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 4px 12px; font-size: 12px; color: var(--dim); background: linear-gradient(90deg, rgba(217,178,105,.16), rgba(0,0,0,0)); border-left: 3px solid var(--gold); font-variant-numeric: tabular-nums; }
     .gc-book-h { font-family: var(--mincho); font-weight: 700; letter-spacing: .08em; color: var(--gold); font-size: 13px; }
-    .gc-book > b { font-family: var(--mincho); font-weight: 700; font-size: 22px; line-height: 1; color: var(--gold-hi); }
-    .gc-book-r { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-left: 6px; font-variant-numeric: tabular-nums; }
-    .gc-book-r .r-N { color: var(--metal-n); } .gc-book-r .r-R { color: var(--metal-r); } .gc-book-r .r-SR { color: var(--metal-sr); } .gc-book-r .r-SSR { color: var(--metal-ssr); }
+    .gc-book b { font-family: var(--mincho); font-weight: 700; font-size: 16px; }
+    .gc-book small { font-size: 12px; opacity: .8; }
+    .gc-book .r-N { color: var(--metal-n); } .gc-book .r-R { color: var(--metal-r); } .gc-book .r-SR { color: var(--metal-sr); } .gc-book .r-SSR { color: var(--metal-ssr); }
     .gc-res-extra { margin-top: 6px; font-size: 12px; color: var(--dim); }
 
     @media (max-width: 720px) {
@@ -540,8 +563,6 @@
       .gc-hands { flex-wrap: nowrap; gap: 10px; }
       .gc-hand { flex-direction: column; gap: 3px; min-width: 0; }
       .gc-hn { text-align: center; }
-      .gc-orow { grid-template-columns: 44px 38px minmax(0,1fr); gap: 8px; font-size: 12px; }
-      .gc-orow small { display: block; margin-left: 0; }
       .gc-bub p { font-size: 14px; }
       .gc-acts .btn { min-width: 220px; }
     }

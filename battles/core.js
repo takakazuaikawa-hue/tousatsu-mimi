@@ -387,11 +387,32 @@
         say(text, expr) { $('#mb-opp-line').textContent = text; if (expr) api.emote(expr); },
         bet(n) { $('#mb-opp-bet').textContent = n; },
         // リコ先輩の一言。expr は think（教える）/ smug / panic（あちゃー）/ lose（泣き笑い）/ win
+        // 空の文字列を渡すと、リコ先輩の欄ごと引っ込める（言うことが無い時は黙る）
         coach(html, expr) {
-          $('#mb-coach').innerHTML = html;
+          const cb = $('#mb-coach'); cb.innerHTML = html;
+          const box = cb.closest('.mb-coach'); if (box) box.classList.toggle('is-quiet', !html);
+          if (!html) return;
           if (expr || !api.coachExpr) { api.coachExpr = expr || 'think'; setPortrait(A, $('#mb-coach-pop'), $('#mb-coach-img'), 'rico', api.coachExpr, 'chibi'); }
         },
-        steps(names, on) { return `<div class="steps">${names.map((n, i) => `<span class="step ${i < on ? 'done' : i === on ? 'on' : ''}">${i + 1} ${n}</span>`).join('')}</div>`; },
+        // 手順の帯：番号入りの菱形を並べる。済んだ段は塗り、先の段は枠だけ、今の段だけ名前を出す
+        steps(names, on) { return `<div class="steps is-dia" role="list" aria-label="手順">${names.map((n, i) => `<span class="dia ${i < on ? 'done' : i === on ? 'on' : 'todo'}" role="listitem" aria-label="${i + 1} ${n}" title="${n}"><i>${i + 1}</i>${i === on ? `<b>${n}</b>` : ''}</span>`).join('')}</div>`; },
+        // ミミの手の札：役名の札＋「対ブラフ ○」「対強い手 ×」（金の○・赤の×は CSS で描く）
+        handTag(name, vsBluff = true, vsStrong = false) {
+          const mk = (ok, t) => `<span class="vs ${ok ? 'ok' : 'ng'}" aria-label="${t}に${ok ? '勝ち' : '負け'}"><i class="mk"></i>${t}</span>`;
+          return `<span class="mb-handtag"><b class="nm">${name}</b>${mk(vsBluff, '対ブラフ')}${mk(vsStrong, '対強い手')}</span>`;
+        },
+        // 相手の伏せ札の上に重ねる、小さな札と名札（例：♥♥? ＋ フラッシュの危険）。cards は HTML の断片
+        threat(cardsHtml, name, extra = '') { return `<span class="mb-threat ${extra}"${name ? ` aria-label="${name}"` : ''}><span class="tc">${cardsHtml}</span>${name ? `<b class="tn">${name}</b>` : ''}</span>`; },
+        // 初めて出会った時だけ、短くリコ先輩が言う（同じ遊びを2回目からは黙る）
+        tipOnce(key, html, expr) {
+          let seen = false; const k = 'mbCoachSeen:' + key;
+          try { seen = !!localStorage.getItem(k); localStorage.setItem(k, '1'); } catch (e) {}
+          api.coach(seen ? '' : html, expr);
+        },
+        // 小さな目盛り：名札（1〜4字）＋長さの棒＋小さな数字。pct は 0〜100
+        gauge(label, pct, cls = '') { const v = Math.round(pct); return `<span class="gg ${cls}" aria-label="${label}${v}%"><label>${label}</label><i class="g"><u style="width:${v}%"></u></i><b>${v}</b></span>`; },
+        // 「詳しく」：押した時だけ出る補足。本文は画面に重ねて出し、並びは動かさない
+        more(html) { return `<details class="mb-more"><summary>詳しく</summary><div class="mb-more-body">${html}</div></details>`; },
         // 開始のカットイン（タップで飛ばせる）
         intro(kind) {
           return new Promise(res => {

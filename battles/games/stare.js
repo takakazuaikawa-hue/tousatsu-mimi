@@ -10,6 +10,8 @@
   const other = (t) => (t === 'bluff' ? 'strong' : 'bluff');
   const LEAN = { bluff: 'ブラフっぽい', strong: '強い手っぽい' };
   const NAME = { bluff: 'ブラフ', strong: '強い手' };
+  const fragileOf = (dur) => (dur <= 4500 ? 3 : dur <= 6000 ? 2 : 1);   // 動揺が100%になるまでが短いほど崩れやすい（3＝すぐ崩れる）
+  const FRAGILE = ['', '崩れにくい', 'ふつう', '崩れやすい'];
 
   // 性格：prior＝ブラフの多さ、dur＝動揺が100%になるまでの長押し時間、acc＝段ごとの的中率、act＝演技の混ざりやすさ
   const CH = {
@@ -146,6 +148,7 @@
     .stare-clue .h { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; letter-spacing: .12em; font-size: 15px; line-height: 1.2; }
     .stare-clue .h em { font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: 0; }
     .stare-clue .t { font-weight: 800; margin-top: 3px; }
+    .stare-clue:not(.is-open) .t { display: none; }
     .stare-clue:not(.is-open) .t { color: var(--text); }
     .stare-clue.is-open { animation: mb-pop .35s cubic-bezier(.2,1.6,.4,1); }
     .stare-clue.is-lost { background: var(--off-bg); border-color: var(--off-line); color: var(--dim); }
@@ -155,6 +158,16 @@
     .stare-chip.bluff { color: var(--crimson); } .stare-chip.strong { color: var(--parch-ink); } .stare-chip.act { color: #7a4a14; text-decoration-style: dotted; }
     .stare-chip.ok { color: #6b4306; text-decoration-style: double; text-decoration-thickness: 3px; } .stare-chip.ng { color: #5a4a36; text-decoration-style: dashed; }
     .stare-hand-name { font-family: var(--mincho); font-size: 13px; font-weight: 800; color: var(--gold-hi); margin-left: 6px; white-space: nowrap; }
+    .stare-herbox { position: relative; display: inline-flex; }
+    .stare-herbox .mb-threat.ov { position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%); z-index: 2; }
+    .stare-hand-name.is-threat { color: #ff9aa6; text-shadow: 0 0 6px rgba(200,37,58,.6); }
+    .stare-who { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; }
+    .st-frag { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mincho); font-weight: 700; font-size: 13px; color: var(--gold-hi); white-space: nowrap; }
+    .st-frag em { font-style: normal; padding: 0 7px; line-height: 1.6; background: rgba(19,4,6,.8); border: 1px solid var(--gold); }
+    .st-frag .pips { display: inline-flex; gap: 3px; }
+    .st-frag .pips i { width: 10px; height: 10px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: var(--line-dim); }
+    .st-frag .pips i.on { background: var(--gold-hi); }
+    .st-gg { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 2px; }
     .stare-hands { flex-wrap: wrap; justify-content: center; row-gap: 4px; }
     @media (max-width: 560px) {
       .stare-duel { grid-template-columns: 24px minmax(0, 1fr) 24px; gap: 6px; }
@@ -206,11 +219,11 @@
       <div id="mb-stare-steps">${api.steps(['見つめ合う', '読む', '賭ける', '答え合わせ'], 0)}</div>
       <div class="stare-sit">
         <div class="stare-cards">
-          <div class="stare-grp"><span class="stare-tag">場札</span>${board.map(c => api.cardHTML(c, 'small')).join('')}</div>
+          <div class="stare-grp"><span class="stare-tag">場札</span>${board.map(c => api.cardHTML(c, 'small' + (c.s === X ? ' hot' : ''))).join('')}</div>
           <div class="stare-grp stare-hands"><span class="stare-tag">MIMI</span>${mine.map(c => api.cardHTML(c, 'small')).join('')}
-            <span class="stare-tag is-vs">VS</span><span class="stare-tag">${api.char.name}</span><span class="stare-grp" id="mb-stare-her">${api.backHTML('small')}${api.backHTML('small')}</span><span class="stare-hand-name" id="mb-stare-her-name"></span></div>
+            <span class="stare-tag is-vs">VS</span><span class="stare-tag">${api.char.name}</span><span class="stare-herbox"><span class="stare-grp" id="mb-stare-her">${api.backHTML('small')}${api.backHTML('small')}</span>${api.threat(`<span class="${X === 'h' || X === 'd' ? 'rd' : ''}">${api.SYM[X]}</span><span class="${X === 'h' || X === 'd' ? 'rd' : ''}">${api.SYM[X]}</span><span class="q">?</span>`, '', 'ov')}</span><span class="stare-hand-name is-threat" id="mb-stare-her-name">フラッシュの危険</span></div>
         </div>
-        <div class="formula">${jp}（${ch.trait}）が大きく賭けてきた。ミミは<b>Qのワンペア</b>：ブラフには勝ち、強い手には負け</div>
+        <div class="formula stare-who">${api.gauge('ブラフ率', ch.prior * 100)}<span class="st-frag" aria-label="${FRAGILE[fragileOf(ch.dur)]}"><em>${FRAGILE[fragileOf(ch.dur)]}</em><span class="pips">${[1, 2, 3].map(n => `<i class="${n <= fragileOf(ch.dur) ? 'on' : ''}"></i>`).join('')}</span></span>${api.handTag('Qのワンペア')}</div>
       </div>
       <div class="stare-duel">
         <div class="stare-meter is-mimi" id="mb-stare-m-mimi"><span class="pct" id="mb-stare-p-mimi">0</span><i class="fill"></i><span class="lbl">ミミの緊張</span></div>
@@ -227,9 +240,9 @@
         <button class="stare-hold is-nudge" id="mb-stare-hold" type="button"><span>見つめる</span><small>長押し ・ 離すと、そこで止まる</small></button>
       </div>
       <div class="stare-clues" id="mb-stare-clues">${clues.map((c, i) => `
-        <div class="stare-clue" data-i="${i}"><div class="h mb-label">段${i + 1} ${KIND[i]}<em class="mb-note">動揺${TH[i]}%で出る・的中${pct(ch.acc[i])}%</em></div><div class="t">？？？</div></div>`).join('')}
+        <div class="stare-clue" data-i="${i}"><div class="h mb-label">段${i + 1} ${KIND[i]}</div><div class="st-gg">${api.gauge('出る', TH[i])}${api.gauge('当たる', ch.acc[i] * 100, 'acc')}</div><div class="t">？？？</div></div>`).join('')}
       </div>`;
-    api.coach('長押しで見つめ合い。相手が崩れるまで粘って。でも、ミミが先に崩れたら負け');
+    api.tipOnce('stare', '押したまま見つめて。ミミが先に崩れたら負け');
 
     const $ = (s) => root.querySelector(s);
     const arena = $('#mb-stare-arena'), hold = $('#mb-stare-hold'), mimiP = $('#mb-stare-mimi'), oppP = $('#mb-stare-opp');
@@ -261,7 +274,7 @@
       const box = root.querySelector(`.stare-clue[data-i="${s}"]`);
       box.classList.add('is-open', 'mb-parchment', 'is-flat');
       box.querySelector('.t').textContent = c.text;
-      if (c.acted) box.querySelector('.h em').textContent = `演技は、逆に読むと的中${pct(ACT_ACC)}%`;
+      if (c.acted) box.querySelector('.st-gg .acc').outerHTML = api.gauge('逆読み', ACT_ACC * 100, 'acc');
       box.insertAdjacentHTML('beforeend', c.acted ? `<span class="stare-chip act">わざとらしい……演技？</span>` : `<span class="stare-chip ${c.surface}">${LEAN[c.surface]}${s === 0 ? '（あいまい）' : ''}</span>`);
       let pop = arena.querySelector('.stare-pop');
       if (!pop) { pop = document.createElement('div'); pop.className = 'stare-pop mb-ebony'; arena.appendChild(pop); }
@@ -276,8 +289,7 @@
       api.say(ch.react[s], ch.emo[s]);
       api.sfx.good();
       const r = oppP.getBoundingClientRect(); api.sparkles(r.left + r.width * .55, r.top + r.height * .3, 12);
-      if (s === 0) api.coach(ch.tip);
-      if (s === 1) api.coach('あと1段で<b>決定的な一言</b>。でも、ミミの緊張に注意！');
+      api.coach('');
     };
     const spike = () => {
       ten += 5 + Math.random() * 8; flashT = 320;
@@ -389,7 +401,7 @@
     ctrl.innerHTML = `<div><p class="stare-ask">${jp}の手は、ブラフ？ 強い手？</p><div class="actions">
       <button class="btn" id="mb-stare-call" type="button">ブラフと読む<small>コールして勝負</small></button>
       <button class="btn quiet" id="mb-stare-fold" type="button">強い手と読む<small>降りて守る</small></button></div></div>`;
-    api.coach(stage ? '出た手がかりで読んで。ブラフならコール、強いなら降りる' : '手がかりなし。ここは勘で読むしかない');
+    api.coach(stage ? '' : '手がかりなし。勘で読もう');
     // 指を離した直後の「おまけのクリック」で、同じ場所に出た読みのボタンが押されないようにする
     const shownAt = performance.now();
     const decide = await new Promise(res => {
@@ -406,12 +418,13 @@
     // 答え合わせ：ためてから、相手の手札を1枚ずつめくる
     $('#mb-stare-steps').innerHTML = api.steps(['見つめ合う', '読む', '賭ける', '答え合わせ'], 3);
     root.querySelector('.stare-sit').scrollIntoView({ block: 'nearest', behavior: api.reduce ? 'auto' : 'smooth' });
-    api.coach('見せ合い……！', 'think'); api.sfx.drum();
+    api.coach(''); api.sfx.drum();
     await api.wait(1000); if (!api.alive()) return;
     const herBox = $('#mb-stare-her');
+    const thr = root.querySelector('.stare-herbox .mb-threat'); if (thr) thr.remove();
+    $('#mb-stare-her-name').classList.remove('is-threat');
     herBox.innerHTML = api.cardHTML(her[0], 'small flip') + api.backHTML('small');
     api.sfx.tap();
-    if (her[0].s === X) api.coach(`${api.SYM[X]}……！ もう1枚も${api.SYM[X]}なら、フラッシュ`);
     await api.wait(her[0].s === X ? 1100 : 700); if (!api.alive()) return;
     herBox.innerHTML = api.cardHTML(her[0], 'small') + api.cardHTML(her[1], 'small flip ' + (truth === 'strong' ? 'glow' : ''));
     const cat = api.category([...her, ...board]);
