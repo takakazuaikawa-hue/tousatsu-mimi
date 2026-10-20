@@ -2933,6 +2933,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 }
 .rico-mode-opt-name { font-size: 18px; font-weight: 700; letter-spacing: 0.05em; }
 .rico-mode-opt-desc { font-size: 12px; opacity: 0.85; }
+.rico-mode-opt-prize { font-family: var(--mincho, serif); font-size: 15px; font-weight: 800; letter-spacing: .06em; color: #f3d27a; }
 
 /* ========== 新しく始めるモーダル ========== */
 .newgame-overlay {
@@ -19131,10 +19132,11 @@ html.is-compact .ek-name { font-size: calc(12px / var(--game-scale, 1)); }
 
 /* ---- スタッフロール：紫の夜空・紫黒の暗幕をやめ、深紅と黒。書体はしっぽり明朝、斜体なし ---- */
 .credits-roll {
-  /* 背景の絵：紫の夜景（staffroll.webp）は使わず、舞台の時計台劇場を暗く沈めて敷く（2026-10-18 背景が無くなっていた） */
-  background: linear-gradient(180deg, rgba(14,3,5,.88) 0%, rgba(20,4,7,.66) 32%, rgba(20,4,7,.66) 68%, rgba(14,3,5,.9) 100%),
-              radial-gradient(ellipse 70% 55% at 50% 50%, rgba(122,14,22,.22), transparent 72%),
-              url('assets/backgrounds/bg_lobby_clock.jpg') center / cover no-repeat,
+  /* 背景の絵：夜の時計塔の屋外絵（staffroll.webp）。ユーザーの好み（2026-10-20）で戻した。
+     文字が読めるよう下側と左右に暗みを乗せるが、絵が見えなくなるほど沈めない（94e0ef9 の暗み程度＝上下.85/中.55 より軽く） */
+  background: linear-gradient(180deg, rgba(14,3,5,.62) 0%, rgba(14,3,5,.28) 30%, rgba(14,3,5,.34) 62%, rgba(14,3,5,.84) 100%),
+              linear-gradient(90deg, rgba(14,3,5,.55) 0%, rgba(14,3,5,0) 24%, rgba(14,3,5,0) 76%, rgba(14,3,5,.55) 100%),
+              url('assets/backgrounds/staffroll.webp') center / cover no-repeat,
               linear-gradient(180deg, #130406, #2a0a0e 50%, #130406) !important;
   font-family: "Shippori Mincho B1", "Yu Mincho", serif;
 }

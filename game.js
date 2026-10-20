@@ -7966,7 +7966,8 @@ function onAction(e) {
       startBattle(state.opponentId);
       break;
     case 'go-ending':
-      showEpisodeTitle('ending', () => { state.screen = 'ending'; render(); });
+      // 第6話の題字（エピローグ）はエンディング本編の前ではなく、スタッフロールとタイトルの後（showEndingFinalButtons）で出す
+      state.screen = 'ending'; render();
       break;
     case 'recall-episode':
       showEpisodeTitle(data.episode, null);
@@ -7977,7 +7978,7 @@ function onAction(e) {
       const oid = data.opponent || state.opponentId;
       showIntermission(oid, () => {
         if (oid === 'velvet') {
-          showEpisodeTitle('ending', () => { state.screen = 'ending'; render(); });
+          state.screen = 'ending'; render();   // 第6話の題字は締めの前（showEndingFinalButtons）で出す
         } else {
           renderWonResultButtons();
           if (isBgmOn()) playSceneBgm('victory');
@@ -8300,7 +8301,7 @@ function startEndingShow(playMusic) {
       voice: 'rico/end_07', text: 'ねえ、今日って……ミミの初日だよね？<br>こんな新人、アタシも聞いたことないよ。',
       wait: 6400 },
 
-    // ── 第4幕：主人公の独白（外れスキルと呼ばれた力で、見る目が育ったことを肯定して締める） ──
+    // ── 第4幕：主人公の独白（明るいコメディ調。ぱにゅぱにゅは結局意味なかった。意味が無いのが面白く、続編への引き。勝手に意味づけしない） ──
     { type: 'portrait', img: 'mimi_ending', fallback: 'mimi_default', name: 'ミミ',
       voice: 'mimi/end_08', text: '「外れスキル《ぱにゅぱにゅ》」<br>——それが、今朝のわたしに与えられた、評価でした。',
       wait: 6200 },
@@ -8308,10 +8309,10 @@ function startEndingShow(playMusic) {
       voice: 'mimi/end_09', text: 'ぱにゅぱにゅ……一生懸命、発動したんですよ？',
       wait: 4400 },
     { type: 'portrait', img: 'mimi_ending', fallback: 'mimi_default', name: 'ミミ',
-      voice: 'mimi/end_10', text: '……でも、振り返ってみて、気づきました。<br>このスキルが見せてくれたのは、カードじゃなくて、<br>相手の声と、指先と、賭け方だったんだって。',
+      voice: 'mimi/end_10', text: '……でも、振り返ってみて、気づきました。<br>このスキル、結局、<br>あんまり意味なかったかも？',
       wait: 7000 },
     { type: 'portrait', img: 'mimi_ending', fallback: 'mimi_default', name: 'ミミ',
-      voice: 'mimi/end_11', text: '外れスキルでも、ちゃんと育つんですね。<br>……明日も、卓に座ってみます。', wait: 6200, afterglow: 5200, keepCaption: true },
+      voice: 'mimi/end_11', text: 'でも、楽しかった（意味深）', wait: 6200, afterglow: 5200, keepCaption: true },
 
     // ── 終章：余韻ナレーション ──
     { type: 'keyart', img: 'ending', name: null,
@@ -8934,8 +8935,26 @@ function showEndingTitleDrop(stage, next) {
   setTimeout(next, 3200);
 }
 
-// 締めのエピローグ。opts.immediate＝スキップの後（見返しの時も）はボタンを最初から出す
+// 締めのエピローグの入口。第6話の題字（EPISODES.ending：一息つけると思ったのに、まだ入口だった、という締めの予告）を
+// スタッフロールとタイトルの後・締めの画面の前に出し、「▶ 開始」で締めの画面へつなぐ。
+// 初回・見返し・スキップ後のどれでも同じ順。二重に呼ばれても題字は1枚だけ
 function showEndingFinalButtons(stage, opts = {}) {
+  if (stage.querySelector('.ending-final-buttons') || stage.dataset.epPending === '1') return;
+  if (!EPISODES.ending || document.querySelector('.episode-overlay:not(.out)')) { showEndingFinalButtonsInner(stage, opts); return; }
+  stage.dataset.epPending = '1';
+  // 右上のスキップ・押し間違いはここで止める（題字の下でロールのスキップが効かないように）
+  stage.querySelectorAll('.ec-skip').forEach(b => { b.disabled = true; b.style.display = 'none'; });
+  const runId = endingRunId;
+  showEpisodeTitle('ending', () => {
+    delete stage.dataset.epPending;
+    // 題字の間に画面を離れていたら（ロビーへ戻った等）何も出さない
+    if (!stage.isConnected || runId !== endingRunId) return;
+    showEndingFinalButtonsInner(stage, opts);
+  });
+}
+
+// 締めのエピローグ本体。opts.immediate＝スキップの後（見返しの時も）はボタンを最初から出す
+function showEndingFinalButtonsInner(stage, opts = {}) {
   if (stage.querySelector('.ending-final-buttons')) return;
   const replay = state && state.endingReplay;
   // 見返し・スキップ後はボタンを待たせない。本編の初回は台詞が出そろってから（見えない間は押せない）
@@ -9339,6 +9358,7 @@ function showRicoModeChooser() {
       <button class="btn btn-primary rico-mode-opt" data-action="rico-mode-serious">
         <span class="rico-mode-opt-name">本気のリコ先輩と対戦</span>
         <span class="rico-mode-opt-desc">チュートリアル無し。開始チップ2000で、最強の打ち筋</span>
+        <span class="rico-mode-opt-prize">${save.firstClearRewardClaimed.includes('rico_serious') ? `再戦 ＋${seriousRicoRematchPreview()}` : `賞金 ${SERIOUS_RICO_REWARD.rewardFirst}`}</span>
       </button>
       <button class="btn btn-ghost rico-mode-opt" data-action="rico-mode-cancel">キャンセル</button>
     </div>
@@ -12888,6 +12908,13 @@ function rematchPreview(opponentId) {
   return Math.max(10, Math.round(opp.rewardRematch * mult));
 }
 
+// 本気のリコ先輩の再戦報酬の見込み（記録キー 'rico_serious'。逓減は rematchPreview と同じ）
+function seriousRicoRematchPreview() {
+  const wins = (save.rematchWins && save.rematchWins.rico_serious) || 0;
+  const mult = wins < 4 ? 1.00 : wins < 8 ? 0.75 : wins < 12 ? 0.50 : wins < 20 ? 0.30 : 0.20;
+  return Math.max(10, Math.round(SERIOUS_RICO_REWARD.rewardRematch * mult));
+}
+
 // 卓の基本チップ（持ち込み前）。本気のリコ先輩は2000
 function startingBaseChips(opponentId, seriousRico) {
   if (seriousRico) return 2000;
@@ -12956,6 +12983,8 @@ function startBattle(opponentId) {
   // フラグは消費したらクリア
   if (isSkipLecture) window.__ricoSkipLecture = false;
   let isFirstTime = !save.firstClearRewardClaimed.includes(opponentId);
+  // 本気のリコ先輩は講義とは別の腕試し。第1話の題字・一枚絵は出さない（体験ハンドだけ終えて直行した時にも出ていた）
+  if (opponentId === 'rico_tutorial' && window.__ricoSeriousMode === true) isFirstTime = false;
   // 体験ハンドの直前に第1話を見せているので、続けて講義へ入るときに二度出さない
   if (opponentId === 'rico_tutorial' && save.introEpisodeShown) isFirstTime = false;
   // 題字は各話で一度だけ（負けて再挑戦するたびに長い題字が毎回出ていた）。見返しはコレクションから
@@ -17088,6 +17117,9 @@ function showDominanceComplete(choice) {
 //=============================================================
 // 17. バトル終了 → リザルト（v4 A5: SS/S/A/B/Cスコア式）
 //=============================================================
+// 本気のリコ先輩（クリア後の最強戦）の報酬。講義（rico_tutorial 300）とは別の記録キー 'rico_serious' で払う。
+// 初回2000はヴェルベット（1500）より上、再戦・Sボーナスはヴェルベットと同じ（周回で稼げすぎないように）
+const SERIOUS_RICO_REWARD = { rewardFirst: 2000, rewardRematch: 700, rewardSBonus: 700 };
 const SCORE_TABLE = { win:50, psychSuccess:10, bluffCatch:15, goodFold:10, goodCall:10, allInWin:20, bluffBreak:25, comebackWin:30 };
 const RANK_THRESHOLDS = [
   { rank: 'SS', min: 120 },
@@ -17150,38 +17182,41 @@ function endBattle() {
   const rewards = [];
   // 練習用「相手の手札を見る」を使った対戦：称号・ランク・初回クリア報酬の記録対象外
   const practice = !!state.peekUsed;
+  // 本気のリコ先輩は講義の初回報酬・再戦カウントと混ぜない
+  const rewardKey = state.seriousRicoMode ? 'rico_serious' : state.opponentId;
+  const rewardOpp = state.seriousRicoMode ? SERIOUS_RICO_REWARD : opp;
   if (won) {
-    const firstClear = !save.firstClearRewardClaimed.includes(state.opponentId);
+    const firstClear = !save.firstClearRewardClaimed.includes(rewardKey);
     firstClearForIntermission = firstClear && !practice;
     if (firstClear && practice) {
       // 初回クリアの権利は残す（練習ではなく普通に勝った時に受け取れる）
       rewards.push('初回クリア報酬：練習中のため対象外');
     } else if (firstClear) {
-      earned += opp.rewardFirst;
-      rewards.push(`初回クリア報酬：+${opp.rewardFirst}`);
-      save.firstClearRewardClaimed.push(state.opponentId);
+      earned += rewardOpp.rewardFirst;
+      rewards.push(`初回クリア報酬：+${rewardOpp.rewardFirst}`);
+      save.firstClearRewardClaimed.push(rewardKey);
     } else {
       // 再戦周回防止：同じ相手に勝つほど報酬が減少（0回:100%/4回:75%/8回:50%/12回:30%/20回+:20%）
       if (!save.rematchWins) save.rematchWins = {};
-      const wins = save.rematchWins[state.opponentId] || 0;
-      save.rematchWins[state.opponentId] = wins + 1;
+      const wins = save.rematchWins[rewardKey] || 0;
+      save.rematchWins[rewardKey] = wins + 1;
       let mult;
       if (wins < 4)       mult = 1.00;
       else if (wins < 8)  mult = 0.75;
       else if (wins < 12) mult = 0.50;
       else if (wins < 20) mult = 0.30;
       else                mult = 0.20;
-      const adjusted = Math.max(10, Math.round(opp.rewardRematch * mult));
+      const adjusted = Math.max(10, Math.round(rewardOpp.rewardRematch * mult));
       earned += adjusted;
       const noteStr = mult < 1.0 ? `（${wins+1}勝目: ${Math.round(mult*100)}%）` : '';
       rewards.push(`再戦勝利報酬：+${adjusted} ${noteStr}`);
     }
     if (!practice && (rank === 'S' || rank === 'SS')) {
-      earned += opp.rewardSBonus;
-      rewards.push(`${rank}評価ボーナス：+${opp.rewardSBonus}`);
+      earned += rewardOpp.rewardSBonus;
+      rewards.push(`${rank}評価ボーナス：+${rewardOpp.rewardSBonus}`);
     }
     // 初回クリアでノート解放（v4 A4）
-    if (firstClear && !practice && opp.unlockNoteOnClear) {
+    if (firstClear && !practice && !state.seriousRicoMode && opp.unlockNoteOnClear) {
       const noteId = opp.unlockNoteOnClear;
       if (!save.unlockedNotes.includes(noteId)) {
         save.unlockedNotes.push(noteId);
@@ -17331,7 +17366,7 @@ function endBattle() {
   // 勝利かつ初回クリアの時だけ、主ボタンを「幕間へ」に差し替える（2回目以降は通常どおり即座に組み立てる）
   {
     const btns = document.querySelector('[data-bind="resultButtons"]');
-    if (btns && !won && state.opponentId !== 'rico_tutorial') {
+    if (btns && !won && (state.opponentId !== 'rico_tutorial' || state.seriousRicoMode)) {
       // 敗北：主ボタンは「同じ相手に再挑戦」。悔しさをそのまま次の一手に繋ぐ
       btns.innerHTML = `
           <button class="btn btn-primary result-main-btn" data-action="rematch"><span>${(state.opponentName || '相手').replace(/（.*）/, '')}に再挑戦</span><span>→</span></button>
@@ -17438,7 +17473,7 @@ function nextGoalText() {
   const after = STAGE_ORDER.slice(curIdx + 1);
   const pickFrom = (list) => list.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
   const nextId = pickFrom(after) || pickFrom(STAGE_ORDER);
-  if (state.resultWon === false && state.opponentId !== 'rico_tutorial') {
+  if (state.resultWon === false && (state.opponentId !== 'rico_tutorial' || state.seriousRicoMode)) {
     return `次の目標：${(state.opponentName || '相手').replace(/（.*）/, '')}にリベンジ`;
   }
   if (nextId) {
