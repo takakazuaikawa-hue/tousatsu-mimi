@@ -19783,3 +19783,31 @@ html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal:has(.psych-cho
 html.is-compact #app > .battle-modal-overlay.v2psych .psych-modal:has(.psych-choices > :nth-child(5)) { row-gap: 4px; }
 /* ハイ＆ローの倍率の小さい字 */
 html.is-compact #stage > .read-battle-host.mb-host .hl-mult small, html.is-compact #stage > .read-battle-host.mb-host [class^="hl-"] small { font-size: 12.5px; }
+
+/* ===== 幕間の会話：エンディングと同じ見せ方（2026-10-20 ユーザー指摘「会話のウィンドウ内の顔と文字が小さい」）=====
+   話している人の立ち絵を中央に大きく、下に名前と台詞を大きく（部品は .ending-portrait-scene / .ek-caption をそのまま使う）。
+   背景は幕間の楽屋。押して進める場面なので、エンディングより切り替えを速くする。古い小窓（顔の四角＋帯）と左右の小さな立ち絵は出さない */
+.intermission-overlay .ims-stage, .intermission-overlay .ims-dialogue { display: none !important; }
+.intermission-overlay .ims-scene {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 35%, rgba(245,215,122,0.08) 0%, transparent 65%),
+    radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%),
+    linear-gradient(0deg, rgba(10,2,4,.92) 0%, rgba(10,2,4,.55) 26%, transparent 48%),
+    url('assets/backgrounds/bg_intermission.jpg') center / cover no-repeat,
+    #000;
+  transition: opacity .45s ease !important;
+  cursor: pointer;
+}
+.intermission-overlay .ims-scene.out { transition: opacity .45s ease !important; }
+.intermission-overlay .ims-scene .ek-caption { animation: capFadeIn .5s ease .05s both !important; }
+.intermission-overlay .ims-scene .ek-caption.cap-out { animation: none !important; }
+.intermission-overlay .ims-scene .eps-portrait-frame { width: 520px; }
+.intermission-overlay .ims-scene .eps-portrait { height: 92%; }
+.intermission-overlay .ims-scene-next { position: absolute; right: -6px; bottom: -4px; font-style: normal; font-size: 16px; color: var(--c-gold-bright, #f3d27a); animation: imsNextBlink 1.2s ease-in-out infinite; }
+@keyframes imsNextBlink { 0%, 100% { opacity: .35; transform: translateY(0); } 50% { opacity: 1; transform: translateY(3px); } }
+/* スマホ：台詞は本文の基準（画面で15px）、名札は13px。立ち絵は高さいっぱいに */
+html.is-compact .intermission-overlay .ims-scene .ek-text { font-size: calc(15px / var(--game-scale, 1)); line-height: 1.5; }
+html.is-compact .intermission-overlay .ims-scene .ek-name { font-size: calc(13px / var(--game-scale, 1)); }
+html.is-compact .intermission-overlay .ims-scene .ek-caption { left: 8%; right: 8%; bottom: 7%; }
+/* 幕間はゲームの枠の外（スマホの左右の余白）まで暗く覆う。後ろの画面がはみ出して見えないように */
+.intermission-overlay { box-shadow: 0 0 0 100vmax #0a0204; }

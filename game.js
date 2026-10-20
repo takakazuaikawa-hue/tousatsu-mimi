@@ -4030,11 +4030,49 @@ function showIntermission(opponentId, onDone, voiceReady) {
 
   function speakerMeta(speaker) {
     // 顔窓は小さい丸なので、全身絵ではなく顔クロップ（assets/ui/face_*）を使う
-    if (speaker === 'mimi') return { name: 'ミミ', img: 'assets/ui/face_mimi.webp', side: 'mimi' };
-    if (speaker === 'rico') return { name: 'リコ先輩', img: 'assets/ui/face_rico.webp', side: 'rico' };
+    // portrait：会話の場面（エンディングと同じ見せ方）で中央に大きく出す立ち絵
+    if (speaker === 'mimi') return { name: 'ミミ', img: 'assets/ui/face_mimi.webp', portrait: 'assets/characters/mimi_intermission.webp', side: 'mimi' };
+    if (speaker === 'rico') return { name: 'リコ先輩', img: 'assets/ui/face_rico.webp', portrait: 'assets/characters/rico_default.webp', side: 'rico' };
     const o = OPPONENTS[speaker];
     const key = (o && o.imgKey) || speaker;
-    return { name: o ? o.name : oppName, img: `assets/ui/face_${key}.webp`, side: 'opp' };
+    return { name: o ? o.name : oppName, img: `assets/ui/face_${key}.webp`, portrait: `assets/characters/${key}_default.webp`, side: 'opp' };
+  }
+
+  // 会話はエンディングと同じ見せ方：話している人の立ち絵を中央に大きく、下に名前と台詞を大きく（2026-10-20 ユーザー指摘：
+  // 「会話のウィンドウ内の顔と文字が小さい。エンディングの時の会話表示方法の方がよっぽど良い」）。
+  // 同じ人が続く時は立ち絵はそのまま、台詞だけ差し替える。人が替わる時は場面ごと重ねて入れ替える。
+  let curScene = null;
+  function fillCaption(cap, meta, text) {
+    cap.textContent = '';
+    const nm = document.createElement('div'); nm.className = 'ek-name'; nm.textContent = meta.name;
+    const tx = document.createElement('div'); tx.className = 'ek-text'; tx.textContent = text;
+    const nx = document.createElement('i'); nx.className = 'ims-scene-next'; nx.setAttribute('aria-hidden', 'true'); nx.textContent = '▼';
+    cap.append(nm, tx, nx);
+  }
+  function renderScene(meta, text) {
+    if (curScene && curScene.dataset.img === meta.portrait) {
+      const cap = curScene.querySelector('.ek-caption');
+      cap.classList.add('cap-out');
+      setTimeout(() => {
+        fillCaption(cap, meta, text);
+        cap.classList.remove('cap-out');
+        cap.style.animation = 'none'; void cap.offsetWidth; cap.style.animation = '';
+      }, 220);
+      return;
+    }
+    if (curScene) { const old = curScene; old.classList.remove('show'); old.classList.add('out'); setTimeout(() => old.remove(), 700); }
+    const w = document.createElement('div');
+    w.className = 'ending-portrait-scene ims-scene ims-scene-' + meta.side;
+    w.dataset.img = meta.portrait;
+    w.innerHTML = `<div class="eps-portrait-frame"><img class="eps-portrait" alt=""></div><div class="ek-caption"></div>`;
+    const im = w.querySelector('.eps-portrait');
+    im.alt = meta.name;
+    im.onerror = () => { im.onerror = null; im.src = 'assets/characters/mimi_default.webp'; };
+    im.src = meta.portrait;
+    fillCaption(w.querySelector('.ek-caption'), meta, text);
+    overlay.insertBefore(w, skipBtn);
+    requestAnimationFrame(() => w.classList.add('show'));
+    curScene = w;
   }
 
   function renderLine() {
@@ -4042,6 +4080,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
     if (!line) { showCg(); return; }
     if (window.MimiVoice) { if (line.voice) MimiVoice.playId(line.voice, { prio: 1, noRepeat: false, maxLateMs: 1500 }); else stopVoice(); }
     const meta = speakerMeta(line.speaker);
+    renderScene(meta, line.text);
     dlgName.textContent = meta.name;
     dlgText.textContent = line.text;
     dlgFaceImg.onerror = () => { dlgFaceImg.onerror = null; dlgFaceImg.src = 'assets/characters/mimi_default.webp'; };
@@ -4065,6 +4104,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
     if (window.MimiVoice) stopVoice();   // スキップ・最後の台詞のあと：声を止める
     dialogueBox.classList.add('ims-hide');
     skipBtn.classList.add('ims-hide');
+    if (curScene) { const sc = curScene; sc.classList.remove('show'); sc.classList.add('out'); setTimeout(() => sc.remove(), 700); curScene = null; }
     // ご褒美CG開放記録（コレクションの「ご褒美CG」で閲覧できるようになる）
     if (!Array.isArray(save.rewardCgSeen)) save.rewardCgSeen = [];
     if (!save.rewardCgSeen.includes(opponentId)) {
