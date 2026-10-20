@@ -5,11 +5,11 @@ MB.register({
   chars: ['selina'],
   async start({ api }) {
     const T = [
-      { board: [[13, 'A'], [8, 'A'], [3, 'A'], [5, 'B'], [11, 'C']], mine: [[13, 'B'], [12, 'D']], threats: [{ type: 'flush', idx: [0, 1, 2] }], bet: 1, strong: 0.75 },
+      { board: [[13, 'A'], [8, 'A'], [3, 'A'], [5, 'B'], [11, 'C']], mine: [[13, 'B'], [12, 'D']], threats: [{ type: 'flush', idx: [0, 1, 2] }], bet: 1, strong: 0.8 },
       { board: [[9, 'A'], [10, 'B'], [11, 'C'], [3, 'D'], [2, 'A']], mine: [[11, 'D'], [14, 'B']], threats: [{ type: 'straight', idx: [0, 1, 2] }], bet: 1, strong: 0.7 },
-      { board: [[8, 'A'], [9, 'A'], [10, 'B'], [2, 'A'], [13, 'C']], mine: [[13, 'D'], [12, 'B']], threats: [{ type: 'flush', idx: [0, 1, 3] }, { type: 'straight', idx: [0, 1, 2] }], bet: 1, strong: 0.85 },
-      { board: [[13, 'A'], [7, 'B'], [2, 'C'], [4, 'D'], [9, 'A']], mine: [[13, 'C'], [12, 'D']], threats: [], bet: 0.33, strong: 0.25 },
-      { board: [[12, 'A'], [12, 'B'], [6, 'C'], [3, 'D'], [9, 'A']], mine: [[14, 'D'], [9, 'C']], threats: [{ type: 'pair', idx: [0, 1] }], bet: 1, strong: 0.45 },
+      { board: [[8, 'A'], [9, 'A'], [10, 'B'], [2, 'A'], [13, 'C']], mine: [[13, 'D'], [12, 'B']], threats: [{ type: 'flush', idx: [0, 1, 3] }, { type: 'straight', idx: [0, 1, 2] }], bet: 1, strong: 0.9 },
+      { board: [[13, 'A'], [7, 'B'], [2, 'C'], [4, 'D'], [9, 'A']], mine: [[13, 'C'], [12, 'D']], threats: [], bet: 0.33, strong: 0.2 },
+      { board: [[12, 'A'], [12, 'B'], [6, 'C'], [3, 'D'], [9, 'A']], mine: [[14, 'D'], [9, 'C']], threats: [{ type: 'pair', idx: [0, 1] }], bet: 1, strong: 0.4 },
     ];
     const t = api.pick(T);
     const perm = api.shuffle(api.SUITS); const map = { A: perm[0], B: perm[1], C: perm[2], D: perm[3] };
