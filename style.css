@@ -20139,3 +20139,8 @@ html.is-compact .shop-screen.v3 .sh3-grano-hit { left: 270px; top: 40px; width: 
 @keyframes home-enter { from { opacity: 0; transform: translate(var(--fx, -40px), var(--fy, 0px)); } 70% { opacity: 1; } to { opacity: 1; transform: none; } }
 /* 額の肖像は額のために描いた絵なので、色をそのまま出す（セピアの加工は顔の切り抜き用だった）（10/21 ユーザー選択） */
 .h15-frame .h15-pic { filter: none; }
+
+/* 扉（各話の一枚絵と題字）の「戻る」と「開始」を並べる（2026-10-21 台帳30）。開始を右（親指の位置）に */
+.episode-foot:has(.episode-back) { display: flex; justify-content: center; align-items: center; gap: 18px; }
+.episode-card-bottom .episode-foot:has(.episode-back) .episode-continue { margin: 0; }
+.episode-foot .episode-back { min-width: 140px; }

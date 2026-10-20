@@ -3641,7 +3641,7 @@ function fitEpisodeTitle(overlay) {
 
 // onContinue が無い呼び出し（研修完了画面の「第1話のタイトルを読む」やコレクションからの見返し）は
 // 何も始まらないので、ボタンは「閉じる」にする。
-function showEpisodeTitle(key, onContinue) {
+function showEpisodeTitle(key, onContinue, onBack) {
   const ep = EPISODES[key];
   if (!ep) { if (onContinue) onContinue(); return; }
   // 二重表示を防ぐ：表示中（フェードアウト前）の題字があれば新しく作らない
@@ -3666,7 +3666,7 @@ function showEpisodeTitle(key, onContinue) {
       <div class="episode-scroll">
       <h1 class="episode-title">${ep.title.split('\n').map(l => `<span class="ep-line">${l}</span>`).join('<br>')}</h1>
       </div>
-      <div class="episode-foot"><button class="btn btn-primary big episode-continue">${continueLabel}</button></div>
+      <div class="episode-foot">${onBack ? '<button class="btn btn-secondary big episode-back">戻る</button>' : ''}<button class="btn btn-primary big episode-continue">${continueLabel}</button></div>
     </div>
   `;
   // ステージ内に挿入（1280×800の最大背景にフィット）
@@ -3688,6 +3688,15 @@ function showEpisodeTitle(key, onContinue) {
       overlay.remove();
       if (onContinue) onContinue();
     }, 400);
+  });
+  const backBtn = overlay.querySelector('.episode-back');
+  if (backBtn) backBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (leaving) return;
+    leaving = true;
+    backBtn.disabled = true; continueBtn.disabled = true;
+    overlay.classList.add('out');
+    setTimeout(() => { overlay.remove(); onBack(); }, 400);
   });
   // カード外クリックで絵だけ表示モードをトグル
   overlay.addEventListener('click', (e) => {
@@ -8074,6 +8083,8 @@ function onAction(e) {
       break;
     case 'intro-to-lecture':
       document.querySelector('.intro-win-overlay')?.remove();
+      // 体験ハンドの直前に第1話を見せていれば、続けて講義へ入る時に二度出さない
+      if (save.introEpisodeShown) window.__skipEpisodeOnce = true;
       startBattle('rico_tutorial');
       break;
     case 'intro-read-episode':
@@ -8261,6 +8272,7 @@ function onAction(e) {
       if (state.opponentId === 'rico_tutorial' && state.seriousRicoMode) {
         window.__ricoSeriousMode = true;
       }
+      window.__skipEpisodeOnce = true;  // すぐの再挑戦では扉を出さない
       startBattle(state.opponentId);
       break;
     case 'go-ending':
@@ -13290,14 +13302,16 @@ function startBattle(opponentId) {
   let isFirstTime = !save.firstClearRewardClaimed.includes(opponentId);
   // 本気のリコ先輩は講義とは別の腕試し。第1話の題字・一枚絵は出さない（体験ハンドだけ終えて直行した時にも出ていた）
   if (opponentId === 'rico_tutorial' && window.__ricoSeriousMode === true) isFirstTime = false;
-  // 体験ハンドの直前に第1話を見せているので、続けて講義へ入るときに二度出さない
-  if (opponentId === 'rico_tutorial' && save.introEpisodeShown) isFirstTime = false;
-  // 題字は各話で一度だけ（負けて再挑戦するたびに長い題字が毎回出ていた）。見返しはコレクションから
+  // 扉（各話の一枚絵と題字）は、その卓に勝つまでロビーから入るたびに出す（2026-10-21 試遊：一度始めてロビーへ戻ると
+  // 二度と出ず、物語が分からなくなった）。ただし結果画面の「リベンジ」ですぐ再挑戦する時と、体験ハンドの直後に
+  // 第1話を見せたばかりの時は出さない（負けて再挑戦するたびに長い題字が出るとうるさい、という以前の指摘）
+  if (window.__skipEpisodeOnce) { isFirstTime = false; window.__skipEpisodeOnce = false; }
+  if (save.clearedStages.includes(opponentId)) isFirstTime = false;
   if (!save.episodesSeen) save.episodesSeen = [];
-  if (save.episodesSeen.includes(opponentId)) isFirstTime = false;
-  else if (isFirstTime && EPISODES[opponentId]) { save.episodesSeen.push(opponentId); saveProgress(); }
+  if (isFirstTime && EPISODES[opponentId] && !save.episodesSeen.includes(opponentId)) { save.episodesSeen.push(opponentId); saveProgress(); }
   if (isFirstTime && EPISODES[opponentId]) {
-    showEpisodeTitle(opponentId, () => startBattleInternal(opponentId));
+    // 「戻る」で卓に入らずロビーへ（結果画面から来た時もロビーへ）
+    showEpisodeTitle(opponentId, () => startBattleInternal(opponentId), () => { if (state.screen !== 'lobby') goLobby(); });
     return;
   }
   startBattleInternal(opponentId);
