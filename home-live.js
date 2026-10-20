@@ -19,7 +19,7 @@
     hairL: [300, 360, 560, 730], hairR: [940, 380, 1120, 730],   // 左右に垂れる髪
   };
   const VS = `
-    attribute vec2 aUV; uniform vec2 uView; uniform vec4 uPlace; uniform float uT;
+    attribute vec2 aUV; attribute float aW; uniform vec2 uView; uniform vec4 uPlace; uniform float uT;
     varying vec2 vUV;
     const vec2 IMG = vec2(${IW}.0, ${IH}.0);
     float ell(vec2 p, vec4 e) { vec2 d = (p - e.xy) / e.zw; return 1.0 - smoothstep(0.55, 1.0, length(d)); }
@@ -46,6 +46,7 @@
       float hl = box(p, vec4(${R.hairL.join('.0,')}.0), 50.0), hr = box(p, vec4(${R.hairR.join('.0,')}.0), 50.0);
       float down = smoothstep(${R.hairL[1]}.0, ${R.rail}.0, p.y);
       q.x += (hl * sin(uT * 1.2 + p.y * 0.012) + hr * sin(uT * 1.05 + 1.3 + p.y * 0.012)) * 3.2 * down * above;
+      q = p + (q - p) * aW;                          // リコの形の中だけ動かす（背景は動かさない）
       vUV = aUV;
       vec2 sp = uPlace.xy + q / IMG * uPlace.zw;      // 画面上の位置（CSS の cover と同じ置き方）
       gl_Position = vec4(sp / uView * vec2(2.0, -2.0) + vec2(-1.0, 1.0), 0.0, 1.0);
@@ -80,6 +81,23 @@
     for (const y of ys) for (const x of xs) { uv[k++] = x / IW; uv[k++] = y / IH; }
     const idx = []; const nx = xs.length;
     for (let j = 0; j < ys.length - 1; j++) for (let i = 0; i < nx - 1; i++) { const a = j * nx + i; idx.push(a, a + 1, a + nx, a + 1, a + nx + 1, a + nx); }
+    // リコの形の型（assets/ui/home/rico_mask.png、白＝リコ、縁はぼかし済み）を頂点ごとの重みにする。読めるまでは重み0（動かない）
+    const wts = new Float32Array(uv.length / 2);
+    const wb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, wb); gl.bufferData(gl.ARRAY_BUFFER, wts, gl.DYNAMIC_DRAW);
+    const wloc = gl.getAttribLocation(prog, 'aW'); gl.enableVertexAttribArray(wloc); gl.vertexAttribPointer(wloc, 1, gl.FLOAT, false, 0, 0);
+    const mimg = new Image();
+    mimg.onload = () => {
+      if (cur !== state) return;
+      const c = document.createElement('canvas'); c.width = mimg.width; c.height = mimg.height;
+      const cx = c.getContext('2d', { willReadFrequently: true }); cx.drawImage(mimg, 0, 0);
+      const px = cx.getImageData(0, 0, c.width, c.height).data;
+      for (let i = 0; i < wts.length; i++) {
+        const x = Math.min(c.width - 1, Math.round(uv[i * 2] * (c.width - 1))), y = Math.min(c.height - 1, Math.round(uv[i * 2 + 1] * (c.height - 1)));
+        wts[i] = px[(y * c.width + x) * 4] / 255;
+      }
+      gl.bindBuffer(gl.ARRAY_BUFFER, wb); gl.bufferData(gl.ARRAY_BUFFER, wts, gl.STATIC_DRAW);
+    };
+    mimg.src = 'assets/ui/home/rico_mask.png';
     const big = uv.length / 2 > 65535;
     const vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(prog, 'aUV'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
