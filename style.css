@@ -20137,3 +20137,5 @@ html.is-compact .shop-screen.v3 .sh3-grano-hit { left: 270px; top: 40px; width: 
 .h15-part.h15-d3:active { --lift: 2px; }
 .h15-sw { animation: none !important; transform: none !important; }
 @keyframes home-enter { from { opacity: 0; transform: translate(var(--fx, -40px), var(--fy, 0px)); } 70% { opacity: 1; } to { opacity: 1; transform: none; } }
+/* 額の肖像は額のために描いた絵なので、色をそのまま出す（セピアの加工は顔の切り抜き用だった）（10/21 ユーザー選択） */
+.h15-frame .h15-pic { filter: none; }

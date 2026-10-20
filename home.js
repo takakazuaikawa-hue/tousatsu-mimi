@@ -40,7 +40,7 @@ function renderHomeLobby() {
   const opponent = OPPONENTS[sid];
   const face = id => `assets/ui/face_${id === 'rico_tutorial' ? 'rico_default' : id}.webp`;
   root.querySelector('[data-home="name"]').textContent = save.playerName || 'ミミ';
-  root.querySelector('.h15-frame .h15-pic').src = face(sid);
+  root.querySelector('.h15-frame .h15-pic').src = framePortrait(sid);
   root.querySelector('.h15-frame .h15-pic').alt = opponent.name;
   root.querySelector('.h15-frame .h15-lbl').textContent = opponent.name;
   root.querySelector('.h15-frame').classList.toggle('has-long-name', opponent.name.length > 5);
@@ -131,6 +131,9 @@ function setHomeStage(root, stage, num = stage) {
 
 // 開幕の儀：勝つ前の姿で入場 → 文字盤の数字が灯る → 封蝋が押される → 灯りが入り視野が開く → 額が次の相手に掛け替わる → 札が跳ねる。
 // どこかを押せば即座に終わりの姿へ。演出用の特別な見た目は作らず、段階の値を時間差で切り替えるだけ。
+// 額に飾る専用の肖像（ChatGPT で額のために描いた絵）。まだ無い相手は顔の切り抜きのまま
+const FRAME_PORTRAITS = new Set(['selina']);
+function framePortrait(id) { return FRAME_PORTRAITS.has(id) ? `assets/ui/portrait_${id}.webp` : `assets/ui/face_${id === 'rico_tutorial' ? 'rico_default' : id}.webp`; }
 function homeCeremonyPlan(root, cleared, next) {
   const prevId = STAGE_ORDER[cleared - 1];
   const prev = OPPONENTS[prevId];
@@ -138,7 +141,7 @@ function homeCeremonyPlan(root, cleared, next) {
   const frame = root.querySelector('.h15-frame');
   const slot = root.querySelectorAll('.h15-slot')[cleared - 1];
   const final = { src: frame.querySelector('.h15-pic').src, name: frame.querySelector('.h15-lbl').textContent, sub: frame.querySelector('.h15-sub').textContent, long: frame.classList.contains('has-long-name') };
-  frame.querySelector('.h15-pic').src = face(prevId);
+  frame.querySelector('.h15-pic').src = framePortrait(prevId);
   frame.querySelector('.h15-lbl').textContent = prev.name;
   frame.querySelector('.h15-sub').textContent = '今夜の相手';
   frame.classList.toggle('has-long-name', prev.name.length > 5);
