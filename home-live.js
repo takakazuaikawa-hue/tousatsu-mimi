@@ -32,20 +32,20 @@
       // 呼吸（4.6秒でひと息）：胴が縁を支点にわずかに伸び縮みし、肩が上下する
       float br = sin(uT * 1.366);
       float wb = ell(p, vec4(${R.body.join('.0,')}.0)) * above;
-      q.y += -(${R.rail}.0 - p.y) * 0.0065 * br * wb;
-      q.x += (p.x - ${R.body[0]}.0) * 0.0025 * br * wb;
+      q.y += -(${R.rail}.0 - p.y) * 0.0100 * br * wb;   // 2026-10-20「自然だがやや小さい」→ 各動きを約1.5倍
+      q.x += (p.x - ${R.body[0]}.0) * 0.0038 * br * wb;
       // 首のかしげ（7秒）：頭まわりを首を中心にごくわずかに回す
       float hw = ell(p, vec4(${R.head.join('.0,')}.0)) * above;
-      float ha = 0.0085 * sin(uT * 0.898) + 0.003 * sin(uT * 2.13);
+      float ha = 0.0130 * sin(uT * 0.898) + 0.0045 * sin(uT * 2.13);
       q = mix(q, rot(q, vec2(${R.neck.join('.0,')}.0), ha), hw);
       // うさ耳（首より遅れて、少し大きく揺れる）
       float ew = box(p, vec4(${R.earBox.join('.0,')}.0), 40.0) * (1.0 - smoothstep(${R.ear[1] - 10}.0, ${R.ear[1] + 30}.0, p.y));
-      float ea = 0.016 * sin(uT * 0.898 - 0.7) + 0.006 * sin(uT * 3.1);
+      float ea = 0.024 * sin(uT * 0.898 - 0.7) + 0.008 * sin(uT * 3.1);
       q = mix(q, rot(q, vec2(${R.ear.join('.0,')}.0), ea), ew);
       // 髪のなびき：垂れた髪の下ほど、ゆっくり横に揺れる
       float hl = box(p, vec4(${R.hairL.join('.0,')}.0), 50.0), hr = box(p, vec4(${R.hairR.join('.0,')}.0), 50.0);
       float down = smoothstep(${R.hairL[1]}.0, ${R.rail}.0, p.y);
-      q.x += (hl * sin(uT * 1.2 + p.y * 0.012) + hr * sin(uT * 1.05 + 1.3 + p.y * 0.012)) * 3.2 * down * above;
+      q.x += (hl * sin(uT * 1.2 + p.y * 0.012) + hr * sin(uT * 1.05 + 1.3 + p.y * 0.012)) * 4.8 * down * above;
       q = p + (q - p) * aW;                          // リコの形の中だけ動かす（背景は動かさない）
       vUV = aUV;
       vec2 sp = uPlace.xy + q / IMG * uPlace.zw;      // 画面上の位置（CSS の cover と同じ置き方）

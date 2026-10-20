@@ -19864,3 +19864,26 @@ html.is-compact .intermission-overlay .ims-scene .ek-caption { left: 8%; right: 
 /* エンディングは自動で進む長い場面なので、寄りは幕間よりさらにゆっくり（14秒で1.08倍） */
 .ending-portrait-scene.eps-cam-scene .ims-cam { animation-duration: 14s; }
 @media (prefers-reduced-motion: reduce) { .ending-portrait-scene.eps-cam-scene .ims-cam, .ending-portrait-scene.eps-cam-scene .eps-portrait-frame, .ending-portrait-scene.eps-cam-scene .eps-portrait, .ending-portrait-scene.eps-cam-scene .ims-cam-bg { animation: none !important; } }
+
+/* ===== プロローグの音量（2026-10-20）：スキップの左に、消音ボタン＋つまみ。聞きながら大きさを変えられる ===== */
+.story-vol { position: absolute; top: 22px; left: 26px; z-index: 3; display: inline-flex; align-items: center; gap: .6em;
+  min-height: var(--st-tap); padding: 0 1em 0 .35em; border-radius: 999px; font: 500 var(--st-ui) / 1 "Noto Sans JP", sans-serif;
+  background: rgba(10, 7, 9, .42); border: 1px solid rgba(243, 236, 224, .24); }
+.story-vol-mute { display: inline-grid; place-items: center; width: calc(var(--st-tap) - 6px); height: calc(var(--st-tap) - 6px); border: 0; border-radius: 50%; background: transparent; color: rgba(243, 236, 224, .9); cursor: pointer; }
+.story-vol-mute svg, .story-vol-mute .ui-ic { width: 1.25em; height: 1.25em; }
+.story-vol-mute:hover, .story-vol-mute:focus-visible { color: #fff; background: rgba(216, 181, 108, .18); outline: none; }
+.story-vol-range { width: 7.5em; accent-color: #d8b56c; cursor: pointer; }
+.story-vol.is-muted .story-vol-range { opacity: .45; }
+.story-vol-hint { position: absolute; top: calc(22px + var(--st-tap) + 10px); left: 26px; z-index: 3; padding: .5em .9em;
+  font: 600 var(--st-ui) / 1.4 "Shippori Mincho B1", serif; color: #f3d27a; background: rgba(20, 6, 9, .82); border: 1px solid rgba(216, 181, 108, .6);
+  animation: storyVolHint 6s ease both; pointer-events: none; }
+@keyframes storyVolHint { 0% { opacity: 0; transform: translateY(-4px); } 8%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+
+/* 音量はスキップ（右上）とぶつからないよう左上。スマホ横はつまみを大きく、押せる高さ44px（画面上） */
+html.is-compact .story-vol { min-height: calc(44px / var(--game-scale, 1)); padding: 0 calc(14px / var(--game-scale, 1)) 0 calc(6px / var(--game-scale, 1)); gap: calc(8px / var(--game-scale, 1)); }
+html.is-compact .story-vol-mute { width: calc(40px / var(--game-scale, 1)); height: calc(40px / var(--game-scale, 1)); }
+html.is-compact .story-vol-range { width: calc(130px / var(--game-scale, 1)); height: calc(32px / var(--game-scale, 1)); }
+html.is-compact .story-vol-hint { top: calc(22px + 52px / var(--game-scale, 1)); font-size: calc(13px / var(--game-scale, 1)); }
+html.is-compact .story-vol-mute svg, html.is-compact .story-vol-mute .ui-ic { width: calc(20px / var(--game-scale, 1)); height: calc(20px / var(--game-scale, 1)); }
+/* 物語の画面も、ゲームの枠の外（スマホの左右の余白）まで暗く覆う */
+.story-overlay { box-shadow: 0 0 0 100vmax #06040a; }

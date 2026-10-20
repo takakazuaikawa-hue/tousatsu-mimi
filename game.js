@@ -270,10 +270,10 @@ function defaultSave() {
     logicEnabled: true,
     bgmVolume: 35,       // BGM 音量（0-100）
     bgmOn: false,        // BGM 全体 ON/OFF（lobby/ending/minipoker BGM すべて従う）
-    sfxVolume: 60,       // SFX 音量（0-100）
+    sfxVolume: 50,       // SFX 音量（0-100）。初めての人は控えめに（2026-10-20：いきなり大きな音で困った、の指摘）
     sfxOn: true,         // SFX 全体 ON/OFF（minipoker SFX 等すべて従う）
     forceSound: false,   // 端末が消音でも音を出す（iOS消音スイッチより優先）。既定OFF＝端末を尊重
-    voiceVolume: 80,     // キャラの声の音量（0-100）。効果音の音量は掛けない（声が効果音より小さいと聞こえない）
+    voiceVolume: 60,     // キャラの声の音量（0-100）。初めての人は控えめ（以前80）。効果音の音量は掛けない（声が効果音より小さいと聞こえない）
     voiceOn: true,       // キャラの声 ON/OFF。効果音OFF・音まるごとOFFの時も鳴らさない（voice.js）
 
     // ── ミニポーカー（mpEnsureSaveで初期化される） ──
@@ -3779,6 +3779,11 @@ function showStoryScene(key, onDone, voiceReady) {
       <span class="story-next" aria-hidden="true"></span>
     </div>
     <button type="button" class="story-skip"><span>スキップ</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6l6 6-6 6M12 6l6 6-6 6"/></svg></button>
+    <div class="story-vol" role="group" aria-label="音量">
+      <button type="button" class="story-vol-mute" aria-label="消音"></button>
+      <input type="range" class="story-vol-range" min="0" max="100" step="5" aria-label="音量（声・効果音・曲）">
+    </div>
+    ${save.soundHintSeen ? '' : '<div class="story-vol-hint" role="note">音が出ます。音量は左上で変えられます</div>'}
     <div class="story-tap" aria-hidden="true">タップで進む</div>`;
   (document.getElementById('stage') || document.body).appendChild(ov);
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -3872,6 +3877,7 @@ function showStoryScene(key, onDone, voiceReady) {
   };
   const onKey = (e) => {
     if (!ov.isConnected) return;
+    if (e.target && e.target.closest && e.target.closest('.story-vol')) return;   // 音量のつまみの矢印キーは、つまみに渡す
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); advance(); }
     else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(); }
   };
@@ -3884,8 +3890,38 @@ function showStoryScene(key, onDone, voiceReady) {
     ov.classList.add('out');
     setTimeout(() => { ov.remove(); done(); }, reduce ? 0 : 520);
   }
+  // 音量：プロローグを聞きながら、その場で大きさを変えられる（2026-10-20 ユーザー指摘「いきなり声が出て周りの視線を浴びた」
+  // 「音はありで遊んでもらいたいけれど大きすぎる不安。プロローグ内で音量調整しながら話を聞けるのがベスト」）。
+  // つまみ1本で 声・効果音・曲 をまとめて動かす（比は 声 1 : 効果音 0.75 : 曲 0.45）。左のボタンは消音（もう一度押すと戻る）
+  const volEl = ov.querySelector('.story-vol'), volRange = ov.querySelector('.story-vol-range'), volMute = ov.querySelector('.story-vol-mute');
+  const paintVol = () => {
+    const on = isSfxOn();
+    volMute.innerHTML = on ? UI_ICON.sound : UI_ICON.mute;
+    volMute.setAttribute('aria-pressed', on ? 'false' : 'true');
+    volRange.value = on ? (save.voiceVolume ?? 60) : 0;
+    volEl.classList.toggle('is-muted', !on);
+  };
+  paintVol();
+  volRange.addEventListener('input', () => {
+    const v = +volRange.value;
+    save.voiceVolume = v; save.sfxVolume = Math.round(v * 0.75); save.bgmVolume = Math.round(v * 0.45);
+    save.sfxOn = v > 0;
+    if (!save.sfxOn && window.stopVoice) stopVoice();
+    if (typeof applyBgmVolume === 'function') applyBgmVolume();
+    volMute.innerHTML = save.sfxOn ? UI_ICON.sound : UI_ICON.mute; volEl.classList.toggle('is-muted', !save.sfxOn);
+  });
+  volRange.addEventListener('change', () => saveProgress());
+  volMute.addEventListener('click', () => {
+    save.sfxOn = !isSfxOn();
+    if (save.sfxOn && !(save.voiceVolume > 0)) { save.voiceVolume = 40; save.sfxVolume = 30; save.bgmVolume = 18; }
+    if (!save.sfxOn && window.stopVoice) stopVoice();
+    if (typeof applyBgmVolume === 'function') applyBgmVolume();
+    paintVol(); saveProgress();
+  });
+  if (!save.soundHintSeen) { save.soundHintSeen = true; saveProgress(); }
   ov.addEventListener('click', (e) => {
     if (e.target.closest('.story-skip')) { e.stopPropagation(); finish(); return; }
+    if (e.target.closest('.story-vol')) { e.stopPropagation(); return; }
     advance();
   });
   window.addEventListener('keydown', onKey, true);
