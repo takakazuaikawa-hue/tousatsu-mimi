@@ -20108,3 +20108,32 @@ html.is-compact .shop-screen.v3 .sh3-say b { display: none; }
 .shop-screen.v3 .sh3-name.is-long { white-space: normal; overflow: visible; text-overflow: clip; word-break: normal; }
 .shop-screen.v3 .sh3-name.is-xlong { font-size: 22px; }
 html.is-compact .shop-screen.v3 .sh3-name.is-xlong { font-size: 36px; }
+/* 交換所の入場：画面の幕（約0.7秒）が払われてから、グラーノ → 札を配る → 品を大きく、の順に出す。
+   絵は入る前に読み終えている（shop3AssetsGate）ので、出る途中で描かれることはない */
+.shop-screen.v3.is-enter .sh3-grano { animation: sh3GranoIn .7s cubic-bezier(.2,.7,.2,1) .38s both, sh3Breath 5.5s ease-in-out 1.1s infinite; }
+@keyframes sh3GranoIn { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+.shop-screen.v3.is-enter .sh3-say { animation: sh3FadeUp .45s ease-out .78s both; }
+.shop-screen.v3.is-enter .sh3-cats, .shop-screen.v3.is-enter .sh3-head, .shop-screen.v3.is-enter .sh3-coins, .shop-screen.v3.is-enter .sh3-back { animation: sh3Fade .5s ease-out .3s both; }
+.shop-screen.v3.is-enter .sh3-row.is-deal .sh3-card { animation-delay: calc(.62s + var(--k, 0) * 60ms); }
+.shop-screen.v3.is-enter .sh3-model-in { animation: sh3ModelIn .6s cubic-bezier(.2,.7,.2,1) 1.05s both; }
+.shop-screen.v3.is-enter .sh3-info, .shop-screen.v3.is-enter .sh3-buy { animation: sh3FadeUp .5s ease-out 1.15s both; }
+@keyframes sh3Fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sh3FadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .shop-screen.v3.is-enter * { animation: none !important; } }
+
+/* グラーノを押す：体の上（カウンターより上）に押せる所。押すと少し身を引いて表情が変わる */
+.shop-screen.v3 .sh3-grano-hit { position: absolute; left: 170px; top: 110px; width: 330px; height: 320px; z-index: 5; border: 0; padding: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.shop-screen.v3 .sh3-grano.is-poked img { animation: sh3Poke .42s cubic-bezier(.3,1.4,.5,1) both; }
+@keyframes sh3Poke { 0% { transform: none; } 35% { transform: translate(-6px, 4px) rotate(-1.2deg); } 100% { transform: none; } }
+html.is-compact .shop-screen.v3 .sh3-grano-hit { left: 270px; top: 40px; width: 330px; height: 300px; }
+
+/* ===== ホームの部品をくっきり描く（2026-10-21）=====
+   部品を立体に傾け（rotateX/Y・preserve-3d）、ずっと揺らしていた（home-sway）ため、ブラウザが部品を小さく描いてから引き伸ばし、
+   文字も金の縁もぼやけていた（qa/homecrisp.mjs で撮り比べ）。部品はまっすぐ置き、揺れ続ける動きはやめる。
+   入る時の動き・触れると浮く・光が走る、は残す */
+.h15-ui, .h15-places, .h15-top { transform-style: flat !important; }
+.h15-part.h15-d3 { transform: translate(calc(var(--dx, 0px) + var(--mx, 0) * var(--p, 0) * 1px), calc(var(--dy, 0px) + var(--my, 0) * var(--p, 0) * 1px)) translateY(var(--lift, 0px)) !important; }
+.h15-part.h15-d3:hover { --lift: -4px; }
+.h15-part.h15-d3:active { --lift: 2px; }
+.h15-sw { animation: none !important; transform: none !important; }
+@keyframes home-enter { from { opacity: 0; transform: translate(var(--fx, -40px), var(--fy, 0px)); } 70% { opacity: 1; } to { opacity: 1; transform: none; } }

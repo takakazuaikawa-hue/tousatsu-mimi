@@ -5802,8 +5802,12 @@ function shop3RenderCats() {
     if (b.dataset.g === shop3.group) return;
     if (typeof mpSfx === 'function') mpSfx('tap');
     shop3.group = b.dataset.g; shop3.sel = null;
-    shop3RenderCats(); shop3RenderRow(true);
-    if (SHOP_COMMENTS[shop3.sel]) shop3Say(SHOP_COMMENTS[shop3.sel]); else if (SHOP3_SHELF_LINE[shop3.group]) shop3Say(SHOP3_SHELF_LINE[shop3.group]);
+    shop3RenderCats();
+    const g = shop3.group, MA = window.MimiAssets, urls = shop3GroupUrls(g);
+    const deal = () => { if (shop3.group !== g) return; shop3RenderRow(true); if (SHOP_COMMENTS[shop3.sel]) shop3Say(SHOP_COMMENTS[shop3.sel]); else if (SHOP3_SHELF_LINE[g]) shop3Say(SHOP3_SHELF_LINE[g]); };
+    if (!MA || MA.allReady(urls)) { deal(); return; }
+    MA.ready(urls, 2500, { set: 'shop' }).then(deal);
+    return;
   }));
 }
 function shop3BindCard(c) {
@@ -5827,7 +5831,8 @@ function shop3RenderRow(deal) {
   const kind = i => /^outfit_rico_/.test(i.id) ? 0 : /^mimi_skin_/.test(i.id) ? 1 : /^pwear_/.test(i.id) ? 2 : 0;
   const sorted = shop3Items(shop3.group).slice().sort((a, b) => (rank(a) === 3) - (rank(b) === 3) || kind(a) - kind(b) || rank(a) - rank(b));
   if (!shop3.sel || !sorted.some(i => i.id === shop3.sel && isShopItemUnlocked(i.id))) {
-    const first = sorted.find(i => isShopItemUnlocked(i.id));
+    const pick = sorted.filter(i => isShopItemUnlocked(i.id) && !isItemOwned(i.id) && !i.clearBonus).sort((a, b) => (isShopItemNew(b.id) - isShopItemNew(a.id)) || (b.price - a.price))[0];
+    const first = pick || sorted.find(i => isShopItemUnlocked(i.id));
     shop3.sel = first ? first.id : null;
   }
   row.innerHTML = sorted.map((it, k) => shop3CardHTML(it, k)).join('');
@@ -5880,14 +5885,77 @@ function shop3RenderStage(item) {
     buy.querySelector('[data-sh3-buy]').addEventListener('click', () => buyItem(item.id));
   }
 }
+// グラーノを押した時の反応：表情の差分と一言。同じ反応が続かないよう順に回す。買った時・足りない時も顔を替える
+const SHOP3_FACES = ['blush', 'smile', 'trouble'];
+const SHOP3_TAP_LINES = [
+  { face: 'blush', text: 'おっと……お客様。店主に手を触れるのは、別料金でしてな' },
+  { face: 'smile', text: 'ふふ、品定めの次は店主の値踏みですか。お目が高い' },
+  { face: 'blush', text: 'そう熱心に見つめられると、値引きしたくなるではありませんか' },
+  { face: 'smile', text: '私は非売品ですよ、お嬢さん。……今のところは、ね' },
+];
+let shop3TapN = 0, shop3FaceT = 0;
+function shop3SetFace(face, ms) {
+  const img = document.querySelector('.sh3-grano img'); if (!img) return;
+  const src = face ? `assets/characters/grano_shop_${face}.webp` : 'assets/characters/grano_shop.webp';
+  // 差分がまだ手元に無い時は替えない（読み込み途中の空白を見せない）
+  if (face && window.MimiAssets && !window.MimiAssets.isReady(src)) return;
+  img.src = src;
+  clearTimeout(shop3FaceT);
+  if (face && ms) shop3FaceT = setTimeout(() => shop3SetFace(null), ms);
+}
+function shop3TapGrano() {
+  const L = SHOP3_TAP_LINES[shop3TapN++ % SHOP3_TAP_LINES.length];
+  if (typeof mpSfx === 'function') mpSfx('tap');
+  const g = document.querySelector('.sh3-grano');
+  if (g) { g.classList.remove('is-poked'); void g.offsetWidth; g.classList.add('is-poked'); }
+  shop3SetFace(L.face, 2600);
+  shop3Say(L.text);
+}
+
+// 交換所の絵：土台（背景・手前のカウンター・グラーノ・札の裏）と、棚ごとの品の絵
+function shop3BaseUrls() { return ['assets/backgrounds/shop_counter.webp', 'assets/backgrounds/shop_counter_fg.webp', 'assets/characters/grano_shop.webp', 'assets/ui/card_back_default.webp', ...SHOP3_FACES.map(f => `assets/characters/grano_shop_${f}.webp`)]; }
+function shop3GroupUrls(gid) {
+  const out = new Set();
+  shop3Items(gid).forEach(it => {
+    if (!isShopItemUnlocked(it.id)) return;
+    const a = shop3Art(it);
+    if (a.src) out.add(a.src);
+    if (a.type === 'stack') ['chip_red', 'chip_gold', 'chip_white', 'chip_blue'].forEach(c => out.add(`assets/ui/${c}.webp`));
+  });
+  return [...out];
+}
+function shop3OpeningGroup() {
+  const firstNew = SHOP3_GROUPS.find(g => shop3Items(g.id).some(i => isShopItemNew(i.id)));
+  return firstNew ? firstNew.id : 'wear';
+}
+// そろっていれば true。そろっていなければ「準備中」を出して読み、終わったら again() を呼んで false を返す
+let __shopGateBusy = false;
+function shop3AssetsGate(again) {
+  const MA = window.MimiAssets; if (!MA) return true;
+  const urls = [...shop3BaseUrls(), ...shop3GroupUrls(shop3OpeningGroup())];
+  if (MA.allReady(urls)) return true;
+  if (__shopGateBusy) return false;
+  __shopGateBusy = true;
+  const veil = showLoadingVeil();
+  MA.ready(urls, 6000, { set: 'shop' }).then(() => { __shopGateBusy = false; veil(); again(); });
+  return false;
+}
+// ロビーにいる間に、交換所の土台と最初の棚を裏で読んでおく（残りの棚はダウンロードだけ）
+function warmShop() {
+  const MA = window.MimiAssets; if (!MA || !save) return;
+  MA.warm([...shop3BaseUrls(), ...shop3GroupUrls(shop3OpeningGroup())], { set: 'shop' });
+  MA.warm(SHOP3_GROUPS.flatMap(g => shop3GroupUrls(g.id)), { set: 'shop', light: true });
+}
 function bindShop() {
   // 新入荷がある分類を最初に開く（無ければ衣装）
-  const firstNew = SHOP3_GROUPS.find(g => shop3Items(g.id).some(i => isShopItemNew(i.id)));
-  shop3.group = firstNew ? firstNew.id : 'wear';
+  shop3.group = shop3OpeningGroup();
   shop3.sel = null;
+  const scr = document.querySelector('.shop-screen.v3');
+  if (scr && MOTION_OK) { scr.classList.add('is-enter'); setTimeout(() => scr.classList.remove('is-enter'), 2200); }
   const n = document.querySelector('[data-bind="saveCoins"]'); if (n) n.textContent = save.coins.toLocaleString();
   shop3RenderCats();
   shop3RenderRow(true);
+  const gb = document.querySelector('.sh3-grano-hit'); if (gb) gb.addEventListener('click', shop3TapGrano);
 }
 
 function buyItem(itemId) {
@@ -5912,6 +5980,7 @@ function playShopShortFx(item) {
   if (typeof mpSfx === 'function') mpSfx('tap');
   const coins = document.querySelector('.sh3-coins');
   if (coins) { coins.classList.remove('is-short'); void coins.offsetWidth; coins.classList.add('is-short'); }
+  shop3SetFace('trouble', 2600);
   shop3Say(`おや、お代が少々足りませんな。あと ${(item.price - save.coins).toLocaleString()} コイン、卓で稼いでいらっしゃい`);
 }
 // 交換の儀式：①チップが手持ちから窓口へ飛ぶ ②大きな品に光が走り封蝋「入手」が押される ③札が表に返る ④グラーノの一言
@@ -5926,6 +5995,7 @@ function playShopBuyFx(item) {
   }
   const model = document.querySelector('.sh3-model');
   if (model) { model.classList.remove('is-sold'); void model.offsetWidth; model.classList.add('is-sold'); }
+  shop3SetFace('smile', 2600);
   shop3Say('商談成立ですな。毎度ありがとうございます、お嬢さん');
   setTimeout(() => {
     shop3RenderCats();
@@ -8074,11 +8144,11 @@ function onAction(e) {
     }
     case 'open-shop': {
       const newCount = newItemCount();
+      if (!shop3AssetsGate(() => onAction({ currentTarget: { dataset: { action: 'open-shop' } } }))) break;
       state.screen = 'shop';
       render();
-      if (newCount > 0) {
-        toast(`新商品 ${newCount} 件入荷！`);
-      }
+      // 入荷の知らせは、入場（幕→グラーノ→札）が済んでから
+      if (newCount > 0) setTimeout(() => { if (state.screen === 'shop') toast(`新商品 ${newCount} 件入荷`); }, MOTION_OK ? 1500 : 0);
       // ※ markShopItemsSeen はショップを出る時に実行（NEWマークがショップ内で消えるバグの修正）
       break;
     }
@@ -19165,6 +19235,7 @@ function startDeferredPrefetch() {
       const a = document.getElementById('lobby-bgm-audio');
       if (a && a.preload !== 'auto') { a.preload = 'auto'; try { a.load(); } catch (e) {} }
       warmNextBattle();
+      warmShop();
       MA.warm(DEFERRED_ASSETS.filter(u => !u.includes("assets/episodes/")), { light: true });
     });
     return;
