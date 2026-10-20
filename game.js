@@ -9571,11 +9571,63 @@ function injectAudioBars() {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'sound-toggle';
-    b.dataset.action = 'toggle-audio-all';
-    b.addEventListener('click', onAction);
+    // 押すと、その場で 声・効果音・曲 の音量を変えられる小窓が開く（2026-10-21 試遊：対戦中に声が大きく、
+    // ロビーへ戻って設定を探すのが面倒）。まとめて消すのも小窓の中で
+    b.dataset.action = 'open-sound-panel';
+    b.addEventListener('click', (e) => { e.stopPropagation(); toggleSoundPanel(b); });
     host.appendChild(b);
   }
   refreshAudioBars();
+}
+
+// 対戦・交換所・結果の音の小窓：声・効果音・曲の3本のつまみと「すべて消す」
+function toggleSoundPanel(btn) {
+  // 画面の中の卓や吹き出しの下に隠れないよう、舞台（#stage）の一番上の層に出す
+  const host = document.getElementById('stage') || btn.parentElement;
+  const old = host.querySelector('.sound-panel');
+  if (old) { old.remove(); return; }
+  const p = document.createElement('div');
+  p.className = 'sound-panel';
+  p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', '音量');
+  const row = (k, label, v) => `<label class="sp-row"><span class="sp-lbl">${label}</span><input class="sp-range" type="range" min="0" max="100" step="5" value="${v}" data-sp="${k}" aria-label="${label}の音量"><b class="sp-val" data-sp-val="${k}">${v}</b></label>`;
+  const paint = () => {
+    const on = isAnyAudioOn();
+    p.classList.toggle('is-muted', !on);
+    const m = p.querySelector('.sp-mute');
+    m.innerHTML = on ? `${UI_ICON.mute}<span>すべて消す</span>` : `${UI_ICON.sound}<span>音を出す</span>`;
+  };
+  p.innerHTML = `<div class="sp-title">音量</div>${row('voice', '声', save.voiceVolume ?? 60)}${row('sfx', '効果音', save.sfxVolume ?? 50)}${row('bgm', '曲', save.bgmVolume ?? 35)}<button type="button" class="sp-mute"></button>`;
+  // ボタンのすぐ下に出す（右端をボタンにそろえる）
+  const hr = host.getBoundingClientRect(), br = btn.getBoundingClientRect(), k = hr.width / (host.offsetWidth || hr.width) || 1;
+  p.style.top = ((br.bottom - hr.top) / k + 8) + 'px';
+  p.style.right = Math.max(8, (hr.right - br.right) / k) + 'px';
+  host.appendChild(p);
+  paint();
+  p.querySelectorAll('.sp-range').forEach(r => {
+    r.addEventListener('input', () => {
+      const v = +r.value, k = r.dataset.sp;
+      p.querySelector(`[data-sp-val="${k}"]`).textContent = v;
+      // 消している時につまみを動かしたら、音を戻す
+      if (!isAnyAudioOn()) { save.bgmOn = true; save.sfxOn = true; startBgmForScreen(); }
+      if (k === 'voice') { save.voiceVolume = v; if (v > 0) save.voiceOn = true; if (v === 0 && window.stopVoice) stopVoice(); }
+      else if (k === 'sfx') save.sfxVolume = v;
+      else { save.bgmVolume = v; applyBgmVolume(); }
+      paint(); refreshAudioBars();
+    });
+    // 離した時に、その大きさで一度鳴らして確かめる
+    r.addEventListener('change', () => {
+      saveProgress();
+      const k = r.dataset.sp;
+      if (k === 'voice' && window.playVoice) playVoice('mimi', 'bark_win_1', { noRepeat: false, prio: 2, maxLateMs: 2500 });
+      else if (k === 'sfx' && typeof mpSfx === 'function') mpSfx('tap');
+    });
+  });
+  p.querySelector('.sp-mute').addEventListener('click', (e) => { e.stopPropagation(); toggleAllAudio(); if (!isAnyAudioOn() && window.stopVoice) stopVoice(); paint(); });
+  p.addEventListener('click', (e) => e.stopPropagation());
+  p.addEventListener('pointerdown', (e) => e.stopPropagation());
+  // 小窓の外を押したら閉じる
+  const away = (e) => { if (!p.isConnected) { document.removeEventListener('pointerdown', away, true); return; } if (!p.contains(e.target) && e.target !== btn && !btn.contains(e.target)) { p.remove(); document.removeEventListener('pointerdown', away, true); } };
+  setTimeout(() => document.addEventListener('pointerdown', away, true), 0);
 }
 
 function refreshAudioBars() {

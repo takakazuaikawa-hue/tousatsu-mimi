@@ -20144,3 +20144,27 @@ html.is-compact .shop-screen.v3 .sh3-grano-hit { left: 270px; top: 40px; width: 
 .episode-foot:has(.episode-back) { display: flex; justify-content: center; align-items: center; gap: 18px; }
 .episode-card-bottom .episode-foot:has(.episode-back) .episode-continue { margin: 0; }
 .episode-foot .episode-back { min-width: 140px; }
+
+/* 対戦・交換所・結果の音の小窓（2026-10-21 台帳31）：声・効果音・曲の3本のつまみと「すべて消す」 */
+.sound-panel { position: absolute; z-index: 5000; width: 300px; padding: 14px 16px 12px; isolation: isolate;
+  background: linear-gradient(180deg, #220a0e, #10080a); border: 1px solid rgba(217,179,90,.75); border-radius: 2px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.7), inset 0 0 0 1px rgba(0,0,0,.6); color: #f0e2b8; font-family: var(--serif); }
+.sound-panel .sp-title { font-size: 14px; letter-spacing: .3em; color: #d9b35a; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(217,179,90,.3); }
+.sound-panel .sp-row { display: grid; grid-template-columns: 4.6em 1fr 2.4em; align-items: center; gap: 10px; min-height: 44px; }
+.sound-panel .sp-lbl { font-size: 16px; white-space: nowrap; }
+.sound-panel .sp-range { width: 100%; height: 32px; accent-color: #d8b56c; cursor: pointer; margin: 0; }
+.sound-panel .sp-val { font-size: 14px; text-align: right; color: #f5d77a; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sound-panel.is-muted .sp-range, .sound-panel.is-muted .sp-val { opacity: .4; }
+.sound-panel .sp-mute { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; margin-top: 8px;
+  background: rgba(12,9,10,.6); border: 1px solid rgba(217,179,90,.5); border-radius: 2px; color: #f0e2b8; font-family: var(--serif); font-size: 15px; cursor: pointer; }
+.sound-panel .sp-mute:hover { border-color: rgba(245,215,122,.9); color: #fff; }
+.sound-panel .sp-mute svg, .sound-panel .sp-mute .ui-ic { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+/* スマホ横：舞台ごと縮むので、画面上で指二本で押せる大きさを保つ */
+html.is-compact .sound-panel { width: calc(330px / var(--game-scale, 1)); padding: calc(12px / var(--game-scale, 1)) calc(14px / var(--game-scale, 1)); }
+html.is-compact .sound-panel .sp-title { font-size: calc(13px / var(--game-scale, 1)); margin-bottom: calc(4px / var(--game-scale, 1)); padding-bottom: calc(4px / var(--game-scale, 1)); }
+html.is-compact .sound-panel .sp-row { min-height: calc(44px / var(--game-scale, 1)); gap: calc(8px / var(--game-scale, 1)); }
+html.is-compact .sound-panel .sp-lbl { font-size: calc(15px / var(--game-scale, 1)); }
+html.is-compact .sound-panel .sp-val { font-size: calc(13px / var(--game-scale, 1)); }
+html.is-compact .sound-panel .sp-range { height: calc(36px / var(--game-scale, 1)); }
+html.is-compact .sound-panel .sp-mute { min-height: calc(44px / var(--game-scale, 1)); font-size: calc(14px / var(--game-scale, 1)); margin-top: calc(6px / var(--game-scale, 1)); }
+html.is-compact .sound-panel .sp-mute svg, html.is-compact .sound-panel .sp-mute .ui-ic { width: calc(18px / var(--game-scale, 1)); height: calc(18px / var(--game-scale, 1)); }
