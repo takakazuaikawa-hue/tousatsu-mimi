@@ -252,7 +252,9 @@
 
     const $ = (s) => root.querySelector(s);
     const court = $('#mb-ob-court'), thread = $('#mb-ob-thread'), go = $('#mb-ob-go');
-    const setStep = (n) => { $('#mb-ob-steps').innerHTML = api.steps(stepNames, n); };
+    const MS = ['ウソの発言を1つ選ぶ', '矛盾する証拠を選ぶ', '「つきつける！」を押す', 'ブラフか強い手か、読みを決める', '答え合わせ'];
+    const setStep = (n) => { $('#mb-ob-steps').innerHTML = api.steps(stepNames, n); api.mission(MS[n]); };
+    setStep(0);
     let selS = null, selE = null, misses = 0, busy = false, done = false, stall = 0;
     const tried = new Set();
     // 段階つきの助け：外れ2回か、同じ組の押し直し2回で「ウソの発言」を光らせる。押し直し4回では「決め手の証拠」も光らせる

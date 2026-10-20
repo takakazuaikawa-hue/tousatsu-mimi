@@ -35,26 +35,28 @@ MB.register({
       .dg-ask { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
       .dg-legend { display: inline-flex; gap: 8px; } .dg-q { font-family: var(--mincho); font-weight: 800; font-size: 17px; }
       .dg-fig { font-family: var(--mincho); font-weight: 800; padding: 0 6px; margin-right: 4px; background: #f1e6cc; color: #17100c; letter-spacing: .05em; } .dg-fig .rd { color: #b8132b; }
-      .dg-hist { display: flex; align-items: center; justify-content: center; gap: 8px; } .dg-hist .mb-bet { padding: 2px 6px; } .dg-hist b { color: var(--gold-hi); } .dg-hist em { font-style: normal; font-weight: 700; }
+      .dg-hist { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 8px; } .dg-hist .dg-hl { font-family: var(--mincho); font-weight: 700; color: var(--t3, var(--gold)); } .dg-hist .mb-bet { padding: 2px 6px; } .dg-hist b { color: var(--gold-hi); } .dg-hist em { font-style: normal; font-weight: 700; }
       .dg-radar { position: relative; max-width: 560px; width: 100%; margin: 0 auto; }
       .dg-bar { position: relative; margin-top: 24px; height: 30px; background: rgba(0,0,0,.45); border: 1px solid var(--line-dim); }
       .dg-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #a47a22, var(--gold-hi)); transition: width .9s cubic-bezier(.2,.8,.2,1); }
       .dg-line { position: absolute; top: -8px; bottom: -8px; width: 3px; background: var(--red-hi); box-shadow: 0 0 10px var(--red-hi); left: 0; transition: left .8s ease .2s; }
       .dg-line span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--gold-hi); }
-      .dg-val { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-family: var(--mincho); font-weight: 800; font-size: 20px; text-shadow: 0 1px 3px #000, 0 0 6px #000; }
+      .dg-val { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 0 10px; background: #130406; border: 1px solid var(--gold); white-space: nowrap; text-shadow: none; font-family: var(--mincho); font-weight: 800; font-size: 20px; text-shadow: 0 1px 3px #000, 0 0 6px #000; }
     `);
     const root = api.root;
     root.innerHTML = `
       ${api.steps(['怖い形をさがす', '賭け額を読む', '決める', '答え合わせ'], 0)}
       <div class="row dg-board" id="mb-dg-board">${board.map((c, i) => api.cardHTML(c, 'big tap').replace('<span class', `<span data-i="${i}" class`)).join('')}</div>
       <div class="row">${mine.map(c => api.cardHTML(c, 'big')).join('')}<span class="formula"><span class="mb-handtag"><b class="nm">${api.CAT_NAME[api.category([...mine, ...board])]}</b></span></span></div>
-      <div class="prompt dg-ask"><span class="dg-legend" aria-label="怖い形：同じマーク3枚・3つ並び・同じ数字2枚">${LEGEND}</span><span class="dg-q">怖い形は？ 札をタップ</span></div>
+      <div class="prompt dg-ask"><span class="dg-legend" aria-label="怖い形：同じマーク3枚・3つ並び・同じ数字2枚">${LEGEND}</span><span class="dg-q">怖い形</span></div>
       <div class="dg-pills" id="mb-dg-pills"></div>
       <div class="actions"><button class="btn quiet" id="mb-dg-none">怖い形はない</button><button class="btn quiet" id="mb-dg-done" hidden>もう無い</button></div>`;
     api.tipOnce('danger', '怖い形は、上の3つ');
+    api.mission('怖い形の札をタップ');
     const sel = new Set(); let miss = 0, helped = false;
     const markFound = (th) => {
       th.found = true; api.sfx.good(); api.coach('');
+      api.mission('ほかの怖い形をタップ。無ければ「もう無い」');
       th.idx.forEach(j => { const c = root.querySelector(`[data-i="${j}"]`); c.classList.remove('sel', 'hint'); c.classList.add('danger'); sel.delete(j); });
       root.querySelector('#mb-dg-pills').insertAdjacentHTML('beforeend', `<span class="dg-pill pop">${TXT[th.type](th.cards)}</span>`);
       root.querySelector('#mb-dg-done').hidden = false; root.querySelector('#mb-dg-none').hidden = true;
@@ -88,10 +90,11 @@ MB.register({
     api.sfx.fanfare();
     root.querySelector('.actions').remove();
     root.querySelector('.steps').outerHTML = api.steps(['怖い形をさがす', '賭け額を読む', '決める', '答え合わせ'], 1);
+    api.mission('コールか降りるか、選ぶ');
     const big = B >= P * 0.9, winPct = Math.round(100 - t.strong * 100);
     const box = document.createElement('div'); box.className = 'dg-radar pop';
     box.innerHTML = `<div class="prompt dg-ask">${api.betTag(big ? 'ポット同額' : 'ポット1/3', big ? 4 : 2)}</div>
-      <div class="formula dg-hist" aria-label="これまでのセリナ：${big ? '大きく' : '小さく'}賭けた時、10回中${Math.round(t.strong * 10)}回">${api.betTag('', big ? 4 : 2).replace('<b></b>', '')}${api.dots(Math.round(t.strong * 10), 10)}<b>${Math.round(t.strong * 10)}</b>/10<em>${threats.length ? '形あり' : 'ミミ超え'}</em></div>
+      <div class="formula dg-hist" aria-label="これまでのセリナ：${big ? '大きく' : '小さく'}賭けた時、10回中${Math.round(t.strong * 10)}回"><span class="dg-hl">${big ? '大きく' : '小さく'}賭けた10回</span>${api.dots(Math.round(t.strong * 10), 10)}<b>${Math.round(t.strong * 10)}回</b><em>ミミより強かった</em></div>
       <div class="dg-bar"><div class="dg-fill" id="mb-dg-fill"></div><div class="dg-line" id="mb-dg-line"><span>割に合う線 ${Math.round(need * 100)}%</span></div><div class="dg-val">ミミが勝つ ${winPct}%</div></div>
       <div class="actions"><button class="btn" id="mb-dg-call">コール<small>${B} 払って見せ合う</small></button><button class="btn quiet" id="mb-dg-fold">降りる<small>ここまでで止める</small></button></div>`;
     root.appendChild(box);

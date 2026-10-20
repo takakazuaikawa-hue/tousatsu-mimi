@@ -281,6 +281,7 @@
       <div class="doubt-pad" id="mb-doubt-pad"><button class="doubt-btn is-start" id="mb-doubt-start" type="button"><span class="w"><span>はじめる</span><small>本音は ← ／ ウソは →</small></span></button></div>
       <div class="doubt-list" id="mb-doubt-list" hidden></div>`;
     api.tipOnce('doubt', '声が大きいほどウソ', 'think');
+    api.mission('5つの台詞を聞き分ける');
 
     const $ = (s) => root.querySelector(s);
     const area = $('#mb-doubt-area'), pad = $('#mb-doubt-pad');
@@ -307,6 +308,7 @@
       await api.wait(ms); b.remove(); if (!api.alive()) return;
     }
 
+    api.mission('声の大きさで、本音かウソかを選ぶ');
     area.insertAdjacentHTML('beforeend', `<div class="doubt-count"><b id="mb-doubt-n">1/5</b><span>ウソほど声が大きい</span></div>
       <div class="doubt-bubble mb-ebony" id="mb-doubt-bubble"></div><div class="doubt-timer" id="mb-doubt-timer"><i></i></div>`);
     pad.innerHTML = `<button class="doubt-btn is-honest" data-a="honest" type="button"><kbd>←</kbd><span class="w"><span>本音</span><small>ほんとのこと</small></span></button>
@@ -378,7 +380,7 @@
     $('#mb-doubt-steps').innerHTML = api.steps(STEPS, 1);
     api.coach('');
     // 賭けの札は舞台の上に重ねて出す（操作盤に継ぎ足すと画面からはみ出していた）。説明はダウト用の決まりに差し替える
-    const wp = api.wager({ question: '4問以上当てた自信は？', base: 40 });
+    const wp = api.wager({ question: '4問以上当てた自信は？', base: 40, mission: '4問以上当てた自信を選ぶ' });
     const note = api.layer.querySelector('.mb-wager-ov .mb-wager-note');
     if (note) note.textContent = `4問以上で勝ち／3問以下で負け${MB.P.fever > 0 ? '（フィーバー：当たり2倍）' : ''}`;
     await wp;

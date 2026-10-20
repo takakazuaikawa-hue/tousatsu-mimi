@@ -70,11 +70,12 @@ MB.register({
     root.innerHTML = `
       ${api.steps(['当たり札をさがす', '値段とくらべる', '決める', 'スロット'], 0)}
       <div class="row">${s.board.map(c => cardHTML(c, 'big')).join('')}${backHTML('big')}<span style="width:14px"></span>${s.hole.map(c => cardHTML(c, 'big')).join('')}</div>
-      <div class="prompt mb-ask"><span class="mb-legend" aria-label="最後の1枚でストレートかフラッシュになる札は、残りの山に何枚？"><span class="mb-threat"><span class="tc"><span>5 6 7 8</span><span class="q">?</span></span></span><span class="mb-threat"><span class="tc"><span class="rd">♥♥♥♥</span><span class="q">?</span></span></span></span><span class="q">何枚？</span></div>
+      <div class="prompt mb-ask"><span class="mb-legend" aria-label="最後の1枚でストレートかフラッシュになる札は、残りの山に何枚？"><span class="mb-threat"><span class="tc"><span>5 6 7 8</span><span class="q">?</span></span></span><span class="mb-threat"><span class="tc"><span class="rd">♥♥♥♥</span><span class="q">?</span></span></span></span></div>
       <div class="outs-count" id="mb-o-count">0 / ${s.outs.length}</div>
       <div class="outs-deck" id="mb-o-deck">${grid.map(c => cardHTML(c, known.has(key(c)) ? 'known' : 'tap')).join('')}</div>
       <div class="actions"><button class="btn ghost" id="mb-o-give">わからない（答えを見る）</button></div>`;
     api.tipOnce('outs', 'うすい札は場とミミの手札');
+    api.mission('当たり札は何枚？ すべてタップ');
     const outKeys = new Set(s.outs.map(key));
     const found = new Set(); let miss = 0, gaveUp = false;
     await new Promise(res => {
@@ -101,6 +102,7 @@ MB.register({
     if (!api.alive()) return;
     api.sfx.fanfare();
     root.querySelector('.steps').outerHTML = api.steps(['当たり札をさがす', '値段とくらべる', '決める', 'スロット'], 1);
+    api.mission('値段とくらべて、コールか降りるか選ぶ');
     root.querySelector('.actions').remove();
     // 探し終えたら 52 枚の一覧は畳み、当たり札だけを1列に並べる（1画面に収めるため。何が当たりかも一目で分かる）
     root.querySelector('#mb-o-deck').classList.add('is-collapsed');
@@ -119,10 +121,11 @@ MB.register({
     if (!api.alive()) return;
     meter.querySelector('.actions').remove();
     const right = called === (s.eq >= s.need);
-    await api.wager({ question: called ? '「付いていく」と決めた。この判断、自信は？' : '「降りる」と決めた。この判断、自信は？', base: 30 });
+    await api.wager({ question: called ? '「付いていく」と決めた。この判断、自信は？' : '「降りる」と決めた。この判断、自信は？', base: 30, mission: 'この判断への自信を選ぶ' });
     if (!api.alive()) return;
     // 確率スロット：残り46枚のうち当たり札だけ金。止まる札は本当に引く1枚
     root.querySelector('.steps').outerHTML = api.steps(['当たり札をさがす', '値段とくらべる', '決める', 'スロット'], 3);
+    api.mission('スロットが止まるのを見届ける');
     const river = api.pick(s.rest);
     const hit = outKeys.has(key(river));
     const strip = [];

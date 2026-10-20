@@ -100,9 +100,10 @@ MB.register({
         ${api.steps(['動きを見る', '容疑者を消す', '決める', '答え合わせ'], beat === 0 ? 0 : 1)}
         <div class="row">${board.map((c, i) => i < b.board ? api.cardHTML(c, 'big') : api.backHTML('big')).join('')}<span style="width:12px"></span>${mine.map(c => api.cardHTML(c, 'big')).join('')}</div>
         <div class="sp-log">${sc.beats.slice(0, beat + 1).map((x, i) => `<div class="${i === beat ? 'now' : ''}"><i class="sp-st">${stName(x)}</i>${stk(stackOf(x))}<span class="sp-ac">${actShort(x)}</span></div>`).join('')}</div>
-        <div class="prompt mb-ask"><span class="mb-bet">${stk(stackOf(b))}<b>${actShort(b)}</b></span><span class="q">${b.must.length ? 'しない手は？' : '外せる？'}</span></div>
+        <div class="prompt mb-ask"><span class="mb-bet">${stk(stackOf(b))}<b>${actShort(b)}</b></span></div>
         <div class="sp-tiles" id="mb-sp-tiles">${sc.tiles.map(t => `<button class="sp-tile ${out.has(t.id) ? 'out' : ''}" data-id="${t.id}"><b>${t.name}</b><span>${t.sub}</span></button>`).join('')}</div>
         <div class="actions"><button class="btn quiet" id="mb-sp-next">${b.must.length ? 'これで全部外した' : '外せる人はいない'}<small>次の動きへ</small></button></div>`;
+      api.mission(b.must.length ? 'この動きをしない手を、すべて外す' : '外せる手が無ければ、次の動きへ');
       if (beat === 0) api.tipOnce('suspects', '<b>動き</b>で容疑者を減らす'); else api.coach('');
     };
     draw();
@@ -130,6 +131,7 @@ MB.register({
     const winPct = Math.round(win / tot * 100);
     const need = sc.call / (sc.pot + sc.call * 2);
     root.querySelector('.steps').outerHTML = api.steps(['動きを見る', '容疑者を消す', '決める', '答え合わせ'], 2);
+    api.mission('コールか降りるか、選ぶ');
     root.querySelectorAll('.sp-tile').forEach(b => { const t = sc.tiles.find(x => x.id === b.dataset.id); if (!out.has(t.id)) { b.classList.add(t.win ? 'win' : 'lose'); b.insertAdjacentHTML('beforeend', `<i class="sp-tag">${t.win ? '勝てる' : '負け'}</i>`); } });
     root.querySelector('.prompt').innerHTML = `${api.dots(left.filter(t => t.win).length, left.length)}<b class="q">${left.filter(t => t.win).length} / ${left.length}</b><span class="sp-lg win">勝てる</span><span class="sp-lg lose">負け</span>`;
     root.querySelector('.actions').outerHTML = `<div class="sp-bar"><div class="sp-fill" id="mb-sp-fill"></div><div class="sp-line" id="mb-sp-line"><span>割に合う線 ${Math.round(need * 100)}%</span></div><div class="sp-val">ミミが勝つ ${winPct}%</div></div>
@@ -141,7 +143,7 @@ MB.register({
     if (!api.alive()) return;
     root.querySelector('.actions').remove();
     const right = called === (winPct / 100 >= need);
-    await api.wager({ question: `「${called ? '付いていく' : '降りる'}」と決めた。自信は？`, base: 35 });
+    await api.wager({ question: `「${called ? '付いていく' : '降りる'}」と決めた。自信は？`, base: 35, mission: 'この判断への自信を選ぶ' });
     if (!api.alive()) return;
     let r = Math.random() * tot, her = left[0];
     for (const t of left) { r -= t.w; if (r <= 0) { her = t; break; } }

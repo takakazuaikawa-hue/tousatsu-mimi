@@ -193,6 +193,7 @@
         <button class="btn quiet" data-d="strong">強い手と読む<small>降りて守る</small></button>
       </div>`;
     api.tipOnce('gacha', '3回目は、R以上が確定', 'think');
+    api.mission('ガチャで心の声を引く');
 
     const $ = (s) => root.querySelector(s);
     const mach = $('#mb-gc-mach');
@@ -313,6 +314,7 @@
 
     // 読む
     $('#mb-gc-steps').innerHTML = api.steps(stepNames, 1);
+    api.mission('ブラフか強い手か、読みを決める');
     const decideEl = $('#mb-gc-decide');
     decideEl.hidden = false; decideEl.classList.add('pop');
     api.reveal(decideEl, 'nearest');

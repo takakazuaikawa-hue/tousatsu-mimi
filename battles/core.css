@@ -170,6 +170,19 @@ html:not(.is-compact) .mb-host .mb-purse b { font-family: var(--mincho); font-si
 /* 段（手順）：小窓の段と同じ。今の段は深紅の面＋下に金の線（高さは変えない） */
 /* 手順の帯（菱形）：番号入りの菱形を並べ、今の段だけ名前を出す。済んだ段＝金で塗り／先の段＝枠だけ／今の段＝深紅に金の枠と光 */
 html.is-compact .mb-host .dia i { width: 24px; height: 24px; }
+/* 今やること（T1 指示。api.mission(文)）：手順の帯のすぐ下に 1 行。明朝800・明るい金・下に金の細線。
+   帯（.steps）の子として帯の下の空き（padding-bottom＝--ms-h）に重ねて描く。遊び側の格子・段組みの行は増えず、帯が1つの箱として高くなるだけ。
+   大きさ：PC 24px（--ms-h 38px）は read-pc.css 末尾の「文字の段の当てはめ」、スマホ横 17px（--ms-h 28px）はここ（read-compact.css は個別の詰めだけ）。段が変わって文が替わった時だけ、短く光る */
+.mb-host div.steps.is-dia { position: relative; align-items: flex-start; padding-bottom: var(--ms-h, 28px); }
+.mb-host .steps > .mb-mission { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 0 10px 6px; text-align: center; white-space: nowrap; font-family: var(--mincho); font-weight: 800; font-size: 17px; line-height: 1.25; letter-spacing: .04em; color: #f3d27a; text-shadow: 0 1px 2px rgba(0,0,0,.7); pointer-events: none; }
+.mb-host .steps > .mb-mission > span { display: inline-block; }
+.mb-host .steps > .mb-mission::after { content: ""; position: absolute; left: 50%; bottom: 0; width: min(70%, 440px); height: 1px; transform: translateX(-50%); background: linear-gradient(90deg, transparent, #b8955a 16%, #e8c25e 50%, #b8955a 84%, transparent); }
+.mb-host .steps > .mb-mission.is-off { visibility: hidden; }
+.mb-host .steps > .mb-mission.flash > span { animation: mb-missionFlash .7s ease-out; }
+.mb-host .steps > .mb-mission.flash::after { animation: mb-missionLine .5s ease-out; }
+@keyframes mb-missionFlash { 0% { filter: brightness(1); text-shadow: 0 0 0 rgba(243,210,122,0); } 28% { filter: brightness(1.4); text-shadow: 0 0 14px rgba(243,210,122,.85); } 100% { filter: brightness(1); text-shadow: 0 1px 2px rgba(0,0,0,.7); } }
+@keyframes mb-missionLine { from { transform: translateX(-50%) scaleX(.3); } to { transform: translateX(-50%) scaleX(1); } }
+
 .mb-host .steps.is-dia { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 8px; }
 .mb-host .dia { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; white-space: nowrap; }
 .mb-host .dia i { position: relative; isolation: isolate; width: 26px; height: 26px; display: grid; place-items: center; font: 700 12px/1 var(--mincho); font-style: normal; background: var(--gold); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); color: var(--gold-hi); }

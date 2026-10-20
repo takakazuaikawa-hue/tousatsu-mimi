@@ -104,10 +104,11 @@ MB.register({
     };
     clueBox.innerHTML = clues.map(drawClue).join('') + `<div class="dt-clue hidden-clue mb-crimson" data-i="gacha"><div class="dt-kind">${ICON['ぱにゅ']}ぱにゅ</div><div class="dt-text">ミミにしか見えない手がかりを1つ探せる</div><div class="dt-acts"><button id="mb-dt-panyu" class="mb-key is-gold">ぱにゅぱにゅで探る</button></div></div>`;
     api.tipOnce('detective', who === 'polka' ? '手がかりを<b>めくって</b>天秤へ' : '<b>変わったもの</b>を探そ');
+    api.mission('手がかりを調べて、天秤に載せる');
     const refresh = () => {
       const sc = Object.values(placed).reduce((a, v) => a + (v === 'bluff' ? 1 : v === 'strong' ? -1 : 0), 0);
       root.querySelector('#mb-dt-needle').style.left = (50 + Math.max(-3, Math.min(3, sc)) * 14) + '%';
-      if (Object.keys(placed).length >= 3 && !decided) root.querySelector('#mb-dt-decide').hidden = false;
+      if (Object.keys(placed).length >= 3 && !decided) { root.querySelector('#mb-dt-decide').hidden = false; api.mission('ブラフか強い手か、読みを決める'); }
     };
     clueBox.addEventListener('click', (e) => {
       const box = e.target.closest('.dt-clue'); if (!box) return;

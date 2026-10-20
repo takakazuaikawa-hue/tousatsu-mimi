@@ -243,6 +243,7 @@
         <div class="stare-clue" data-i="${i}"><div class="h mb-label">段${i + 1} ${KIND[i]}</div><div class="st-gg">${api.gauge('出る', TH[i])}${api.gauge('当たる', ch.acc[i] * 100, 'acc')}</div><div class="t">？？？</div></div>`).join('')}
       </div>`;
     api.tipOnce('stare', '押したまま見つめて。ミミが先に崩れたら負け');
+    api.mission('長押しで見つめ、離して止める');
 
     const $ = (s) => root.querySelector(s);
     const arena = $('#mb-stare-arena'), hold = $('#mb-stare-hold'), mimiP = $('#mb-stare-mimi'), oppP = $('#mb-stare-opp');
@@ -349,7 +350,7 @@
         hold.querySelector('span').textContent = '見つめる'; hold.classList.add('is-nudge');
         if (performance.now() - pressAt < 700) misses++;
         if (misses >= 4) {
-          toggle = true;
+          toggle = true; api.mission('タップで見つめ、もう一度タップで止める');
           hold.querySelector('span').textContent = '見つめる（タップ）'; hold.querySelector('small').textContent = 'タップで始まる ・ もう一回タップで止める';
           api.coach('長押しがむずかしければ、タップで始めて、もう一回タップで止めてもOK', 'think');
         } else if (misses >= 2) {
@@ -397,8 +398,9 @@
     if (over === 'mimi') base = Math.max(10, Math.round(base / 2));
 
     $('#mb-stare-steps').innerHTML = api.steps(['見つめ合う', '読む', '賭ける', '答え合わせ'], 1);
+    api.mission('手がかりから、ブラフか強い手かを読む');
     const ctrl = $('#mb-stare-ctrl');
-    ctrl.innerHTML = `<div><p class="stare-ask">${jp}の手は、ブラフ？ 強い手？</p><div class="actions">
+    ctrl.innerHTML = `<div><div class="actions">
       <button class="btn" id="mb-stare-call" type="button">ブラフと読む<small>コールして勝負</small></button>
       <button class="btn quiet" id="mb-stare-fold" type="button">強い手と読む<small>降りて守る</small></button></div></div>`;
     api.coach(stage ? '' : '手がかりなし。勘で読もう');

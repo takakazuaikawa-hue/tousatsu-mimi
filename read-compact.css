@@ -369,6 +369,8 @@ html.is-compact #stage > .read-battle-host.mb-host .hb-meter { height: 22px; gap
 html.is-compact #stage > .read-battle-host.mb-host .hb-meter i { width: 3px; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-bname { font-size: 14px; line-height: 1.2; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-bname small { font-size: 12px; }
+/* スマホ：「いまの5枚 · 」は省き、役の説明だけにする（説明の最後の1文字が2行目に落ちるため） */
+html.is-compact #stage > .read-battle-host.mb-host .hb-bname .hb-now { display: none; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-verdict { grid-column: 2; grid-row: 4; font-size: 14px; line-height: 1.3; min-height: 0; text-align: left; }
 html.is-compact #stage > .read-battle-host.mb-host .hb-verdict.good { font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root > .actions { grid-column: 2; grid-row: 5; gap: 0; }
@@ -764,3 +766,29 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root .formula { font
   /* 見つめ合い：右の目盛りの数字（3・2・1）が右の列の文字に重ならないよう、窓の右に余白 */
   html.is-compact #stage > .read-battle-host.mb-host .stare-duel { padding-right: 8px; }
 }
+
+/* ----- 今やること（api.mission）を足した分の詰め（2026-10-20） -----
+   mission は帯の下に 28px 取る。縦が足りない所は「同じことを2か所で言わない」で削る（指示は mission が持つ）。 */
+/* 見抜く：手順の菱形は隠す（mission がその段の指示を持つ）。帯は mission の1行だけになる */
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .steps .dia { display: none; }
+/* つきつける：列の見出し（発言／証拠）は隠す（mission が「発言を選ぶ」「証拠を選ぶ」と言う） */
+html.is-compact #stage > .read-battle-host.mb-host .ob-colhead { display: none; }
+/* 危険度：「これまでの傾向」は点と数と短い言葉だけ（名札は上の賭けの札と同じことを言うので隠す）。折り返さない */
+html.is-compact #stage > .read-battle-host.mb-host .dg-hist { flex-wrap: nowrap; gap: 6px; }
+html.is-compact #stage > .read-battle-host.mb-host .dg-hist .dg-hl { display: none; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) { padding: 1px 0; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) { gap: 1px 4px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .dt-clues { gap: 1px; }
+/* ガチャ：手順の菱形は隠し、mission を左の列（--gcl）の右から始める。左の列の置き場は帯が 24→28px になった分の 4px だけ下げる */
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) > #mb-gc-steps .dia { display: none; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) > #mb-gc-steps .steps > .mb-mission { left: calc(var(--gcl) + 8px); }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) .gc-panyu { top: 32px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) .gc-left { top: 130px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) #mb-gc-decide { top: 260px; }
+/* ガチャ：読みを決める段ではもう引かないので、天井の行は隠す（決めるボタンと同じ高さに重なるため） */
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-gc-decide:not([hidden])) .gc-ceilg { visibility: hidden; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.gc-voices > .gc-voice:nth-child(3)) .gc-book { display: none; }
+@media (min-width: 720px) { html.is-compact #stage > .read-battle-host.mb-host .ob-ev { margin-top: 6px; } }
+/* 容疑者：今の動きの札（賭けの大きさ）は、すぐ上の動きの記録の最後の行と同じことなので隠す */
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .prompt:has(> .mb-bet) { display: none; }
+@media (max-width: 700px) { html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .card { --w: 26px; } }

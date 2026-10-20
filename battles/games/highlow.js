@@ -194,6 +194,7 @@
 
     const root = api.root;
     const STEPS = ['どっちが勝つ？', '答え合わせ', '続ける？やめる？'];
+    const MS = ['勝つのはどっち？ 3つから選ぶ', '答え合わせ', '続けるか、受け取ってやめるか選ぶ'];
     root.innerHTML = `
       <div id="mb-hl-steps">${api.steps(STEPS, 0)}</div>
       <div class="hl-top">
@@ -254,7 +255,7 @@
       const pot = LADDER[round - 1];
       const D = makeDeal(api, pickType(api));
       const isFinal = round === 4;
-      $('#mb-hl-steps').innerHTML = api.steps(STEPS, 0);
+      $('#mb-hl-steps').innerHTML = api.steps(STEPS, 0); api.mission(MS[0]);
       setLadder(round - 1);
       api.bet(pot);
       $('#mb-hl-round').innerHTML = `<span class="${isFinal ? 'final' : ''}">${isFinal ? '最終戦' : `${round}回戦 / 4`} · 当たれば ${pot * 2}</span>`;
@@ -300,7 +301,7 @@
       api.sfx.tap();
       pickBox.classList.remove('is-cue');
       pickBox.querySelectorAll('.btn').forEach(b => { b.disabled = true; });
-      $('#mb-hl-steps').innerHTML = api.steps(STEPS, 1);
+      $('#mb-hl-steps').innerHTML = api.steps(STEPS, 1); api.mission(MS[1]);
 
       // ためてから答え合わせ
       const mAll = D.m.concat(D.b), oAll = D.o.concat(D.b);
@@ -366,7 +367,7 @@
           return;
         }
         // 続けるか、受け取ってやめるか（射幸性の核）
-        $('#mb-hl-steps').innerHTML = api.steps(STEPS, 2);
+        $('#mb-hl-steps').innerHTML = api.steps(STEPS, 2); api.mission(MS[2]);
         await api.wait(api.reduce ? 100 : 500);
         if (!api.alive()) return;
         const tempt = round === 3 ? `最後 → 320 ＆ PERFECT` : `あと${4 - round}回 → 320`;

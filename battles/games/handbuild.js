@@ -325,7 +325,7 @@
     };
     const setBand = (cards, prefix = '') => {
       let cat = 0, name, sub;
-      if (cards.length === 5) { cat = api.category(cards); name = handName(api, cards); sub = prefix || `いまの5枚 · ${CAT_DESC[cat]}`; }
+      if (cards.length === 5) { cat = api.category(cards); name = handName(api, cards); sub = prefix || `<span class="hb-now">いまの5枚 · </span>${CAT_DESC[cat]}`; }
       else if (cards.length === 0) { name = 'まだ選んでいない'; sub = '札を押すと下の枠に入る'; }
       else { cat = api.category(cards); name = handName(api, cards) || '役なし'; sub = `あと${5 - cards.length}枚`; }
       band.style.setProperty('--c', CAT_COLOR[cat]);
@@ -337,6 +337,7 @@
     const refresh = (snapIdx) => {
       drawDeal(); drawSlots(snapIdx); setBand(sel.map(i => all[i]));
       goBtn.disabled = sel.length !== 5;
+      api.mission(sel.length === 5 ? '「これで勝負」を押す' : '7枚から一番強い5枚を選ぶ');
       goBtn.classList.toggle('is-cue', sel.length === 5);
       deal.classList.toggle('is-cue', sel.length < 5 && !hintSet.size);
       goBtn.querySelector('small').textContent = sel.length === 5 ? `${handName(api, sel.map(i => all[i]))}で勝負` : `あと${5 - sel.length}枚選ぶ`;
@@ -384,7 +385,7 @@
     const mine = sel.map(i => all[i]);
     const myScore = api.score(mine);
     api.coach('');
-    await api.wager({ question: 'これが最強の5枚？', base });
+    await api.wager({ question: 'これが最強の5枚？', base, mission: 'この5枚が最強という自信を選ぶ' });
     if (!api.alive()) return;
     root.querySelector('#mb-hb-steps').innerHTML = api.steps(['5枚を選ぶ', '読みを賭ける', '答え合わせ'], 2);
 

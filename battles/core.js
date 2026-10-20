@@ -397,7 +397,7 @@
           if (expr || !api.coachExpr) { api.coachExpr = expr || 'think'; setPortrait(A, $('#mb-coach-pop'), $('#mb-coach-img'), 'rico', api.coachExpr, 'chibi'); }
         },
         // 手順の帯：番号入りの菱形を並べる。済んだ段は塗り、先の段は枠だけ、今の段だけ名前を出す
-        steps(names, on) { return `<div class="steps is-dia" role="list" aria-label="手順">${names.map((n, i) => `<span class="dia ${i < on ? 'done' : i === on ? 'on' : 'todo'}" role="listitem" aria-label="${i + 1} ${n}" XX
+        steps(names, on) { return `<div class="steps is-dia" role="list" aria-label="手順">${names.map((n, i) => `<span class="dia ${i < on ? 'done' : i === on ? 'on' : 'todo'}" role="listitem" aria-label="${i + 1} ${n}" title="${n}"><i>${i + 1}</i>${i === on ? `<b>${n}</b>` : ''}</span>`).join('')}<div class="mb-mission${api.missionText ? '' : ' is-off'}" role="status"><span>${api.missionText || '&nbsp;'}</span></div></div>`; },
         // 今やること（T1 指示）：手順の帯のすぐ下に 1 行。段が変わるたびに文を渡して差し替える（空文字なら場所を取ったまま隠す）。
         // 帯（.steps）の子として描く（帯の下に空きを取り、そこに重ねる）ので、遊び側の格子・段組みの行は増えない。帯が作り直されても api.steps が今の文を入れ直す。
         // 文が変わった時だけ、短く光る
@@ -488,6 +488,7 @@
             box.querySelectorAll('.mb-wchip').forEach(btn => btn.addEventListener('click', () => {
               if (!live()) return;
               sfx.tap(); const m = +btn.dataset.m; api.mult = m;
+              api.mission(o.after || '答え合わせ');
               // 自信の大きさに相手が反応する（×3 は焦る、×1 は余裕）
               if (m === 3) api.emote('panic'); else if (m === 1) api.emote('smug');
               box.querySelectorAll('.mb-wchip').forEach(x => { x.disabled = true; x.style.opacity = x === btn ? 1 : .3; });

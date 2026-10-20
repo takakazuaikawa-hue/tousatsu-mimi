@@ -234,6 +234,7 @@
       <div class="actions" id="mb-sn-acts"><button class="btn sn-fire" id="mb-sn-fire">撃つ<small>この額で賭ける</small></button></div>
       <div class="sn-out" id="mb-sn-out"></div>`;
     api.tipOnce('sniper', '金の四角が一番広い所', 'think');
+    api.mission('照準を動かして、賭ける額を決める');
 
     const $ = (s) => root.querySelector(s);
     const chart = $('#mb-sn-chart'), rect = $('#mb-sn-rect'), ret = $('#mb-sn-ret'), range = $('#mb-sn-range'), area = $('#mb-sn-area');
@@ -261,6 +262,7 @@
         if (!moved) {
           moved = true; ret.classList.remove('is-cue'); const h = $('#mb-sn-hint'); if (h) h.remove();
           fire.classList.add('is-cue');
+          api.mission('金の四角が最大の所で「撃つ」を押す');
           api.coach('');
         }
       }
@@ -296,7 +298,7 @@
     $('#mb-sn-prompt').hidden = true; range.closest('.sn-rangebox').hidden = true;
     $('#mb-sn-steps').innerHTML = api.steps(STEPS, 2);
     api.coach('');
-    await api.wager({ question: 'ここがベストの額？', base: '20〜40' });
+    await api.wager({ question: 'ここがベストの額？', base: '20〜40', mission: 'この額への自信を選ぶ' });
     if (!api.alive()) return;
     $('#mb-sn-steps').innerHTML = api.steps(STEPS, 3);
 
