@@ -19811,3 +19811,38 @@ html.is-compact .intermission-overlay .ims-scene .ek-name { font-size: calc(13px
 html.is-compact .intermission-overlay .ims-scene .ek-caption { left: 8%; right: 8%; bottom: 7%; }
 /* 幕間はゲームの枠の外（スマホの左右の余白）まで暗く覆う。後ろの画面がはみ出して見えないように */
 .intermission-overlay { box-shadow: 0 0 0 100vmax #0a0204; }
+
+/* ===== 幕間のカメラ（2026-10-20 ユーザー指摘「人物がずっと浮いている。表示位置でなんとかするならズームやカメラ移動でしっかり演出を」）=====
+   ・立ち絵は上半身に寄せる（絵の高さ＝画面の190%、頭を上端近くに）。足元は画面の外なので浮かない。
+   ・立ち位置は話し手で分ける：ミミ＝左、リコ＝中央、相手＝右。背景もその側へ寄せて、カメラがその人を向いている見え方に。
+   ・場面ごとにカメラがゆっくり寄る（9秒で1.08倍）。話し手が替わる時は、前の人の側から振ってくる（背景と立ち絵が横に流れて止まる）。
+   ・背景は少しぼかして暗く＝ピントは人物。下は台詞が読めるように暗く落とす */
+.intermission-overlay .ims-scene { background: #000 !important; overflow: hidden; }
+.intermission-overlay .ims-scene::before { display: none; }
+.ims-cam { position: absolute; inset: 0; transform-origin: 50% 30%; animation: imsCamPush 9s cubic-bezier(.25,.1,.25,1) both; }
+.ims-cam::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(0deg, rgba(10,2,4,.95) 0%, rgba(10,2,4,.6) 24%, transparent 46%),
+              radial-gradient(ellipse 75% 80% at var(--cx, 50%) 35%, transparent 45%, rgba(0,0,0,.55) 100%); }
+.ims-cam-bg { position: absolute; inset: -4% -10%; background: url('assets/backgrounds/bg_intermission.jpg') var(--bgx, 50%) 40% / cover no-repeat; filter: blur(2.5px) brightness(.72) saturate(.9); }
+.intermission-overlay .ims-scene .eps-portrait-frame { position: absolute; left: var(--cx, 50%); top: 3%; width: auto; height: 190%; margin: 0; transform: translateX(-50%); display: block; }
+.intermission-overlay .ims-scene .eps-portrait { height: 100%; width: auto; animation: imsBreath 5.5s ease-in-out infinite; filter: drop-shadow(0 10px 28px rgba(0,0,0,.8)); }
+.ims-scene-mimi { --cx: 34%; --bgx: 22%; --enter: 1; }
+.ims-scene-rico { --cx: 50%; --bgx: 50%; --enter: 0; }
+.ims-scene-opp  { --cx: 66%; --bgx: 78%; --enter: -1; }
+/* 話し手が替わった時の振り：前の人の側から、背景は大きく・人物は小さく流れて止まる（奥行き） */
+.ims-scene[data-from] .ims-cam-bg { animation: imsPanBg .9s cubic-bezier(.2,.7,.2,1) both; }
+.ims-scene[data-from] .eps-portrait-frame { animation: imsPanFg .9s cubic-bezier(.2,.7,.2,1) both; }
+.ims-scene[data-from="mimi"] { --from: -1; }
+.ims-scene[data-from="rico"] { --from: 0; }
+.ims-scene[data-from="opp"]  { --from: 1; }
+.ims-scene[data-from="mimi"].ims-scene-rico, .ims-scene[data-from="mimi"].ims-scene-opp { --dir: 1; }
+.ims-scene[data-from="opp"].ims-scene-rico, .ims-scene[data-from="opp"].ims-scene-mimi { --dir: -1; }
+.ims-scene[data-from="rico"].ims-scene-opp { --dir: 1; }
+.ims-scene[data-from="rico"].ims-scene-mimi { --dir: -1; }
+@keyframes imsCamPush { from { transform: scale(1); } to { transform: scale(1.08); } }
+@keyframes imsPanBg { from { transform: translateX(calc(var(--dir, 0) * -6%)); } to { transform: translateX(0); } }
+@keyframes imsPanFg { from { transform: translateX(calc(-50% + var(--dir, 0) * 14%)); opacity: .2; } to { transform: translateX(-50%); opacity: 1; } }
+@keyframes imsBreath { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-.4%) scale(1.004); } }
+/* 人が替わる時の重ね：新しい場面が上に来て、前の場面は少し遅れて消える */
+.intermission-overlay .ims-scene { transition: opacity .55s ease !important; }
+@media (prefers-reduced-motion: reduce) { .ims-cam, .ims-scene[data-from] .ims-cam-bg, .ims-scene[data-from] .eps-portrait-frame, .intermission-overlay .ims-scene .eps-portrait { animation: none !important; } }
