@@ -35,7 +35,7 @@
 
   // 押してはいけない（検査の流れを壊す・外へ出る）もの
   const AVOID_ACTION = new Set(['back-title', 'reset-save', 'new-game', 'new-game-keep-coins', 'new-game-full', 'newgame-cancel', 'share-game',
-    'open-settings', 'toggle-audio-all', 'toggle-sfx', 'toggle-bgm', 'toggle-psych', 'toggle-logic', 'toggle-backdoor', 'open-shop', 'open-collection',
+    'open-settings', 'toggle-audio-all', 'open-sound-panel', 'toggle-sfx', 'toggle-bgm', 'toggle-psych', 'toggle-logic', 'toggle-backdoor', 'open-shop', 'open-collection',
     'use-panyu-sense', 'skip-stage', 'rico-skip-tutorial', 'psych-skip', 'char-profile', 'open-rico-viewer', 'show-hand-guide', 'open-glossary',
     'open-history', 'panyu-free', 'play-minipoker', 'buy-item', 'equip-change', 'lb3-toggle-audio', 'toggle-v2-detail', 'intro-read-episode',
     'intro-to-lecture', 'recall-episode', 'view-reward-cg', 'play-ending-theme', 'open-note', 'rico-mode-cancel', 'back-lobby']);
@@ -212,6 +212,7 @@
     for (const el of cands) {
       const act = el.dataset ? el.dataset.action : '';
       const t = label(el);
+      if (el.closest && el.closest('.sound-panel')) continue;   // 音の小窓の中（すべて消す等）は押さない
       if (act && AVOID_ACTION.has(act) && !(act === 'back-lobby' && /ロビーへ/.test(t) && S && (S.screen === 'result' || S.screen === 'ending'))) continue;
       if (AVOID_TEXT.test(t) && !(act && PREFER_ACTION[act])) continue;
       if (el.classList.contains('action-slot') || el.classList.contains('verb-btn') || el.classList.contains('verb-size') || el.classList.contains('verb-back')) continue;
