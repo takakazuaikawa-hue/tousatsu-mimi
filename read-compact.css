@@ -792,3 +792,11 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.gc-voices 
 /* 容疑者：今の動きの札（賭けの大きさ）は、すぐ上の動きの記録の最後の行と同じことなので隠す */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .prompt:has(> .mb-bet) { display: none; }
 @media (max-width: 700px) { html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .card { --w: 26px; } }
+/* 当たり札：当たり札が多い問題（2段以上に並ぶ）でも縦に収まるよう、手順の菱形は隠す（mission が段の指示を持つ） */
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .steps .dia { display: none; }
+/* ダウト：「最後 · 今の賭けの話」の札は 12px 未満にしない */
+html.is-compact #stage > .read-battle-host.mb-host .doubt-last { font-size: 12px; }
+/* ダウト：答え合わせの5行が縦に収まるよう、手順の菱形は隠す（mission が段の指示を持つ） */
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) #mb-doubt-steps .dia { display: none; }
+/* 容疑者：動きが3つある問題でも縦に収まるよう、手順の菱形は隠す（mission が段の指示を持つ） */
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .steps .dia { display: none; }
