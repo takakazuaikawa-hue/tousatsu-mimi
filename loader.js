@@ -109,6 +109,8 @@
     lobby: () => [
       ...['scene','stage-empty','nameplate','plate','plate_pic','ledger','seal','mark','lock','oct','frame','ticket','ico_shop','ico_collection','ico_school','ico_title','ico_gift','ico_coin','ico_gear'].map(k => `assets/ui/home/${k}.webp`),
       ...['rico_default','polka','selina','grano','velvet','mimi'].map(k => `assets/ui/face_${k}.webp`),
+      // 額と台帳の小さな顔の窓は、額のために描いた肖像（home.js の framePortrait）
+      ...['rico','polka','selina','grano','velvet','mimi'].map(k => `assets/ui/portrait_${k}.webp`).filter(u => MAN[u]),
     ],
     // 対戦に入る瞬間に要るもの（そろうまで「準備中」で待つ）
     battleNow: (oppId, key) => [

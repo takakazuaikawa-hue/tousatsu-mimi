@@ -1190,7 +1190,7 @@
     const frame = root.querySelector('.h15-frame');
     if (frame) {
       const ch = A.champion || 'velvet';
-      frame.querySelector('.h15-pic').src = idleFace(ch);
+      frame.querySelector('.h15-pic').src = typeof framePortrait === 'function' ? framePortrait(ch) : idleFace(ch);  // 王者の額も肖像（home.js）
       frame.querySelector('.h15-pic').alt = NAMES[ch];
       frame.querySelector('.h15-lbl').textContent = NAMES[ch];
       frame.querySelector('.h15-sub').textContent = ch === 'mimi' ? '王者' : '現王者';
