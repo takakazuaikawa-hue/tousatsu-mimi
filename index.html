@@ -41,13 +41,13 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Bebas+Neue&family=Shippori+Mincho+B1:wght@600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap">
-<link rel="stylesheet" href="style.css?v=20261020d">
-<link rel="stylesheet" href="battles/core.css?v=20261020d">
-<link rel="stylesheet" href="battles/read-pc.css?v=20261020d">
-<link rel="stylesheet" href="read-compact.css?v=20261020d">
-<link rel="stylesheet" href="ui-modal.css?v=20261020d">
-<link rel="stylesheet" href="allstar.css?v=20261020d">
-<link rel="stylesheet" href="offline.css?v=20261020d">
+<link rel="stylesheet" href="style.css?v=20261021a">
+<link rel="stylesheet" href="battles/core.css?v=20261021a">
+<link rel="stylesheet" href="battles/read-pc.css?v=20261021a">
+<link rel="stylesheet" href="read-compact.css?v=20261021a">
+<link rel="stylesheet" href="ui-modal.css?v=20261021a">
+<link rel="stylesheet" href="allstar.css?v=20261021a">
+<link rel="stylesheet" href="offline.css?v=20261021a">
 <link rel="preload" as="image" href="assets/ui/home/scene.webp" fetchpriority="high">
 </head>
 <body>
@@ -192,35 +192,24 @@
 </template>
 
 <template id="tpl-shop">
-  <div class="screen shop-screen v2">
-    <div class="bg-layer bg-shop"></div>
-    <div class="shop-v2-scrim"></div>
+  <!-- 交換所 v3：グラーノ商会の窓口。品は札にして羅紗に並べ、選んだ品をカウンターの向こうに大きく見せる。
+       押す所は親指の届く所だけ：左端＝分類、下＝札、右下＝交換。上は題字とコインの表示だけ -->
+  <div class="screen shop-screen v3">
+    <div class="sh3-bg" aria-hidden="true"></div>
+    <div class="sh3-light" aria-hidden="true"></div>
+    <div class="sh3-model" aria-hidden="true"></div>
+    <div class="sh3-grano" aria-hidden="true"><img src="assets/characters/grano_shop.webp" alt="" onerror="this.onerror=null;this.src='assets/characters/grano_offer.webp';"></div>
+    <div class="sh3-fg" aria-hidden="true"></div>
 
-    <div class="shop-v2-owner character-frame char-grano-shop">
-      <img src="assets/characters/grano_offer.webp" alt="グラーノ" onerror="this.onerror=function(){window.assetFallback(this,'grano')};this.src='assets/characters/grano_recommend.webp';">
-    </div>
-    <div class="shop-v2-bubble grano-shop-bubble" data-bind="ricoShopComment">「おや、いらっしゃい。今日の掘り出し物は……ふふ、良い目をお持ちだ」</div>
+    <header class="sh3-head"><div class="sh3-ttl">交換所</div><div class="sh3-brand">グラーノ商会</div></header>
+    <div class="sh3-coins"><small>手持ち</small><b data-bind="saveCoins">0</b><span>コイン</span></div>
+    <button class="sh3-back" data-action="back-lobby">ロビーへ</button>
 
-    <button class="btn btn-ghost shop-v2-back" data-action="back-lobby">← ロビーへ</button>
-
-    <header class="shop-v2-head">
-      <div class="shop-v2-disp shop-v2-brand">GRANO TRADING CO.</div>
-      <div class="shop-v2-title">交換所</div>
-    </header>
-    <div class="shop-v2-coins">
-      <div class="shop-v2-disp shop-v2-coins-label">COINS</div>
-      <div class="shop-v2-disp shop-v2-coins-num" data-bind="saveCoins">0</div>
-    </div>
-
-    <nav class="shop-v2-tabs">
-      <button class="shop-cat-btn active" data-cat="panyu"><span>ぱにゅ強化</span></button>
-      <button class="shop-cat-btn" data-cat="note"><span>戦術ノート</span></button>
-      <button class="shop-cat-btn" data-cat="skin"><span>見た目</span></button>
-      <button class="shop-cat-btn" data-cat="stack"><span>チップ拡張</span></button>
-      <button class="shop-cat-btn" data-cat="memory"><span>メモリ</span></button>
-    </nav>
-
-    <section class="shop-items" data-bind="shopItems"></section>
+    <nav class="sh3-cats" aria-label="品の分類"></nav>
+    <div class="sh3-info" aria-live="polite"></div>
+    <div class="sh3-say"><b>グラーノ</b><span data-bind="ricoShopComment">「おや、いらっしゃい。今夜の掘り出し物は……ふふ、良い目をお持ちだ」</span></div>
+    <section class="sh3-row" aria-label="品の札"></section>
+    <div class="sh3-buy"></div>
   </div>
 </template>
 
@@ -478,26 +467,26 @@
   </div>
 </template>
 
-<script src="battles/core.js?v=20261020d"></script>
-<script src="battles/games/detective.js?v=20261020d"></script>
-<script src="battles/games/stare.js?v=20261020d"></script>
-<script src="battles/games/doubt.js?v=20261020d"></script>
-<script src="battles/games/objection.js?v=20261020d"></script>
-<script src="battles/games/gacha.js?v=20261020d"></script>
-<script src="battles/games/handbuild.js?v=20261020d"></script>
-<script src="battles/games/highlow.js?v=20261020d"></script>
-<script src="battles/games/danger.js?v=20261020d"></script>
-<script src="battles/games/sniper.js?v=20261020d"></script>
-<script src="battles/games/outs.js?v=20261020d"></script>
-<script src="battles/games/suspects.js?v=20261020d"></script>
-<script src="assets/manifest.js?v=20261020d"></script>
-<script src="loader.js?v=20261020d"></script>
-<script src="home.js?v=20261020d"></script>
-<script src="home-live.js?v=20261020d"></script>
-<script src="voice.js?v=20261020d"></script>
-<script src="game.js?v=20261020d"></script>
-<script src="allstar.js?v=20261020d"></script>
-<script src="allstar-ui.js?v=20261020d"></script>
-<script src="offline.js?v=20261020d"></script>
+<script src="battles/core.js?v=20261021a"></script>
+<script src="battles/games/detective.js?v=20261021a"></script>
+<script src="battles/games/stare.js?v=20261021a"></script>
+<script src="battles/games/doubt.js?v=20261021a"></script>
+<script src="battles/games/objection.js?v=20261021a"></script>
+<script src="battles/games/gacha.js?v=20261021a"></script>
+<script src="battles/games/handbuild.js?v=20261021a"></script>
+<script src="battles/games/highlow.js?v=20261021a"></script>
+<script src="battles/games/danger.js?v=20261021a"></script>
+<script src="battles/games/sniper.js?v=20261021a"></script>
+<script src="battles/games/outs.js?v=20261021a"></script>
+<script src="battles/games/suspects.js?v=20261021a"></script>
+<script src="assets/manifest.js?v=20261021a"></script>
+<script src="loader.js?v=20261021a"></script>
+<script src="home.js?v=20261021a"></script>
+<script src="home-live.js?v=20261021a"></script>
+<script src="voice.js?v=20261021a"></script>
+<script src="game.js?v=20261021a"></script>
+<script src="allstar.js?v=20261021a"></script>
+<script src="allstar-ui.js?v=20261021a"></script>
+<script src="offline.js?v=20261021a"></script>
 </body>
 </html>

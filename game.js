@@ -5694,41 +5694,200 @@ function renderShopItems(cat) {
   }).join('');
 }
 
-function bindShop() {
-  document.querySelectorAll('.shop-cat-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.shop-cat-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const cat = btn.dataset.cat;
-      const itemsEl = document.querySelector('[data-bind="shopItems"]');
-      itemsEl.innerHTML = renderShopItems(cat);
-      bindActions();
-      bindShopItems();
-    });
-  });
-  bindShopItems();
+// ===== 交換所 v3：グラーノ商会の窓口 =====
+// 品はすべて「札」。羅紗のカウンターに並べ、選んだ品をカウンターの向こうに大きく見せる（衣装はその服を着た姿）。
+// 押す所は親指の届く所だけ：左端＝分類、下＝札、右下＝交換。グラーノは脇役で、品ごとに一言しゃべる。
+const SHOP3_GROUPS = [
+  { id: 'wear',   label: '衣装',     match: i => /^(outfit_rico_|mimi_skin_|pwear_)/.test(i.id) },
+  { id: 'panyu',  label: 'ぱにゅ',   match: i => i.cat === 'panyu' && !i.id.startsWith('pwear_') },
+  { id: 'look',   label: '卓の装い', match: i => i.cat === 'skin' && !/^(outfit_rico_|mimi_skin_)/.test(i.id) },
+  { id: 'note',   label: 'ノート',   match: i => i.cat === 'note' },
+  { id: 'stack',  label: 'チップ',   match: i => i.cat === 'stack' },
+  { id: 'memory', label: 'メモリ',   match: i => i.cat === 'memory' },
+];
+// 卓の装いの見本の色（カード裏・卓・チップの見た目の CSS と同じ色）
+const SHOP3_SWATCH = {
+  skin_red_gold_card: 'linear-gradient(135deg,#8a1828,#d9b35a)', skin_blue_silver_card: 'linear-gradient(135deg,#1e3a72,#c0c7d4)',
+  skin_obsidian_card: 'linear-gradient(135deg,#050507,#3a2a22)', skin_floral_card: 'radial-gradient(circle at 30% 30%,#f8c7d8,#b88aa8 60%,#6a3a5a)',
+  skin_galaxy_card: 'radial-gradient(ellipse at 40% 40%,#8a2a35,#300811 50%,#180003)',
+  table_vip: 'radial-gradient(ellipse,#5a1a28,#2a0a12 75%)', table_emerald: 'radial-gradient(ellipse,#1a4a2a,#041a0a 75%)',
+  table_neon: 'radial-gradient(ellipse,#8a1a42,#200003 75%)', table_speakeasy: 'radial-gradient(ellipse,#6a4a22,#150a04 75%)',
+  chip_skin_ivory: 'radial-gradient(circle,#f3ead6 0 34%,#3a2a20 35% 44%,#f3ead6 45% 60%,#2a1810 61%)',
+  chip_skin_jade: 'radial-gradient(circle,#bfe3cf 0 34%,#123a2a 35% 44%,#5fae8c 45% 60%,#0a1a12 61%)',
+  chip_skin_dragon: 'radial-gradient(circle,#ffcf9a 0 34%,#5a0a08 35% 44%,#e0462a 45% 60%,#1a0402 61%)',
+};
+// 品の絵（ChatGPT で同じ絵柄の小物として描いた。assets/ui/shop/items）。段違いの品（Lv2/Lv3 など）は同じ絵に数を重ねる
+const SHOP3_OBJ = {
+  panyu_sense: 'panyu_sense', panyu_range: 'panyu_range', panyu_gauge: 'panyu_gauge', panyu_combo_x2: 'panyu_combo', panyu_chrono: 'panyu_chrono',
+  note_pot_odds: 'note_pot_odds', note_tell: 'note_tell', note_bankroll: 'note_bankroll', memory_minipoker: 'memory_minipoker',
+  bgm_lobby_jazz: 'memory_bgm_records', bgm_battle_tense: 'memory_bgm_records', bgm_battle_techno: 'memory_bgm_records', se_pack_casino: 'memory_se_bell',
+  gallery_rico: 'gallery_rico', gallery_opponents: 'gallery_opponents', gallery_mimi: 'gallery_mimi', omake_drama_1: 'omake_drama', omake_drama_2: 'omake_drama',
+  omake_voice_pack: 'memory_bgm_player', memory_ending: 'memory_film', omake_credit: 'memory_film', memory_ending_theme: 'memory_theme',
+  skin_red_gold_card: 'skin_red_gold_card', skin_blue_silver_card: 'skin_blue_silver_card', skin_obsidian_card: 'skin_obsidian_card', skin_floral_card: 'skin_floral_card', skin_galaxy_card: 'skin_galaxy_card', chip_skin_ivory: 'chip_skin_ivory', chip_skin_jade: 'chip_skin_jade', chip_skin_dragon: 'chip_skin_dragon', table_vip: 'table_vip', table_emerald: 'table_emerald', table_neon: 'table_neon', table_speakeasy: 'table_speakeasy',
+};
+let shop3 = { group: 'wear', sel: null };
+// 棚を開いた時のグラーノの一言（その棚の先頭の品に台詞が無い時だけ）
+const SHOP3_SHELF_LINE = {
+  wear: '着せ替えの棚でございます。どなたを、どう飾りますかな',
+  panyu: 'ぱにゅぱにゅの品々。効き目は保証しますよ、効き目は',
+  look: '卓の装いは、勝負の気分を変えるもの。安い買い物ではありませんが、ね',
+  note: '知識は一番安くて、一番高くつく品です',
+  stack: 'チップは多いほど、長く遊べますからな',
+  memory: '思い出は、見届けた方のものですよ',
+};
+function shop3GroupOf(item) { return (SHOP3_GROUPS.find(g => g.match(item)) || SHOP3_GROUPS[0]).id; }
+function shop3Items(gid) { const g = SHOP3_GROUPS.find(x => x.id === gid) || SHOP3_GROUPS[0]; return SHOP_ITEMS.filter(g.match); }
+// 品の絵：衣装＝その服を着た姿、ぱにゅ衣装＝その服のミミ、それ以外＝札の紋（線画＋大きな数）
+function shop3Art(item) {
+  const id = item.id;
+  let m = id.match(/^outfit_rico_(.+)$/); if (m) return { type: 'figure', src: `assets/characters/rico_${m[1]}.webp` };
+  m = id.match(/^mimi_skin_(.+)$/);        if (m) return { type: 'figure', src: `assets/characters/mimi_${m[1]}.webp` };
+  m = id.match(/^pwear_(.+)$/);            if (m && PANYU_OUTFIT_IMG[m[1]]) return { type: 'scene', src: `assets/characters/${PANYU_OUTFIT_IMG[m[1]]}.webp` };
+  let big = '';
+  const obj = SHOP3_OBJ[id] || SHOP3_OBJ[id.replace(/_(lv\d|plus_\d+)$/, '')];
+  if ((m = id.match(/^chips_plus_(\d+)$/))) return { type: 'stack', big: '+' + Number(m[1]).toLocaleString(), piles: ({ 500: 1, 1500: 2, 3000: 3, 5000: 4, 10000: 5 })[m[1]] || 1 };
+  else if ((m = id.match(/_lv(\d)$/))) big = 'Lv' + m[1];
+  else if ((m = id.match(/_plus_(\d+)$/))) big = '+' + m[1];
+  else if (id === 'panyu_combo_x2') big = '×2';
+  if (obj) return { type: 'object', src: `assets/ui/shop/items/${obj}.webp`, big };
+  return { type: 'emblem', big, swatch: SHOP3_SWATCH[id] || '', cat: item.cat };
 }
-function bindShopItems() {
-  document.querySelectorAll('.shop-item').forEach(item => {
-    // ホバーでも切り替え（PC操作用）
-    item.addEventListener('mouseenter', () => selectShopItem(item));
-    // クリックで選択（モバイル/タッチ操作用）。購入ボタンは別途バブリングを止める
-    item.addEventListener('click', (e) => {
-      // 購入ボタン押下はアイテム選択ではなく購入動作のみ
-      if (e.target.closest('[data-action="buy-item"]')) return;
-      selectShopItem(item);
-    });
-  });
+function shop3CardName(item) {
+  if (/^chips_plus_/.test(item.id)) return '持ち込み';
+  const q = item.name.match(/「(.+?)」/); if (q) return q[1];
+  if (/^memory_ending_theme$/.test(item.id)) return '主題歌';
+  if (item.id === 'memory_ending') return 'エンディング';
+  return shop3ShortName(item).replace(/^(カットイン)・/, '');
 }
-function selectShopItem(item) {
-  document.querySelectorAll('.shop-item').forEach(i => i.classList.remove('selected'));
-  item.classList.add('selected');
-  const id = item.dataset.item;
-  const comment = SHOP_COMMENTS[id];
-  if (comment) {
-    const el = document.querySelector('[data-bind="ricoShopComment"]');
-    if (el) el.textContent = `「${comment}」`;
+function shop3ShortName(item) { return /^chips_plus_/.test(item.id) ? '持ち込み' + item.name.replace(/^チップ拡張 /, ' ') : item.name.replace(/^(リコ・|ミミ・|ぱにゅ衣装：)/, ''); }
+function shop3Kicker(item) {
+  if (/^outfit_rico_/.test(item.id)) return 'リコ先輩の衣装';
+  if (/^mimi_skin_/.test(item.id))   return 'ミミの衣装';
+  if (/^pwear_/.test(item.id))       return 'ぱにゅぱにゅの衣装';
+  return (SHOP3_GROUPS.find(g => g.id === shop3GroupOf(item)) || {}).label || '';
+}
+// まだ入荷していない品：誰に勝つと入るか
+function shop3UnlockWho(item) {
+  const st = SHOP_UNLOCK[item.id];
+  if (!st || st === 'always') return '';
+  return st === 'rico_tutorial' ? 'リコ先輩' : ((OPPONENTS[st] && OPPONENTS[st].name) || '');
+}
+function shop3Face(item, art) {
+  if (art.type === 'figure') return `<span class="sh3-face is-figure" style="background-image:url('${art.src}')"></span>`;
+  if (art.type === 'scene')  return `<span class="sh3-face is-scene" style="background-image:url('${art.src}')"></span>`;
+  if (art.type === 'stack') {
+    const chips = ['chip_red', 'chip_gold', 'chip_white', 'chip_blue', 'chip_gold'];
+    const piles = Array.from({ length: art.piles }, (_, p) => `<i class="sh3-pile" style="--p:${p};--h:${4 + ((p * 3) % 4)}">${Array.from({ length: 4 + ((p * 3) % 4) }, (_, k) => `<b style="--k:${k};background-image:url('assets/ui/${chips[p]}.webp')"></b>`).join('')}</i>`).join('');
+    return `<span class="sh3-face is-stack"><span class="sh3-piles">${piles}</span><em>${art.big}</em></span>`;
   }
+  if (art.type === 'object') return `<span class="sh3-face is-object"><img src="${art.src}" alt="" loading="lazy">${art.big ? `<em>${art.big}</em>` : ''}</span>`;
+  return `<span class="sh3-face is-emblem">${art.swatch ? `<i class="sh3-swatch" style="background:${art.swatch}"></i>` : `<i class="sh3-glyph">${shopCatIconSvg(art.cat)}</i>`}${art.big ? `<em>${art.big}</em>` : ''}</span>`;
+}
+function shop3CardHTML(item, k) {
+  if (!isShopItemUnlocked(item.id)) {
+    const who = shop3UnlockWho(item);
+    return `<button type="button" class="sh3-card is-back" data-sh3="${item.id}" style="--k:${k}" aria-label="未入荷の品"><span class="sh3-face is-backface"></span><span class="sh3-cap">${who ? who + 'に勝つと' : '近日入荷'}</span></button>`;
+  }
+  const owned = isItemOwned(item.id);
+  const cls = ['sh3-card', owned ? 'is-owned' : '', isShopItemNew(item.id) ? 'is-new' : '', shop3.sel === item.id ? 'is-sel' : ''].filter(Boolean).join(' ');
+  return `<button type="button" class="${cls}" data-sh3="${item.id}" style="--k:${k}" aria-label="${item.name}">${shop3Face(item, shop3Art(item))}<span class="sh3-cap">${shop3CardName(item)}</span>${owned ? '<span class="sh3-owned">入手済</span>' : ''}</button>`;
+}
+function shop3RenderCats() {
+  const nav = document.querySelector('.sh3-cats'); if (!nav) return;
+  nav.innerHTML = SHOP3_GROUPS.map(g => {
+    const isNew = shop3Items(g.id).some(i => isShopItemNew(i.id));
+    return `<button type="button" class="sh3-cat${g.id === shop3.group ? ' is-on' : ''}" data-g="${g.id}"><span>${g.label}</span>${isNew ? '<i class="sh3-newdot" aria-label="新入荷あり"></i>' : ''}</button>`;
+  }).join('');
+  nav.querySelectorAll('.sh3-cat').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.g === shop3.group) return;
+    if (typeof mpSfx === 'function') mpSfx('tap');
+    shop3.group = b.dataset.g; shop3.sel = null;
+    shop3RenderCats(); shop3RenderRow(true);
+    if (SHOP_COMMENTS[shop3.sel]) shop3Say(SHOP_COMMENTS[shop3.sel]); else if (SHOP3_SHELF_LINE[shop3.group]) shop3Say(SHOP3_SHELF_LINE[shop3.group]);
+  }));
+}
+function shop3BindCard(c) {
+  c.addEventListener('click', () => {
+    const it = SHOP_ITEMS.find(i => i.id === c.dataset.sh3);
+    if (!it) return;
+    if (typeof mpSfx === 'function') mpSfx('tap');
+    if (!isShopItemUnlocked(it.id)) {
+      const who = shop3UnlockWho(it);
+      shop3Say(who ? `そちらはまだ入荷前でしてな。${who}に勝たれた頃に、お持ちしましょう` : 'そちらはまだ入荷前でしてな');
+      return;
+    }
+    if (shop3.sel === it.id) return;
+    shop3Select(it.id, true);
+  });
+}
+function shop3RenderRow(deal) {
+  const row = document.querySelector('.sh3-row'); if (!row) return;
+  // 並び：新入荷→未所持→所持→未入荷（伏せ札）
+  const rank = i => !isShopItemUnlocked(i.id) ? 3 : isItemOwned(i.id) ? 2 : isShopItemNew(i.id) ? 0 : 1;
+  const kind = i => /^outfit_rico_/.test(i.id) ? 0 : /^mimi_skin_/.test(i.id) ? 1 : /^pwear_/.test(i.id) ? 2 : 0;
+  const sorted = shop3Items(shop3.group).slice().sort((a, b) => (rank(a) === 3) - (rank(b) === 3) || kind(a) - kind(b) || rank(a) - rank(b));
+  if (!shop3.sel || !sorted.some(i => i.id === shop3.sel && isShopItemUnlocked(i.id))) {
+    const first = sorted.find(i => isShopItemUnlocked(i.id));
+    shop3.sel = first ? first.id : null;
+  }
+  row.innerHTML = sorted.map((it, k) => shop3CardHTML(it, k)).join('');
+  if (deal) { row.scrollLeft = 0; row.classList.remove('is-deal'); void row.offsetWidth; row.classList.add('is-deal'); }
+  row.querySelectorAll('.sh3-card').forEach(shop3BindCard);
+  shop3Select(shop3.sel, false);
+}
+function shop3Say(text) {
+  const el = document.querySelector('[data-bind="ricoShopComment"]'); if (!el) return;
+  el.textContent = `「${text}」`;
+  const box = el.closest('.sh3-say'); if (box) { box.classList.remove('is-talk'); void box.offsetWidth; box.classList.add('is-talk'); }
+}
+function shop3Select(id, speak) {
+  shop3.sel = id;
+  document.querySelectorAll('.sh3-card').forEach(c => c.classList.toggle('is-sel', c.dataset.sh3 === id));
+  const sel = document.querySelector(`.sh3-card[data-sh3="${id}"]`);
+  if (sel && speak) sel.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+  const item = SHOP_ITEMS.find(i => i.id === id);
+  shop3RenderStage(item);
+  if (speak && item && SHOP_COMMENTS[item.id]) shop3Say(SHOP_COMMENTS[item.id]);
+}
+function shop3RenderStage(item) {
+  const model = document.querySelector('.sh3-model'), info = document.querySelector('.sh3-info'), buy = document.querySelector('.sh3-buy');
+  if (!model || !info || !buy) return;
+  if (!item) { model.innerHTML = ''; info.innerHTML = '<p class="sh3-desc">この棚は、まだ空でしてな。対戦に勝つと品が入ります。</p>'; buy.innerHTML = ''; return; }
+  const art = shop3Art(item);
+  const inner = art.type === 'figure' ? `<img class="sh3-fig" src="${art.src}" alt="">`
+    : art.type === 'scene' ? `<span class="sh3-frame"><img src="${art.src}" alt=""></span>`
+    : `<span class="sh3-bigcard">${shop3Face(item, art)}</span>`;
+  model.className = 'sh3-model is-' + art.type + (/_card$/.test(item.id) ? ' is-cardback' : '');
+  model.innerHTML = `<div class="sh3-model-in">${inner}</div>`;
+  info.innerHTML = `<div class="sh3-kick">${shop3Kicker(item)}</div><h2 class="sh3-name${shop3ShortName(item).length > 6 ? ' is-long' : ''}${shop3ShortName(item).length > 9 ? ' is-xlong' : ''}">${shop3ShortName(item)}</h2><p class="sh3-desc">${item.desc || ''}</p>`;
+  const owned = isItemOwned(item.id);
+  const block = owned ? null : shopItemBlock(item);
+  const play = owned ? memoryItemAction(item.id) : null;
+  const price = item.clearBonus ? '<span class="sh3-price is-free">クリア特典</span>' : `<span class="sh3-price">${item.price.toLocaleString()}<small>コイン</small></span>`;
+  if (owned) {
+    buy.className = 'sh3-buy is-owned';
+    buy.innerHTML = play
+      ? `<button type="button" class="sh3-buybtn" data-action="${play.action}" data-memory-id="${item.id}"><span class="sh3-buy-l">${play.label}</span></button>`
+      : `<div class="sh3-buybtn is-done"><span class="sh3-seal">入手済</span></div>`;
+    if (play && typeof bindActions === 'function') bindActions();
+  } else if (block) {
+    buy.className = 'sh3-buy is-block';
+    buy.innerHTML = `<div class="sh3-buybtn is-done">${price}<span class="sh3-buy-note">${block.label}</span></div>`;
+  } else {
+    const short = save.coins < item.price;
+    buy.className = 'sh3-buy' + (short ? ' is-short' : '');
+    buy.innerHTML = `<button type="button" class="sh3-buybtn" data-sh3-buy="${item.id}">${price}<span class="sh3-buy-l">${short ? 'コインが足りません' : '交換する'}</span></button>`;
+    buy.querySelector('[data-sh3-buy]').addEventListener('click', () => buyItem(item.id));
+  }
+}
+function bindShop() {
+  // 新入荷がある分類を最初に開く（無ければ衣装）
+  const firstNew = SHOP3_GROUPS.find(g => shop3Items(g.id).some(i => isShopItemNew(i.id)));
+  shop3.group = firstNew ? firstNew.id : 'wear';
+  shop3.sel = null;
+  const n = document.querySelector('[data-bind="saveCoins"]'); if (n) n.textContent = save.coins.toLocaleString();
+  shop3RenderCats();
+  shop3RenderRow(true);
 }
 
 function buyItem(itemId) {
@@ -5738,60 +5897,48 @@ function buyItem(itemId) {
   if (!isShopItemUnlocked(itemId)) return;
   // 前提の品が無い／上位を持っている／クリア条件未達は、ボタンが出ていなくてもここで止める
   const block = shopItemBlock(item);
-  if (block) { toast(block.kind === 'superseded' ? '上位の品を持っているので不要です' : block.label.replace('', '')); return; }
-  if (save.coins < item.price) return;
-  // 演出は「再描画で壊れる前」に、購入直前の実DOM要素を掴んでおく
-  const boughtItemEl = document.querySelector(`.shop-item[data-item="${itemId}"]`);
+  if (block) { toast(block.kind === 'superseded' ? '上位の品を持っているので不要です' : block.label); return; }
+  if (save.coins < item.price) { playShopShortFx(item); return; }
   save.coins -= item.price;
   save.ownedItems.push(itemId);
   // 効果適用
   applyItemEffect(itemId);
   applyEquippedStyles();
   saveProgress();
-  // トーストは演出関数側（playShopBuyFx）で一本化して表示する（二重トーストの重なり防止）
-  playShopBuyFx(boughtItemEl, item);
-  // 再レンダリング
-  const activeCat = document.querySelector('.shop-cat-btn.active')?.dataset.cat || 'panyu';
-  const itemsEl = document.querySelector('[data-bind="shopItems"]');
-  if (itemsEl) itemsEl.innerHTML = renderShopItems(activeCat);
-  const coinsEl = document.querySelector('[data-bind="saveCoins"]');
-  if (coinsEl) coinsEl.textContent = save.coins;
-  bindActions();
-  bindShopItems();
+  playShopBuyFx(item);
 }
-
-// 購入成功時の演出：①押した商品スラブが金色に発光して0.5秒だけ横回転
-//                    ②コイン表示から商品スラブへチップが数枚飛ぶ（既存の flyChips を再利用）
-//                    ③toast（呼び出し元で既に表示済み）／SEは mpSfx を再利用
-// render() による再描画で商品スラブの実要素はすぐ入れ替わるため、
-// 見た目用のクローンを document.body に重ねて自前アニメ→自前削除する（購入判定・所持品には一切触れない）
-function playShopBuyFx(itemEl, item) {
+// コインが足りない：手持ちの台が小さく揺れ、グラーノが一言（いくら足りないかを添える）
+function playShopShortFx(item) {
+  if (typeof mpSfx === 'function') mpSfx('tap');
+  const coins = document.querySelector('.sh3-coins');
+  if (coins) { coins.classList.remove('is-short'); void coins.offsetWidth; coins.classList.add('is-short'); }
+  shop3Say(`おや、お代が少々足りませんな。あと ${(item.price - save.coins).toLocaleString()} コイン、卓で稼いでいらっしゃい`);
+}
+// 交換の儀式：①チップが手持ちから窓口へ飛ぶ ②大きな品に光が走り封蝋「入手」が押される ③札が表に返る ④グラーノの一言
+function playShopBuyFx(item) {
   const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   if (typeof mpSfx === 'function') mpSfx('milestone');
-  // ① コインがスラブへ飛ぶ（fromSel=コイン表示、toSel=商品スラブ要素）。3〜5枚程度に見えるよう固定値を渡す
-  if (typeof flyChips === 'function') {
-    const fromEl = document.querySelector('[data-bind="saveCoins"]');
-    if (fromEl && itemEl) flyChips(fromEl, itemEl, reduceMotion ? 60 : 300);
+  const coinsNum = document.querySelector('[data-bind="saveCoins"]');
+  if (coinsNum) coinsNum.textContent = save.coins.toLocaleString();
+  if (typeof flyChips === 'function' && !reduceMotion) {
+    const from = document.querySelector('.sh3-coins'), to = document.querySelector('.sh3-grano');
+    if (from && to) flyChips(from, to, Math.max(200, item.price));
   }
-  // ② 押した商品スラブのクローンを重ねて金色発光＋一度だけ横回転（perspective 用に外側 wrap を用意）
-  if (itemEl) {
-    const rect = itemEl.getBoundingClientRect();
-    if (rect.width && rect.height) {
-      const wrap = document.createElement('div');
-      wrap.className = 'shop-buy-fx-wrap';
-      wrap.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;`;
-      const clone = itemEl.cloneNode(true);
-      clone.removeAttribute('data-item');
-      clone.className = 'shop-item shop-buy-fx-clone';
-      wrap.appendChild(clone);
-      document.body.appendChild(wrap);
-      requestAnimationFrame(() => clone.classList.add(reduceMotion ? 'shop-buy-fx-spin-reduced' : 'shop-buy-fx-spin'));
-      const life = reduceMotion ? 260 : 560;
-      setTimeout(() => wrap.remove(), life);
+  const model = document.querySelector('.sh3-model');
+  if (model) { model.classList.remove('is-sold'); void model.offsetWidth; model.classList.add('is-sold'); }
+  shop3Say('商談成立ですな。毎度ありがとうございます、お嬢さん');
+  setTimeout(() => {
+    shop3RenderCats();
+    const card = document.querySelector(`.sh3-card[data-sh3="${item.id}"]`);
+    if (card) {
+      card.outerHTML = shop3CardHTML(item, 0);
+      const c2 = document.querySelector(`.sh3-card[data-sh3="${item.id}"]`);
+      if (c2) { c2.classList.add('is-flip', 'is-sel'); shop3BindCard(c2); }
     }
-  }
-  // ③ 小さなトースト（アイテム入手の告知。購入成功メッセージとは別に一言添える）
-  if (typeof toast === 'function') toast(`${item.name} を手に入れた！`);
+    shop3RenderStage(item);
+    const m2 = document.querySelector('.sh3-model'); if (m2) m2.classList.add('is-sold-stay');
+  }, reduceMotion ? 0 : 520);
+  if (typeof toast === 'function') toast(`${item.name} を手に入れた`);
 }
 
 function pickLogicQuestion() {

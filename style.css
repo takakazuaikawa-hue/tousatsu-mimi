@@ -13768,7 +13768,7 @@ body.is-tease-hot .card.tease-card::after {
 .shop-screen.v2 .shop-items {
   position: absolute; left: 480px; right: 48px; top: 210px; bottom: 26px;
   display: flex; flex-direction: column; gap: 12px;
-  overflow-y: auto; overflow-x: hidden; z-index: 3; padding-right: 4px;
+  overflow-y: auto; overflow-x: hidden; z-index: 3; padding-right: 4px; padding-top: 12px; /* 「新入荷」札が上へ9pxはみ出すぶん */
 }
 .shop-screen.v2 .shop-item,
 .shop-buy-fx-wrap .shop-item {
@@ -19700,7 +19700,7 @@ html.is-compact .shop-v2-coins { right: calc(44px + var(--bleed)); }
 html.is-compact .shop-screen.v2 .shop-v2-back { right: calc(360px + var(--bleed)); }
 html.is-compact .shop-v2-tabs { right: calc(44px + var(--bleed)); }
 html.is-compact .shop-screen.v2 .shop-items { right: calc(36px + var(--bleed)); }
-html.is-compact .shop-screen.v2 .shop-items { padding-top: 10px; }
+html.is-compact .shop-screen.v2 .shop-items { padding-top: 22px; }
 html.is-compact .shop-v2-coins-label { font-size: 26px; }
 html.is-compact .shop-screen.v2 .shop-item-desc { font-size: 14.8px; }
 html.is-compact .shop-screen.v2 .shop-item-price small { font-size: 13px; }
@@ -19887,3 +19887,224 @@ html.is-compact .story-vol-hint { top: calc(22px + 52px / var(--game-scale, 1));
 html.is-compact .story-vol-mute svg, html.is-compact .story-vol-mute .ui-ic { width: calc(20px / var(--game-scale, 1)); height: calc(20px / var(--game-scale, 1)); }
 /* 物語の画面も、ゲームの枠の外（スマホの左右の余白）まで暗く覆う */
 .story-overlay { box-shadow: 0 0 0 100vmax #06040a; }
+
+/* ===================================================================
+   交換所 v3：グラーノ商会の窓口（2026-10-20）
+   層：背景 → 灯り → 大きく見せる品 → グラーノ → 手前のカウンター（背景の下だけを切り出した絵）→ 文字と押す所
+   押す所は親指の届く所だけ：左端＝分類、下＝札、右下＝交換。上は題字とコインの表示だけ
+   =================================================================== */
+.shop-screen.v3 { display: block; overflow: hidden; background: #0b0506; font-family: "Shippori Mincho B1", "Yu Mincho", serif; color: #f3e6c6; }
+.shop-screen.v3 .sh3-bg, .shop-screen.v3 .sh3-fg { position: absolute; inset: 0; background: url('assets/backgrounds/shop_counter.webp') center bottom / cover no-repeat; pointer-events: none; }
+.shop-screen.v3 .sh3-bg { z-index: 0; filter: saturate(.92) brightness(.9); }
+.shop-screen.v3 .sh3-fg { z-index: 4; background-image: url('assets/backgrounds/shop_counter_fg.webp'); filter: saturate(.92) brightness(.82); }
+.shop-screen.v3 .sh3-light { position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(ellipse 22% 48% at 61% 40%, rgba(255,222,165,.30), transparent 70%),
+              linear-gradient(180deg, rgba(8,3,3,.62) 0%, rgba(8,3,3,0) 17%),
+              linear-gradient(90deg, rgba(8,3,3,.70) 0%, rgba(8,3,3,.15) 13%, rgba(8,3,3,0) 24%, rgba(8,3,3,0) 76%, rgba(8,3,3,.42) 100%); }
+
+/* 大きく見せる品：衣装はその服を着た姿、ぱにゅ衣装は額に入れた一枚、それ以外は大きな札 */
+.shop-screen.v3 .sh3-model { position: absolute; left: 540px; top: 26px; width: 470px; height: 774px; z-index: 2; pointer-events: none; }
+.shop-screen.v3 .sh3-model-in { position: absolute; inset: 0; animation: sh3ModelIn .5s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes sh3ModelIn { from { opacity: 0; transform: translateY(14px) scale(.985); filter: brightness(1.6) blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+.shop-screen.v3 .sh3-fig { position: absolute; left: 50%; top: 0; height: 720px; width: auto; transform: translateX(-50%);
+  filter: drop-shadow(0 0 26px rgba(255,214,150,.30)) drop-shadow(0 18px 22px rgba(0,0,0,.6)) sepia(.10) saturate(1.04); }
+.shop-screen.v3 .sh3-model.is-scene .sh3-frame { position: absolute; left: 0; top: 96px; width: 470px; aspect-ratio: 16 / 9; padding: 10px; box-sizing: border-box;
+  background: linear-gradient(135deg, #f1d58c, #9a6a26 45%, #e9c675 70%, #7a521c); box-shadow: 0 0 40px rgba(255,214,150,.3), 0 22px 30px rgba(0,0,0,.65); }
+.shop-screen.v3 .sh3-model.is-scene .sh3-frame img { display: block; width: 100%; height: 100%; object-fit: cover; box-shadow: inset 0 0 0 1px rgba(0,0,0,.5); }
+.shop-screen.v3 .sh3-model.is-emblem .sh3-bigcard { position: absolute; left: 115px; top: 92px; width: 240px; height: 360px; display: block; }
+.shop-screen.v3 .sh3-model.is-emblem .sh3-bigcard .sh3-face { box-shadow: inset 0 0 0 1px #b98b3c, inset 0 0 0 5px rgba(20,6,6,.55), inset 0 0 0 6px rgba(227,194,120,.75), 0 0 46px rgba(255,214,150,.32), 0 22px 30px rgba(0,0,0,.65); }
+.shop-screen.v3 .sh3-model.is-emblem .sh3-bigcard .sh3-face em { font-size: 64px; }
+.shop-screen.v3 .sh3-model.is-emblem .sh3-bigcard .sh3-glyph svg { width: 120px; height: 120px; }
+/* 交換の瞬間：光が走り、封蝋「入手」が押される */
+.shop-screen.v3 .sh3-model.is-sold .sh3-model-in::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 30%, rgba(255,246,214,.75) 47%, transparent 64%) no-repeat; background-size: 220% 100%; animation: sh3Sweep .9s ease-out both; mix-blend-mode: screen; }
+@keyframes sh3Sweep { from { background-position: 140% 0; } to { background-position: -60% 0; } }
+.shop-screen.v3 .sh3-model.is-sold-stay::before { content: "入手"; position: absolute; z-index: 5; right: 26px; top: 300px; width: 104px; height: 104px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 34px; font-weight: 800; letter-spacing: .12em; color: #f6e2b4; padding-left: .12em; box-sizing: border-box;
+  background: radial-gradient(circle at 40% 35%, #b4222c, #6a0a12 70%); box-shadow: 0 0 0 4px rgba(106,10,18,.65), 0 6px 14px rgba(0,0,0,.55);
+  transform: rotate(-12deg); animation: sh3Seal .42s cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes sh3Seal { from { opacity: 0; transform: rotate(-12deg) scale(1.9); } to { opacity: 1; transform: rotate(-12deg) scale(1); } }
+
+/* グラーノ：カウンターの奥。腰から下は手前のカウンターに隠れる */
+.shop-screen.v3 .sh3-grano { position: absolute; left: 118px; top: 78px; width: 420px; z-index: 3; pointer-events: none; animation: sh3Breath 5.5s ease-in-out infinite; transform-origin: 50% 90%; }
+.shop-screen.v3 .sh3-grano img { display: block; width: 100%; height: auto; filter: drop-shadow(0 14px 20px rgba(0,0,0,.55)) sepia(.06) saturate(1.04) brightness(.98); }
+@keyframes sh3Breath { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-3px) scale(1.006); } }
+
+/* 題字・コイン（押せない表示） */
+.shop-screen.v3 .sh3-head { position: absolute; left: 40px; top: 18px; z-index: 6; pointer-events: none; }
+.shop-screen.v3 .sh3-ttl { font-size: 42px; font-weight: 800; letter-spacing: .34em; line-height: 1; color: #f8ecd2; text-shadow: 0 2px 0 rgba(0,0,0,.5), 0 0 18px rgba(0,0,0,.6); }
+.shop-screen.v3 .sh3-brand { margin-top: 9px; font-size: 13px; font-weight: 700; letter-spacing: .6em; color: #d9b269; text-shadow: 0 1px 3px #000; }
+.shop-screen.v3 .sh3-coins { position: absolute; right: 40px; top: 18px; z-index: 6; display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: 8px; text-align: right; pointer-events: none; }
+.shop-screen.v3 .sh3-coins small { grid-column: 1 / -1; font-size: 13px; font-weight: 700; letter-spacing: .4em; color: #cbb48a; }
+.shop-screen.v3 .sh3-coins b { font-size: 34px; font-weight: 800; letter-spacing: .04em; color: #f7dc8a; font-variant-numeric: tabular-nums; text-shadow: 0 0 16px rgba(247,220,138,.35), 0 2px 0 rgba(0,0,0,.5); }
+.shop-screen.v3 .sh3-coins span { font-size: 13px; letter-spacing: .2em; color: #cbb48a; }
+.shop-screen.v3 .sh3-coins.is-short { animation: sh3Shake .42s ease both; }
+.shop-screen.v3 .sh3-coins.is-short b { color: #ff9a8a; transition: color .2s; }
+@keyframes sh3Shake { 0%, 100% { transform: none; } 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(2px); } }
+
+/* 左端：分類（左の親指） */
+.shop-screen.v3 .sh3-cats { position: absolute; left: 0; top: 196px; width: 130px; z-index: 6; display: flex; flex-direction: column; gap: 6px; }
+.shop-screen.v3 .sh3-cat { position: relative; height: 62px; width: 124px; padding: 0 0 0 24px; border: 0; text-align: left; cursor: pointer; font: 700 17px/1 "Shippori Mincho B1", "Yu Mincho", serif; letter-spacing: .16em; color: #dcc79c;
+  background: linear-gradient(90deg, rgba(14,6,6,.94), rgba(14,6,6,.78)); box-shadow: inset 0 -1px 0 rgba(217,178,105,.18), inset -1px 0 0 rgba(217,178,105,.4); transition: width .2s ease, color .2s; }
+.shop-screen.v3 .sh3-cat:hover { color: #f7dc8a; }
+.shop-screen.v3 .sh3-cat.is-on { width: 140px; color: #241008; background: linear-gradient(90deg, #f3d891, #c99b45); box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,240,200,.6); }
+.shop-screen.v3 .sh3-cat.is-on::after { content: ""; position: absolute; right: -10px; top: 50%; width: 0; height: 0; border-left: 10px solid #c99b45; border-top: 10px solid transparent; border-bottom: 10px solid transparent; transform: translateY(-50%); }
+.shop-screen.v3 .sh3-newdot { position: absolute; right: 16px; top: 50%; width: 8px; height: 8px; margin-top: -4px; background: #f7dc8a; transform: rotate(45deg); box-shadow: 0 0 8px #f7dc8a; }
+.shop-screen.v3 .sh3-cat.is-on .sh3-newdot { background: #6a0a12; box-shadow: none; }
+.shop-screen.v3 .sh3-back { position: absolute; left: 0; top: 718px; width: 124px; height: 56px; z-index: 6; border: 0; cursor: pointer; padding: 0 0 0 24px; text-align: left;
+  font: 700 15px/1 "Shippori Mincho B1", "Yu Mincho", serif; letter-spacing: .2em; color: #cbb48a; background: rgba(14,6,6,.78); box-shadow: inset -1px 0 0 rgba(217,178,105,.3); }
+.shop-screen.v3 .sh3-back:hover { color: #f7dc8a; }
+
+/* 品の説明（右上） */
+.shop-screen.v3 .sh3-info { position: absolute; right: 40px; top: 118px; width: 250px; z-index: 6; }
+.shop-screen.v3 .sh3-kick { font-size: 13px; font-weight: 700; letter-spacing: .32em; color: #d9b269; text-shadow: 0 1px 3px #000; }
+.shop-screen.v3 .sh3-name { margin: 8px 0 12px; font-size: 38px; font-weight: 800; letter-spacing: .14em; line-height: 1.25; color: #fbf1d8; text-shadow: 0 2px 0 rgba(0,0,0,.45), 0 0 20px rgba(0,0,0,.55); overflow-wrap: anywhere; }
+.shop-screen.v3 .sh3-desc { margin: 0; font-size: 15px; line-height: 1.85; color: #eadbb8; text-shadow: 0 1px 3px #000, 0 0 10px rgba(0,0,0,.8); overflow-wrap: anywhere; }
+
+/* グラーノの一言（字幕の帯） */
+.shop-screen.v3 .sh3-say { position: absolute; left: 150px; top: 446px; width: 380px; z-index: 6; padding: 10px 16px 11px; box-sizing: border-box; pointer-events: none;
+  background: linear-gradient(90deg, rgba(14,6,6,.92), rgba(14,6,6,.62)); border-left: 2px solid #d9b269; font-size: 15px; line-height: 1.7; color: #f3e6c6; }
+.shop-screen.v3 .sh3-say b { display: block; font-size: 12px; font-weight: 700; letter-spacing: .4em; color: #d9b269; }
+.shop-screen.v3 .sh3-say.is-talk span { display: inline-block; animation: sh3Talk .35s ease-out both; }
+@keyframes sh3Talk { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+
+/* 下：札（羅紗のカウンターに並ぶ。多い時は横に送る） */
+.shop-screen.v3 .sh3-row { position: absolute; left: 150px; right: 318px; bottom: 18px; height: 196px; z-index: 6; display: flex; align-items: flex-end; gap: 12px; padding: 0 22px 8px 4px; box-sizing: border-box;
+  overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-mask: linear-gradient(90deg, #000 88%, transparent); mask: linear-gradient(90deg, #000 88%, transparent); }
+.shop-screen.v3 .sh3-row::-webkit-scrollbar { display: none; }
+.shop-screen.v3 .sh3-card { position: relative; flex: 0 0 112px; height: 168px; padding: 0; border: 0; cursor: pointer; scroll-snap-align: start; background: none; transition: transform .22s cubic-bezier(.2,.7,.2,1); }
+.shop-screen.v3 .sh3-row.is-deal .sh3-card { animation: sh3Deal .5s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--k, 0) * 55ms); }
+@keyframes sh3Deal { from { opacity: 0; transform: translate(-60px, -26px) rotate(-8deg); } to { opacity: 1; transform: none; } }
+.shop-screen.v3 .sh3-face { position: absolute; inset: 0; display: block; overflow: hidden; background-color: #3a0a12; background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 1px #b98b3c, inset 0 0 0 4px rgba(20,6,6,.55), inset 0 0 0 5px rgba(227,194,120,.75), 0 8px 14px rgba(0,0,0,.55); }
+.shop-screen.v3 .sh3-face.is-figure { background-color: #5a0e18; background-size: 240%; background-position: 50% 3%; }
+.shop-screen.v3 .sh3-face.is-scene { background-size: auto 100%; background-position: 50% 30%; }
+.shop-screen.v3 .sh3-face.is-emblem { display: grid; place-items: center; align-content: center; gap: 6px; background: radial-gradient(ellipse at 50% 35%, #7a1420, #3a0710 70%, #22040a); }
+.shop-screen.v3 .sh3-face.is-emblem .sh3-glyph { color: #e9c675; display: block; line-height: 0; }
+.shop-screen.v3 .sh3-face.is-emblem .sh3-glyph svg { width: 54px; height: 54px; stroke-width: 1.5; }
+.shop-screen.v3 .sh3-face.is-emblem .sh3-swatch { display: block; width: 58%; aspect-ratio: 2 / 3; box-shadow: 0 0 0 2px #e9c675, 0 6px 10px rgba(0,0,0,.5); }
+.shop-screen.v3 .sh3-face.is-emblem em { font-style: normal; font-weight: 800; font-size: 26px; letter-spacing: .02em; color: #f7dc8a; line-height: 1; text-shadow: 0 2px 0 rgba(0,0,0,.5); }
+.shop-screen.v3 .sh3-face.is-backface { background: url('assets/ui/card_back_default.webp') center / cover; filter: saturate(.8) brightness(.8); }
+.shop-screen.v3 .sh3-cap { position: absolute; left: 4px; right: 4px; bottom: 4px; padding: 14px 2px 5px; font-size: 13px; font-weight: 700; letter-spacing: .1em; line-height: 1.2; text-align: center; color: #f8ecd2;
+  background: linear-gradient(rgba(16,5,5,0), rgba(16,5,5,.88) 45%); text-shadow: 0 1px 2px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shop-screen.v3 .sh3-card.is-back .sh3-cap { font-size: 12px; letter-spacing: .02em; color: #e3cf9f; white-space: normal; }
+.shop-screen.v3 .sh3-card.is-sel { transform: translateY(-20px); }
+.shop-screen.v3 .sh3-card.is-sel .sh3-face { box-shadow: inset 0 0 0 1px #f7dc8a, inset 0 0 0 4px rgba(20,6,6,.4), inset 0 0 0 6px #f7dc8a, 0 0 26px rgba(255,214,150,.55), 0 16px 22px rgba(0,0,0,.6); }
+.shop-screen.v3 .sh3-card:not(.is-sel):hover { transform: translateY(-8px); }
+.shop-screen.v3 .sh3-card.is-owned .sh3-face { filter: saturate(.75) brightness(.78); }
+.shop-screen.v3 .sh3-owned { position: absolute; right: -4px; top: -4px; padding: 4px 6px; font-size: 12px; font-weight: 800; letter-spacing: .1em; color: #f6e2b4; background: #7a0e16; box-shadow: 0 0 0 1px #d9b269, 0 3px 6px rgba(0,0,0,.5); transform: rotate(6deg); }
+/* 新入荷：札の表面を光の筋がゆっくり通る（赤い NEW の札はやめた） */
+.shop-screen.v3 .sh3-card.is-new .sh3-face::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 38%, rgba(255,248,222,.55) 50%, transparent 62%) no-repeat; background-size: 260% 100%; animation: sh3Foil 3.6s ease-in-out infinite; mix-blend-mode: screen; }
+@keyframes sh3Foil { 0%, 55% { background-position: 150% 0; } 100% { background-position: -50% 0; } }
+.shop-screen.v3 .sh3-card.is-flip .sh3-face { animation: sh3Flip .6s cubic-bezier(.3,.7,.3,1) both; }
+@keyframes sh3Flip { 0% { transform: perspective(600px) rotateY(90deg); filter: brightness(2); } 100% { transform: none; filter: none; } }
+
+/* 右下：交換（右の親指） */
+.shop-screen.v3 .sh3-buy { position: absolute; right: 40px; bottom: 30px; width: 250px; height: 128px; z-index: 6; }
+.shop-screen.v3 .sh3-buybtn { width: 100%; height: 100%; border: 0; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #fbf1d8;
+  font-family: inherit; background: linear-gradient(#80161f, #4a0910); box-shadow: inset 0 0 0 1px #e9c675, inset 0 0 0 5px rgba(0,0,0,.28), inset 0 0 0 6px rgba(233,198,117,.45), 0 12px 26px rgba(0,0,0,.6); transition: transform .12s ease, filter .2s; }
+.shop-screen.v3 button.sh3-buybtn:hover { filter: brightness(1.12); }
+.shop-screen.v3 button.sh3-buybtn:active { transform: translateY(2px) scale(.985); }
+.shop-screen.v3 .sh3-price { font-size: 32px; font-weight: 800; letter-spacing: .04em; color: #f7dc8a; line-height: 1; font-variant-numeric: tabular-nums; }
+.shop-screen.v3 .sh3-price small { margin-left: 6px; font-size: 13px; letter-spacing: .2em; color: #e7cf98; }
+.shop-screen.v3 .sh3-price.is-free { font-size: 20px; letter-spacing: .2em; }
+.shop-screen.v3 .sh3-buy-l { font-size: 19px; font-weight: 800; letter-spacing: .5em; padding-left: .5em; }
+.shop-screen.v3 .sh3-buy.is-short .sh3-buybtn { background: linear-gradient(#3a1a1a, #241010); }
+.shop-screen.v3 .sh3-buy.is-short .sh3-buy-l { font-size: 15px; letter-spacing: .14em; padding-left: .14em; color: #e3cf9f; }
+.shop-screen.v3 .sh3-buybtn.is-done { cursor: default; background: rgba(20,8,8,.82); }
+.shop-screen.v3 .sh3-buy-note { font-size: 14px; letter-spacing: .1em; color: #e3cf9f; text-align: center; padding: 0 10px; }
+.shop-screen.v3 .sh3-seal { font-size: 22px; font-weight: 800; letter-spacing: .4em; padding-left: .4em; color: #f7dc8a; }
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-screen.v3 .sh3-grano, .shop-screen.v3 .sh3-card.is-new .sh3-face::after, .shop-screen.v3 .sh3-row.is-deal .sh3-card, .shop-screen.v3 .sh3-model-in { animation: none !important; }
+}
+
+/* ---- スマホ横（is-compact）：舞台は横に広く（約1540×800）、画面では約0.49倍。文字は約2倍で描く ---- */
+html.is-compact .shop-screen.v3 .sh3-bg, html.is-compact .shop-screen.v3 .sh3-fg, html.is-compact .shop-screen.v3 .sh3-light { left: calc(-1 * var(--bleed)); right: calc(-1 * var(--bleed)); }
+html.is-compact .shop-screen.v3 .sh3-head { left: 252px; top: 12px; }
+html.is-compact .shop-screen.v3 .sh3-ttl { font-size: 58px; }
+html.is-compact .shop-screen.v3 .sh3-brand { display: none; }
+html.is-compact .shop-screen.v3 .sh3-coins { right: 24px; top: 10px; column-gap: 12px; }
+html.is-compact .shop-screen.v3 .sh3-coins small { font-size: 25px; letter-spacing: .3em; }
+html.is-compact .shop-screen.v3 .sh3-coins b { font-size: 60px; }
+html.is-compact .shop-screen.v3 .sh3-coins span { font-size: 25px; }
+html.is-compact .shop-screen.v3 .sh3-cats { top: 12px; width: 232px; gap: 8px; }
+html.is-compact .shop-screen.v3 .sh3-cat { height: 98px; width: 222px; padding-left: 34px; font-size: 32px; }
+html.is-compact .shop-screen.v3 .sh3-cat.is-on { width: 236px; }
+html.is-compact .shop-screen.v3 .sh3-cat.is-on::after { right: -16px; border-left-width: 16px; border-top-width: 16px; border-bottom-width: 16px; }
+html.is-compact .shop-screen.v3 .sh3-newdot { width: 14px; height: 14px; margin-top: -7px; right: 24px; }
+html.is-compact .shop-screen.v3 .sh3-back { top: 676px; width: 222px; height: 110px; padding-left: 34px; font-size: 30px; }
+html.is-compact .shop-screen.v3 .sh3-grano { left: 236px; top: 96px; width: 400px; }
+html.is-compact .shop-screen.v3 .sh3-model { left: auto; right: 470px; top: 6px; width: 470px; }
+html.is-compact .shop-screen.v3 .sh3-fig { height: 640px; }
+html.is-compact .shop-screen.v3 .sh3-model.is-scene .sh3-frame { top: 70px; }
+html.is-compact .shop-screen.v3 .sh3-model.is-emblem .sh3-bigcard { top: 60px; width: 220px; height: 330px; }
+html.is-compact .shop-screen.v3 .sh3-info { right: 24px; top: 108px; width: 430px; }
+html.is-compact .shop-screen.v3 .sh3-kick { font-size: 25px; letter-spacing: .2em; }
+html.is-compact .shop-screen.v3 .sh3-name { font-size: 62px; margin: 8px 0 10px; letter-spacing: .1em; }
+html.is-compact .shop-screen.v3 .sh3-desc { font-size: 29px; line-height: 1.65; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+html.is-compact .shop-screen.v3 .sh3-say { left: 252px; top: auto; bottom: 318px; width: 560px; padding: 14px 20px; font-size: 29px; line-height: 1.55; }
+html.is-compact .shop-screen.v3 .sh3-say b { font-size: 25px; letter-spacing: .3em; }
+html.is-compact .shop-screen.v3 .sh3-row { left: 252px; right: 470px; bottom: 14px; height: 296px; gap: 16px; padding-bottom: 6px; }
+html.is-compact .shop-screen.v3 .sh3-card { flex-basis: 168px; height: 252px; }
+html.is-compact .shop-screen.v3 .sh3-card.is-sel { transform: translateY(-26px); }
+html.is-compact .shop-screen.v3 .sh3-cap { font-size: 26px; padding: 22px 2px 7px; letter-spacing: .04em; }
+html.is-compact .shop-screen.v3 .sh3-card.is-back .sh3-cap { font-size: 25px; }
+html.is-compact .shop-screen.v3 .sh3-owned { font-size: 25px; padding: 6px 8px; }
+html.is-compact .shop-screen.v3 .sh3-face.is-emblem em { font-size: 44px; }
+html.is-compact .shop-screen.v3 .sh3-face.is-emblem .sh3-glyph svg { width: 80px; height: 80px; }
+html.is-compact .shop-screen.v3 .sh3-buy { right: 24px; bottom: 20px; width: 430px; height: 214px; }
+html.is-compact .shop-screen.v3 .sh3-price { font-size: 60px; }
+html.is-compact .shop-screen.v3 .sh3-price small { font-size: 26px; }
+html.is-compact .shop-screen.v3 .sh3-buy-l { font-size: 36px; }
+html.is-compact .shop-screen.v3 .sh3-buy.is-short .sh3-buy-l { font-size: 28px; }
+html.is-compact .shop-screen.v3 .sh3-buy-note { font-size: 28px; }
+html.is-compact .shop-screen.v3 .sh3-seal { font-size: 40px; }
+.shop-screen.v3 .sh3-model.is-scene .sh3-frame { left: 4px; width: 430px; }
+.shop-screen.v3 .sh3-row.is-deal .sh3-card { animation-fill-mode: backwards; }
+/* 品の絵の札：深紅のベルベットの地に小物の絵、段（Lv2 など）は左上に金の数 */
+.shop-screen.v3 .sh3-face.is-object { background: radial-gradient(ellipse 70% 55% at 50% 42%, #8a1a26, #4a0a14 62%, #26050c); }
+.shop-screen.v3 .sh3-face.is-object img { position: absolute; left: 8%; top: 9%; width: 84%; height: 66%; max-width: none; object-fit: contain; filter: drop-shadow(0 8px 10px rgba(0,0,0,.55)); }
+.shop-screen.v3 .sh3-face.is-object em { position: absolute; left: 9px; top: 8px; font-style: normal; font-weight: 800; font-size: 20px; color: #f7dc8a; line-height: 1; text-shadow: 0 2px 0 rgba(0,0,0,.6), 0 0 8px rgba(0,0,0,.6); }
+.shop-screen.v3 .sh3-model.is-object .sh3-bigcard { position: absolute; left: 95px; top: 70px; width: 280px; height: 420px; display: block; }
+.shop-screen.v3 .sh3-model.is-object .sh3-bigcard .sh3-face { box-shadow: inset 0 0 0 1px #b98b3c, inset 0 0 0 6px rgba(20,6,6,.55), inset 0 0 0 7px rgba(227,194,120,.75), 0 0 50px rgba(255,214,150,.32), 0 22px 30px rgba(0,0,0,.65); }
+.shop-screen.v3 .sh3-model.is-object .sh3-bigcard .sh3-face img { top: 10%; height: 72%; }
+.shop-screen.v3 .sh3-model.is-object .sh3-bigcard .sh3-face em { font-size: 44px; left: 18px; top: 16px; }
+html.is-compact .shop-screen.v3 .sh3-face.is-object em { font-size: 34px; }
+html.is-compact .shop-screen.v3 .sh3-model.is-object .sh3-bigcard { top: 40px; width: 260px; height: 390px; left: 105px; }
+/* チップ拡張：チップの山（多いほど山が増える）と、額を金の数で */
+.shop-screen.v3 .sh3-face.is-stack { background: radial-gradient(ellipse 70% 55% at 50% 50%, #7a1420, #3a0710 70%, #22040a); }
+.shop-screen.v3 .sh3-piles { position: absolute; left: 0; right: 0; top: 18%; height: 52%; display: flex; justify-content: center; align-items: flex-end; gap: 2%; }
+.shop-screen.v3 .sh3-pile { position: relative; width: 26%; height: 100%; display: block; }
+.shop-screen.v3 .sh3-pile b { position: absolute; left: 0; width: 100%; aspect-ratio: 1 / .5; bottom: calc(var(--k) * 11%); background: center / 100% 200% no-repeat; border-radius: 50%; box-shadow: 0 2px 2px rgba(0,0,0,.45); }
+.shop-screen.v3 .sh3-face.is-stack em { position: absolute; left: 0; right: 0; top: 7%; text-align: center; font-style: normal; font-weight: 800; font-size: 20px; color: #f7dc8a; text-shadow: 0 2px 0 rgba(0,0,0,.6); }
+.shop-screen.v3 .sh3-model.is-stack .sh3-bigcard { position: absolute; left: 95px; top: 70px; width: 280px; height: 420px; display: block; }
+.shop-screen.v3 .sh3-model.is-stack .sh3-bigcard .sh3-face { box-shadow: inset 0 0 0 1px #b98b3c, inset 0 0 0 6px rgba(20,6,6,.55), inset 0 0 0 7px rgba(227,194,120,.75), 0 0 50px rgba(255,214,150,.32), 0 22px 30px rgba(0,0,0,.65); }
+.shop-screen.v3 .sh3-model.is-stack .sh3-bigcard em { font-size: 46px; top: 8%; }
+html.is-compact .shop-screen.v3 .sh3-face.is-stack em { font-size: 34px; }
+html.is-compact .shop-screen.v3 .sh3-model.is-stack .sh3-bigcard { top: 40px; width: 260px; height: 390px; left: 105px; }
+.shop-screen.v3 .sh3-pile b { aspect-ratio: 1 / 1; bottom: calc(var(--k) * 9% - 22%); background-size: 100% 100%; box-shadow: none; border-radius: 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
+/* スマホ横の詰め直し：コインと説明の重なり、台詞の帯と顔の重なりを解く。チップの山を大きく */
+html.is-compact .shop-screen.v3 .sh3-grano { top: 34px; }
+html.is-compact .shop-screen.v3 .sh3-info { top: 150px; }
+html.is-compact .shop-screen.v3 .sh3-say { width: 520px; font-size: 27px; padding: 10px 18px; }
+.shop-screen.v3 .sh3-pile { width: 30%; }
+.shop-screen.v3 .sh3-pile b { bottom: calc(var(--k) * 12% - 26%); }
+.shop-screen.v3 .sh3-piles { top: 22%; height: 50%; }
+/* 大きな札：品の絵を大きく。カードの裏は札いっぱいに */
+.shop-screen.v3 .sh3-model.is-object .sh3-bigcard .sh3-face img { left: 5%; width: 90%; top: 12%; height: 76%; }
+.shop-screen.v3 .sh3-model.is-cardback .sh3-bigcard .sh3-face { background: none; box-shadow: 0 0 50px rgba(255,214,150,.3), 0 22px 30px rgba(0,0,0,.65); }
+.shop-screen.v3 .sh3-model.is-cardback .sh3-bigcard .sh3-face img { inset: 0; left: 0; top: 0; width: 100%; height: 100%; object-fit: contain; transform: scale(1.32); }
+.shop-screen.v3 .sh3-name { text-wrap: balance; }
+.shop-screen.v3 .sh3-name.is-long { font-size: 30px; letter-spacing: .08em; }
+html.is-compact .shop-screen.v3 .sh3-name.is-long { font-size: 48px; }
+.shop-screen.v3 .sh3-card.is-new .sh3-face::after { background: linear-gradient(110deg, transparent 44%, rgba(255,248,222,.34) 50%, transparent 56%) no-repeat; background-size: 300% 100%; }
+/* 品の名前：語の途中で折らない（長い名前は一段小さく、1行に収める） */
+.shop-screen.v3 .sh3-name { word-break: keep-all; line-break: strict; }
+.shop-screen.v3 .sh3-name.is-long { font-size: 27px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.is-compact .shop-screen.v3 .sh3-name.is-long { font-size: 44px; }
+/* スマホ横：台詞の帯はグラーノの体に重ねず、カウンターの縁に沿って低く */
+html.is-compact .shop-screen.v3 .sh3-say { bottom: 304px; width: 470px; padding: 8px 16px; font-size: 26px; line-height: 1.45; background: linear-gradient(90deg, rgba(14,6,6,.86), rgba(14,6,6,.4)); }
+html.is-compact .shop-screen.v3 .sh3-say b { display: none; }
+.shop-screen.v3 .sh3-name.is-long { white-space: normal; overflow: visible; text-overflow: clip; word-break: normal; }
+.shop-screen.v3 .sh3-name.is-xlong { font-size: 22px; }
+html.is-compact .shop-screen.v3 .sh3-name.is-xlong { font-size: 36px; }
