@@ -132,7 +132,7 @@ function setHomeStage(root, stage, num = stage) {
 // 開幕の儀：勝つ前の姿で入場 → 文字盤の数字が灯る → 封蝋が押される → 灯りが入り視野が開く → 額が次の相手に掛け替わる → 札が跳ねる。
 // どこかを押せば即座に終わりの姿へ。演出用の特別な見た目は作らず、段階の値を時間差で切り替えるだけ。
 // 額に飾る専用の肖像（ChatGPT で額のために描いた絵）。まだ無い相手は顔の切り抜きのまま
-const FRAME_PORTRAITS = new Set(['rico', 'polka', 'selina', 'grano', 'velvet']);
+const FRAME_PORTRAITS = new Set(['rico', 'polka', 'selina', 'grano', 'velvet', 'mimi']);
 function framePortrait(id) { const pid = id === 'rico_tutorial' ? 'rico' : id; return FRAME_PORTRAITS.has(pid) ? `assets/ui/portrait_${pid}.webp` : `assets/ui/face_${id === 'rico_tutorial' ? 'rico_default' : id}.webp`; }
 function homeCeremonyPlan(root, cleared, next) {
   const prevId = STAGE_ORDER[cleared - 1];
