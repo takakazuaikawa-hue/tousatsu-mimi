@@ -9431,13 +9431,47 @@ function bgmVolFloat() {
 function applyBgmVolume() {
   const lobbyA = document.getElementById('lobby-bgm-audio');
   const endA = document.getElementById('ending-bgm-audio');
-  if (lobbyA) lobbyA.volume = bgmVolFloat();
+  // 下げ上げの途中の曲は、その動きに任せる（上げる先は毎回いまの音量から計算している）
+  if (lobbyA && !_bgmFades.has(lobbyA)) lobbyA.volume = bgmVolFloat();
   if (endA)   endA.volume   = Math.min(1, bgmVolFloat() * 1.6);
   // シーンBGMもスライダーに追従
-  const scA = document.getElementById('scene-bgm-audio');
-  if (scA && _sceneBgmKey && SCENE_BGM[_sceneBgmKey]) {
+  const scA = _sceneEl();
+  if (scA && _sceneBgmKey && SCENE_BGM[_sceneBgmKey] && !_bgmFades.has(scA)) {
     scA.volume = Math.min(1, bgmVolFloat() * SCENE_BGM[_sceneBgmKey].gain);
   }
+}
+
+// ── 曲のやわらかい出入り（2026-10-21 台帳33：画面が替わる時に曲がぶつ切りだった）──
+// 前の曲は 0.7 秒で下げて止め、次の曲は 0 から 0.8 秒で上げる。シーンの曲は2本の再生器を交互に使い、
+// 下げる曲と上げる曲を重ねて入れ替える。iPhone の Safari は音量を変えられないので、そこでは今まで通りすぐ切り替わる
+const BGM_FADE_OUT_MS = 700, BGM_FADE_IN_MS = 800;
+const _bgmFades = new Map();   // 再生器 → 動いている下げ上げ
+function _bgmFadeStop(a) { const f = _bgmFades.get(a); if (f) { clearInterval(f.t); _bgmFades.delete(a); } }
+// to は数か「いまの目標の音量を返す関数」（上げている途中に音量のつまみを動かしても追従する）
+function bgmFade(a, to, ms, done) {
+  if (!a) return;
+  _bgmFadeStop(a);
+  const from = a.volume, t0 = performance.now();
+  const target = () => Math.max(0, Math.min(1, typeof to === 'function' ? to() : to));
+  const f = { t: setInterval(() => {
+    const k = Math.min(1, (performance.now() - t0) / ms);
+    try { a.volume = from + (target() - from) * k; } catch (e) {}
+    if (k >= 1) { _bgmFadeStop(a); if (done) done(); }
+  }, 30) };
+  _bgmFades.set(a, f);
+}
+function bgmFadeOutPause(a, ms = BGM_FADE_OUT_MS) {
+  if (!a) return;
+  if (a.paused) { _bgmFadeStop(a); return; }
+  bgmFade(a, 0, ms, () => a.pause());
+}
+function bgmFadeInPlay(a, to, ms = BGM_FADE_IN_MS) {
+  if (!a) return;
+  const fading = _bgmFades.has(a);
+  if (a.paused) { try { a.volume = 0; } catch (e) {} }
+  else if (!fading) { try { a.volume = typeof to === 'function' ? to() : to; } catch (e) {} return; }  // 鳴っている同じ曲はそのまま
+  const p = a.play(); if (p && p.catch) p.catch(() => {});
+  bgmFade(a, to, ms);
 }
 
 // ── シーン専用BGM（実音源）──────────────────────────────
@@ -9455,33 +9489,49 @@ const SCENE_BGM = {
   allstar:  { file: 'assets/bgm/velvet-dice-run.mp3', gain: 0.70 }, // 零時の卓「Velvet Dice Run」
 };
 let _sceneBgmKey = null;
+let _sceneElB = false;   // いま鳴らしているのが2本目（scene-bgm-audio-b）か
+function _sceneEl() { return document.getElementById(_sceneElB ? 'scene-bgm-audio-b' : 'scene-bgm-audio') || document.getElementById('scene-bgm-audio'); }
 // ロビー/ED/シンセを止める（シーンBGM自身には触れない＝同曲ガードを壊さない）
 function _stopNonSceneBgm() {
   const lobbyA = document.getElementById('lobby-bgm-audio');
   const endA = document.getElementById('ending-bgm-audio');
-  if (lobbyA) lobbyA.pause();
+  if (lobbyA) bgmFadeOutPause(lobbyA);
   if (endA) endA.pause();
   if (typeof _stopSkinBgm === 'function') _stopSkinBgm();
 }
 function playSceneBgm(key) {
   const def = SCENE_BGM[key];
-  const a = document.getElementById('scene-bgm-audio');
+  let a = _sceneEl();
   if (!def || !a) return;
-  if (!isBgmOn()) { a.pause(); return; }      // BGM全体OFFなら鳴らさない（既定OFF）
+  if (!isBgmOn()) { _bgmFadeStop(a); a.pause(); return; }      // BGM全体OFFなら鳴らさない（既定OFF）
   _stopNonSceneBgm();
-  routeThroughWebAudio(a);                    // 旧iOSでだけ消音スイッチに従わせる保険
-  a.loop = true;
-  a.volume = Math.max(0, Math.min(1, bgmVolFloat() * def.gain));
-  if (_sceneBgmKey !== key) {                  // 同じ曲なら頭出しせず継続（再レンダーで途切れない）
+  const vol = () => bgmVolFloat() * def.gain;
+  if (_sceneBgmKey !== key) {                  // 違う曲：今の曲を下げながら、もう1本の再生器で次の曲を上げる
+    const old = a;
+    if (!old.paused) {
+      bgmFadeOutPause(old);
+      const other = document.getElementById(_sceneElB ? 'scene-bgm-audio' : 'scene-bgm-audio-b');
+      if (other) { _sceneElB = !_sceneElB; a = other; }
+    }
+    _bgmFadeStop(a);
+    routeThroughWebAudio(a);                    // 旧iOSでだけ消音スイッチに従わせる保険
+    a.loop = true;
     _sceneBgmKey = key;
     a.src = def.file;
     a.currentTime = 0;
+    try { a.volume = 0; } catch (e) {}
+    const p = a.play(); if (p && p.catch) p.catch(() => {});
+    bgmFade(a, vol, BGM_FADE_IN_MS);
+    return;
   }
-  const p = a.play(); if (p && p.catch) p.catch(() => {});
+  // 同じ曲なら頭出しせず継続（再レンダーで途切れない）。止まっていれば上げながら再開
+  routeThroughWebAudio(a);
+  a.loop = true;
+  bgmFadeInPlay(a, vol);
 }
 function stopSceneBgm() {
-  const a = document.getElementById('scene-bgm-audio');
-  if (a) a.pause();
+  // 2本とも下げて止める（入れ替えの途中で呼ばれても、下げている方も含めて止まる）
+  ['scene-bgm-audio', 'scene-bgm-audio-b'].forEach(id => bgmFadeOutPause(document.getElementById(id)));
   _sceneBgmKey = null;
 }
 // 現在の画面に応じて正しい1曲だけを鳴らす（BGM ON トグル時の復帰に使用）
@@ -10775,11 +10825,11 @@ function _startSkinBgm(skin) {
 function applyLobbyBgmSkin() {
   const lobbyA = document.getElementById('lobby-bgm-audio');
   if (save.equippedBgmLobby === 'jazz') {
-    if (lobbyA) lobbyA.pause();
+    if (lobbyA) bgmFadeOutPause(lobbyA);
     if (isBgmOn()) _startSkinBgm('jazz'); else _stopSkinBgm();
   } else {
     _stopSkinBgm();
-    if (lobbyA && isBgmOn()) { lobbyA.volume = bgmVolFloat(); lobbyA.play().catch(() => {}); }
+    if (lobbyA && isBgmOn()) bgmFadeInPlay(lobbyA, bgmVolFloat);
   }
 }
 // バトル突入時：シンセスキン購入者はシンセ、既定は実バトル/ボスBGMへ切替（ロビー曲は止める）
@@ -10787,7 +10837,7 @@ function startBattleBgmSkin() {
   const skin = save.equippedBgmBattle;
   if (skin === 'tense' || skin === 'techno') {
     const lobbyA = document.getElementById('lobby-bgm-audio');
-    if (lobbyA) lobbyA.pause();
+    if (lobbyA) bgmFadeOutPause(lobbyA);
     if (typeof stopSceneBgm === 'function') stopSceneBgm();
     _stopSkinBgm();
     if (isBgmOn()) _startSkinBgm(skin);

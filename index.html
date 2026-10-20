@@ -78,6 +78,8 @@
 <!-- シーン専用BGM（タイトル/バトル/ボス/ミニゲーム）。src を差し替えて使い回し、
      ロビー/エンディング/シンセと排他再生することで二重再生（＝うるささ）を防ぐ -->
 <audio id="scene-bgm-audio" loop preload="auto"></audio>
+<!-- 曲の入れ替えを重ねて行うための2本目（前の曲を下げながら次の曲を上げる。game.js の playSceneBgm） -->
+<audio id="scene-bgm-audio-b" loop preload="auto"></audio>
 
 <div id="stage">
   <div id="app"></div>
