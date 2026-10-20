@@ -3912,7 +3912,7 @@ const INTERMISSIONS = {
   },
   polka: {
     lines: [
-      { speaker: 'polka', text: 'うわー、新人に負けるとはなー……でも今日のミミちゃん、ちゃんとボクの指先見てたでしょ', voice: 'polka/ims_polka_1' },
+      { speaker: 'polka', text: 'うわー、新人に負けるとはなー……初日なのに、ちゃんとボクの指先見てたでしょ', voice: 'polka/ims_polka_1' },
       { speaker: 'mimi',  text: '正直かなり分かりやすかったです……あ、責めてるわけじゃなくて！' },
       { speaker: 'rico',  text: 'ふふ、初勝利おめでとう。でも、これで満足しないでよね？' },
       { speaker: 'rico',  text: '次はセリナ。声も態度も崩さない、理屈で殴ってくるタイプ。ベット額の"意味"に耳を澄ませな' },
@@ -4064,7 +4064,12 @@ function showIntermission(opponentId, onDone, voiceReady) {
     const w = document.createElement('div');
     w.className = 'ending-portrait-scene ims-scene ims-scene-' + meta.side;
     w.dataset.img = meta.portrait;
-    w.innerHTML = `<div class="eps-portrait-frame"><img class="eps-portrait" alt=""></div><div class="ek-caption"></div>`;
+    // カメラ：背景（ぼかし）と立ち絵をまとめて ims-cam に入れ、ゆっくり寄る。前の話し手の側から振ってくる（data-from）。
+    // 立ち絵は上半身に寄せ、足元は画面の外（全身を床の上に置くと浮いて見えるため。2026-10-20 ユーザー指摘）
+    const prevSide = curScene ? curScene.dataset.side : '';
+    w.dataset.side = meta.side;
+    if (prevSide && prevSide !== meta.side) w.dataset.from = prevSide;
+    w.innerHTML = `<div class="ims-cam"><div class="ims-cam-bg"></div><div class="eps-portrait-frame"><img class="eps-portrait" alt=""></div></div><div class="ek-caption"></div>`;
     const im = w.querySelector('.eps-portrait');
     im.alt = meta.name;
     im.onerror = () => { im.onerror = null; im.src = 'assets/characters/mimi_default.webp'; };
