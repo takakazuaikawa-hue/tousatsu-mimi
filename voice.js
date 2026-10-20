@@ -12,7 +12,9 @@
   'use strict';
   var BASE = 'assets/voice/';
   var DUCK_TO = 0.7;              // 声の間、BGM は3割下げる
-  var QUEUE_MAX = 2, QUEUE_TTL = 3500;
+  // 掛け声の待ち：プレイはサクサク進むので、前の声を待って遅れて鳴ると「遅く聞こえる」（2026-10-20 ユーザー指摘）。
+  // 待たせるのは一番新しい1本だけ、0.9秒以内に始められなければ鳴らさない（以前は2本・3.5秒）
+  var QUEUE_MAX = 1, QUEUE_TTL = 900;
 
   var manifest = null, manifestP = null;
   var buffers = new Map();        // id -> AudioBuffer
