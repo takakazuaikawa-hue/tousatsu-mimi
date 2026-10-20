@@ -8477,10 +8477,15 @@ function startEndingShow(playMusic) {
         el.classList.add('out');
         setTimeout(() => el.remove(), 1800);
       });
-      // 立ち絵を中央に大きく＋台詞バンド
+      // 立ち絵＋台詞バンド。幕間と同じカメラ（2026-10-20 ユーザー指示「幕間と同じようなカメラワークをエンディングの会話でも」）：
+      // 上半身に寄せて足元は画面の外（浮いて見えないように）、リコ先輩は右・ミミは左、場面ごとにゆっくり寄り、話し手が替わる時は前の人の側から振る
+      const side = /^mimi/.test(a.img) ? 'mimi' : /^rico/.test(a.img) ? 'opp' : 'rico';
+      const prevScene = stage.querySelector('.ending-portrait-scene.eps-cam-scene.out');
       const wrap = document.createElement('div');
-      wrap.className = `ending-portrait-scene portrait-${a.img}`;
+      wrap.className = `ending-portrait-scene portrait-${a.img} eps-cam-scene ims-scene-${side}`;
       wrap.dataset.img = a.img;
+      wrap.dataset.side = side;
+      if (prevScene && prevScene.dataset.side && prevScene.dataset.side !== side) wrap.dataset.from = prevScene.dataset.side;
       const imgPath = a.type === 'speaker'
         ? `assets/characters/${a.img}_default.webp`
         : `assets/characters/${a.img}.webp`;
@@ -8490,17 +8495,19 @@ function startEndingShow(playMusic) {
         ? `this.onerror=function(){this.onerror=null;window.assetFallback(this,this.src.split('/').pop().replace('.webp','').split('_')[0])};this.src='${fallbackPath}';`
         : `this.onerror=null;window.assetFallback(this,this.src.split('/').pop().replace('.webp','').split('_')[0])`;
       wrap.innerHTML = `
+        <div class="ims-cam"><div class="ims-cam-bg eps-cam-bg"></div>
         <div class="eps-portrait-frame">
           <img class="eps-portrait" src="${imgPath}" alt="${a.name || ''}"
                onerror="${fallbackInline}">
-        </div>
+        </div></div>
         <div class="ek-caption">
           ${a.name ? `<div class="ek-name">${a.name}</div>` : ''}
           <div class="ek-text">${a.text}</div>
         </div>
       `;
       stage.appendChild(wrap);
-      attachMotionBg(wrap, 'assets/motion/ending_room.mp4'); // 夕暮れの部屋：カーテンと光がゆっくり揺れる
+      // 夕暮れの部屋：カーテンと光がゆっくり揺れる。カメラの背景の中に入れて、映像ごと寄り・振れるように
+      attachMotionBg(wrap.querySelector('.eps-cam-bg'), 'assets/motion/ending_room.mp4');
       requestAnimationFrame(() => wrap.classList.add('show'));
       const afterglowMs = (typeof a.afterglow === 'number') ? a.afterglow : 2200;
       setTimeout(() => {

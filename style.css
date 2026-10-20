@@ -19846,3 +19846,21 @@ html.is-compact .intermission-overlay .ims-scene .ek-caption { left: 8%; right: 
 /* 人が替わる時の重ね：新しい場面が上に来て、前の場面は少し遅れて消える */
 .intermission-overlay .ims-scene { transition: opacity .55s ease !important; }
 @media (prefers-reduced-motion: reduce) { .ims-cam, .ims-scene[data-from] .ims-cam-bg, .ims-scene[data-from] .eps-portrait-frame, .intermission-overlay .ims-scene .eps-portrait { animation: none !important; } }
+
+/* ===== エンディングの会話（リコ先輩・ミミの立ち絵の場面）にも幕間と同じカメラ（2026-10-20 ユーザー指示）=====
+   部品は幕間の .ims-cam / .ims-cam-bg と同じ。背景は夕暮れの部屋（ending_room.webp と動く映像）。
+   立ち絵は上半身に寄せ（足元は画面の外）、リコ先輩は右・ミミは左。場面ごとにゆっくり寄り、話し手が替わる時は前の人の側から振る */
+.ending-portrait-scene.eps-cam-scene { background: #000 !important; overflow: hidden; }
+.ending-portrait-scene.eps-cam-scene::before { display: none; }
+.eps-cam-bg { background-image: url('assets/backgrounds/ending_room.webp') !important; filter: blur(2px) brightness(.8) saturate(.95); }
+.eps-cam-bg > .motion-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--bgx, 50%) 40%; }
+.ending-portrait-scene.eps-cam-scene .eps-portrait-frame { position: absolute; left: var(--cx, 50%); top: 3%; width: auto; height: 190%; margin: 0; transform: translateX(-50%); display: block; }
+.ending-portrait-scene.eps-cam-scene .eps-portrait { height: 100%; width: auto; animation: imsBreath 5.5s ease-in-out infinite; filter: drop-shadow(0 10px 28px rgba(0,0,0,.8)); }
+.ending-portrait-scene.eps-cam-scene[data-from] .ims-cam-bg { animation: imsPanBg 1.2s cubic-bezier(.2,.7,.2,1) both; }
+.ending-portrait-scene.eps-cam-scene[data-from] .eps-portrait-frame { animation: imsPanFg 1.2s cubic-bezier(.2,.7,.2,1) both; }
+/* 振りの向き（幕間と同じ決まり）。エンディングは リコ先輩（右）→ ミミ（左） */
+.ending-portrait-scene.eps-cam-scene[data-from="opp"].ims-scene-mimi { --dir: -1; }
+.ending-portrait-scene.eps-cam-scene[data-from="mimi"].ims-scene-opp { --dir: 1; }
+/* エンディングは自動で進む長い場面なので、寄りは幕間よりさらにゆっくり（14秒で1.08倍） */
+.ending-portrait-scene.eps-cam-scene .ims-cam { animation-duration: 14s; }
+@media (prefers-reduced-motion: reduce) { .ending-portrait-scene.eps-cam-scene .ims-cam, .ending-portrait-scene.eps-cam-scene .eps-portrait-frame, .ending-portrait-scene.eps-cam-scene .eps-portrait, .ending-portrait-scene.eps-cam-scene .ims-cam-bg { animation: none !important; } }

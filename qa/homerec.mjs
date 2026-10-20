@@ -20,19 +20,14 @@ await page.eval(`(() => {
 })()`);
 await page.eval('Promise.all([...document.querySelectorAll(".home-stage img")].filter(im=>im.src).map(im=>im.decode().catch(()=>{}))).then(()=>document.fonts.ready).then(()=>true)');
 await sleep(5000);
-const FPS = 30, DT = 1000 / FPS;
-let expired = null;
-page.on('Emulation.virtualTimeBudgetExpired', () => { if (expired) { const f = expired; expired = null; f(); } });
-const advance = (ms) => new Promise((res) => {
-  const t = setTimeout(() => { expired = null; res(); }, 15000);
-  expired = () => { clearTimeout(t); res(); };
-  page.send('Emulation.setVirtualTimePolicy', { policy: 'advance', budget: ms }).catch(() => { clearTimeout(t); expired = null; res(); });
-});
-await page.send('Emulation.setVirtualTimePolicy', { policy: 'pause' });
+const FPS = 30;
+// リコの動きの時計（uT）をこちらで 1/30 秒ずつ進める。本当の時計で撮ると、PC が重い時に描く回数が減って動きが飛ぶ（びくびくに見える）
+// ＝ 1秒に30回描ける端末で見える動きと同じ。画面の描き直しを待ってから撮る
+await page.eval(`(() => { const o = WebGLRenderingContext.prototype.uniform1f; window.__draws = 0; WebGLRenderingContext.prototype.uniform1f = function (l, v) { window.__draws++; return o.call(this, l, window.__vt != null ? window.__vt : v); }; return 1; })()`);
 const N = Math.round(SEC * FPS);
 for (let k = 0; k < N; k++) {
-  await advance(DT);
-  await page.eval(`(() => { const now = performance.now(); for (const a of document.getAnimations()) { if (a.__t0 == null) a.__t0 = now - Math.min(a.currentTime || 0, ${DT}); a.pause(); a.currentTime = now - a.__t0; } return 1; })()`);
+  await page.eval(`(window.__vt = ${(k / FPS).toFixed(4)}, window.__d0 = window.__draws, 1)`);
+  for (let w = 0; w < 100; w++) { if (await page.eval('window.__draws > window.__d0 + 1')) break; await sleep(30); }
   await page.screenshot(path.join(dir, `f${String(k).padStart(5, '0')}.png`));
 }
 const live = await page.eval(`!!(window.HomeLive && document.querySelector('.home-stage canvas, canvas'))`);
