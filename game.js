@@ -14453,7 +14453,7 @@ function maybeShowHouseRules() {
 function readTellsRow(on) {
   return `<div class="mk-tells">${READ_TELLS.map(t => `<div class="mk-tell is-${t.k}${on ? (on === t.k ? ' is-on' : ' is-off') : ''}"><b>${t.word}</b><small>${t.desc}</small></div>`).join('')}</div>`;
 }
-function readIntroPages(group) {
+function readIntroPages(group, gameId) {
   const opp = (state.opponentName || '相手').replace(/（.*）/, '');
   const bet = Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0));
   const back = '<span class="mk-dl-cards"><span class="mk-dl-card"></span><span class="mk-dl-card"></span></span>';
@@ -14476,6 +14476,15 @@ function readIntroPages(group) {
           </div>`,
         note: 'ここで「読み合い」が始まります。',
         rico: `${opp}の手を推理してみよう。読み勝つと、手の強さがわかるよ` };
+  // 本当の手の読み合い：読みを預けて卓で使い、答え合わせはこの手の決着の後
+  if (REAL_READ_GAMES.has(gameId)) return [first, {
+    eyebrow: 'READ BATTLE',
+    title: `いま賭かっている手を読む`,
+    fig: `<div class="mk-dilemma"><div class="mk-dl">${back}<b>本物</b><small>ミミより強い手。降りるのが筋</small></div><span class="mk-dl-or">か</span><div class="mk-dl">${back}<b>ブラフ</b><small>ミミの方が強い。付いていけば取れる</small></div></div>`,
+    note: '手がかりを集めて、どちらかを読み、自信を賭けます。答え合わせは、この手の決着の後。降りても札はめくって確かめます。読み違えても、卓のチップは減りません。',
+    rico: '読みを信じて、付いていくか降りるか決めよう。3回続けて当てると、ご褒美が2倍になるよ',
+    next: '読み合いへ',
+  }];
   return [first, {
     eyebrow: 'READ BATTLE',
     title: `読み勝つと、${opp}の今の手がわかる`,
@@ -15380,14 +15389,16 @@ function startReadBattle(group) {
   if (!save.readIntroSeen) {
     const gen0 = battleGen;
     if (typeof dismissCutIn === 'function') dismissCutIn(); // 相手のカットイン（画面の一番上）が説明の札を覆っていた
-    showMustKnow(readIntroPages(group), { cls: 'is-read' }).then(() => {
+    state.__nextReadGame = pickReadBattle(group);
+    showMustKnow(readIntroPages(group, state.__nextReadGame), { cls: 'is-read' }).then(() => {
       save.readIntroSeen = true;
       saveProgress();
       if (gen0 === battleGen && state.screen === 'battle') startReadBattle(group);
     });
     return;
   }
-  const gameId = pickReadBattle(group);
+  const gameId = state.__nextReadGame || pickReadBattle(group);
+  state.__nextReadGame = null;
   const stage = document.getElementById('stage') || document.body;
   document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
   if (typeof dismissCutIn === 'function') dismissCutIn();
@@ -15402,11 +15413,13 @@ function startReadBattle(group) {
   try {
     inst = window.MB.mount(host, {
       gameId, charId: state.opponentImgKey, purse: state.readBattlePurse, exitLabel: '卓にもどる',
+      table: readBattleTable(gameId),
       volume: isSfxOn() ? sfxVolFloat() : 0,
       onExit: (r) => {
         try { inst && inst.destroy(); } catch (e) {}
         host.remove(); state.readBattle = null;
         if (gen !== battleGen || state.screen !== 'battle') return;
+        if (r && r.deferred) return holdReadBattle(group, gameId, r);
         finishReadBattle(group, gameId, r || {}, state.readBattlePurse.coins - coinsBefore);
       },
     });
@@ -15418,6 +15431,76 @@ function startReadBattle(group) {
   state.readBattlePlayed[gameId] = (state.readBattlePlayed[gameId] || 0) + 1;
   save.readBattleSeen[gameId] = true;
   saveProgress();
+}
+// ===== 本当の手の読み合い（2026-10-21）=====
+// 読み合いの中では読みを預けるだけ。答え合わせは手の決着の後（continueAfterHand の頭で showReadVerdict）。
+// 本当の手で遊べる種類だけ table を渡す。渡さない種類は今までどおり架空の場面で、その場で答え合わせ
+const REAL_READ_GAMES = new Set(['stare']);
+const RB_SUIT = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
+const rbCard = (c) => ({ r: c.rank, s: RB_SUIT[c.suit] || 's' });
+function readBattleTable(gameId) {
+  if (!REAL_READ_GAMES.has(gameId)) return null;
+  if (!state.opponentHand || state.opponentHand.length < 2 || !state.playerHand || (state.community || []).length < 3) return null;
+  if (!save.readRecord) save.readRecord = {};
+  return {
+    board: state.community.map(rbCard), mine: state.playerHand.map(rbCard), her: state.opponentHand.map(rbCard),
+    pot: state.pot || 0, toCall: Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0)), phase: state.handPhase,
+    record: save.readRecord[state.opponentImgKey] || null,
+  };
+}
+// 読みを預かって卓に戻す
+function holdReadBattle(group, gameId, r) {
+  state.psychPending = false;
+  state.psychResolving = false;
+  if (group === 'psych') state.psychResolved = true;
+  state.psychTried = (state.psychTried || 0) + 1;
+  state.pendingRead = { ...r.pending, gameId, group, oppKey: state.opponentImgKey, handNo: state.handNo };
+  const pickName = r.pending.pick === 'bluff' ? 'ブラフ' : '本物';
+  const name = (state.opponentName || '相手').replace(/（.*）/, '');
+  state.mimiThought = `「読み：${name}は${pickName}。${r.pending.pick === 'bluff' ? '信じるなら、付いていく' : '信じるなら、降りる'}」`;
+  state.ricoAdvice = `「ミミの読みは『${pickName}』（自信 ×${r.pending.mult || 1}）。答え合わせは、この手の後で」`;
+  state.isPlayerTurn = true;
+  render();
+}
+// 手の決着の後：相手の札をめくって読みの答え合わせ
+function showReadVerdict() {
+  const p = state.pendingRead; state.pendingRead = null;
+  return new Promise(resolve => {
+    if (!p || !window.MB || state.screen !== 'battle') return resolve();
+    const stage = document.getElementById('stage') || document.body;
+    document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
+    const host = document.createElement('div');
+    host.className = 'read-battle-host rb-' + (p.group || 'psych');
+    stage.appendChild(host);
+    state.readBattlePurse = state.readBattlePurse || { coins: 0, combo: 0, fever: 0, best: 0, perfect: 0 };
+    const coinsBefore = state.readBattlePurse.coins;
+    let inst = null;
+    const gen = battleGen;
+    try {
+      inst = window.MB.mount(host, {
+        gameId: '__verdict', charId: p.oppKey, purse: state.readBattlePurse, exitLabel: '次へ', noIntro: true, pending: p,
+        volume: isSfxOn() ? sfxVolFloat() : 0,
+        onExit: (r) => {
+          try { inst && inst.destroy(); } catch (e) {}
+          host.remove();
+          if (gen !== battleGen) return resolve();
+          // 記録：この相手の「大きな賭け」が本物だったかブラフだったかを、20回分だけ覚える
+          if (!save.readRecord) save.readRecord = {};
+          const rec = save.readRecord[p.oppKey] || [];
+          rec.push(p.truth === 'bluff'); save.readRecord[p.oppKey] = rec.slice(-20);
+          state.readBattleBonus = (state.readBattleBonus || 0) + (state.readBattlePurse.coins - coinsBefore);
+          log('psych', { qid: 'mb_' + p.gameId, success: !!(r && r.correct), mult: p.mult || 1 });
+          if (r && r.correct) {
+            state.panyu = Math.min(state.panyuMax, state.panyu + 25);
+            state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
+            state.psychSuccessCount++;
+          }
+          saveProgress();
+          resolve();
+        },
+      });
+    } catch (e) { console.error('read verdict failed', e); host.remove(); resolve(); }
+  });
 }
 function finishReadBattle(group, gameId, r, gain) {
   state.psychPending = false;
@@ -17348,6 +17431,7 @@ function continueButtonLabel() {
 }
 
 function continueAfterHand() {
+  if (state.pendingRead) { const g0 = battleGen; return showReadVerdict().then(() => { if (g0 === battleGen && state.screen === 'battle') continueAfterHand(); }); }
   setMimiExpression('default'); // P1-3: 次のハンドへ進む際は表情をリセット
   if (canRebuy()) return showRebuy();
   if (state.playerChips <= 0 || state.opponentChips <= 0 || state.handNo >= state.maxHands) {

@@ -367,6 +367,11 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
 .mb-host .mb-wchip.x3 { background: radial-gradient(circle at 50% 45%, var(--gold-hi) 0 42%, #fff6dc 42% 46%, #a8803e 46% 100%); color: #1d080e; box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 0 0 3px rgba(122,14,22,.55); animation: mb-chipShine 1.2s ease-in-out infinite; }
 @keyframes mb-chipShine { 50% { box-shadow: 0 0 26px rgba(239,205,130,.8), inset 0 0 0 3px rgba(122,14,22,.55); } }
 .mb-host .mb-wager-note { font-size: 12px; color: var(--dim); }
+/* 当たり／外れのコイン：チップの下の縁に重ねる黒檀の小札（当たり＝金、外れ＝赤） */
+.mb-host .mb-wager.has-stakes .mb-wager-chips { padding-bottom: 12px; }
+.mb-host .mb-wchip-st { position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); display: flex; gap: 6px; padding: 1px 6px; white-space: nowrap; font-style: normal; font-family: var(--mincho); font-weight: 800; font-size: 12px; line-height: 1.35; background: #130406; border: 1px solid var(--line); border-radius: 2px; }
+.mb-host .mb-wchip-st .w { font-style: normal; color: var(--gold-hi); }
+.mb-host .mb-wchip-st .l { font-style: normal; color: #ff8f9c; }
 .mb-host .mb-result { position: absolute; inset: 0; z-index: 15; display: grid; place-items: center; background: rgba(8,2,4,.78); animation: mb-fadeIn .25s; }
 @keyframes mb-fadeIn { from { opacity: 0; } }
 /* 結果の札：小窓の型（金茶の 2px の枠＋二重線＋四隅の金飾り 28px） */
@@ -691,3 +696,39 @@ html:not(.is-compact) .mb-host .mb-body::after {
 /* 答え合わせの縁：.mb-win＝金の二重線（枠＋外に1本）、.mb-lose＝灰の一重線。緑・ピンクの縁の代わり */
 .mb-host :is(.mb-game-root, .mb-layer) .mb-win { border-color: var(--gold-hi); outline: 1px solid var(--gold-hi); outline-offset: 3px; }
 .mb-host :is(.mb-game-root, .mb-layer) .mb-lose { outline: 1px solid #8a8073; outline-offset: 3px; }
+
+/* ===== 読み合いの共通の骨組み（.rb-frame）2026-10-21 =====
+   どの読み合いも、この枠に部品をはめる。遊びごとに並べ方を詰めない（docs/design-ref/clarity-rules.md の 6）。
+   上：手順と今やること（1行）／真ん中左：遊びの絵（.rb-play）／真ん中右：判断の材料（.rb-info）／下：押す所（.rb-act・高さ固定）
+   高さは画面から先に決める。材料が右の枠に入らない時は、部品を減らすかまとめる */
+.mb-host .mb-game-root.rb-frame { display: grid; grid-template-columns: minmax(0, 1fr) var(--rb-info-w, 356px); grid-template-rows: var(--rb-top-h, 40px) minmax(0, 1fr) var(--rb-act-h, 100px);
+  grid-template-areas: "top top" "play info" "act act"; gap: var(--rb-gap, 10px) var(--rb-col-gap, 24px); align-content: stretch; }
+.mb-host .rb-frame > .rb-top { grid-area: top; min-width: 0; display: flex; align-items: center; }
+.mb-host .rb-frame > .rb-play { grid-area: play; min-height: 0; min-width: 0; }
+.mb-host .rb-frame > .rb-info { grid-area: info; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--rb-gap, 10px); overflow-y: auto; }
+.mb-host .rb-frame > .rb-act { grid-area: act; min-width: 0; display: flex; align-items: center; justify-content: center; }
+.mb-host .rb-frame > .rb-act > * { width: 100%; max-height: 100%; }
+/* 手順の菱形と今やることを1行に（帯の下に重ねず、右に続ける） */
+.mb-host .rb-top .steps.is-dia { width: 100%; padding-bottom: 0; justify-content: flex-start; align-items: center; }
+.mb-host .rb-top .steps > .mb-mission { position: static; flex: 1 1 auto; min-width: 0; padding: 0 0 0 10px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+.mb-host .rb-top .steps > .mb-mission::after { content: none; }
+/* 読みを預ける札（本当の手の勝負）：読みの名前を大きく、当たり・外れのコインを並べる */
+.mb-host .mb-entrust-pick { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 6px 0 4px; font-family: var(--mincho); font-weight: 700; font-size: 14px; color: var(--gold-pale); }
+.mb-host .mb-entrust-pick b { font-size: 26px; font-weight: 800; color: var(--gold-hi); letter-spacing: .06em; }
+.mb-host .mb-entrust-pick span { font-size: 15px; color: var(--text); }
+.mb-host .mb-entrust-coin { display: flex; gap: 14px; font-family: var(--mincho); font-weight: 800; font-size: 15px; margin-bottom: 4px; }
+.mb-host .mb-entrust-coin .w { color: var(--gold-hi); } .mb-host .mb-entrust-coin .l { color: #ff8f9c; }
+/* 読みを預ける札は絵なしの1列（結果の札の「絵｜文」の2列を使わない） */
+.mb-host .mb-entrust .mb-result-card { grid-template-columns: minmax(0, 1fr); width: min(560px, 92%); max-width: 560px; gap: 8px; }
+.mb-host .mb-entrust .mb-result-detail { font-size: 14px; line-height: 1.6; }
+/* 遊びの4点の絵札：見出し（目的・やり方・危なさ・見る物）を左、文を右に */
+.mb-host .mb-rules .mb-result-card { grid-template-columns: minmax(0, 1fr); width: min(620px, 94%); gap: 8px; }
+.mb-host .mb-rl4 { display: grid; grid-template-columns: 4.5em minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 5px 0; border-top: 1px solid var(--line-dim); font-size: 14px; line-height: 1.55; color: var(--text); }
+.mb-host .mb-rl4 > b { font-family: var(--mincho); font-weight: 800; font-size: 14px; color: var(--gold-hi); letter-spacing: .08em; }
+.mb-host .mb-rl4 b.em, .mb-host .mb-rl4 em { font-style: normal; font-weight: 800; color: var(--gold-hi); }
+.mb-host .mb-rl4-look { display: block; }
+.mb-host .mb-rl4-look i { font-style: normal; color: var(--gold); margin: 0 6px; }
+/* 上の段の右の「ルール」 */
+.mb-host .mb-rules-btn { flex: 0 0 auto; margin-left: 8px; min-height: 28px; padding: 2px 12px; font-family: var(--mincho); font-weight: 700; font-size: 13px; color: var(--gold-pale); background: rgba(19,4,6,.85); border: 1px solid var(--line); border-radius: 2px; cursor: pointer; }
+.mb-host .mb-rules-btn:hover { border-color: var(--gold-hi); }
+.mb-host .rb-top > .rb-steps { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; }

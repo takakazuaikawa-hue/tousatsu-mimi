@@ -68,6 +68,18 @@
     }
     return w / samples;
   }
+  // 2人の手の勝負：a が b に勝つ見込み（0-1、引き分けは半分）。残りの場札は全部の組み合わせを数える（場札3枚でも 1081 通り）
+  function headsUp(a, b, board) {
+    const used = new Set([...a, ...b, ...board].map(key));
+    const rest = deck().filter(c => !used.has(key(c)));
+    const need = 5 - board.length; let w = 0, n = 0;
+    const run = (start, picked) => {
+      if (picked.length === need) { const bd = board.concat(picked); const x = score(a.concat(bd)), y = score(b.concat(bd)); w += x > y ? 1 : x === y ? .5 : 0; n++; return; }
+      for (let i = start; i < rest.length; i++) { picked.push(rest[i]); run(i + 1, picked); picked.pop(); }
+    };
+    run(0, []);
+    return n ? w / n : .5;
+  }
   function cardHTML(c, cls = '') {
     const red = c.s === 'h' || c.s === 'd' ? 'red' : '';
     return `<span class="card ${red} ${cls}" data-k="${key(c)}" aria-label="${rn(c.r)} ${SUIT_NAME[c.s]}"><b>${rn(c.r)}</b><i>${SYM[c.s]}</i></span>`;
@@ -365,8 +377,10 @@
       const CHARS = {}; for (const k in CHARS_RAW) { const c = CHARS_RAW[k]; CHARS[k] = { ...c, face: A(c.face), panic: A(c.panic), smug: A(c.smug) }; }
       const MIMI = {}; for (const k in MIMI_RAW) MIMI[k] = A(MIMI_RAW[k]);
       const api = {
-        alive: live, $, wait, rand, pick, shuffle, deck, key, label, rn, SYM, SUITS, SUIT_NAME, score, category, CAT_NAME, equity, cardHTML, backHTML, sfx, CHARS, MIMI, reduce, sparkles, reveal,
+        alive: live, $, wait, rand, pick, shuffle, deck, key, label, rn, SYM, SUITS, SUIT_NAME, score, category, CAT_NAME, equity, headsUp, cardHTML, backHTML, sfx, CHARS, MIMI, reduce, sparkles, reveal,
         root: gameRoot, host, stage, layer, asset: A,
+        // 卓の本当の手（本編から渡る時だけ）：{ board, mine, her, pot, toCall, phase, record }。札は { r, s }。無ければ架空の場面で遊ぶ
+        table: opts.table || null, opts,
         // 縦に長い舞台（スマホの単独ページ）で、結果の札が画面外に出ないよう舞台ごと見える所へ寄せる。組み込みでは何もしない
         fitStage() { if (dev && stage.getBoundingClientRect().height > window.innerHeight) stage.scrollIntoView({ block: 'center', behavior: 'auto' }); },
         // 遊びの中身だけに効く CSS を足す（同じ id は一度だけ）。セレクタは自動で .mb-host の下に閉じる
@@ -468,19 +482,20 @@
             <div class="mb-tally-sum"><span class="${called ? 'mine' : ''}">付いていく <b class="${sum >= 0 ? 'pos' : 'neg'}">${sg(sum)}</b></span><span class="${called ? '' : 'mine'}">降りる <b>±0</b></span></div></div>`;
         },
         // 読みに賭ける：自信の度合いを選ぶ。×1/×2/×3 を返す
+        // o.stakes を渡すと、外れた時に失う額を倍率ごとに変える（例 [0, 1, 3]：たぶん＝失わない／確信＝元の額／ぜったい＝元の3倍）。
+        // こうすると「見込みが五分ならたぶん、半分を超えたら確信、3分の2を超えたらぜったい」が一番得になり、自信を選ぶ意味が出る
         wager(o = {}) {
           return new Promise(res => {
             const b = o.base || 20;
+            api.lossK = o.stakes || null;
             api.mission(o.mission || '読みの自信を選ぶ');
             const box = document.createElement('div');
-            box.className = 'mb-wager mb-pop';
+            box.className = 'mb-wager mb-pop' + (o.stakes ? ' has-stakes' : '');
+            const fv = P.fever > 0 ? 2 : 1;
+            const chip = (m, name) => `<button class="mb-wchip x${m}" data-m="${m}"><span>${name}<b>×${m}</b></span>${o.stakes ? `<em class="mb-wchip-st"><i class="w">+${b * m * fv}</i><i class="l">${o.stakes[m - 1] ? '−' + b * o.stakes[m - 1] : '±0'}</i></em>` : ''}</button>`;
             box.innerHTML = `<div class="mb-wager-q">${o.question || 'その読み、どのくらい自信ある？'}</div>
-              <div class="mb-wager-chips">
-                <button class="mb-wchip x1" data-m="1"><span>たぶん<b>×1</b></span></button>
-                <button class="mb-wchip x2" data-m="2"><span>確信<b>×2</b></span></button>
-                <button class="mb-wchip x3" data-m="3"><span>ぜったい<b>×3</b></span></button>
-              </div>
-              <div class="mb-wager-note">当たれば ${b}×倍率、外れたら その半分を失う${P.fever > 0 ? '（フィーバー中は当たりがさらに2倍）' : ''}</div>`;
+              <div class="mb-wager-chips">${chip(1, 'たぶん')}${chip(2, '確信')}${chip(3, 'ぜったい')}</div>
+              <div class="mb-wager-note">${o.note || (o.stakes ? `札の下は、当たった時／外れた時のコイン${fv > 1 ? '（フィーバー中は当たりが2倍）' : ''}` : `当たれば ${b}×倍率、外れたら その半分を失う${P.fever > 0 ? '（フィーバー中は当たりがさらに2倍）' : ''}`)}</div>`;
             // 置き場所の指定が無ければ、遊びの下に継ぎ足さず舞台の上に重ねて出す（継ぎ足すと 190px 伸びて画面からはみ出していた）
             const ov = o.into ? null : document.createElement('div');
             if (ov) { ov.className = 'mb-wager-ov'; ov.appendChild(box); layer.appendChild(ov); }
@@ -494,6 +509,47 @@
               box.querySelectorAll('.mb-wchip').forEach(x => { x.disabled = true; x.style.opacity = x === btn ? 1 : .3; });
               setTimeout(() => { box.remove(); if (ov) ov.remove(); res(m); }, 250);
             }));
+          });
+        },
+        // 遊びの4点の絵札（目的・やり方・危なさ・見る物）。その遊びの初回は必ず出し、2回目からは出さない。
+        // 上の段（.rb-top）の右に「ルール」を置き、いつでも開ける。o = { key, title, goal, how, risk, look:[[決めること, 見る物], ...] }
+        rules(o) {
+          const card = () => new Promise(res => {
+            const el = document.createElement('div'); el.className = 'mb-result mb-rules';
+            const row = (k, v) => `<div class="mb-rl4"><b>${k}</b><div>${v}</div></div>`;
+            el.innerHTML = `<div class="mb-result-card"><div>
+                <div class="mb-result-stamp">${o.title}</div>
+                ${row('目的', o.goal)}${row('やり方', o.how)}${row('危なさ', o.risk)}
+                ${row('見る物', o.look.map(([a, b]) => `<span class="mb-rl4-look">${a}<i>→</i>${b}</span>`).join(''))}
+              </div><div class="mb-result-actions"><button class="btn gold" id="mb-rules-ok">わかった</button></div></div>`;
+            layer.appendChild(el);
+            el.querySelector('#mb-rules-ok').addEventListener('click', () => { sfx.tap(); el.remove(); res(); });
+          });
+          api.showRules = card;
+          const top = gameRoot.querySelector('.rb-top');
+          if (top && !top.querySelector('.mb-rules-btn')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'mb-rules-btn'; b.textContent = 'ルール'; b.addEventListener('click', () => { sfx.tap(); card(); }); top.appendChild(b); }
+          let seen = false; const k = 'mbRulesSeen:' + o.key;
+          try { seen = !!localStorage.getItem(k); localStorage.setItem(k, '1'); } catch (e) {}
+          return seen ? Promise.resolve() : card();
+        },
+        // 読みを預ける（本当の手の勝負）：答え合わせは手の決着の後。ここでは読みと自信と、当たり・外れのコインを見せて卓に戻す。
+        // o = { pending（決着後の答え合わせに渡す中身）, pick（読みの名前）, advice（卓でどうするかの一言）, win, lose }
+        entrust(o) {
+          if (!live()) return;
+          api.mission('読みを持って、卓へ');
+          const el = document.createElement('div');
+          el.className = 'mb-result mb-entrust';
+          el.innerHTML = `<div class="mb-result-card"><div>
+              <div class="mb-result-stamp">読みを預けた</div>
+              <div class="mb-entrust-pick">ミミの読み<b>${o.pick}</b><span>自信 ×${api.mult || 1}</span></div>
+              <div class="mb-entrust-coin"><span class="w">当たれば +${o.win}</span><span class="l">外れたら ${o.lose ? '−' + o.lose : '±0'}</span></div>
+              <div class="mb-result-detail">${o.advice}<br>答え合わせは、この手の決着の後。降りても、相手の札はめくって確かめる。</div>
+            </div><div class="mb-result-actions"><button class="btn gold" id="mb-next">${opts.exitLabel || '卓にもどる'}</button></div></div>`;
+          layer.appendChild(el); sfx.fanfare();
+          el.querySelector('#mb-next').addEventListener('click', () => {
+            if (exited) return; exited = true; sfx.tap();
+            const res = { gameId: g.id, group: g.group, charId: api.charId, deferred: true, pending: o.pending, mult: api.mult || 1, gain: 0, correct: false };
+            if (typeof opts.onExit === 'function') { try { opts.onExit(res); } catch (e) { console.error(e); } }
           });
         },
         // 答え合わせとご褒美。correct / perfect / base / title / detail / art('win'|'lose')
@@ -513,7 +569,7 @@
             if (P.fever > 0) P.fever--;
             if (o.perfect) P.perfect++;
           } else {
-            gain = -Math.round(b * mult / 2);
+            gain = api.lossK ? -b * (api.lossK[mult - 1] || 0) : -Math.round(b * mult / 2);
             P.combo = 0; P.fever = 0;
           }
           P.coins = Math.max(0, P.coins + gain);
@@ -598,7 +654,7 @@
       api.setOpp(who, '……', null);
       if (g.prepare) g.prepare({ api });
       purse();
-      await api.intro(g.group);
+      if (!opts.noIntro) await api.intro(g.group);
       if (rid !== runId || dead) return;
       try { await g.start({ api }); } catch (e) { console.error(e); api.coach('ごめん、うまく始められなかった。卓にもどって続けよう'); }
     }
@@ -639,7 +695,7 @@
     for (const gk of ['psych', 'logic']) {
       const row = document.createElement('div'); row.className = 'tab-group';
       row.innerHTML = `<span>${gk === 'psych' ? 'PSYCH' : 'LOGIC'}</span>`;
-      games.filter(g => g.group === gk).sort((a, b) => (a.order || 0) - (b.order || 0)).forEach(g => {
+      games.filter(g => g.group === gk && !g.hidden).sort((a, b) => (a.order || 0) - (b.order || 0)).forEach(g => {
         const b = document.createElement('button');
         b.className = 'tab' + (g.isNew ? ' is-new' : ''); b.dataset.id = g.id; b.setAttribute('role', 'tab');
         b.innerHTML = `<small>${g.sub || groups[gk]}</small>${g.title}`;

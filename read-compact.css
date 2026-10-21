@@ -103,71 +103,7 @@ html.is-compact #stage > .read-battle-host.mb-host .dt-clue.key, html.is-compact
 /* ----- detective ここまで ----- */
 
 
-/* ----- stare ここから ----- */
-/* 左：見つめ合いの窓＋長押しボタン／右：手順・札・手がかり3つ */
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.stare-duel) { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-areas: "duel sit" "duel clues" "ctrl clues" "steps clues"; gap: 4px 10px; padding: 6px 0 8px; align-content: start; }
-html.is-compact #stage > .read-battle-host.mb-host #mb-stare-steps { grid-area: steps; }
-html.is-compact #stage > .read-battle-host.mb-host #mb-stare-steps .steps { gap: 3px; flex-wrap: wrap; justify-content: center; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-sit { grid-area: sit; align-items: flex-start; gap: 2px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-cards { gap: 2px 6px; justify-content: flex-start; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-duel { padding-right: 8px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-sit { padding-left: 4px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-grp { gap: 2px; flex-wrap: wrap; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-tag { font-size: 12px; margin-right: 2px; letter-spacing: .06em; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-tag.is-vs { font-size: 13px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-sit .card.small { --w: 33px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-sit .formula { font-size: 12px; line-height: 1.35; text-align: left; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-hand-name { font-size: 12px; margin-left: 2px; white-space: normal; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-duel { grid-area: duel; zoom: 1; padding-top: 18px; grid-template-columns: 22px minmax(0, 1fr) 22px; gap: 6px; align-self: stretch; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-arena { height: auto; min-height: 150px; max-height: 250px; align-self: stretch; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-meter { width: 18px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-meter .lbl { font-size: 12px; line-height: 12px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-meter .tick b { font-size: 12px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-meter .pct { font-size: 13px; top: -17px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-pop { font-size: 12px; line-height: 1.35; padding: 4px 8px 5px; right: 6px; bottom: 6px; max-width: 70%; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-pop small { font-size: 12px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-doki { font-size: 14px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-banner { padding: 4px 6%; font-size: 15px; top: 62%; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-banner small { font-size: 12px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl { grid-area: ctrl; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-hold { width: 100%; min-height: 52px; padding: 4px 12px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-hold span { font-size: 22px; letter-spacing: .1em; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-hold small { font-size: 12px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl > div { width: 100%; display: flex; align-items: center; gap: 8px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ask { font-size: 13px; margin: 0; flex: 0 0 82px; text-align: left; line-height: 1.3; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .actions { flex: 1 1 0; gap: 6px; flex-wrap: nowrap; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .actions .btn { flex: 1 1 0; min-width: 0; min-height: 48px; padding: 4px 6px; font-size: 14px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .actions .btn small { font-size: 12px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-clues { grid-area: clues; grid-template-columns: 1fr; gap: 4px; align-content: start; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-clue { padding: 3px 8px 4px; font-size: 12px; line-height: 1.35; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-clue .h { font-size: 13px; flex-wrap: wrap; row-gap: 0; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-clue:not(.is-open) .t { display: none; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-clue .st-gg { gap: 0 10px; margin-top: 0; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-handtag { gap: 2px 4px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-handtag .nm { font-size: 13px; line-height: 1.25; padding: 0 6px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-handtag .vs { line-height: 1.25; padding: 0 5px 0 3px; }
-@media (max-width: 719px) { html.is-compact .mb-host .dia i { width: 22px; height: 22px; font-size: 12px; } }
-html.is-compact #stage > .read-battle-host.mb-host .stare-who { justify-content: flex-start; gap: 2px 8px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-who .gg .g { width: 36px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-who .mb-handtag { gap: 3px 4px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-who .mb-handtag .nm { font-size: 13px; padding: 0 6px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-who .mb-handtag .vs { font-size: 13px; padding: 0 5px 0 3px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-herbox .mb-threat.ov { bottom: -4px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-herbox .mb-threat .tc { font-size: 13px; padding: 0 3px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-clue .t { margin-top: 1px; display: inline; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-chip { font-size: 12px; line-height: 1.4; margin: 2px 4px 0 0; padding: 0 6px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-meter .tick b { width: 18px; }
-/* 賭け：左下の枠に、文字（左）と3つの札（右）を横に並べる */
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "q chips" "note chips"; gap: 2px 8px; padding: 4px 8px; align-items: center; justify-items: start; text-align: left; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager-q { grid-area: q; font-size: 14px; line-height: 1.3; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager-note { grid-area: note; font-size: 12px; line-height: 1.3; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wager-chips { grid-area: chips; gap: 4px; flex-wrap: nowrap; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wchip { width: 62px; height: 62px; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wchip span { font-size: 12px; line-height: 1.1; white-space: nowrap; }
-html.is-compact #stage > .read-battle-host.mb-host .stare-ctrl .mb-wchip b { font-size: 20px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.stare-duel):has(.mb-wager) { grid-template-areas: "duel sit" "duel clues" "steps clues" "ctrl ctrl"; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.stare-duel):has(.mb-wager) .stare-sit .formula { display: none; }
-/* ----- stare ここまで ----- */
+
 
 
 /* ----- doubt ここから ----- */
@@ -739,22 +675,6 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root .formula { font
 }
 
 @media (max-width: 719px) {
-  /* ----- stare ----- 左：見つめ合いの窓・長押し・手順（細く）／右：場札と手札を2行・場の式・手がかり3つ（広く）。
-     読む時・賭ける時は、下の帯いっぱいに決めるボタン／賭けの札を出す */
-  html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.stare-duel) { grid-template-columns: 164px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-areas: "duel sit" "duel clues" "ctrl clues" "steps clues"; gap: 3px 8px; padding: 2px 0 2px; height: var(--rb-h, 375px); box-sizing: border-box; }
-  html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.stare-duel):has(#mb-stare-call), html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.stare-duel):has(.mb-wager) { grid-template-areas: "duel sit" "duel clues" "steps clues" "ctrl ctrl"; }
-  html.is-compact #stage > .read-battle-host.mb-host #mb-stare-steps .steps { gap: 2px 3px; flex-wrap: wrap; justify-content: flex-start; }
-  html.is-compact #stage > .read-battle-host.mb-host .stare-duel { grid-template-columns: 20px minmax(0, 1fr) 20px; gap: 4px; padding-top: 18px; }
-  html.is-compact #stage > .read-battle-host.mb-host .stare-meter { width: 16px; }
-  html.is-compact #stage > .read-battle-host.mb-host .stare-meter .tick b { width: 16px; }
-  html.is-compact #stage > .read-battle-host.mb-host .stare-arena { min-height: 140px; max-height: 290px; }
-  html.is-compact #stage > .read-battle-host.mb-host .stare-hold { min-height: 50px; padding: 3px 4px; }
-  html.is-compact #stage > .read-battle-host.mb-host .stare-hold span { font-size: 20px; }
-  html.is-compact #stage > .read-battle-host.mb-host .stare-sit .stare-cards { gap: 2px 6px; }
-  html.is-compact #stage > .read-battle-host.mb-host .stare-hands { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: center; }
-}
-
-@media (max-width: 719px) {
   /* ----- handbuild ----- 右の列が細いので、段階の札と「役の強さ順」を2段に積み、右の安全域にかからないようにする（一覧は右端をそろえて開く） */
   html.is-compact #stage > .read-battle-host.mb-host .hb-head { flex-wrap: wrap; justify-content: flex-end; align-content: flex-start; gap: 2px 6px; }
   html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row > .mb-portrait.is-chibi + div .mb-speech { margin-top: 62px; }
@@ -763,8 +683,6 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root .formula { font
   html.is-compact #stage > .read-battle-host.mb-host .hb-band { grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 4px 8px; }
   html.is-compact #stage > .read-battle-host.mb-host .hb-bname { white-space: nowrap; }
   html.is-compact #stage > .read-battle-host.mb-host .hb-bname small { white-space: normal; }
-  /* 見つめ合い：右の目盛りの数字（3・2・1）が右の列の文字に重ならないよう、窓の右に余白 */
-  html.is-compact #stage > .read-battle-host.mb-host .stare-duel { padding-right: 8px; }
 }
 
 /* ----- 今やること（api.mission）を足した分の詰め（2026-10-20） -----
@@ -800,3 +718,39 @@ html.is-compact #stage > .read-battle-host.mb-host .doubt-last { font-size: 12px
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) #mb-doubt-steps .dia { display: none; }
 /* 容疑者：動きが3つある問題でも縦に収まるよう、手順の菱形は隠す（mission が段の指示を持つ） */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .steps .dia { display: none; }
+
+/* ===== 共通の骨組み（.rb-frame）のスマホ横の寸法 =====
+   844x390：上 30・下 76・すき間 6×2・上下の余白 6+6 → 真ん中 260。右の材料の枠 270（720px 未満の機種は 230、真ん中 245） */
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root.rb-frame { --rb-top-h: 30px; --rb-act-h: 76px; --rb-gap: 6px; --rb-col-gap: 10px; --rb-info-w: 270px;
+  height: var(--rb-h, 390px); box-sizing: border-box; padding: 6px 0; }
+@media (max-width: 719px) { html.is-compact #stage > .read-battle-host.mb-host .mb-game-root.rb-frame { --rb-info-w: 256px; } }
+html.is-compact #stage > .read-battle-host.mb-host .rb-top .steps > .mb-mission { font-size: 15px; }
+/* 骨組みの中の札の大きさ（右の材料の枠は 270px。札2段で 82px に収める） */
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-info .card.small { --w: 24px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .st-svg { max-height: 48px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .stare-clue { padding: 2px 8px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .stare-clue .h { font-size: 13px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .st-choice .st-go > span:first-child { font-size: 17px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wager { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "q chips" "note chips"; gap: 2px 10px; padding: 4px 10px; align-items: center; justify-items: start; text-align: left; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wager-q { grid-area: q; font-size: 15px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wager-note { grid-area: note; font-size: 12px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wager-chips { grid-area: chips; gap: 8px; flex-wrap: nowrap; padding-bottom: 10px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wchip { width: 56px; height: 56px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wchip span { font-size: 12px; line-height: 1.1; white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wchip b { font-size: 18px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-act .actions { display: flex; gap: 8px; width: 100%; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-act .actions .btn { flex: 1 1 0; min-height: 56px; font-size: 16px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-entrust .mb-result-card { grid-template-columns: minmax(0, 1fr); width: min(540px, 92%); gap: 6px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-info { gap: 5px; }
+/* 骨組みの上の段は1行（スマホ全体の「手順の帯は折り返す」を打ち消す） */
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-top .steps { flex-wrap: nowrap; gap: 4px; }
+/* 720px 未満の機種：右の材料の枠を 256px に（遊びの絵の方を細くする）。札は 22px */
+@media (max-width: 719px) {
+  html.is-compact #stage > .read-battle-host.mb-host .mb-game-root.rb-frame { --rb-info-w: 256px; }
+  html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-info .card.small { --w: 22px; }
+  html.is-compact #stage > .read-battle-host.mb-host .rb-top .steps > .mb-mission { font-size: 14px; }
+}
+html.is-compact #stage > .read-battle-host.mb-host .mb-rules .mb-result-card { grid-template-columns: minmax(0, 1fr); width: min(600px, 94%); gap: 4px; padding: 10px 16px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-rules .mb-result-stamp { font-size: 20px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-rl4 { font-size: 13px; line-height: 1.45; padding: 3px 0; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-rules-btn { min-height: 26px; font-size: 12px; padding: 0 10px; }
