@@ -45,6 +45,8 @@ export function stdCheck({ minText = 12, bodyMin = 14, safe = 47, phone = true }
     if (SAFE && r.width < VW * 0.7 && (r.left < SAFE - 1 || r.right > VW - SAFE + 1)) safeHit.push('[押] ' + label(e) + ' x' + Math.round(r.left) + '-' + Math.round(r.right));
   }
   const tiny = [], body = [], clip = [], offText = [];
+  // 2026-10-21 快適さの測定：大きさ（画面上 px を四捨五入）ごとの字数。補足の段以下の割合と、表にない大きさを後で出す
+  const dist = {}; const bySel = {};
   const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n; const seen = new Set();
   while ((n = tw.nextNode())) {
     const t = n.textContent.replace(/\\s+/g, ' ').trim(); const el = n.parentElement; if (!t || !el || seen.has(el) || !vis(el)) continue;
@@ -67,6 +69,8 @@ export function stdCheck({ minText = 12, bodyMin = 14, safe = 47, phone = true }
     if (underModal(el, (rr.left + rr.right) / 2, (rr.top + rr.bottom) / 2)) continue;
     const px = parseFloat(getComputedStyle(el).fontSize) * scaleOf(el);
     const lab = t.slice(0, 16) + ' ' + px.toFixed(1) + ' ' + cls(el);
+    dist[Math.round(px)] = (dist[Math.round(px)] || 0) + t.length;
+    { const full = (el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/s+/).slice(0, 2).join('.') : '')) + (el.parentElement && typeof el.parentElement.className === 'string' && el.parentElement.className.trim() ? ' < ' + el.parentElement.className.trim().split(/s+/)[0] : ''); const k = full + ' @' + Math.round(px); const b = bySel[k] || (bySel[k] = { n: 0, ex: t.slice(0, 14) }); b.n += t.length; }
     if (px < MIN - 0.15) tiny.push(lab);
     else if (BODY && px < BODY - 0.15 && (el.closest(BODY_SEL) || (t.length >= 30 && el.tagName !== 'SMALL' && !/note|hint|cap|sub|tag|legal|small/i.test(typeof el.className === 'string' ? el.className : '')))) body.push(lab);
     if (part) clip.push(lab);
@@ -83,10 +87,19 @@ export function stdCheck({ minText = 12, bodyMin = 14, safe = 47, phone = true }
     const cands = [...document.querySelectorAll('#stage *, body > *')].filter(e => { const r = e.getBoundingClientRect(); return r.height >= VH * 0.5 && r.width > 20 && vis(e); });
     for (const x of [2, VW - 3]) { if (!cands.some(e => { const r = e.getBoundingClientRect(); return r.left <= x && r.right >= x + 1 && paints(e); })) bar.push(x < VW / 2 ? '左' : '右'); }
   }
+  // トランプの札（.card で幅のある物）の画面上の幅：一番小さい物
+  const cardWs = [...document.querySelectorAll('.card, .mp-card, .hr-pcard')].filter(e => vis(e)).map(e => e.getBoundingClientRect()).filter(r => r.width >= 8 && r.right > 0 && r.left < VW && r.bottom > 0 && r.top < VH).map(r => Math.round(r.width));
   const broken = [...document.images].filter(im => im.src && vis(im) && im.complete && !im.naturalWidth).map(im => im.src.split('/').slice(-2).join('/'));
-  return { screen: (typeof state !== 'undefined' && state) ? state.screen : '', covered, small, off: [...off, ...offText], tiny, body, safe: safeHit, clip, bar, broken, scrollX: document.documentElement.scrollWidth > VW };
+  return { screen: (typeof state !== 'undefined' && state) ? state.screen : '', covered, small, off: [...off, ...offText], tiny, body, safe: safeHit, clip, bar, broken, scrollX: document.documentElement.scrollWidth > VW, dist, bySel, cardMin: cardWs.length ? Math.min(...cardWs) : null };
 })()`;
 }
 
 export const KEYS = ['covered', 'small', 'tiny', 'body', 'safe', 'off', 'clip', 'bar', 'broken'];
 export const countsOf = (r) => Object.fromEntries(KEYS.map(k => [k, (r[k] || []).length]));
+
+// 快適さのまとめ：補足の段（note 以下）の字数の割合、表にない大きさ（allowed の ±0.6 に入らず、display 未満の物）の字数
+export function comfortOf(r, { note = 14, allowed = [14, 16, 17, 19, 20], display = 24 } = {}) {
+  const d = r.dist || {}; let tot = 0, small = 0, odd = 0; const oddSizes = {};
+  for (const [k, v] of Object.entries(d)) { const px = +k; tot += v; if (px <= note + 0.5) small += v; if (px < display && !allowed.some(a => Math.abs(a - px) <= 0.6)) { odd += v; oddSizes[px] = v; } }
+  return { chars: tot, noteShare: tot ? Math.round(small / tot * 100) : 0, oddShare: tot ? Math.round(odd / tot * 100) : 0, oddSizes, cardMin: r.cardMin };
+}

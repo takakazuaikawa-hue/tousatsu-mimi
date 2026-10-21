@@ -10,7 +10,7 @@
     .vd-title { font-family: var(--mincho); font-weight: 800; font-size: 15px; letter-spacing: .12em; color: var(--gold); }
     .vd-cards { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: center; }
     .vd-grp { display: flex; gap: 4px; align-items: center; }
-    .vd-tag { font-family: var(--mincho); font-weight: 700; font-size: 13px; color: var(--gold); margin-right: 4px; }
+    .vd-tag { font-family: var(--mincho); font-weight: 700; font-size: 14px; color: var(--gold); margin-right: 4px; }
     .vd-truth { font-family: var(--mincho); font-weight: 800; font-size: 24px; line-height: 1.3; color: var(--gold-hi); text-align: center; opacity: 0; transform: scale(1.4); transition: opacity .35s, transform .35s cubic-bezier(.2,1.5,.4,1); }
     .vd-truth.on { opacity: 1; transform: none; }
     .vd-truth small { display: block; font-size: 14px; font-weight: 700; color: var(--gold-pale); }
@@ -19,7 +19,7 @@
     .vd-pick .mk { font-size: 26px; line-height: 1; }
     .vd-pick .mk.ok { color: var(--gold-hi); } .vd-pick .mk.ng { color: #ff8f9c; }
     .vd-notes { display: flex; flex-wrap: wrap; gap: 6px 10px; justify-content: center; max-width: 640px; }
-    .vd-note { font-size: 13px; padding: 2px 8px; border: 1px solid var(--line-dim); background: rgba(19,4,6,.7); color: var(--dim); opacity: 0; transition: opacity .25s; }
+    .vd-note { font-size: 14px; padding: 2px 8px; border: 1px solid var(--line-dim); background: rgba(19,4,6,.7); color: var(--dim); opacity: 0; transition: opacity .25s; }
     .vd-note.on { opacity: 1; }
     .vd-note.ok { border-color: var(--gold); color: var(--gold-pale); } .vd-note.ng { color: #c9a9ad; border-style: dashed; }
     .vd-note b { font-weight: 800; margin-left: 6px; }

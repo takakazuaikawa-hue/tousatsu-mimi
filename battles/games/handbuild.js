@@ -198,15 +198,15 @@
       .hb-lv i { width: 13px; height: 13px; display: inline-block; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: var(--line-dim); }
       .hb-lv i.on { background: var(--gold-hi); }
       .hb-ref { position: relative; }
-      .hb-ref summary { list-style: none; cursor: pointer; font-family: var(--mincho); font-size: 12px; font-weight: 700; color: var(--gold); padding: 3px 12px; border: 1px solid var(--line); border-radius: 2px; background: var(--panel); }
+      .hb-ref summary { list-style: none; cursor: pointer; font-family: var(--mincho); font-size: 14px; font-weight: 700; color: var(--gold); padding: 3px 12px; border: 1px solid var(--line); border-radius: 2px; background: var(--panel); }
       .hb-ref summary > span { display: inline-block; }
       .hb-ref summary::-webkit-details-marker { display: none; }
       .hb-ref[open] summary { color: var(--gold-hi); border-color: var(--gold-hi); background: var(--sel); box-shadow: inset 0 -2px 0 #d7b370; }
       .hb-ref ol { position: absolute; right: 0; top: calc(100% + 6px); z-index: 8; margin: 0; padding: 8px 10px; list-style: none; width: min(300px, calc(100vw - 48px)); background: linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo)); border: 1px solid var(--line); border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(227,185,100,.18), 0 12px 30px rgba(0,0,0,.6); display: grid; gap: 3px; }
-      .hb-ref li { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; font-size: 12px; }
+      .hb-ref li { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; font-size: 14px; }
       .hb-ref li i { width: 10px; height: 10px; border-radius: 1px; }
-      .hb-ref li b { font-weight: 700; } .hb-ref li span { color: var(--dim); font-size: 11px; }
-      .hb-ref .hb-arrow { font-family: var(--mincho); font-weight: 700; letter-spacing: .14em; color: var(--gold); font-size: 11px; text-align: center; }
+      .hb-ref li b { font-weight: 700; } .hb-ref li span { color: var(--dim); font-size: 14px; }
+      .hb-ref .hb-arrow { font-family: var(--mincho); font-weight: 700; letter-spacing: .14em; color: var(--gold); font-size: 14px; text-align: center; }
       .hb-side { display: none; }
       .hb-deal { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 8px 26px; }
       .hb-grp { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -224,7 +224,7 @@
       .hb-slot > .card { position: absolute; left: 0; top: 0; --w: 62px; cursor: pointer; }
       .hb-slot.full { border-style: solid; border-color: rgba(245,215,122,.55); }
       .hb-slot:empty::after { content: attr(data-n); font-family: var(--mincho); font-weight: 700; font-size: 22px; color: rgba(217,179,90,.3); }
-      .hb-slot .hb-tag { position: absolute; left: -6px; right: -6px; bottom: -17px; text-align: center; font-size: 10px; font-weight: 700; color: var(--dim); white-space: nowrap; }
+      .hb-slot .hb-tag { position: absolute; left: -6px; right: -6px; bottom: -17px; text-align: center; font-size: 14px; font-weight: 700; color: var(--dim); white-space: nowrap; }
       .hb-snap { animation: mb-hbSnap .3s cubic-bezier(.2,1.8,.4,1); }
       @keyframes mb-hbSnap { from { transform: translateY(-30px) scale(1.2) rotate(-6deg); } 60% { transform: translateY(3px) scale(.95); } }
       .hb-band { --c: #5e4b4d; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; width: min(560px, 100%); margin: 0 auto; padding: 8px 18px; position: relative; isolation: isolate; transition: color .2s; }
@@ -233,7 +233,7 @@
       .hb-meter i { width: 7px; background: rgba(255,255,255,.12); transition: background .2s; }
       .hb-meter i.on { background: var(--c); box-shadow: 0 0 6px var(--c); }
       .hb-bname { font-family: var(--mincho); font-weight: 700; font-size: clamp(17px, 2.6vw, 22px); line-height: 1.2; color: var(--gold-pale); text-shadow: 0 2px 0 rgba(0,0,0,.55); }
-      .hb-bname small { display: block; font-family: var(--sans); font-weight: 400; font-size: 11px; color: var(--dim); text-shadow: none; letter-spacing: .04em; }
+      .hb-bname small { display: block; font-family: var(--sans); font-weight: 400; font-size: 14px; color: var(--dim); text-shadow: none; letter-spacing: .04em; }
       .hb-band.is-light .hb-bname { color: #fff; }
       .hb-band.hb-bump { animation: mb-hbBump .35s cubic-bezier(.2,1.6,.4,1); }
       @keyframes mb-hbBump { 40% { transform: scale(1.05); } }

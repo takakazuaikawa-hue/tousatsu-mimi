@@ -92,7 +92,7 @@
 
 .mb-host .mb-purse { display: flex; gap: 8px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
 /* 財布の帯：箱は角 2px の黒檀、ラベルは明朝。数字は PC だけ明朝（下の html:not(.is-compact) の行） */
-.mb-host .mb-purse > div { background: var(--panel-2); border: 1px solid var(--line-dim); border-radius: 2px; padding: 6px 12px; font-family: var(--mincho); font-weight: 700; font-size: 12px; color: var(--dim); display: flex; align-items: baseline; gap: 6px; }
+.mb-host .mb-purse > div { background: var(--panel-2); border: 1px solid var(--line-dim); border-radius: 2px; padding: 6px 12px; font-family: var(--mincho); font-weight: 700; font-size: 14px; color: var(--dim); display: flex; align-items: baseline; gap: 6px; }
 .mb-host .mb-purse b { font-family: var(--disp); font-size: 22px; letter-spacing: .04em; color: var(--gold-hi); font-weight: 400; }
 /* PC は数字も明朝に。スマホ横は左の細い列（小さいスマホで 168px）に3つの箱が並ぶので、幅の広がる明朝の数字にせず Bebas のまま */
 html:not(.is-compact) .mb-host .mb-purse b { font-family: var(--mincho); font-size: 20px; letter-spacing: .02em; font-weight: 700; }
@@ -115,12 +115,12 @@ html:not(.is-compact) .mb-host .mb-purse b { font-family: var(--mincho); font-si
 .mb-host .mb-facewin { display: inline-block; width: 58px; height: 72px; transform: skewX(-12deg); overflow: hidden; border: 2px solid var(--gold); background: #22090c; box-shadow: 0 6px 14px rgba(0,0,0,.5); flex: 0 0 auto; }
 .mb-host .mb-facewin img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; transform: skewX(12deg) scale(1.3); }
 /* 名札：英語の名前は残し、明朝の小さな金文字に */
-.mb-host .mb-opp-name { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--gold); font-size: 13px; line-height: 1.2; }
+.mb-host .mb-opp-name { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--gold); font-size: 14px; line-height: 1.2; }
 /* 台詞の短冊：押せない物なので斜めのまま。深紅＋左に金の細線（線は内側の影で描き、幅を変えない） */
 .mb-host .mb-speech { margin-top: 4px; display: inline-block; padding: 6px 14px; font-family: var(--mincho); font-weight: 700; font-size: 15px; color: var(--gold-pale); background: linear-gradient(90deg, var(--crimson), rgba(34,9,12,.92)); box-shadow: inset 3px 0 0 var(--gold); transform: skewX(-8deg); max-width: 100%; }
 .mb-host .mb-speech > span { display: inline-block; transform: skewX(8deg); }
 .mb-host .mb-betchip { text-align: right; font-variant-numeric: tabular-nums; }
-.mb-host .mb-betchip .lbl { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--dim); font-size: 13px; }
+.mb-host .mb-betchip .lbl { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--dim); font-size: 14px; }
 .mb-host .mb-betchip .num { font-family: var(--disp); font-size: 32px; line-height: 1; color: var(--gold-hi); }
 .mb-host .mb-game-root { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; min-height: 360px; }
 .mb-host .mb-coach { position: relative; z-index: 1; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; padding: 10px 14px; background: rgba(19,4,6,.84); border-top: 1px solid var(--line); margin: auto calc(-1 * clamp(12px, 3vw, 26px)) 0; }
@@ -161,12 +161,12 @@ html:not(.is-compact) .mb-host .mb-purse b { font-family: var(--mincho); font-si
 .mb-host .mb-coach-pop[data-e="panic"] img { animation: mb-chJitter .28s linear 4; }
 .mb-host .mb-coach-pop.is-face { width: 52px; height: 64px; bottom: 8px; transform: skewX(-12deg); overflow: hidden; border: 2px solid var(--gold); }
 .mb-host .mb-coach-pop.is-face img { width: 100%; height: 100%; object-fit: cover; transform: skewX(12deg) scale(1.2); }
-.mb-host .mb-coach-name { font-family: var(--mincho); font-weight: 700; letter-spacing: normal; color: var(--gold); font-size: 12px; line-height: 1.2; }
+.mb-host .mb-coach-name { font-family: var(--mincho); font-weight: 700; letter-spacing: normal; color: var(--gold); font-size: 14px; line-height: 1.2; }
 .mb-host .mb-coach-line { font-weight: 700; font-size: 15px; min-height: 1.6em; }
 .mb-host .prompt { font-family: var(--mincho); font-weight: 800; font-size: clamp(17px, 2.6vw, 21px); text-align: center; text-wrap: balance; margin: 0; }
 .mb-host .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
 /* 場所の名前（手札・場札など）：明朝の小さな金文字 */
-.mb-host .zone-label { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--gold); font-size: 12px; text-align: center; }
+.mb-host .zone-label { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--gold); font-size: 14px; text-align: center; }
 /* 段（手順）：小窓の段と同じ。今の段は深紅の面＋下に金の線（高さは変えない） */
 /* 手順の帯（菱形）：番号入りの菱形を並べ、今の段だけ名前を出す。済んだ段＝金で塗り／先の段＝枠だけ／今の段＝深紅に金の枠と光 */
 html.is-compact .mb-host .dia i { width: 24px; height: 24px; }
@@ -185,7 +185,7 @@ html.is-compact .mb-host .dia i { width: 24px; height: 24px; }
 
 .mb-host .steps.is-dia { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 8px; }
 .mb-host .dia { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; white-space: nowrap; }
-.mb-host .dia i { position: relative; isolation: isolate; width: 26px; height: 26px; display: grid; place-items: center; font: 700 12px/1 var(--mincho); font-style: normal; background: var(--gold); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); color: var(--gold-hi); }
+.mb-host .dia i { position: relative; isolation: isolate; width: 26px; height: 26px; display: grid; place-items: center; font: 700 14px/1 var(--mincho); font-style: normal; background: var(--gold); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); color: var(--gold-hi); }
 .mb-host .dia i::before { content: ""; position: absolute; inset: 2px; z-index: -1; background: #1a0709; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 .mb-host .dia.todo i { background: var(--line-dim); color: #b79c6b; }
 .mb-host .dia.done i { color: #1d080e; }
@@ -197,7 +197,7 @@ html.is-compact .mb-host .dia i { width: 24px; height: 24px; }
 /* ミミの手の札：役名の札＋「対ブラフ ○」「対強い手 ×」。○は金の輪、×は赤の斜め線2本（絵文字は使わない） */
 .mb-host .mb-handtag { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 5px; vertical-align: middle; }
 .mb-host .mb-handtag .nm { font-family: var(--mincho); font-weight: 800; font-size: 14px; color: var(--gold-pale); padding: 1px 8px; background: linear-gradient(90deg, var(--crimson), rgba(34,9,12,.92)); box-shadow: inset 2px 0 0 var(--gold); white-space: nowrap; }
-.mb-host .mb-handtag .vs { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px 1px 4px; font-family: var(--mincho); font-weight: 700; font-size: 13px; line-height: 1.5; white-space: nowrap; background: rgba(19,4,6,.78); border: 1px solid var(--line-dim); }
+.mb-host .mb-handtag .vs { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px 1px 4px; font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 1.5; white-space: nowrap; background: rgba(19,4,6,.78); border: 1px solid var(--line-dim); }
 .mb-host .mb-handtag .vs.ok { color: var(--gold-hi); border-color: var(--gold); }
 .mb-host .mb-handtag .vs.ng { color: #ee8a96; border-color: #8a2231; }
 .mb-host .mb-handtag .mk { position: relative; flex: 0 0 auto; width: 13px; height: 13px; }
@@ -209,14 +209,14 @@ html.is-compact .mb-host .dia i { width: 24px; height: 24px; }
 .mb-host .mb-threat .tc { display: inline-flex; gap: 5px; white-space: nowrap; padding: 1px 5px; font: 800 14px/1.2 var(--mincho); background: #f1e6cc; color: #17100c; border: 1px solid var(--gold); box-shadow: 0 2px 6px rgba(0,0,0,.55); }
 .mb-host .mb-threat .tc .rd { color: #b8132b; }
 .mb-host .mb-threat .tc .q { color: #7d1022; }
-.mb-host .mb-threat .tn { font-family: var(--mincho); font-weight: 800; font-size: 13px; color: #ff9aa6; text-shadow: 0 1px 0 #000, 0 0 6px rgba(200,37,58,.7); white-space: nowrap; }
+.mb-host .mb-threat .tn { font-family: var(--mincho); font-weight: 800; font-size: 14px; color: #ff9aa6; text-shadow: 0 1px 0 #000, 0 0 6px rgba(200,37,58,.7); white-space: nowrap; }
 /* 小さな目盛り（名札＋棒＋小さな数字） */
-.mb-host .gg { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; line-height: 1.3; white-space: nowrap; }
-.mb-host .gg label { font-family: var(--mincho); font-weight: 700; font-size: 12px; color: var(--gold); }
+.mb-host .gg { display: inline-flex; align-items: center; gap: 5px; font-size: 14px; line-height: 1.3; white-space: nowrap; }
+.mb-host .gg label { font-family: var(--mincho); font-weight: 700; font-size: 14px; color: var(--gold); }
 .mb-host .gg .g { display: block; width: 46px; height: 8px; background: #0d0405; border: 1px solid var(--line-dim); box-sizing: border-box; }
 .mb-host .gg .g u { display: block; height: 100%; text-decoration: none; background: linear-gradient(90deg, var(--gold), var(--gold-hi)); }
-.mb-host .gg b { font-weight: 700; font-size: 12px; color: var(--text); font-variant-numeric: tabular-nums; }
-html:not(.is-compact) .mb-host .gg, html:not(.is-compact) .mb-host .gg label, html:not(.is-compact) .mb-host .gg b { font-size: 13px; }
+.mb-host .gg b { font-weight: 700; font-size: 14px; color: var(--text); font-variant-numeric: tabular-nums; }
+html:not(.is-compact) .mb-host .gg, html:not(.is-compact) .mb-host .gg label, html:not(.is-compact) .mb-host .gg b { font-size: 14px; }
 html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
 .mb-host .gg.bad .g u { background: linear-gradient(90deg, #8a2231, var(--red-hi)); }
 .mb-host .mb-parchment .gg label { color: var(--crimson); }
@@ -244,7 +244,7 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
 .mb-host .mb-coach.is-quiet { display: none; }
 /* 詳しく：押した時だけ補足を重ねて出す（並びは動かさない）。押す所は 44px */
 .mb-host details.mb-more { display: inline-block; }
-.mb-host details.mb-more > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 12px; font-family: var(--mincho); font-weight: 700; font-size: 13px; color: var(--gold); border: 1px solid var(--line-dim); background: var(--panel); box-sizing: border-box; }
+.mb-host details.mb-more > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 12px; font-family: var(--mincho); font-weight: 700; font-size: 14px; color: var(--gold); border: 1px solid var(--line-dim); background: var(--panel); box-sizing: border-box; }
 .mb-host details.mb-more > summary::-webkit-details-marker { display: none; }
 .mb-host details.mb-more[open] > summary { color: var(--gold-pale); border-color: var(--gold); background: var(--sel); }
 .mb-host details.mb-more > .mb-more-body { position: absolute; z-index: 40; left: 0; right: 0; bottom: calc(100% + 4px); padding: 8px 12px; font-size: 14px; line-height: 1.5; color: var(--text); background: #120406; border: 1px solid var(--gold); box-shadow: 0 8px 24px rgba(0,0,0,.7); }
@@ -253,14 +253,14 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
    主＝深紅に金文字／.gold＝金に黒文字／.quiet＝黒檀に金文字／.ghost＝線だけ。斜め（skew）は押せない物だけに使う */
 .mb-host .btn { position: relative; border: 0; cursor: pointer; font-family: var(--mincho); font-weight: 700; color: #f0d08a; padding: 12px 26px; min-width: 150px; min-height: 52px; isolation: isolate; font-size: 16px; }
 .mb-host .btn::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: none; border-radius: 2px; background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); border: 1px solid var(--gold); box-shadow: 0 4px 12px rgba(0,0,0,.4); }
-.mb-host .btn small { display: block; font-family: var(--sans); font-weight: 400; font-size: 12px; letter-spacing: normal; color: #dcc7a2; }
+.mb-host .btn small { display: block; font-family: var(--sans); font-weight: 400; font-size: 14px; letter-spacing: normal; color: #dcc7a2; }
 .mb-host .btn.gold { color: #1d080e; }
 .mb-host .btn.gold::before { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: var(--crimson); }
 .mb-host .btn.gold small { color: rgba(29,8,14,.78); }
 .mb-host .btn.quiet { color: var(--gold); }
 .mb-host .btn.quiet::before { background: var(--panel); border-color: var(--line); }
 .mb-host .btn.quiet small { color: var(--dim); }
-.mb-host .btn.ghost { min-width: 0; min-height: 40px; padding: 6px 16px; font-size: 13px; font-weight: 700; color: var(--dim); }
+.mb-host .btn.ghost { min-width: 0; min-height: 40px; padding: 6px 16px; font-size: 14px; font-weight: 700; color: var(--dim); }
 .mb-host .btn.ghost::before { background: transparent; border-color: var(--line-dim); box-shadow: none; }
 /* hover：金の線を明るく、面を少しだけ明るく（ふくらませない・光らせない） */
 .mb-host .btn:hover:not(:disabled)::before { border-color: var(--gold-hi); box-shadow: inset 0 0 0 1px rgba(227,185,100,.25), 0 4px 12px rgba(0,0,0,.4); filter: brightness(1.12); }
@@ -271,7 +271,7 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
 .mb-host .btn[disabled] { opacity: 1; cursor: default; color: var(--off-text); }
 .mb-host .btn[disabled]::before { background: var(--off-bg); border-color: var(--off-line); box-shadow: none; filter: none; }
 .mb-host .btn[disabled] small { color: var(--off-text); }
-.mb-host .formula { text-align: center; color: var(--dim); font-size: 13px; font-variant-numeric: tabular-nums; }
+.mb-host .formula { text-align: center; color: var(--dim); font-size: 14px; font-variant-numeric: tabular-nums; }
 .mb-host .formula b { color: var(--text); }
 .mb-host .verdict { text-align: center; font-family: var(--mincho); font-weight: 800; font-size: 19px; }
 .mb-host .verdict.good { color: var(--good); }
@@ -361,15 +361,15 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
   background: radial-gradient(circle at 50% 45%, var(--crimson) 0 42%, var(--parch) 42% 46%, var(--crimson-lo) 46% 100%); box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 0 0 3px rgba(217,178,105,.6); transition: transform .15s; }
 .mb-host .mb-wchip:hover { transform: translateY(-4px) rotate(-6deg); }
 .mb-host .mb-wchip:focus-visible { outline: 2px solid #f3d58e; outline-offset: 3px; }
-.mb-host .mb-wchip span { display: block; font-size: 13px; line-height: 1.2; text-align: center; }
+.mb-host .mb-wchip span { display: block; font-size: 14px; line-height: 1.2; text-align: center; }
 .mb-host .mb-wchip b { font-family: var(--disp); font-size: 30px; font-weight: 400; line-height: 1; display: block; }
 .mb-host .mb-wchip.x2 { background: radial-gradient(circle at 50% 45%, var(--panel) 0 42%, var(--parch) 42% 46%, #0c0606 46% 100%); }
 .mb-host .mb-wchip.x3 { background: radial-gradient(circle at 50% 45%, var(--gold-hi) 0 42%, #fff6dc 42% 46%, #a8803e 46% 100%); color: #1d080e; box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 0 0 3px rgba(122,14,22,.55); animation: mb-chipShine 1.2s ease-in-out infinite; }
 @keyframes mb-chipShine { 50% { box-shadow: 0 0 26px rgba(239,205,130,.8), inset 0 0 0 3px rgba(122,14,22,.55); } }
-.mb-host .mb-wager-note { font-size: 12px; color: var(--dim); }
+.mb-host .mb-wager-note { font-size: 14px; color: var(--dim); }
 /* 当たり／外れのコイン：チップの下の縁に重ねる黒檀の小札（当たり＝金、外れ＝赤） */
 .mb-host .mb-wager.has-stakes .mb-wager-chips { padding-bottom: 12px; }
-.mb-host .mb-wchip-st { position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); display: flex; gap: 6px; padding: 1px 6px; white-space: nowrap; font-style: normal; font-family: var(--mincho); font-weight: 800; font-size: 12px; line-height: 1.35; background: #130406; border: 1px solid var(--line); border-radius: 2px; }
+.mb-host .mb-wchip-st { position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); display: flex; gap: 6px; padding: 1px 6px; white-space: nowrap; font-style: normal; font-family: var(--mincho); font-weight: 800; font-size: 14px; line-height: 1.35; background: #130406; border: 1px solid var(--line); border-radius: 2px; }
 .mb-host .mb-wchip-st .w { font-style: normal; color: var(--gold-hi); }
 .mb-host .mb-wchip-st .l { font-style: normal; color: #ff8f9c; }
 .mb-host .mb-result { position: absolute; inset: 0; z-index: 15; display: grid; place-items: center; background: rgba(8,2,4,.78); animation: mb-fadeIn .25s; }
@@ -393,16 +393,16 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
 .mb-host .mb-result-gain { font-family: var(--disp); font-size: 40px; line-height: 1; margin-top: 8px; font-variant-numeric: tabular-nums; }
 .mb-host .mb-result.good .mb-result-gain { color: var(--gold-hi); }
 .mb-host .mb-result.bad .mb-result-gain { color: var(--bad); }
-.mb-host .mb-result-sub { font-size: 12px; color: var(--dim); }
+.mb-host .mb-result-sub { font-size: 14px; color: var(--dim); }
 .mb-host .mb-result-actions { grid-column: 1 / -1; display: flex; justify-content: center; gap: 12px; margin-top: 4px; }
 .mb-host .mb-tally { margin-top: 10px; display: grid; gap: 6px; }
-.mb-host .mb-tally-h { font-size: 12px; font-weight: 700; color: var(--dim); }
+.mb-host .mb-tally-h { font-size: 14px; font-weight: 700; color: var(--dim); }
 .mb-host .mb-tally-dots { display: grid; grid-template-columns: repeat(25, 1fr); gap: 3px; max-width: 360px; }
 .mb-host .mb-tally-dots i { aspect-ratio: 1; border-radius: 1px; background: rgba(217,178,105,.1); animation: mb-dotIn .25s ease both; animation-delay: var(--d); }
 .mb-host .mb-tally-dots i.w { background: var(--gold-hi); box-shadow: 0 0 5px rgba(239,205,130,.5); }
 .mb-host .mb-tally-dots i.l { background: rgba(200,37,58,.55); }
 @keyframes mb-dotIn { from { transform: scale(0); opacity: 0; } }
-.mb-host .mb-tally-sum { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.mb-host .mb-tally-sum { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; font-variant-numeric: tabular-nums; }
 .mb-host .mb-tally-sum span { padding: 1px 8px; border-radius: 2px; }
 .mb-host .mb-tally-sum .mine { outline: 1px solid var(--gold); }
 .mb-host .mb-tally-sum b { font-family: var(--mincho); font-size: 16px; font-weight: 700; margin-left: 4px; color: var(--dim); }
@@ -422,7 +422,7 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
   border: 3px solid var(--gold-hi); border-radius: 2px;
   box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px rgba(239,205,130,.7), 0 0 60px rgba(239,205,130,.35), 0 20px 50px rgba(0,0,0,.7); }
 .mb-host .mb-rl-title { font-family: var(--disp); font-size: clamp(40px, 7vw, 64px); line-height: 1; color: var(--gold-hi); letter-spacing: .04em; text-shadow: 0 0 24px rgba(245,215,122,.8); }
-.mb-host .mb-rl-title small { display: block; margin-top: 6px; font-family: var(--sans); font-size: 13px; font-weight: 700; letter-spacing: 0; color: var(--text); text-shadow: none; }
+.mb-host .mb-rl-title small { display: block; margin-top: 6px; font-family: var(--sans); font-size: 14px; font-weight: 700; letter-spacing: 0; color: var(--text); text-shadow: none; }
 .mb-host .mb-rl-window { position: relative; height: 96px; overflow: hidden; background: #0b0205; border-block: 3px solid var(--gold); box-shadow: inset 0 0 36px rgba(0,0,0,.95); }
 .mb-host .mb-rl-track { position: absolute; left: 0; top: 8px; bottom: 8px; display: flex; will-change: transform; }
 .mb-host .mb-rl-cell { flex: 0 0 84px; display: grid; place-items: center; font-family: var(--disp); font-size: 34px; color: var(--text); border-right: 1px solid rgba(255,255,255,.08); }
@@ -574,7 +574,7 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
 /* 心の声が3つ並ぶと下の図鑑が切れていた：天井の説明は畳み、心の声の間を詰める（2026-10-11） */
 .mb-host .gc-right:has(.gc-voices > :not(.gc-empty)) .gc-odds > .gc-ceil { display: none; }
 .mb-host .gc-right .gc-voices { gap: 4px; }
-.mb-host .outs-meter .formula { line-height: 1.3; font-size: 13px; }
+.mb-host .outs-meter .formula { line-height: 1.3; font-size: 14px; }
 .mb-host .mb-game-root:has(.ob-court) { gap: 6px; }
 .mb-host .mb-game-root .outs-deck { max-width: 700px; } /* 当たり札を探す一覧：札を少し小さくして、1画面に収める */
 
@@ -729,6 +729,6 @@ html:not(.is-compact) .mb-host .mb-body::after {
 .mb-host .mb-rl4-look { display: block; }
 .mb-host .mb-rl4-look i { font-style: normal; color: var(--gold); margin: 0 6px; }
 /* 上の段の右の「ルール」 */
-.mb-host .mb-rules-btn { flex: 0 0 auto; margin-left: 8px; min-height: 28px; padding: 2px 12px; font-family: var(--mincho); font-weight: 700; font-size: 13px; color: var(--gold-pale); background: rgba(19,4,6,.85); border: 1px solid var(--line); border-radius: 2px; cursor: pointer; }
+.mb-host .mb-rules-btn { flex: 0 0 auto; margin-left: 8px; min-height: 28px; padding: 2px 12px; font-family: var(--mincho); font-weight: 700; font-size: 14px; color: var(--gold-pale); background: rgba(19,4,6,.85); border: 1px solid var(--line); border-radius: 2px; cursor: pointer; }
 .mb-host .mb-rules-btn:hover { border-color: var(--gold-hi); }
 .mb-host .rb-top > .rb-steps { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; }

@@ -17,7 +17,7 @@ const doRead = !want.length || want.includes('read') || readOnly.length;
 const outArg = args.find((a, i) => args[i - 1] === '--out');
 const OUT = path.resolve(outArg || path.join('qa/out/textaudit', sizeArg));
 fs.mkdirSync(OUT, { recursive: true });
-const MIN_TEXT = 12, MIN_BODY = 14, MIN_TAP = 44, SAFE = 47;   // docs/design-ref/mobile-standard.md（2026-10-18）
+const MIN_TEXT = 14, MIN_BODY = 16, MIN_TAP = 44, SAFE = 47;   // docs/design-ref/mobile-standard.md（2026-10-18）
 
 const GAMES = [
   ['detective', 'polka', 'psych'], ['stare', 'polka', 'psych'], ['doubt', 'polka', 'psych'], ['gacha', 'polka', 'psych'], ['objection', 'velvet', 'psych'],

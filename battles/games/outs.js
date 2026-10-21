@@ -43,14 +43,14 @@ MB.register({
       .outs-deck.is-collapsed { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: none; }
       .outs-deck.is-collapsed .card { display: none; }
       .outs-deck.is-collapsed .card.found, .outs-deck.is-collapsed .card.shown { display: flex; width: 42px; flex: 0 0 42px; transform: none; }
-      .outs-deck.is-collapsed .card b { font-size: 16px; } .outs-deck.is-collapsed .card i { font-size: 12px; }
+      .outs-deck.is-collapsed .card b { font-size: 16px; } .outs-deck.is-collapsed .card i { font-size: 14px; }
       .outs-count { font-family: var(--disp); font-size: 30px; text-align: center; color: var(--gold-hi); font-variant-numeric: tabular-nums; }
-      .outs-count small { font-family: var(--sans); font-size: 12px; color: var(--dim); margin-left: 6px; }
+      .outs-count small { font-family: var(--sans); font-size: 14px; color: var(--dim); margin-left: 6px; }
       .outs-meter { max-width: 620px; width: 100%; margin: 0 auto; display: grid; gap: 8px; }
       .outs-bar { position: relative; margin-top: 24px; height: 34px; background: rgba(0,0,0,.45); border: 1px solid var(--faint); }
       .outs-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #a47a22, var(--gold-hi)); transition: width 1s cubic-bezier(.2,.8,.2,1); }
       .outs-line { position: absolute; top: -8px; bottom: -8px; width: 3px; background: var(--red-hi); box-shadow: 0 0 10px var(--red-hi); left: 0; transition: left .8s ease .2s; }
-      .outs-line span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--gold-hi); }
+      .outs-line span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 14px; font-weight: 700; color: var(--gold-hi); }
       .outs-val { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-family: var(--disp); font-size: 22px; }
       /* 確率スロット：当たり札だけ金色のリール */
       .reel-wrap { position: relative; max-width: 720px; width: 100%; margin: 0 auto; height: 108px; overflow: hidden; background: linear-gradient(180deg, #0c0306, #26070f 50%, #0c0306); border-block: 3px solid var(--gold); box-shadow: inset 0 0 30px rgba(0,0,0,.9); }
@@ -61,7 +61,7 @@ MB.register({
       .reel { position: absolute; top: 14px; left: 0; display: flex; gap: 8px; will-change: transform; }
       .reel .card { --w: 56px; flex: 0 0 auto; }
       .reel .card.out { background: linear-gradient(180deg, #fff7d6, #f5d77a); border-color: #b8860b; }
-      .reel-legend { text-align: center; font-size: 13px; color: var(--dim); }
+      .reel-legend { text-align: center; font-size: 14px; color: var(--dim); }
       .reel-legend b { color: var(--gold-hi); }
     `);
     const root = api.root;

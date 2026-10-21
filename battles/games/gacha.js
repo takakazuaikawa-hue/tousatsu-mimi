@@ -372,16 +372,16 @@
     .gc-board .card { --w: 50px; }
     .gc-hands { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 18px; }
     .gc-hand { display: flex; align-items: center; gap: 8px; }
-    .gc-who { font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; color: var(--gold); font-size: 13px; }
+    .gc-who { font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; color: var(--gold); font-size: 14px; }
     .gc-cards { display: flex; gap: 4px; }
-    .gc-hn { font-weight: 900; font-size: 13px; }
+    .gc-hn { font-weight: 900; font-size: 14px; }
     .gc-hn.is-strong { color: var(--red-hi); font-size: 16px; } .gc-hn.is-bluff { color: var(--good); font-size: 16px; }
     .gc-vs { font-family: var(--disp); font-size: 26px; color: var(--red-hi); transform: skewX(-12deg); line-height: 1; }
     .gc-hands.is-reveal .gc-hand:first-child { filter: drop-shadow(0 0 14px rgba(200,37,58,.55)); }
     .gc-sub { margin: -4px 0 0; text-align: center; }
     .gc-herbox { position: relative; display: inline-flex; }
     .gc-herbox .mb-threat.ov { position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%); z-index: 2; }
-    .gc-hn.is-threat { color: #ff9aa6; font-family: var(--mincho); font-size: 13px; text-shadow: 0 0 6px rgba(200,37,58,.6); }
+    .gc-hn.is-threat { color: #ff9aa6; font-family: var(--mincho); font-size: 14px; text-shadow: 0 0 6px rgba(200,37,58,.6); }
     .gc-hands.is-reveal .mb-threat { display: none; }
 
     .gc-wrap { display: grid; grid-template-columns: 280px minmax(0,1fr); gap: 18px; align-items: start; }
@@ -486,7 +486,7 @@
     /* ---- ぱにゅ・確率表・心の声 ---- */
     .gc-panyu { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 8px 12px; background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; }
     .gc-pn { display: flex; align-items: center; gap: 8px; }
-    .gc-pn > span:first-child { font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; font-size: 13px; color: var(--gold); }
+    .gc-pn > span:first-child { font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; font-size: 14px; color: var(--gold); }
     .gc-pn > b { font-family: var(--disp); font-weight: 400; font-size: 32px; line-height: 1; color: var(--gold-hi); min-width: 1.4em; font-variant-numeric: tabular-nums; }
     .gc-segs { display: flex; gap: 5px; }
     .gc-segs i { width: 26px; height: 16px; transform: skewX(-12deg); background: linear-gradient(90deg, var(--gold-hi), var(--gold)); border: 1px solid var(--gold-pale); box-shadow: 0 0 10px rgba(217,178,105,.5); transition: all .3s; }
@@ -500,17 +500,17 @@
     .gc-coin { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 36% 30%, #fff3c2, #e3b964 52%, #a87a1a); border: 2px solid #7a5410; box-shadow: inset 0 0 0 2px rgba(255,243,194,.55), 0 1px 3px rgba(0,0,0,.6); }
     /* 天井の目盛り：3つの点（引いた数だけ点灯）＋「天井」の札。最後の点が天井 */
     .gc-ceilg { display: inline-flex; align-items: center; gap: 7px; }
-    .gc-ceilg-t { font-family: var(--mincho); font-weight: 800; font-size: 13px; letter-spacing: .08em; color: #1d080e; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); padding: 0 8px; line-height: 1.5; }
+    .gc-ceilg-t { font-family: var(--mincho); font-weight: 800; font-size: 14px; letter-spacing: .08em; color: #1d080e; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); padding: 0 8px; line-height: 1.5; }
     .gc-ceilg i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--gold); background: #1a0709; box-sizing: border-box; transition: all .3s; }
     .gc-ceilg i.last { width: 18px; height: 18px; border-width: 3px; }
     .gc-ceilg i.on { background: var(--gold-hi); box-shadow: 0 0 9px rgba(239,205,130,.85); }
 
     .gc-odds { position: relative; padding: 6px 12px 8px; background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; display: grid; grid-template-columns: minmax(0,1fr) auto; column-gap: 10px; row-gap: 4px; align-items: center; }
     .gc-odds > .gc-odds-h, .gc-odds > .gc-or { grid-column: 1; }
-    .gc-odds-h { font-family: var(--mincho); font-weight: 700; letter-spacing: .06em; font-size: 13px; color: var(--gold-hi); }
+    .gc-odds-h { font-family: var(--mincho); font-weight: 700; letter-spacing: .06em; font-size: 14px; color: var(--gold-hi); }
     .gc-odds > details.mb-more { position: static; grid-column: 2; grid-row: 1 / span 5; align-self: center; }
     /* 確率＝札＋棒の長さ＋数字＋2〜4字の名前 */
-    .gc-or { display: grid; grid-template-columns: 50px minmax(0,1fr) 46px 52px; gap: 8px; align-items: center; font-size: 13px; }
+    .gc-or { display: grid; grid-template-columns: 50px minmax(0,1fr) 46px 52px; gap: 8px; align-items: center; font-size: 14px; }
     .gc-or > b { font-family: var(--mincho); font-weight: 700; font-size: 16px; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
     .gc-or > em { font-style: normal; font-weight: 700; color: var(--text); white-space: nowrap; }
     .gc-bar { display: block; height: 10px; background: #0d0405; border: 1px solid var(--line-dim); }
@@ -527,7 +527,7 @@
 
     .gc-voices { display: flex; flex-direction: column; gap: 10px; min-height: 60px; }
     .gc-empty { display: grid; place-items: center; min-height: 40px; border: 1.5px dashed var(--line); }
-    .gc-empty span { font-family: var(--mincho); font-weight: 700; font-size: 12px; letter-spacing: .2em; color: #8a7350; }
+    .gc-empty span { font-family: var(--mincho); font-weight: 700; font-size: 14px; letter-spacing: .2em; color: #8a7350; }
     .gc-voice { display: grid; grid-template-columns: 50px minmax(0,1fr); gap: 3px 12px; align-items: center; }
     .gc-voice > .gc-rar { grid-row: span 2; align-self: center; font-size: 20px; }
     /* 心の声の札＝黒檀の札（白い丸い吹き出しの代わり。core.css の .mb-ebony を HTML で付ける）。
@@ -543,16 +543,16 @@
       box-shadow: inset 4px 0 0 var(--crimson), inset 0 0 0 1px var(--metal-ssr), inset 0 0 0 2px #130406, inset 0 0 0 3px rgba(243,223,170,.75), 0 0 14px rgba(243,223,170,.45), 0 8px 18px rgba(0,0,0,.55);
       animation: mb-gcGild 1.6s ease-in-out 3, mb-gcSheen 1.1s .15s ease-out 1 both; }
     @keyframes mb-gcGild { 50% { box-shadow: inset 4px 0 0 var(--crimson), inset 0 0 0 1px var(--metal-ssr), inset 0 0 0 2px #130406, inset 0 0 0 3px rgba(243,223,170,.75), 0 0 26px rgba(255,246,216,.7), 0 8px 18px rgba(0,0,0,.55); } }
-    .gc-meta { font-size: 11.5px; color: var(--dim); }
-    .gc-meta em { font-style: normal; font-family: var(--mincho); font-weight: 700; letter-spacing: .08em; font-size: 13px; margin-left: 6px; padding: 0 5px; background: var(--gold-hi); color: #1d080e; }
+    .gc-meta { font-size: 14px; color: var(--dim); }
+    .gc-meta em { font-style: normal; font-family: var(--mincho); font-weight: 700; letter-spacing: .08em; font-size: 14px; margin-left: 6px; padding: 0 5px; background: var(--gold-hi); color: #1d080e; }
 
     /* 図鑑：レア度の色の小さな数字だけ（集めた数／全部の数） */
-    .gc-book { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 4px 12px; font-size: 12px; color: var(--dim); background: linear-gradient(90deg, rgba(217,178,105,.16), rgba(0,0,0,0)); border-left: 3px solid var(--gold); font-variant-numeric: tabular-nums; }
-    .gc-book-h { font-family: var(--mincho); font-weight: 700; letter-spacing: .08em; color: var(--gold); font-size: 13px; }
+    .gc-book { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 4px 12px; font-size: 14px; color: var(--dim); background: linear-gradient(90deg, rgba(217,178,105,.16), rgba(0,0,0,0)); border-left: 3px solid var(--gold); font-variant-numeric: tabular-nums; }
+    .gc-book-h { font-family: var(--mincho); font-weight: 700; letter-spacing: .08em; color: var(--gold); font-size: 14px; }
     .gc-book b { font-family: var(--mincho); font-weight: 700; font-size: 16px; }
-    .gc-book small { font-size: 12px; opacity: .8; }
+    .gc-book small { font-size: 14px; opacity: .8; }
     .gc-book .r-N { color: var(--metal-n); } .gc-book .r-R { color: var(--metal-r); } .gc-book .r-SR { color: var(--metal-sr); } .gc-book .r-SSR { color: var(--metal-ssr); }
-    .gc-res-extra { margin-top: 6px; font-size: 12px; color: var(--dim); }
+    .gc-res-extra { margin-top: 6px; font-size: 14px; color: var(--dim); }
 
     @media (max-width: 720px) {
       /* スマホ：ぱにゅ残量 → ガチャ台とボタン → 出た心の声 → 確率表 → 図鑑 の順に縦に並べる */

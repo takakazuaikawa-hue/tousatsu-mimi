@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, sleep } from './lib/session.mjs';
-import { stdCheck, countsOf } from './lib/stdcheck.mjs';
+import { stdCheck, countsOf, comfortOf } from './lib/stdcheck.mjs';
 const mode = process.argv[2] || 'pc';
 const phone = mode === 'phone';
 const sizeArg = process.argv.find((a, i) => process.argv[i - 1] === '--size') || (phone ? '844x390' : '1280x800');
@@ -16,7 +16,8 @@ const session = await openSession({ width: W, height: H, mobile: phone, speed: 1
 const { page } = session;
 for (let i = 0; i < 40 && !(await page.eval('typeof startBattle === "function"')); i++) await sleep(500);
 
-const CHECK = stdCheck({ phone, minText: phone ? 12 : 11 });
+// 2026-10-21 基準を上げた（最小14px・本文16px。docs/design-ref/typography.md）。QA_MIN / QA_BODY で上書きできる
+const CHECK = stdCheck({ phone, minText: +(process.env.QA_MIN || 14), bodyMin: +(process.env.QA_BODY || 16) });
 const report = [];
 let idx = 0;
 async function snap(name) {
@@ -28,7 +29,8 @@ async function snap(name) {
   try { r = await page.eval(CHECK); } catch (e) { r = { error: String(e.message).slice(0, 120) }; }
   await page.screenshot(path.join(OUT, file));
   r.name = name; r.file = file; report.push(r);
-  console.log(name, JSON.stringify(countsOf(r)));
+  r.comfort = comfortOf(r, phone ? {} : { note: 15, allowed: [14, 15, 18, 19, 22, 26], display: 30 });
+  console.log(name, JSON.stringify(countsOf(r)), '快適', JSON.stringify(r.comfort));
 }
 const ev = (js) => page.eval(`(() => { ${js}; return true; })()`).catch(e => console.log('ERR', js.slice(0, 60), e.message.slice(0, 120)));
 const act = (action, data = {}) => ev(`onAction({ currentTarget: { dataset: ${JSON.stringify({ action, ...data })} }, preventDefault(){}, stopPropagation(){}, target: document.body })`);

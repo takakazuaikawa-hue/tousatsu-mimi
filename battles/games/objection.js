@@ -477,20 +477,20 @@
     .ob-hand { display: flex; align-items: center; gap: 8px; }
     .ob-who { font-family: var(--mincho); font-weight: 700; letter-spacing: .14em; color: var(--gold); font-size: 15px; }
     .ob-cards { display: flex; gap: 4px; }
-    .ob-hn { font-weight: 900; font-size: 13px; }
+    .ob-hn { font-weight: 900; font-size: 14px; }
     .ob-hand.her .ob-hn { color: var(--dim); }
     .ob-hn.is-strong { color: var(--red-hi) !important; font-size: 16px; } .ob-hn.is-bluff { color: var(--good) !important; font-size: 16px; }
     .ob-vs { font-family: var(--disp); font-size: 26px; color: var(--red-hi); transform: skewX(-12deg); line-height: 1; }
     .ob-hands.is-reveal .ob-hand.her { filter: drop-shadow(0 0 14px rgba(217,178,105,.5)); }
-    .ob-sub { margin: -4px 0 0; text-align: center; font-size: 13px; color: var(--dim); text-wrap: balance; }
+    .ob-sub { margin: -4px 0 0; text-align: center; font-size: 14px; color: var(--dim); text-wrap: balance; }
     .ob-sub b { color: var(--text); }
 
     .ob-court { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 56px minmax(0,1fr); align-items: start; }
     .ob-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-    .ob-colhead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; padding: 3px 14px; font-family: var(--mincho); font-size: 12px; font-weight: 700; color: var(--gold-hi); background: var(--band); box-shadow: inset 3px 0 0 var(--gold), inset 0 -1px 0 var(--line); }
+    .ob-colhead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; padding: 3px 14px; font-family: var(--mincho); font-size: 14px; font-weight: 700; color: var(--gold-hi); background: var(--band); box-shadow: inset 3px 0 0 var(--gold), inset 0 -1px 0 var(--line); }
 
     .ob-say { position: relative; cursor: pointer; padding: 6px 14px 9px; margin-top: 4px; color: var(--text); border-radius: 2px !important; transition: border-color .16s, box-shadow .16s; outline: none; }
-    .ob-say .ob-tag { font-family: var(--mincho); font-weight: 700; letter-spacing: .14em; font-size: 13px; color: var(--gold); line-height: 1.4; background: #130406 !important; border-color: var(--line) !important; border-radius: 2px !important; }
+    .ob-say .ob-tag { font-family: var(--mincho); font-weight: 700; letter-spacing: .14em; font-size: 14px; color: var(--gold); line-height: 1.4; background: #130406 !important; border-color: var(--line) !important; border-radius: 2px !important; }
     .ob-say.sel .ob-tag { background: #130406 !important; border-color: var(--gold-hi) !important; }
     .ob-say p { margin: 0; font-weight: 800; font-size: 14.5px; line-height: 1.55; }
     .ob-say:hover, .ob-say:focus-visible { border-color: var(--gold-hi); }
@@ -500,14 +500,14 @@
     .ob-ev:hover, .ob-ev:focus-visible { box-shadow: inset 0 0 0 1px var(--gold-hi), inset 0 0 0 2px rgba(255,255,255,.3), 0 6px 14px rgba(0,0,0,.45); }
     .ob-ev.sel, .ob-ev.is-key { box-shadow: 0 0 0 2px #130406, 0 0 0 3px var(--gold-hi), inset 0 0 0 1px var(--line), 0 6px 14px rgba(0,0,0,.45); }
     .ob-ev.is-off { background: #d3c4a3; color: #5a4a36; box-shadow: inset 0 0 0 1px var(--line-dim), 0 4px 10px rgba(0,0,0,.35); }
-    .ob-tab { position: absolute; top: -12px; left: 10px; padding: 1px 10px; font-size: 12px; line-height: 1.5; white-space: nowrap; }
+    .ob-tab { position: absolute; top: -12px; left: 10px; padding: 1px 10px; font-size: 14px; line-height: 1.5; white-space: nowrap; }
     .ob-tab em { font-style: normal; font-family: inherit; font-weight: 700; font-size: inherit; letter-spacing: 0; margin-left: 0; }
     .ob-mini-row { display: flex; flex-wrap: wrap; gap: 4px; }
     .ob-ev .card.ob-mini { --w: 30px; border-width: 1px; box-shadow: 0 2px 4px rgba(0,0,0,.4); }
-    .ob-note { margin-top: 6px; font-size: 12px; font-weight: 700; color: #6b5a44; line-height: 1.45; }
-    .ob-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; font-size: 13px; line-height: 23px; }
+    .ob-note { margin-top: 6px; font-size: 14px; font-weight: 700; color: #6b5a44; line-height: 1.45; }
+    .ob-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; font-size: 14px; line-height: 23px; }
     .ob-log li { display: grid; grid-template-columns: 4.6em auto minmax(0,1fr); gap: 8px; align-items: baseline; }
-    .ob-log .st { font-weight: 900; font-size: 12px; color: #7d1022; }
+    .ob-log .st { font-weight: 900; font-size: 14px; color: #7d1022; }
     .ob-log .cs { white-space: nowrap; }
     .ob-log .ac { font-weight: 800; }
     .ob-cl { font-family: var(--disp); font-weight: 400; font-size: 1.2em; letter-spacing: .02em; color: var(--text); margin-right: 2px; }
@@ -536,17 +536,17 @@
 
     .ob-bar { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 30px; padding-top: 4px; }
     .ob-bar.is-done .ob-go { display: none; }
-    .ob-cred { display: flex; align-items: center; gap: 7px; font-weight: 900; font-size: 13px; color: var(--dim); }
+    .ob-cred { display: flex; align-items: center; gap: 7px; font-weight: 900; font-size: 14px; color: var(--dim); }
     .ob-cred i { width: 26px; height: 18px; background: linear-gradient(90deg, var(--gold-hi), var(--gold)); border: 1px solid var(--gold-pale); border-radius: 2px; box-shadow: 0 0 8px rgba(217,178,105,.35); }
     .ob-cred i.broken { background: #241010; border-color: #6e1c24; box-shadow: none; animation: mb-obBreak .5s ease; }
     @keyframes mb-obBreak { 0% { background: var(--red-hi); transform: scale(1.5); } 60% { transform: translateY(4px) rotate(8deg); } }
     .ob-go { min-width: 230px; min-height: 60px; font-size: 22px; letter-spacing: .08em; }
-    .ob-go small { font-family: var(--mincho); letter-spacing: .24em; font-size: 13px; }
+    .ob-go small { font-family: var(--mincho); letter-spacing: .24em; font-size: 14px; }
     .ob-go:not([disabled]) { animation: mb-obGo 1s ease-in-out infinite; }
     .ob-go:not([disabled])::before { box-shadow: 0 0 18px rgba(217,178,105,.4), 0 4px 12px rgba(0,0,0,.4); }
     @keyframes mb-obGo { 50% { transform: scale(1.03); } }
-    .ob-luck { width: 100%; margin: 0; text-align: center; font-size: 13px; color: var(--bad); font-weight: 700; }
-    .ob-res-extra { margin-top: 6px; font-size: 12px; color: var(--dim); }
+    .ob-luck { width: 100%; margin: 0; text-align: center; font-size: 14px; color: var(--bad); font-weight: 700; }
+    .ob-res-extra { margin-top: 6px; font-size: 14px; color: var(--dim); }
 
     .ob-slam { position: absolute; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
     .ob-slam::before { content: ""; position: absolute; inset: 0; background: rgba(8,2,4,.74); animation: mb-fadeIn .15s; }
@@ -575,19 +575,19 @@
 
     @media (max-width: 560px) {
       .ob-court { grid-template-columns: minmax(0,1fr) 14px minmax(0,1fr); }
-      .ob-colhead { padding: 2px 8px; font-size: 11px; }
+      .ob-colhead { padding: 2px 8px; font-size: 14px; }
       .ob-say { padding: 5px 9px 7px; }
-      .ob-say p { font-size: 13px; line-height: 1.5; }
+      .ob-say p { font-size: 14px; line-height: 1.5; }
       .ob-ev { padding: 16px 8px 8px; }
-      .ob-tab { font-size: 12px; padding: 1px 7px; left: 6px; }
-      .ob-tab em { font-size: 11px; margin-left: 0; }
+      .ob-tab { font-size: 14px; padding: 1px 7px; left: 6px; }
+      .ob-tab em { font-size: 14px; margin-left: 0; }
       .ob-ev .card.ob-mini { --w: 23px; }
       .ob-mini-row { gap: 3px; }
-      .ob-log { font-size: 12px; line-height: 1.35; gap: 4px; }
+      .ob-log { font-size: 14px; line-height: 1.35; gap: 4px; }
       .ob-log li { grid-template-columns: auto minmax(0,1fr); gap: 0 6px; }
       .ob-log .ac { grid-column: 1 / -1; }
-      .ob-evtext { font-size: 13px; }
-      .ob-note { font-size: 11px; }
+      .ob-evtext { font-size: 14px; }
+      .ob-note { font-size: 14px; }
       .ob-stamp { font-size: 16px; right: 4px; top: -12px; }
       .ob-hands { flex-wrap: nowrap; gap: 10px; }
       .ob-hand { flex-direction: column; gap: 3px; min-width: 0; }
@@ -595,7 +595,7 @@
       .ob-art { width: 170vw; right: -35vw; top: 1%; }
       .ob-go { min-width: 200px; font-size: 20px; }
       .ob-band { top: 52%; }
-      .ob-peek-say { font-size: 13px; top: -44px; }
+      .ob-peek-say { font-size: 14px; top: -44px; }
     }
     @media (prefers-reduced-motion: reduce) {
       .ob-art, .ob-band, .ob-en, .ob-jp, .ob-peek { animation: none !important; }

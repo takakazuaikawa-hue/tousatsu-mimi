@@ -27,7 +27,7 @@
 .pack-body { display: flex; flex-direction: column; gap: 8px; }
 .pack-body p { margin: 0; line-height: 1.6; }
 .pack-lead { font-size: 15px; }
-.pack-note { font-size: 13px; color: var(--c-text-dim, #c4b89a); }
+.pack-note { font-size: 14px; color: var(--c-text-dim, #c4b89a); }
 .pack-note.is-caution { color: #ffb38a; }
 .pack-size { font-size: 14px; text-align: center; font-variant-numeric: tabular-nums; color: var(--c-gold-bright, #f5d77a); }
 .pack-bar {
@@ -46,7 +46,7 @@
 /* 設定の中の1行 */
 [data-pack-row] { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; }
 [data-pack-row][hidden] { display: none; }
-[data-pack-row] .pack-row-state { font-size: 12px; font-weight: 500; color: var(--c-gold-bright, #f5d77a); opacity: 0.95; }
+[data-pack-row] .pack-row-state { font-size: 14px; font-weight: 500; color: var(--c-gold-bright, #f5d77a); opacity: 0.95; }
 
 /* スマホ（横画面 844x390 など）：縦が足りないので詰める */
 @media (max-height: 520px) {
@@ -54,9 +54,9 @@
   .pack-modal { padding: 8px 14px; gap: 6px; border-width: 10px; border-image-width: 10px; max-height: 100%; }
   .pack-title { font-size: 16px; }
   .pack-body { gap: 4px; }
-  .pack-lead { font-size: 13px; line-height: 1.5; }
-  .pack-note { font-size: 11px; line-height: 1.45; }
-  .pack-size { font-size: 12px; }
+  .pack-lead { font-size: 14px; line-height: 1.5; }
+  .pack-note { font-size: 14px; line-height: 1.45; }
+  .pack-size { font-size: 14px; }
   .pack-actions { gap: 8px; }
-  .pack-actions .btn { min-height: 40px; min-width: 120px; padding: 6px 14px; font-size: 13px; }
+  .pack-actions .btn { min-height: 40px; min-width: 120px; padding: 6px 14px; font-size: 14px; }
 }

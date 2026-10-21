@@ -85,7 +85,7 @@
     .stare-grp { display: flex; gap: 4px; align-items: center; }
     .stare-tag { font-family: var(--disp); letter-spacing: .14em; font-size: 14px; color: var(--gold); margin-right: 4px; line-height: 1; }
     .stare-tag.is-vs { color: var(--gold-hi); font-size: 18px; margin: 0; }
-    .stare-sit .formula { font-size: 13px; }
+    .stare-sit .formula { font-size: 14px; }
     .stare-sit .formula b { color: var(--gold-hi); }
     .stare-duel { display: grid; grid-template-columns: 30px minmax(0, 1fr) 30px; gap: 8px; }
     .stare-arena { position: relative; height: clamp(236px, 31vw, 320px); overflow: hidden; border: 1px solid var(--line); background: #12040a; user-select: none; -webkit-user-select: none; --shk: 0px; }
@@ -116,22 +116,22 @@
     .stare-meter.is-hot { border-color: var(--red-hi); animation: mb-stare-hot .3s steps(2) infinite; }
     @keyframes mb-stare-hot { 50% { box-shadow: 0 0 14px rgba(200,37,58,.85); } }
     .stare-meter.is-beat { box-shadow: 0 0 10px rgba(227,164,164,.75); }
-    .stare-meter .lbl { position: absolute; left: 0; right: 0; bottom: 6px; width: 1em; word-break: break-all; text-align: center; margin: 0 auto; font-size: 11px; font-weight: 900; letter-spacing: 0; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; z-index: 1; line-height: 1.25; }
+    .stare-meter .lbl { position: absolute; left: 0; right: 0; bottom: 6px; width: 1em; word-break: break-all; text-align: center; margin: 0 auto; font-size: 14px; font-weight: 900; letter-spacing: 0; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; z-index: 1; line-height: 1.25; }
     .stare-meter .tick { position: absolute; left: -4px; right: -4px; height: 2px; margin-bottom: -1px; background: rgba(244,228,189,.75); z-index: 2; }
-    .stare-meter .tick b { position: absolute; left: calc(100% + 1px); top: -8px; font-family: var(--mincho); font-weight: 700; font-size: 13px; line-height: 16px; color: var(--dim); }
+    .stare-meter .tick b { position: absolute; left: calc(100% + 1px); top: -8px; font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 16px; color: var(--dim); }
     .stare-meter .tick.is-got { background: var(--gold-hi); box-shadow: 0 0 8px var(--gold-hi); } .stare-meter .tick.is-got b { color: var(--gold-hi); }
     .stare-meter .pct { position: absolute; left: 50%; top: -20px; transform: translateX(-50%); font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 16px; color: var(--text); white-space: nowrap; }
     .stare-duel { padding-top: 20px; }
     /* 手がかりのポップ：白い丸い吹き出しをやめ、黒檀の札（core.css の .mb-ebony が面・線・書体を持つ。要素に mb-ebony、見出しに mb-label を付けている） */
     .stare-pop { position: absolute; z-index: 4; right: 12px; bottom: 12px; max-width: min(62%, 340px); padding: 7px 12px 8px; font-size: 14px; line-height: 1.45; }
     .stare-pop::before { content: none; }
-    .stare-pop small { display: block; letter-spacing: .12em; font-size: 13px; line-height: 1.1; }
+    .stare-pop small { display: block; letter-spacing: .12em; font-size: 14px; line-height: 1.1; }
     .stare-burst { position: absolute; z-index: 4; right: 16%; top: 6%; font-family: var(--disp); font-size: clamp(34px, 5vw, 50px); line-height: 1; color: var(--gold-hi); text-shadow: 0 3px 0 rgba(0,0,0,.5), 0 0 18px rgba(245,215,122,.9); transform: rotate(-8deg); pointer-events: none; animation: mb-stare-burst .9s ease forwards; }
     .stare-burst small { display: block; font-size: .45em; letter-spacing: .2em; color: var(--gold-pale); }
     @keyframes mb-stare-burst { 0% { opacity: 0; transform: rotate(-8deg) scale(2.2); } 18% { opacity: 1; transform: rotate(-8deg) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: rotate(-8deg) translateY(-10px); } }
     .stare-doki { position: absolute; z-index: 4; left: 10px; top: 8px; font-weight: 900; font-size: 18px; color: var(--pink); text-shadow: 0 2px 0 #000, 0 0 10px rgba(200,37,58,.9); transform: rotate(-10deg); pointer-events: none; animation: mb-stare-burst .7s ease forwards; }
     .stare-banner { position: absolute; z-index: 5; left: -4%; right: -4%; top: 70%; padding: 8px 6%; text-align: center; transform: skewY(-4deg); background: linear-gradient(90deg, #5a0b19, var(--red) 45%, #5a0b19); border-block: 3px solid var(--gold-hi); font-family: var(--mincho); font-weight: 800; font-size: clamp(17px, 3vw, 28px); line-height: 1.25; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.45); animation: mb-stare-ban .4s cubic-bezier(.2,1.3,.3,1) both; }
-    .stare-banner small { display: block; font-family: var(--sans); font-weight: 700; font-size: 12px; color: var(--gold-pale); letter-spacing: .04em; }
+    .stare-banner small { display: block; font-family: var(--sans); font-weight: 700; font-size: 14px; color: var(--gold-pale); letter-spacing: .04em; }
     .stare-banner.is-win { background: linear-gradient(90deg, #6b4a0a, #e8c46a 45%, #6b4a0a); color: #1d080e; text-shadow: none; }
     .stare-banner.is-win small { color: #2b1a10; }
     .stare-banner.is-stop { background: linear-gradient(90deg, #1a060c, #3a0c18 45%, #1a060c); }
@@ -142,7 +142,7 @@
     .stare-hold::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 2px; background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); border: 1px solid var(--gold); box-shadow: 0 8px 20px rgba(0,0,0,.5); transition: transform .1s, border-color .15s; }
     .stare-hold:hover::before { border-color: var(--gold-hi); box-shadow: inset 0 0 0 1px rgba(227,185,100,.25), 0 8px 20px rgba(0,0,0,.5); }
     .stare-hold span { display: block; font-family: var(--mincho); font-weight: 800; font-size: 26px; letter-spacing: .14em; line-height: 1.2; }
-    .stare-hold small { display: block; font-size: 12px; font-weight: 700; color: #dcc7a2; }
+    .stare-hold small { display: block; font-size: 14px; font-weight: 700; color: #dcc7a2; }
     .stare-hold.is-nudge::before { animation: mb-stare-nudge 1.1s ease-in-out infinite; }
     @keyframes mb-stare-nudge { 50% { box-shadow: 0 0 0 3px rgba(239,205,130,.3), 0 0 26px rgba(239,205,130,.65); } }
     .stare-hold.is-hint::before { animation: mb-stare-nudge .6s ease-in-out infinite; border-color: var(--gold-pale); }
@@ -152,9 +152,9 @@
     .stare-clues { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
     /* 手がかりの札：出る前は暗い札に破線の枠、開いたら羊皮紙（JS が mb-parchment is-flat を付ける。墨・見出し・注記の色は core.css が持つ）。
        出なかった札（is-lost）は opacity で薄めず、暗い型の色で読めるまま。答え合わせの縁は mb-win（金の二重線）／mb-lose（灰の一重線） */
-    .stare-clue { position: relative; padding: 7px 12px 9px; border: 1px dashed var(--line); background: var(--panel); color: var(--dim); font-size: 13px; line-height: 1.5; }
+    .stare-clue { position: relative; padding: 7px 12px 9px; border: 1px dashed var(--line); background: var(--panel); color: var(--dim); font-size: 14px; line-height: 1.5; }
     .stare-clue .h { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; letter-spacing: .12em; font-size: 15px; line-height: 1.2; }
-    .stare-clue .h em { font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: 0; }
+    .stare-clue .h em { font-style: normal; font-size: 14px; font-weight: 700; letter-spacing: 0; }
     .stare-clue .t { font-weight: 800; margin-top: 3px; }
     .stare-clue:not(.is-open) .t { font-weight: 500; color: var(--dim); }
     
@@ -162,15 +162,15 @@
     .stare-clue.is-lost { background: var(--off-bg); border-color: var(--off-line); color: var(--dim); }
     .stare-clue.is-lost .h, .stare-clue.is-lost .h em, .stare-clue.is-lost .t { color: var(--dim); }
     /* 読みの札：塗りの四角バッジをやめ、字と下線だけ（羊皮紙の上で読める濃い色。ブラフ＝深紅／強い手＝墨／演技＝茶の点線／本当＝金茶の二重線／外れ＝灰茶の破線） */
-    .stare-chip { display: inline-block; margin: 5px 6px 0 0; padding: 1px 2px; font-family: var(--mincho); font-size: 12px; font-weight: 800; letter-spacing: .04em; line-height: 1.6; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .stare-chip { display: inline-block; margin: 5px 6px 0 0; padding: 1px 2px; font-family: var(--mincho); font-size: 14px; font-weight: 800; letter-spacing: .04em; line-height: 1.6; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
     .stare-chip.bluff { color: var(--crimson); } .stare-chip.strong { color: var(--parch-ink); } .stare-chip.act { color: #7a4a14; text-decoration-style: dotted; }
     .stare-chip.ok { color: #6b4306; text-decoration-style: double; text-decoration-thickness: 3px; } .stare-chip.ng { color: #5a4a36; text-decoration-style: dashed; }
-    .stare-hand-name { font-family: var(--mincho); font-size: 13px; font-weight: 800; color: var(--gold-hi); margin-left: 6px; white-space: nowrap; }
+    .stare-hand-name { font-family: var(--mincho); font-size: 14px; font-weight: 800; color: var(--gold-hi); margin-left: 6px; white-space: nowrap; }
     .stare-herbox { position: relative; display: inline-flex; }
     .stare-herbox .mb-threat.ov { position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%); z-index: 2; }
     .stare-hand-name.is-threat { color: #ff9aa6; text-shadow: 0 0 6px rgba(200,37,58,.6); }
     .stare-who { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; }
-    .st-frag { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mincho); font-weight: 700; font-size: 13px; color: var(--gold-hi); white-space: nowrap; }
+    .st-frag { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mincho); font-weight: 700; font-size: 14px; color: var(--gold-hi); white-space: nowrap; }
     .st-frag em { font-style: normal; padding: 0 7px; line-height: 1.6; background: rgba(19,4,6,.8); border: 1px solid var(--gold); }
     .st-frag .pips { display: inline-flex; gap: 3px; }
     .st-frag .pips i { width: 10px; height: 10px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: var(--line-dim); }
@@ -180,12 +180,12 @@
 
     /* これまでの記録：大きく賭けた20回を札の点で（ブラフ＝赤、本物＝金）。赤が多い子は、よくブラフをする */
     .st-record { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-    .st-rec-h { white-space: nowrap; font-family: var(--mincho); font-weight: 700; font-size: 12px; line-height: 1.3; color: var(--gold); }
+    .st-rec-h { white-space: nowrap; font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--gold); }
     .st-rec-dots { display: grid; grid-template-columns: repeat(20, 3px); gap: 1px; }
     .st-rec-dots i { width: 3px; height: 12px; border-radius: 0; }
     .st-rec-dots i.b { background: linear-gradient(180deg, #e0485c, #8a1424); box-shadow: inset 0 0 0 1px rgba(255,200,205,.35); }
     .st-rec-dots i.s { background: linear-gradient(180deg, var(--gold-hi), #8a5a1e); }
-    .st-rec-sum { white-space: nowrap; display: flex; gap: 6px; font-family: var(--mincho); font-size: 12px; line-height: 1.3; }
+    .st-rec-sum { white-space: nowrap; display: flex; gap: 6px; font-family: var(--mincho); font-size: 14px; line-height: 1.3; }
     .st-rec-sum .b { color: #ff8f9c; } .st-rec-sum .s { color: var(--gold-hi); }
     /* 見込みの天秤 */
     .st-scale { display: flex; flex-direction: column; gap: 2px; padding: 2px 8px 4px; background: var(--panel); border: 1px solid var(--line); }
@@ -198,7 +198,7 @@
     .st-svg .str { stroke: var(--gold); stroke-width: 1; fill: none; }
     .st-svg .dish { fill: #3a2208; stroke: var(--gold-hi); stroke-width: 1.2; }
     .st-svg text { font-family: var(--mincho); font-weight: 800; font-size: 15px; text-anchor: middle; }
-    .st-odds small { font-size: 12px; line-height: 1.2; color: var(--dim); white-space: nowrap; }
+    .st-odds small { font-size: 14px; line-height: 1.2; color: var(--dim); white-space: nowrap; }
     .stare-clue .h { flex-wrap: nowrap; white-space: nowrap; }
     .rb-info .stare-hand-name { white-space: nowrap; }
     .st-svg .is-b text { fill: #ff8f9c; } .st-svg .is-s text { fill: var(--gold-hi); }
@@ -206,7 +206,7 @@
     .st-svg .is-s rect.rec { fill: var(--gold); }
     .st-svg rect.clue { fill: #f4e4bd; stroke: #6b4306; stroke-width: .6; }
     .st-odds { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 92px; }
-    .st-odds .lbl { font-size: 12px; color: var(--dim); font-family: var(--mincho); font-weight: 700; }
+    .st-odds .lbl { font-size: var(--ty-note, 14px); color: var(--dim); font-family: var(--mincho); font-weight: 700; margin-right: 4px; }
     .st-odds b { font-family: var(--mincho); font-weight: 800; font-size: 17px; line-height: 1.1; white-space: nowrap; }
     .st-odds b.b { color: #ff8f9c; } .st-odds b.s { color: var(--gold-hi); }
     .st-odds .bar { position: relative; display: block; width: 92px; height: 7px; background: #0d0405; border: 1px solid var(--line-dim); }
@@ -215,8 +215,8 @@
     .st-scale.is-wager .st-odds .bar s { display: block; }
     /* 手がかりの札の見出し：番号・確かさ（◆）・そこで止めた時のご褒美 */
     .stare-clue .h { display: flex; gap: 4px 10px; align-items: center; justify-content: flex-start; }
-    .st-sure { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; letter-spacing: 0; }
-    .st-lean { margin-left: auto; font-size: 12px; letter-spacing: 0; } .st-lean .stare-chip { margin: 0; }
+    .st-sure { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; letter-spacing: 0; }
+    .st-lean { margin-left: auto; font-size: 14px; letter-spacing: 0; } .st-lean .stare-chip { margin: 0; }
     .st-pips { display: inline-flex; gap: 2px; }
     .st-pips i { width: 9px; height: 9px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: var(--line-dim); }
     .st-pips i.on { background: var(--gold-hi); }
@@ -227,7 +227,7 @@
     .stare-meter .proj.ng { background: repeating-linear-gradient(135deg, rgba(200,37,58,.7) 0 3px, rgba(200,37,58,.2) 3px 6px); border-top-color: var(--red-hi); animation: mb-stare-hot .5s steps(2) infinite; }
 
     .stare-meter.is-mimi { z-index: 6; }
-    .st-verdict { position: absolute; z-index: 6; left: calc(100% + 9px); bottom: 0; transform: translateY(50%); display: flex; flex-direction: column; padding: 3px 9px 4px; white-space: nowrap; font-family: var(--mincho); font-weight: 700; font-size: 12px; line-height: 1.3; color: var(--gold-pale); background: rgba(19,4,6,.94); border: 1px solid var(--gold-hi); border-left-width: 4px; pointer-events: none; transition: bottom .25s; }
+    .st-verdict { position: absolute; z-index: 6; left: calc(100% + 9px); bottom: 0; transform: translateY(50%); display: flex; flex-direction: column; padding: 3px 9px 4px; white-space: nowrap; font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--gold-pale); background: rgba(19,4,6,.94); border: 1px solid var(--gold-hi); border-left-width: 4px; pointer-events: none; transition: bottom .25s; }
     .st-verdict::before { content: ""; position: absolute; left: -11px; top: 50%; margin-top: -6px; border: 6px solid transparent; border-right-color: var(--gold-hi); border-left-width: 0; }
     .st-verdict.warn { border-color: #f0a03c; } .st-verdict.warn::before { border-right-color: #f0a03c; }
     .st-verdict b { font-weight: 800; font-size: 14px; color: var(--gold-hi); }
@@ -239,7 +239,7 @@
     .st-choice { display: flex; gap: 8px; width: 100%; align-items: stretch; }
     .st-choice .st-go { flex: 1.7 1 0; width: auto; min-height: 0; padding: 6px 10px 7px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
     .st-choice .st-go > span:first-child { font-size: 20px; letter-spacing: .1em; }
-    .st-choice .st-go small { font-size: 12px; line-height: 1.3; color: var(--gold-pale); }
+    .st-choice .st-go small { font-size: 14px; line-height: 1.3; color: var(--gold-pale); }
     .st-choice .st-go small b { font-weight: 800; margin-right: 4px; }
     .st-choice .st-go small.ok b { color: var(--gold-hi); } .st-choice .st-go small.ng b { color: #ff8f9c; }
     .st-choice .st-stop { flex: 1 1 0; min-width: 0; }
@@ -253,19 +253,22 @@
     .rb-play.stare-duel { display: grid; grid-template-columns: 24px minmax(0, 1fr) 24px; gap: 8px; padding: 0; height: 100%; min-height: 0; }
     .rb-play .stare-arena { height: 100%; min-height: 0; }
     .rb-info { overflow-x: hidden; }
+    .st-sit-cap { font-family: var(--mincho); font-weight: 700; font-size: var(--ty-note, 14px); color: var(--gold); white-space: nowrap; }
+    .st-sit-row { gap: 3px; flex-wrap: nowrap; }
+    .st-sit-sep { display: block; width: 1px; align-self: stretch; margin: 2px 5px; background: var(--line); }
     .rb-info .stare-sit { align-items: flex-start; gap: 4px; }
     .rb-info .stare-grp { flex-wrap: nowrap; gap: 3px; }
-    .rb-info .stare-tag { white-space: nowrap; font-family: var(--mincho); font-weight: 700; font-size: 12px; letter-spacing: .06em; margin-right: 2px; }
-    .rb-info .stare-hand-name { font-size: 12px; margin-left: 4px; }
+    .rb-info .stare-tag { white-space: nowrap; font-family: var(--mincho); font-weight: 700; font-size: 14px; letter-spacing: .06em; margin-right: 2px; }
+    .rb-info .stare-hand-name { font-size: 14px; margin-left: 4px; }
     .rb-info .stare-clues { grid-template-columns: minmax(0, 1fr); gap: 4px; }
     .rb-act .st-choice { height: 100%; }
     .rb-act > div > .actions { display: flex; gap: 12px; justify-content: center; }
     @media (max-width: 560px) {
       .stare-duel { grid-template-columns: 24px minmax(0, 1fr) 24px; gap: 6px; }
-      .stare-meter { width: 16px; } .stare-meter .lbl { line-height: 16px; font-size: 10px; letter-spacing: .1em; }
-      .stare-meter .tick b { font-size: 11px; }
+      .stare-meter { width: 16px; } .stare-meter .lbl { line-height: 16px; font-size: 14px; letter-spacing: .1em; }
+      .stare-meter .tick b { font-size: 14px; }
       .stare-clues { grid-template-columns: 1fr; gap: 8px; }
-      .stare-pop { font-size: 12.5px; max-width: 68%; right: 8px; bottom: 8px; padding: 6px 10px 7px; }
+      .stare-pop { font-size: 14px; max-width: 68%; right: 8px; bottom: 8px; padding: 6px 10px 7px; }
       .stare-hold span { font-size: 23px; }
       .stare-cards { gap: 6px 10px; }
     }
@@ -339,7 +342,7 @@
       });
       const side = pb >= .5 ? 'ブラフ' : '本物', p = Math.round(Math.max(pb, 1 - pb) * 100);
       const odds = root.querySelector('#mb-stare-odds');
-      if (odds) odds.innerHTML = `<span class="lbl">いまの見込み</span><b class="${pb >= .5 ? 'b' : 's'}">${side} ${p}%</b><small>${pb >= .5 ? 'ミミの勝ち' : 'ミミの負け'}の側</small>`;
+      if (odds) odds.innerHTML = `<b class="${pb >= .5 ? 'b' : 's'}"><small class="lbl">見込み</small>${side} ${p}%</b><small>${pb >= .5 ? 'ミミの勝ち' : 'ミミの負け'}の側</small>`;
       return pb;
     };
     const nB = record.filter(Boolean).length;
@@ -359,9 +362,9 @@
       </div>
       <div class="rb-info">
         <div class="stare-sit">
-          <div class="stare-grp"><span class="stare-tag">場札</span>${board.map(c => api.cardHTML(c, 'small' + (!T && c.s === X ? ' hot' : ''))).join('')}</div>
-          <div class="stare-grp"><span class="stare-tag">ミミ</span>${mine.map(c => api.cardHTML(c, 'small')).join('')}<span class="stare-hand-name">${mimiHandName}</span>
-            <span class="stare-tag is-opp">${jp}</span><span class="stare-herbox"><span class="stare-grp" id="mb-stare-her">${api.backHTML('small')}${api.backHTML('small')}</span>${T ? '' : api.threat(`<span class="${X === 'h' || X === 'd' ? 'rd' : ''}">${api.SYM[X]}</span><span class="${X === 'h' || X === 'd' ? 'rd' : ''}">${api.SYM[X]}</span><span class="q">?</span>`, '', 'ov')}</span><span class="stare-hand-name" id="mb-stare-her-name"></span></div>
+          <div class="st-sit-cap">場札 ／ ミミの手（${mimiHandName}）</div>
+          <div class="stare-grp st-sit-row">${board.map(c => api.cardHTML(c, 'small' + (!T && c.s === X ? ' hot' : ''))).join('')}<i class="st-sit-sep"></i>${mine.map(c => api.cardHTML(c, 'small')).join('')}</div>
+          <span class="stare-grp" id="mb-stare-her" hidden></span><span id="mb-stare-her-name" hidden></span>
         </div>
         <div class="st-scale"><div class="st-scale-top">${scaleSVG()}<div class="st-odds" id="mb-stare-odds"></div></div>
           <div class="st-record" aria-label="${jp}が大きく賭けた20回のうち、ブラフは${nB}回"><span class="st-rec-h">大きな賭け20回</span><span class="st-rec-dots">${record.map(b => `<i class="${b ? 'b' : 's'}"></i>`).join('')}</span><span class="st-rec-sum"><b class="b">ブラフ${nB}</b></span></div>
@@ -497,7 +500,7 @@
     const pNow = pBluff(), pMine = Math.round((decide === 'bluff' ? pNow : 1 - pNow) * 100);
     root.querySelector('.st-scale').classList.add('is-wager');
     api.mission('天秤の見込みで、自信を決める');
-    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超えは ぜったい、50%超えは 確信が得', base, stakes: STAKES, into: ctrl });
+    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超え→ぜったい　50%超え→確信', base, stakes: STAKES, into: ctrl });
     if (!api.alive()) return;
 
     // 本当の手の勝負：読みを預けて卓に戻る。答え合わせは手の決着の後（battles/games/verdict.js）
@@ -523,7 +526,7 @@
     root.querySelector('.stare-sit').scrollIntoView({ block: 'nearest', behavior: api.reduce ? 'auto' : 'smooth' });
     api.coach(''); api.sfx.drum();
     await api.wait(1000); if (!api.alive()) return;
-    const herBox = $('#mb-stare-her');
+    const herBox = $('#mb-stare-her'); herBox.hidden = false; $('#mb-stare-her-name').hidden = false;
     const thr = root.querySelector('.stare-herbox .mb-threat'); if (thr) thr.remove();
     $('#mb-stare-her-name').classList.remove('is-threat');
     herBox.innerHTML = api.cardHTML(her[0], 'small flip') + api.backHTML('small');

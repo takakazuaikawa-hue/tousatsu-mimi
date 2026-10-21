@@ -50,7 +50,7 @@ MB.register({
     api.say(speech.text.replace(/[「」]/g, ''), who === 'polka' ? 'smug' : 'think'); api.bet(400);
     api.css('detective', `
       /* 天秤：深紅（強い手）↔ 金（ブラフ）。針は淡い金 */
-      .dt-scale { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; max-width: 560px; width: 100%; margin: 0 auto; font-family: var(--mincho); font-size: 13px; font-weight: 800; }
+      .dt-scale { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; max-width: 560px; width: 100%; margin: 0 auto; font-family: var(--mincho); font-size: 14px; font-weight: 800; }
       .dt-scale .l { color: var(--red-hi); } .dt-scale .r { color: var(--gold-hi); }
       .dt-beam { position: relative; height: 10px; background: linear-gradient(90deg, rgba(200,37,58,.6), rgba(217,178,105,.14) 50%, rgba(239,205,130,.6)); border: 1px solid var(--line-dim); }
       .dt-beam i { position: absolute; top: -9px; left: 50%; width: 4px; height: 28px; margin-left: -2px; background: var(--gold-pale); box-shadow: 0 0 0 1px #130406, 0 0 10px rgba(244,228,189,.7); transition: left .5s cubic-bezier(.2,1.3,.4,1); }
@@ -62,7 +62,7 @@ MB.register({
       .dt-clue:not(.open) .dt-text { color: #7b6a55; }
       .dt-acts { display: flex; flex-wrap: wrap; gap: 6px; }
       /* 押す所（調べる／強い手／ブラフ／関係なし／ぱにゅぱにゅで探る）は .mb-key（四角・黒檀に金文字。選んだ物は深紅に金の下線） */
-      .dt-acts button { font-size: 13px; padding: 5px 10px; }
+      .dt-acts button { font-size: 14px; padding: 5px 10px; }
       .dt-clue:not(.open) .lean { display: none; } .dt-clue.open .open-btn { display: none; }
       .dt-clue.hidden-clue .dt-kind { color: var(--gold-hi); }
       .dt-clue.hidden-clue .dt-text { color: var(--text); }
@@ -79,7 +79,7 @@ MB.register({
       .dt-mine .formula { text-align: left; }
       /* 答え合わせ：決め手＝金の二重線、ひっかけ＝赤の線（太さと内側へ寄せる指定はスマホ横の read-compact.css が持つ） */
       .dt-clue.key { outline: 3px double var(--gold-hi); outline-offset: 2px; } .dt-clue.trap { outline: 3px solid var(--red-hi); outline-offset: 2px; }
-      .dt-verdict { font-size: 12px; font-weight: 900; color: #5e430b; } .dt-clue.trap .dt-verdict { color: var(--crimson); }
+      .dt-verdict { font-size: 14px; font-weight: 900; color: #5e430b; } .dt-clue.trap .dt-verdict { color: var(--crimson); }
       .dt-clue.hidden-clue .dt-verdict { color: var(--gold-hi); } .dt-clue.hidden-clue.trap .dt-verdict { color: #f0b4aa; }
     `);
     const root = api.root;

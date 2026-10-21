@@ -30,7 +30,7 @@ MB.register({
       .dg-board .card { cursor: pointer; }
       .dg-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 30px; }
       /* 見つけた形の札：赤い塗りと緑をやめ、黒檀の札に（左に深紅の短冊。「形なし」は金）。大きさは各 CSS（PC は read-pc.css、スマホは read-compact.css） */
-      .dg-pill { font-size: 13px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 2px; background: linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo)); color: var(--text); box-shadow: inset 3px 0 0 var(--crimson); }
+      .dg-pill { font-size: 14px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 2px; background: linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo)); color: var(--text); box-shadow: inset 3px 0 0 var(--crimson); }
       .dg-pill.calm { border-color: var(--gold); box-shadow: inset 3px 0 0 var(--gold); }
       .dg-ask { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
       .dg-legend { display: inline-flex; gap: 8px; } .dg-q { font-family: var(--mincho); font-weight: 800; font-size: 17px; }
@@ -40,7 +40,7 @@ MB.register({
       .dg-bar { position: relative; margin-top: 24px; height: 30px; background: rgba(0,0,0,.45); border: 1px solid var(--line-dim); }
       .dg-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #a47a22, var(--gold-hi)); transition: width .9s cubic-bezier(.2,.8,.2,1); }
       .dg-line { position: absolute; top: -8px; bottom: -8px; width: 3px; background: var(--red-hi); box-shadow: 0 0 10px var(--red-hi); left: 0; transition: left .8s ease .2s; }
-      .dg-line span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--gold-hi); }
+      .dg-line span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 14px; font-weight: 700; color: var(--gold-hi); }
       .dg-val { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 0 10px; background: #130406; border: 1px solid var(--gold); white-space: nowrap; text-shadow: none; font-family: var(--mincho); font-weight: 800; font-size: 20px; text-shadow: 0 1px 3px #000, 0 0 6px #000; }
     `);
     const root = api.root;

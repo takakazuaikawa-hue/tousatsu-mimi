@@ -93,12 +93,12 @@
       .sn-law .ar { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
       .sn-law .ar.up { border-bottom: 9px solid currentColor; } .sn-law .ar.dn { border-top: 9px solid currentColor; }
       .sn-law .sq { width: 13px; height: 13px; background: linear-gradient(135deg, var(--gold-hi), var(--gold)); border: 1px solid #4a2c08; }
-      .sn-me-name small { display: block; font-weight: 700; font-size: 11px; color: var(--dim); }
+      .sn-me-name small { display: block; font-weight: 700; font-size: 14px; color: var(--dim); }
       .sn-pot { font-family: var(--mincho); font-weight: 700; letter-spacing: .1em; color: var(--gold); font-size: 14px; line-height: 1; text-align: center; }
       .sn-pot b { display: block; font-weight: 400; font-size: 30px; color: var(--gold-hi); letter-spacing: .04em; }
       .sn-read { display: flex; align-items: flex-end; justify-content: center; gap: 8px 14px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
       .sn-read > div { text-align: center; line-height: 1; }
-      .sn-read small { display: block; font-size: 11px; font-weight: 700; color: var(--dim); margin-bottom: 3px; }
+      .sn-read small { display: block; font-size: 14px; font-weight: 700; color: var(--dim); margin-bottom: 3px; }
       .sn-read b { font-family: var(--disp); font-weight: 400; font-size: 40px; color: var(--gold-pale); letter-spacing: .03em; }
       .sn-read .op { font-family: var(--disp); font-size: 30px; color: var(--gold); padding-bottom: 4px; }
       .sn-read em { font-style: normal; font-weight: 900; font-family: var(--mincho); font-size: 14px; color: var(--gold-hi); display: inline-block; padding: 6px 10px; border: 1px solid var(--gold); border-radius: 2px; background: rgba(217,178,105,.16); }
@@ -107,12 +107,12 @@
       .sn-wrap { position: relative; padding: 24px 14px 30px 46px; }
       .sn-chart { position: relative; height: 225px; touch-action: pan-y; cursor: crosshair; user-select: none; -webkit-user-select: none; }
       .sn-chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-      .sn-ylab, .sn-xlab { position: absolute; font-family: var(--mincho); font-weight: 700; font-size: 13px; letter-spacing: .04em; color: var(--gold); line-height: 1; white-space: nowrap; pointer-events: none; }
+      .sn-ylab, .sn-xlab { position: absolute; font-family: var(--mincho); font-weight: 700; font-size: 14px; letter-spacing: .04em; color: var(--gold); line-height: 1; white-space: nowrap; pointer-events: none; }
       .sn-ylab { left: -8px; transform: translate(-100%, -50%); }
       .sn-xlab { bottom: -20px; transform: translateX(-50%); }
-      .sn-axis-y { position: absolute; left: 0; top: -19px; font-size: 11px; font-weight: 700; color: var(--dim); pointer-events: none; white-space: nowrap; }
-      .sn-floor { position: absolute; left: 0; top: 4px; width: 12.5%; text-align: center; font-size: 10px; font-weight: 700; color: var(--dim); pointer-events: none; }
-      .sn-area { position: absolute; transform: translate(-50%, -50%); font-weight: 900; font-size: 13px; color: var(--gold-pale); text-shadow: 0 1px 3px rgba(0,0,0,.8); pointer-events: none; white-space: nowrap; transition: opacity .15s; }
+      .sn-axis-y { position: absolute; left: 0; top: -19px; font-size: 14px; font-weight: 700; color: var(--dim); pointer-events: none; white-space: nowrap; }
+      .sn-floor { position: absolute; left: 0; top: 4px; width: 12.5%; text-align: center; font-size: 14px; font-weight: 700; color: var(--dim); pointer-events: none; }
+      .sn-area { position: absolute; transform: translate(-50%, -50%); font-weight: 900; font-size: 14px; color: var(--gold-pale); text-shadow: 0 1px 3px rgba(0,0,0,.8); pointer-events: none; white-space: nowrap; transition: opacity .15s; }
       .sn-ret { position: absolute; width: 0; height: 0; pointer-events: none; z-index: 2; }
       .sn-ret .x1, .sn-ret .x2 { position: absolute; left: -44px; top: -1px; width: 88px; height: 2px; background: linear-gradient(90deg, var(--red-hi) 0 38%, transparent 38% 62%, var(--red-hi) 62%); }
       .sn-ret .x1 { transform: rotate(45deg); } .sn-ret .x2 { transform: rotate(-45deg); }
@@ -121,12 +121,12 @@
       .sn-ret .num { position: absolute; left: 20px; bottom: 14px; font-family: var(--disp); line-height: .9; white-space: nowrap; padding: 3px 10px 2px; background: rgba(20,6,10,.85); border-left: 3px solid var(--gold); transform: skewX(-12deg); }
       .sn-ret .num > span { display: block; transform: skewX(12deg); }
       .sn-ret .num b { font-weight: 400; font-size: 28px; color: #fff; letter-spacing: .04em; }
-      .sn-ret .num small { display: block; font-family: var(--mincho); font-weight: 700; font-size: 13px; color: var(--gold-hi); letter-spacing: .06em; }
+      .sn-ret .num small { display: block; font-family: var(--mincho); font-weight: 700; font-size: 14px; color: var(--gold-hi); letter-spacing: .06em; }
       .sn-ret.flip-x .num { left: auto; right: 20px; border-left: 0; border-right: 3px solid var(--gold); }
       .sn-ret.flip-y .num { bottom: auto; top: 14px; }
       .sn-ret.is-cue .dia { animation: mb-snCue 1s ease-in-out infinite; }
       @keyframes mb-snCue { 50% { transform: rotate(45deg) scale(1.45); box-shadow: 0 0 18px rgba(245,215,122,1); border-color: var(--gold-hi); } }
-      .sn-hint { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); font-weight: 900; font-size: 12px; color: var(--gold-hi); white-space: nowrap; animation: mb-snHint 1.2s ease-in-out infinite; }
+      .sn-hint { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); font-weight: 900; font-size: 14px; color: var(--gold-hi); white-space: nowrap; animation: mb-snHint 1.2s ease-in-out infinite; }
       @keyframes mb-snHint { 50% { transform: translateX(-50%) translateX(6px); } }
       .sn-ret.locked .x1, .sn-ret.locked .x2 { background: linear-gradient(90deg, #fff 0 38%, transparent 38% 62%, #fff 62%); }
       .sn-ret.locked .dia { border-color: var(--red-hi); background: rgba(255,74,96,.35); }
@@ -150,17 +150,17 @@
       .sn-out .roll { font-weight: 900; font-size: 15px; }
       .sn-out .roll b { font-family: var(--mincho); font-weight: 800; font-size: 24px; letter-spacing: .06em; }
       .sn-out .roll .call { color: var(--good); } .sn-out .roll .fold { color: var(--bad); }
-      .sn-out .her { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--dim); }
+      .sn-out .her { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--dim); }
       .sn-cmp { display: flex; justify-content: center; gap: 8px 18px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
       .sn-cmp > div { text-align: center; line-height: 1.1; padding: 4px 14px; position: relative; isolation: isolate; }
       .sn-cmp > div::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; }
       .sn-cmp > div.best::before { border-color: var(--gold-hi); background: rgba(217,178,105,.16); box-shadow: inset 0 0 0 2px #190608, inset 0 0 0 3px var(--gild); }
-      .sn-cmp small { display: block; font-size: 11px; color: var(--dim); font-weight: 700; }
+      .sn-cmp small { display: block; font-size: 14px; color: var(--dim); font-weight: 700; }
       .sn-cmp b { font-family: var(--disp); font-weight: 400; font-size: 28px; }
       .sn-cmp .best b { color: var(--gold-hi); }
       .sn-verdict { text-align: center; font-family: var(--mincho); font-weight: 800; font-size: 20px; }
       .sn-verdict.good { color: var(--good); } .sn-verdict.bad { color: var(--bad); }
-      .sn-verdict small { display: block; font-family: var(--sans); font-size: 13px; color: var(--text); font-weight: 700; }
+      .sn-verdict small { display: block; font-family: var(--sans); font-size: 14px; color: var(--text); font-weight: 700; }
       .sn-react { position: absolute; z-index: 6; right: -6px; top: 34%; width: 260px; height: 190px; pointer-events: none; animation: mb-snIn .4s cubic-bezier(.2,1.3,.3,1) both; }
       .sn-react::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 56%; transform: skewX(-12deg); background: linear-gradient(90deg, var(--crimson), var(--crimson-lo)); border-block: 2px solid var(--gold-hi); box-shadow: 0 10px 24px rgba(0,0,0,.55); }
       .sn-react img { position: absolute; bottom: 0; right: -10px; height: 100%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
@@ -169,15 +169,15 @@
       @keyframes mb-snIn { from { transform: translateX(110%); } }
       @media (max-width: 560px) {
         .sn-read b { font-size: 32px; } .sn-read .op { font-size: 24px; }
-        .sn-read em { font-size: 12px; padding: 4px 8px; }
+        .sn-read em { font-size: 14px; padding: 4px 8px; }
         .sn-meter { width: 84px; }
         .sn-wrap { padding: 22px 8px 28px 38px; }
         .sn-rangebox { padding: 0 8px 0 38px; }
         .sn-chart { height: 210px; }
-        .sn-ylab { font-size: 11px; }
-        .sn-xlab { font-size: 11px; }
+        .sn-ylab { font-size: 14px; }
+        .sn-xlab { font-size: 14px; }
         
-        .sn-ret .num b { font-size: 22px; } .sn-ret .num small { font-size: 11px; }
+        .sn-ret .num b { font-size: 22px; } .sn-ret .num small { font-size: 14px; }
         .sn-react { width: 190px; height: 140px; }
         .sn-react b { font-size: 30px; }
         .sn-cmp b { font-size: 22px; }

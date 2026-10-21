@@ -108,13 +108,13 @@
       .hl-ladder { display: flex; gap: 5px; }
       .hl-rung { position: relative; min-width: 56px; padding: 4px 8px 3px; text-align: center; font-family: var(--disp); font-size: 22px; line-height: 1; color: var(--dim); isolation: isolate; transition: color .2s; }
       .hl-rung::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--line-dim); transition: background .25s, border-color .25s; }
-      .hl-rung small { display: block; font-family: var(--mincho); font-weight: 700; font-size: 10px; letter-spacing: .12em; color: var(--dim); }
+      .hl-rung small { display: block; font-family: var(--mincho); font-weight: 700; font-size: 14px; letter-spacing: .12em; color: var(--dim); }
       .hl-rung.won { color: var(--gold-hi); } .hl-rung.won::before { border-color: rgba(217,179,90,.7); background: rgba(217,179,90,.16); }
       .hl-rung.now { color: var(--gold-pale); } .hl-rung.now small { color: var(--gold-pale); } .hl-rung.now::before { background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); border-color: var(--gold-hi); box-shadow: 0 0 14px rgba(200,37,58,.6); }
       .hl-rung.next { color: var(--gold-pale); } .hl-rung.next::before { border: 1px dashed var(--gold-hi); }
       .hl-rung.lost { color: var(--bad); text-decoration: line-through; }
       .hl-pot { text-align: center; line-height: 1; }
-      .hl-pot small { display: block; font-size: 11px; color: var(--dim); font-weight: 700; margin-bottom: 2px; }
+      .hl-pot small { display: block; font-size: 14px; color: var(--dim); font-weight: 700; margin-bottom: 2px; }
       .hl-pot b { font-family: var(--disp); font-weight: 400; font-size: 50px; color: var(--gold-hi); display: inline-block; text-shadow: 0 0 18px rgba(245,215,122,.5); font-variant-numeric: tabular-nums; }
       .hl-pot.is-beat b { animation: mb-hlPotBeat .82s ease-out infinite; }
       @keyframes mb-hlPotBeat { 10% { transform: scale(1.12); } 22% { transform: scale(1); } 32% { transform: scale(1.07); } 60% { transform: scale(1); } }
@@ -144,7 +144,7 @@
       .hl-hn { min-height: 2.9em; display: grid; place-items: center; text-align: center; font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--text); text-wrap: balance; }
       .hl-hn span { display: inline-block; padding: 2px 10px; background: rgba(0,0,0,.5); border: 1px solid rgba(217,179,90,.4); border-radius: 2px; }
       .hl-hand.win .hl-hn span { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1d080e; border-color: var(--gold-pale); }
-      .hl-hn .hl-wait { color: var(--dim); font-family: var(--sans); font-weight: 700; font-size: 12px; }
+      .hl-hn .hl-wait { color: var(--dim); font-family: var(--sans); font-weight: 700; font-size: 14px; }
       .hl-vs { align-self: center; font-family: var(--disp); font-size: 36px; color: var(--gold-hi); text-shadow: 0 0 16px rgba(245,215,122,.6); transform: rotate(-8deg); }
       .hl-pick { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; width: min(640px, 100%); margin: 0 auto; }
       .hl-pick .btn { min-width: 0; padding: 8px 10px; min-height: 54px; font-size: 17px; }
@@ -181,10 +181,10 @@
         .hl-duel { gap: 4px; }
         .hl-vs { font-size: 24px; }
         .hl-chibi { height: 64px; max-width: 54px; }
-        .hl-hn { font-size: 12px; }
+        .hl-hn { font-size: 14px; }
         .hl-pick { gap: 6px; }
         .hl-pick .btn { font-size: 14px; padding: 6px 4px; }
-        .hl-pick .btn.hl-tie { min-width: 76px; font-size: 13px; }
+        .hl-pick .btn.hl-tie { min-width: 76px; font-size: 14px; }
         .hl-verdict b { font-size: 20px; }
         .hl-react { width: 180px; height: 150px; top: 44%; }
         .hl-react b { font-size: 28px; }

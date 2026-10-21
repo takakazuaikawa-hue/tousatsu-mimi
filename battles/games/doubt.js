@@ -104,7 +104,7 @@
     .doubt-grp { display: flex; gap: 4px; align-items: center; }
     /* 名札・場所の名前：明朝の小さな金文字（英語は名札の POLKA だけ） */
     .doubt-tag { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; font-size: 14px; color: var(--gold); margin-right: 4px; line-height: 1; }
-    .doubt-hand { font-family: var(--mincho); font-size: 13px; font-weight: 700; color: var(--gold-hi); margin-left: 6px; white-space: nowrap; }
+    .doubt-hand { font-family: var(--mincho); font-size: 14px; font-weight: 700; color: var(--gold-hi); margin-left: 6px; white-space: nowrap; }
     .doubt-hands { flex-wrap: wrap; justify-content: center; row-gap: 4px; }
     .doubt-area { position: relative; height: clamp(270px, 29vw, 300px); overflow: hidden; border: 1px solid var(--line); background: linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo)); user-select: none; -webkit-user-select: none; transition: height .3s ease; }
     .doubt-win { position: absolute; z-index: 1; right: 7%; top: 12px; bottom: 18px; width: min(34%, 300px); transform: skewX(-12deg); overflow: hidden; border: 3px solid var(--gold); background: linear-gradient(180deg, var(--band), var(--ebony-lo)); box-shadow: 0 10px 22px rgba(0,0,0,.6); transition: top .3s ease, bottom .3s ease, right .3s ease, width .3s ease; }
@@ -116,7 +116,7 @@
     @keyframes mb-doubt-twitch { 30% { transform: skewX(-12deg) translate(-8px, 3px); } 65% { transform: skewX(-12deg) translate(4px, -2px); } }
     .doubt-count { position: absolute; z-index: 3; left: 16px; top: 10px; display: flex; align-items: baseline; gap: 10px; }
     .doubt-count b { font-family: var(--disp); font-weight: 400; font-size: 30px; line-height: 1; color: var(--gold-hi); letter-spacing: .06em; }
-    .doubt-count span { font-family: var(--mincho); font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--gold-pale); background: rgba(19,4,6,.72); padding: 1px 8px; border-left: 3px solid var(--gold); }
+    .doubt-count span { font-family: var(--mincho); font-size: 14px; font-weight: 700; letter-spacing: .06em; color: var(--gold-pale); background: rgba(19,4,6,.72); padding: 1px 8px; border-left: 3px solid var(--gold); }
     /* 台詞：黒檀の札（.mb-ebony）。白い丸い吹き出しと尻尾はやめた（面・線・影・書体は core.css の部品が描く） */
     .doubt-bubble { position: absolute; z-index: 2; left: 16px; top: 52%; width: min(58%, 540px); transform: translateY(-50%); padding: 16px 20px; font-size: clamp(18px, 2.3vw, 24px); line-height: 1.45; }
     .doubt-bubble.is-in { animation: mb-doubt-in .22s cubic-bezier(.2,1.5,.4,1); }
@@ -125,7 +125,7 @@
     .doubt-bubble.go-r { transition: transform .26s ease-in, opacity .26s; transform: translate(40%, -60%) rotate(10deg) scale(.8); opacity: 0; }
     .doubt-bubble.go-miss { transition: transform .3s ease-in, opacity .3s; transform: translate(0, 10%); opacity: 0; }
     /* 「最後 · 今の賭けの話」：赤い札をやめ、金の明朝の小さな見出し */
-    .doubt-last { display: inline-block; margin-bottom: 4px; padding: 0 2px 1px; font-style: normal; font-family: var(--mincho); font-size: 12px; font-weight: 700; letter-spacing: .1em; color: var(--gold); border-bottom: 1px solid var(--line); }
+    .doubt-last { display: inline-block; margin-bottom: 4px; padding: 0 2px 1px; font-style: normal; font-family: var(--mincho); font-size: 14px; font-weight: 700; letter-spacing: .1em; color: var(--gold); border-bottom: 1px solid var(--line); }
     .doubt-text { display: block; }
     /* 押した答えの判子（ダウト！／本音？／見逃し…）。羊皮紙に墨：ウソ＝深紅、本音＝金茶、見逃し＝灰。正解かどうかはまだ見せない */
     .doubt-stamp { position: absolute; right: -6px; top: -20px; padding: 0 12px; font-family: var(--mincho); font-size: 24px; font-weight: 800; letter-spacing: .08em; line-height: 1.5; transform: rotate(9deg); border: 3px double; background: var(--parch); box-shadow: 0 4px 10px rgba(0,0,0,.5); opacity: 0; }
@@ -151,11 +151,11 @@
     .dv-bars i:nth-child(1) { height: 6px; } .dv-bars i:nth-child(2) { height: 10px; } .dv-bars i:nth-child(3) { height: 14px; } .dv-bars i:nth-child(4) { height: 18px; } .dv-bars i:nth-child(5) { height: 22px; } .dv-bars i:nth-child(6) { height: 26px; }
     .doubt-row .sub .dd { font-style: normal; padding: 0 6px; font-family: var(--mincho); font-weight: 800; background: rgba(19,4,6,.8); border: 1px solid var(--gold); color: var(--gold-pale); }
     .doubt-row .sub .dd.lie { border-color: var(--red-hi); color: #ff9aa6; }
-    .doubt-rule-ex { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 13px; font-weight: 800; }
+    .doubt-rule-ex { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 14px; font-weight: 800; }
     .doubt-rule-ex span { padding: 2px 10px; border-left: 3px solid var(--gold); }
     .doubt-rule-ex .is-lie { background: var(--band); border-left-color: var(--red-hi); color: var(--gold-pale); }
     .doubt-rule-ex .is-honest { background: rgba(217,178,105,.12); color: var(--gold-pale); }
-    .doubt-rule-note { margin-top: 8px; font-size: 12px; color: var(--dim); }
+    .doubt-rule-note { margin-top: 8px; font-size: 14px; color: var(--dim); }
     .doubt-pad { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: min(640px, 100%); margin: 0 auto; }
     /* 本音／ウソ／はじめる：四角い押す札（斜めは押せない物だけ）。ウソ＝深紅、本音＝黒檀、はじめる＝金 */
     .doubt-btn { position: relative; border: 0; cursor: pointer; min-height: 78px; padding: 8px 14px; color: #f0d08a; background: transparent; isolation: isolate; display: flex; align-items: center; justify-content: center; gap: 12px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
@@ -168,7 +168,7 @@
     .doubt-btn.is-start { color: #1d080e; }
     .doubt-btn .w { display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
     .doubt-btn .w span { font-family: var(--mincho); font-weight: 800; font-size: 27px; letter-spacing: .12em; }
-    .doubt-btn .w small { font-size: 12px; font-weight: 700; color: #dcc7a2; }
+    .doubt-btn .w small { font-size: 14px; font-weight: 700; color: #dcc7a2; }
     .doubt-btn.is-honest .w small { color: var(--dim); }
     .doubt-btn.is-start .w small { color: rgba(29,8,14,.78); }
     .doubt-btn kbd { font-family: var(--disp); font-size: 30px; line-height: 1; color: var(--gold-hi); }
@@ -192,7 +192,7 @@
     .doubt-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 44px; gap: 8px; align-items: center; padding: 6px 10px; background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; }
     .doubt-row .n { font-family: var(--disp); font-size: 24px; line-height: 1; color: var(--gold); text-align: center; }
     .doubt-row .q { font-weight: 800; font-size: 14px; line-height: 1.45; }
-    .doubt-row .sub { display: block; font-size: 12px; color: var(--dim); font-weight: 700; }
+    .doubt-row .sub { display: block; font-size: 14px; color: var(--dim); font-weight: 700; }
     .doubt-row .sub em { font-style: normal; color: var(--text); }
     /* 「例外！」の札：ピンクをやめ、金のタブ */
     .doubt-row .sub .trap { display: inline-block; white-space: nowrap; color: #1d080e; background: var(--gold); font-family: var(--mincho); font-weight: 700; letter-spacing: .06em; border-radius: 2px; padding: 0 6px; margin-left: 4px; }
@@ -228,7 +228,7 @@
       .doubt-area.is-sum .doubt-win { top: 8px; bottom: 8px; height: auto; right: 6%; width: 34%; }
       .doubt-tally b { font-size: 52px; }
       .doubt-row { grid-template-columns: 22px minmax(0, 1fr) 36px; padding: 6px 8px; gap: 6px; }
-      .doubt-row .q { font-size: 13px; }
+      .doubt-row .q { font-size: 14px; }
     }
   `;
 
