@@ -47,6 +47,8 @@ export function stdCheck({ minText = 12, bodyMin = 14, safe = 47, phone = true }
   const tiny = [], body = [], clip = [], offText = [];
   // 2026-10-21 快適さの測定：大きさ（画面上 px を四捨五入）ごとの字数。補足の段以下の割合と、表にない大きさを後で出す
   const dist = {}; const bySel = {};
+  // 2026-10-21 折れの検査（わざと枠の外に重ねる飾り＝position:absolute の子は、はみ出しに数えない）：wrap＝短い名前（12字以内）が2行以上／orphan＝最後の行が2字以下（3行目以降の長文は除かず数える）／overflowBox＝ボタンの中の文字がボタンより広い
+  const wrap = [], orphan = [];
   const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n; const seen = new Set();
   while ((n = tw.nextNode())) {
     const t = n.textContent.replace(/\\s+/g, ' ').trim(); const el = n.parentElement; if (!t || !el || seen.has(el) || !vis(el)) continue;
@@ -74,6 +76,11 @@ export function stdCheck({ minText = 12, bodyMin = 14, safe = 47, phone = true }
     if (px < MIN - 0.15) tiny.push(lab);
     else if (BODY && px < BODY - 0.15 && (el.closest(BODY_SEL) || (t.length >= 30 && el.tagName !== 'SMALL' && !/note|hint|cap|sub|tag|legal|small/i.test(typeof el.className === 'string' ? el.className : '')))) body.push(lab);
     if (part) clip.push(lab);
+    { const lines = []; for (const q of rs) { const l = lines.find(z => Math.abs(z.top - q.top) < q.height * 0.5); if (l) { l.w += q.width; } else lines.push({ top: q.top, w: q.width }); }
+      const pxw = px || 14;
+      const csw = getComputedStyle(el); const vertical = /vertical/.test(csw.writingMode) || el.getBoundingClientRect().width < pxw * 1.6; const labelish = !!el.closest('button, [role=button], [data-action], th, td, label, h1, h2, h3, h4, .btn, [class*=lbl], [class*=label], [class*=title], [class*=name], [class*=tag]');
+      if (!vertical && labelish && lines.length >= 2 && t.length <= 12 && n.textContent.trim().indexOf(String.fromCharCode(10)) < 0) wrap.push(lab + ' ' + lines.length + '行');
+      else if (lines.length >= 2 && lines[lines.length - 1].w < pxw * 2.6 && t.length > 3) orphan.push(lab + ' 最後の行 約' + Math.round(lines[lines.length - 1].w / pxw) + '字'); }
     let L = Math.min(...rs.map(r => r.left)), R = Math.max(...rs.map(r => r.right)), T = rr.top, B = Math.max(...rs.map(r => r.bottom));
     // 自分か親が overflow で切っている所（… で省いた文字など）は、その箱の中だけを見る
     for (let x = el; x && x !== document.body; x = x.parentElement) { const c = getComputedStyle(x); if (c.overflowX === 'visible' && c.overflowY === 'visible') continue; const b = x.getBoundingClientRect(); L = Math.max(L, b.left); R = Math.min(R, b.right); T = Math.max(T, b.top); B = Math.min(B, b.bottom); }
@@ -89,12 +96,14 @@ export function stdCheck({ minText = 12, bodyMin = 14, safe = 47, phone = true }
   }
   // トランプの札（.card で幅のある物）の画面上の幅：一番小さい物
   const cardWs = [...document.querySelectorAll('.card, .mp-card, .hr-pcard')].filter(e => vis(e)).map(e => e.getBoundingClientRect()).filter(r => r.width >= 8 && r.right > 0 && r.left < VW && r.bottom > 0 && r.top < VH).map(r => Math.round(r.width));
+  const overflowBox = [];
+  for (const e of taps) { const r = e.getBoundingClientRect(); if (r.width < 4 || r.right <= 0 || r.left >= VW || r.bottom <= 0 || r.top >= VH) continue; if (e.scrollWidth > e.clientWidth + 2 && getComputedStyle(e).overflowX !== 'visible') overflowBox.push(label(e) + ' 文字幅' + e.scrollWidth + '>' + e.clientWidth); else { const kids = [...e.querySelectorAll('*')].filter(k => k.getClientRects().length && !/absolute|fixed/.test(getComputedStyle(k).position) && ![...e.querySelectorAll('*')].some(p => p.contains(k) && p !== k && /absolute|fixed/.test(getComputedStyle(p).position))); for (const k of kids) { const kr = k.getBoundingClientRect(); if (kr.width > 2 && (kr.right > r.right + 2 || kr.left < r.left - 2)) { overflowBox.push(label(e) + ' 中身がはみ出し ' + Math.round(kr.right - r.right) + 'px'); break; } } } }
   const broken = [...document.images].filter(im => im.src && vis(im) && im.complete && !im.naturalWidth).map(im => im.src.split('/').slice(-2).join('/'));
-  return { screen: (typeof state !== 'undefined' && state) ? state.screen : '', covered, small, off: [...off, ...offText], tiny, body, safe: safeHit, clip, bar, broken, scrollX: document.documentElement.scrollWidth > VW, dist, bySel, cardMin: cardWs.length ? Math.min(...cardWs) : null };
+  return { screen: (typeof state !== 'undefined' && state) ? state.screen : '', covered, small, off: [...off, ...offText], tiny, body, safe: safeHit, clip, bar, broken, scrollX: document.documentElement.scrollWidth > VW, dist, bySel, wrap, orphan, overflowBox, cardMin: cardWs.length ? Math.min(...cardWs) : null };
 })()`;
 }
 
-export const KEYS = ['covered', 'small', 'tiny', 'body', 'safe', 'off', 'clip', 'bar', 'broken'];
+export const KEYS = ['covered', 'small', 'tiny', 'body', 'safe', 'off', 'clip', 'bar', 'broken', 'wrap', 'orphan', 'overflowBox'];
 export const countsOf = (r) => Object.fromEntries(KEYS.map(k => [k, (r[k] || []).length]));
 
 // 快適さのまとめ：補足の段（note 以下）の字数の割合、表にない大きさ（allowed の ±0.6 に入らず、display 未満の物）の字数

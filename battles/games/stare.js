@@ -118,7 +118,7 @@
     .stare-meter.is-beat { box-shadow: 0 0 10px rgba(227,164,164,.75); }
     .stare-meter .lbl { position: absolute; left: 0; right: 0; bottom: 6px; width: 1em; word-break: break-all; text-align: center; margin: 0 auto; font-size: 14px; font-weight: 900; letter-spacing: 0; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; z-index: 1; line-height: 1.25; }
     .stare-meter .tick { position: absolute; left: -4px; right: -4px; height: 2px; margin-bottom: -1px; background: rgba(244,228,189,.75); z-index: 2; }
-    .stare-meter .tick b { position: absolute; left: calc(100% + 1px); top: -8px; font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 16px; color: var(--dim); }
+    .stare-meter .tick b { position: absolute; left: calc(100% + 1px); top: -8px; font-family: var(--mincho); font-weight: 700; font-size: 15px; line-height: 16px; color: var(--dim); }
     .stare-meter .tick.is-got { background: var(--gold-hi); box-shadow: 0 0 8px var(--gold-hi); } .stare-meter .tick.is-got b { color: var(--gold-hi); }
     .stare-meter .pct { position: absolute; left: 50%; top: -20px; transform: translateX(-50%); font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 16px; color: var(--text); white-space: nowrap; }
     .stare-duel { padding-top: 20px; }
@@ -198,7 +198,7 @@
     .st-svg .str { stroke: var(--gold); stroke-width: 1; fill: none; }
     .st-svg .dish { fill: #3a2208; stroke: var(--gold-hi); stroke-width: 1.2; }
     .st-svg text { font-family: var(--mincho); font-weight: 800; font-size: 15px; text-anchor: middle; }
-    .st-odds small { font-size: 14px; line-height: 1.2; color: var(--dim); white-space: nowrap; }
+    .st-odds small, .st-odds b small { font-size: var(--ty-note, 14px); line-height: 1.2; color: var(--dim); white-space: nowrap; }
     .stare-clue .h { flex-wrap: nowrap; white-space: nowrap; }
     .rb-info .stare-hand-name { white-space: nowrap; }
     .st-svg .is-b text { fill: #ff8f9c; } .st-svg .is-s text { fill: var(--gold-hi); }
@@ -239,8 +239,8 @@
     .st-choice { display: flex; gap: 8px; width: 100%; align-items: stretch; }
     .st-choice .st-go { flex: 1.7 1 0; width: auto; min-height: 0; padding: 6px 10px 7px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
     .st-choice .st-go > span:first-child { font-size: 20px; letter-spacing: .1em; }
-    .st-choice .st-go small { font-size: 14px; line-height: 1.3; color: var(--gold-pale); }
-    .st-choice .st-go small b { font-weight: 800; margin-right: 4px; }
+    .st-choice .st-go small { font-size: var(--ty-note, 14px); line-height: 1.3; color: var(--gold-pale); }
+    .st-choice .st-go small b { font-size: var(--ty-note, 14px); font-weight: 800; margin-right: 4px; }
     .st-choice .st-go small.ok b { color: var(--gold-hi); } .st-choice .st-go small.ng b { color: #ff8f9c; }
     .st-choice .st-stop { flex: 1 1 0; min-width: 0; }
     .st-choice button:disabled { opacity: .55; }
@@ -500,7 +500,7 @@
     const pNow = pBluff(), pMine = Math.round((decide === 'bluff' ? pNow : 1 - pNow) * 100);
     root.querySelector('.st-scale').classList.add('is-wager');
     api.mission('天秤の見込みで、自信を決める');
-    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超え→ぜったい　50%超え→確信', base, stakes: STAKES, into: ctrl });
+    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base, stakes: STAKES, into: ctrl });
     if (!api.alive()) return;
 
     // 本当の手の勝負：読みを預けて卓に戻る。答え合わせは手の決着の後（battles/games/verdict.js）

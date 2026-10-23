@@ -3102,7 +3102,7 @@ body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse
 .preload-count b { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; color: #f3ece0; font-variant-numeric: tabular-nums; margin-right: 2px; }
 .preload-tip-box { border-left: 2px solid #d8b56c; padding: 2px 0 2px 14px; }
 .preload-tip-label { font-size: 14px; letter-spacing: 0.24em; color: #d8b56c; margin-bottom: 4px; }
-.preload-tip { font-size: clamp(13px, 1.5vw, 15px); line-height: 1.75; color: #f3ece0; min-height: 3.5em; transition: opacity 0.3s ease; }
+.preload-tip { font-size: clamp(14px, 1.5vw, 15px); line-height: 1.75; color: #f3ece0; min-height: 3.5em; transition: opacity 0.3s ease; }
 .preload-tip.is-swapping { opacity: 0; }
 /* 縦持ち：ミミを上に、文字は下にまとめる */
 @media (max-aspect-ratio: 1/1) {
@@ -17673,13 +17673,14 @@ body.is-tease-hot   .battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle { opaci
    --game-scale で割り戻して大きくする（PC の 1280×800 では左の値そのまま）。
    ========================================================================= */
 .story-overlay {
-  --st-text: max(28px, calc(16.5px / var(--game-scale, 1)));
-  --st-name: max(21px, calc(13px / var(--game-scale, 1)));
+  /* 2026-10-21 文字の段（typography.md 0-2）：台詞18・名前16・番号14・区切り15・操作16（画面上） */
+  --st-text: max(28px, calc(18px / var(--game-scale, 1)));
+  --st-name: max(21px, calc(16px / var(--game-scale, 1)));
   --st-mono: max(30px, calc(17px / var(--game-scale, 1)));
-  --st-no: max(20px, calc(12.5px / var(--game-scale, 1)));
+  --st-no: max(20px, calc(14px / var(--game-scale, 1)));
   --st-title: max(52px, calc(26px / var(--game-scale, 1)));
-  --st-ln: max(22px, calc(13.5px / var(--game-scale, 1)));
-  --st-ui: max(15px, calc(12.5px / var(--game-scale, 1)));
+  --st-ln: max(22px, calc(15px / var(--game-scale, 1)));
+  --st-ui: max(15px, calc(16px / var(--game-scale, 1)));
   --st-tap: max(46px, calc(42px / var(--game-scale, 1)));
   --st-pad: 72px;
   --st-gold: #d8b56c;
@@ -17926,12 +17927,13 @@ body:has(.story-overlay) #fullscreen-btn-group { display: none !important; }
    --game-scale で割り戻す。図（札・チップ）はスマホで少しだけ大きくする（--mk-g）。
    ===================================================================== */
 .mk-layer {
-  --mk-cap: max(14px, calc(12px / var(--game-scale, 1)));
-  --mk-sub: max(16px, calc(13px / var(--game-scale, 1)));
-  --mk-body: max(20px, calc(14px / var(--game-scale, 1)));
-  --mk-main: max(24px, calc(16px / var(--game-scale, 1)));
-  --mk-head: max(30px, calc(20px / var(--game-scale, 1)));
-  --mk-num: max(32px, calc(18px / var(--game-scale, 1)));
+  /* 2026-10-21 文字の段（typography.md 0-2）：画面上で 補足14・見出し16・本文17・主19・題22・数字26 を下回らない */
+  --mk-cap: max(15px, calc(14px / var(--game-scale, 1)));
+  --mk-sub: max(18px, calc(16px / var(--game-scale, 1)));
+  --mk-body: max(20px, calc(17px / var(--game-scale, 1)));
+  --mk-main: max(24px, calc(19px / var(--game-scale, 1)));
+  --mk-head: max(30px, calc(22px / var(--game-scale, 1)));
+  --mk-num: max(32px, calc(26px / var(--game-scale, 1)));
   --mk-tap: max(48px, calc(44px / var(--game-scale, 1)));
   --mk-g: max(1, calc(.64 / var(--game-scale, 1)));
   --mk-w: max(780px, min(1180px, calc(580px / var(--game-scale, 1))));
@@ -20244,3 +20246,20 @@ html.is-compact .battle-screen.v2.t8 > .v2-band { top: 352px !important; height:
 /* リコ先輩の部屋：選択肢は中身（名前・説明・賞金）の高さまで伸ばす。入りきらなければ窓の中で流す */
 .rico-mode-modal .rico-mode-opt { flex-shrink: 0; height: auto; }
 .rico-mode-modal { overflow-y: auto; }
+/* 2026-10-21 タイトル（スマホ横）：ボタンの文字を19pxに上げたら「続きから」が折れた。
+   ボタンの中を2段（上＝名前、下＝何戦目）にし、どちらも折り返さない。欄は画面で 230px 幅に */
+html.is-compact .title-screen.t3 .t3-menu { width: calc(230px / var(--game-scale, 1)); }
+html.is-compact .title-screen.t3 .t3-btn { flex-direction: column; justify-content: center; align-items: flex-start; gap: calc(2px / var(--game-scale, 1));
+  height: auto; min-height: calc(48px / var(--game-scale, 1)); padding: calc(5px / var(--game-scale, 1)) calc(14px / var(--game-scale, 1)); }
+html.is-compact .title-screen.t3 .t3-btn.is-primary { min-height: calc(56px / var(--game-scale, 1)); height: auto; }
+html.is-compact .title-screen.t3 .t3-btn b, html.is-compact .title-screen.t3 .t3-btn small { white-space: nowrap; line-height: 1.2; }
+html.is-compact .title-screen.t3 .t3-btn b { letter-spacing: .1em; }
+
+/* ===== 2026-10-21 折れ・1字残り・はみ出しの直し（qa/lib/stdcheck.mjs の wrap / orphan / overflowBox で見つけた所）===== */
+/* 全体に word-break: auto-phrase / text-wrap: pretty を掛けると、卓の描き直しのたびに重い計算が走り、通しの検査で進行が止まった（2026-10-23）。全体には掛けない */
+/* 結果（スマホ）：「ロビーへ」がボタンからはみ出していた。字間を詰めて1行に */
+html.is-compact .result-screen .result-sub-buttons .btn, html.is-compact .result-screen .result-main-btn { letter-spacing: .04em; white-space: nowrap; padding: 0 8px; }
+
+html.is-compact .result-screen .result-sub-buttons .btn { letter-spacing: 0 !important; white-space: nowrap !important; padding: 0 6px !important; font-size: var(--fx-body) !important; }
+.pv2 .pv2-outfit b { font-size: 15px; }
+html.is-compact .result-screen .result-sub-buttons .btn { font-size: calc(16px / var(--game-scale, 1)) !important; padding: 0 4px !important; }

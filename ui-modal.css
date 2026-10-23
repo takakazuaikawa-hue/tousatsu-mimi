@@ -652,3 +652,23 @@ html.is-compact .minipoker-modal .mp-double-pitch b { font-size: var(--ty-head);
 .minipoker-modal :is(.mp-handname, .mp-mission-reward, .mp-pt-lucky) { font-size: var(--ty-head); }
 .minipoker-modal .mp-btn { font-size: var(--ty-btn2); }
 .minipoker-modal .mp-double-pitch b { font-size: var(--ty-head); }
+
+/* ===== 2026-10-21 折れの直し（設定・役の一覧・ミニポーカー）===== */
+/* 設定：項目の名前とボタンの名前は折らない。ダウンロードの状態は名前の下の行に */
+.settings-modal .settings-modal-label, .settings-modal-links .btn { white-space: nowrap; }
+.settings-modal-links .pack-row-state { display: block; margin: 0; }
+.settings-modal-links .btn[data-pack-row] { flex-direction: column; align-items: flex-start; white-space: nowrap; }
+/* 役の一覧：役の名前は1行（字間を詰める） */
+.hand-guide-panel .rp-ladder-name { white-space: nowrap; letter-spacing: 0; }
+/* ミニポーカーの配当表：役の名前は1行 */
+.minipoker-modal .mp-pt-name { white-space: nowrap; }
+
+/* 2026-10-21 わずかに縮む所の補足は15px（画面で14px以上）。設定の「ひらく」は欄を広げて長い名前を1行に */
+.minipoker-modal :is(.mp-pt-payout, .mp-pt-mult, .mp-pt-name, .mp-stat, .mp-header span) { font-size: 15px; }
+.settings-modal-toggle .stm-status { font-size: 15px; }
+html:not(.is-compact) .settings-modal-groups { grid-template-columns: 1.3fr .95fr 1.35fr; }
+/* 図鑑・用語集：文字を大きくした分、札の高さは中身に合わせる（下が切れていた） */
+.collection-modal .coll-stage-card, .collection-modal .coll-stage, .glossary-modal .gl-entry { height: auto; max-height: none; }
+.glossary-modal .gl-body { -webkit-line-clamp: unset; max-height: none; overflow: visible; display: block; }
+html.is-compact .minipoker-modal td:is(.mp-pt-payout, .mp-pt-mult, .mp-pt-name), .minipoker-modal .mp-card-corner { font-size: 15px; }
+@media (orientation: landscape) { html.is-compact .settings-modal-groups { grid-template-columns: 1.55fr 1fr 1.05fr; } }

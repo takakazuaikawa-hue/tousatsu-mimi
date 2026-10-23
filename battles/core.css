@@ -287,8 +287,9 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
   box-shadow: 0 3px 8px rgba(0,0,0,.45); position: relative; user-select: none; border: 2px solid transparent;
   transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease, border-color .18s ease;
 }
-.mb-host .card b { font-family: var(--disp); font-size: calc(var(--w) * .46); font-weight: 400; }
-.mb-host .card i { font-style: normal; font-size: calc(var(--w) * .36); }
+/* 札の数字は本文の大きさ（16px）を、マークは補足（14px）を下回らない（typography.md 0-2：札は数字が本文以上） */
+.mb-host .card b { font-family: var(--disp); font-size: max(16px, calc(var(--w) * .5)); font-weight: 400; }
+.mb-host .card i { font-style: normal; font-size: max(14px, calc(var(--w) * .4)); line-height: 1; }
 .mb-host .card.red { color: var(--card-red); }
 .mb-host .card.back { background: repeating-linear-gradient(45deg, #7d1022 0 6px, #5a0b19 6px 12px); border-color: var(--gold); }
 .mb-host .card.back b,
@@ -370,8 +371,8 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
 /* 当たり／外れのコイン：チップの下の縁に重ねる黒檀の小札（当たり＝金、外れ＝赤） */
 .mb-host .mb-wager.has-stakes .mb-wager-chips { padding-bottom: 12px; }
 .mb-host .mb-wchip-st { position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); display: flex; gap: 6px; padding: 1px 6px; white-space: nowrap; font-style: normal; font-family: var(--mincho); font-weight: 800; font-size: 14px; line-height: 1.35; background: #130406; border: 1px solid var(--line); border-radius: 2px; }
-.mb-host .mb-wchip-st .w { font-style: normal; color: var(--gold-hi); }
-.mb-host .mb-wchip-st .l { font-style: normal; color: #ff8f9c; }
+.mb-host .mb-wchip-st .w { font-style: normal; font-size: var(--ty-note, 14px); color: var(--gold-hi); }
+.mb-host .mb-wchip-st .l { font-style: normal; font-size: var(--ty-note, 14px); color: #ff8f9c; }
 .mb-host .mb-result { position: absolute; inset: 0; z-index: 15; display: grid; place-items: center; background: rgba(8,2,4,.78); animation: mb-fadeIn .25s; }
 @keyframes mb-fadeIn { from { opacity: 0; } }
 /* 結果の札：小窓の型（金茶の 2px の枠＋二重線＋四隅の金飾り 28px） */

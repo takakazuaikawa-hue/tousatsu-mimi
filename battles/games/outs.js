@@ -35,7 +35,7 @@ MB.register({
     api.css('outs', `
       .outs-deck { display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 4px; max-width: 760px; margin: 0 auto; width: 100%; }
       .outs-deck .card { --w: 100%; width: 100%; height: auto; aspect-ratio: 5 / 7; border-radius: 4px; }
-      .outs-deck .card b { font-size: clamp(11px, 2.4vw, 20px); } .outs-deck .card i { font-size: clamp(9px, 1.9vw, 15px); }
+      .outs-deck .card b { font-size: clamp(14px, 2.4vw, 20px); } .outs-deck .card i { font-size: clamp(14px, 1.9vw, 15px); }
       .outs-deck .card.known { opacity: .2; cursor: default; }
       .outs-deck .card.found { background: linear-gradient(180deg, #fff7d6, #f5d77a); border-color: #b8860b; transform: translateY(-3px); box-shadow: 0 0 12px rgba(245,215,122,.8); }
       .outs-deck .card.shown { border-color: var(--gold-hi); border-style: dashed; }

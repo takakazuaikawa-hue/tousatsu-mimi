@@ -3,6 +3,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, sleep } from './lib/session.mjs';
+import { stdCheck } from './lib/stdcheck.mjs';
+const STD = stdCheck({ minText: 14, bodyMin: 16 });
 const GAMES = [
   ['detective', 'polka', 'psych'], ['stare', 'polka', 'psych'], ['doubt', 'polka', 'psych'], ['gacha', 'polka', 'psych'], ['objection', 'velvet', 'psych'],
   ['handbuild', 'polka', 'logic'], ['highlow', 'polka', 'logic'], ['danger', 'selina', 'logic'], ['sniper', 'selina', 'logic'], ['outs', 'grano', 'logic'], ['suspects', 'velvet', 'logic'],
@@ -74,7 +76,7 @@ async function runGame(gameId, opp, group, first) {
       }
       gone = 0; wasIn = true;
       // QA_MEASURE=1：遊びの部品ごとの高さと、舞台からのはみ出しを記録する（収まりの調べ用）
-      if (process.env.QA_MEASURE) { const m = await page.eval(`(() => { const r = document.querySelector('.read-battle-host .mb-game-root'); if (!r) return '{}'; const sc = document.querySelector('.read-battle-host .mb-scroll'); const o = { scroll: sc ? [sc.scrollHeight, sc.clientHeight] : null }; [...r.children].forEach(c => { const b = c.getBoundingClientRect(); o[(c.id || c.className || c.tagName).toString().slice(0, 24)] = [Math.round(b.top), Math.round(b.height)]; }); return JSON.stringify(o); })()`); rec.push({ n: 'measure', text: m }); }
+      if (process.env.QA_MEASURE) { const m = await page.eval(`(() => { const r = document.querySelector('.read-battle-host .mb-game-root'); if (!r) return '{}'; const sc = document.querySelector('.read-battle-host .mb-scroll'); const o = { scroll: sc ? [sc.scrollHeight, sc.clientHeight] : null }; [...r.children].forEach(c => { const b = c.getBoundingClientRect(); o[(c.id || c.className || c.tagName).toString().slice(0, 24)] = [Math.round(b.top), Math.round(b.height)]; }); return JSON.stringify(o); })()`); rec.push({ n: 'measure', text: m }); try { const c = await page.eval(STD); const bad = { tiny: c.tiny, wrap: c.wrap, orphan: c.orphan, overflowBox: c.overflowBox, off: c.off }; if (Object.values(bad).some(a => a && a.length)) rec.push({ n: 'std', text: JSON.stringify(bad) }); } catch (e) {} }
       if (!s.layer && (gameId === 'objection' || gameId === 'outs')) {
         const st = (globalThis.__st = globalThis.__st || { a: 0, ph: 0, tapped: 0 });
         let c = null;

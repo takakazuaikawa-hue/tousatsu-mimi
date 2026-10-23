@@ -71,8 +71,8 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clue
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .row > * { order: 1; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .row ~ .row > .card:first-child { margin-left: 10px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .card { --w: 30px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .card b { font-size: 14px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .card i { font-size: 14px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .card b { font-size: 17px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) .card i { font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .row > .formula { order: 2; flex: 0 0 100%; text-align: left; font-size: 14px; line-height: 1.25; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-dt-clues) > .row:has(.flip) > .formula { order: 1; flex: 0 0 auto; margin-left: 10px; white-space: nowrap; }
 /* 決めるボタン：札の右（出ていない間は場所を取らない） */
@@ -111,8 +111,8 @@ html.is-compact #stage > .read-battle-host.mb-host .dt-clue.key, html.is-compact
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) { gap: 4px; padding: 4px 0; box-sizing: border-box; height: var(--rb-h, 390px); }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .steps { gap: 4px; flex-wrap: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .card { --w: 28px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .card b { font-size: 14px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .card i { font-size: 14px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .card b { font-size: 17px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) .card i { font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-sit { gap: 2px 12px; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-tag { font-size: 14px; margin-right: 2px; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-hand { font-size: 14px; margin-left: 4px; }
@@ -504,8 +504,8 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-dec
 /* 52枚の一覧：高さ46px・幅は入るだけ（約34〜36px）。札の数字とマークは画面上 15px / 11.5px */
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck { grid-area: deck; max-width: none; gap: 3px 2px; grid-auto-rows: 46px; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card { aspect-ratio: auto; height: 46px; border-radius: 3px; flex-shrink: 0; }
-html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card b { font-size: 15px; }
-html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card i { font-size: 14px; }
+html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card b { font-size: 17px; }
+html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card i { font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card.found { transform: none; }
 /* 探し終えた後：左に手札と当たり札、右に値段くらべ */
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) { grid-template-columns: minmax(0, 9fr) minmax(0, 11fr); grid-template-areas: none; grid-template-rows: auto auto auto auto auto; }
@@ -517,8 +517,8 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-met
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .outs-deck { grid-area: 4 / 1 / 5 / 2; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed { gap: 4px; justify-content: flex-start; align-content: flex-start; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card.found, html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card.shown { width: 36px; flex: 0 0 36px; cursor: default; }
-html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card b { font-size: 15px; }
-html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card i { font-size: 14px; }
+html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card b { font-size: 17px; }
+html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card i { font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-meter { grid-area: 2 / 2 / 5 / 3; max-width: none; margin: 0; gap: 6px; align-content: start; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-meter .prompt { font-size: 14px; line-height: 1.3; text-align: left; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-bar { margin-top: 18px; height: 28px; }
@@ -547,8 +547,8 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tile
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .row { gap: 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .row > span:not(.formula):empty { width: 6px !important; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .card { --w: 30px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .card b { font-size: 14px; }
-html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .card i { font-size: 14px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .card b { font-size: 17px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .card i { font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .formula { font-size: 14px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .prompt { font-size: 14px; line-height: 1.25; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .actions { gap: 8px; }
@@ -570,9 +570,9 @@ html.is-compact #stage > .read-battle-host.mb-host .sp-val { font-size: 17px; }
 /* ----- suspects ここまで ----- */
 
 /* スマホ版の基準（2026-10-18）：12px 未満が残っていた所（遊びごとの JS の中の CSS・札の大きさに比例するマーク）を 12px に */
-html.is-compact #stage > .read-battle-host.mb-host .card i { font-size: max(12px, calc(var(--w, 34px) * .36)); }
-html.is-compact #stage > .read-battle-host.mb-host .card b { font-size: max(12.5px, calc(var(--w, 34px) * .46)); }
-html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card b { font-size: 14px; }
+html.is-compact #stage > .read-battle-host.mb-host .card i { font-size: max(14px, calc(var(--w, 34px) * .36)); }
+html.is-compact #stage > .read-battle-host.mb-host .card b { font-size: max(14px, calc(var(--w, 34px) * .46)); }
+html.is-compact #stage > .read-battle-host.mb-host .outs-deck .card b { font-size: 17px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:is(:has(> .outs-deck), :has(> .outs-meter)) > .row .card b { font-size: 14px !important; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card b { font-size: 17px; }
 html.is-compact #stage > .read-battle-host.mb-host .outs-deck:not(.is-collapsed) { width: calc(100% - 12px); }
@@ -597,7 +597,7 @@ html.is-compact #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card
 html.is-compact #stage > .read-battle-host.mb-host :is(.ob-evtext, .formula, .prompt) { font-size: 14px; line-height: 1.35; }
 html.is-compact #stage > .read-battle-host.mb-host :is(.sn-wrap small, [class^="sn-"] small, .hl-wrap small) { font-size: 14px; }
 html.is-compact #stage > .read-battle-host.mb-host .sn-xlab { font-size: 14px; }
-html.is-compact #stage > .read-battle-host.mb-host small { font-size: max(12px, .8em); }
+html.is-compact #stage > .read-battle-host.mb-host small { font-size: max(14px, .8em); }
 html.is-compact #stage > .read-battle-host.mb-host .mb-game-root .formula { font-size: 14px !important; line-height: 1.35; }
 
 /* ===== 最小のスマホ（幅720px未満・667x375）：左の列を細くして、遊びの横幅を取り戻す ===== */
@@ -735,7 +735,7 @@ html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wager { display
 html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wager-q { grid-area: q; font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wager-note { grid-area: note; font-size: 14px; }
 html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wager-chips { grid-area: chips; gap: 44px; flex-wrap: nowrap; padding-bottom: 10px; }
-html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wchip { width: 56px; height: 56px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wchip { width: 66px; height: 66px; }
 html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wchip span { font-size: 14px; line-height: 1.1; white-space: nowrap; }
 html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wchip b { font-size: 18px; }
 html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-act .actions { display: flex; gap: 8px; width: 100%; }
@@ -789,3 +789,32 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-rules-btn { font-size: va
 html.is-compact #stage > .read-battle-host.mb-host .mb-entrust-pick { font-size: var(--ty-body); }
 html.is-compact #stage > .read-battle-host.mb-host .mb-entrust-pick b { font-size: var(--ty-num); }
 html.is-compact #stage > .read-battle-host.mb-host .mb-entrust-coin { font-size: var(--ty-head); }
+
+/* ===== 2026-10-21 左の列（スマホ）：台詞とリコ先輩の一言を、列の幅いっぱいで読ませる =====
+   顔の絵（右上 64x80）の横に台詞を入れていたので1行6字ほどで折れていた。名前の欄を顔の高さまで取り、台詞はその下に列の幅いっぱい。
+   リコ先輩は、小さな絵と名前を1段目、一言を2段目に（絵の横に一言を入れない） */
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row > div:not(.mb-coach):not(.mb-betchip) { padding-right: 0; min-height: 0; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-opp-name { min-height: 84px; padding-right: 76px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-speech { display: block; margin-top: 0; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach { display: grid; grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto auto; gap: 2px 8px; padding: 6px 8px; min-height: 0; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-pop { position: static; grid-row: 1; grid-column: 1; width: 40px; height: 44px; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach > div { display: contents; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-name { grid-row: 1; grid-column: 2; align-self: end; }
+html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-line { grid-row: 2; grid-column: 1 / -1; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .stare-banner { font-size: 19px; }
+
+/* 2026-10-21 少し縮めて描く所（0.93〜0.98倍）の補足は15px（画面で14px以上） */
+html.is-compact #stage > .read-battle-host.mb-host :is(.dg-fig, .sn-xlab, .doubt-last, .hl-me small, .mb-wchip span) { font-size: 15px; }
+/* ガチャの機械（スマホは 0.36 倍に縮める）：カプセルの「？」と「UP!」は画面で16px以上 */
+html.is-compact #stage > .read-battle-host.mb-host .gc-mach .gc-in .q { font-size: calc(16px / .36); }
+html.is-compact #stage > .read-battle-host.mb-host .gc-mach .gc-up { font-size: calc(17px / .36); }
+@media (max-width: 719px) {
+  html.is-compact #stage > .read-battle-host.mb-host .gc-mach .gc-in .q { font-size: calc(16px / .26); }
+  html.is-compact #stage > .read-battle-host.mb-host .gc-mach .gc-up { font-size: calc(17px / .26); }
+}
+/* 2026-10-21 札の数字は本文以上：読み合いの中の札は数字18・マーク15（縮んだ枠の中でも14を下回らない） */
+html.is-compact #stage > .read-battle-host.mb-host .card:not(.back) b { font-size: max(18px, calc(var(--w) * .55)); }
+html.is-compact #stage > .read-battle-host.mb-host .card:not(.back) i { font-size: max(15px, calc(var(--w) * .42)); }
+html.is-compact #stage > .read-battle-host.mb-host .reel-wrap .card b { font-size: calc(17px / .74); }
+html.is-compact #stage > .read-battle-host.mb-host .reel-wrap .card i { font-size: calc(15px / .74); }
+html.is-compact #stage > .read-battle-host.mb-host :is(.st-choice .st-go small b, .hl-me small, .hl-hand-name, .gc-rates b) { font-size: 15px; }
