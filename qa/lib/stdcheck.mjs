@@ -11,7 +11,7 @@
 //   broken   壊れた画像
 export const BODY_SEL = [
   '.opponent-speech', '.rico-bubble', '.v2-com-text', '.status-note', '.rb-quote', '.rb-rico-line', '.hr-line', '.result-next-goal',
-  '.psych-question', '.psych-situation', '.psych-speech', '.mb-speech', '.mb-coach-line', '.ob-evtext',
+  '.psych-question', '.psych-situation', '.psych-speech', '.mb-speech', '.mb-coach-line', '.oj-say p', '.oj-ev p', '.oj-found p',
   '.dialogue-text', '.ep-text', '.story-text', '.modal-desc', '.shop-desc', '.item-desc', '.profile-desc', '.glossary-desc',
   '.mp-msg', '.as-sub', '.as-say', '.settings-desc', '.tut-text', '.hint-text',
 ].join(',');

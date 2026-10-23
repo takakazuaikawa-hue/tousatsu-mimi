@@ -576,7 +576,6 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
 .mb-host .gc-right:has(.gc-voices > :not(.gc-empty)) .gc-odds > .gc-ceil { display: none; }
 .mb-host .gc-right .gc-voices { gap: 4px; }
 .mb-host .outs-meter .formula { line-height: 1.3; font-size: 14px; }
-.mb-host .mb-game-root:has(.ob-court) { gap: 6px; }
 .mb-host .mb-game-root .outs-deck { max-width: 700px; } /* 当たり札を探す一覧：札を少し小さくして、1画面に収める */
 
 /* ===== 心理・論理の舞台の背景（2026-10-16） =====

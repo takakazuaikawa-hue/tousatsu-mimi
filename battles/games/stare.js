@@ -197,11 +197,11 @@
     .st-svg .pan { transition: transform .7s cubic-bezier(.3,1.4,.5,1); }
     .st-svg .str { stroke: var(--gold); stroke-width: 1; fill: none; }
     .st-svg .dish { fill: #3a2208; stroke: var(--gold-hi); stroke-width: 1.2; }
-    .st-svg text { font-family: var(--mincho); font-weight: 800; font-size: 15px; text-anchor: middle; }
+    .st-scalebox { position: relative; min-width: 0; padding-bottom: calc(var(--ty-note, 14px) * 1.3); }
+    .st-pan { position: absolute; bottom: 0; white-space: nowrap; font-family: var(--mincho); font-weight: 800; font-size: var(--ty-note, 14px); line-height: 1.3; } .st-pan.is-b { left: 0; color: #ff8f9c; } .st-pan.is-s { right: 0; color: var(--gold-hi); }
     .st-odds small, .st-odds b small { font-size: var(--ty-note, 14px); line-height: 1.2; color: var(--dim); white-space: nowrap; }
     .stare-clue .h { flex-wrap: nowrap; white-space: nowrap; }
     .rb-info .stare-hand-name { white-space: nowrap; }
-    .st-svg .is-b text { fill: #ff8f9c; } .st-svg .is-s text { fill: var(--gold-hi); }
     .st-svg rect.rec { fill: #b0202f; stroke: #ffb3bc; stroke-width: .6; }
     .st-svg .is-s rect.rec { fill: var(--gold); }
     .st-svg rect.clue { fill: #f4e4bd; stroke: #6b4306; stroke-width: .6; }
@@ -324,7 +324,7 @@
     const scaleSVG = () => `<svg class="st-svg" viewBox="34 0 192 78" aria-hidden="true">
         <path class="post" d="M130 20 V68 M114 74 H146 L139 68 H121 Z"/>
         <g class="beam" id="mb-st-beam"><rect x="58" y="17" width="144" height="5" rx="1"/><circle cx="130" cy="19.5" r="5"/></g>
-        ${['b', 's'].map(k => `<g class="pan is-${k}" id="mb-st-pan-${k}"><path class="str" d="M0 0 L-24 18 M0 0 L24 18"/><g class="wts" id="mb-st-w-${k}"></g><path class="dish" d="M-28 18 H28 Q21 27 0 27 Q-21 27 -28 18 Z"/><text x="0" y="42">${k === 'b' ? 'ブラフ' : '本物'}</text></g>`).join('')}
+        ${['b', 's'].map(k => `<g class="pan is-${k}" id="mb-st-pan-${k}"><path class="str" d="M0 0 L-24 18 M0 0 L24 18"/><g class="wts" id="mb-st-w-${k}"></g><path class="dish" d="M-28 18 H28 Q21 27 0 27 Q-21 27 -28 18 Z"/></g>`).join('')}
       </svg>`;
     const weights = [{ side: W0 >= 0 ? 'b' : 's', w: Math.abs(W0), rec: true }];
     const pBluff = () => { let o = prior / (1 - prior); clues.slice(0, stage).forEach(c => { o *= c.lean === 'bluff' ? c.acc / (1 - c.acc) : (1 - c.acc) / c.acc; }); return o / (1 + o); };
@@ -366,7 +366,7 @@
           <div class="stare-grp st-sit-row">${board.map(c => api.cardHTML(c, 'small' + (!T && c.s === X ? ' hot' : ''))).join('')}<i class="st-sit-sep"></i>${mine.map(c => api.cardHTML(c, 'small')).join('')}</div>
           <span class="stare-grp" id="mb-stare-her" hidden></span><span id="mb-stare-her-name" hidden></span>
         </div>
-        <div class="st-scale"><div class="st-scale-top">${scaleSVG()}<div class="st-odds" id="mb-stare-odds"></div></div>
+        <div class="st-scale"><div class="st-scale-top"><div class="st-scalebox">${scaleSVG()}<span class="st-pan is-b">ブラフ</span><span class="st-pan is-s">本物</span></div><div class="st-odds" id="mb-stare-odds"></div></div>
           <div class="st-record" aria-label="${jp}が大きく賭けた20回のうち、ブラフは${nB}回"><span class="st-rec-h">大きな賭け20回</span><span class="st-rec-dots">${record.map(b => `<i class="${b ? 'b' : 's'}"></i>`).join('')}</span><span class="st-rec-sum"><b class="b">ブラフ${nB}</b></span></div>
         </div>
         <div class="stare-clues" id="mb-stare-clues">${clues.map((c, i) => `

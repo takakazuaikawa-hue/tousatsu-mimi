@@ -81,7 +81,7 @@ async function runGame(gameId, opp, group, first) {
         const st = (globalThis.__st = globalThis.__st || { a: 0, ph: 0, tapped: 0 });
         let c = null;
         if (gameId === 'objection') {
-          const says = s.cands.filter(x => /ob-say/.test(x.cls)), evs = s.cands.filter(x => /ob-ev/.test(x.cls)), ob = s.cands.find(x => /OBJECTION/.test(x.t));
+          const says = s.cands.filter(x => /o[bj]-say/.test(x.cls)), evs = s.cands.filter(x => /o[bj]-ev/.test(x.cls)), ob = s.cands.find(x => /OBJECTION/.test(x.t));
           if (says.length) {
             if (st.ph === 0) { c = says[Math.floor(st.a / 3) % says.length]; st.ph = 1; }
             else if (st.ph === 1) { c = evs[st.a % evs.length]; st.ph = 2; }

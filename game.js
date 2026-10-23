@@ -14579,6 +14579,7 @@ function startHand() {
     state.scriptedTurnRiver = null;
   }
   state.community = [];
+  state.handActs = []; // この手の相手の動き（読み合いの「卓の記録」に使う）
   state.equityHistory = []; // ハンド毎にリセット
   state.psychResolved = false;
   state.logicResolvedStreet = false;
@@ -14888,6 +14889,8 @@ function opponentTurn() {
     opponentTurnDecide();
   }, delay);
 }
+// この手の相手の動きを通りごとに覚える：{ ph: 通り, t: check|call|bet|raise|allin, a: 額, p: 賭ける前のポット }
+function noteOppAct(t, a, p) { (state.handActs = state.handActs || []).push({ ph: state.handPhase, t, a, p }); }
 function opponentTurnDecide() {
   // 画面遷移後のゾンビ実行ガード
   if (state.screen !== 'battle' || state.handPhase === 'idle' || state.handPhase === 'showdown') return;
@@ -14983,6 +14986,7 @@ function opponentTurnDecide() {
     state.pot += pay; pushPotChips(pay);
     state.opponentSpeech = opponentSpeech(action);
     log('actions', { actor: 'opponent', type: pay > 0 ? 'call' : 'check', amount: pay });
+    noteOppAct(pay > 0 ? 'call' : 'check', pay, state.pot - pay);
     // 今ストリートで相手がチェックした事実を記録（次のレイズで check-raise 検出に使う）
     if (pay === 0) state.opponentCheckedThisStreet = true;
     mpSfx(pay > 0 ? 'call' : 'check');
@@ -15020,6 +15024,7 @@ function opponentTurnDecide() {
       state.pot += pay; pushPotChips(pay);
       state.opponentSpeech = opponentSpeech({ type: 'check_call', intent: 'reluctant_call' });
       log('actions', { actor: 'opponent', type: 'call_fallback', amount: pay });
+      noteOppAct('call', pay, state.pot - pay);
       mpSfx('call');
       voiceBark('opp', 'call');
       render();
@@ -15037,6 +15042,7 @@ function opponentTurnDecide() {
   state.checkRaiseDetected = !!state.opponentCheckedThisStreet;
   state.opponentSpeech = opponentSpeech(action);
   log('bets', { actor: 'opponent', type: 'bet', size: action.size, amount, intent: action.intent });
+  noteOppAct(state.opponentChips === 0 ? 'allin' : need > 0 ? 'raise' : 'bet', amount, state.pot - amount);
   log('reactions', { intent: action.intent, speech: state.opponentSpeech });
   mpSfx(action.size === 'allin' ? 'battle-allin' : 'battle-bet');
   voiceBark('opp', (amount > 0 && (action.size === 'allin' || state.opponentChips === 0)) ? 'allin' : need > 0 ? 'raise' : 'bet');
@@ -15435,7 +15441,7 @@ function startReadBattle(group) {
 // ===== 本当の手の読み合い（2026-10-21）=====
 // 読み合いの中では読みを預けるだけ。答え合わせは手の決着の後（continueAfterHand の頭で showReadVerdict）。
 // 本当の手で遊べる種類だけ table を渡す。渡さない種類は今までどおり架空の場面で、その場で答え合わせ
-const REAL_READ_GAMES = new Set(['stare']);
+const REAL_READ_GAMES = new Set(['stare', 'objection']);
 const RB_SUIT = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
 const rbCard = (c) => ({ r: c.rank, s: RB_SUIT[c.suit] || 's' });
 function readBattleTable(gameId) {
@@ -15446,6 +15452,7 @@ function readBattleTable(gameId) {
     board: state.community.map(rbCard), mine: state.playerHand.map(rbCard), her: state.opponentHand.map(rbCard),
     pot: state.pot || 0, toCall: Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0)), phase: state.handPhase,
     record: save.readRecord[state.opponentImgKey] || null,
+    acts: (state.handActs || []).filter(a => a.ph !== 'preflop').map(a => ({ ...a })),
   };
 }
 // 読みを預かって卓に戻す
