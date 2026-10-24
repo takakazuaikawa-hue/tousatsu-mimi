@@ -10,7 +10,7 @@ const GAMES = [
   ['handbuild', 'polka', 'logic'], ['highlow', 'polka', 'logic'], ['danger', 'selina', 'logic'], ['sniper', 'selina', 'logic'], ['outs', 'grano', 'logic'], ['suspects', 'velvet', 'logic'],
 ];
 const only = process.argv.slice(2);
-const OUT = path.resolve('qa/out/readaudit');
+const OUT = path.resolve('qa/out/readaudit' + (process.env.QA_SIZE ? '-' + process.env.QA_SIZE : ''));
 const PRI = /卓にもどる|卓へ|読み合いへ|次へ|つぎへ|はじめ|スタート|決定|確定|答え|めくる|開く|読みに賭ける|賭ける|OK/;
 const AVOID = /スキップ|ルール|とじる|閉じる|やめる|戻る/;
 
@@ -48,7 +48,7 @@ function pick(cands, clicked, sig) {
 function bump(clicked, c) { const k = c.t + '|' + c.cls + '|' + Math.round(c.y / 20); clicked[k] = (clicked[k] || 0) + 1; }
 async function runGame(gameId, opp, group, first) {
   const dir = path.join(OUT, gameId); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
-  const session = await openSession({ width: +(process.env.QA_SIZE || '844x390').split('x')[0], height: +(process.env.QA_SIZE || '844x390').split('x')[1], speed: 1, save: { clearedStages: ['rico_tutorial', 'polka', 'selina', 'grano'], introPlayed: true, houseRulesSeen: true, coins: 500, ...(first ? {} : { readIntroSeen: true }) } });
+  const session = await openSession({ width: +(process.env.QA_SIZE || '844x390').split('x')[0], height: +(process.env.QA_SIZE || '844x390').split('x')[1], speed: 1, seed: +(process.env.QA_SEED || 12345), save: { clearedStages: ['rico_tutorial', 'polka', 'selina', 'grano'], introPlayed: true, houseRulesSeen: true, coins: 500, ...(first ? {} : { readIntroSeen: true }) } });
   const { page } = session;
   const rec = [];
   try {
@@ -76,7 +76,7 @@ async function runGame(gameId, opp, group, first) {
       }
       gone = 0; wasIn = true;
       // QA_MEASURE=1：遊びの部品ごとの高さと、舞台からのはみ出しを記録する（収まりの調べ用）
-      if (process.env.QA_MEASURE) { const m = await page.eval(`(() => { const r = document.querySelector('.read-battle-host .mb-game-root'); if (!r) return '{}'; const sc = document.querySelector('.read-battle-host .mb-scroll'); const o = { scroll: sc ? [sc.scrollHeight, sc.clientHeight] : null }; [...r.children].forEach(c => { const b = c.getBoundingClientRect(); o[(c.id || c.className || c.tagName).toString().slice(0, 24)] = [Math.round(b.top), Math.round(b.height)]; }); return JSON.stringify(o); })()`); rec.push({ n: 'measure', text: m }); try { const c = await page.eval(STD); const bad = { tiny: c.tiny, wrap: c.wrap, orphan: c.orphan, overflowBox: c.overflowBox, off: c.off }; if (Object.values(bad).some(a => a && a.length)) rec.push({ n: 'std', text: JSON.stringify(bad) }); } catch (e) {} }
+      if (process.env.QA_MEASURE) { const m = await page.eval(`(() => { const r = document.querySelector('.read-battle-host .mb-game-root'); if (!r) return '{}'; const sc = document.querySelector('.read-battle-host .mb-scroll'); const o = { scroll: sc ? [sc.scrollHeight, sc.clientHeight] : null }; [...r.children].forEach(c => { const b = c.getBoundingClientRect(); o[(c.id || c.className || c.tagName).toString().slice(0, 24)] = [Math.round(b.top), Math.round(b.height)]; }); return JSON.stringify(o); })()`); rec.push({ n: 'measure', text: m }); if (process.env.QA_FONTS) { const fl = await page.eval(`(() => { const o = {}; const h = document.querySelector('.read-battle-host'); if (!h) return '{}'; const w = document.createTreeWalker(h, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { const p = n.parentElement; const t = n.nodeValue.trim(); if (!t) continue; const r = p.getBoundingClientRect(); if (r.width < 2 || r.height < 2 || r.right < 0 || r.left > innerWidth || r.bottom<0 || r.top>innerHeight) continue; const cs = getComputedStyle(p); if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) < .1) continue; const z = parseFloat(getComputedStyle(h).zoom)||1; const fs = Math.round(parseFloat(cs.fontSize) * (p.closest('.gc-mach')?0.36:1) *10)/10; const key = (p.className||p.tagName).toString().slice(0,30) + ' ' + fs; if (!o[key]) o[key] = t.slice(0,16); } return JSON.stringify(o); })()`); rec.push({ n: 'fonts', text: fl }); } try { const c = await page.eval(STD); const bad = { tiny: c.tiny, wrap: c.wrap, orphan: c.orphan, overflowBox: c.overflowBox, off: c.off }; if (Object.values(bad).some(a => a && a.length)) rec.push({ n: 'std', text: JSON.stringify(bad) }); } catch (e) {} }
       if (!s.layer && (gameId === 'objection' || gameId === 'outs')) {
         const st = (globalThis.__st = globalThis.__st || { a: 0, ph: 0, tapped: 0 });
         let c = null;

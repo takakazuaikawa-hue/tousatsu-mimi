@@ -20,7 +20,7 @@
   function handName(api, cards) {
     const R = api.rn; const { cat, ranks } = sig(api, cards);
     switch (cat) {
-      case 0: return `役なし（一番上は${R(ranks[0])}）`;
+      case 0: return `役なし（上は${R(ranks[0])}）`;
       case 1: return `${R(ranks[0])}のワンペア`;
       case 2: return `${R(ranks[0])}と${R(ranks[1])}のツーペア`;
       case 3: return `${R(ranks[0])}のスリーカード`;

@@ -346,24 +346,24 @@
       touches++;
       if (touches === 12 && !hintSet.size) {
         a.bests[0].forEach(i => hintSet.add(i)); refresh(-1);
-        api.coach('迷ったら、光っている札が<b>最強の組み合わせ</b>のヒント', 'think');
+        api.coach('迷ったら、<b>光っている札</b>がヒント', 'think');
       } else if (touches === 24 && !assisted) {
         assisted = true; sel = a.bests[0].slice(); hintSet.clear(); refresh(-1);
-        api.coach('答えの5枚を入れたよ。「これで勝負」を押してみよ（ヒントあり）', 'think');
+        api.coach('答えを入れたよ。<b>これで勝負</b>を押そう', 'think');
       }
     };
     const toggle = (i) => {
       if (locked) return;
-      if (assisted) { api.sfx.tick(); api.coach('答えの5枚を入れてあるよ。「これで勝負」を押してね', 'think'); return; } // 助けで入れた後は、迷わず進めるよう札を固定
+      if (assisted) { api.sfx.tick(); api.coach('答えを入れたよ。<b>これで勝負</b>を押そう', 'think'); return; } // 助けで入れた後は、迷わず進めるよう札を固定
       toggle1(i); helpCheck();
     };
     const toggle1 = (i) => {
       if (sel.includes(i)) { sel = sel.filter(x => x !== i); api.sfx.tick(); refresh(-1); return; }
-      if (sel.length >= 5) { api.sfx.nope(); const s = slotsEl; s.classList.remove('nope'); void s.offsetWidth; s.classList.add('nope'); api.coach('5枠がいっぱい。入っている札を押すと外せるよ', 'panic'); return; }
+      if (sel.length >= 5) { api.sfx.nope(); const s = slotsEl; s.classList.remove('nope'); void s.offsetWidth; s.classList.add('nope'); api.coach('5枠いっぱい。入った札を押すと外せる', 'panic'); return; }
       sel.push(i); api.sfx.tap(); refresh(sel.length - 1);
       if (!tipped) {
         tipped = true;
-        api.coach(level === 1 ? '役に入らない「おまけ」の札は、大きい数字ほど強いよ' : level === 2 ? '手札を使わなくてもいい。7枚全部から考えて' : '役が2つ以上できる形。<b>役の強さ順</b>で上の方を');
+        api.coach(level === 1 ? '「おまけ」の札は、大きい数字ほど強い' : level === 2 ? '手札を使わなくてもOK。7枚から選ぼう' : '役が2つ以上の形。<b>強さ順</b>で上を');
       }
     };
     const onPick = (e) => {

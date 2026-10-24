@@ -1,7 +1,7 @@
 // 読みの答え合わせ（本当の手の勝負の、決着の後）
 // 読み合いの中では読みを預けるだけにし、答え合わせはその手が終わった後にここで行う（読み合いの中で答えを見せると、卓の判断が要らなくなるため）。
 // 本編が MB.mount(host, { gameId: '__verdict', pending, noIntro: true, ... }) で呼ぶ。pending は各遊びが entrust で渡した中身：
-// { title, charId, pick:'bluff'|'strong', truth, mimiEq（読んだ時にミミが勝つ見込み 0〜100）, board, mine, her, base, mult, stakes, perfect, notes:[{ label, lean }] }
+// { title, charId, pick:'bluff'|'strong', truth, mimiEq（読んだ時にミミが勝つ見込み 0〜100）, board, mine, her, base, mult, stakes, perfect, notes:[{ label, lean }], extra（読みの下に出す1行。省略可） }
 (() => {
   const NAME = { bluff: 'ブラフ', strong: '本物' };
   const MEAN = { bluff: 'ミミの方が強かった', strong: 'ミミより強かった' };
@@ -23,6 +23,9 @@
     .vd-note.on { opacity: 1; }
     .vd-note.ok { border-color: var(--gold); color: var(--gold-pale); } .vd-note.ng { color: #c9a9ad; border-style: dashed; }
     .vd-note b { font-weight: 800; margin-left: 6px; }
+    .vd-extra { font-family: var(--mincho); font-weight: 800; font-size: var(--ty-head, 16px); color: var(--gold-pale); text-align: center; opacity: 0; transition: opacity .3s; }
+    .vd-extra.on { opacity: 1; }
+    .vd-extra b { color: var(--gold-hi); }
   `;
 
   async function start({ api }) {
@@ -42,6 +45,7 @@
         </div>
         <div class="vd-truth" id="mb-vd-truth">${jp}は ${NAME[truth]}だった<small>読んだ時、${MEAN[truth]}（ミミが勝つ見込み ${Math.round(p.mimiEq ?? 50)}%）</small></div>
         <div class="vd-pick" id="mb-vd-pick">ミミの読み：${NAME[pick]}<span class="mk ${correct ? 'ok' : 'ng'}">${correct ? '○' : '×'}</span></div>
+        ${p.extra ? `<div class="vd-extra" id="mb-vd-extra">${p.extra}</div>` : ''}
         <div class="vd-notes">${(p.notes || []).map(n => `<span class="vd-note ${n.lean === truth ? 'ok' : 'ng'}">${n.label}<b>${n.lean === truth ? '当たっていた' : '外れの手がかり'}</b></span>`).join('')}</div>
       </div>`;
     api.mission('相手の札をめくる');
@@ -59,6 +63,7 @@
     if (p.endLines) api.say(p.endLines[(truth === 'bluff' ? 'b' : 's') + (correct ? 'c' : 'w')] || '', correct ? 'busted' : 'smug');
     await api.wait(700); if (!api.alive()) return;
     root.querySelector('#mb-vd-pick').classList.add('on');
+    const ex = root.querySelector('#mb-vd-extra'); if (ex) setTimeout(() => ex.classList.add('on'), 250);
     root.querySelectorAll('.vd-note').forEach((n, i) => setTimeout(() => n.classList.add('on'), 200 + i * 180));
     await api.wait(600 + (p.notes || []).length * 180); if (!api.alive()) return;
     api.mult = p.mult || 1; api.lossK = p.stakes || null;

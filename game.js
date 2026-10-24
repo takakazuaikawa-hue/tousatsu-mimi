@@ -75,6 +75,7 @@ const ACHIEVEMENTS = [
   // 心理・性格
   { id: 'read_first', icon: '読', name: '初の読み切り', desc: 'ミミミMAXで相手の性格を読み切った', cat: '心理' },
   { id: 'read_all',   icon: '読', name: '心理マスター', desc: '全キャラの性格を読み切った', cat: '心理' },
+  { id: 'graduate',   icon: '卒', name: '卒業', desc: '本気のリコ先輩の予想を外して、3回読み当てた', cat: '心理' },
   // 圧倒
   { id: 'dominate',   icon: '圧', name: '圧倒勝利', desc: '相手チップを0にして勝利', cat: '圧倒' },
 ];
@@ -13442,7 +13443,8 @@ function startBattleInternal(opponentId) {
   preloadBattleVoice(opp.id, seriousRico);   // ロビーで読めていれば何もしない。直接入った時の保険
   // 真剣モードのリコ先輩は全パラメータ最強
   state.opponentProfile = seriousRico
-    ? { style: 'rico_serious', bluffTendency: 0.7, aggression: 0.85, foldDiscipline: 0.7, valueBetTendency: 0.8, drawAggression: 0.85, trapTendency: 0.6 }
+    // ブラフの多さはミミの癖から（卒業試験）：大きな賭けに降りがちな子にはブラフで、付いてきがちな子には本物で来る
+    ? { style: 'rico_serious', bluffTendency: seriousRicoBluff(), aggression: 0.85, foldDiscipline: 0.7, valueBetTendency: 0.8, drawAggression: 0.85, trapTendency: 0.6 }
     : opp.profile;
   state.opponentImgKey = opp.imgKey;
   state.maxHands = seriousRico ? 999 : opp.maxHands;
@@ -14702,8 +14704,23 @@ function mimiAssess(allCards, community, opponentBet, pot, callNeed) {
 //=============================================================
 // 12. プレイヤーアクション
 //=============================================================
+// ミミの癖：大きな賭け（ポットの6割以上）を受けた時に、降りたか（true）付いていったか（false）を、相手を問わず最近20回だけ覚える。
+// 本気のリコ先輩はこれを見て賭けてくる（読み合い「卒業試験」battles/games/graduation.js）
+// ミミの降りた割合（記録が無いうちは、教わったとおり慎重な子として 12/20）
+function mimiFoldRate() { const h = Array.isArray(save.mimiHabit) && save.mimiHabit.length >= 5 ? save.mimiHabit : null; return h ? h.filter(Boolean).length / h.length : 0.6; }
+// 本気のリコ先輩のブラフの多さ：ミミの降りた割合 0.3→0.46／0.6→0.67／0.9→0.85
+function seriousRicoBluff() { return Math.max(0.25, Math.min(0.85, 0.25 + 0.7 * mimiFoldRate())); }
+function noteMimiHabit(folded) {
+  if (!state || state.tutorialMode || state.introHandMode || state.lectureMode) return;
+  const need = Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0));
+  const before = Math.max(1, (state.pot || 0) - need);
+  if (need <= 0 || need < before * 0.6) return;
+  const h = Array.isArray(save.mimiHabit) ? save.mimiHabit : [];
+  h.push(!!folded); save.mimiHabit = h.slice(-20);
+}
 function playerFold() {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
+  noteMimiHabit(true);
   state.isPlayerTurn = false;
   mpSfx('fold');
   voiceBark('mimi', 'fold');
@@ -14727,6 +14744,7 @@ function playerFold() {
 }
 function playerCall() {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
+  noteMimiHabit(false);
   mpSfx('call');
   voiceBark('mimi', 'call');
   const need = state.currentBetOpponent - state.currentBetPlayer;
@@ -14757,6 +14775,7 @@ function playerCheckCall() {
 }
 function playerRaise(bb) {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
+  noteMimiHabit(false);
   mpSfx('battle-bet');
   voiceBark('mimi', 'raise');
   const amount = Math.max(0, Math.min(50 * bb, state.playerChips));
@@ -14804,6 +14823,7 @@ function playerBet(size) {
 }
 function playerAllIn() {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
+  noteMimiHabit(false);
   state.playerShoves = (state.playerShoves || 0) + 1;
   mpSfx('battle-allin');
   const amount = state.playerChips;
@@ -15369,7 +15389,11 @@ const READ_BATTLE_POOLS = {
   selina: { psych: ['detective', 'stare', 'gacha'],          logic: ['danger', 'sniper'] },
   grano:  { psych: ['gacha'],                                 logic: ['outs', 'highlow'] },
   velvet: { psych: ['objection', 'stare', 'gacha'],          logic: ['suspects'] },
+  // 本気のリコ先輩：専用の読み合い「卒業試験」だけ。論理バトル（古い3択を含む）は出さない
+  rico_serious: { psych: ['graduation'], logic: [] },
 };
+// 読み合いの割り当ての欄：本気のリコ先輩は絵が通常のリコ先輩と同じなので、別の欄で引く
+const readPoolKey = () => (state.seriousRicoMode ? 'rico_serious' : state.opponentImgKey);
 const READ_BATTLE_TELL = {
   detective: '手がかりを読んだ', stare: '見つめ合いに勝った', doubt: 'ウソを見抜いた', gacha: '心の声を聞いた', objection: '矛盾を突いた',
   handbuild: '最強の役を作った', highlow: '強さを比べ切った', danger: '危険札を見抜いた', sniper: '賭け額を当てた', outs: 'アウツを数えた', suspects: '容疑者を絞った',
@@ -15377,11 +15401,11 @@ const READ_BATTLE_TELL = {
 function readBattleReady(group) {
   if (!window.MB || typeof window.MB.mount !== 'function') return false;
   if (!state || state.tutorialMode || state.introHandMode || state.lectureMode) return false;
-  const pool = (READ_BATTLE_POOLS[state.opponentImgKey] || {})[group];
+  const pool = (READ_BATTLE_POOLS[readPoolKey()] || {})[group];
   return !!(pool && pool.length);
 }
 function pickReadBattle(group) {
-  const pool = READ_BATTLE_POOLS[state.opponentImgKey][group];
+  const pool = READ_BATTLE_POOLS[readPoolKey()][group];
   const played = state.readBattlePlayed || (state.readBattlePlayed = {});
   if (!save.readBattleSeen) save.readBattleSeen = {};
   // まだ遊んだことの無い種類を先に、次にこの対戦で出た回数が少ない種類を出す
@@ -15449,7 +15473,7 @@ function startReadBattle(group) {
 // ===== 本当の手の読み合い（2026-10-21）=====
 // 読み合いの中では読みを預けるだけ。答え合わせは手の決着の後（continueAfterHand の頭で showReadVerdict）。
 // 本当の手で遊べる種類だけ table を渡す。渡さない種類は今までどおり架空の場面で、その場で答え合わせ
-const REAL_READ_GAMES = new Set(['stare', 'objection']);
+const REAL_READ_GAMES = new Set(['stare', 'objection', 'graduation']);
 const RB_SUIT = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
 const rbCard = (c) => ({ r: c.rank, s: RB_SUIT[c.suit] || 's' });
 function readBattleTable(gameId) {
@@ -15461,6 +15485,8 @@ function readBattleTable(gameId) {
     pot: state.pot || 0, toCall: Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0)), phase: state.handPhase,
     record: save.readRecord[state.opponentImgKey] || null,
     acts: (state.handActs || []).filter(a => a.ph !== 'preflop').map(a => ({ ...a })),
+    // 卒業試験：ミミの癖（最近20回）と、これまでに先輩の予想を外して当てた回数
+    habit: Array.isArray(save.mimiHabit) ? save.mimiHabit.slice() : null, grad: save.gradCount || 0,
   };
 }
 // 読みを預かって卓に戻す
@@ -15505,6 +15531,11 @@ function showReadVerdict() {
           rec.push(p.truth === 'bluff'); save.readRecord[p.oppKey] = rec.slice(-20);
           state.readBattleBonus = (state.readBattleBonus || 0) + (state.readBattlePurse.coins - coinsBefore);
           log('psych', { qid: 'mb_' + p.gameId, success: !!(r && r.correct), mult: p.mult || 1 });
+          // 卒業試験：先輩の予想（ミミの癖）を外して当てたら1つ数える。3つで称号「卒業」
+          if (p.gameId === 'graduation' && r && r.correct && p.pred && p.pick !== p.pred && !state.peekUsed) {
+            save.gradCount = (save.gradCount || 0) + 1;
+            if (save.gradCount >= 3) unlockAchievement('graduate');
+          }
           if (r && r.correct) {
             state.panyu = Math.min(state.panyuMax, state.panyu + 25);
             state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);

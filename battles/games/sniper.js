@@ -221,7 +221,7 @@
             <rect id="mb-sn-rect" x="0" y="0" width="0" height="0" fill="rgba(245,215,122,.30)" stroke="var(--gold-hi)" stroke-width="2" vector-effect="non-scaling-stroke"/>
             <path d="M${curvePts.join(' L')}" fill="none" stroke="var(--text)" stroke-width="3" vector-effect="non-scaling-stroke"/>
           </svg>
-          <span class="sn-axis-y">↑ 付いてくる確率　　→ 賭け額</span>
+          <span class="sn-axis-y">↑ 付いてくる確率　→ 賭け額</span>
           ${[[1, '100%'], [.5, '50%'], [0, '0%']].map(([p, t]) => `<span class="sn-ylab" style="top:${Y(p)}%">${t}</span>`).join('')}
           ${[[minBet, '¼'], [pot / 2, '½'], [pot, 'ポット'], [pot * 1.5, '1.5×'], [maxBet, '2×']].map(([b, t]) => `<span class="sn-xlab" style="left:${X(b)}%">${t}</span>`).join('')}
           <span class="sn-floor">最低額</span>
@@ -321,7 +321,7 @@
     } else {
       api.say('……降りるわ。', 'think'); api.sfx.nope();
       out.innerHTML = `<div class="roll">付いてくる確率 ${Math.round(p * 100)}% → <b class="fold">フォールド</b> 降りられた</div>
-        <div class="her">ミミはポットの ${pot} だけ獲得</div>`;
+        <div class="her">ポットの ${pot} だけ獲得</div>`;
       react(api.char.smug, '降りた');
     }
     await api.wait(api.reduce ? 400 : 1600);
@@ -342,7 +342,7 @@
     const correct = ratio >= .9;
     const perfect = ratio >= .97 && api.mult === 3;
     const dir = myBet > C.bestBet ? '大きすぎた。セリナが降りやすくなる' : '小さすぎた。もっと取れた';
-    const luck = correct && !call ? 'セリナは降りたけど、それは運。額の選び方は正解' : !correct && call ? `付いてきたのは運。見込みではベストの ${pct}%` : '';
+    const luck = correct && !call ? '降りたのは運。額の選び方は正解' : !correct && call ? `付いてきたのは運。見込みではベストの ${pct}%` : '';
     const verdictText = correct ? (ratio >= .97 ? 'ど真ん中！' : 'ほぼベスト！') : `ずれた：${dir}`;
     out.insertAdjacentHTML('beforeend', `
       <div class="sn-cmp">

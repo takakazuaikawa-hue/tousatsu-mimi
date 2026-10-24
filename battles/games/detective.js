@@ -8,15 +8,15 @@ MB.register({
     const P = {
       polka: {
         prior: .65, speechLeak: .8, faceLeak: .8, sizeNote: 'ポルカは、弱い時ほど大きく賭ける', sizeLean: 'bluff',
-        speech: { bluff: ['うわー、ボク絶対勝てる手だわー（棒）', 'ミミちゃん、降りた方がいいって！ ほんとに！'], strong: ['……えへへ、どうしよっかな。', 'ん。ちょっとだけ、ね。'] },
+        speech: { bluff: ['うわー、ボク絶対勝てる手だわー（棒）', 'ミミちゃん、降りた方がいいって！'], strong: ['……えへへ、どうしよっかな。', 'ん。ちょっとだけ、ね。'] },
         face: { bluff: '目が泳いで、汗をかいている', strong: '口の端が上がって、落ち着いている' },
         panyu: { bluff: 'チップを置く指先が、小さく震えていた', strong: 'チップを置く手つきが、やけに丁寧だった' },
       },
       selina: {
         prior: .25, speechLeak: 0, faceLeak: .35, sizeNote: 'セリナは、強い時ほど大きく賭ける', sizeLean: 'strong',
         speech: { bluff: ['……ポット。'], strong: ['……ポット。'] },
-        face: { bluff: '表情は変わらない。……が、まばたきが一度増えた', strong: '表情は変わらない' },
-        panyu: { bluff: '賭けた後、場札のマークをちらっと二度見した', strong: '賭けた後、一度も場札を見なかった' },
+        face: { bluff: '表情は同じ。……が、まばたきが一度増えた', strong: '表情は変わらない' },
+        panyu: { bluff: '賭けた後、場札をちらっと二度見した', strong: '賭けた後、一度も場札を見なかった' },
       },
     };
     const who = api.charId in P ? api.charId : 'polka';
@@ -31,8 +31,8 @@ MB.register({
     const speech = ch.speechLeak === 0 ? { text: `「${api.pick(ch.speech[truth])}」`, lean: 'none' }
       : leak(ch.speechLeak) ? { text: `「${api.pick(ch.speech[truth])}」`, lean: truth } : { text: `「${api.pick(ch.speech[opp(truth)])}」`, lean: opp(truth) };
     const face = leak(ch.faceLeak) ? { text: ch.face[truth], lean: (who === 'selina' && truth === 'strong') ? 'none' : truth } : { text: who === 'selina' ? ch.face.strong : '特に変わった様子はない', lean: 'none' };
-    const size = { text: `ポットと同じ額。${ch.sizeNote}`, lean: ch.sizeLean };
-    const flowS = 'フロップから毎回、同じ大きさで賭け続けている', flowB = 'フロップはチェックしたのに、今になって急に大きく';
+    const size = { text: ch.sizeNote, lean: ch.sizeLean };
+    const flowS = '毎回、同じ大きさで賭け続けている', flowB = 'チェックから急に大きく賭けた';
     const flow = leak(.6) ? { text: truth === 'bluff' ? flowB : flowS, lean: truth } : { text: truth === 'bluff' ? flowS : flowB, lean: opp(truth) };
     const clues = [{ kind: '言葉', ...speech, open: true }, { kind: '顔', ...face }, { kind: '賭け額', ...size }, { kind: '流れ', ...flow }];
     const hidden = { kind: 'ミミの勘', text: ch.panyu[truth], lean: truth };
@@ -100,7 +100,7 @@ MB.register({
       return `<div class="dt-clue ${i === 'p' ? 'hidden-clue mb-crimson' : 'mb-parchment is-pinned'} ${c.open ? 'open' : ''}" data-i="${i}">
         <div class="dt-kind">${ICON[c.kind] || ''}${c.kind}</div><div class="dt-text">${c.open ? c.text : '？？？'}</div>
         <div class="dt-acts"><button class="open-btn mb-key">調べる</button>
-          <button class="lean mb-key" data-lean="strong">強い手</button><button class="lean mb-key" data-lean="bluff">ブラフ</button><button class="lean mb-key" data-lean="none">関係なし</button></div></div>`;
+          <button class="lean mb-key" data-lean="strong">強い手</button><button class="lean mb-key" data-lean="bluff">ブラフ</button><button class="lean mb-key" data-lean="none">無関係</button></div></div>`;
     };
     clueBox.innerHTML = clues.map(drawClue).join('') + `<div class="dt-clue hidden-clue mb-crimson" data-i="gacha"><div class="dt-kind">${ICON['ぱにゅ']}ぱにゅ</div><div class="dt-text">ミミにしか見えない手がかりを1つ探せる</div><div class="dt-acts"><button id="mb-dt-panyu" class="mb-key is-gold">ぱにゅぱにゅで探る</button></div></div>`;
     api.tipOnce('detective', who === 'polka' ? '手がかりを<b>めくって</b>天秤へ' : '<b>変わったもの</b>を探そ');
