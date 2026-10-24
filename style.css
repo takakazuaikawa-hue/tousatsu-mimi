@@ -20276,7 +20276,6 @@ html.is-compact .battle-screen.v2.t8 .v2-opp .v2-tells { display: none !importan
 html.is-compact .battle-screen.v2.t8 > .t8-note-tells { display: flex; flex-direction: column; align-items: flex-start; gap: calc(4px / var(--game-scale, 1)); position: absolute; left: calc(14px / var(--game-scale, 1)); top: calc(102px / var(--game-scale, 1)); z-index: 8; max-width: calc(150px / var(--game-scale, 1)); }
 html.is-compact .battle-screen.v2.t8 > .t8-note-tells .v2-tag { font-size: var(--fx-cap); line-height: 1.25; padding: calc(3px / var(--game-scale, 1)) calc(8px / var(--game-scale, 1)); white-space: nowrap; }
 /* 右の列：相手のレンジ（2行）と相手の傾向（1行・2つまで）。リコ先輩の欄は、どちらかが出ている時だけ3行まで */
-html.is-compact .battle-screen.v2.t8:is(:has(> .v2-range-band:not(:empty)), :has(> .opponent-info .note-tell-hint)) .rico-bubble.v2-com-text { -webkit-line-clamp: 3 !important; max-height: 4.2em !important; }
 html.is-compact .battle-screen.v2.t8 > .v2-range-band { left: auto !important; right: 14px !important; width: 360px !important; top: calc(200px / var(--game-scale, 1)) !important; }
 html.is-compact .battle-screen.v2.t8 > .v2-range-band .rb-inner { padding: calc(3px / var(--game-scale, 1)) calc(8px / var(--game-scale, 1)); gap: 0 calc(8px / var(--game-scale, 1)); line-height: 1.25; }
 html.is-compact .battle-screen.v2.t8 > .v2-range-band :is(.rb-label, .rb-band, .rb-bluff) { font-size: var(--fx-cap); letter-spacing: 0; }
@@ -20294,7 +20293,7 @@ html.is-compact .battle-screen.v2.t8:has(.bet-chooser) .v2-role-label { display:
 html.is-compact .battle-screen.v2.t8 > .v2-band { height: calc(62px / var(--game-scale, 1)) !important; justify-content: flex-start !important; overflow: visible; }
 html.is-compact .battle-screen.v2.t8 .opponent-speech.v2-band-text { max-width: calc((var(--rb-w, 844px) - 2 * var(--pad-x, 47px)) * .38 / var(--game-scale, 1)) !important; line-height: 1.3 !important; white-space: normal !important; text-align: center; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 /* 相手の伏せ札：相手の立ち絵の手前（名前の右上）。場札の右に置くとショーダウンで場札と並んで7枚に見えた */
-html.is-compact .battle-screen.v2.t8 .v2-band-hand { position: absolute !important; left: calc(50% + 120px) !important; top: calc(-36px / var(--game-scale, 1)) !important; margin: 0 !important; transform: none !important; }
+html.is-compact .battle-screen.v2.t8 .v2-band-hand { position: absolute !important; left: calc(50% - 352px) !important; top: calc(-36px / var(--game-scale, 1)) !important; margin: 0 !important; transform: none !important; }
 html.is-compact .battle-screen.v2.t8 > .center-table.v2-table { top: calc(238px / var(--game-scale, 1)) !important; }
 /* POT は場札の左。チップの山は出さず、賭けの札は数字の下に「+66」だけ */
 html.is-compact .battle-screen.v2.t8 > .v2-pot { left: auto !important; right: calc(50% + 196px) !important; transform: none !important; top: calc(238px / var(--game-scale, 1)) !important; }
@@ -20308,3 +20307,15 @@ html.is-compact .battle-screen.v2.t8:has(.bet-chooser) > :is(.v2-range-band, .op
 html.is-compact .battle-screen.v2.t8:has(.bet-chooser) .v2-band-hand { visibility: hidden; }
 /* 小さいスマホ（幅760px未満）：右の列が相対的に太いので「ミミの役」の見出しを省き、役の名前を押す所にかけない */
 @media (max-width: 759px) { html.is-compact .battle-screen.v2.t8 .v2-role-label { display: none; } }
+/* ===== スマホの卓：リコ先輩の欄（2026-10-25 試遊の指摘：顔がやけに小さく切れている・一言が入りきらない） =====
+   顔は舞台の 44px（画面 21px）だった → 画面 72px の斜めの窓。欄は相手の立ち絵の右の空き（画面の幅の 38%、844 では約 285px）まで広げ、
+   一言は1行約11字×4行まで（今の助言は最長でも30字台）。名前の見出しは顔で分かるので省く。相手の伏せ札は相手の名前の左へ */
+html.is-compact .battle-screen.v2.t8 > .v2-comments.left-panel { top: calc(98px / var(--game-scale, 1)) !important; right: 14px !important; width: calc((var(--rb-w, 844px) - 2 * var(--pad-x, 47px)) * .38 / var(--game-scale, 1)) !important; }
+html.is-compact .battle-screen.v2.t8 .v2-com-rico { grid-template-columns: calc(72px / var(--game-scale, 1)) minmax(0, 1fr) !important; gap: calc(8px / var(--game-scale, 1)) !important; align-items: start !important; padding: calc(4px / var(--game-scale, 1)) calc(8px / var(--game-scale, 1)) calc(4px / var(--game-scale, 1)) calc(4px / var(--game-scale, 1)) !important; }
+html.is-compact .battle-screen.v2.t8 .v2-com-face { width: calc(72px / var(--game-scale, 1)) !important; height: calc(72px / var(--game-scale, 1)) !important; border: 0 !important; clip-path: polygon(16% 0, 100% 0, 84% 100%, 0 100%); background: linear-gradient(160deg, #5a1726, #1d080e); }
+html.is-compact .battle-screen.v2.t8 .v2-com-face img { object-position: center 16% !important; }
+html.is-compact .battle-screen.v2.t8 .rico-bubble.v2-com-text { font-size: var(--fx-body) !important; line-height: 1.3 !important; -webkit-line-clamp: 4 !important; max-height: 5.3em !important; align-self: center; }
+html.is-compact .battle-screen.v2.t8 .rico-bubble.v2-com-text::before { display: none !important; }
+/* 幕間の音のボタン：スキップの左（2026-10-25 試遊：途中から声や曲を出したい。物語の場面は左上の音量のつまみがある） */
+.intermission-overlay > .sound-toggle { top: 18px; right: 148px; z-index: 7; }
+html.is-compact .intermission-overlay > .sound-toggle { right: calc(22px + 113px / var(--game-scale, 1)); top: 18px; }

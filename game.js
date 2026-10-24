@@ -4058,6 +4058,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
   `;
   const stage = document.getElementById('stage');
   (stage || document.body).appendChild(overlay);
+  addSoundToggle(overlay);
 
   const mimiChar = overlay.querySelector('.ims-char-mimi');
   const oppChar = overlay.querySelector('.ims-char-opp');
@@ -9539,6 +9540,8 @@ function stopSceneBgm() {
 function startBgmForScreen() {
   if (!isBgmOn()) { _stopNonSceneBgm(); stopSceneBgm(); return; }
   if (document.querySelector('.minipoker-overlay')) { playSceneBgm('minigame'); return; }
+  // 幕間の途中で音を入れた時は、幕間の曲を鳴らす
+  if (document.querySelector('.intermission-overlay:not(.out)')) { playSceneBgm('intermission'); return; }
   const sc = state && state.screen;
   if (sc === 'title')       playSceneBgm('title');
   else if (sc === 'battle') { if (typeof startBattleBgmSkin === 'function') startBattleBgmSkin(); }
@@ -9618,16 +9621,20 @@ function injectAudioBars() {
   }
   // 対戦・交換所・結果：音をまとめて切り替える四角いボタン（旧ロビーの .top-hud が無くなり、ここで止める手段が無かった）
   const host = document.querySelector('.battle-screen.v2, .shop-screen.v2, .result-screen');
-  if (host && !host.querySelector('.sound-toggle')) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'sound-toggle';
-    // 押すと、その場で 声・効果音・曲 の音量を変えられる小窓が開く（2026-10-21 試遊：対戦中に声が大きく、
-    // ロビーへ戻って設定を探すのが面倒）。まとめて消すのも小窓の中で
-    b.dataset.action = 'open-sound-panel';
-    b.addEventListener('click', (e) => { e.stopPropagation(); toggleSoundPanel(b); });
-    host.appendChild(b);
-  }
+  if (host) addSoundToggle(host);
+  refreshAudioBars();
+}
+// 音の四角いボタン：押すと、その場で 声・効果音・曲 の音量を変えられる小窓が開く（2026-10-21 試遊：対戦中に声が大きく、
+// ロビーへ戻って設定を探すのが面倒）。まとめて消すのも小窓の中で。
+// 幕間にも付ける（2026-10-25 試遊：途中から声や曲を出したいのに操作が無い）。物語の場面は左上に音量のつまみがあるので付けない
+function addSoundToggle(host) {
+  if (!host || host.querySelector(':scope > .sound-toggle')) return;
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'sound-toggle';
+  b.dataset.action = 'open-sound-panel';
+  b.addEventListener('click', (e) => { e.stopPropagation(); toggleSoundPanel(b); });
+  host.appendChild(b);
   refreshAudioBars();
 }
 
