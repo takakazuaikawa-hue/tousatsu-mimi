@@ -21,7 +21,8 @@ export function stdCheck({ minText = 12, bodyMin = 14, safe = 47, phone = true }
   const VW = innerWidth, VH = innerHeight, SAFE = ${phone ? safe : 0}, MIN = ${minText}, BODY = ${phone ? bodyMin : 0};
   const BODY_SEL = ${JSON.stringify(BODY_SEL)};
   const vis = (e) => { for (let x = e; x && x !== document.documentElement; x = x.parentElement) { const cs = getComputedStyle(x); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.05) return false; } return true; };
-  const scaleOf = (e) => { let x = e; while (x && !(x.offsetWidth > 0)) x = x.parentElement; if (!x) return 1; return x.getBoundingClientRect().width / x.offsetWidth; };
+  // 縮みは幅40px以上の親で測る（1文字の細い部品は元の幅が整数に丸められ、縮みが小さく出ていた：K・J の札の数字が 13.7px と出た 2026-10-25）
+  const scaleOf = (e) => { let x = e; while (x && !(x.offsetWidth >= 40)) x = x.parentElement; if (!x) return 1; return x.getBoundingClientRect().width / x.offsetWidth; };
   const label = (e) => ((e.getAttribute('aria-label') || e.textContent || e.title || (typeof e.className === 'string' ? e.className : '') || '').replace(/\\s+/g, ' ').trim()).slice(0, 24);
   const cls = (e) => (e.tagName.toLowerCase() + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\\s+/)[0] : ''));
   // 画面の大半を覆う別の層（小窓・全画面の演出）の下に隠れている物は、利用者に見えないので数えない

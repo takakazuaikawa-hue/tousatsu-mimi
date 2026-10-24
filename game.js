@@ -7004,7 +7004,7 @@ function renderPotBlock() {
     <div class="v2-disp v2-pot-num bu-pot-physical">${state.pot || 0}</div>
     ${stack('r', ['white', 'blue', 'white', 'blue', 'gold'])}
     <div class="v2-pot-sub">
-      ${opp > 0 ? `<span class="v2-chip v2-chip-red">${oppName} +${opp} <em>${sizeTag}</em></span>` : ''}
+      ${opp > 0 ? `<span class="v2-chip v2-chip-red"><i class="pc-name">${oppName} </i>+${opp}<em> ${sizeTag}</em></span>` : ''}
     </div>`;
   // 「残り」チップとスタックバーは廃止。立ち絵前面の .v2-stack-gauge に一本化した（二重表示だった）。
 }
@@ -8009,7 +8009,8 @@ function renderVerbActions(slots, need) {
   const foldEnabled = foldS && foldS.enabled && need > 0;
   const ccLabel = raising ? 'コール' : 'チェック';
   const ccSub = raising ? `${need} 払って付いていく` : 'タダで次の札を見る';
-  const betLabel = raising ? '上乗せする' : '賭ける';
+  // スマホは「上乗せ」まで（ボタンが約100px幅で「上乗せする ▸」が入らない）。PC は「上乗せする」
+  const betLabel = raising ? '上乗せ<span class="vl-long">する</span>' : '賭ける';
   const onlyAllin = betS.length === 1 && betS[0].kind === 'allin';
   const betSub = !betS.length ? 'チップが足りない' : onlyAllin ? `残り全部（${betS[0].chipAmount}）だけ` : (raising ? 'レイズ：額を選ぶ' : 'ベット：額を選ぶ');
   return `<div class="verb-grid">

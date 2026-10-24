@@ -20263,3 +20263,48 @@ html.is-compact .result-screen .result-sub-buttons .btn, html.is-compact .result
 html.is-compact .result-screen .result-sub-buttons .btn { letter-spacing: 0 !important; white-space: nowrap !important; padding: 0 6px !important; font-size: var(--fx-body) !important; }
 .pv2 .pv2-outfit b { font-size: 15px; }
 html.is-compact .result-screen .result-sub-buttons .btn { font-size: calc(16px / var(--game-scale, 1)) !important; padding: 0 4px !important; }
+
+/* ===== スマホの卓：装備や読みの結果で増える部品の置き場（2026-10-25 試遊の指摘：重なり・入りきらない） =====
+   装備（相手のレンジ・相手の癖メモ）と読みの札は、PC の並びのまま舞台ごと縮むと約7pxになり、スマホ用に並べ替えた勝率・リコ先輩の欄に重なっていた。
+   置き場（画面の px）：左の列＝卓の名前の下・ミミの耳の上（読みの札）／右の列＝リコ先輩の欄の下・押す所の上（相手のレンジ2行・相手の傾向1行。リコ先輩の欄は3行まで）
+   真ん中＝相手の名前→台詞（2行まで）→場札。POT は場札の左、相手の伏せ札は場札の右（卓の上に置いた形）。賭けの札は POT の下に「+66」だけ。
+   値はどれも「画面の px ÷ 舞台の縮み」で書き、どの機種でも画面上で同じ大きさになる。qa/latebattle.mjs（クリア後の装備のセーブ）で数える */
+.battle-screen .t8-note-tells { display: none; }
+.battle-screen .v2-chip .pc-name { font-style: normal; }
+html.is-compact .battle-screen.v2.t8 .vl-long { display: none; }
+html.is-compact .battle-screen.v2.t8 .v2-opp .v2-tells { display: none !important; }
+html.is-compact .battle-screen.v2.t8 > .t8-note-tells { display: flex; flex-direction: column; align-items: flex-start; gap: calc(4px / var(--game-scale, 1)); position: absolute; left: calc(14px / var(--game-scale, 1)); top: calc(102px / var(--game-scale, 1)); z-index: 8; max-width: calc(150px / var(--game-scale, 1)); }
+html.is-compact .battle-screen.v2.t8 > .t8-note-tells .v2-tag { font-size: var(--fx-cap); line-height: 1.25; padding: calc(3px / var(--game-scale, 1)) calc(8px / var(--game-scale, 1)); white-space: nowrap; }
+/* 右の列：相手のレンジ（2行）と相手の傾向（1行・2つまで）。リコ先輩の欄は、どちらかが出ている時だけ3行まで */
+html.is-compact .battle-screen.v2.t8:is(:has(> .v2-range-band:not(:empty)), :has(> .opponent-info .note-tell-hint)) .rico-bubble.v2-com-text { -webkit-line-clamp: 3 !important; max-height: 4.2em !important; }
+html.is-compact .battle-screen.v2.t8 > .v2-range-band { left: auto !important; right: 14px !important; width: 360px !important; top: calc(200px / var(--game-scale, 1)) !important; }
+html.is-compact .battle-screen.v2.t8 > .v2-range-band .rb-inner { padding: calc(3px / var(--game-scale, 1)) calc(8px / var(--game-scale, 1)); gap: 0 calc(8px / var(--game-scale, 1)); line-height: 1.25; }
+html.is-compact .battle-screen.v2.t8 > .v2-range-band :is(.rb-label, .rb-band, .rb-bluff) { font-size: var(--fx-cap); letter-spacing: 0; }
+html.is-compact .battle-screen.v2.t8 > .v2-range-band .rb-note { display: none; }
+html.is-compact .battle-screen.v2.t8 > .opponent-info { left: auto !important; right: 14px !important; width: 360px !important; top: calc(242px / var(--game-scale, 1)) !important; }
+html.is-compact .battle-screen.v2.t8 > .v2-range-band:empty ~ .opponent-info { top: calc(200px / var(--game-scale, 1)) !important; }
+html.is-compact .battle-screen.v2.t8 .note-tell-hint { margin: 0; flex-wrap: nowrap; padding: calc(3px / var(--game-scale, 1)) calc(6px / var(--game-scale, 1)); gap: calc(6px / var(--game-scale, 1)); font-size: var(--fx-cap); line-height: 1.25; }
+/* 傾向は1行・2つまで（最長「バリュー志向 降りやすい」11字が右の列 175px に入る）。見出しは右の列の上の「相手のレンジ」と同じ札の続きとして省く */
+html.is-compact .battle-screen.v2.t8 .note-tell-hint .ntt-label { display: none; }
+html.is-compact .battle-screen.v2.t8 .note-tell-hint .ntt-tag { font-size: var(--fx-cap); white-space: nowrap; padding: 0 calc(4px / var(--game-scale, 1)); }
+html.is-compact .battle-screen.v2.t8 .note-tell-hint .ntt-tag:nth-of-type(n+4) { display: none; }
+/* 賭け額を選ぶ板が出ている間は「ミミの役」の見出しを省き、役の名前が板に重ならないようにする */
+html.is-compact .battle-screen.v2.t8:has(.bet-chooser) .v2-role-label { display: none; }
+/* 真ん中：台詞は2行まで（伏せ札は帯から出して場札の右へ） */
+html.is-compact .battle-screen.v2.t8 > .v2-band { height: calc(62px / var(--game-scale, 1)) !important; justify-content: flex-start !important; overflow: visible; }
+html.is-compact .battle-screen.v2.t8 .opponent-speech.v2-band-text { max-width: calc((var(--rb-w, 844px) - 2 * var(--pad-x, 47px)) * .38 / var(--game-scale, 1)) !important; line-height: 1.3 !important; white-space: normal !important; text-align: center; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+/* 相手の伏せ札：相手の立ち絵の手前（名前の右上）。場札の右に置くとショーダウンで場札と並んで7枚に見えた */
+html.is-compact .battle-screen.v2.t8 .v2-band-hand { position: absolute !important; left: calc(50% + 120px) !important; top: calc(-36px / var(--game-scale, 1)) !important; margin: 0 !important; transform: none !important; }
+html.is-compact .battle-screen.v2.t8 > .center-table.v2-table { top: calc(238px / var(--game-scale, 1)) !important; }
+/* POT は場札の左。チップの山は出さず、賭けの札は数字の下に「+66」だけ */
+html.is-compact .battle-screen.v2.t8 > .v2-pot { left: auto !important; right: calc(50% + 196px) !important; transform: none !important; top: calc(238px / var(--game-scale, 1)) !important; }
+html.is-compact .battle-screen.v2.t8 .v2-pot .t8-stack { display: none; }
+/* 賭けの札（グラーノ +66 2/3ポット）はスマホでは出さない：コールのボタン（66 払って付いていく）と同じ中身で、置き場が無い */
+html.is-compact .battle-screen.v2.t8 .v2-pot-sub { display: none !important; }
+/* 対戦開始など大きなボタン：文字の段（19px）に合わせた高さ（舞台の 64px のままだと画面で 31px しかなく、文字が下にはみ出していた） */
+html.is-compact .battle-screen.v2.t8 .action-area .btn-primary.big { height: calc(48px / var(--game-scale, 1)) !important; line-height: 1 !important; }
+/* 賭け額を選ぶ板が出ている間は、右の列の札（レンジ・傾向）と伏せ札を引っ込める（板が押す所の上へ伸びて重なるため） */
+html.is-compact .battle-screen.v2.t8:has(.bet-chooser) > :is(.v2-range-band, .opponent-info) { visibility: hidden; }
+html.is-compact .battle-screen.v2.t8:has(.bet-chooser) .v2-band-hand { visibility: hidden; }
+/* 小さいスマホ（幅760px未満）：右の列が相対的に太いので「ミミの役」の見出しを省き、役の名前を押す所にかけない */
+@media (max-width: 759px) { html.is-compact .battle-screen.v2.t8 .v2-role-label { display: none; } }
