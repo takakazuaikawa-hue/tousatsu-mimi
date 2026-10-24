@@ -1,0 +1,53 @@
+/* ===== 見抜く（detective） =====
+   PC だけ（html:not(.is-compact)）。色・形は battles/games/detective.js の CSS と core.css の部品（.mb-parchment .mb-crimson .mb-key）が持つ。ここは並べ方と大きさ。
+   一番中身が多い状態＝答え合わせ：「調べる」を4枚ぜんぶ押し、「ぱにゅぱにゅで探る」で5枚目（ミミの勘）も開き、5枚ぜんぶに強い手／ブラフ／関係なしを付けて決め、
+   賭けを選んだあと。相手の手札が場札・ミミの手札と同じ段に並び、5枚すべての付箋に判定の行（決め手／ひっかけ／手がかりにならない）が付く。
+   高さの見積もり（遊び本体の予算 約605px）：
+     手順 28 ＋ 札の段 95 ＋ 問い 31 ＋ 天秤 30 ＋ 付箋 222（余白 32・種類 21・文 72（3行分）・押す所 48・判定 19・行間 30）＋ 決めるボタン 60 ＝ 466、
+     行間 12×5 ＝ 60 を足して 約526px。残り約79pxは行の間に均等に配る（下に偏らない）。
+   決めるボタンは出ていない間も場所を取っておく（visibility:hidden）。3枚目を決めた瞬間にボタンが出て、上の付箋が動いて押し間違えるのを防ぐ。
+   札の段は「場札｜ミミの手札｜相手の手札」の1本の帯。ふだんは2列で、相手の手札が出る時だけ3列になる（段の入れ子は変えない：スマホ横の CSS が段の直下を見ている）。 */
+
+/* 遊び本体：6つの行（手順・札の帯・問い・天秤・付箋・決めるボタン）を舞台の高さいっぱいに均等に配る */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) {
+  flex: 1 1 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: space-between; gap: 12px 40px;
+}
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues):has(> .dt-her) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) > * { grid-column: 1 / -1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) > .dt-board { grid-column: 1; grid-row: 2; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) > .dt-mine { grid-column: 2; grid-row: 2; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) > .dt-her { grid-column: 3; grid-row: 2; }
+
+/* 札 68px（高さ95px）。ミミの式と相手の名札は札の横に置く（式は2行までで、札の高さの中に収まる）。縮むのは式だけで、札は縮めない */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-board,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-mine,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-her { flex-wrap: nowrap; justify-content: center; gap: 8px; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-board .card.big,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-mine .card.big,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-her .card.big { --w: 68px; flex: 0 0 auto; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-mine .formula { flex: 0 1 260px; margin-left: 6px; text-align: left; font-size: 14px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-her .formula { margin-right: 6px; font-family: var(--mincho); font-weight: 700; font-size: 14px; letter-spacing: .1em; color: var(--gold); white-space: nowrap; }
+
+/* 問い 22px・天秤は横を広げる（針の上下に余白 30px） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .dt-clues) > .prompt { font-size: 22px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-bet b { font-size: 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-q { font-size: 22px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-scale { max-width: 760px; min-height: 30px; font-size: 14px; letter-spacing: .08em; gap: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-beam { height: 12px; }
+
+/* 付箋：5枚を横1列の調査票に。傾けない。文は3行分の高さを取り、調べる前後で高さが変わらない（押す所が動かない） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-clues { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-clue { padding: 16px 14px 14px; gap: 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-kind { font-size: 15px; line-height: 1.4; letter-spacing: .12em; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-text { font-size: 15px; line-height: 1.6; min-height: 4.8em; }
+/* 押す所：3つ並べて（強い手／ブラフ／関係なし）48px。「調べる」と「ぱにゅぱにゅで探る」は横いっぱい */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-acts button { min-width: 0; min-height: 48px; padding: 0; font-size: 14px; line-height: 1.2; letter-spacing: 0; white-space: nowrap; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-acts .open-btn,
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dt-panyu { grid-column: 1 / -1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .dt-verdict { font-size: 13px; line-height: 1.45; }
+
+/* 決めるボタン：ブラフと読む／強い手と読む。出ていない間も場所は取っておく */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dt-decide { gap: 24px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dt-decide[hidden] { display: flex !important; visibility: hidden; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dt-decide .btn { min-width: 260px; min-height: 60px; }
