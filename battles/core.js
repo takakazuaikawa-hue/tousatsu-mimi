@@ -400,7 +400,7 @@
           api.expr = expr;
           setPortrait(A, $('#mb-opp-portrait'), $('#mb-opp-face'), api.charId || 'polka', expr, g.group === 'logic' ? 'chibi' : 'face');
         },
-        say(text, expr) { $('#mb-opp-line').textContent = text; if (expr) api.emote(expr); },
+        say(text, expr) { const el = $('#mb-opp-line'); el.textContent = ''; String(text).split('|').forEach((t, i) => { if (i) el.appendChild(document.createElement('wbr')); el.appendChild(document.createTextNode(t)); }); el.style.wordBreak = String(text).includes('|') ? 'keep-all' : ''; if (expr) api.emote(expr); },  // | は折ってよい所（<wbr>）
         bet(n) { $('#mb-opp-bet').textContent = n; },
         // リコ先輩の一言。expr は think（教える）/ smug / panic（あちゃー）/ lose（泣き笑い）/ win
         // 空の文字列を渡すと、リコ先輩の欄ごと引っ込める（言うことが無い時は黙る）

@@ -41,5 +41,5 @@ try {
   console.log('預かった読み', await page.eval(`JSON.stringify(state.pendingRead && { pick: state.pendingRead.pick, pred: state.pendingRead.pred, truth: state.pendingRead.truth, extra: state.pendingRead.extra })`));
   await page.eval(`state.isPlayerTurn = true; playerFold(); true`); await sleep(3000);
   await click('/次のハンド|次へ|つぎへ/'); await sleep(5000); await shot('verdict'); await sleep(2500); await shot('verdict_result'); await click('/^次へ$/'); await sleep(2000);
-  console.log('卒業の数', await page.eval('save.gradCount || 0'), '称号', await page.eval('!!(save.achievements && save.achievements.graduate)'), '癖', await page.eval('JSON.stringify(save.mimiHabit.slice(-3))'));
+  console.log('一枚絵', await page.eval('!!document.querySelector(".grad-scene-overlay")'), '見た印', await page.eval('!!save.gradCgSeen')); console.log('卒業の数', await page.eval('save.gradCount || 0'), '称号', await page.eval('!!(save.achievements && save.achievements.graduate)'), '癖', await page.eval('JSON.stringify(save.mimiHabit.slice(-3))'));
 } finally { await session.close(); }

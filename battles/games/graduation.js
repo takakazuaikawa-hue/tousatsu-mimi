@@ -22,7 +22,9 @@
     { id: 'face', name: '言葉と顔', acc: .6, how: '本気の先輩はほとんど顔に出ない',
       say: { bluff: ['一瞬だけ、|まばたきが|増えた', '「……どうしたの？」|声が半拍、|早い'], strong: ['呼吸が、|まったく|変わらない', '目が笑っている。|待っている顔だ'] } },
   ];
-  const OPEN = ['アタシ、ミミのこと全部見てたから', '練習は終わり。ここからは試験よ', '教える立場、やめたから'];
+  const OPEN = ['アタシ、ミミのこと全部見てたから', '練習は終わり。ここからは試験よ', '教える立場、|やめたから'];
+  // ルールの文：| で区切った句の途中では折らない（語の途中で1字だけ次の行に落ちていた）
+  const nw = (s) => s.split('|').map(t => `<span style="white-space:nowrap">${t}</span>`).join('');
   const END = { bc: '……見抜いたのね。成長したわ', bw: '降りると思った。ミミの癖、全部知ってるから', sc: '……いい判断よ。降りる勇気も実力', sw: '付いてくると思ったわ。甘いわよ、ミミ' };
 
   MB.register({ id: 'graduation', group: 'psych', order: 6, title: '卒業試験', sub: '心理 · 本気のリコ', isNew: true, chars: ['rico'], start });
@@ -112,9 +114,9 @@
 
     await api.rules({
       key: 'graduation', title: '卒業試験',
-      goal: `先輩の賭けが<em>本物</em>か<em>ブラフ</em>かを読む。<em>先輩の予想を外して当てる</em>と卒業へ（3回）`,
+      goal: nw('先輩の賭けが<em>本物</em>か<em>ブラフ</em>かを読む。|<em>先輩の予想を外して当てる</em>と|卒業へ（3回）'),
       how: 'ミミの記録と先輩の予想を見て、教えを1つ使って読む',
-      risk: '先輩はミミの癖の逆を突く。予想どおりの読みは卒業に数えない',
+      risk: nw('先輩はミミの癖の逆を突く。|予想どおりの読みは|卒業に数えない'),
       look: [['教え', '確かさと、今の場面'], ['読み', '天秤と先輩の予想'], ['自信', '天秤の見込み（％）']],
     });
     if (!api.alive()) return;
@@ -155,7 +157,7 @@
     const defy = decide !== pred;
     $('#mb-gd-pred').classList.add(defy ? 'is-defied' : 'is-kept');
     $('#mb-gd-pred').insertAdjacentHTML('beforeend', `<span class="gd-stamp${defy ? '' : ' is-kept'}">${defy ? '予想を外した' : '予想どおり'}</span>`);
-    api.say(defy ? '……へぇ。そう来るの' : 'やっぱりね', defy ? 'panic' : 'smug');
+    api.say(defy ? '……へぇ。|そう来るの' : 'やっぱりね', defy ? 'panic' : 'smug');
     root.querySelector('.gd-por').classList.toggle('is-alt', defy);
 
     // ④ 自信

@@ -4202,15 +4202,35 @@ function showIntermission(opponentId, onDone, voiceReady) {
   renderLine();
 }
 
+// 卒業の一枚絵：本気のリコ先輩の予想を外して3回読み当てた瞬間に1度だけ出す（ご褒美ではなく物語の名場面。2026-10-26 候補4を採用）
+const GRADUATION_CG = 'assets/backgrounds/graduation_cg.jpg';
+function showGraduationScene(onDone) {
+  const overlay = document.createElement('div');
+  overlay.className = 'grad-scene-overlay';
+  overlay.innerHTML = `
+    <img class="grad-scene-img" src="${GRADUATION_CG}" alt="リコ先輩がミミの頭をなでる">
+    <div class="grad-scene-title">卒業</div>
+    <div class="grad-scene-line"><b>リコ</b>「……合格よ、ミミ。<wbr>もう、アタシが<wbr>教えることは<wbr>何もないわ」</div>
+    <div class="grad-scene-hint">タップして続ける</div>`;
+  (document.getElementById('stage') || document.body).appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('show'));
+  const shownAt = Date.now();
+  overlay.addEventListener('click', () => {
+    if (Date.now() - shownAt < 900 || overlay.classList.contains('out')) return;
+    overlay.classList.add('out');
+    setTimeout(() => { overlay.remove(); onDone && onDone(); }, 400);
+  });
+}
+
 // コレクションの「ご褒美CG」サムネイルから開く全画面ビューア。タップで閉じる。
 function showRewardCgViewer(id) {
-  const opp = OPPONENTS[id] || {};
+  const opp = id === 'graduation' ? { name: '卒業' } : (OPPONENTS[id] || {});
   const overlay = document.createElement('div');
   overlay.className = 'reward-cg-viewer-overlay';
   overlay.innerHTML = `
     <div class="reward-cg-viewer-body">
       <img class="reward-cg-viewer-img" alt="${opp.name || ''}"
-           src="assets/backgrounds/reward_cg_${id}.jpg"
+           src="${id === 'graduation' ? GRADUATION_CG : `assets/backgrounds/reward_cg_${id}.jpg`}"
            ${MOTION_CG.includes(id) ? `data-motion="assets/motion/cg_${id}.mp4" data-motion-replay="1"` : ''}
            onerror="this.onerror=function(){this.onerror=null;this.style.display='none';this.closest('.reward-cg-viewer-body').classList.add('noimg');};this.src='assets/episodes/${id}.webp';">
       <div class="reward-cg-viewer-hint">タップして閉じる</div>
@@ -12846,8 +12866,12 @@ function showCollectionModal() {
       <div class="coll-cg-locked">${GOLD_LOCK}</div>
       <div class="coll-cg-label">？？？<br><small>（${id === 'rico_tutorial' ? `${opp.name}の講義を修了すると開放` : `${opp.name}に初勝利で開放`}）</small></div>
     </div>`;
-  }).join('');
-  const rewardCgCount = stageOrder.filter(id => rewardCgSeen.includes(id)).length;
+  }).join('') + (save.gradCgSeen
+    ? `<button class="coll-cg-card on" data-action="view-reward-cg" data-cg-id="graduation" title="卒業の一枚絵を見る">
+        <img src="${GRADUATION_CG}" alt="卒業"><div class="coll-cg-label">卒業</div></button>`
+    : `<div class="coll-cg-card off" title="未開放"><div class="coll-cg-locked">${GOLD_LOCK}</div>
+        <div class="coll-cg-label">？？？<br><small>（本気のリコ先輩の卒業試験に合格すると開放）</small></div></div>`);
+  const rewardCgCount = stageOrder.filter(id => rewardCgSeen.includes(id)).length + (save.gradCgSeen ? 1 : 0);
 
   const achHtml = achievements.map(a => `
     <div class="coll-ach ${a.achieved ? 'on' : 'off'}">
@@ -12902,7 +12926,7 @@ function showCollectionModal() {
           <div class="coll-stages">${stagesHtml}</div>
         </section>
         <section class="coll-section">
-          <h3 class="coll-section-title">ご褒美CG <span class="coll-section-count">${rewardCgCount}/${stageOrder.length}</span></h3>
+          <h3 class="coll-section-title">ご褒美CG <span class="coll-section-count">${rewardCgCount}/${stageOrder.length + 1}</span></h3>
           <div class="coll-cgs">${rewardCgHtml}</div>
         </section>
         <section class="coll-section">
@@ -15513,6 +15537,8 @@ function showReadVerdict() {
     const host = document.createElement('div');
     host.className = 'read-battle-host rb-' + (p.group || 'psych');
     stage.appendChild(host);
+    // 卒業まであと1つ：答え合わせを読んでいる間に一枚絵を先に読み込む（出た瞬間に絵が欠けないように）
+    if (p.gameId === 'graduation' && (save.gradCount || 0) >= 2 && !save.gradCgSeen) new Image().src = GRADUATION_CG;
     state.readBattlePurse = state.readBattlePurse || { coins: 0, combo: 0, fever: 0, best: 0, perfect: 0 };
     const coinsBefore = state.readBattlePurse.coins;
     let inst = null;
@@ -15532,15 +15558,17 @@ function showReadVerdict() {
           state.readBattleBonus = (state.readBattleBonus || 0) + (state.readBattlePurse.coins - coinsBefore);
           log('psych', { qid: 'mb_' + p.gameId, success: !!(r && r.correct), mult: p.mult || 1 });
           // 卒業試験：先輩の予想（ミミの癖）を外して当てたら1つ数える。3つで称号「卒業」
+          let graduatedNow = false;
           if (p.gameId === 'graduation' && r && r.correct && p.pred && p.pick !== p.pred && !state.peekUsed) {
             save.gradCount = (save.gradCount || 0) + 1;
-            if (save.gradCount >= 3) unlockAchievement('graduate');
+            if (save.gradCount >= 3) { unlockAchievement('graduate'); graduatedNow = !save.gradCgSeen; }
           }
           if (r && r.correct) {
             state.panyu = Math.min(state.panyuMax, state.panyu + 25);
             state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
             state.psychSuccessCount++;
           }
+          if (graduatedNow) { save.gradCgSeen = true; saveProgress(); showGraduationScene(resolve); return; }
           saveProgress();
           resolve();
         },
