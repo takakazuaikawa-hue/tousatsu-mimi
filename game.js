@@ -3297,7 +3297,21 @@ function applyBindings() {
         el.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
         break;
       }
-      case 'ricoAdvice': el.innerHTML = state.ricoAdvice; break;
+      case 'ricoAdvice': {
+        // 本気のリコ戦：先輩は相手なので助言はしない。この欄はミミの顔とミミの心の声にする（台帳34・41）
+        const inner = !!state.seriousRicoMode;
+        const row = el.closest('.v2-com-rico');
+        if (row) {
+          row.classList.toggle('is-mimi-voice', inner);
+          const fi = row.querySelector('.v2-rico-face img');
+          if (fi && inner && fi.getAttribute('src') !== 'assets/ui/face_mimi.webp') { fi.onerror = null; fi.setAttribute('src', 'assets/ui/face_mimi.webp'); fi.alt = 'ミミ'; }
+          else if (fi && !inner && fi.alt === 'ミミ') { fi.alt = 'リコ先輩'; applyBattleRicoOutfit(); }
+        }
+        // 心の声は長いと欄で切れるので、最初の一言と、最後の「→ どうするか」だけにする
+        if (inner) { const ls = String(state.mimiThought || '').split('\n').filter(Boolean); el.textContent = ls.length > 2 ? ls[0] + '\n' + ls[ls.length - 1] : ls.join('\n'); }
+        else el.innerHTML = state.ricoAdvice;
+        break;
+      }
       case 'opponentSpeech': {
         if (state.opponentThinking) {
           el.innerHTML = `<span class="think-dots" aria-label="考え中"><i></i><i></i><i></i></span>`;
@@ -4873,6 +4887,7 @@ function applyOpponentIdle() {
 function applyBattleRicoOutfit() {
   const img = document.querySelector('.char-rico img');
   if (!img) return;
+  if (state.seriousRicoMode && img.closest('.v2-com-rico')) return;   // 本気のリコ戦はこの欄がミミの心の声（顔はミミ）
   const equipped = save && save.equippedRicoOutfit;
   const found = equipped && equipped !== 'default'
     ? RICO_OUTFITS.find(o => outfitIdFor(o.file) === equipped)

@@ -20340,3 +20340,7 @@ html.is-compact .grad-scene-line { left: calc((var(--pad-x, 47px) + 8px) / var(-
 html.is-compact .grad-scene-hint { right: calc((var(--pad-x, 47px) + 8px) / var(--game-scale, 1)); bottom: calc(6px / var(--game-scale, 1)); font-size: calc(14px / var(--game-scale, 1)); }
 html.is-compact #stage > .grad-scene-overlay { left: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1)); right: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1)); top: calc(-1 * var(--gut-y, 0px) / var(--game-scale, 1)); bottom: calc(-1 * var(--gut-y, 0px) / var(--game-scale, 1)); }
 .reward-cg-viewer-hint { font-size: 16px; }
+/* 本気のリコ戦：左下の欄はミミの顔と心の声（先輩は相手なので助言しない。2026-10-26） */
+.battle-screen.v2 .v2-com-rico.is-mimi-voice .v2-rico-bubble { white-space: pre-line; }
+.battle-screen.v2 .v2-com-rico.is-mimi-voice .v2-com-face { border-color: #e9a3b4; }
+html.is-compact .battle-screen.v2.t8 .v2-com-rico.is-mimi-voice .rico-bubble.v2-com-text { -webkit-line-clamp: 5 !important; max-height: 6.6em !important; }
