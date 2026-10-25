@@ -1426,15 +1426,15 @@ function pickRicoOpeningAdvice(opponentId) {
 function opponentReadyLine() {
   if (state.seriousRicoMode) return pick([
     '本気のアタシ、見せるわ',
-    '甘やかしは終わり。さあ、始めよう',
-    'ミミ、今日は弟子じゃなくて相手として',
+    'さあ、始めよう',
+    '今日は相手として',
     '師範代の名にかけて、勝たせてもらう',
   ]);
   switch (state.opponentId) {
     case 'rico_tutorial': return pick([
-      'いいよミミ、リラックスして〜',
-      'はい、深呼吸して〜',
-      '練習、練習。気楽にね〜',
+      'リラックスして〜',
+      '深呼吸して〜',
+      '気楽にね〜',
       'カード配るよ〜、ふふ',
     ]);
     case 'polka':  return pick([
@@ -1455,15 +1455,15 @@ function opponentReadyLine() {
     ]);
     case 'grano':  return pick([
       'さあ、開店ですよ。',
-      '良い取引にしましょう、お嬢さん。',
+      '良い取引を、お嬢さん',
       '値踏みの時間ですね。',
       'ふふ、本日もよろしくお願いしますな。',
       'お嬢さんの財布の中身、楽しみですよ。',
       '今日も商売繁盛と参りましょう。',
     ]);
     case 'velvet': return pick([
-      'さあ、始めるのよ、新人。',
-      'あなたの限界、見せてもらうの。',
+      '始めるのよ、新人',
+      '限界、見せてもらうの',
       'カードを配るのよ……',
       '……運命の卓へ、ようこそ。',
       '今夜が、あなたの最終試験なの。',
@@ -1559,7 +1559,7 @@ function opponentReactToPlayerAggression(kind, amount) {
         'その手、本気で通すつもり？',
       ]);
       case 'allin': return pick([
-        'オールイン……本気なのね、ミミ',
+        'オールイン……本気ね',
         '全部……いいわ、受けて立つ',
         '弟子が師匠に挑む顔ね、それ',
         'その覚悟、見せてもらうわ',
@@ -1588,7 +1588,7 @@ function opponentReactToPlayerAggression(kind, amount) {
         'うわ、成長したね……ちょっと悩むわ',
       ]);
       case 'allin': return pick([
-        'えっ、オールイン！？ま、まじで！？',
+        'えっ、オールイン！？',
         'ちょ、待って！本当に全部乗せた！？',
         'ミミ、それ本気の顔してる……どうしよ',
         'うわぁ、これは……教え子が怖いよ',
@@ -1615,7 +1615,7 @@ function opponentReactToPlayerAggression(kind, amount) {
         'ちょっとタンマ！考えさせてー！',
       ]);
       case 'allin': return pick([
-        'ええーっ！？オールイン！？う、嘘でしょ〜！？',
+        'ええっ、オールイン！？',
         'ちょ、ま、待って！心の準備が〜！',
         'ボ、ボクの人生終わった……（涙目）',
         'えぇぇ！？そこまでやる！？',
@@ -1642,7 +1642,7 @@ function opponentReactToPlayerAggression(kind, amount) {
         '……見直す必要がありそうです。',
       ]);
       case 'allin': return pick([
-        'オールイン……予想以上です。少し、驚きました。',
+        '……予想以上です',
         'そこまでの覚悟とは。慎重に判断します。',
         '全て、ですか。……興味深いです。',
         '……想定外です。じっくり読ませてください。',
@@ -1669,7 +1669,7 @@ function opponentReactToPlayerAggression(kind, amount) {
         'これは考えものですね。',
       ]);
       case 'allin': return pick([
-        'オールイン……全財産を賭けるとは、大した度胸ですな。',
+        '大した度胸ですな',
         'これは大きな取引になりましたね……検討します。',
         'まさか、そこまでの覚悟とは。驚きました。',
         'ふむ……これは商談の域を超えていますね。',
@@ -1696,7 +1696,7 @@ function opponentReactToPlayerAggression(kind, amount) {
         'あら素敵。もっと見せて？',
       ]);
       case 'allin': return pick([
-        'オールイン……あら、素敵。全部賭ける覚悟、気に入ったのよ。',
+        'あら、素敵な覚悟なの',
         'ふふふ、いいのよ。そこまでするなら、受けて立つの。',
         '震えるどころか、笑えてきたのよ。楽しませてくれるじゃない。',
         'あら、あらあら。新人にしては上出来なのよ。',
