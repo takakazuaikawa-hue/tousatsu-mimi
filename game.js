@@ -7001,9 +7001,9 @@ function renderTugOfWar(host) {
     if (moved) { void host.offsetWidth; host.classList.add('moved-' + moved); }
   }
   return `<div class="tug-head">
-      <span class="tug-name is-mimi">ミミ <b>${P}</b></span>
+      <span class="tug-name is-mimi"><i class="tug-who">ミミ </i><b>${P}</b></span>
       <span class="tug-state ${cls}">${mood}</span>
-      <span class="tug-name is-opp"><b>${O}</b> ${oppName}</span>
+      <span class="tug-name is-opp"><b>${O}</b><i class="tug-who"> ${oppName}</i></span>
     </div>
     <div class="tug-bar" role="img" aria-label="ミミ ${P}、${oppName} ${O}">
       <i class="tug-mimi" style="width:${pct}%"></i><i class="tug-opp" style="width:${100 - pct}%"></i><i class="tug-mid"></i>

@@ -20347,3 +20347,6 @@ html.is-compact #stage > .grad-scene-overlay { left: calc(-1 * var(--gut-x, 0px)
 .battle-screen.v2 .v2-com-rico.is-mimi-voice .v2-com-face { border-color: #e9a3b4; }
 html.is-compact .battle-screen.v2.t8 .v2-com-rico.is-mimi-voice .rico-bubble.v2-com-text { -webkit-line-clamp: 5 !important; max-height: 6.6em !important; }
 .battle-screen.v2.t8 .v2-com-rico.is-mimi-voice .rico-bubble.v2-com-text::before { content: 'ミミの心の声'; color: #f0b3c2; }
+/* 小さいスマホ（667×375 など）：帯の左右の名前が卓の名前と「役の一覧」に重なる → 名前は隠し、数字と帯の色で見せる（2026-10-26） */
+.tug-name .tug-who { font-style: normal; }
+@media (max-width: 700px) { html.is-compact .tug-name .tug-who { display: none; } html.is-compact .tug-head { padding-left: calc(16px / var(--game-scale, 1)); } }
