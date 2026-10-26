@@ -16,6 +16,6 @@ try {
   await page.eval(`window.__ricoSeriousMode = true; startBattle('rico_tutorial'); true`); await sleep(2500);
   for (let i = 0; i < 20 && !(await page.eval('(state.playerHand || []).length === 2 && (state.deck || []).length > 10')); i++) { await page.eval(`(() => { const b = [...document.querySelectorAll('button')].find(b => b.offsetParent && /開始|対戦開始/.test(b.textContent)); b && b.click(); return 1; })()`); await sleep(900); }
   await sleep(2500); await shot('1_hand');
-  await page.eval(`(() => { while ((state.community || []).length < 3) state.community.push(state.deck.pop()); state.handPhase = 'flop'; state.currentBetOpponent = (state.currentBetPlayer || 0) + 120; state.mimiThought = '「リコ先輩が120ベット……どう出る？」' + String.fromCharCode(10) + mimiAssess([...state.playerHand, ...state.community], state.community, 120, state.pot); state.isPlayerTurn = true; render(); return 1; })()`);
+  await page.eval(`(() => { while ((state.community || []).length < 3) state.community.push(state.deck.pop()); state.handPhase = 'flop'; state.currentBetOpponent = (state.currentBetPlayer || 0) + 120; state.mimiThought = '「本気のリコ先輩が120まで上げてきた……」' + String.fromCharCode(10) + mimiAssess([...state.playerHand, ...state.community], state.community, 120, state.pot); state.isPlayerTurn = true; render(); return 1; })()`);
   await sleep(1500); await shot('2_facing');
 } finally { await session.close(); }

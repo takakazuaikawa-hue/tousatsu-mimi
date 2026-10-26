@@ -3308,7 +3308,8 @@ function applyBindings() {
           else if (fi && !inner && fi.alt === 'ミミ') { fi.alt = 'リコ先輩'; applyBattleRicoOutfit(); }
         }
         // 心の声は長いと欄で切れるので、最初の一言と、最後の「→ どうするか」だけにする
-        if (inner) { const ls = String(state.mimiThought || '').split('\n').filter(Boolean); el.textContent = ls.length > 2 ? ls[0] + '\n' + ls[ls.length - 1] : ls.join('\n'); }
+        if (inner) { const ls = String(state.mimiThought || '').replace(/(本気の)?リコ先輩/g, '先輩').split('\n').filter(Boolean); const wide = document.documentElement.classList.contains('is-compact');   // PC の欄は狭く3行しか入らない：「→ どうするか」を優先
+          el.textContent = ls.length > 1 && !wide ? ls[ls.length - 1] : ls.length > 2 ? ls[0] + '\n' + ls[ls.length - 1] : ls.join('\n'); }
         else el.innerHTML = state.ricoAdvice;
         break;
       }
@@ -13517,7 +13518,7 @@ function startBattleInternal(opponentId) {
   state.peekUsed = isPeekActive();
   if (typeof startBattleBgmSkin === 'function') startBattleBgmSkin();
   // 相手別テーブル背景（CODEX納品画像）を適用
-  document.body.dataset.oppBg = ['polka','selina','grano','velvet'].includes(opp.id) ? opp.id : '';
+  document.body.dataset.oppBg = seriousRico ? 'rico_serious' : ['polka','selina','grano','velvet'].includes(opp.id) ? opp.id : '';   // 本気のリコ＝時計台の大文字盤の裏（2026-10-26 候補2）
   state.handPhase = 'idle';
   state.panyuMax = save.panyuGaugeMax || 100;
   state.panyuSenseFreeUsed = save.panyuSenseFreeUsed;
@@ -19515,6 +19516,7 @@ const DEFERRED_ASSETS = [
   'assets/backgrounds/poker_table_bg.webp',
   'assets/backgrounds/table_polka.webp', 'assets/backgrounds/table_selina.webp',
   'assets/backgrounds/table_grano.webp', 'assets/backgrounds/table_velvet.webp',
+  'assets/backgrounds/table_rico_serious.webp',
 ];
 function startDeferredPrefetch() {
   // 読み込み係があれば、プレイの順番どおりに読む：ロビー → ロビーのBGM → 次の相手の対戦 → 残りの背景

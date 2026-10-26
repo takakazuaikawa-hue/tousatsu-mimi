@@ -397,6 +397,7 @@ html.is-compact #app > .title-screen.t3 > .t3-scene { left: calc(-1 * var(--blee
 body[data-opp-bg="polka"]  .bg-poker,
 body[data-opp-bg="selina"] .bg-poker,
 body[data-opp-bg="grano"]  .bg-poker,
+body[data-opp-bg="rico_serious"] .bg-poker,
 body[data-opp-bg="velvet"] .bg-poker {
   background-size: cover, cover, cover;
   background-position: center, center, center;
@@ -406,6 +407,7 @@ body[data-opp-bg="polka"]  .bg-poker { background-image: radial-gradient(ellipse
 body[data-opp-bg="selina"] .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_selina.webp'), url('assets/backgrounds/poker_table_bg.webp'); }
 body[data-opp-bg="grano"]  .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_grano.webp'),  url('assets/backgrounds/poker_table_bg.webp'); }
 body[data-opp-bg="velvet"] .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_velvet.webp'), url('assets/backgrounds/poker_table_bg.webp'); }
+body[data-opp-bg="rico_serious"] .bg-poker { background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_rico_serious.webp'), url('assets/backgrounds/poker_table_bg.webp'); }
 .bg-result {
   background:
     radial-gradient(ellipse at 50% 30%, rgba(245,215,122,0.25), transparent 60%),
@@ -20344,3 +20346,4 @@ html.is-compact #stage > .grad-scene-overlay { left: calc(-1 * var(--gut-x, 0px)
 .battle-screen.v2 .v2-com-rico.is-mimi-voice .v2-rico-bubble { white-space: pre-line; }
 .battle-screen.v2 .v2-com-rico.is-mimi-voice .v2-com-face { border-color: #e9a3b4; }
 html.is-compact .battle-screen.v2.t8 .v2-com-rico.is-mimi-voice .rico-bubble.v2-com-text { -webkit-line-clamp: 5 !important; max-height: 6.6em !important; }
+.battle-screen.v2.t8 .v2-com-rico.is-mimi-voice .rico-bubble.v2-com-text::before { content: 'ミミの心の声'; color: #f0b3c2; }
