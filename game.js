@@ -18002,6 +18002,17 @@ function endBattle() {
     goalLine.className = 'result-next-goal';
     goalLine.textContent = nextGoalText();
     statsBox.insertAdjacentElement('afterend', goalLine);
+    // 勝った時：交換所に新しく入荷した品を札で見せる（小さな絵3つまで・押すと交換所へ）。台帳36（10/21 承認）
+    const news = won ? SHOP_ITEMS.filter(i => isShopItemNew(i.id)) : [];
+    if (news.length) {
+      const card = document.createElement('button');
+      card.type = 'button'; card.className = 'result-unlock'; card.dataset.action = 'open-shop';
+      // 絵は交換所と同じ（衣装は着た姿の上半分・品は札の絵）。衣装を先に
+      const th = news.map(i => ({ i, a: shop3Art(i) })).filter(x => x.a && x.a.src).sort((p, q) => (q.a.type === 'figure') - (p.a.type === 'figure')).slice(0, 3);
+      card.innerHTML = `<span class="ru-h">解放</span><span class="ru-thumbs">${th.map(x => `<img class="is-${x.a.type}" src="${x.a.src}" alt="">`).join('')}</span><span class="ru-t">新入荷 <b>${news.length}</b>点</span><span class="ru-go">交換所へ ›</span>`;
+      card.addEventListener('click', onAction);
+      goalLine.insertAdjacentElement('afterend', card);
+    }
   }
 
   // 主ボタン：次に挑戦できるステージが解放されていればそのステージへ直行、無ければロビーへ
@@ -18029,6 +18040,7 @@ function endBattle() {
           <button class="btn btn-primary result-main-btn" data-action="go-intermission" data-opponent="${state.opponentId}"><span>幕間へ</span><span>→</span></button>
         `;
         btns.querySelectorAll('[data-action]').forEach(el => el.addEventListener('click', onAction));
+        resultUnlockLater(true);
       } else {
         renderWonResultButtons();
       }
@@ -18041,6 +18053,7 @@ function endBattle() {
     save.endingUnlocked = true;
     saveProgress();
     if (firstClearForIntermission) {
+      resultUnlockLater(true);
       // ヴェルベットの降伏の台詞（負けて崩れる場面：「あたし」「〜なの」「〜のよ」。「ざぁこ」は使わない）。
       // スコア内訳（畳んである）の中ではなく、結果の札の本体に1枚の台詞札として置く
       const concession = pick([
@@ -18103,6 +18116,7 @@ function wonResultButtonsHtml(opponentId) {
 }
 // [data-bind="resultButtons"] に通常の勝利ボタン群を描画し、data-action を再バインドする
 function renderWonResultButtons() {
+  resultUnlockLater(false);
   const btns = document.querySelector('[data-bind="resultButtons"]');
   if (!btns) return;
   btns.innerHTML = wonResultButtonsHtml(state.opponentId);
@@ -18110,6 +18124,12 @@ function renderWonResultButtons() {
 }
 
 // 次に挑戦すべきステージ名を1行で返す（解放ルール／クリア記録は既存関数をそのまま読むだけ）
+// 「解放」の札：初勝利で幕間が控えている間は押せない表示（交換所へ行くと幕間を飛ばしてしまうため）。幕間の後の勝利ボタンで戻す
+function resultUnlockLater(on) {
+  const ru = document.querySelector('.result-unlock'); if (!ru) return;
+  ru.disabled = !!on; ru.classList.toggle('is-later', !!on);
+  const go = ru.querySelector('.ru-go'); if (go) go.textContent = on ? '幕間のあとで' : '交換所へ ›';
+}
 function nextGoalText() {
   // 今の相手より「先」の未クリアを優先（ポルカに勝った直後に「リコ先輩に挑戦」と出ないように）
   const curIdx = STAGE_ORDER.indexOf(state.opponentId);
