@@ -143,7 +143,12 @@
     const { S } = G();
     const ov = TAP_OVERLAYS.concat(DUP_WATCH.map(c => '.' + c)).map(s => [...document.querySelectorAll(s)].filter(vis).length ? s : '').filter(Boolean).join(',');
     if (!S) return 'boot';
-    return [S.screen, S.opponentId, S.handPhase, S.handNo, S.isPlayerTurn ? 1 : 0, S.playerChips, S.opponentChips, S.pot, S.psychPending ? 1 : 0, S.introHandMode ? 1 : 0, S.lectureMode ? 1 : 0, ov, readBattleMark()].join('|');
+    return [S.screen, S.opponentId, S.handPhase, S.handNo, S.isPlayerTurn ? 1 : 0, S.playerChips, S.opponentChips, S.pot, S.psychPending ? 1 : 0, S.introHandMode ? 1 : 0, S.lectureMode ? 1 : 0, ov, readBattleMark(), storyMark()].join('|');
+  }
+  // 物語の画面（タップで1文ずつ進む）：進んだ文の長さと場面の印。これが無いと、進んでいても「進まない」と判定して止まっていた（台帳24）
+  function storyMark() {
+    const ov = [...document.querySelectorAll('.story-overlay')].filter(vis).pop();
+    return ov ? (ov.textContent || '').length + ':' + ov.className.replace(/\s+/g, '.') : '';
   }
 
   function snapshot() {

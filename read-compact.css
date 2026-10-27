@@ -1028,3 +1028,8 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tile
 }
 
 /* ===== 古い型9種の文字の段 ここまで ===== */
+/* 最小のスマホ（幅720px未満）の左の列：「フィーバ／ー」と折れていた・相手の名前が顔の絵に隠れていた（2026-10-27） */
+@media (max-width: 719px) {
+  html.is-compact #stage > .read-battle-host.mb-host .mb-purse > div, html.is-compact #stage > .read-battle-host.mb-host .mb-purse .mb-fever-box { white-space: nowrap; letter-spacing: 0; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-opp-name { position: relative; z-index: 3; text-shadow: 0 1px 3px #000, 0 0 8px #000; }
+}

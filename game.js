@@ -5027,9 +5027,9 @@ function showSettingsModal() {
           <button class="btn btn-secondary settings-modal-trophy" data-action="open-glossary">${UI_ICON.book} ポーカー辞典</button>
           <button class="btn btn-secondary settings-modal-trophy" data-action="equip-change">${UI_ICON.dress} 装備変更</button>
           ${(save.ownedItems || []).includes('memory_minipoker') ? `<button class="btn btn-secondary settings-modal-trophy" data-action="play-minipoker">${UI_ICON.card} ファイブポーカー</button>` : ''}
-          <button class="btn btn-secondary settings-modal-trophy" data-pack-row>まとめてダウンロード <span class="pack-row-state" data-pack-state></span></button>
+          <button class="btn btn-secondary settings-modal-trophy" data-pack-row><span class="kw">まとめて<wbr>ダウンロード</span> <span class="pack-row-state" data-pack-state></span></button>
           <button class="btn btn-secondary settings-modal-trophy" data-action="home-fullscreen">全画面で遊ぶ</button>
-          <button class="btn btn-danger settings-modal-reset" data-action="reset-save">セーブデータをリセット</button>
+          <button class="btn btn-danger settings-modal-reset" data-action="reset-save"><span class="kw">セーブデータを<wbr>リセット</span></button>
         </section>
       </div>
       <button class="btn btn-primary settings-modal-close">閉じる</button>
