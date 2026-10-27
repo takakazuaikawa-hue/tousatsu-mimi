@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html voice.js game.js home.js home-live.js loader.js style.css read-compact.css allstar.js allstar-ui.js allstar.css _site/
-          cp sw.js offline.js offline.css manifest.webmanifest _site/
+          cp sw.js offline.js offline.css type-roles.css manifest.webmanifest _site/
           if [ -f ui-modal.css ]; then cp ui-modal.css _site/; fi
           mkdir -p _site/battles/games
           cp battles/core.js battles/core.css battles/read-pc.css _site/battles/

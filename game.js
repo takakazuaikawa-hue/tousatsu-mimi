@@ -3739,17 +3739,56 @@ const STORY_WHO = {
   rico: { name: 'リコ先輩', face: 'assets/ui/face_rico_bunny.webp' },
   mimi: { name: 'ミミ', face: 'assets/ui/face_mimi.webp' },
   goddess: { name: '女神' },
+  polka: { name: 'ポルカ', face: 'assets/ui/face_polka.webp' },
+  selina: { name: 'セリナ', face: 'assets/ui/face_selina.webp' },
+  grano: { name: 'グラーノ', face: 'assets/ui/face_grano.webp' },
+  velvet: { name: 'ヴェルベット', face: 'assets/ui/face_velvet.webp' },
 };
+// 場面ごとの背景（無ければ assets/episodes/<場面>.webp）。苦戦の場面は一枚絵ができるまで各話の扉の絵
+const STORY_ART = { struggle_polka: 'assets/episodes/polka.webp', struggle_selina: 'assets/episodes/selina.webp', struggle_grano: 'assets/episodes/grano.webp', struggle_velvet: 'assets/episodes/velvet.webp' };
+// 台帳37 初対戦の苦戦の場面：攻め方は読み合いと同じ相手の癖
+const STRUGGLE_SCENES = {
+  polka: [
+    { k: 'say', who: 'polka', t: 'えへへ、ミミちゃんのチップ、どんどんボクのとこに来るね〜！' },
+    { k: 'think', who: 'mimi', t: '大きく賭けられるたびに、降りちゃってる……' },
+    { k: 'say', who: 'rico', t: 'ポルカは大きく賭けてもブラフが多い子。顔を見て。焦ってたら、付いていっていいよ' },
+  ],
+  selina: [
+    { k: 'say', who: 'selina', t: '……計算どおり。' },
+    { k: 'think', who: 'mimi', t: '小さく賭け続けられて、少しずつ削られてる……' },
+    { k: 'say', who: 'rico', t: 'セリナが大きく賭けた時は、ほとんど本物。弱い手で付き合わないで、強い時だけ勝負しよ' },
+  ],
+  grano: [
+    { k: 'say', who: 'grano', t: 'お嬢さん、その値段で払い続けては、商売になりませんな' },
+    { k: 'think', who: 'mimi', t: '払うたびに、外れてばかり……' },
+    { k: 'say', who: 'rico', t: '払う額と、当たる見込みを比べな。高すぎる時は降りるのも立派な一手だよ' },
+  ],
+  velvet: [
+    { k: 'say', who: 'velvet', t: 'ふふっ、もう半分しか残ってないの。ざぁこ♡' },
+    { k: 'think', who: 'mimi', t: '強気に言われるたびに、引いちゃってる……' },
+    { k: 'say', who: 'rico', t: 'ヴェルベットは演技がうまい。強がった時ほど怪しいよ。逆を読んでみな' },
+  ],
+};
+// 苦戦の場面を出す時か：まだ勝っていない相手・チップが最初の6割以下・その相手ではまだ見ていない
+function struggleSceneDue() {
+  if (state.tutorialMode || state.introHandMode || state.lectureMode || state.seriousRicoMode) return null;
+  const id = state.opponentId;
+  if (!STRUGGLE_SCENES[id] || (save.clearedStages || []).includes(id)) return null;
+  if (!save.struggleSeen) save.struggleSeen = [];
+  if (save.struggleSeen.includes(id)) return null;
+  const init = state.__initialChips || 0;
+  if (!init || state.playerChips <= 0 || state.playerChips > init * 0.6) return null;
+  return id;
+}
 const PROLOGUES = {
+  struggle_polka: STRUGGLE_SCENES.polka, struggle_selina: STRUGGLE_SCENES.selina, struggle_grano: STRUGGLE_SCENES.grano, struggle_velvet: STRUGGLE_SCENES.velvet,
   rico_tutorial: [
-    { k: 'mono', t: '三日目の徹夜明け。終電は、とっくに出たあとだった。', voice: 'mimi/pro_01' },
-    { k: 'mono', t: 'ふらつく足で渡った、深夜の横断歩道。', voice: 'mimi/pro_02' },
-    { k: 'mono', t: '目の前いっぱいのライト。鳴りやまないクラクション。', voice: 'mimi/pro_03' },
-    { k: 'mono', t: '――そこで、私の記憶は途切れている。', voice: 'mimi/pro_04' },
-    { k: 'voice', who: 'goddess', t: 'この子のスキルは……《ぱ●ぱ●》。\nなにこれ、外れスキルだね' },
-    { k: 'title' },
+    // 2026-10-27 始まりのつかみ（台帳28・ユーザーが案Cを選んだ）：うさ耳で目覚める驚きから始め、徹夜明けは一瞬暗くして思い出す1行に縮める
     { k: 'say', who: 'mimi', t: '……え？　なにこれ。うさぎの耳？　しっぽ？', voice: 'mimi/pro_05' },
     { k: 'say', who: 'mimi', t: 'あったかい……ぴくぴく動く……。これ、本物！？', voice: 'mimi/pro_06' },
+    { k: 'mono', t: '三日目の徹夜明け。ライトとクラクション。――そこで、記憶は途切れている。', voice: 'mimi/pro_00' },
+    { k: 'voice', who: 'goddess', t: 'この子のスキルは……《ぱ●ぱ●》。\nなにこれ、外れスキルだね' },
+    { k: 'title' },
     { k: 'think', who: 'mimi', t: 'トラック、知らない部屋、うさぎの耳。……まさか、異世界転生ってやつ！？' },
     { k: 'say', who: 'rico', t: 'おはよ、新人ちゃん。鏡に見とれてないで、そろそろ開店だよ', voice: 'rico/pro_07' },
     { k: 'say', who: 'mimi', t: 'あ、あの！　ここどこですか！？　私、会社の帰りで……', voice: 'mimi/pro_08' },
@@ -3778,7 +3817,7 @@ function showStoryScene(key, onDone, voiceReady) {
     return;
   }
   const ep = EPISODES[key] || {};
-  const art = `assets/episodes/${key}.webp`;
+  const art = STORY_ART[key] || `assets/episodes/${key}.webp`;
   if (window.MimiAssets) window.MimiAssets.warm([art]);
   const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const sub = ep.sub || String(ep.short || '').split('─').pop().trim();
@@ -3844,6 +3883,8 @@ function showStoryScene(key, onDone, voiceReady) {
   const showStep = (s) => {
     if (window.MimiVoice) { if (s.voice) MimiVoice.playId(s.voice, { prio: 1, noRepeat: false, maxLateMs: 1500 }); else stopVoice(); }
     if (s.k === 'mono') {
+      // 会話の後の独白（目覚めの後に徹夜明けを思い出す）：一瞬暗く戻す
+      if (!ov.classList.contains('is-mono')) { ov.classList.remove('has-art', 'is-talk', 'is-title'); ov.classList.add('is-mono'); monoEl.innerHTML = ''; }
       const line = document.createElement('p');
       line.textContent = s.t;
       monoEl.appendChild(line);
@@ -4069,6 +4110,9 @@ function showIntermission(opponentId, onDone, voiceReady) {
         <div class="ims-cg-fallback-name">${oppName}</div>
         <div class="ims-cg-fallback-label">ご褒美CG 開放！</div>
       </div>
+      <div class="ims-cg-stamp" aria-hidden="true"><span>一枚絵 開放</span></div>
+      <div class="ims-cg-cap"><b></b><span></span></div>
+      <div class="ims-cg-got">コレクションに追加</div>
       <div class="ims-cg-hint"><span>タップして進む</span><i class="ims-cg-hint-arrow" aria-hidden="true">▼</i></div>
     </div>
   `;
@@ -4076,6 +4120,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
   (stage || document.body).appendChild(overlay);
   addSoundToggle(overlay);
 
+  { const pre = new Image(); pre.src = data.cg || `assets/backgrounds/reward_cg_${opponentId}.jpg`; }
   const mimiChar = overlay.querySelector('.ims-char-mimi');
   const oppChar = overlay.querySelector('.ims-char-opp');
   const dialogueBox = overlay.querySelector('.ims-dialogue');
@@ -4179,6 +4224,9 @@ function showIntermission(opponentId, onDone, voiceReady) {
       saveProgress();
     }
     const cgPath = data.cg || `assets/backgrounds/reward_cg_${opponentId}.jpg`;
+    // 余韻の字幕：最後に話した人の一言（会話の箱は隠すので、その前に写す）
+    const capEl = cgLayer.querySelector('.ims-cg-cap');
+    if (capEl) { capEl.querySelector('b').textContent = dlgName.textContent || ''; capEl.querySelector('span').textContent = dlgText.textContent || ''; }
     cgImg.onerror = () => {
       cgImg.onerror = () => { cgImg.onerror = null; cgImg.style.display = 'none'; cgLayer.classList.add('ims-cg-noimg'); };
       cgImg.src = `assets/episodes/${opponentId}.webp`;
@@ -4192,6 +4240,13 @@ function showIntermission(opponentId, onDone, voiceReady) {
     }
     cgLayer.hidden = false;
     requestAnimationFrame(() => cgLayer.classList.add('show'));
+    // 溜め → 寄りから引く → 余韻の字幕 → コレクションに追加（動きを減らす設定では寄り引きをせず、字幕と札だけ）
+    const quiet = !MOTION_OK;
+    cgLayer.classList.add(quiet ? 'is-quiet' : 'is-stamp');
+    if (typeof mpSfx === 'function') mpSfx('reach');
+    setTimeout(() => { cgLayer.classList.remove('is-stamp'); cgLayer.classList.add('is-reveal'); if (typeof mpSfx === 'function') mpSfx('bigwin'); }, quiet ? 0 : 850);
+    setTimeout(() => { if (capEl && capEl.querySelector('span').textContent) cgLayer.classList.add('is-cap'); }, quiet ? 300 : 3200);
+    setTimeout(() => cgLayer.classList.add('is-got'), quiet ? 600 : 4400);
   }
 
   function finish() {
@@ -5765,6 +5820,8 @@ const SHOP3_SWATCH = {
 };
 // 品の絵（ChatGPT で同じ絵柄の小物として描いた。assets/ui/shop/items）。段違いの品（Lv2/Lv3 など）は同じ絵に数を重ねる
 const SHOP3_OBJ = {
+  // カットインの2品は、本物のカットインをその見た目で撮って切り出した絵（qa/cutinshot.mjs、2026-10-27）
+  cutin_classic: 'cutin_classic', cutin_neon: 'cutin_neon',
   panyu_sense: 'panyu_sense', panyu_range: 'panyu_range', panyu_gauge: 'panyu_gauge', panyu_combo_x2: 'panyu_combo', panyu_chrono: 'panyu_chrono',
   note_pot_odds: 'note_pot_odds', note_tell: 'note_tell', note_bankroll: 'note_bankroll', memory_minipoker: 'memory_minipoker',
   bgm_lobby_jazz: 'memory_bgm_records', bgm_battle_tense: 'memory_bgm_records', bgm_battle_techno: 'memory_bgm_records', se_pack_casino: 'memory_se_bell',
@@ -8194,6 +8251,7 @@ function onAction(e) {
       goLobby();
       break;
     }
+    case 'replay-struggle': { const id = data.opp; if (STRUGGLE_SCENES[id]) showStoryScene('struggle_' + id); break; }
     case 'open-shop': {
       const newCount = newItemCount();
       if (!shop3AssetsGate(() => onAction({ currentTarget: { dataset: { action: 'open-shop' } } }))) break;
@@ -12882,13 +12940,13 @@ function showCollectionModal() {
     }
     return `<div class="coll-cg-card off" title="未開放">
       <div class="coll-cg-locked">${GOLD_LOCK}</div>
-      <div class="coll-cg-label">？？？<br><small>（${id === 'rico_tutorial' ? `${opp.name}の講義を修了すると開放` : `${opp.name}に初勝利で開放`}）</small></div>
+      <div class="coll-cg-label"><small>${id === 'rico_tutorial' ? `${opp.name}の講義を終えると開放` : `${opp.name}に勝つと開放`}</small></div>
     </div>`;
   }).join('') + (save.gradCgSeen
     ? `<button class="coll-cg-card on" data-action="view-reward-cg" data-cg-id="graduation" title="卒業の一枚絵を見る">
         <img src="${GRADUATION_CG}" alt="卒業"><div class="coll-cg-label">卒業</div></button>`
     : `<div class="coll-cg-card off" title="未開放"><div class="coll-cg-locked">${GOLD_LOCK}</div>
-        <div class="coll-cg-label">？？？<br><small>（本気のリコ先輩の卒業試験に合格すると開放）</small></div></div>`);
+        <div class="coll-cg-label"><small>卒業試験に合格で開放</small></div></div>`);
   const rewardCgCount = stageOrder.filter(id => rewardCgSeen.includes(id)).length + (save.gradCgSeen ? 1 : 0);
 
   const achHtml = achievements.map(a => `
@@ -12947,6 +13005,13 @@ function showCollectionModal() {
           <h3 class="coll-section-title">ご褒美CG <span class="coll-section-count">${rewardCgCount}/${stageOrder.length + 1}</span></h3>
           <div class="coll-cgs">${rewardCgHtml}</div>
         </section>
+        ${(() => {
+          // 台帳37：初対戦の苦戦の場面は、勝った後に思い出で見返せる
+          const ids = ['polka', 'selina', 'grano', 'velvet'].filter(id => (save.struggleSeen || []).includes(id) && (save.clearedStages || []).includes(id));
+          if (!ids.length) return '';
+          return `<section class="coll-section"><h3 class="coll-section-title">苦戦の思い出 <span class="coll-section-count">${ids.length}件</span></h3>
+            <div class="memory-grid">${ids.map(id => `<button class="memory-card" data-action="replay-struggle" data-opp="${id}"><div class="memory-card-title">${(STORY_WHO[id] || {}).name}戦</div><div class="memory-card-desc">${STRUGGLE_SCENES[id][2].t}</div><div class="memory-card-play">見る</div></button>`).join('')}</div></section>`;
+        })()}
         <section class="coll-section">
           <h3 class="coll-section-title">交換所アイテム <span class="coll-section-count">${ownedItems.length}/${allItems.length}</span></h3>
           <div class="coll-items">${itemsHtml}</div>
@@ -17583,6 +17648,13 @@ function continueAfterHand() {
     return startDominanceMode();
   }
   state.mimiThought = '「次のハンドだ。集中していこう」';
+  // 台帳37：初対戦で苦戦し始めたら、1回だけ一枚絵と会話で攻め方を伝える
+  const struggle = struggleSceneDue();
+  if (struggle) {
+    save.struggleSeen.push(struggle); saveProgress();
+    const g0 = battleGen;
+    return showStoryScene('struggle_' + struggle, () => { if (g0 === battleGen && state.screen === 'battle') startHand(); });
+  }
   // 結果バナーの「次のハンド (Hand N) へ」で、そのまま配る（卓に戻ってもう一度押させていた）
   startHand();
 }

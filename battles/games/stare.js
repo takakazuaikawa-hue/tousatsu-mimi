@@ -375,7 +375,7 @@
       </div>
       <div class="rb-act stare-ctrl" id="mb-stare-ctrl"></div>`;
     api.tipOnce('stare', `金が<b>5つ以上</b>なら見つめる。4つ以下なら、やめどき`);
-    api.mission('もう一度見つめる？ ここでやめる？');
+    api.mission('見つめる？ やめる？');
 
     const $ = (s) => root.querySelector(s);
     const arena = $('#mb-stare-arena'), mimiP = $('#mb-stare-mimi'), oppP = $('#mb-stare-opp');
@@ -402,7 +402,7 @@
       const box = root.querySelector(`.stare-clue[data-i="${s}"]`);
       box.classList.add('is-open', 'mb-parchment', 'is-flat');
       if (c.acted) box.querySelector('.st-sure').innerHTML = `確かさ${pips(sure(ACT_ACC))}`;
-      box.querySelector('.st-lean').innerHTML = c.acted ? `<span class="stare-chip act">演技 → ${NAME[c.lean]}</span>` : `<span class="stare-chip ${c.surface}">→ ${NAME[c.surface]}</span>`;
+      box.querySelector('.st-lean').innerHTML = c.acted ? `<span class="stare-chip act">演技</span>${api.lean(c.lean)}` : api.lean(c.surface);
       weights.push({ side: c.lean === 'bluff' ? 'b' : 's', w: Math.log(c.acc / (1 - c.acc)) });
       let pop = arena.querySelector('.stare-pop');
       if (!pop) { pop = document.createElement('div'); pop.className = 'stare-pop mb-ebony'; arena.appendChild(pop); }
@@ -481,7 +481,7 @@
     if (over === 'mimi') base = Math.max(10, Math.round(base / 2));
 
     $('#mb-stare-steps').innerHTML = api.steps(['見つめ合う', '読む', '賭ける', '答え合わせ'], 1);
-    api.mission('天秤が下がった方が、ありそうな手');
+    api.mission('天秤の傾きで読む');
     const ctrl = $('#mb-stare-ctrl');
     ctrl.innerHTML = `<div><div class="actions">
       <button class="btn" id="mb-stare-call" type="button">ブラフと読む<small>ミミの方が強い</small></button>
@@ -499,8 +499,8 @@
     $('#mb-stare-steps').innerHTML = api.steps(['見つめ合う', '読む', '賭ける', '答え合わせ'], 2);
     const pNow = pBluff(), pMine = Math.round((decide === 'bluff' ? pNow : 1 - pNow) * 100);
     root.querySelector('.st-scale').classList.add('is-wager');
-    api.mission('天秤の見込みで、自信を決める');
-    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base, stakes: STAKES, into: ctrl });
+    api.mission('見込みで自信を決める');
+    await api.wager({ mission: '見込みで自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base, stakes: STAKES, into: ctrl });
     if (!api.alive()) return;
 
     // 本当の手の勝負：読みを預けて卓に戻る。答え合わせは手の決着の後（battles/games/verdict.js）

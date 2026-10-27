@@ -1,7 +1,7 @@
 // スマホ版の基準（docs/design-ref/mobile-standard.md）で1画面を測る式を作る。page.eval(stdCheck({...})) で使う。
 // 数えるもの：
 //   covered  見えているのに他の物に隠れて押せない
-//   small    押す所 44px 未満
+//   small    押す所 44px 未満（スマホ・指）／24px 未満（PC・マウス。WCAG 2.5.8）2026-10-27
 //   tiny     文字が minText 未満（スマホ 12px／PC 11px）
 //   body     本文（台詞・説明・ルール）が bodyMin（14px）未満。本文＝BODY_SEL に当たる所、または 30 字以上の文
 //   safe     左右の安全域（各 47px）に入っている押す所・読む文字（ノッチ付き iPhone で欠ける）
@@ -18,7 +18,7 @@ export const BODY_SEL = [
 
 export function stdCheck({ minText = 12, bodyMin = 14, safe = 47, phone = true } = {}) {
   return `(() => {
-  const VW = innerWidth, VH = innerHeight, SAFE = ${phone ? safe : 0}, MIN = ${minText}, BODY = ${phone ? bodyMin : 0};
+  const VW = innerWidth, VH = innerHeight, SAFE = ${phone ? safe : 0}, MIN = ${minText}, BODY = ${phone ? bodyMin : 0}, TAP = ${phone ? 43.5 : 23.5};
   const BODY_SEL = ${JSON.stringify(BODY_SEL)};
   const vis = (e) => { for (let x = e; x && x !== document.documentElement; x = x.parentElement) { const cs = getComputedStyle(x); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.05) return false; } return true; };
   // 縮みは幅40px以上の親で測る（1文字の細い部品は元の幅が整数に丸められ、縮みが小さく出ていた：K・J の札の数字が 13.7px と出た 2026-10-25）
@@ -40,7 +40,7 @@ export function stdCheck({ minText = 12, bodyMin = 14, safe = 47, phone = true }
     const t = document.elementFromPoint(cx, cy);
     if (underModal(e, cx, cy)) continue;
     if (t && t !== e && !e.contains(t) && !t.contains(e)) covered.push(label(e) + ' ← ' + cls(t));
-    if (r.width < 43.5 || r.height < 43.5) small.push(label(e) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height));
+    if (r.width < TAP || r.height < TAP) small.push(label(e) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height));
     if (r.left < -1 || r.top < -1 || r.right > VW + 1 || r.bottom > VH + 1) off.push(label(e) + ' ' + Math.round(r.left) + ',' + Math.round(r.top) + '-' + Math.round(r.right) + ',' + Math.round(r.bottom));
     // 画面いっぱいの「どこでも押せる」層は安全域の検査から外す
     if (SAFE && r.width < VW * 0.7 && (r.left < SAFE - 1 || r.right > VW - SAFE + 1)) safeHit.push('[押] ' + label(e) + ' x' + Math.round(r.left) + '-' + Math.round(r.right));

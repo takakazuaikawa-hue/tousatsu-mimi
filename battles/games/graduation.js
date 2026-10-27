@@ -161,9 +161,9 @@
     root.querySelector('.gd-por').classList.toggle('is-alt', defy);
 
     // ④ 自信
-    setStep(3, '天秤の見込みで、自信を決める');
+    setStep(3, '見込みで自信を決める');
     const pMine = Math.round((decide === 'bluff' ? pb : 1 - pb) * 100);
-    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base: BASE, stakes: STAKES, into: act });
+    await api.wager({ mission: '見込みで自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base: BASE, stakes: STAKES, into: act });
     if (!api.alive()) return;
     const m = api.mult || 1;
     const side = pb >= .5 ? 'bluff' : 'strong', pSide = Math.round(Math.max(pb, 1 - pb) * 100);

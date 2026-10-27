@@ -60,7 +60,7 @@
     .nr-tile { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 1px; padding: 4px 8px; min-height: 0; text-align: left; cursor: pointer; border: 1px solid var(--line); background: linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo)); color: var(--text); }
     .nr-tile .nm { font-family: var(--mincho); font-weight: 800; font-size: var(--ty-body, 17px); line-height: 1.25; color: var(--gold-hi); }
     .nr-tile .sb { font-size: 14px; line-height: 1.3; color: var(--dim); }
-    .nr-tile .ct { font-size: 14px; line-height: 1.3; color: var(--gold-pale); font-family: var(--mincho); font-weight: 700; }
+    .nr-tile .ct { display: flex; gap: 2px; }
     .nr-tile.is-out { background: #1a0709; border-color: #6e655a; }
     .nr-tile.is-out .nm, .nr-tile.is-out .sb, .nr-tile.is-out .ct { opacity: .45; text-decoration: line-through; }
     .nr-tile.is-out::after { content: "×"; position: absolute; right: 5px; top: 3px; font-size: 26px; font-weight: 900; color: var(--red-hi); line-height: 1; }
@@ -141,7 +141,7 @@
     root.innerHTML = `
       <div class="rb-top"><div class="rb-steps" id="mb-nr-steps">${api.steps(STEPS, 0)}</div></div>
       <div class="rb-play nr-play">
-        <div class="nr-tiles" id="mb-nr-tiles">${tiles.map(g => `<button class="nr-tile" type="button" data-g="${g.id}"><span class="nm">${g.name}</span><span class="sb">${g.sub}</span><span class="ct">例 ${exTxt(g.ex)}</span></button>`).join('')}</div>
+        <div class="nr-tiles" id="mb-nr-tiles">${tiles.map(g => `<button class="nr-tile" type="button" data-g="${g.id}"><span class="nm">${g.name}</span><span class="sb">${g.sub}</span><span class="ct">${g.ex.map(c => api.cardHTML(c, 'small')).join('')}</span></button>`).join('')}</div>
       </div>
       <div class="rb-info">
         <div class="nr-sit2"><div class="nr-cap">場札 ／ ミミの手（${mimiName}）</div><div class="nr-row">${board.map(c => api.cardHTML(c, 'small')).join('')}<i class="nr-sep"></i>${mine.map(c => api.cardHTML(c, 'small')).join('')}</div></div>
@@ -162,7 +162,7 @@
     });
     if (!api.alive()) return;
     api.tipOnce('narrow', `${jp}の癖：${HABIT[who]}`, 'think');
-    api.mission('賭け方に合わない組を外す');
+    api.mission('合わない組を外す');
     const out = new Set();
     root.querySelectorAll('.nr-tile').forEach(b => b.addEventListener('click', () => { if (b.disabled) return; const g = b.dataset.g; if (out.has(g)) out.delete(g); else out.add(g); b.classList.toggle('is-out', out.has(g)); api.sfx.tap(); }));
     act.innerHTML = `<div class="nr-act1"><button class="btn gold" id="mb-nr-go" type="button"><span>これで決める</span><small>外した組に×・残した組が容疑者</small></button></div>`;
@@ -204,7 +204,7 @@
     api.coach('');
     $('#mb-nr-steps').innerHTML = api.steps(STEPS, 2);
     const base = 20 + good * 10;
-    await api.wager({ mission: '棒と線の差で、自信を決める', question: `「${NAMES[decide]}」— 棒 ${winPct}% ／ 線 ${need}%`, note: '差が大きいほど、自信を上げてよい', base, stakes: STAKES, into: act });
+    await api.wager({ mission: '棒と線の差で自信を決める', question: `「${NAMES[decide]}」— 棒 ${winPct}% ／ 線 ${need}%`, note: '差が大きいほど、自信を上げてよい', base, stakes: STAKES, into: act });
     if (!api.alive()) return;
     const m = api.mult || 1;
     const sensible = over ? 'call' : 'fold';

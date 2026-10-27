@@ -181,8 +181,8 @@
     const drawChoice = () => {
       const pb = bal.p(), pNow = Math.round(Math.max(pb, 1 - pb) * 100);
       act.innerHTML = `<div class="gx-choice">
-        <button class="btn gold gx-pull" id="mb-gc-pull" type="button"><span>ぱにゅぱにゅ！</span><small>心の声を1つ聞く${pulls === 2 ? '（R以上）' : ''} → ご褒美${base()}→${base() - 20}</small></button>
-        <button class="btn quiet gx-stop" id="mb-gc-stop" type="button"><span>もう引かない</span><small>ご褒美${base()}で読む（いま見込み${pNow}%）</small></button>
+        <button class="btn gold gx-pull" id="mb-gc-pull" type="button"><span>ぱにゅぱにゅ！</span><small>心の声を1つ${pulls === 2 ? '（R以上）' : ''} ${api.coin(base(), base() - 20)}</small></button>
+        <button class="btn quiet gx-stop" id="mb-gc-stop" type="button"><span>もう引かない</span><small>${api.coin(base())} で読む・見込み${pNow}%</small></button>
       </div>`;
     };
     drawPanyu();
@@ -195,7 +195,7 @@
     });
     if (!api.alive()) return;
     api.tipOnce('gacha', `見込みが<b>70%</b>を超えたら、もう引かなくていい`, 'think');
-    api.mission('心の声を聞く？ ここで読む？');
+    api.mission('心の声を聞く？');
 
     const roll = () => {
       if (force.rolls && force.rolls[pulls - 1]) return force.rolls[pulls - 1];
@@ -259,7 +259,7 @@
       const isNew = !book.has(v.key); book.add(v.key); saveBook(); got.push(v);
       const row = root.querySelector(`.gx-voice[data-i="${pulls - 1}"]`);
       row.className = `gx-voice v-${rar} mb-parchment is-flat pop`;
-      row.innerHTML = `<span class="h">心の声${pulls}<span class="gc-rar r-${rar}">${rar}</span>${rar === 'SSR' ? '<b class="gx-true">本音</b>' : api.pips(api.sure(v.acc))}</span><span class="gx-lean ${v.lean}">→ ${NAME[v.lean]}寄り</span>`;
+      row.innerHTML = `<span class="h">心の声${pulls}<span class="gc-rar r-${rar}">${rar}</span>${rar === 'SSR' ? '<b class="gx-true">本音</b>' : api.pips(api.sure(v.acc))}</span>${api.lean(v.lean)}`;
       // 声の文は遊びの枠に大きく出す（次に引くまで残す）
       let pop = root.querySelector('.gx-pop');
       if (!pop) { pop = document.createElement('div'); pop.className = 'gx-pop mb-ebony'; root.querySelector('.gx-play').appendChild(pop); }
@@ -291,7 +291,7 @@
 
     // 読む
     $('#mb-gc-steps').innerHTML = api.steps(stepNames, 1);
-    api.mission('天秤が下がった方が、ありそうな手');
+    api.mission('天秤の傾きで読む');
     act.innerHTML = `<div><div class="actions">
       <button class="btn" id="mb-gc-b" type="button">ブラフと読む<small>ミミの方が強い</small></button>
       <button class="btn quiet" id="mb-gc-s" type="button">本物と読む<small>ミミより強い</small></button></div></div>`;
@@ -306,7 +306,7 @@
     $('#mb-gc-steps').innerHTML = api.steps(stepNames, 2);
     const pNow = bal.p(), pMine = Math.round((decide === 'bluff' ? pNow : 1 - pNow) * 100);
     const b0 = base();
-    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base: b0, stakes: STAKES, into: act });
+    await api.wager({ mission: '見込みで自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base: b0, stakes: STAKES, into: act });
     if (!api.alive()) return;
 
     const best0 = pNow >= .5 ? 'bluff' : 'strong', pBest0 = Math.round(Math.max(pNow, 1 - pNow) * 100);

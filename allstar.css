@@ -270,7 +270,7 @@
 .as-sizer .as-back { position: static; min-width: 76px; height: 44px; font: 700 15px/1 var(--as-min); color: var(--as-muted); }
 .as-sizer-g { position: absolute; left: 8px; right: 8px; top: 52px; bottom: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .as-size { position: relative !important; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 8px; padding: 4px 10px; text-align: left; }
-.as-size b { font: 800 18px/1 var(--as-min); color: var(--as-gold-hi); grid-row: 1 / 3; }
+.as-size b { font: 800 18px/1 var(--as-min); color: var(--as-gold-hi); grid-row: 1 / 3; white-space: nowrap; }
 .as-size span { font-size: 15px; color: var(--as-muted); }
 .as-size em { font: 600 17px/1 var(--as-num); font-style: normal; color: var(--as-ivory); }
 .as-size.is-all { background: linear-gradient(180deg, #6a0c14, #3e0306) !important; border-color: var(--as-gold-hi) !important; }

@@ -166,7 +166,7 @@
       <svg class="oj-thread" id="mb-oj-thread" aria-hidden="true"></svg>`;
     const $ = (s) => root.querySelector(s);
     const thread = $('#mb-oj-thread'), go = $('#mb-oj-go');
-    const MS = ['ウソだと思う発言を選ぶ', '食い違う証拠を選ぶ', '「つきつける！」を押す'];
+    const MS = ['ウソの発言を選ぶ', '食い違う証拠を選ぶ', 'つきつける！'];
     let selS = null, selE = null, misses = 0, busy = false, done = false;
     const setStep = (n, m) => { $('#mb-oj-steps').innerHTML = api.steps(stepNames, n); api.mission(m); };
     setStep(0, MS[0]);
@@ -288,7 +288,7 @@
         <g transform="rotate(${ang.toFixed(2)} 130 19.5)"><rect class="beam" x="58" y="17" width="144" height="5" rx="1"/><circle class="beam" cx="130" cy="19.5" r="5"/></g>${pan('b', -66)}${pan('s', 66)}</svg><span class="oj-pan is-b">ブラフ</span><span class="oj-pan is-s">本物</span></div>
         <div class="oj-odds"><small>見込み</small><b class="is-${side}">${NAME[side]} ${pSide}%</b></div></div>
       <div class="oj-record" aria-label="${jp}が大きく賭けた20回のうち、ブラフは${nB}回"><span class="h">大きな賭け20回</span><span class="d">${record.map(b => `<i class="${b ? 'b' : 's'}"></i>`).join('')}</span><b>ブラフ${nB}</b></div>`;
-    setStep(1, '天秤が下がった方が、ありそうな手');
+    setStep(1, '天秤の傾きで読む');
     const act = $('#mb-oj-act');
     act.innerHTML = `<div><div class="actions">
       <button class="btn" id="mb-oj-bluff" type="button">ブラフと読む<small>ミミの方が強い</small></button>
@@ -301,9 +301,9 @@
     });
     if (!api.alive()) return;
     act.innerHTML = '';
-    setStep(2, '天秤の見込みで、自信を決める');
+    setStep(2, '見込みで自信を決める');
     const pMine = Math.round((decide === 'bluff' ? pB : 1 - pB) * 100);
-    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base, stakes: STAKES, into: act });
+    await api.wager({ mission: '見込みで自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base, stakes: STAKES, into: act });
     if (!api.alive()) return;
     const m = api.mult || 1;
     const why = found ? `決め手は${P(lie.short)}。` : `ウソは${P(lie.short)}。`;

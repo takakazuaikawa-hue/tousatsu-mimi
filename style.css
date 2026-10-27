@@ -9305,8 +9305,7 @@ body[data-cutin-skin="classic"] .cutin-flash {
     repeating-linear-gradient(0deg, rgba(0,0,0,0.35) 0 3px, transparent 3px 10px),
     radial-gradient(ellipse at 80% 50%, rgba(200,37,58,0.25) 0%, transparent 60%) !important;
 }
-body[data-cutin-skin="neon"] .cutin-portrait { box-shadow: 0 0 24px 6px rgba(255, 80, 130,0.8) !important; border-color: #ff7cf5 !important; }
-body[data-cutin-skin="neon"] .cutin-flash { background: radial-gradient(ellipse at 80% 50%, rgba(255, 80, 130,0.55) 0%, transparent 65%) !important; }
+/* ネオン：深紅と金の指定は下の「カットイン：古典派は…」の段にまとめた（ここにあった紫寄りの指定は効いていない残りだったので消した 2026-10-27） */
 
 /* ===== ショップUIアトラス（1536×512 単一PNG） =====
    ファイル配置: assets/ui/shop_atlas.webp
@@ -14084,7 +14083,7 @@ body.is-tease-hot .card.tease-card::after {
 }
 .coll-cg-card.off .coll-cg-locked { font-size: 26px; color: #888; }
 .coll-cg-card.off .coll-cg-label { position: static; background: none; padding: 6px 8px 0; font-size: 14px; color: #c4b888; }
-.coll-cg-card.off .coll-cg-label small { display: block; opacity: .8; }
+.coll-cg-card.off .coll-cg-label small { display: block; opacity: .9; line-height: 1.35; }
 
 .reward-cg-viewer-overlay {
   position: absolute; inset: 0; z-index: 400;
@@ -20372,3 +20371,24 @@ html.is-compact .battle-screen.v2.t8 .v2-com-rico.is-mimi-voice .rico-bubble.v2-
 html.is-compact .result-unlock .ru-thumbs img:nth-child(n+3) { display: none; }
 .result-unlock.is-later { cursor: default; }
 .result-unlock.is-later .ru-go { color: #cbb98f; }
+
+/* 2026-10-27 台帳35 幕間の後の一枚絵の見せ方：溜め（暗く・光・判子）→ 寄りから引く → 余韻の字幕 → コレクションに追加。幕間は縮めて描く舞台なので ÷ 縮める倍率 */
+.ims-cg { --s: var(--game-scale, 1); overflow: hidden; }
+.ims-cg-stamp { position: absolute; inset: 0; display: grid; place-items: center; z-index: 3; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, rgba(20,6,10,.55), rgba(8,2,4,.92)); }
+.ims-cg-stamp span { font-family: var(--font-mincho, serif); font-weight: 800; letter-spacing: .3em; font-size: calc(var(--r-mission) * 1.4 / var(--s)); color: #f5d77a; padding: calc(6px / var(--s)) calc(28px / var(--s)); border-block: 2px solid #d9b35a; text-shadow: 0 0 18px rgba(245,215,122,.7); transform: scale(1.6); opacity: 0; }
+.ims-cg-stamp::after { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; left: -40%; background: linear-gradient(100deg, transparent, rgba(255,243,194,.35), transparent); }
+.ims-cg.is-stamp .ims-cg-stamp { opacity: 1; transition: opacity .25s; }
+.ims-cg.is-stamp .ims-cg-stamp span { animation: imsStamp .5s cubic-bezier(.2,1.5,.4,1) .15s forwards; }
+.ims-cg.is-stamp .ims-cg-stamp::after { animation: imsSweep .8s ease-out forwards; }
+@keyframes imsStamp { to { transform: none; opacity: 1; } }
+@keyframes imsSweep { to { left: 110%; } }
+.ims-cg.is-stamp .ims-cg-img { opacity: 0; }
+.ims-cg.is-reveal .ims-cg-img { transform-origin: 50% 28%; animation: imsPull 2.6s cubic-bezier(.25,.6,.2,1) both; }
+@keyframes imsPull { from { transform: scale(1.32); opacity: 0; } 12% { opacity: 1; } to { transform: none; opacity: 1; } }
+.ims-cg-cap { position: absolute; left: 50%; bottom: calc(54px / var(--s)); transform: translateX(-50%); z-index: 2; max-width: 80%; padding: calc(6px / var(--s)) calc(18px / var(--s)); background: linear-gradient(90deg, transparent, rgba(12,3,6,.82) 15%, rgba(12,3,6,.82) 85%, transparent); text-align: center; color: #f7eecf; opacity: 0; transition: opacity .6s; pointer-events: none; }
+.ims-cg-cap b { display: block; font-family: var(--font-mincho, serif); font-weight: 700; font-size: calc(var(--r-note) / var(--s)); color: #d9b35a; letter-spacing: .12em; }
+.ims-cg-cap span { font-family: var(--font-mincho, serif); font-weight: 600; font-size: calc(var(--r-speech) / var(--s)); line-height: 1.5; }
+.ims-cg.is-cap .ims-cg-cap { opacity: 1; }
+.ims-cg-got { position: absolute; right: calc(18px / var(--s)); top: calc(16px / var(--s)); z-index: 2; padding: 0 calc(12px / var(--s)); font-family: var(--font-mincho, serif); font-weight: 800; font-size: calc(var(--r-note) / var(--s)); line-height: 1.8; color: #1d080e; background: linear-gradient(180deg, #f5d77a, #d9b35a); opacity: 0; transform: translateY(-6px); transition: opacity .4s, transform .4s; pointer-events: none; }
+.ims-cg.is-got .ims-cg-got { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .ims-cg.is-reveal .ims-cg-img { animation: none; } }

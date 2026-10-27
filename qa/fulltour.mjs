@@ -17,7 +17,7 @@ const { page } = session;
 for (let i = 0; i < 40 && !(await page.eval('typeof startBattle === "function"')); i++) await sleep(500);
 
 // 2026-10-21 基準を上げた（最小14px・本文16px。docs/design-ref/typography.md）。QA_MIN / QA_BODY で上書きできる
-const CHECK = stdCheck({ phone, minText: +(process.env.QA_MIN || 14), bodyMin: +(process.env.QA_BODY || 16) });
+const CHECK = stdCheck({ phone, minText: +(process.env.QA_MIN || 14), bodyMin: +(process.env.QA_BODY || 14.9) /* 2026-10-27 本文の段：スマホ15（小さいスマホは14。type-roles.css） */ });
 const report = [];
 let idx = 0;
 async function snap(name) {

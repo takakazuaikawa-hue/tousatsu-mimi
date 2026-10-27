@@ -57,12 +57,16 @@
     .aq-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 8px; min-height: 26px; border: 1px solid var(--line-dim); background: rgba(19,4,6,.7); font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--gold); white-space: nowrap; }
     .aq-row .l { font-weight: 800; } .aq-row .l.bluff { color: #a01f35; } .aq-row .l.strong { color: #7a5410; }
     .aq-row.is-empty .l { color: var(--dim); }
-    .aq-qs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, .8fr); gap: 6px; height: 100%; width: 100%; }
+    .aq-qs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, .6fr); gap: 6px; height: 100%; width: 100%; }
     .aq-qs .btn { margin: 0; min-height: 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1px; padding: 2px 6px; }
-    .aq-qs .btn > span { font-size: var(--ty-btn2, 17px); line-height: 1.2; white-space: nowrap; }
+    .aq-qs .btn > span { font-size: var(--ty-btn2, 17px); line-height: 1.2; }
+    .aq-qs .btn > small b { font-weight: 700; white-space: nowrap; }
     .aq-qs .btn > small { font-size: 14px; line-height: 1.3; white-space: nowrap; }
     .aq-qs .btn > small b { font-weight: 800; }
     .aq-qs .btn[disabled] { opacity: .45; }
+    /* 動揺＝ブラフ寄り（赤の◆）・平気＝本物寄り（金の◆）。寄りは色で見せる（4点の札の「やり方」で説明） */
+    .aq-qs .aq-b .mb-pips i.on { background: #e0485c; } .aq-qs .aq-s .mb-pips i.on { background: #f5d77a; }
+    .aq-qs .btn.gold .aq-b .mb-pips i.on { background: #a01f35; } .aq-qs .btn.gold .aq-s .mb-pips i.on { background: #7a5410; }
   `;
 
   async function start({ api }) {
@@ -111,10 +115,11 @@
     api.tipOnce('ask', `${jp}に<b>効く問いかけ</b>を1つ。◆の多い札`, 'think');
     const asked = [];
     while (asked.length < 2) {
-      api.mission(asked.length ? '2つ目も聞く？（ご褒美 60→40）' : `${jp}に、どれを聞く？`);
+      api.mission(asked.length ? '2つ目も聞く？' : `どれを聞く？`);
+      if (asked.length) api.coach('2つ目を聞くと、ご褒美は 60→40', 'think');
       const pb = bal.p(), pNow = Math.round(Math.max(pb, 1 - pb) * 100);
-      act.innerHTML = `<div class="aq-qs">${QS.map(q => `<button class="btn${asked.includes(q.id) ? '' : ' gold'}" data-q="${q.id}" type="button"${asked.includes(q.id) ? ' disabled' : ''}><span>${q.name}</span><small>動揺→ブラフ${pipsOf(q.id, true)}</small><small>平気→本物${pipsOf(q.id, false)}</small></button>`).join('')}
-        <button class="btn quiet" data-q="stop" type="button"><span>${asked.length ? 'もう聞かない' : '聞かずに読む'}</span><small>見込み${pNow}%</small></button></div>`;
+      act.innerHTML = `<div class="aq-qs">${QS.map(q => `<button class="btn${asked.includes(q.id) ? '' : ' gold'}" data-q="${q.id}" type="button"${asked.includes(q.id) ? ' disabled' : ''}><span>${q.name}</span><small><b class="aq-b">動揺${pipsOf(q.id, true)}</b> <b class="aq-s">平気${pipsOf(q.id, false)}</b></small></button>`).join('')}
+        <button class="btn quiet" data-q="stop" type="button"><span>読む</span><small>見込み${pNow}%</small></button></div>`;
       const q = await new Promise(res => act.querySelectorAll('button').forEach(b => { b.onclick = () => { api.sfx.tap(); res(b.dataset.q); }; }));
       if (!api.alive()) return;
       if (q === 'stop') break;
@@ -138,7 +143,7 @@
       asked.push(q);
       const row = root.querySelector(`.aq-row[data-i="${asked.length - 1}"]`);
       row.className = 'aq-row mb-parchment is-flat';
-      row.innerHTML = `<span>${Q.short}：${react ? '動揺' : '平気'} ${api.pips(api.sure(acc))}</span><span class="l ${lean}">→ ${NAME[lean]}寄り</span>`;
+      row.innerHTML = `<span>${Q.short}：${react ? '動揺' : '平気'} ${api.pips(api.sure(acc))}</span>${api.lean(lean)}`;
       row._note = { label: `${Q.name}：${react ? '動揺した' : '平気だった'} → ${NAME[lean]}寄り`, lean };
       await api.wait(api.reduce ? 200 : 700); if (!api.alive()) return;
     }
@@ -146,7 +151,7 @@
     const base = asked.length >= 2 ? 40 : 60;
 
     $('#mb-aq-steps').innerHTML = api.steps(STEPS, 1);
-    api.mission('天秤が下がった方が、ありそうな手');
+    api.mission('天秤の傾きで読む');
     act.innerHTML = `<div class="actions">
       <button class="btn" id="mb-aq-b" type="button">ブラフと読む<small>ミミの方が強い</small></button>
       <button class="btn quiet" id="mb-aq-s" type="button">本物と読む<small>ミミより強い</small></button></div>`;
@@ -159,7 +164,7 @@
     act.innerHTML = '';
     $('#mb-aq-steps').innerHTML = api.steps(STEPS, 2);
     const pNow = bal.p(), pMine = Math.round((decide === 'bluff' ? pNow : 1 - pNow) * 100);
-    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base, stakes: STAKES, into: act });
+    await api.wager({ mission: '見込みで自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base, stakes: STAKES, into: act });
     if (!api.alive()) return;
     const best0 = pNow >= .5 ? 'bluff' : 'strong', pBest0 = Math.round(Math.max(pNow, 1 - pNow) * 100);
     const m = api.mult || 1;

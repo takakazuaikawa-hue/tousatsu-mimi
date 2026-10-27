@@ -267,7 +267,7 @@
     });
     if (!api.alive()) return;
     api.tipOnce('sniper', '金の四角が一番広い所', 'think');
-    api.mission('照準を動かして、賭ける額を決める');
+    api.mission('照準で額を決める');
 
     const $ = (s) => root.querySelector(s);
     const chart = $('#mb-sn-chart'), rect = $('#mb-sn-rect'), ret = $('#mb-sn-ret'), range = $('#mb-sn-range'), area = $('#mb-sn-area');
@@ -295,7 +295,7 @@
         if (!moved) {
           moved = true; ret.classList.remove('is-cue'); const h = $('#mb-sn-hint'); if (h) h.remove();
           fire.classList.add('is-cue');
-          api.mission('金の四角が最大の所で「撃つ」を押す');
+          api.mission('四角が最大の所で撃つ');
           api.coach('');
         }
       }
@@ -331,7 +331,7 @@
     $('#mb-sn-prompt').hidden = true; range.closest('.sn-rangebox').hidden = true;
     $('#mb-sn-steps').innerHTML = api.steps(STEPS, 2);
     api.coach('');
-    await api.wager(T ? { question: 'ここがベストの額？', base: 20 + Math.round(Math.min(1, ratio) * 20), mission: 'この額への自信を選ぶ', note: 'ベストに近いほど、自信を上げてよい', stakes: STAKES } : { question: 'ここがベストの額？', base: '20〜40', mission: 'この額への自信を選ぶ' });
+    await api.wager(T ? { question: 'ここがベストの額？', base: 20 + Math.round(Math.min(1, ratio) * 20), mission: 'この額への自信は？', note: 'ベストに近いほど、自信を上げてよい', stakes: STAKES } : { question: 'ここがベストの額？', base: '20〜40', mission: 'この額への自信は？' });
     if (!api.alive()) return;
     $('#mb-sn-steps').innerHTML = api.steps(STEPS, 3);
     let call = null;

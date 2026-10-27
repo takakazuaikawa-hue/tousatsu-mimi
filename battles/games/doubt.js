@@ -359,7 +359,7 @@
     });
     if (!api.alive()) return;
     api.tipOnce('doubt', '声が大きいほどウソ', 'think');
-    api.mission('5つのおしゃべりを聞き分ける');
+    api.mission('おしゃべりを聞く');
 
     await new Promise(res => {
       const go = () => { document.removeEventListener('keydown', onK); res(); };
@@ -377,7 +377,7 @@
       await api.wait(ms); b.remove(); if (!api.alive()) return;
     }
 
-    api.mission('声の大きさで、本音かウソかを選ぶ');
+    api.mission('本音か、ウソか？');
     area.insertAdjacentHTML('beforeend', `<div class="doubt-count"><b id="mb-doubt-n">1/5</b><span>ウソほど声が大きい</span></div>
       <div class="doubt-bubble mb-ebony" id="mb-doubt-bubble"></div><div class="doubt-timer" id="mb-doubt-timer"><i></i></div>`);
     pad.innerHTML = `<button class="doubt-btn is-honest" data-a="honest" type="button"><kbd>←</kbd><span class="w"><span>本音</span><small>ほんとのこと</small></span></button>
@@ -442,7 +442,7 @@
         row.classList.add(ok ? 'is-ok' : 'is-ng');
       } else {
         // 5つ目：答えはまだ見せない。振り分けが天秤の重りになる（ウソ→ブラフ寄り、本音→本物寄り）
-        row.querySelector('.a').innerHTML = a === 'miss' ? '聞き逃した' : `<em class="dd ${a === 'lie' ? 'lie' : ''}">${YOU[a]}</em> → ${a === 'lie' ? 'ブラフ' : '本物'}寄り ${api.pips(api.sure(RULE_ACC))}`;
+        row.querySelector('.a').innerHTML = a === 'miss' ? '聞き逃した' : `<em class="dd ${a === 'lie' ? 'lie' : ''}">${YOU[a]}</em> ${api.lean(a === 'lie' ? 'bluff' : 'strong')} ${api.pips(api.sure(RULE_ACC))}`;
         if (a !== 'miss') bal.add(a === 'lie' ? 'bluff' : 'strong', RULE_ACC);
       }
       await api.wait(230); if (!api.alive()) { document.removeEventListener('keydown', onKey); return; }
@@ -460,7 +460,7 @@
 
     // 読む
     $('#mb-doubt-steps').innerHTML = api.steps(STEPS, 1);
-    api.mission('天秤が下がった方が、ありそうな手');
+    api.mission('天秤の傾きで読む');
     const actEl = $('#mb-doubt-act');
     pad.hidden = true;
     actEl.insertAdjacentHTML('beforeend', `<div class="dx-read"><div class="actions">
@@ -476,7 +476,7 @@
     actEl.querySelector('.dx-read').remove();
     $('#mb-doubt-steps').innerHTML = api.steps(STEPS, 2);
     const pNow = bal.p(), pMine = Math.round((decide === 'bluff' ? pNow : 1 - pNow) * 100);
-    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base, stakes: STAKES, into: actEl });
+    await api.wager({ mission: '見込みで自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base, stakes: STAKES, into: actEl });
     if (!api.alive()) return;
     api.coach('');
     const best0 = pNow >= .5 ? 'bluff' : 'strong', pBest0 = Math.round(Math.max(pNow, 1 - pNow) * 100);

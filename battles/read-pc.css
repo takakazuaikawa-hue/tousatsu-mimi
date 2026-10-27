@@ -807,3 +807,7 @@ html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-entrust-coin { font
 
 /* ダウト（本当の手の版・2026-10-27）：共通の骨組みの遊びの枠いっぱいに（古い 340px の高さを外す） */
 html:not(.is-compact) #stage > .read-battle-host.mb-host .rb-frame > .doubt-area { height: auto; }
+
+/* 2026-10-27 枠の直し（PC）：手順の印の横の段の名前は出さない、自信のチップは横長の札 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .rb-top .steps .dia b { display: none; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .rb-frame .rb-act .mb-wchip { width: auto; min-width: 112px; height: 76px; border-radius: 8px; padding: 4px 12px; }

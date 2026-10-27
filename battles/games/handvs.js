@@ -114,7 +114,8 @@
     .hv-cand .c { display: flex; gap: 2px; font-weight: 800; font-family: var(--mincho); white-space: nowrap; }
     .hv-cand .c .rd { color: #ff8f9c; }
     .hv-cand .r { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .hv-cand .r.win { color: var(--gold-hi); } .hv-cand .r.lose { color: #ff8f9c; } .hv-cand .r.tie { color: var(--gold-pale); }
+    .hv-out { display: inline-block; padding: 0 6px; font-family: var(--mincho); font-weight: 800; border: 1px solid; line-height: 1.35; }
+    .hv-out.win { color: var(--gold-hi); border-color: rgba(245,215,122,.6); background: rgba(122,90,30,.3); } .hv-out.lose { color: #ff8f9c; border-color: rgba(255,143,156,.6); background: rgba(122,14,22,.35); } .hv-out.tie { color: #d8cbb0; border-color: rgba(216,203,176,.5); }
     .hv-cand .m { font-weight: 900; font-size: 17px; text-align: center; }
     .hv-cand .m.ok { color: var(--good); } .hv-cand .m.ng { color: var(--bad); }
     .hv-cand.is-now { border-color: var(--gold); background: linear-gradient(90deg, var(--band), var(--panel)); }
@@ -195,7 +196,7 @@
 
     // ① 5枚を作る（場札が4枚以上の時）
     if (doBuild) {
-      api.mission('ミミの札から、一番強い5枚を選ぶ');
+      api.mission('一番強い5枚を選ぶ');
       api.tipOnce('handvs', '役の強さ順は、上の「役の一覧」と同じ', 'think');
       const sel = new Set();
       play.innerHTML = `${ladderHTML()}<div class="hv-cap">ミミの札（手札＋場札）</div><div class="hv-row hv-pick" id="mb-hv-seven">${seven.map((c, i) => api.cardHTML(c, '').replace('class="card', `data-i="${i}" class="card`)).join('')}</div>
@@ -224,7 +225,7 @@
 
     // ② くらべる：候補を1つずつ
     $('#mb-hv-steps').innerHTML = api.steps(STEPS, S('くらべる'));
-    api.mission(`ミミの手と${jp}の候補、どちらが強い？`);
+    api.mission(`どちらが強い？`);
     if (!doBuild) api.tipOnce('handvs', '同じ役なら、比べる札の大きい方が勝ち', 'think');
     let wins = 0;
     for (let i = 0; i < cands.length; i++) {
@@ -241,7 +242,7 @@
       drawLadder();
       const nextV = LADDER[Math.min(LADDER.length - 1, lad + 1)];
       act.innerHTML = `<div class="hv-act3">
-        <button class="btn" data-a="win" type="button"><span>ミミの勝ち</span><small>${stopped ? '' : `当たれば ご褒美${nextV}`}</small></button>
+        <button class="btn" data-a="win" type="button"><span>ミミの勝ち</span><small>${stopped ? '' : `当たれば ${api.coin(nextV)}`}</small></button>
         <button class="btn quiet" data-a="tie" type="button"><span>引き分け</span><small>まったく同じ強さ</small></button>
         <button class="btn quiet" data-a="lose" type="button"><span>ミミの負け</span><small>${jp}の方が強い</small></button></div>`;
       const a = await new Promise(res => act.querySelectorAll('button').forEach(b => { b.onclick = () => { api.sfx.tap(); res(b.dataset.a); }; }));
@@ -250,7 +251,7 @@
       if (c.res === 'win') wins += 1; else if (c.res === 'tie') wins += .5;
       $('#mb-hv-cname').textContent = handName(api, c.h.concat(board)); $('#mb-hv-cname').classList.remove('q');
       $('#mb-hv-res').innerHTML = `<span class="${ok ? 'ok' : 'ng'}">${ok ? '○' : '×'} ${RES[c.res]}</span><small>${why(api, mine, c.h, board)}</small>`;
-      row.querySelector('.r').className = 'r ' + c.res; row.querySelector('.r').textContent = RES[c.res];
+      row.querySelector('.r').className = 'r ' + c.res; row.querySelector('.r').innerHTML = `<span class="hv-out ${c.res}">${{ win: '勝ち', lose: '負け', tie: '分け' }[c.res]}</span>`;
       const m = row.querySelector('.m'); m.textContent = ok ? '○' : '×'; m.className = 'm ' + (ok ? 'ok' : 'ng');
       // 勝てる候補の棒：2個ずつ（引き分けは1個）
       const on = Math.round(wins * 2);
@@ -287,7 +288,7 @@
     $('#mb-hv-steps').innerHTML = api.steps(STEPS, S('賭ける'));
     const base = LADDER[lad];
     const gap = Math.abs(winPct - need);
-    await api.wager({ mission: '棒と線の差で、自信を決める', question: `「${NAMES[decide]}」— 棒 ${winPct}% ／ 線 ${need}%`, note: '差が大きいほど、自信を上げてよい', base, stakes: STAKES, into: act });
+    await api.wager({ mission: '棒と線の差で自信を決める', question: `「${NAMES[decide]}」— 棒 ${winPct}% ／ 線 ${need}%`, note: '差が大きいほど、自信を上げてよい', base, stakes: STAKES, into: act });
     if (!api.alive()) return;
     const m = api.mult || 1;
     const sensible = over ? 'call' : 'fold';

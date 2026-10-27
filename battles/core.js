@@ -183,6 +183,15 @@
     .mb-bal-rec .d i { width: 3px; height: 12px; background: linear-gradient(180deg, var(--gold-hi), #8a5a1e); }
     .mb-bal-rec .d i.b { background: linear-gradient(180deg, #e0485c, #8a1424); }
     .mb-bal-rec b { color: #ff8f9c; }
+    .mb-lean { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; font-family: var(--mincho); font-weight: 800; white-space: nowrap; border: 1px solid; line-height: 1.35; }
+    .mb-lean i { width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 8px solid currentColor; }
+    .mb-lean.b { color: #ff8f9c; border-color: rgba(255,143,156,.6); background: rgba(122,14,22,.35); }
+    .mb-lean.s { color: var(--gold-hi); border-color: rgba(245,215,122,.6); background: rgba(122,90,30,.3); }
+    .mb-parchment .mb-lean.b { color: #8a1424; background: rgba(160,31,53,.12); border-color: rgba(138,20,36,.5); }
+    .mb-parchment .mb-lean.s { color: #6b4306; background: rgba(217,178,105,.25); border-color: rgba(107,67,6,.5); }
+    .mb-coin { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .mb-coin i { width: .95em; height: .95em; border-radius: 50%; background: radial-gradient(circle at 36% 30%, #fff3c2, #e3b964 52%, #a87a1a); border: 1px solid #7a5410; flex: 0 0 auto; }
+    .mb-coin em { font-style: normal; color: var(--dim); margin: 0 1px; }
     .mb-pips { display: inline-flex; gap: 2px; vertical-align: middle; }
     .mb-pips i { width: 9px; height: 9px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: var(--line-dim); }
     .mb-pips i.on { background: var(--gold-hi); }
@@ -475,6 +484,10 @@
         betTag(label, n = 3) { return `<span class="mb-bet"><span class="mb-stk" aria-hidden="true">${'<i></i>'.repeat(n)}</span><b>${label}</b></span>`; },
         // 点の目盛り：total 個のうち on 個が点灯（例：10回中6回）
         dots(on, total = 10) { return `<span class="mb-dots" aria-label="${total}回中${on}回">${Array.from({ length: total }, (_, i) => `<i class="${i < on ? 'on' : ''}"></i>`).join('')}</span>`; },
+        // 寄りの札（2026-10-27 文の代わりに絵で）：色の矢印＋短い名前。lean＝'bluff'|'strong'。赤＝ブラフ（ミミの勝ちの側）・金＝本物
+        lean(lean) { return `<span class="mb-lean ${lean === 'bluff' ? 'b' : 's'}" aria-label="${lean === 'bluff' ? 'ブラフ寄り' : '本物寄り'}"><i></i>${lean === 'bluff' ? 'ブラフ' : '本物'}</span>`; },
+        // コインの印：ご褒美の額（from→to は増減）
+        coin(n, to) { return `<span class="mb-coin"><i></i>${n}${to != null ? `<em>→</em>${to}` : ''}</span>`; },
         // 手がかりの確かさ：当たる率 → ◆の数（◆＝6割、◆◆＝8割、◆◆◆＝9割以上）
         sure(acc) { return acc >= .9 ? 3 : acc >= .7 ? 2 : 1; },
         pips(n) { return `<span class="mb-pips" aria-label="確かさ${n}">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`; },

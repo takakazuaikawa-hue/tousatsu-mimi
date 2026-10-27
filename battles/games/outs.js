@@ -96,7 +96,7 @@ MB.register({
     });
     if (!api.alive()) return;
     api.tipOnce('outs', 'うすい札は場とミミの手札');
-    api.mission('当たり札は何枚？ すべてタップ');
+    api.mission('当たり札を全部タップ');
     const outKeys = new Set(s.outs.map(key));
     const found = new Set(); let miss = 0, gaveUp = false;
     await new Promise(res => {
@@ -123,7 +123,7 @@ MB.register({
     if (!api.alive()) return;
     api.sfx.fanfare();
     root.querySelector('.steps').outerHTML = api.steps(['当たり札をさがす', '値段とくらべる', '決める', 'スロット'], 1);
-    api.mission('値段とくらべて、コールか降りるか選ぶ');
+    api.mission('値段とくらべて決める');
     root.querySelector('.actions').remove();
     // 探し終えたら 52 枚の一覧は畳み、当たり札だけを1列に並べる（1画面に収めるため。何が当たりかも一目で分かる）
     root.querySelector('#mb-o-deck').classList.add('is-collapsed');
@@ -148,7 +148,7 @@ MB.register({
     oxAct.remove();
     const right = called === (s.eq >= s.need);
     const base0 = gaveUp ? 15 : Math.max(10, 30 - miss * 5);
-    await api.wager(s.real ? { question: `「${called ? '付いていく' : '降りる'}」— 見込み 約${s.outs.length * 2}% ／ 線 ${pct(s.need)}%`, base: base0, mission: '棒と線の差で、自信を決める', note: '差が大きいほど、自信を上げてよい', stakes: STAKES } : { question: called ? '「付いていく」と決めた。この判断、自信は？' : '「降りる」と決めた。この判断、自信は？', base: 30, mission: 'この判断への自信を選ぶ' });
+    await api.wager(s.real ? { question: `「${called ? '付いていく' : '降りる'}」— 見込み 約${s.outs.length * 2}% ／ 線 ${pct(s.need)}%`, base: base0, mission: '棒と線の差で自信を決める', note: '差が大きいほど、自信を上げてよい', stakes: STAKES } : { question: called ? '「付いていく」と決めた。この判断、自信は？' : '「降りる」と決めた。この判断、自信は？', base: 30, mission: 'この判断への自信は？' });
     if (!api.alive()) return;
     if (s.real) {
       // 本当の手：最後の1枚は卓で配られる。判断を預けて戻る
