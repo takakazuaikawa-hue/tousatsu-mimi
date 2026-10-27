@@ -12,6 +12,8 @@ let n = 0, last = '';
 const report = [];
 for (let step = 0; step < 400; step++) {
   await sleep(400);
+  // 3択（心理バトル）が出たら撮る
+  if (await page.eval(`!!document.querySelector('.psych-modal') && getComputedStyle(document.querySelector('.psych-modal')).display !== 'none'`).catch(() => false)) { if (!globalThis.__psy) { globalThis.__psy = 1; await sleep(1200); await page.screenshot(path.resolve(`${out}_${W}_psych.png`)); report.push('3択を撮った'); } }
   const s = await page.eval(`(() => {
     const L = document.querySelector('.coach-layer');
     if (!L) return { none: true, screen: state && state.screen, intro: state && state.introHandMode, win: !!document.querySelector('.intro-win-overlay') };

@@ -1804,7 +1804,7 @@ function evaluateBoardDanger(board) {
 const PSYCH_QUESTIONS = {
   rico_tutorial_flop: {
     id: 'rico_tutorial_flop',
-    situationFn: (state) => `練習問題：リコ先輩が2/3ポット以上をベットしてきた。\n場札：${renderCardsText(state.community)}　ミミの手札：${renderCardsText(state.playerHand)}`,
+    situationFn: (state) => `練習問題：リコ先輩の大きな賭け、どう読む？\n場札：${renderCardsText(state.community)}　ミミの手札：${renderCardsText(state.playerHand)}`,
     speech: 'いっくよー！ふふ、ガツンといくね♪',
     zazazoHint: '【チュートリアル】リコ先輩は弱い手であえて大きく打って、ミミに練習させているよ',
     choices: [
@@ -15824,14 +15824,15 @@ function triggerPsychBattle(qid) {
     ctx.className = 'v2p-context';
     // 「いま起きたこと」は状況整理テキストが既に語っているので、掛け金だけを右端に出す
     void happened;
-    ctx.innerHTML = `<span class="v2p-ctx-stakes">この読みの賭け金 — 成功：<b class="v2p-gain">ぱにゅ +${gain}／ミミミ +1</b>　失敗：<b class="v2p-loss">ぱにゅ ${loss}</b></span>`;
+    // 研修（初日の3ハンド・リコ先輩の研修）は練習：まだ説明していない言葉（ぱにゅ・ミミミ）は出さない
+    ctx.innerHTML = (state.introHandMode || state.tutorialMode) ? `<span class="v2p-ctx-stakes">練習なので、外れても卓のチップは減らない</span>` : `<span class="v2p-ctx-stakes">この読みの賭け金 — 成功：<b class="v2p-gain">ぱにゅ +${gain}／ミミミ +1</b>　失敗：<b class="v2p-loss">ぱにゅ ${loss}</b></span>`;
     root.querySelector('.psych-modal')?.appendChild(ctx); // 選択肢の直上に絶対配置（CSS側で位置決め）
   }
 
   // v2：右上ミミミゲージ（読み切り進捗を3セグメントで表示。講義モードでは非表示のまま）
   const gaugeBox = root.querySelector('[data-bind="zazazoGaugeBox"]');
   if (gaugeBox) {
-    if (isLecture) {
+    if (isLecture || state.introHandMode || state.tutorialMode) {
       gaugeBox.style.display = 'none';
     } else {
       const zMax = state.zazazoMax || 3;
@@ -15917,7 +15918,7 @@ function triggerPsychBattle(qid) {
   }
   senseBtn.addEventListener('click', () => usePanyuSense(qid, isFree));
   // 講義では出さない（未説明のまま押せて30タップのミニゲームに飛び、ゲーム全体で1回の無料枠を使っていた）
-  if (isLecture) { senseBtn.style.display = 'none'; senseBtn.disabled = true; }
+  if (isLecture || state.introHandMode || state.tutorialMode) { senseBtn.style.display = 'none'; senseBtn.disabled = true; }
 
   // 性格読み切り後はスキップボタンを表示（講義では出さない：押すと講義の進行が止まる）
   const skipBtn = root.querySelector('[data-bind="psychSkipBtn"]');
