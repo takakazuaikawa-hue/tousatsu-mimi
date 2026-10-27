@@ -8093,7 +8093,7 @@ function renderVerbActions(slots, need) {
   if (state.betChooserOpen && betS.length) {
     const sizeName = { sm: raising ? '小さく' : '1/2ポット', md: raising ? 'ふつう' : '2/3ポット', lg: raising ? '大きく' : 'ポット', allin: 'ぜんぶ' };
     return `<div class="bet-chooser">
-      <div class="bet-chooser-head"><span>${raising ? 'いくら出して上乗せする？' : 'いくら賭ける？'}</span>
+      <div class="bet-chooser-head"><span>${sniperNear ? `狙った額${state.sniperBet} → 光る所` : (raising ? 'いくら出して上乗せする？' : 'いくら賭ける？')}</span>
         <button class="btn verb-back" data-action="close-bet-chooser">もどる</button></div>
       <div class="bet-chooser-grid">${betS.map(s => {
         const label = (state.handPhase === 'preflop' && s.kind !== 'allin') ? s.label : (sizeName[s.kind] || s.label);
@@ -8101,7 +8101,7 @@ function renderVerbActions(slots, need) {
         const fe = s.noteHint ? `<small class="verb-fe fe-${s.noteHint.tier}">通る見込み ${s.noteHint.label}</small>` : '';
         return `<button class="btn verb-size size-${s.kind}" ${attrs(s)}><span class="verb-label">${label}</span>${sub ? `<small class="verb-sub">${sub}</small>` : ''}${num(s.chipAmount)}${fe}</button>`;
       }).join('')}</div>
-    </div>`.replace(`size-${sniperNear || 'none'} `, sniperNear ? `size-${sniperNear} is-suggest is-sniper ` : 'size-none ');
+    </div>`.replace(`size-${sniperNear || 'none'}"`, sniperNear ? `size-${sniperNear} is-suggest is-sniper"` : 'size-none"');
   }
   const foldEnabled = foldS && foldS.enabled && need > 0;
   const ccLabel = raising ? 'コール' : 'チェック';
@@ -8112,7 +8112,7 @@ function renderVerbActions(slots, need) {
   const betSub = !betS.length ? 'チップが足りない' : onlyAllin ? `残り全部（${betS[0].chipAmount}）だけ` : (raising ? 'レイズ：額を選ぶ' : 'ベット：額を選ぶ');
   return `<div class="verb-grid">
     <button class="btn verb-btn verb-cc${tag('call')}" ${attrs(ccS)}><span class="verb-label">${ccLabel}</span><small class="verb-sub">${ccSub}</small>${num(raising ? need : 0)}</button>
-    <button class="btn verb-btn verb-fold${tag('fold')}" ${foldEnabled ? attrs(foldS) : 'disabled'}><span class="verb-label">降りる</span><small class="verb-sub">${foldEnabled ? 'このハンドをあきらめる' : 'いまは降りなくていい'}</small></button>
+    <button class="btn verb-btn verb-fold${tag('fold')}" ${foldEnabled ? attrs(foldS) : 'disabled'}><span class="verb-label">降りる</span><small class="verb-sub">${foldEnabled ? 'このハンドをあきらめる' : '今は降りなくていい'}</small></button>
     <button class="btn verb-btn verb-bet${tag('bet')}" ${betS.length ? 'data-action="open-bet-chooser"' : 'disabled'}><span class="verb-label">${betLabel} ▸</span><small class="verb-sub">${betSub}</small></button>
   </div>`;
 }
@@ -13952,6 +13952,8 @@ function placeCoach() {
   if (t && hole) {
     const rs = ts.map(e => e.getBoundingClientRect());
     const r = { left: Math.min(...rs.map(q => q.left)), top: Math.min(...rs.map(q => q.top)), right: Math.max(...rs.map(q => q.right)), bottom: Math.max(...rs.map(q => q.bottom)) };
+    // 「ここを押そう」の札（ボタンの上にはみ出す ::before）も明るい所に入れる。卓は縮めて描くので、ボタンの縮み具合で札の高さを直す
+    ts.forEach(e => { if (e.classList && e.classList.contains('is-intro-go') && e.offsetHeight) { const tagH = parseFloat(getComputedStyle(e, '::before').height) || 24; const k = e.getBoundingClientRect().height / e.offsetHeight; r.top = Math.min(r.top, e.getBoundingClientRect().top - (tagH + 8) * k); } });
     const pad = 8;
     hole.hidden = false;
     const H = { left: r.left - pad, top: r.top - pad, right: r.right + pad, bottom: r.bottom + pad };

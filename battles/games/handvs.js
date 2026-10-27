@@ -108,6 +108,9 @@
     .hv-res small { display: block; font-size: 14px; font-weight: 700; color: var(--gold-pale); }
     .hv-sit { display: flex; flex-direction: column; gap: 2px; font-family: var(--mincho); font-size: 14px; line-height: 1.35; color: var(--gold-pale); }
     .hv-sit b { color: var(--gold-hi); font-size: 16px; }
+    .hv-cands-h { font-family: var(--mincho); font-weight: 800; color: var(--gold-hi); }
+    .hv-cands-h small { color: var(--gold-pale); font-weight: 700; margin-left: 2px; }
+    .hv-cap small { display: block; color: var(--dim); }
     .hv-cands { display: flex; flex-direction: column; gap: 3px; }
     .hv-cand { display: grid; grid-template-columns: 3.4em auto minmax(0, 1fr) 22px; gap: 6px; align-items: center; padding: 1px 8px; min-height: 26px; background: var(--panel); border: 1px solid var(--line-dim); font-size: 14px; line-height: 1.3; }
     .hv-cand .n { font-family: var(--mincho); font-weight: 700; color: var(--dim); white-space: nowrap; }
@@ -127,6 +130,16 @@
     .hv-bar s { position: absolute; top: -5px; bottom: -5px; width: 3px; margin-left: -1.5px; background: #fff3c2; box-shadow: 0 0 6px rgba(255,243,194,.8); }
     .hv-bar-t { display: flex; justify-content: space-between; gap: 8px; font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--gold-pale); white-space: nowrap; }
     .hv-bar-t b { color: var(--gold-hi); }
+    .hv-big { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 8px; background: var(--panel); border: 1px solid var(--line); }
+    .hv-big-bar { position: relative; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; height: 30px; margin-top: 1.6em; }
+    .hv-big-bar i { background: #2a0c12; border: 1px solid var(--line-dim); }
+    .hv-big-bar i.on { background: linear-gradient(180deg, var(--gold-hi), #8a5a1e); border-color: var(--gold); }
+    .hv-big-bar s { position: absolute; top: -6px; bottom: -6px; width: 3px; margin-left: -1.5px; background: #fff3c2; box-shadow: 0 0 8px rgba(255,243,194,.9); text-decoration: none; }
+    .hv-big-bar s b { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); white-space: nowrap; font-family: var(--mincho); font-weight: 800; color: #fff3c2; }
+    .hv-big-t { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; font-family: var(--mincho); font-weight: 800; }
+    .hv-big-t b { color: var(--gold-hi); }
+    .hv-big-t .ok { color: var(--gold-hi); } .hv-big-t .ng { color: #ff8f9c; }
+    .hv-big small { color: var(--dim); }
     .hv-act3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; height: 100%; }
     .hv-act3 .btn, .hv-act2 .btn { margin: 0; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; }
     .hv-act3 .btn > span, .hv-act2 .btn > span { font-size: var(--ty-btn, 19px); line-height: 1.2; }
@@ -173,8 +186,9 @@
       <div class="rb-play hv-play" id="mb-hv-play"></div>
       <div class="rb-info">
         <div class="hv-sit"><span>ポット <b>${pot}</b>　${free ? '相手は様子見' : `払う額 <b>${toCall}</b>`}</span><span>割に合う線 <b>${need}%</b><span class="hv-why">${free ? '（勝っている方が多ければ賭ける）' : '（払う額 ÷ 払った後のポット）'}</span></span></div>
+        <div class="hv-cands-h">${jp}が持っていそうな手<small>（候補）</small></div>
         <div class="hv-cands" id="mb-hv-cands">${cands.map((c, i) => `<div class="hv-cand" data-i="${i}"><span class="n">候補${i + 1}</span><span class="c">？？</span><span class="r"></span><b class="m"></b></div>`).join('')}</div>
-        <div class="hv-bars"><div class="hv-bar-t"><span>勝てる候補 <b id="mb-hv-wn">？</b></span><span>線 ${need}%</span></div>
+        <div class="hv-bars"><div class="hv-bar-t"><span>勝てる候補 <b id="mb-hv-wn">？</b></span><span>割に合う線 ${need}%</span></div>
           <div class="hv-bar" id="mb-hv-bar">${Array.from({ length: 10 }, () => '<i class="q"></i>').join('')}<s style="left:${need}%"></s></div></div>
       </div>
       <div class="rb-act" id="mb-hv-act"></div>`;
@@ -226,7 +240,8 @@
     // ② くらべる：候補を1つずつ
     $('#mb-hv-steps').innerHTML = api.steps(STEPS, S('くらべる'));
     api.mission(`どちらが強い？`);
-    if (!doBuild) api.tipOnce('handvs', '同じ役なら、比べる札の大きい方が勝ち', 'think');
+    // 候補の意味は最初の1回だけ一言で（2回目からは「同じ役なら…」）
+    api.coach(`候補は、${jp}の賭け方から考えた「持っていそうな手」。1つずつ比べよう`, 'think');
     let wins = 0;
     for (let i = 0; i < cands.length; i++) {
       const c = cands[i];
@@ -237,7 +252,7 @@
         <div class="hv-row"><span class="hv-cap">場札</span>${board.map(x => api.cardHTML(x, 'small')).join('')}</div>
         <div class="hv-row"><span class="hv-cap">ミミ</span>${mine.map(x => api.cardHTML(x, '')).join('')}<span class="hv-name">${mimiName}</span></div>
         <div class="hv-vs">VS</div>
-        <div class="hv-row"><span class="hv-cap">候補${i + 1}</span>${c.h.map(x => api.cardHTML(x, '')).join('')}<span class="hv-name q" id="mb-hv-cname">？</span></div>
+        <div class="hv-row"><span class="hv-cap">${jp}？<small>候補${i + 1}</small></span>${c.h.map(x => api.cardHTML(x, '')).join('')}<span class="hv-name q" id="mb-hv-cname">？</span></div>
         <div class="hv-res" id="mb-hv-res"></div>`;
       drawLadder();
       const nextV = LADDER[Math.min(LADDER.length - 1, lad + 1)];
@@ -273,7 +288,12 @@
     play.innerHTML = `${ladderHTML()}
       <div class="hv-row"><span class="hv-cap">場札</span>${board.map(x => api.cardHTML(x, 'small')).join('')}</div>
       <div class="hv-row"><span class="hv-cap">ミミ</span>${mine.map(x => api.cardHTML(x, '')).join('')}<span class="hv-name">${mimiName}</span></div>
-      <div class="hv-res">勝てる候補 ${winPct}% ／ 線 ${need}%<small>${over ? `棒が線を超えている＝${NAMES.call}のが得` : `棒が線に届かない＝${NAMES.fold}のが得`}（決着までの札で変わることもある）</small></div>`;
+      <div class="hv-big">
+        <div class="hv-big-bar">${Array.from({ length: 10 }, (_, k) => `<i class="${k < Math.round(winPct / 10) ? 'on' : ''}"></i>`).join('')}<s style="left:${need}%"><b>割に合う線 ${need}%</b></s></div>
+        <div class="hv-big-t"><span>勝てる候補 <b>${winPct}%</b></span><span class="${over ? 'ok' : 'ng'}">${over ? `線を超えた → ${NAMES.call}のが得` : `線に届かない → ${NAMES.fold}のが得`}</span></div>
+        <small>決着までの札で変わることもある</small>
+      </div>`;
+    api.coach('');;
     drawLadder();
     act.innerHTML = `<div class="hv-act2">
       <button class="btn" id="mb-hv-call" type="button"><span>${NAMES.call}</span><small>${free ? 'チップを賭ける' : `${toCall} 払って続ける`}</small></button>

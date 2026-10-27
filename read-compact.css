@@ -1128,3 +1128,8 @@ html.is-compact #stage > .read-battle-host.mb-host .aq-qs .btn > small { white-s
   html.is-compact #stage > .read-battle-host.mb-host .dx-four { min-height: 0; padding: 1px 6px; }
   html.is-compact #stage > .read-battle-host.mb-host .vd-cards { gap: 3px 6px; }
 }
+
+/* 2026-10-28 役くらべ（スマホ）：候補の見出しを足して右の欄が溢れた → 候補を2列に。割に合う線は棒の見出しに1回だけ（上の状況の行と同じ数字だった） */
+html.is-compact #stage > .read-battle-host.mb-host .hv-cands { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 4px; }
+html.is-compact #stage > .read-battle-host.mb-host .hv-cand { grid-template-columns: auto auto minmax(0, 1fr) 14px; gap: 3px; padding: 0 4px; }
+html.is-compact #stage > .read-battle-host.mb-host .hv-sit > span:last-child { display: none; }

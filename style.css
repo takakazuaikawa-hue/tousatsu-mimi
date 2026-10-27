@@ -3377,7 +3377,7 @@ body[data-opp-bg="rico_serious"] .bg-poker { background-image: radial-gradient(e
 .tutorial-actions .skip-btn:hover { opacity: 1; }
 .tutorial-actions .skip-btn:hover { opacity: 1; }
 .tutorial-bubble::before {
-  content: "📚 リコ先輩からのアドバイス";
+  content: "リコ先輩からのアドバイス";
   display: block;
   font-size: 14px;
   letter-spacing: 0.2em;
@@ -20354,7 +20354,7 @@ html.is-compact .battle-screen.v2.t8 .v2-com-rico.is-mimi-voice .rico-bubble.v2-
 @media (max-width: 700px) { html.is-compact .battle-screen.v2.t8 .v2-com-rico.is-mimi-voice .rico-bubble.v2-com-text { -webkit-line-clamp: 6 !important; max-height: 7.9em !important; } }
 
 /* 2026-10-27 賭け額スナイパーで狙った額に一番近い賭けのボタン（リコのおすすめと同じ光り方、札の名前だけ替える） */
-.battle-screen.v2 .is-suggest.is-sniper::before { content: "狙った額に一番近い"; }
+.battle-screen.v2 .is-suggest.is-sniper::before { content: none; display: none; }
 
 /* 2026-10-27 勝利の結果画面の「解放」の札（交換所の新入荷・小さな絵3つまで・押すと交換所へ）台帳36。結果画面は縮めて描くので、大きさは画面上の px ÷ 縮める倍率 */
 .result-unlock { --s: var(--game-scale, 1); display: flex; align-items: center; gap: calc(10px / var(--s)); width: 100%; margin: calc(6px / var(--s)) 0 calc(4px / var(--s)); padding: calc(5px / var(--s)) calc(12px / var(--s)); cursor: pointer; text-align: left;
@@ -20392,3 +20392,11 @@ html.is-compact .result-unlock .ru-thumbs img:nth-child(n+3) { display: none; }
 .ims-cg-got { position: absolute; right: calc(18px / var(--s)); top: calc(16px / var(--s)); z-index: 2; padding: 0 calc(12px / var(--s)); font-family: var(--font-mincho, serif); font-weight: 800; font-size: calc(var(--r-note) / var(--s)); line-height: 1.8; color: #1d080e; background: linear-gradient(180deg, #f5d77a, #d9b35a); opacity: 0; transform: translateY(-6px); transition: opacity .4s, transform .4s; pointer-events: none; }
 .ims-cg.is-got .ims-cg-got { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .ims-cg.is-reveal .ims-cg-img { animation: none; } }
+
+/* 2026-10-28 講義・研修の窓：額縁の絵（四角）と外の縁取り・中の地（角丸）がずれていた → 角を丸めず、地は額縁の内側だけに塗る。
+   「講義開始」などの札は窓の上の端からはみ出して額縁の下にもぐっていた → 額縁の内側の右上に置き、前に出す。札の地は紫をやめて深紅 */
+.tutorial-bubble { border-radius: 0; }
+.tutorial-bubble .tutorial-step { top: 4px; right: 6px; z-index: 2; background: var(--c-red, #7d1022); }
+
+/* 額を選ぶ欄の見出しと「もどる」は1行で */
+.battle-screen.v2 .bet-chooser-head > span, .battle-screen.v2 .bet-chooser-head .verb-back { white-space: nowrap; }
