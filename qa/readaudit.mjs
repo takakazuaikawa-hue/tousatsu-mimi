@@ -6,8 +6,8 @@ import { openSession, sleep } from './lib/session.mjs';
 import { stdCheck } from './lib/stdcheck.mjs';
 const STD = stdCheck({ minText: 14, bodyMin: 16 });
 const GAMES = [
-  ['detective', 'polka', 'psych'], ['stare', 'polka', 'psych'], ['doubt', 'polka', 'psych'], ['gacha', 'polka', 'psych'], ['objection', 'velvet', 'psych'],
-  ['handbuild', 'polka', 'logic'], ['highlow', 'polka', 'logic'], ['danger', 'selina', 'logic'], ['sniper', 'selina', 'logic'], ['outs', 'grano', 'logic'], ['suspects', 'velvet', 'logic'],
+  ['detective', 'polka', 'psych'], ['ask', 'polka', 'psych'], ['ask_selina', 'selina', 'psych'], ['stare', 'polka', 'psych'], ['doubt', 'polka', 'psych'], ['gacha', 'polka', 'psych'], ['objection', 'velvet', 'psych'],
+  ['handbuild', 'polka', 'logic'], ['highlow', 'polka', 'logic'], ['handvs', 'polka', 'logic'], ['danger', 'selina', 'logic'], ['sniper', 'selina', 'logic'], ['outs', 'grano', 'logic'], ['suspects', 'velvet', 'logic'], ['narrow', 'selina', 'logic'], ['narrow_velvet', 'velvet', 'logic'],
 ];
 const only = process.argv.slice(2);
 const OUT = path.resolve('qa/out/readaudit' + (process.env.QA_SIZE ? '-' + process.env.QA_SIZE : ''));
@@ -30,7 +30,7 @@ const SNAP = `(() => {
 function pick(cands, clicked, sig) {
   if (!cands.length) return null;
   const T0 = /調べる|めくる|開く|見る|引く|回す|スタート|はじめ|次へ|つぎへ|読み合いへ|探る|並べる|選ぶ/;
-  const T1 = /決定|確定|賭ける|卓へ|卓にもどる|答え|読みに|勝負|OK|天秤|宣言|撃つ|指名|告発|異議/;
+  const T1 = /これで決める|ミミの勝ち|この5枚|決定|確定|賭ける|卓へ|卓にもどる|答え|読みに|勝負|OK|天秤|宣言|撃つ|指名|告発|異議/;
   const score = (c) => {
     const k = c.t + '|' + c.cls + '|' + Math.round(c.y / 20);
     const n = clicked[k] || 0;
@@ -46,8 +46,9 @@ function pick(cands, clicked, sig) {
 }
 
 function bump(clicked, c) { const k = c.t + '|' + c.cls + '|' + Math.round(c.y / 20); clicked[k] = (clicked[k] || 0) + 1; }
-async function runGame(gameId, opp, group, first) {
-  const dir = path.join(OUT, gameId); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
+async function runGame(gameId0, opp, group, first) {
+  const gameId = gameId0.replace(/_.*/, ""), dirName = gameId0;
+  const dir = path.join(OUT, dirName); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
   const session = await openSession({ width: +(process.env.QA_SIZE || '844x390').split('x')[0], height: +(process.env.QA_SIZE || '844x390').split('x')[1], speed: 1, seed: +(process.env.QA_SEED || 12345), save: { clearedStages: ['rico_tutorial', 'polka', 'selina', 'grano'], introPlayed: true, houseRulesSeen: true, coins: 500, ...(first ? {} : { readIntroSeen: true }) } });
   const { page } = session;
   const rec = [];

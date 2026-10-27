@@ -157,6 +157,36 @@
 
   // CSS の全セレクタの頭に .mb-host を付ける（@keyframes の中身はそのまま。@media などは中を再帰する）
   // :root / html / body は .mb-host そのものに読み替える（body.is-fever → .mb-host.is-fever）
+  // 共通の天秤（api.balance）と確かさの◆（api.pips）。見た目は見つめ合いの天秤と同じ
+  const BAL_CSS = `
+    .mb-bal { display: flex; flex-direction: column; gap: 2px; padding: 2px 8px 4px; background: var(--panel); border: 1px solid var(--line); }
+    .mb-bal-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0 8px; }
+    .mb-bal-box { position: relative; min-width: 0; padding-bottom: calc(var(--ty-note, 14px) * 1.3); }
+    .mb-bal-svg { width: 100%; max-height: 92px; display: block; overflow: visible; }
+    .mb-bal-svg .post { fill: #6b4a1e; stroke: var(--gold); stroke-width: 1.5; }
+    .mb-bal-svg .beam rect { fill: var(--gold); } .mb-bal-svg .beam circle { fill: var(--gold-hi); stroke: #3a2208; }
+    .mb-bal-svg .beam, .mb-bal-svg .pan { transition: transform .7s cubic-bezier(.3,1.4,.5,1); }
+    .mb-bal-svg .str { stroke: var(--gold); stroke-width: 1; fill: none; }
+    .mb-bal-svg .dish { fill: #3a2208; stroke: var(--gold-hi); stroke-width: 1.2; }
+    .mb-bal-svg rect.rec { fill: #b0202f; stroke: #ffb3bc; stroke-width: .6; } .mb-bal-svg .is-s rect.rec { fill: var(--gold); }
+    .mb-bal-svg rect.clue { fill: #f4e4bd; stroke: #6b4306; stroke-width: .6; }
+    .mb-bal-pan { position: absolute; bottom: 0; white-space: nowrap; font-family: var(--mincho); font-weight: 800; font-size: var(--ty-note, 14px); line-height: 1.3; }
+    .mb-bal-pan.is-b { left: 0; color: #ff8f9c; } .mb-bal-pan.is-s { right: 0; color: var(--gold-hi); }
+    .mb-bal-odds { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 92px; }
+    .mb-bal-odds b { font-family: var(--mincho); font-weight: 800; font-size: 17px; line-height: 1.1; white-space: nowrap; }
+    .mb-bal-odds b.b { color: #ff8f9c; } .mb-bal-odds b.s { color: var(--gold-hi); }
+    .mb-bal-odds small { font-size: var(--ty-note, 14px); line-height: 1.2; color: var(--dim); white-space: nowrap; }
+    .mb-bal-odds .lbl { font-family: var(--mincho); font-weight: 700; margin-right: 4px; }
+    .mb-bal-rec { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-family: var(--mincho); font-size: 14px; line-height: 1.3; }
+    .mb-bal-rec .h { font-weight: 700; color: var(--gold); }
+    .mb-bal-rec .d { display: grid; grid-template-columns: repeat(20, 3px); gap: 1px; }
+    .mb-bal-rec .d i { width: 3px; height: 12px; background: linear-gradient(180deg, var(--gold-hi), #8a5a1e); }
+    .mb-bal-rec .d i.b { background: linear-gradient(180deg, #e0485c, #8a1424); }
+    .mb-bal-rec b { color: #ff8f9c; }
+    .mb-pips { display: inline-flex; gap: 2px; vertical-align: middle; }
+    .mb-pips i { width: 9px; height: 9px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: var(--line-dim); }
+    .mb-pips i.on { background: var(--gold-hi); }
+  `;
   function scopeCss(text) {
     text = text.replace(/\/\*[\s\S]*?\*\//g, '');
     const splitTop = (s) => {
@@ -445,6 +475,47 @@
         betTag(label, n = 3) { return `<span class="mb-bet"><span class="mb-stk" aria-hidden="true">${'<i></i>'.repeat(n)}</span><b>${label}</b></span>`; },
         // 点の目盛り：total 個のうち on 個が点灯（例：10回中6回）
         dots(on, total = 10) { return `<span class="mb-dots" aria-label="${total}回中${on}回">${Array.from({ length: total }, (_, i) => `<i class="${i < on ? 'on' : ''}"></i>`).join('')}</span>`; },
+        // 手がかりの確かさ：当たる率 → ◆の数（◆＝6割、◆◆＝8割、◆◆◆＝9割以上）
+        sure(acc) { return acc >= .9 ? 3 : acc >= .7 ? 2 : 1; },
+        pips(n) { return `<span class="mb-pips" aria-label="確かさ${n}">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`; },
+        // 心理の天秤（全種類で同じ）：左の皿＝ブラフ（ミミの勝ち）、右の皿＝本物（ミミの負け）。
+        // 最初に「大きな賭け20回」の記録の重り、手がかりが出るたびに重り（大きさ＝確かさ）。o = { record:[true=ブラフ…], name }
+        balance(o) {
+          api.css('mb-bal', BAL_CSS);
+          const record = o.record, nB = record.filter(Boolean).length;
+          const prior = Math.min(.9, Math.max(.1, nB / record.length));
+          const W0 = Math.log(prior / (1 - prior));
+          const weights = [{ side: W0 >= 0 ? 'b' : 's', w: Math.abs(W0), rec: true }];
+          let odds = prior / (1 - prior);
+          const uid = 'bal' + Math.random().toString(36).slice(2, 7);
+          const q = (s) => api.root.querySelector('#' + uid + s);
+          const B = {
+            prior,
+            html: `<div class="mb-bal" id="${uid}"><div class="mb-bal-top"><div class="mb-bal-box"><svg class="mb-bal-svg" viewBox="34 0 192 78" aria-hidden="true">
+                <path class="post" d="M130 20 V68 M114 74 H146 L139 68 H121 Z"/>
+                <g class="beam" id="${uid}-beam"><rect x="58" y="17" width="144" height="5" rx="1"/><circle cx="130" cy="19.5" r="5"/></g>
+                ${['b', 's'].map(k => `<g class="pan is-${k}" id="${uid}-pan-${k}"><path class="str" d="M0 0 L-24 18 M0 0 L24 18"/><g id="${uid}-w-${k}"></g><path class="dish" d="M-28 18 H28 Q21 27 0 27 Q-21 27 -28 18 Z"/></g>`).join('')}
+              </svg><span class="mb-bal-pan is-b">ブラフ</span><span class="mb-bal-pan is-s">本物</span></div><div class="mb-bal-odds" id="${uid}-odds"></div></div>
+              <div class="mb-bal-rec" aria-label="${o.name}が大きく賭けた20回のうち、ブラフは${nB}回"><span class="h">大きな賭け20回</span><span class="d">${record.map(b => `<i class="${b ? 'b' : 's'}"></i>`).join('')}</span><b>ブラフ${nB}</b></div></div>`,
+            p: () => odds / (1 + odds),
+            // lean＝'bluff'|'strong'、acc＝その手がかりが当たる率
+            add(lean, acc) { odds *= lean === 'bluff' ? acc / (1 - acc) : (1 - acc) / acc; weights.push({ side: lean === 'bluff' ? 'b' : 's', w: Math.log(acc / (1 - acc)) }); B.draw(); },
+            draw() {
+              const pb = B.p(), beam = q('-beam'); if (!beam) return pb;
+              const ang = -(pb - .5) * 36 * Math.PI / 180;
+              beam.setAttribute('transform', `rotate(${(ang * 180 / Math.PI).toFixed(2)} 130 19.5)`);
+              [['b', -66], ['s', 66]].forEach(([k, dx]) => {
+                q('-pan-' + k).setAttribute('transform', `translate(${(130 + dx * Math.cos(ang)).toFixed(1)} ${(19.5 + dx * Math.sin(ang)).toFixed(1)})`);
+                let yy = 18;
+                q('-w-' + k).innerHTML = weights.filter(w => w.side === k).map(w => { const wd = Math.min(46, 14 + w.w * 11); yy -= 9; return `<rect class="${w.rec ? 'rec' : 'clue'}" x="${(-wd / 2).toFixed(1)}" y="${yy}" width="${wd.toFixed(1)}" height="8" rx="1"/>`; }).join('');
+              });
+              const b = pb >= .5, p = Math.round(Math.max(pb, 1 - pb) * 100);
+              q('-odds').innerHTML = `<b class="${b ? 'b' : 's'}"><small class="lbl">見込み</small>${b ? 'ブラフ' : '本物'} ${p}%</b><small>${b ? 'ミミの勝ち' : 'ミミの負け'}の側</small>`;
+              return pb;
+            },
+          };
+          return B;
+        },
         // 「詳しく」：押した時だけ出る補足。本文は画面に重ねて出し、並びは動かさない
         more(html) { return `<details class="mb-more"><summary>詳しく</summary><div class="mb-more-body">${html}</div></details>`; },
         // 開始のカットイン（タップで飛ばせる）

@@ -1,116 +1,115 @@
-// 心理：心の声ガチャ（ぱにゅぱにゅ）
-// 相手が賭けてきた。ミミの外れスキル《ぱにゅぱにゅ》で、相手の「心の声」を引ける（手持ち30、1回10、最大3回）。
-// 引かずに残したぱにゅは、1あたりコイン2枚として賭け金のもとに足される＝引くか節約するかの駆け引き。
-// 心の声はすべて、裏で決めた相手の本当の手札から作る（N と R は書いてある割合で外れる。SR・SSR は正確）。
+// 心理：心の声ガチャ（ぱにゅぱにゅ）— 2026-10-27 卓の本当の手の版に作り替え
+// 卓でいま賭かっている手で、相手の伏せ札が「本物」（ミミより強い）か「ブラフ」（ミミの方が強い）かを読む。
+// ぱにゅ（手持ち30）を10使うと、相手の心の声が1つ聞ける（最大3回、3回目は R 以上）。声には確かさがあり（N◆ 6割・R◆◆ 8割・SR◆◆◆ 9割・SSR 本音）、
+// 聞くたびに天秤に重りが乗る。引かずに残したぱにゅは、1あたりコイン2枚としてご褒美のもとに足される（80→60→40→20）＝引くか止めるかの駆け引き。
+// 試算：どの相手でも「天秤の見込みが70%以上なら引かない」がほぼ一番得。セリナは最初から引かないのが一番得。全部引くのはどの相手でも一番損。
+// 読みを預けて卓に戻り、答え合わせは手の決着の後（verdict.js）。単独ページ（卓なし）では架空の場面を配る。
 (() => {
   const RAR = {
-    N: { p: 55, name: '気分のかけら', short: '気分', acc: '6割で本当の手に沿う' },
-    R: { p: 30, name: '手の強さのヒント', short: 'ヒント', acc: '8割で本当の手に沿う' },
-    SR: { p: 12, name: '相手の札を1枚見抜く', short: '1枚', acc: '正確' },
-    SSR: { p: 3, name: '両方の札が見える', short: '両方', acc: '正確・大当たり' },
+    N: { p: 55, short: '気分', acc: .6 },
+    R: { p: 30, short: 'ヒント', acc: .8 },
+    SR: { p: 12, short: '本音', acc: .92 },
+    SSR: { p: 3, short: '大当たり', acc: .99 },
   };
   const ORDER = ['N', 'R', 'SR', 'SSR'];
   // 天井（3回目）は R 以上だけを、同じ比率で引き直す
   const CEIL = { R: 30 / 45, SR: 12 / 45, SSR: 3 / 45 };
-  const pct = (x) => (Math.round(x * 1000) / 10) + '%';
+  const STAKES = [0, 1, 3];
+  const NAME = { bluff: 'ブラフ', strong: '本物' };
+  // 大きな賭けの記録（見つめ合いと同じ人の癖：ポルカ 65%・グラーノ 50%・ヴェルベット 45%・セリナ 25%）
+  const PRIOR = { polka: .65, selina: .25, grano: .5, velvet: .45 };
+  const recordOf = (prior, n = 20) => { const k = Math.round(prior * n); const o = [3, 11, 6, 17, 0, 9, 14, 2, 19, 7, 12, 4, 16, 1, 10, 18, 5, 13, 8, 15]; const s = new Set(o.slice(0, k)); return Array.from({ length: n }, (_, i) => s.has(i)); };
 
-  // キャラごとの心の声（口調を変える）
+  // キャラごとの心の声（口調を変える）。strong＝本物寄りの声、bluff＝ブラフ寄りの声
   const VOICE = {
     polka: {
       N: {
         strong: ['えへへ、早く見せたいな〜♪', 'ふんふーん、今日のボク、ついてる気がする！', 'わくわく……ばれちゃダメだぞ、ボク！'],
         bluff: ['……どきどき。お願い、降りて〜', 'ひ、ひざが勝手にゆれちゃう……', '平気な顔、平気な顔……！'],
       },
-      R: { strong: 'ボクの札、場札とばっちり噛み合ってるもんね！', bluff: 'ボクの札、場札とぜんっぜん噛み合ってないや……' },
-      SR: '{c}ちゃん、がんばって〜！',
-      SSR: '{a}と{b}、ボクの宝物！ 見ないで〜！',
+      R: {
+        strong: ['ボクの札、場札とばっちり噛み合ってるもんね！', '場札がボクの味方してくれてる〜'],
+        bluff: ['ボクの札、場札とぜんっぜん噛み合ってないや……', 'あれ、ボクの札、どれとも並ばない……'],
+      },
+      SR: { strong: ['ミミちゃんの手より、ボクの方が上だもんね〜'], bluff: ['ミミちゃんの方が強いかも……お願い、気づかないで'] },
+      SSR: { strong: ['勝ってる。ぜったい勝ってる！'], bluff: ['……ボク、ブラフしてる。バレたら終わりだ'] },
       open: 'ミミちゃん、勝負だよっ！ ボク、本気だからね！',
-      end: { winBluff: 'うわーん、バレてたー！', loseBluff: 'えへへ、ブラフでした〜！', winStrong: 'ちぇー、降りられちゃった', loseStrong: 'やったー！ 本物だよ！' },
+      end: { bc: 'うわーん、バレてたー！', bw: 'えへへ、ブラフでした〜！', sc: 'ちぇー、降りられちゃった', sw: 'やったー！ 本物だよ！' },
     },
     selina: {
       N: {
         strong: ['……問題ない。', '……静か。いい。', '……勝ち筋、見えた。'],
         bluff: ['……早く、降りて。', '……計算が、合わない。', '……顔には、出さない。'],
       },
-      R: { strong: '……私の札、場と、つながってる。', bluff: '……私の札、場と、つながらない。' },
-      SR: '……{c}。',
-      SSR: '……{a}、{b}。……見た？',
+      R: {
+        strong: ['……私の札、場と、つながってる。', '……この場は、私の形。'],
+        bluff: ['……私の札、場と、つながらない。', '……どれとも、組めない。'],
+      },
+      SR: { strong: ['……ミミより、上。'], bluff: ['……ミミの方が、上。押すしかない。'] },
+      SSR: { strong: ['……勝っている。確かめた。'], bluff: ['……これは、ブラフ。'] },
       open: '……ポット。',
-      end: { winBluff: '……読まれた。', loseBluff: '……降りてくれて、ありがとう。', winStrong: '……賢明。', loseStrong: '……本物。' },
+      end: { bc: '……読まれた。', bw: '……降りてくれて、ありがとう。', sc: '……賢明。', sw: '……本物。' },
     },
     grano: {
       N: {
         strong: ['ふふ、これは良い取引になりそうですな', '利益の匂いがいたしますぞ', '値切られる前に、しっかり頂きましょう'],
         bluff: ['……損切りの準備はしておきましょうか', '在庫は空っぽ、しかし看板は立派に', 'ここは口八丁で乗り切るしか……'],
       },
-      R: { strong: '私の二枚、場札と上々の相性ですな', bluff: '私の二枚、場札とは取引不成立でして' },
-      SR: '頼みますぞ、{c}殿……',
-      SSR: '{a}と{b}、私の全財産ですぞ……',
+      R: {
+        strong: ['私の二枚、場札と上々の相性ですな', '場札との商談、まとまっておりますな'],
+        bluff: ['私の二枚、場札とは取引不成立でして', '帳簿が、どうにも合いませんな'],
+      },
+      SR: { strong: ['お嬢さんの手より、こちらの品が上ですな'], bluff: ['お嬢さんの方が上物……ここは口で押すしか'] },
+      SSR: { strong: ['本物です。値引きはいたしませんぞ'], bluff: ['……これは、はったり商売ですな'] },
       open: 'ここは強気に参りましょう。さあ、いかがなさいます？',
-      end: { winBluff: 'なんと、見抜かれましたか……', loseBluff: 'ふふ、良い取引でした', winStrong: '慎重なお方ですな', loseStrong: 'まいど、ありがとうございます' },
+      end: { bc: 'なんと、見抜かれましたか……', bw: 'ふふ、良い取引でした', sc: '慎重なお方ですな', sw: 'まいど、ありがとうございます' },
     },
     velvet: {
       N: {
         strong: ['ふふん、早くコールしなさいよ♡', 'あたしの勝ち、もう決まってるの♡', 'ざぁこの泣き顔、楽しみなの♡'],
         bluff: ['……は、早く降りなさいよ、ざぁこ', 'こ、こわくなんかないの……！', 'なんでこっち見てるの……？'],
       },
-      R: { strong: 'あたしの札、場札とお似合いなの♡', bluff: 'あたしの札……場札と、ぜんぜん合ってないの' },
-      SR: '{c}、あたしの味方でしょ？',
-      SSR: '{a}と{b}……見ないでよ、ざぁこ！',
+      R: {
+        strong: ['あたしの札、場札とお似合いなの♡', '場札があたしに微笑んでるわ♡'],
+        bluff: ['あたしの札……場札と、ぜんぜん合ってないの', 'な、なんで一枚も揃わないのよ……'],
+      },
+      SR: { strong: ['ざぁこの手より、あたしの方が上なの♡'], bluff: ['ざぁこの方が強いの……バレないで……'] },
+      SSR: { strong: ['勝ってるわ。本当に。'], bluff: ['……ブラフよ。怖いの。'] },
       open: 'ほら、コールしてみなさいよ。ざぁこ♡',
-      end: { winBluff: 'う、うそ……あたしのブラフが……！', loseBluff: 'ふふっ、降りちゃった♡ ざぁこ♡', winStrong: '……ちっ。逃げ足だけは速いのね', loseStrong: 'ざぁんねん♡ 本物なの' },
+      end: { bc: 'う、うそ……あたしのブラフが……！', bw: 'ふふっ、降りちゃった♡ ざぁこ♡', sc: '……ちっ。逃げ足だけは速いのね', sw: 'ざぁんねん♡ 本物なの' },
     },
   };
   const WHO = Object.keys(VOICE);
-  const TOTAL = { N: WHO.length * 6, R: WHO.length * 2, SR: WHO.length, SSR: WHO.length };
+  const TOTAL = { N: WHO.length * 6, R: WHO.length * 4, SR: WHO.length * 2, SSR: WHO.length * 2 };
   const ALL = TOTAL.N + TOTAL.R + TOTAL.SR + TOTAL.SSR;
-  // 心の声図鑑（このページで集めた種類）
+  // 心の声図鑑（集めた種類）
   const book = new Set();
   try { JSON.parse(localStorage.getItem('mbGachaBook') || '[]').forEach(k => book.add(k)); } catch (e) {}
   const saveBook = () => { try { localStorage.setItem('mbGachaBook', JSON.stringify([...book])); } catch (e) {} };
 
   MB.register({ id: 'gacha', group: 'psych', order: 5, title: '心の声ガチャ', sub: '心理 · ぱにゅぱにゅ', isNew: true, chars: ['polka', 'selina', 'grano', 'velvet'], start });
 
-  // 本当の手を決める。flush：場に同じマーク3枚、強い＝そのマーク2枚。set：強い＝場の数字と同じポケットペア。
-  // ミミは一番上の数字のワンペア（ブラフには勝ち、強い手には負け）になるまで配り直す。
+  // 単独ページ用の架空の場面：ミミは一番上の数字のワンペア。本物＝フラッシュ、ブラフ＝役なし
   function deal(api, truth) {
     const R = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
     for (let t = 0; t < 500; t++) {
-      const tpl = Math.random() < .5 ? 'flush' : 'set';
+      const X = api.pick(api.SUITS); const O = api.shuffle(api.SUITS.filter(s => s !== X));
       const ranks = api.shuffle(R).slice(0, 5);
-      let board, X = null;
-      if (tpl === 'flush') {
-        X = api.pick(api.SUITS); const O = api.shuffle(api.SUITS.filter(s => s !== X));
-        board = ranks.map((r, i) => ({ r, s: i < 3 ? X : O[i - 3] }));
-      } else {
-        const ss = api.shuffle(api.SUITS); const pat = [0, 1, 2, 3, api.rand(4)];
-        board = ranks.map((r, i) => ({ r, s: ss[pat[i]] }));
-      }
+      const board = ranks.map((r, i) => ({ r, s: i < 3 ? X : O[i - 3] }));
       const used = new Set(board.map(api.key));
       const top = Math.max(...ranks); const topCard = board.find(c => c.r === top);
       const nonX = api.SUITS.filter(s => s !== X);
       const kick = R.slice().reverse().find(r => !ranks.includes(r));
-      const mimi = [{ r: top, s: api.pick(nonX.filter(s => s !== topCard.s)) }, { r: kick, s: api.pick(nonX) }];
-      mimi.forEach(c => used.add(api.key(c)));
-      let her;
-      if (truth === 'strong') {
-        if (tpl === 'flush') {
-          her = api.shuffle(R.filter(r => !ranks.includes(r) && r !== kick)).slice(0, 2).map(r => ({ r, s: X }));
-        } else {
-          const m = api.pick(ranks.filter(r => r !== top));
-          const bs = board.find(c => c.r === m).s;
-          her = api.shuffle(api.SUITS.filter(s => s !== bs)).slice(0, 2).map(s => ({ r: m, s }));
-        }
-      } else {
-        const rs = api.shuffle(R.filter(r => !ranks.includes(r) && r !== kick && r !== top)).slice(0, 2);
-        her = rs.map(r => ({ r, s: api.pick(nonX) }));
-      }
+      const mine = [{ r: top, s: api.pick(nonX.filter(s => s !== topCard.s)) }, { r: kick, s: api.pick(nonX) }];
+      mine.forEach(c => used.add(api.key(c)));
+      const her = truth === 'strong'
+        ? api.shuffle(R.filter(r => !ranks.includes(r) && r !== kick)).slice(0, 2).map(r => ({ r, s: X }))
+        : api.shuffle(R.filter(r => !ranks.includes(r) && r !== kick && r !== top)).slice(0, 2).map(r => ({ r, s: api.pick(nonX) }));
       if (her.some(c => used.has(api.key(c))) || new Set(her.map(api.key)).size < 2) continue;
-      if (api.category(mimi.concat(board)) !== 1) continue;
-      const a = api.score(her.concat(board)), b = api.score(mimi.concat(board));
+      if (api.category(mine.concat(board)) !== 1) continue;
+      const a = api.score(her.concat(board)), b = api.score(mine.concat(board));
       if (truth === 'strong' ? a <= b : a >= b) continue;
-      if (truth === 'bluff' && api.category(her.concat(board)) !== 0) continue;
-      return { tpl, X, board: api.shuffle(board), mimi, her, top };
+      return { board: api.shuffle(board), mine, her };
     }
     return null;
   }
@@ -120,98 +119,83 @@
     const who = api.charId in VOICE ? api.charId : 'polka';
     const V = VOICE[who];
     const jp = api.char.jp;
-    const truth = force.truth || (Math.random() < .5 ? 'bluff' : 'strong');
-    const opp = (t) => (t === 'bluff' ? 'strong' : 'bluff');
-    let D = deal(api, truth);
-    if (!D) { // 念のための固定の配り
-      const b = [{ r: 13, s: 'h' }, { r: 9, s: 'h' }, { r: 4, s: 'c' }, { r: 2, s: 'h' }, { r: 7, s: 's' }];
-      D = { tpl: 'flush', X: 'h', board: b, mimi: [{ r: 13, s: 'c' }, { r: 14, s: 'd' }], her: truth === 'strong' ? [{ r: 12, s: 'h' }, { r: 6, s: 'h' }] : [{ r: 6, s: 'd' }, { r: 5, s: 'c' }], top: 13 };
+    const T = api.table;
+    const record = [...recordOf(PRIOR[who]), ...((T && Array.isArray(T.record)) ? T.record : [])].slice(-20);
+    // 札：卓の本当の手（本編）か、架空の場面（単独ページ）
+    let board, mine, her, truth, mimiEq;
+    if (T) {
+      board = T.board; mine = T.mine; her = T.her;
+      mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+      truth = mimiEq >= 50 ? 'bluff' : 'strong';
+    } else {
+      truth = force.truth || (Math.random() < PRIOR[who] ? 'bluff' : 'strong');
+      const D = deal(api, truth) || { board: [{ r: 13, s: 'h' }, { r: 9, s: 'h' }, { r: 4, s: 'c' }, { r: 2, s: 'h' }, { r: 7, s: 's' }], mine: [{ r: 13, s: 'c' }, { r: 14, s: 'd' }], her: truth === 'strong' ? [{ r: 12, s: 'h' }, { r: 6, s: 'h' }] : [{ r: 6, s: 'd' }, { r: 5, s: 'c' }] };
+      ({ board, mine, her } = D);
+      mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
     }
-    const { board, mimi, her, tpl, X } = D;
-    const herCat = api.CAT_NAME[api.category(her.concat(board))];
-    const mimiName = `${api.rn(D.top)}のワンペア`;
-    const bet = 300 + api.rand(8) * 100;
+    const mimiHandName = api.CAT_NAME[api.category([...mine, ...board])];
+    const other = (t) => (t === 'bluff' ? 'strong' : 'bluff');
 
-    api.say(V.open, who === 'selina' ? 'think' : 'smug'); api.bet(bet);
+    api.say(V.open, who === 'selina' ? 'think' : 'smug'); api.bet(T ? (T.toCall || '—') : 500);
     api.css('gacha', CSS);
     const root = api.root;
-    const stepNames = ['心の声を引く', '読む', '読みを賭ける', '答え合わせ'];
-    // 場札の意味は文で説明せず、当てはまる場札を赤く光らせ、相手の伏せ札に小さな札と短い名札を重ねる
-    const redS = (c) => (c === 'h' || c === 'd' ? 'rd' : '');
-    const threatName = tpl === 'flush' ? 'フラッシュの危険' : 'スリーカードの危険';
-    const dangerRank = Math.max(...board.filter(c => c.r !== D.top).map(c => c.r));   // 伏せ札と重なると危ない数字（ミミのペア以外で一番大きい場札の数字）
-    const threatChip = tpl === 'flush'
-      ? `<span class="${redS(X)}">${api.SYM[X]}</span><span class="${redS(X)}">${api.SYM[X]}</span><span class="q">?</span>`
-      : `<span>${api.rn(dangerRank)}</span><span>${api.rn(dangerRank)}</span><span class="q">?</span>`;
-    const detailHtml = `<div class="gc-det"><p>確率はそのまま表示。N 6割・R 8割は本当の手に沿い、SR・SSR は正確。</p><p><b>天井</b>：3回目は <b>R以上が確定</b>（R ${pct(CEIL.R)}・SR ${pct(CEIL.SR)}・SSR ${pct(CEIL.SSR)}）</p><p>残したぱにゅは1あたりコイン2枚（ご褒美のもと＝20＋ぱにゅ×2）</p></div>`;
+    const bal = api.balance({ record, name: jp });
+    const stepNames = ['心の声を引く', '読む', '賭ける', '答え合わせ'];
     const balls = [['n', 12, 6], ['r', 44, 2], ['n', 78, 8], ['sr', 110, 3], ['n', 140, 6], ['r', 26, 30], ['n', 60, 34], ['ssr', 94, 30], ['n', 126, 32], ['r', 150, 36], ['n', 40, 58], ['sr', 76, 60], ['n', 112, 58]];
+    root.classList.add('rb-frame');
     root.innerHTML = `
-      <div id="mb-gc-steps">${api.steps(stepNames, 0)}</div>
-      <div class="row gc-board">${board.map(c => api.cardHTML(c, (tpl === 'flush' ? c.s === X : c.r === dangerRank) ? 'hot' : '')).join('')}</div>
-      <div class="gc-hands" id="mb-gc-hands">
-        <div class="gc-hand"><span class="gc-who">${api.char.name}</span><span class="gc-herbox"><span class="gc-cards" id="mb-gc-her">${api.backHTML('small')}${api.backHTML('small')}</span><span class="mb-threat ov"><span class="tc">${threatChip}</span></span></span><span class="gc-hn is-threat" id="mb-gc-her-name">${threatName}</span></div>
-        <span class="gc-vs">VS</span>
-        <div class="gc-hand"><span class="gc-who">MIMI</span><span class="gc-cards">${mimi.map(c => api.cardHTML(c, 'small')).join('')}</span></div>
-      </div>
-      <div class="gc-sub">${api.handTag(mimiName)}</div>
-      <div class="gc-wrap">
-        <div class="gc-left">
-          <div class="gc-mach" id="mb-gc-mach" role="button" tabindex="0" aria-label="ガチャのレバーを引く">
-            <i class="gc-ear l"></i><i class="gc-ear r"></i>
-            <div class="gc-dome"><div class="gc-balls">${balls.map(([k, x, y]) => `<i class="b-${k}" style="left:${x}px;bottom:${y}px"></i>`).join('')}</div></div>
-            <i class="gc-bow"></i>
-            <div class="gc-body">
-              <div class="gc-plate"><span>ぱにゅぱにゅ</span></div>
-              <div class="gc-face"><i></i><b>ω</b><i></i></div>
-              <div class="gc-chute"></div>
-            </div>
-            <div class="gc-lever"><i class="stick"></i><i class="pivot"></i></div>
-            <i class="gc-feet"></i>
-          </div>
-          <div class="gc-ceilg" id="mb-gc-ceilg" aria-label="天井：3回目はR以上が確定"><span class="gc-ceilg-t">天井</span><i></i><i></i><i class="last"></i></div>
-          <div class="gc-acts" id="mb-gc-acts">
-            <button class="btn gold gc-pull" id="mb-gc-pull">ぱにゅぱにゅ！<small>ぱにゅ −10</small></button>
-            <button class="btn quiet gc-stop" id="mb-gc-stop">もう引かない<small>読みに進む</small></button>
-          </div>
+      <div class="rb-top"><div class="rb-steps" id="mb-gc-steps">${api.steps(stepNames, 0)}</div></div>
+      <div class="rb-play gx-play">
+        <div class="gc-mach" id="mb-gc-mach" role="button" tabindex="0" aria-label="ガチャのレバーを引く">
+          <i class="gc-ear l"></i><i class="gc-ear r"></i>
+          <div class="gc-dome"><div class="gc-balls">${balls.map(([k, x, y]) => `<i class="b-${k}" style="left:${x}px;bottom:${y}px"></i>`).join('')}</div></div>
+          <i class="gc-bow"></i>
+          <div class="gc-body"><div class="gc-plate"><span>ぱにゅぱにゅ</span></div><div class="gc-face"><i></i><b>ω</b><i></i></div><div class="gc-chute"></div></div>
+          <div class="gc-lever"><i class="stick"></i><i class="pivot"></i></div>
+          <i class="gc-feet"></i>
         </div>
-        <div class="gc-right">
-          <div class="gc-panyu">
-            <div class="gc-pn"><span>ぱにゅ</span><b id="mb-gc-pn">30</b><span class="gc-segs" id="mb-gc-segs"><i></i><i></i><i></i></span></div>
-            <div class="gc-basebox" aria-label="残したぱにゅは1あたりコイン2枚"><i class="gc-arr"></i><i class="gc-coin"></i><b>+<span id="mb-gc-bv">60</span></b></div>
-          </div>
-          <div class="gc-voices" id="mb-gc-voices"><div class="gc-empty" aria-label="まだ心の声は聞こえない"><span>心の声</span></div></div>
-          <div class="gc-odds">
-            <div class="gc-odds-h">排出確率</div>
-            ${ORDER.map(k => `<div class="gc-or"><span class="gc-rar r-${k}">${k}</span><i class="gc-bar"><u class="r-${k}" style="width:${(RAR[k].p / 55 * 100).toFixed(1)}%"></u></i><b>${RAR[k].p}%</b><em>${RAR[k].short}</em></div>`).join('')}
-            ${api.more(detailHtml)}
-          </div>
-          <div class="gc-book" id="mb-gc-book"></div>
+        <div class="gx-side">
+          <div class="gx-odds" aria-label="出る確率">${ORDER.map(k => `<div class="gx-or"><span class="gc-rar r-${k}">${k}</span><b>${RAR[k].p}%</b><span class="gx-acc">${k === 'SSR' ? '本音' : api.pips(api.sure(RAR[k].acc))}</span></div>`).join('')}</div>
+          <div class="gx-panyu"><span class="h">ぱにゅ</span><span class="gc-segs" id="mb-gc-segs"><i></i><i></i><i></i></span></div>
+          <div class="gx-ceil"><span class="gc-ceilg" id="mb-gc-ceilg" aria-label="3回目はR以上"><i></i><i></i><i class="last"></i></span><span class="t">3回目は<br>R以上</span></div>
         </div>
       </div>
-      <div class="actions" id="mb-gc-decide" hidden>
-        <button class="btn" data-d="bluff">ブラフと読む<small>コールして勝負</small></button>
-        <button class="btn quiet" data-d="strong">強い手と読む<small>降りて守る</small></button>
-      </div>`;
-    api.tipOnce('gacha', '3回目は、R以上が確定', 'think');
-    api.mission('ガチャで心の声を引く');
-
+      <div class="rb-info">
+        <div class="gx-sit"><div class="gx-sit-cap">場札 ／ ミミの手（${mimiHandName}）</div>
+          <div class="gx-sit-row">${board.map(c => api.cardHTML(c, 'small')).join('')}<i class="gx-sep"></i>${mine.map(c => api.cardHTML(c, 'small')).join('')}</div></div>
+        ${bal.html}
+        <div class="gx-voices" id="mb-gc-voices">${[0, 1, 2].map(i => `<div class="gx-voice is-empty" data-i="${i}"><span class="h">心の声${i + 1}</span><span class="gx-lean">まだ聞いていない</span></div>`).join('')}</div>
+      </div>
+      <div class="rb-act gx-act" id="mb-gc-act"></div>`;
+    bal.draw();
     const $ = (s) => root.querySelector(s);
-    const mach = $('#mb-gc-mach');
-    let panyu = 30, pulls = 0, busy = false, over = false;
+    const mach = $('#mb-gc-mach'), act = $('#mb-gc-act');
+    let panyu = 30, pulls = 0, busy = false;
     const got = [];
-    const drawBook = () => {
-      const n = (k) => [...book].filter(x => x.split(':')[1] === k).length;
-      $('#mb-gc-book').innerHTML = `<span class="gc-book-h" title="心の声図鑑 ${book.size}/${ALL}種">図鑑</span>${ORDER.map(k => `<span class="r-${k}" title="${k} ${n(k)}/${TOTAL[k]}"><b>${n(k)}</b><small>/${TOTAL[k]}</small></span>`).join('')}`;
-    };
+    const base = () => 20 + panyu * 2;
     const drawPanyu = () => {
-      $('#mb-gc-pn').textContent = panyu; $('#mb-gc-bv').textContent = panyu * 2;
       root.querySelectorAll('#mb-gc-ceilg i').forEach((el, i) => el.classList.toggle('on', i < pulls));
       $('#mb-gc-segs').querySelectorAll('i').forEach((el, i) => el.classList.toggle('used', i >= panyu / 10));
-      const p = $('#mb-gc-pull');
-      if (p) p.innerHTML = pulls === 2 ? 'ぱにゅぱにゅ！<small>天井・R以上 確定</small>' : 'ぱにゅぱにゅ！<small>ぱにゅ −10</small>';
-      $('#mb-gc-acts').classList.toggle('is-ceil', pulls === 2);
     };
-    drawBook(); drawPanyu();
+    // 選ぶ所：押すと何が起きるかをボタンに書く
+    const drawChoice = () => {
+      const pb = bal.p(), pNow = Math.round(Math.max(pb, 1 - pb) * 100);
+      act.innerHTML = `<div class="gx-choice">
+        <button class="btn gold gx-pull" id="mb-gc-pull" type="button"><span>ぱにゅぱにゅ！</span><small>心の声を1つ聞く${pulls === 2 ? '（R以上）' : ''} → ご褒美${base()}→${base() - 20}</small></button>
+        <button class="btn quiet gx-stop" id="mb-gc-stop" type="button"><span>もう引かない</span><small>ご褒美${base()}で読む（いま見込み${pNow}%）</small></button>
+      </div>`;
+    };
+    drawPanyu();
+    await api.rules({
+      key: 'gacha', title: '心の声ガチャ',
+      goal: `${jp}の伏せ札が<em>本物</em>（ミミより強い）か<em>ブラフ</em>（ミミの方が強い）かを読む。答え合わせはこの手の決着の後`,
+      how: `ぱにゅを使うと、${jp}の<em>心の声</em>が1つ聞ける（3回まで）。◆が多い声ほど当たる`,
+      risk: '1回引くたびに、ご褒美が20減る（80→60→40→20）。外れの声もまじる',
+      look: [['もう1回引くか', '見込み（70%を超えたら引かない）'], ['本物かブラフか', '天秤'], ['自信', '天秤の見込み（％）']],
+    });
+    if (!api.alive()) return;
+    api.tipOnce('gacha', `見込みが<b>70%</b>を超えたら、もう引かなくていい`, 'think');
+    api.mission('心の声を聞く？ ここで読む？');
 
     const roll = () => {
       if (force.rolls && force.rolls[pulls - 1]) return force.rolls[pulls - 1];
@@ -219,25 +203,17 @@
       const x = Math.random() * 100;
       return x < 3 ? 'SSR' : x < 15 ? 'SR' : x < 45 ? 'R' : 'N';
     };
+    // 声は本当の手から作る：書いてある確かさの割合で本当の側、残りは逆の側
     const voiceOf = (rar) => {
-      if (rar === 'N') { const lean = Math.random() < .6 ? truth : opp(truth); const i = api.rand(3); return { rar, lean, text: V.N[lean][i], key: `${who}:N:${lean}:${i}` }; }
-      if (rar === 'R') { const lean = Math.random() < .8 ? truth : opp(truth); return { rar, lean, text: V.R[lean], key: `${who}:R:${lean}` }; }
-      if (rar === 'SR') { const c = api.pick(her); return { rar, lean: truth, cards: [c], text: V.SR.replace('{c}', api.label(c)), key: `${who}:SR` }; }
-      return { rar, lean: truth, cards: her, text: V.SSR.replace('{a}', api.label(her[0])).replace('{b}', api.label(her[1])), key: `${who}:SSR` };
-    };
-    const ricoOn = (v) => {
-      if (v.rar === 'N' || v.rar === 'R') return '';   // 気分・ヒントは声と表が語る。リコは黙る（相手の台詞と同じことを言わない）
-      if (v.rar === 'SSR') return `${herCat}。もう迷わないね`;
-      const c = v.cards[0], L = `<b>${api.label(c)}</b>`;
-      if (tpl === 'flush') return c.s === X ? `${L}は場と同じマーク。フラッシュの匂い…！` : `${L}は場のマークと違う。フラッシュは無いね`;
-      return board.some(b => b.r === c.r) ? `${L}は場の数字と同じ！ スリーカードだ` : `${L}は場のどれとも合わない。空振りっぽい`;
+      const lean = Math.random() < RAR[rar].acc ? truth : other(truth);
+      const pool = V[rar][lean]; const i = api.rand(pool.length);
+      return { rar, lean, acc: RAR[rar].acc, text: pool[i], key: `${who}:${rar}:${lean}:${i}` };
     };
 
-    // 1回引く：レバー → カプセルが落ちて揺れる（ため）→ 開いてレア度の色 → 心の声
+    // 1回引く：レバー → カプセルが落ちて揺れる（ため）→ 開いてレア度の色 → 心の声 → 天秤に重り
     const pull = async () => {
-      if (busy || over || panyu < 10) return;
       busy = true; pulls++; panyu -= 10; drawPanyu();
-      $('#mb-gc-pull').disabled = true; $('#mb-gc-stop').disabled = true;
+      act.querySelectorAll('button').forEach(b => { b.disabled = true; });
       const rar = roll(); const v = voiceOf(rar);
       api.sfx.tap(); api.coach('');
       mach.classList.remove('is-pull'); void mach.offsetWidth; mach.classList.add('is-pull');
@@ -279,96 +255,122 @@
       else if (rar === 'R') api.sfx.good();
       else api.sfx.tap();
       await api.wait(R ? 100 : 650); if (!api.alive()) return;
-      // 心の声をフキダシで出し、図鑑に数える
+      // 心の声を欄に書き、天秤に重りを乗せる
       const isNew = !book.has(v.key); book.add(v.key); saveBook(); got.push(v);
-      const list = $('#mb-gc-voices'); const empty = list.querySelector('.gc-empty'); if (empty) empty.remove();
-      list.insertAdjacentHTML('afterbegin', `<div class="gc-voice v-${rar} pop">
-        <span class="gc-rar r-${rar}">${rar}</span>
-        <div class="gc-bub mb-ebony"><p>「${v.text}」</p>${v.cards ? `<div class="gc-vcards">${v.cards.map(c => api.cardHTML(c, 'small')).join('')}</div>` : ''}</div>
-        <div class="gc-meta">${pulls}回目・${RAR[rar].short}${isNew ? '<em>初入手</em>' : ''}</div></div>`);
-      drawBook();
-      if (window.innerWidth <= 720) api.reveal(list.firstElementChild, 'nearest');
-      api.coach(ricoOn(v), rar === 'SSR' ? 'win' : rar === 'SR' ? 'smug' : 'think');
-      // 札を見抜かれた瞬間、相手は動揺する（本人は気づいていない）。セリナは SSR の時だけ
+      const row = root.querySelector(`.gx-voice[data-i="${pulls - 1}"]`);
+      row.className = `gx-voice v-${rar} mb-parchment is-flat pop`;
+      row.innerHTML = `<span class="h">心の声${pulls}<span class="gc-rar r-${rar}">${rar}</span>${rar === 'SSR' ? '<b class="gx-true">本音</b>' : api.pips(api.sure(v.acc))}</span><span class="gx-lean ${v.lean}">→ ${NAME[v.lean]}寄り</span>`;
+      // 声の文は遊びの枠に大きく出す（次に引くまで残す）
+      let pop = root.querySelector('.gx-pop');
+      if (!pop) { pop = document.createElement('div'); pop.className = 'gx-pop mb-ebony'; root.querySelector('.gx-play').appendChild(pop); }
+      pop.innerHTML = `<small class="mb-label">心の声${pulls}（${rar}）</small>「${v.text}」`;
+      pop.classList.remove('pop'); void pop.offsetWidth; pop.classList.add('pop');
+      bal.add(v.lean, v.acc);
+      // 本音・大当たりが出た瞬間、相手は動揺する（本人は気づいていない）。セリナは SSR の時だけ
       if (rar === 'SSR' || (rar === 'SR' && who !== 'selina')) api.emote('panic');
       setTimeout(() => { cap.remove(); burst.remove(); badge.remove(); spot.remove(); mach.classList.remove('is-ssr'); }, R ? 200 : 900);
       await api.wait(R ? 100 : 350); if (!api.alive()) return;
       busy = false;
-      if (panyu < 10) { finishPulls(true); return; }
-      $('#mb-gc-pull').disabled = false; $('#mb-gc-stop').disabled = false;
+      void isNew;
     };
-    let endPulls;
-    const pulled = new Promise(r => { endPulls = r; });
-    const finishPulls = (out) => {
-      if (over) return; over = true;
-      $('#mb-gc-acts').hidden = true; mach.classList.add('is-over');
-      api.coach('');
-      endPulls();
-    };
-    $('#mb-gc-pull').addEventListener('click', pull);
-    mach.addEventListener('click', pull);
-    mach.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pull(); } });
-    $('#mb-gc-stop').addEventListener('click', () => { if (busy || over) return; api.sfx.tap(); finishPulls(false); });
-    await pulled;
-    if (!api.alive()) return;
+    // 引く／やめる
+    while (panyu >= 10) {
+      drawChoice();
+      const a = await new Promise(res => {
+        $('#mb-gc-pull').onclick = () => { if (!busy) res('pull'); };
+        mach.onclick = () => { if (!busy) res('pull'); };
+        mach.onkeydown = (e) => { if ((e.key === 'Enter' || e.key === ' ') && !busy) { e.preventDefault(); res('pull'); } };
+        $('#mb-gc-stop').onclick = () => { if (!busy) { api.sfx.tap(); res('stop'); } };
+      });
+      if (!api.alive()) return;
+      if (a === 'stop') break;
+      await pull(); if (!api.alive()) return;
+    }
+    mach.onclick = null; mach.onkeydown = null; mach.classList.add('is-over');
+    root.querySelectorAll('.gx-voice.is-empty .gx-lean').forEach(t => { t.textContent = '聞かなかった'; });
 
     // 読む
     $('#mb-gc-steps').innerHTML = api.steps(stepNames, 1);
-    api.mission('ブラフか強い手か、読みを決める');
-    const decideEl = $('#mb-gc-decide');
-    decideEl.hidden = false; decideEl.classList.add('pop');
-    api.reveal(decideEl, 'nearest');
-    const decide = await new Promise(res => decideEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { api.sfx.tap(); res(b.dataset.d); })));
-    if (!api.alive()) return;
-    decideEl.hidden = true;
-    $('#mb-gc-steps').innerHTML = api.steps(stepNames, 2);
-    const base = 20 + panyu * 2;
-    await api.wager({ question: `「${decide === 'bluff' ? 'ブラフ' : '強い手'}」と読んだ。自信は？`, base });
-    if (!api.alive()) return;
-
-    // ためてから、相手の手札をめくる
-    $('#mb-gc-steps').innerHTML = api.steps(stepNames, 3);
-    const hands = $('#mb-gc-hands');
-    api.reveal(hands, 'center');
-    hands.classList.add('is-reveal');
-    api.coach(''); api.sfx.drum();
-    await api.wait(api.reduce ? 200 : 1000); if (!api.alive()) return;
-    const herEl = $('#mb-gc-her');
-    herEl.children[0].outerHTML = api.cardHTML(her[0], 'small flip'); api.sfx.tick();
-    await api.wait(api.reduce ? 150 : 750); if (!api.alive()) return;
-    herEl.children[1].outerHTML = api.cardHTML(her[1], 'small flip'); api.sfx.tick();
-    await api.wait(api.reduce ? 150 : 500); if (!api.alive()) return;
-    const nm = $('#mb-gc-her-name'); nm.textContent = herCat; nm.classList.remove('is-threat'); nm.classList.add(truth === 'strong' ? 'is-strong' : 'is-bluff', 'pop');
-    const correct = decide === truth;
-    api.say(truth === 'bluff' ? (correct ? V.end.winBluff : V.end.loseBluff) : (correct ? V.end.winStrong : V.end.loseStrong),
-      truth === 'bluff' ? (correct ? 'busted' : 'smug') : (who === 'selina' ? 'think' : 'smug'));
-    await api.wait(api.reduce ? 200 : 900); if (!api.alive()) return;
-
-    // 集めた声から見て、筋の通った読みはどちらだったか（SR・SSR は決め手、N・R は割合で重み）
-    let lo = 0, exact = false;
-    for (const v of got) {
-      if (v.rar === 'SR' || v.rar === 'SSR') exact = true;
-      else lo += (v.lean === 'bluff' ? 1 : -1) * (v.rar === 'R' ? Math.log(4) : Math.log(1.5));
-    }
-    const sensible = exact ? truth : lo > 0 ? 'bluff' : lo < 0 ? 'strong' : null;
-    const truthDesc = truth === 'strong' ? `本当に強い手（${herCat}・${her.map(api.label).join(' ')}）` : `ブラフ（${herCat}・${her.map(api.label).join(' ')}）`;
-    let why;
-    if (correct) why = pulls === 0 ? '心の声なしで読み切った！' : `心の声${pulls}回で読み切った。`;
-    else if (pulls === 0) why = '1回引けば、ヒントがもらえたかも。';
-    else if (sensible === decide) {
-      const liar = got.find(v => v.lean !== truth);
-      why = `${liar ? liar.rar + 'の声は' + (liar.rar === 'N' ? '4割' : '2割') + '外れる。' : ''}判断は筋が通ってた、運が悪かっただけ。`;
-    } else why = `心の声は「${truth === 'bluff' ? 'ブラフ' : '強い手'}」寄りだった。`;
-    api.fitStage();
-    api.finish({
-      correct, base,
-      perfect: correct && api.mult === 3 && pulls <= 1,
-      detail: `${jp}は${truthDesc}だった。${why}`,
-      extra: `<div class="gc-res-extra">残したぱにゅ ${panyu} → ご褒美のもと ${base}・心の声図鑑 ${book.size}/${ALL}</div>`,
+    api.mission('天秤が下がった方が、ありそうな手');
+    act.innerHTML = `<div><div class="actions">
+      <button class="btn" id="mb-gc-b" type="button">ブラフと読む<small>ミミの方が強い</small></button>
+      <button class="btn quiet" id="mb-gc-s" type="button">本物と読む<small>ミミより強い</small></button></div></div>`;
+    api.coach(pulls ? '' : '心の声なし。天秤は、これまでの記録だけで傾いている');
+    const shownAt = performance.now();
+    const decide = await new Promise(res => {
+      const on = (v) => () => { if (performance.now() - shownAt < 450) return; api.sfx.tap(); res(v); };
+      $('#mb-gc-b').onclick = on('bluff'); $('#mb-gc-s').onclick = on('strong');
     });
+    if (!api.alive()) return;
+    act.innerHTML = '';
+    $('#mb-gc-steps').innerHTML = api.steps(stepNames, 2);
+    const pNow = bal.p(), pMine = Math.round((decide === 'bluff' ? pNow : 1 - pNow) * 100);
+    const b0 = base();
+    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base: b0, stakes: STAKES, into: act });
+    if (!api.alive()) return;
+
+    const best0 = pNow >= .5 ? 'bluff' : 'strong', pBest0 = Math.round(Math.max(pNow, 1 - pNow) * 100);
+    const m = api.mult || 1;
+    const notes = got.map((v, i) => ({ label: `心の声${i + 1}（${v.rar}）「${v.text}」→ ${NAME[v.lean]}寄り`, lean: v.lean }));
+    const why = decide === best0 ? `天秤の見込みが高い方（${NAME[best0]} ${pBest0}%）を選んだ判断は正しい。` : `天秤の見込みは${NAME[best0]}が${pBest0}%だった。`;
+    // 本当の手の勝負：読みを預けて卓に戻る。答え合わせは手の決着の後（battles/games/verdict.js）
+    if (T) {
+      api.say(decide === 'bluff' ? V.N.bluff[0] : V.open, decide === 'bluff' ? 'panic' : 'smug');
+      api.entrust({
+        pick: NAME[decide], win: b0 * m, lose: b0 * STAKES[m - 1],
+        advice: decide === 'bluff' ? '「ブラフ」と読んだ。信じるなら、付いていく（コール）' : '「本物」と読んだ。信じるなら、降りる',
+        pending: { title: '心の声ガチャ', charId: api.charId, pick: decide, truth, mimiEq, endLines: V.end, board, mine, her, base: b0, mult: m, stakes: STAKES,
+          perfect: m === 3 && pulls <= 1, notes, why, extra: `残したぱにゅ ${panyu} → ご褒美のもと ${b0}` },
+      });
+      return;
+    }
+    // 単独ページ：その場で答え合わせ
+    api.lossK = STAKES;
+    const correct = decide === truth;
+    api.say(V.end[(truth === 'bluff' ? 'b' : 's') + (correct ? 'c' : 'w')], correct ? 'busted' : 'smug');
+    api.finish({ correct, base: b0, perfect: correct && m === 3 && pulls <= 1,
+      detail: `${jp}は${NAME[truth]}（${her.map(api.label).join(' ')}）だった。${why}`,
+      extra: `<div class="gc-res-extra">残したぱにゅ ${panyu} → ご褒美のもと ${b0}・心の声図鑑 ${book.size}/${ALL}</div>` });
   }
 
   const CSS = `
+    /* ---- 2026-10-27 本当の手の版の並び（共通の骨組み .rb-frame に載せる） ---- */
+    .gx-play { display: flex; align-items: center; justify-content: center; gap: 16px; }
+    .gx-play .gc-mach { flex: 0 0 auto; zoom: 1; }
+    .gx-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; margin-left: 18px; }
+    .gx-odds { display: grid; gap: 4px; padding: 6px 10px; background: var(--panel); border: 1px solid var(--line-dim); }
+    .gx-or { display: grid; grid-template-columns: 3.2em 2.8em auto; align-items: center; gap: 6px; font-size: var(--ty-note, 14px); line-height: 1.3; }
+    .gx-or .gc-rar { font-size: 14px; line-height: 1.35; }
+    .gx-or b { font-family: var(--mincho); font-weight: 700; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+    .gx-acc { font-family: var(--mincho); font-weight: 800; color: var(--gold-hi); white-space: nowrap; }
+    .gx-panyu, .gx-ceil { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .gx-panyu .h { font-family: var(--mincho); font-weight: 700; font-size: var(--ty-note, 14px); color: var(--gold); }
+    .gx-ceil .t { font-family: var(--mincho); font-size: var(--ty-note, 14px); color: var(--dim); }
+    .gx-sit { display: flex; flex-direction: column; gap: 2px; }
+    .gx-sit-cap { font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--gold); white-space: nowrap; }
+    .gx-sit-row { display: flex; gap: 3px; align-items: center; flex-wrap: nowrap; }
+    .gx-sep { width: 8px; flex: 0 0 auto; }
+    .gx-voices { display: flex; flex-direction: column; gap: 4px; }
+    .gx-voice { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 8px; border: 1px solid var(--line-dim); background: rgba(19,4,6,.7); }
+    .gx-voice.is-empty .gx-lean { color: var(--dim); font-weight: 700; }
+    .gx-play { position: relative; }
+    .gx-pop { position: absolute; left: 0; right: 0; bottom: 0; z-index: 7; padding: 6px 12px 8px; font-size: var(--ty-body, 17px); line-height: 1.45; text-align: center; }
+    .gx-pop small { display: block; font-size: 14px; line-height: 1.3; }
+    .gx-pop.pop { animation: mb-gxPop .35s cubic-bezier(.2,1.4,.4,1) backwards; }
+    .gx-voice .h { display: flex; align-items: center; gap: 6px; font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 1.4; color: var(--gold); }
+    .gx-voice .h .gc-rar { font-size: 14px; line-height: 1.3; }
+    .gx-lean { font-family: var(--mincho); font-weight: 800; font-size: 14px; white-space: nowrap; }
+    .gx-lean.bluff { color: #a01f35; } .gx-lean.strong { color: #7a5410; }
+    .gx-true { font-family: var(--mincho); font-weight: 800; font-size: 14px; color: #7d1022; }
+    .gx-voice.pop { animation: mb-gxPop .35s cubic-bezier(.2,1.4,.4,1) backwards; }
+    @keyframes mb-gxPop { from { transform: scale(1.08); opacity: 0; } }
+    .gx-choice { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; height: 100%; align-items: stretch; }
+    .gx-choice .btn { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; min-height: 0; margin: 0; }
+    .gx-choice .btn > span { font-size: var(--ty-btn, 19px); line-height: 1.2; }
+    .gx-choice .btn > small { font-size: var(--ty-note, 14px); line-height: 1.3; white-space: nowrap; }
+    .gx-pull:not([disabled]) { animation: mb-gcPullBtn 1.4s ease-in-out infinite; }
+    .rb-act.gx-act > div > .actions { height: 100%; }
+
     .gc-board .card { --w: 50px; }
     .gc-hands { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 18px; }
     .gc-hand { display: flex; align-items: center; gap: 8px; }

@@ -2,7 +2,7 @@
 // ポルカのおしゃべり5つを、制限時間内に「本音」「ウソ」へ振り分ける（左右のボタン、または ←→）。
 // 規則はひとつ「ポルカは、ウソの時ほど声が大きい」。ただし 1〜4つ目のうち1つくらいは例外（ひっかけ）。
 // 5つ目は「今の賭け」の台詞。その本音／ウソが、そのままポルカの手がブラフかどうかの答えになる。
-// 振り分けの結果はすぐには見せない。自信を賭けてから、1問ずつ答え合わせ → 最後にポルカの手札をめくる。
+// 2026-10-27 本当の手の版：1〜4つ目はその場で○×（今日の癖の確かめ・当てた数だけご褒美）。5つ目の振り分けが天秤の重り（確かさ◆◆＝85%）。読みを預けて卓に戻り、答え合わせは手の決着の後。
 (() => {
   const LIMIT = [3200, 2950, 2700, 2450, 2200];
   const POOL = {
@@ -100,6 +100,44 @@
   }
 
   const CSS = `
+    /* ---- 2026-10-27 本当の手の版の並び（共通の骨組み .rb-frame に載せる） ---- */
+    .rb-frame > .doubt-area { height: auto; min-height: 0; }
+    .rb-frame .doubt-bubble { width: min(60%, 520px); }
+    .rb-frame .doubt-rule { width: min(64%, 540px); }
+    .dx-sit { display: flex; flex-direction: column; gap: 2px; }
+    .dx-sit-cap { font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--gold); white-space: nowrap; }
+    .dx-sit-row { display: flex; gap: 3px; align-items: center; flex-wrap: nowrap; }
+    .dx-sep { width: 8px; flex: 0 0 auto; }
+    .dx-list { display: flex; flex-direction: column; gap: 3px; }
+    .dx-four { display: flex; align-items: center; gap: 4px; padding: 2px 8px; min-height: 28px; background: var(--panel); border: 1px solid var(--line-dim); font-size: 14px; }
+    .dx-four .q { font-family: var(--mincho); font-weight: 700; color: var(--dim); white-space: nowrap; margin-right: 2px; }
+    .dx-chip { display: inline-flex; align-items: center; gap: 2px; padding: 0 5px; min-width: 2.6em; justify-content: center; border: 1px solid var(--line-dim); }
+    .dx-chip .n { font-family: var(--disp); font-weight: 400; font-size: 15px; color: var(--gold); }
+    .dx-chip .mark { position: relative; font-size: 17px; font-weight: 900; line-height: 1; min-width: 1em; text-align: center; }
+    .dx-chip .mark.ok { color: var(--good); } .dx-chip .mark.ng { color: var(--bad); }
+    .dx-chip.is-ok { border-color: var(--gold-hi); } .dx-chip.is-ng { border-color: #8a8073; }
+    .dx-chip.is-trap { background: rgba(217,178,105,.25); }
+    .dx-chip .tr { font-family: var(--mincho); font-weight: 800; font-size: 14px; color: var(--gold-hi); }
+    .dx-read, .dx-read .actions { height: 100%; }
+    .dx-read .actions { margin: 0; }
+    .dx-row { display: grid; grid-template-columns: 18px auto minmax(0, 1fr); gap: 6px; align-items: center; padding: 1px 8px; min-height: 26px; background: var(--panel); border: 1px solid var(--line-dim); font-size: 14px; line-height: 1.3; }
+    .dx-row .n { font-family: var(--disp); font-weight: 400; font-size: 17px; color: var(--gold); text-align: center; }
+    .dx-row .q { font-family: var(--mincho); font-weight: 700; color: var(--dim); white-space: nowrap; }
+    .dx-row .a { display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; color: var(--text); font-weight: 700; }
+    .dx-row .dd { font-style: normal; padding: 0 5px; font-family: var(--mincho); font-weight: 800; background: rgba(19,4,6,.8); border: 1px solid var(--gold); color: var(--gold-pale); }
+    .dx-row .dd.lie { border-color: var(--red-hi); color: #ff9aa6; }
+    .dx-row .trap { color: #1d080e; background: var(--gold); font-family: var(--mincho); font-weight: 700; padding: 0 5px; }
+    .dx-row .mark { position: relative; font-size: 20px; font-weight: 900; text-align: center; line-height: 1; }
+    .dx-row .mark.ok { color: var(--good); } .dx-row .mark.ng { color: var(--bad); }
+    .dx-row .mark.is-on { animation: mb-doubt-stamp2 .28s cubic-bezier(.2,1.8,.4,1); }
+    .dx-row.is-bet { border-color: var(--gold); background: linear-gradient(90deg, var(--band), var(--panel)); }
+    .dx-row.is-bet .q { color: var(--gold-hi); }
+    .dx-row.is-ok { border-color: var(--gold-hi); } .dx-row.is-ng { border-color: #8a8073; }
+    .rb-act .doubt-pad { width: 100%; height: 100%; max-width: none; }
+    .rb-act .doubt-btn { min-height: 0; height: 100%; }
+    .rb-act .doubt-btn.is-start { grid-column: 1 / -1; width: min(420px, 100%); }
+    .rb-act .doubt-pad .actions { grid-column: 1 / -1; height: 100%; }
+
     .doubt-sit { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; justify-content: center; }
     .doubt-grp { display: flex; gap: 4px; align-items: center; }
     /* 名札・場所の名前：明朝の小さな金文字（英語は名札の POLKA だけ） */
@@ -232,8 +270,31 @@
     }
   `;
 
+  // 2026-10-27 卓の本当の手の版：前の4つは今日の癖の確かめ（その場で○×・当てた数だけご褒美）、5つ目（今の賭けの話）の振り分けが天秤の重りになる
+  const STAKES = [0, 1, 3];
+  const NAME = { bluff: 'ブラフ', strong: '本物' };
+  const RULE_ACC = .85;   // 5つ目の台詞が規則（ウソほど声が大きい）どおりに出る割合
+  const recordOf = (prior, n = 20) => { const k = Math.round(prior * n); const o = [3, 11, 6, 17, 0, 9, 14, 2, 19, 7, 12, 4, 16, 1, 10, 18, 5, 13, 8, 15]; const s = new Set(o.slice(0, k)); return Array.from({ length: n }, (_, i) => s.has(i)); };
+  const END = { bc: 'うわーん、バレてたー！', bw: 'えへへ、ブラフでしたー！', sc: '……うん、ほんとに強かったの', sw: '……だから言ったのに' };
+
   async function start({ api }) {
-    const bluff = Math.random() < .65;
+    const T = api.table;
+    const record = [...recordOf(.65), ...((T && Array.isArray(T.record)) ? T.record : [])].slice(-20);
+    // 札：卓の本当の手（本編）か、架空の場面（単独ページ）
+    let board, mine, her, truth, mimiEq;
+    if (T) {
+      board = T.board; mine = T.mine; her = T.her;
+      mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+      truth = mimiEq >= 50 ? 'bluff' : 'strong';
+    } else {
+      truth = Math.random() < .65 ? 'bluff' : 'strong';
+      const X = api.pick(api.SUITS); const o = api.SUITS.filter(s => s !== X);
+      board = [{ r: 12, s: X }, { r: 8, s: X }, { r: 3, s: X }, { r: 10, s: o[0] }, { r: 2, s: o[1] }];
+      mine = [{ r: 12, s: o[1] }, { r: 14, s: o[2] }];
+      her = dealHer(api, truth === 'bluff', X, board);
+      mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+    }
+    const mimiHandName = api.CAT_NAME[api.category([...mine, ...board])];
     const P = Object.fromEntries(Object.entries(POOL).map(([k, v]) => [k, v.slice()]));
     const take = (a) => a.splice(api.rand(a.length), 1)[0];
     // 1〜4つ目：本音かウソかを裏で決める（全部同じにはしない）。例外は多くて1つ
@@ -244,16 +305,14 @@
       const trap = i === trapAt;
       return { lie, trap, text: take(lie ? (trap ? P.trapLie : P.lie) : (trap ? P.trapHonest : P.honest)) };
     });
-    lines.push({ lie: bluff, trap: false, bet: true, text: take(bluff ? P.betLie : P.betHonest) });
+    // 5つ目：今の賭けの話。ブラフならウソ。声は規則どおりに 85% で出る（残りは逆の声＝静かなウソ・元気な本音）
+    const betLie = truth === 'bluff';
+    const ruleOk = Math.random() < RULE_ACC;
+    const loud = ruleOk ? betLie : !betLie;
+    lines.push({ lie: betLie, trap: !ruleOk, bet: true, text: take(loud ? P.betLie : P.betHonest) });
     // 顔：ウソなら焦り顔、本音なら得意顔が 65% で出る（規則ほど確かではない、おまけの手がかり）
     lines.forEach(l => { l.face = Math.random() < .65 ? (l.lie ? 'panic' : 'smug') : (l.lie ? 'smug' : 'panic'); });
 
-    const X = api.pick(api.SUITS); const o = api.SUITS.filter(s => s !== X);
-    const board = [{ r: 12, s: X }, { r: 8, s: X }, { r: 3, s: X }, { r: 10, s: o[0] }, { r: 2, s: o[1] }];
-    const her = dealHer(api, bluff, X, board);
-
-    // ○×の判子は本編の assets/ui/stamp_correct.webp・stamp_wrong.webp（型抜きにして金・灰で塗る）。型抜きは同じ出どころの絵しか読めないので、
-    // fetch で読めたことを確かめてから使う（file:// や別の出どころで読めない時は、文字の ○× のまま）
     const stampUrl = (k) => 'url("' + api.asset('assets/ui/stamp_' + k + '.webp') + '")';
     const stampOk = {};
     ['correct', 'wrong'].forEach(k => { try { fetch(api.asset('assets/ui/stamp_' + k + '.webp')).then(r => { stampOk[k] = !!r.ok; }).catch(() => {}); } catch (e) {} });
@@ -261,34 +320,46 @@
       .doubt-list.has-stamp .mark.ok::after { -webkit-mask-image: ${stampUrl('correct')}; mask-image: ${stampUrl('correct')}; }
       .doubt-list.has-stamp .mark.ng::after { -webkit-mask-image: ${stampUrl('wrong')}; mask-image: ${stampUrl('wrong')}; }
     `);
-    api.say('ねえねえミミちゃん、聞いて聞いて！', 'smug'); api.bet(300);
+    api.say('ねえねえミミちゃん、聞いて聞いて！', 'smug'); api.bet(T ? (T.toCall || '—') : 300);
     const root = api.root;
-    const STEPS = ['聞き分ける', '自信を賭ける', '答え合わせ'];
+    const bal = api.balance({ record, name: api.char.jp });
+    const STEPS = ['聞き分ける', '読む', '賭ける', '答え合わせ'];
+    root.classList.add('rb-frame');
     root.innerHTML = `
-      <div id="mb-doubt-steps">${api.steps(STEPS, 0)}</div>
-      <div class="doubt-sit">
-        <div class="doubt-grp"><span class="doubt-tag">場札</span>${board.map(c => api.cardHTML(c, 'small')).join('')}</div>
-        <div class="doubt-grp doubt-hands"><span class="doubt-tag">${api.char.name}</span><span class="doubt-grp" id="mb-doubt-her">${api.backHTML('small')}${api.backHTML('small')}</span><span class="doubt-hand" id="mb-doubt-hand"></span></div>
-      </div>
-      <div class="doubt-area" id="mb-doubt-area">
+      <div class="rb-top"><div class="rb-steps" id="mb-doubt-steps">${api.steps(STEPS, 0)}</div></div>
+      <div class="rb-play doubt-area" id="mb-dx-area">
         <div class="doubt-win"><img class="doubt-face main" src="${api.asset('art/face/' + api.charId + '_smug.webp')}" alt="${api.char.jp}"><img class="doubt-face alt" src="${api.asset('art/face/' + api.charId + '_panic.webp')}" alt=""></div>
-        <div class="doubt-rule${document.documentElement.classList.contains('is-compact') ? '' : ' mb-frame'}" id="mb-doubt-rule"><small>ルール</small>
+        <div class="doubt-rule" id="mb-doubt-rule"><small>ポルカの癖</small>
           <div class="doubt-rule-main" aria-label="声が大きいほどウソ"><span class="dv-end">本音</span><span class="dv-bars"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="dv-end lie">ウソ</span></div>
-          <div class="doubt-rule-ex"><span class="is-honest">……　短い</span><span class="is-lie">！！　のびる　（棒）</span></div>
-          <div class="doubt-rule-note">例外あり</div>
+          <div class="doubt-rule-ex"><span class="is-honest">……　短い ＝ 本音</span><span class="is-lie">！！　のびる　（棒）＝ ウソ</span></div>
+          <div class="doubt-rule-note">例外は、多くて1つ</div>
         </div>
       </div>
-      <div class="doubt-pad" id="mb-doubt-pad"><button class="doubt-btn is-start" id="mb-doubt-start" type="button"><span class="w"><span>はじめる</span><small>本音は ← ／ ウソは →</small></span></button></div>
-      <div class="doubt-list" id="mb-doubt-list" hidden></div>`;
-    api.tipOnce('doubt', '声が大きいほどウソ', 'think');
-    api.mission('5つの台詞を聞き分ける');
-
+      <div class="rb-info">
+        <div class="dx-sit"><div class="dx-sit-cap">場札 ／ ミミの手（${mimiHandName}）</div>
+          <div class="dx-sit-row">${board.map(c => api.cardHTML(c, 'small')).join('')}<i class="dx-sep"></i>${mine.map(c => api.cardHTML(c, 'small')).join('')}</div></div>
+        ${bal.html}
+        <div class="doubt-list dx-list" id="mb-doubt-list"><div class="dx-four"><span class="q">前の4つ</span>${[0, 1, 2, 3].map(i => `<span class="dx-chip" data-i="${i}"><b class="n">${i + 1}</b><b class="mark"></b></span>`).join('')}</div>
+          <div class="dx-row is-bet" data-i="4"><b class="n">5</b><span class="q">今の賭けの話</span><span class="a"></span></div></div>
+      </div>
+      <div class="rb-act" id="mb-doubt-act"><div class="doubt-pad" id="mb-doubt-pad"><button class="doubt-btn is-start" id="mb-doubt-start" type="button"><span class="w"><span>はじめる</span><small>本音は ← ／ ウソは →</small></span></button></div></div>`;
+    bal.draw();
     const $ = (s) => root.querySelector(s);
-    const area = $('#mb-doubt-area'), pad = $('#mb-doubt-pad');
+    const area = $('#mb-dx-area'), pad = $('#mb-doubt-pad'), list = $('#mb-doubt-list');
     const setFace = (f, twitch = true) => {
       area.classList.toggle('is-panic', f === 'panic');
       if (twitch && !api.reduce) { area.classList.remove('is-twitch'); void area.offsetWidth; area.classList.add('is-twitch'); }
     };
+    await api.rules({
+      key: 'doubt', title: 'ダウト！',
+      goal: `ポルカの伏せ札が<em>本物</em>（ミミより強い）か<em>ブラフ</em>（ミミの方が強い）かを読む。答え合わせはこの手の決着の後`,
+      how: 'おしゃべり5つを、時間内に「本音」か「ウソ」に振り分ける。<em>5つ目は今の賭けの話</em>（ウソならブラフ）',
+      risk: '前の4つは、外すとご褒美が増えない。5つ目を逆に振り分けると、天秤が逆に傾く',
+      look: [['本音かウソか', '声の大きさ（……短い＝本音／！！ のびる＝ウソ。例外は多くて1つ）'], ['本物かブラフか', '天秤'], ['自信', '天秤の見込み（％）']],
+    });
+    if (!api.alive()) return;
+    api.tipOnce('doubt', '声が大きいほどウソ', 'think');
+    api.mission('5つのおしゃべりを聞き分ける');
 
     await new Promise(res => {
       const go = () => { document.removeEventListener('keydown', onK); res(); };
@@ -300,8 +371,6 @@
     tone(660, .06); tone(990, .08, 'triangle', .05, .06);
     $('#mb-doubt-rule').remove();
     api.coach('');
-
-    // READY → GO
     for (const [w, ms] of [['READY', 520], ['GO!', 420]]) {
       const b = document.createElement('div'); b.className = 'doubt-big'; b.textContent = w; area.appendChild(b);
       tone(w === 'GO!' ? 1175 : 587, .12, 'square', .03);
@@ -314,6 +383,7 @@
     pad.innerHTML = `<button class="doubt-btn is-honest" data-a="honest" type="button"><kbd>←</kbd><span class="w"><span>本音</span><small>ほんとのこと</small></span></button>
       <button class="doubt-btn is-lie" data-a="lie" type="button"><span class="w"><span>ウソ</span><small>ダウト！</small></span><kbd>→</kbd></button>`;
     pad.classList.add('is-live');
+    list.classList.toggle('has-stamp', !!(stampOk.correct && stampOk.wrong));
     const bubble = $('#mb-doubt-bubble'), timer = $('#mb-doubt-timer'), bar = timer.querySelector('i');
     let answer = null;
     const hit = (a) => {
@@ -329,8 +399,9 @@
       if (e.key === 'ArrowLeft') { e.preventDefault(); hit('honest'); } else if (e.key === 'ArrowRight') { e.preventDefault(); hit('lie'); }
     };
     document.addEventListener('keydown', onKey);
-
+    const YOU = { honest: '本音', lie: 'ウソ', miss: '聞き逃し' };
     const picks = [];
+    let hits = 0, run = 0;
     for (let i = 0; i < 5; i++) {
       const l = lines[i];
       bubble.className = 'doubt-bubble mb-ebony';
@@ -354,103 +425,80 @@
       bar.style.transition = 'none'; bar.style.width = getComputedStyle(bar).width;
       picks.push(a);
       const st = bubble.querySelector('.doubt-stamp');
-      st.textContent = a === 'lie' ? 'ダウト！' : a === 'honest' ? '本音？' : '見逃し…';
+      st.textContent = a === 'lie' ? 'ダウト！' : a === 'honest' ? '本音？' : '聞き逃し…';
       st.className = 'doubt-stamp is-on ' + a;
       const up = 1 + i * .07;
       if (a === 'lie') { tone(392 * up, .06, 'square', .04); tone(784 * up, .12, 'square', .035, .05); }
       else if (a === 'honest') { tone(784 * up, .07); tone(1046 * up, .1, 'triangle', .05, .06); }
       else api.sfx.nope();
+      const row = list.querySelector(`[data-i="${i}"]`);
+      if (!l.bet) {
+        // 前の4つ：その場で○×（今日の癖の確かめ）
+        const ok = a === (l.lie ? 'lie' : 'honest');
+        if (ok) { hits++; run++; tone(660 + run * 110, .09); }
+        row.title = `${YOU[a]}と選んだ・答えは${l.lie ? 'ウソ' : '本音'}${l.trap ? '（例外）' : ''}`;
+        if (l.trap) { row.classList.add('is-trap'); row.insertAdjacentHTML('beforeend', '<small class="tr">例外</small>'); }
+        const m = row.querySelector('.mark'); m.textContent = ok ? '○' : '×'; m.className = 'mark is-on ' + (ok ? 'ok' : 'ng');
+        row.classList.add(ok ? 'is-ok' : 'is-ng');
+      } else {
+        // 5つ目：答えはまだ見せない。振り分けが天秤の重りになる（ウソ→ブラフ寄り、本音→本物寄り）
+        row.querySelector('.a').innerHTML = a === 'miss' ? '聞き逃した' : `<em class="dd ${a === 'lie' ? 'lie' : ''}">${YOU[a]}</em> → ${a === 'lie' ? 'ブラフ' : '本物'}寄り ${api.pips(api.sure(RULE_ACC))}`;
+        if (a !== 'miss') bal.add(a === 'lie' ? 'bluff' : 'strong', RULE_ACC);
+      }
       await api.wait(230); if (!api.alive()) { document.removeEventListener('keydown', onKey); return; }
       bubble.classList.add(a === 'lie' ? 'go-r' : a === 'honest' ? 'go-l' : 'go-miss');
       await api.wait(260); if (!api.alive()) { document.removeEventListener('keydown', onKey); return; }
     }
     document.removeEventListener('keydown', onKey);
-
-    // 5つ終わり：結果はまだ見せず、自信を賭ける
-    const got = lines.map((l, i) => picks[i] === (l.lie ? 'lie' : 'honest'));
-    const hits = got.filter(Boolean).length;
-    const correct = hits >= 4;
-    const base = correct ? hits * 8 : 30;
     area.querySelector('.doubt-count').remove(); timer.remove();
     bubble.className = 'doubt-bubble mb-ebony is-in';
-    bubble.innerHTML = '<span class="doubt-text">おしゃべり、おしまい！ ……ボクのウソ、見抜けた？</span>';
+    bubble.innerHTML = '<span class="doubt-text">おしゃべり、おしまい！</span>';
     setFace('smug');
     api.say('ふふーん、どうだった？');
-    pad.classList.remove('is-live'); pad.innerHTML = '';
+    pad.classList.remove('is-live');
+    const base = 20 + hits * 10;
+
+    // 読む
     $('#mb-doubt-steps').innerHTML = api.steps(STEPS, 1);
-    api.coach('');
-    // 賭けの札は舞台の上に重ねて出す（操作盤に継ぎ足すと画面からはみ出していた）。説明はダウト用の決まりに差し替える
-    const wp = api.wager({ question: '4問以上当てた自信は？', base: 40, mission: '4問以上当てた自信を選ぶ' });
-    const note = api.layer.querySelector('.mb-wager-ov .mb-wager-note');
-    if (note) note.textContent = `4問以上で勝ち／3問以下で負け${MB.P.fever > 0 ? '（フィーバー：当たり2倍）' : ''}`;
-    await wp;
-    if (!api.alive()) return;
-
-    // 答え合わせ：1問ずつ ○× を押していく
-    $('#mb-doubt-steps').innerHTML = api.steps(STEPS, 2);
-    const YOU = { honest: '本音', lie: 'ウソ', miss: '見逃し' };
-    const list = $('#mb-doubt-list');
-    list.innerHTML = lines.map((l, i) => `<div class="doubt-row ${l.bet ? 'is-bet' : ''}" data-i="${i}"><b class="n">${i + 1}</b>
-      <span class="q">「${l.text}」<span class="sub"><em class="dd ${picks[i] === 'lie' ? 'lie' : ''}">${YOU[picks[i]]}</em><span class="ans"></span></span></span><b class="mark"></b></div>`).join('');
-    list.hidden = false;
-    list.classList.toggle('has-stamp', !!(stampOk.correct && stampOk.wrong));
-    area.classList.add('is-sum');
-    bubble.remove();
-    area.insertAdjacentHTML('beforeend', `<div class="doubt-tally"><small>当てた数</small><b id="mb-doubt-t">0</b><i>/ 5</i></div>`);
-    api.reveal(area, 'start');
-    api.coach(''); api.sfx.drum();
-    await api.wait(950); if (!api.alive()) return;
-    let run = 0, missed = false;
-    for (let i = 0; i < 5; i++) {
-      const l = lines[i];
-      if (l.bet) {
-        api.sfx.drum(); setFace('smug', false);
-        await api.wait(1000); if (!api.alive()) return;
-      }
-      const row = list.querySelector(`.doubt-row[data-i="${i}"]`);
-      row.querySelector('.ans').innerHTML = `${got[i] ? '' : ` → <em class="dd ${l.lie ? 'lie' : ''}">${l.lie ? 'ウソ' : '本音'}</em>`}${l.trap ? `<span class="trap">例外！${l.lie ? '静かなウソ' : '元気な本音'}</span>` : ''}`;
-      const m = row.querySelector('.mark');
-      m.textContent = got[i] ? '○' : '×'; m.className = 'mark is-on ' + (got[i] ? 'ok' : 'ng');
-      row.classList.add(got[i] ? 'is-ok' : 'is-ng');
-      if (got[i]) { run++; const tb = $('#mb-doubt-t'); tb.textContent = run; tb.classList.remove('is-bump'); void tb.offsetWidth; tb.classList.add('is-bump'); tone(660 + run * 110, .09); tone(990 + run * 110, .1, 'triangle', .05, .06); }
-      else {
-        api.sfx.nope();
-        if (!missed) { missed = true; api.coach(''); }
-      }
-      if (l.bet) setFace(got[i] ? 'panic' : 'smug', true);
-      await api.wait(l.bet ? 700 : 520); if (!api.alive()) return;
-    }
-
-    // ポルカの手札をめくる（5つ目の答えと同じ）
-    api.coach('');
-    const herBox = $('#mb-doubt-her');
-    api.reveal(herBox, 'nearest');
-    await api.wait(700); if (!api.alive()) return;
-    herBox.innerHTML = api.cardHTML(her[0], 'small flip') + api.backHTML('small'); api.sfx.tap();
-    await api.wait(her[0].s === X ? 900 : 600); if (!api.alive()) return;
-    herBox.innerHTML = api.cardHTML(her[0], 'small') + api.cardHTML(her[1], 'small flip ' + (bluff ? '' : 'glow'));
-    const cat = api.category([...her, ...board]);
-    $('#mb-doubt-hand').textContent = bluff ? (her[0].s === X ? '役なし（あと1枚でフラッシュ）' : '役なし') : api.CAT_NAME[cat] + '！';
-    api.sfx[bluff ? 'tap' : 'whoosh']();
-    setFace(bluff ? 'panic' : 'smug');
-    api.say(bluff ? (got[4] ? 'うわーん、バレてたー！' : 'えへへ、ブラフでしたー！') : (got[4] ? '……うん、ほんとに強かったの' : '……だから言ったのに'), bluff ? (got[4] ? 'busted' : 'smug') : (got[4] ? 'think' : 'smug'));
-    await api.wait(800); if (!api.alive()) return;
-
-    // なぜ当たった／外れたか
-    const missIdx = got.map((g, i) => (g ? -1 : i)).filter(i => i >= 0);
-    const trapMiss = missIdx.find(i => lines[i].trap && picks[i] !== 'miss');
-    const timeouts = missIdx.filter(i => picks[i] === 'miss').length;
-    const hand = bluff ? '役なしのブラフ' : `${api.CAT_NAME[cat]}（本当に強い手）`;
-    let why;
-    if (!missIdx.length) why = '規則も例外も、全部見抜いた。';
-    else if (trapMiss != null) why = `${trapMiss + 1}つ目は例外の${lines[trapMiss].lie ? '静かなウソ' : '元気な本音'}で、規則どおりに読んだのは正しい判断。`;
-    else if (timeouts) why = `見逃しが${timeouts}つ。迷ったら、声の大きさで即決！`;
-    else { const k = missIdx[0]; why = `${k + 1}つ目は${lines[k].lie ? '「！」が多い＝ウソ' : '「……」で短い＝本音'}の形だった。`; }
-    api.finish({
-      correct, perfect: hits === 5 && api.mult === 3, base,
-      title: hits === 5 ? (api.mult === 3 ? undefined : '全問正解！') : hits === 3 ? 'あと1問……！' : undefined,
-      detail: `${hits}/5問、5つ目は${bluff ? 'ウソ' : '本音'}＝ポルカは${hand}だった。${why}`,
+    api.mission('天秤が下がった方が、ありそうな手');
+    const actEl = $('#mb-doubt-act');
+    pad.hidden = true;
+    actEl.insertAdjacentHTML('beforeend', `<div class="dx-read"><div class="actions">
+      <button class="btn" id="mb-doubt-b" type="button">ブラフと読む<small>ミミの方が強い</small></button>
+      <button class="btn quiet" id="mb-doubt-s" type="button">本物と読む<small>ミミより強い</small></button></div></div>`);
+    api.coach(`前の4つは ${hits}/4。ご褒美のもと ${base}`);
+    const shownAt = performance.now();
+    const decide = await new Promise(res => {
+      const on = (v) => () => { if (performance.now() - shownAt < 450) return; api.sfx.tap(); res(v); };
+      $('#mb-doubt-b').onclick = on('bluff'); $('#mb-doubt-s').onclick = on('strong');
     });
+    if (!api.alive()) return;
+    actEl.querySelector('.dx-read').remove();
+    $('#mb-doubt-steps').innerHTML = api.steps(STEPS, 2);
+    const pNow = bal.p(), pMine = Math.round((decide === 'bluff' ? pNow : 1 - pNow) * 100);
+    await api.wager({ mission: '天秤の見込みで、自信を決める', question: `「${NAME[decide]}」の見込みは ${pMine}%`, note: '67%超→ぜったい　50%超→確信', base, stakes: STAKES, into: actEl });
+    if (!api.alive()) return;
+    api.coach('');
+    const best0 = pNow >= .5 ? 'bluff' : 'strong', pBest0 = Math.round(Math.max(pNow, 1 - pNow) * 100);
+    const m = api.mult || 1;
+    const p5 = picks[4], l5 = lines[4];
+    const notes = p5 === 'miss' ? [] : [{ label: `5つ目「${l5.text}」を${YOU[p5]}と聞いた → ${p5 === 'lie' ? 'ブラフ' : '本物'}寄り`, lean: p5 === 'lie' ? 'bluff' : 'strong' }];
+    const why = (decide === best0 ? `天秤の見込みが高い方（${NAME[best0]} ${pBest0}%）を選んだ判断は正しい。` : `天秤の見込みは${NAME[best0]}が${pBest0}%だった。`) + (l5.trap ? '5つ目は例外（規則と逆の声）だった。' : '');
+    if (T) {
+      api.entrust({
+        pick: NAME[decide], win: base * m, lose: base * STAKES[m - 1],
+        advice: decide === 'bluff' ? '「ブラフ」と読んだ。信じるなら、付いていく（コール）' : '「本物」と読んだ。信じるなら、降りる',
+        pending: { title: 'ダウト！', charId: api.charId, pick: decide, truth, mimiEq, endLines: END, board, mine, her, base, mult: m, stakes: STAKES,
+          perfect: hits === 4 && m === 3, notes, why, extra: `前の4つ ${hits}/4 → ご褒美のもと ${base}` },
+      });
+      return;
+    }
+    // 単独ページ：その場で答え合わせ
+    api.lossK = STAKES;
+    const correct = decide === truth;
+    api.say(END[(truth === 'bluff' ? 'b' : 's') + (correct ? 'c' : 'w')], correct ? 'busted' : 'smug');
+    api.finish({ correct, perfect: correct && hits === 4 && m === 3, base,
+      detail: `ポルカは${NAME[truth]}（${her.map(api.label).join(' ')}）だった。${why}` });
   }
 
   MB.register({ id: 'doubt', group: 'psych', order: 3, title: 'ダウト！', sub: '心理・早押し', isNew: true, chars: ['polka'], start });

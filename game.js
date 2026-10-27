@@ -14527,6 +14527,15 @@ function readIntroPages(group, gameId) {
         note: 'ここで「読み合い」が始まります。',
         rico: `${opp}の手を推理してみよう。読み勝つと、手の強さがわかるよ` };
   // 本当の手の読み合い：読みを預けて卓で使い、答え合わせはこの手の決着の後
+  // 論理の本当の手の遊び：読むのは「付いていくのが割に合うか」
+  if (REAL_READ_GAMES.has(gameId) && group === 'logic') return [first, {
+    eyebrow: 'LOGIC BATTLE',
+    title: 'いま賭かっている手で、付いていくか決める',
+    fig: `<div class="mk-dilemma"><div class="mk-dl"><span class="mk-dl-q">?</span><b>付いていく</b><small>勝てる見込みが、払う額に見合う時</small></div><span class="mk-dl-or">か</span><div class="mk-dl"><span class="mk-dl-q">?</span><b>降りる</b><small>見込みが、払う額に届かない時</small></div></div>`,
+    note: '札を比べて勝てる見込みを作り、どちらかを決めて、自信を賭けます。答え合わせは、この手の決着の後。外れても、卓のチップは減りません。',
+    rico: '数えて比べれば、答えは出せる。3回続けて当てると、ご褒美が2倍になるよ',
+    next: '読み合いへ',
+  }];
   if (REAL_READ_GAMES.has(gameId)) return [first, {
     eyebrow: 'READ BATTLE',
     title: `いま賭かっている手を読む`,
@@ -15425,10 +15434,13 @@ function advanceAfterCall() {
 // 賭けた倍率・コンボで増減したコインは「読み合いボーナス」として対戦後に受け取る。
 // ============================================================
 const READ_BATTLE_POOLS = {
-  polka:  { psych: ['detective', 'stare', 'doubt', 'gacha'], logic: ['handbuild', 'highlow'] },
-  selina: { psych: ['detective', 'stare', 'gacha'],          logic: ['danger', 'sniper'] },
-  grano:  { psych: ['gacha'],                                 logic: ['outs', 'highlow'] },
-  velvet: { psych: ['objection', 'stare', 'gacha'],          logic: ['suspects'] },
+  // 論理：役づくり＋ハイ＆ローは「役くらべ」（handvs）にまとめた（2026-10-27）
+  // 心理：手がかり探偵は「問いかけ」（ask）に作り替えた（2026-10-27）
+  polka:  { psych: ['ask', 'stare', 'doubt', 'gacha'], logic: ['handvs'] },
+  selina: { psych: ['ask', 'stare', 'gacha'],          logic: ['narrow', 'sniper'] },
+  grano:  { psych: ['gacha'],                                 logic: ['outs', 'handvs'] },
+  // 論理：危険札さがし＋容疑者しぼりは、本当の手の「容疑者しぼり」（narrow）にまとめた（2026-10-27）
+  velvet: { psych: ['objection', 'stare', 'gacha'],          logic: ['narrow'] },
   // 本気のリコ先輩：専用の読み合い「卒業試験」だけ。論理バトル（古い3択を含む）は出さない
   rico_serious: { psych: ['graduation'], logic: [] },
 };
@@ -15513,7 +15525,7 @@ function startReadBattle(group) {
 // ===== 本当の手の読み合い（2026-10-21）=====
 // 読み合いの中では読みを預けるだけ。答え合わせは手の決着の後（continueAfterHand の頭で showReadVerdict）。
 // 本当の手で遊べる種類だけ table を渡す。渡さない種類は今までどおり架空の場面で、その場で答え合わせ
-const REAL_READ_GAMES = new Set(['stare', 'objection', 'graduation']);
+const REAL_READ_GAMES = new Set(['stare', 'objection', 'graduation', 'gacha', 'doubt', 'handvs', 'ask', 'narrow']);
 const RB_SUIT = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
 const rbCard = (c) => ({ r: c.rank, s: RB_SUIT[c.suit] || 's' });
 function readBattleTable(gameId) {
@@ -15536,10 +15548,11 @@ function holdReadBattle(group, gameId, r) {
   if (group === 'psych') state.psychResolved = true;
   state.psychTried = (state.psychTried || 0) + 1;
   state.pendingRead = { ...r.pending, gameId, group, oppKey: state.opponentImgKey, handNo: state.handNo };
-  const pickName = r.pending.pick === 'bluff' ? 'ブラフ' : '本物';
+  const logic = r.pending.kind === 'logic';
+  const pickName = logic ? ((r.pending.names || {})[r.pending.pick] || (r.pending.pick === 'call' ? '付いていく' : '降りる')) : (r.pending.pick === 'bluff' ? 'ブラフ' : '本物');
   const name = (state.opponentName || '相手').replace(/（.*）/, '');
-  state.mimiThought = `「読み：${name}は${pickName}。${r.pending.pick === 'bluff' ? '信じるなら、付いていく' : '信じるなら、降りる'}」`;
-  state.ricoAdvice = `「ミミの読みは『${pickName}』（自信 ×${r.pending.mult || 1}）。答え合わせは、この手の後で」`;
+  state.mimiThought = logic ? `「判断：${pickName}。${r.pending.pick === 'call' ? '次は付いていく（コール）' : '次は降りる'}」` : `「読み：${name}は${pickName}。${r.pending.pick === 'bluff' ? '信じるなら、付いていく' : '信じるなら、降りる'}」`;
+  state.ricoAdvice = `「ミミの${logic ? '判断' : '読み'}は『${pickName}』（自信 ×${r.pending.mult || 1}）。答え合わせは、この手の後で」`;
   state.isPlayerTurn = true;
   render();
 }
@@ -15570,7 +15583,7 @@ function showReadVerdict() {
           // 記録：この相手の「大きな賭け」が本物だったかブラフだったかを、20回分だけ覚える
           if (!save.readRecord) save.readRecord = {};
           const rec = save.readRecord[p.oppKey] || [];
-          rec.push(p.truth === 'bluff'); save.readRecord[p.oppKey] = rec.slice(-20);
+          rec.push(p.kind === 'logic' ? (p.mimiEq ?? 50) >= 50 : p.truth === 'bluff'); save.readRecord[p.oppKey] = rec.slice(-20);
           state.readBattleBonus = (state.readBattleBonus || 0) + (state.readBattlePurse.coins - coinsBefore);
           log('psych', { qid: 'mb_' + p.gameId, success: !!(r && r.correct), mult: p.mult || 1 });
           // 卒業試験：先輩の予想（ミミの癖）を外して当てたら1つ数える。3つで称号「卒業」

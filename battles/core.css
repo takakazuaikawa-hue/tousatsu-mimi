@@ -722,7 +722,11 @@ html:not(.is-compact) .mb-host .mb-body::after {
 .mb-host .mb-entrust .mb-result-card { grid-template-columns: minmax(0, 1fr); width: min(560px, 92%); max-width: 560px; gap: 8px; }
 .mb-host .mb-entrust .mb-result-detail { font-size: 14px; line-height: 1.6; }
 /* 遊びの4点の絵札：見出し（目的・やり方・危なさ・見る物）を左、文を右に */
-.mb-host .mb-rules .mb-result-card { grid-template-columns: minmax(0, 1fr); width: min(620px, 94%); gap: 8px; }
+.mb-host .mb-rules { place-items: start center; padding-top: 6px; }
+.mb-host .mb-rules .mb-result-card { display: flex; flex-direction: column; width: min(620px, 94%); gap: 8px; max-height: min(calc(100% - 12px), calc(100vh - 14px)); }
+/* 中身だけを巻き取り、「わかった」はいつも見える所に */
+.mb-host .mb-rules .mb-result-card > div:first-child { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.mb-host .mb-rules .mb-result-actions { flex: 0 0 auto; }
 .mb-host .mb-rl4 { display: grid; grid-template-columns: 4.5em minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 5px 0; border-top: 1px solid var(--line-dim); font-size: 14px; line-height: 1.55; color: var(--text); }
 .mb-host .mb-rl4 > b { font-family: var(--mincho); font-weight: 800; font-size: 14px; color: var(--gold-hi); letter-spacing: .08em; }
 .mb-host .mb-rl4 b.em, .mb-host .mb-rl4 em { font-style: normal; font-weight: 800; color: var(--gold-hi); }

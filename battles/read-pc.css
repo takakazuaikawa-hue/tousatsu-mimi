@@ -804,3 +804,6 @@ html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-rules-btn { font-si
 html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-entrust-pick { font-size: var(--ty-body); }
 html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-entrust-pick b { font-size: var(--ty-num); }
 html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-entrust-coin { font-size: var(--ty-head); }
+
+/* ダウト（本当の手の版・2026-10-27）：共通の骨組みの遊びの枠いっぱいに（古い 340px の高さを外す） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .rb-frame > .doubt-area { height: auto; }
