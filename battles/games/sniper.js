@@ -41,6 +41,26 @@
       o.connect(og); og.connect(AC.destination); o.start(t); o.stop(t + .3);
     } catch (e) {}
   }
+  // 卓の本当の手（2026-10-27）：セリナの手として考えられる全部の組み合わせから曲線を作る。
+  // セリナは慎重（相手の癖は全種類で同じ）：賭け額が大きいほど、強い手でしか付いてこない。付いてくる手の上位の割合＝ .92 ÷ (1 + e^(4.5×(額÷ポット − .75)))
+  // 縦軸＝「付いてきてミミが勝つ割合 − 付いてきてミミが負ける割合」。金の四角＝額 × これ＝ミミのもらえる見込み。
+  // 額を上げすぎると、ミミより強い手しか付いてこなくなって四角が縮む。一番得な額は場札で変わる
+  function realCurve(api, hole, board, pot, step) {
+    const used = new Set([...hole, ...board].map(api.key));
+    const rest = api.deck().filter(c => !used.has(api.key(c)));
+    const my = api.score(hole.concat(board));
+    const hs = [];
+    for (let i = 0; i < rest.length; i++) for (let j = i + 1; j < rest.length; j++) hs.push(api.score([rest[i], rest[j]].concat(board)));
+    hs.sort((a, b) => a - b);
+    const N = hs.length;
+    const top = (bet) => .92 / (1 + Math.exp(4.5 * (bet / pot - .75)));
+    const q = (bet) => { const k = Math.max(1, Math.round(top(bet) * N)); let w = 0, l = 0; for (let i = N - k; i < N; i++) { if (hs[i] < my) w++; else if (hs[i] > my) l++; } return Math.max(0, (w - l) / N); };
+    const ev = (bet) => q(bet) * bet;
+    let best = 0, bestBet = pot / 4;
+    for (let b = pot / 4; b <= pot * 2 + 1e-6; b += step) { const e = ev(b); if (e > best) { best = e; bestBet = b; } }
+    const beat = hs.filter(x => x < my).length / N;
+    return { p: q, ev, best, bestBet: Math.round(bestBet), beat };
+  }
   function handName(api, seven) {
     const s = api.score(seven), cat = Math.floor(s / 1e10);
     if (cat === 5) { const cnt = {}; seven.forEach(c => { cnt[c.s] = (cnt[c.s] || 0) + 1; }); const S = Object.keys(cnt).find(k => cnt[k] >= 5); return `${api.SYM[S]}のフラッシュ`; }
@@ -54,10 +74,11 @@
   }
 
   async function start({ api }) {
-    const pot = api.pick([400, 480, 600, 800]);
+    const T = api.table;
+    const pot = T ? Math.max(100, T.pot || 0) : api.pick([400, 480, 600, 800]);
     const step = pot / 40;
     const minBet = pot / 4, maxBet = pot * 2;
-    const C = makeCurve(pot, step);
+    let C = T ? null : makeCurve(pot, step);
     // ミミの強い手（ほぼ勝てる）と、セリナが付いてきた時の手（ミミより弱い）を先に決めておく
     let hole = null, board = null, eq = -1;
     for (let t = 0; t < 400; t++) {
@@ -69,6 +90,7 @@
       if (eq >= .86) break;
     }
     if (!hole) { const d = api.shuffle(api.deck()); hole = d.slice(0, 2); board = d.slice(2, 7); eq = api.equity(hole, board, 300); }
+    if (T) { hole = T.mine; board = T.board; C = realCurve(api, hole, board, pot, step); eq = C.beat; }
     const used = new Set(hole.concat(board).map(api.key));
     const rest = api.deck().filter(c => !used.has(api.key(c)));
     const myScore = api.score(hole.concat(board));
@@ -79,6 +101,9 @@
       if (s < myScore && Math.floor(s / 1e10) >= 1) her = h;
     }
     if (!her) her = api.shuffle(rest).slice(0, 2);
+    if (T) her = T.her;
+    const STAKES = [0, 1, 3];
+    const PL = T ? '付いてきて勝てる割合' : `${api.char.jp}が付いてくる確率`;
 
     api.say('……ずいぶん考えるのね。', 'think');
     api.bet('?');
@@ -198,11 +223,11 @@
         <span class="sn-me-name"><span class="mb-handtag"><b class="nm">${handName(api, hole.concat(board))}</b></span>${api.gauge('勝率', eq * 100)}</span>
         <span class="sn-pot">ポット<b>${pot}</b></span>
       </div>
-      <div class="prompt sn-law" id="mb-sn-prompt" aria-label="額を上げると取り分は増えるが、付いてくる確率は下がる。掛け算が一番大きい所を狙う"><span class="lw">額<i class="ar up"></i></span><span class="lw ok">取り分<i class="ar up"></i></span><span class="lw ng">確率<i class="ar dn"></i></span><span class="lw aim"><i class="sq"></i>最大</span></div>
+      <div class="prompt sn-law" id="mb-sn-prompt" aria-label="額を上げると取り分は増えるが、付いてくる確率は下がる。掛け算が一番大きい所を狙う"><span class="lw">額<i class="ar up"></i></span><span class="lw ok">取り分<i class="ar up"></i></span><span class="lw ng">${T ? '割合' : '確率'}<i class="ar dn"></i></span><span class="lw aim"><i class="sq"></i>最大</span></div>
       <div class="sn-read">
         <div><small>賭け額</small><b id="mb-sn-bet">${init}</b></div>
         <span class="op">×</span>
-        <div><small>${api.char.jp}が付いてくる確率</small><b id="mb-sn-p">0%</b><i class="sn-meter"><i id="mb-sn-pm"></i></i></div>
+        <div><small>${PL}</small><b id="mb-sn-p">0%</b><i class="sn-meter"><i id="mb-sn-pm"></i></i></div>
         <span class="op">＝</span>
         <div><small>もらえる見込み</small><em>金色の四角の広さ</em></div>
       </div>
@@ -221,7 +246,7 @@
             <rect id="mb-sn-rect" x="0" y="0" width="0" height="0" fill="rgba(245,215,122,.30)" stroke="var(--gold-hi)" stroke-width="2" vector-effect="non-scaling-stroke"/>
             <path d="M${curvePts.join(' L')}" fill="none" stroke="var(--text)" stroke-width="3" vector-effect="non-scaling-stroke"/>
           </svg>
-          <span class="sn-axis-y">↑ 付いてくる確率　→ 賭け額</span>
+          <span class="sn-axis-y">↑ ${T ? '勝てる割合' : '付いてくる確率'}　→ 賭け額</span>
           ${[[1, '100%'], [.5, '50%'], [0, '0%']].map(([p, t]) => `<span class="sn-ylab" style="top:${Y(p)}%">${t}</span>`).join('')}
           ${[[minBet, '¼'], [pot / 2, '½'], [pot, 'ポット'], [pot * 1.5, '1.5×'], [maxBet, '2×']].map(([b, t]) => `<span class="sn-xlab" style="left:${X(b)}%">${t}</span>`).join('')}
           <span class="sn-floor">最低額</span>
@@ -233,6 +258,14 @@
       <div class="sn-rangebox"><input class="sn-range" id="mb-sn-range" type="range" min="${minBet}" max="${maxBet}" step="${step}" value="${init}" aria-label="賭け額"></div>
       <div class="actions" id="mb-sn-acts"><button class="btn sn-fire" id="mb-sn-fire">撃つ<small>この額で賭ける</small></button></div>
       <div class="sn-out" id="mb-sn-out"></div>`;
+    await api.rules({
+      key: 'sniper', title: '賭け額スナイパー',
+      goal: `ミミは強い手。${api.char.jp}から一番多く取れる<em>賭け額</em>を決める`,
+      how: '照準を動かして額を決め、撃つ。決めた額は、卓でそのまま賭ける',
+      risk: `大きすぎると、${api.char.jp}はミミより強い手でしか付いてこない。小さすぎると取り分が少ない`,
+      look: [['額', '金の四角（額 × 付いてきて勝てる割合）が一番広い所'], ['自信', 'ベストに近いと思うか']],
+    });
+    if (!api.alive()) return;
     api.tipOnce('sniper', '金の四角が一番広い所', 'think');
     api.mission('照準を動かして、賭ける額を決める');
 
@@ -252,7 +285,7 @@
       area.style.left = (x / 2) + '%'; area.style.top = ((y + 100) / 2) + '%';
       area.style.opacity = x > 14 && (100 - y) > 14 ? 1 : 0;
       $('#mb-sn-rb').textContent = Math.round(bet);
-      $('#mb-sn-rp').textContent = `コール ${Math.round(p * 100)}%`;
+      $('#mb-sn-rp').textContent = T ? `勝てる ${Math.round(p * 100)}%` : `コール ${Math.round(p * 100)}%`;
       $('#mb-sn-bet').textContent = Math.round(bet);
       $('#mb-sn-p').textContent = Math.round(p * 100) + '%';
       $('#mb-sn-pm').style.width = (p * 100) + '%';
@@ -298,16 +331,18 @@
     $('#mb-sn-prompt').hidden = true; range.closest('.sn-rangebox').hidden = true;
     $('#mb-sn-steps').innerHTML = api.steps(STEPS, 2);
     api.coach('');
-    await api.wager({ question: 'ここがベストの額？', base: '20〜40', mission: 'この額への自信を選ぶ' });
+    await api.wager(T ? { question: 'ここがベストの額？', base: 20 + Math.round(Math.min(1, ratio) * 20), mission: 'この額への自信を選ぶ', note: 'ベストに近いほど、自信を上げてよい', stakes: STAKES } : { question: 'ここがベストの額？', base: '20〜40', mission: 'この額への自信を選ぶ' });
     if (!api.alive()) return;
     $('#mb-sn-steps').innerHTML = api.steps(STEPS, 3);
-
-    // セリナが付いてくるか：画面の確率どおりに乱数で決める
+    let call = null;
     const out = $('#mb-sn-out');
+    if (!T) {
+
+    // セリナが付いてくるか：画面の確率どおりに乱数で決める（単独ページだけ。本編は卓で本当に賭ける）
     api.say('……'); api.coach(''); api.sfx.drum();
     await api.wait(api.reduce ? 200 : 1100);
     if (!api.alive()) return;
-    const call = Math.random() < p;
+    call = Math.random() < p;
     const react = (src, word) => {
       const el = document.createElement('div'); el.className = 'sn-react';
       el.innerHTML = `<img src="${src}" alt=""><b>${word}</b>`; root.appendChild(el);
@@ -326,6 +361,7 @@
     }
     await api.wait(api.reduce ? 400 : 1600);
     if (!api.alive()) return;
+    }
 
     // 答え合わせ：本当のベストの額に照準マーク
     api.coach(''); api.sfx.drum();
@@ -342,7 +378,8 @@
     const correct = ratio >= .9;
     const perfect = ratio >= .97 && api.mult === 3;
     const dir = myBet > C.bestBet ? '大きすぎた。セリナが降りやすくなる' : '小さすぎた。もっと取れた';
-    const luck = correct && !call ? '降りたのは運。額の選び方は正解' : !correct && call ? `付いてきたのは運。見込みではベストの ${pct}%` : '';
+    const luck = T ? '' : correct && !call ? '降りたのは運。額の選び方は正解' : !correct && call ? `付いてきたのは運。見込みではベストの ${pct}%` : '';
+    if (T) window.__mbSuggestBet = myBet;
     const verdictText = correct ? (ratio >= .97 ? 'ど真ん中！' : 'ほぼベスト！') : `ずれた：${dir}`;
     out.insertAdjacentHTML('beforeend', `
       <div class="sn-cmp">
@@ -359,7 +396,7 @@
     if (!api.alive()) return;
     api.finish({
       correct, perfect, base: 20 + Math.round(Math.min(1, ratio) * 20),
-      detail: `ベストは ${C.bestBet}（見込み ${Math.round(C.best)}）。あなたは ${myBet}（見込み ${Math.round(myEV)}＝ベストの${pct}%）。${luck ? luck + '。' : call ? `${api.char.jp}は付いてきた。` : `${api.char.jp}は降りた。`}`,
+      detail: `ベストは ${C.bestBet}（見込み ${Math.round(C.best)}）。あなたは ${myBet}（見込み ${Math.round(myEV)}＝ベストの${pct}%）。${T ? `卓で ${myBet} を賭けよう。` : luck ? luck + '。' : call ? `${api.char.jp}は付いてきた。` : `${api.char.jp}は降りた。`}`,
     });
   }
 

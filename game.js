@@ -8031,6 +8031,8 @@ function renderVerbActions(slots, need) {
   const attrs = (s) => (s && s.enabled ? `data-action="${s.action}"` : 'disabled') + (s && s.dataSize ? ` data-size="${s.dataSize}"` : '');
   const num = (n) => (n > 0 ? `<span class="verb-num">${n}</span>` : '');
   const raising = need > 0;
+  // 賭け額スナイパーで決めた額に、一番近いボタンを光らせる（この手の間だけ）
+  const sniperNear = (state.sniperBet && state.sniperBetHand === state.handNo && betS.length) ? betS.slice().sort((a, b) => Math.abs((a.chipAmount || 0) - state.sniperBet) - Math.abs((b.chipAmount || 0) - state.sniperBet))[0].kind : null;
   if (state.betChooserOpen && betS.length) {
     const sizeName = { sm: raising ? '小さく' : '1/2ポット', md: raising ? 'ふつう' : '2/3ポット', lg: raising ? '大きく' : 'ポット', allin: 'ぜんぶ' };
     return `<div class="bet-chooser">
@@ -8042,7 +8044,7 @@ function renderVerbActions(slots, need) {
         const fe = s.noteHint ? `<small class="verb-fe fe-${s.noteHint.tier}">通る見込み ${s.noteHint.label}</small>` : '';
         return `<button class="btn verb-size size-${s.kind}" ${attrs(s)}><span class="verb-label">${label}</span>${sub ? `<small class="verb-sub">${sub}</small>` : ''}${num(s.chipAmount)}${fe}</button>`;
       }).join('')}</div>
-    </div>`;
+    </div>`.replace(`size-${sniperNear || 'none'} `, sniperNear ? `size-${sniperNear} is-suggest is-sniper ` : 'size-none ');
   }
   const foldEnabled = foldS && foldS.enabled && need > 0;
   const ccLabel = raising ? 'コール' : 'チェック';
@@ -14565,8 +14567,8 @@ function showReadReward(correct, hint, gameId) {
   if (!correct) {
     return showMustKnow([{ eyebrow: 'READ BATTLE', count: '読み違い', cls: 'is-miss',
       title: '読み違えた……',
-      note: '読み合いは、卓とは別の勝負。卓のチップは減っていません。ここからは、手札と場札で決めよう。',
-      rico: '外れても、ここからの判断は別の勝負。落ち着いて', next: '卓へ' }], { cls: 'is-reward' });
+      note: '読み合いで外れても、卓のチップは減っていません。ここからは、手札と場札で決めよう。',
+      rico: '外れても大丈夫。落ち着いて決めよう', next: '卓へ' }], { cls: 'is-reward' });
   }
   const T = READ_TELLS.find(t => t.k === hint.k) || READ_TELLS[1];
   const firstTime = !save.readRewardSeen;
@@ -15457,6 +15459,19 @@ function readBattleReady(group) {
   return !!(pool && pool.length);
 }
 const READ_GAME_OK = {
+  // 賭け額スナイパー：相手がチェックしてミミが先に賭けられ、ミミの手が強い（今の札で、相手のありうる手の8割以上に勝つ）
+  sniper: () => {
+    try {
+      const M = window.MB; if (!M || !M.score) return false;
+      const board = (state.community || []).map(rbCard), mine = (state.playerHand || []).map(rbCard);
+      const toCall = Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0));
+      if (board.length < 3 || mine.length !== 2 || toCall > 0) return false;
+      const used = new Set([...mine, ...board].map(M.key)), rest = M.deck().filter(c => !used.has(M.key(c)));
+      const my = M.score([...mine, ...board]); let w = 0, n = 0;
+      for (let i = 0; i < rest.length; i++) for (let j = i + 1; j < rest.length; j++) { n++; if (M.score([rest[i], rest[j], ...board]) < my) w++; }
+      return w / n >= .8;
+    } catch (e) { return false; }
+  },
   // アウツさがし：ターン（場札4枚）で相手が賭けてきていて、ミミがあと1枚でストレートかフラッシュになる（当たり札4枚以上）
   outs: () => {
     try {
@@ -15542,7 +15557,7 @@ function startReadBattle(group) {
 // ===== 本当の手の読み合い（2026-10-21）=====
 // 読み合いの中では読みを預けるだけ。答え合わせは手の決着の後（continueAfterHand の頭で showReadVerdict）。
 // 本当の手で遊べる種類だけ table を渡す。渡さない種類は今までどおり架空の場面で、その場で答え合わせ
-const REAL_READ_GAMES = new Set(['stare', 'objection', 'graduation', 'gacha', 'doubt', 'handvs', 'ask', 'narrow', 'outs']);
+const REAL_READ_GAMES = new Set(['stare', 'objection', 'graduation', 'gacha', 'doubt', 'handvs', 'ask', 'narrow', 'outs', 'sniper']);
 const RB_SUIT = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
 const rbCard = (c) => ({ r: c.rank, s: RB_SUIT[c.suit] || 's' });
 function readBattleTable(gameId) {
@@ -15623,6 +15638,7 @@ function showReadVerdict() {
   });
 }
 function finishReadBattle(group, gameId, r, gain) {
+  if (gameId === 'sniper' && window.__mbSuggestBet) { state.sniperBet = window.__mbSuggestBet; state.sniperBetHand = state.handNo; window.__mbSuggestBet = null; }
   state.psychPending = false;
   state.psychResolving = false;
   if (group === 'psych') state.psychResolved = true;
@@ -15638,6 +15654,7 @@ function finishReadBattle(group, gameId, r, gain) {
     if (!state.tellTags) state.tellTags = [];
     state.tellTags.push(hint.tag);
     state.mimiThought = `「${READ_BATTLE_TELL[gameId] || '読み勝った'}……！ ${hint.text}」`;
+    if (gameId === 'sniper' && window.__mbSuggestBet) state.mimiThought = `「狙う額は ${window.__mbSuggestBet}。『賭ける』で一番近い額を選ぼう」`;
     // ご褒美の一言は、このハンドの間ずっと右の吹き出しに残す（決める時に読み返せるように。吹き出しは2行まで）
     const T = READ_TELLS.find(t => t.k === hint.k) || READ_TELLS[1];
     state.ricoAdvice = `「読み：${(state.opponentName || '相手').replace(/（.*）/, '')}は${T.word}。${READ_ADVICE_SHORT[T.k]}」`;

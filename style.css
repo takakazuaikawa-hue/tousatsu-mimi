@@ -20353,3 +20353,6 @@ html.is-compact .battle-screen.v2.t8 .v2-com-rico.is-mimi-voice .rico-bubble.v2-
 /* 設定の右の列のボタン：語の途中で折らない（「ダウンロー／ド」「リセ／ット」になっていた。台帳7） */
 .settings-modal .kw { word-break: keep-all; overflow-wrap: anywhere; }
 @media (max-width: 700px) { html.is-compact .battle-screen.v2.t8 .v2-com-rico.is-mimi-voice .rico-bubble.v2-com-text { -webkit-line-clamp: 6 !important; max-height: 7.9em !important; } }
+
+/* 2026-10-27 賭け額スナイパーで狙った額に一番近い賭けのボタン（リコのおすすめと同じ光り方、札の名前だけ替える） */
+.battle-screen.v2 .is-suggest.is-sniper::before { content: "狙った額に一番近い"; }
