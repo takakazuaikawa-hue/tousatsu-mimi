@@ -15456,13 +15456,30 @@ function readBattleReady(group) {
   const pool = (READ_BATTLE_POOLS[readPoolKey()] || {})[group];
   return !!(pool && pool.length);
 }
+const READ_GAME_OK = {
+  // アウツさがし：ターン（場札4枚）で相手が賭けてきていて、ミミがあと1枚でストレートかフラッシュになる（当たり札4枚以上）
+  outs: () => {
+    try {
+      const M = window.MB; if (!M || !M.score) return false;
+      const board = (state.community || []).map(rbCard), mine = (state.playerHand || []).map(rbCard);
+      const toCall = Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0));
+      if (board.length !== 4 || mine.length !== 2 || toCall <= 0) return false;
+      const known = [...mine, ...board]; if (M.category(known) >= 4) return false;
+      const used = new Set(known.map(M.key));
+      const outs = M.deck().filter(c => !used.has(M.key(c)) && M.category([...known, c]) >= 4 && M.category([...board, c]) < 4);
+      return outs.length >= 4;
+    } catch (e) { return false; }
+  },
+};
 function pickReadBattle(group) {
   const pool = READ_BATTLE_POOLS[readPoolKey()][group];
   const played = state.readBattlePlayed || (state.readBattlePlayed = {});
   if (!save.readBattleSeen) save.readBattleSeen = {};
   // まだ遊んだことの無い種類を先に、次にこの対戦で出た回数が少ない種類を出す
   const score = (id) => (save.readBattleSeen[id] ? 10 : 0) + (played[id] || 0) * 3 + Math.random();
-  return pool.slice().sort((a, b) => score(a) - score(b))[0];
+  // その場面でしか意味のない遊び（アウツ＝ミミがあと1枚で役・スナイパー＝ミミが先に賭けられて手が強い）は、条件に合う時だけ出す
+  const ok = pool.filter(id => !READ_GAME_OK[id] || READ_GAME_OK[id]());
+  return (ok.length ? ok : pool).slice().sort((a, b) => score(a) - score(b))[0];
 }
 // 相手の今の手の強さを、ミミの言葉で一言にする（読み勝った時のご褒美）
 function readBattleRealHint() {
@@ -15525,7 +15542,7 @@ function startReadBattle(group) {
 // ===== 本当の手の読み合い（2026-10-21）=====
 // 読み合いの中では読みを預けるだけ。答え合わせは手の決着の後（continueAfterHand の頭で showReadVerdict）。
 // 本当の手で遊べる種類だけ table を渡す。渡さない種類は今までどおり架空の場面で、その場で答え合わせ
-const REAL_READ_GAMES = new Set(['stare', 'objection', 'graduation', 'gacha', 'doubt', 'handvs', 'ask', 'narrow']);
+const REAL_READ_GAMES = new Set(['stare', 'objection', 'graduation', 'gacha', 'doubt', 'handvs', 'ask', 'narrow', 'outs']);
 const RB_SUIT = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
 const rbCard = (c) => ({ r: c.rank, s: RB_SUIT[c.suit] || 's' });
 function readBattleTable(gameId) {
@@ -15552,7 +15569,7 @@ function holdReadBattle(group, gameId, r) {
   const pickName = logic ? ((r.pending.names || {})[r.pending.pick] || (r.pending.pick === 'call' ? '付いていく' : '降りる')) : (r.pending.pick === 'bluff' ? 'ブラフ' : '本物');
   const name = (state.opponentName || '相手').replace(/（.*）/, '');
   state.mimiThought = logic ? `「判断：${pickName}。${r.pending.pick === 'call' ? '次は付いていく（コール）' : '次は降りる'}」` : `「読み：${name}は${pickName}。${r.pending.pick === 'bluff' ? '信じるなら、付いていく' : '信じるなら、降りる'}」`;
-  state.ricoAdvice = `「ミミの${logic ? '判断' : '読み'}は『${pickName}』（自信 ×${r.pending.mult || 1}）。答え合わせは、この手の後で」`;
+  state.ricoAdvice = `「${logic ? '判断' : '読み'}は『${pickName}』。答え合わせは手の後で」`;
   state.isPlayerTurn = true;
   render();
 }

@@ -28,7 +28,18 @@ MB.register({
       }
       return null;
     };
-    const s = gen();
+    // 卓の本当の手（本編）：ターンで相手が賭けてきていて、ミミがあと1枚でストレートかフラッシュになる時だけ出る（game.js の READ_GAME_OK）。
+    // 当たり札はミミの本当の手札と場札から数え、最後の1枚は卓で本当に配られる。答え合わせは手の決着の後（verdict.js、kind:'logic'）
+    const T = api.table;
+    let s = null;
+    if (T && T.board.length === 4 && (T.toCall || 0) > 0) {
+      const hole = T.mine, board = T.board, known = [...hole, ...board];
+      const rest = deck().filter(c => !known.some(k => key(k) === key(c)));
+      const outs = rest.filter(c => category([...known, c]) >= 4 && category([...board, c]) < 4);
+      if (outs.length >= 4) { const B = T.toCall, P = Math.max(0, (T.pot || 0) - B); s = { hole, board, rest, outs, eq: outs.length / rest.length, need: B / (P + 2 * B), P, B, real: true, her: T.her }; }
+    }
+    if (!s) s = gen();
+    const STAKES = [0, 1, 3];
     const pct = (x) => Math.round(x * 1000) / 10;
     api.say(api.pick(['この値段で付いてくるかい？', 'お代はこれだけ。安いもんだろう？', '払うかどうか、よく計算してごらん']), 'smug');
     api.bet(s.B);
@@ -62,6 +73,8 @@ MB.register({
       .reel .card { --w: 56px; flex: 0 0 auto; }
       .reel .card.out { background: linear-gradient(180deg, #fff7d6, #f5d77a); border-color: #b8860b; }
       .reel-legend { text-align: center; font-size: 14px; color: var(--dim); }
+      .ox-act { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; }
+      .ox-act .btn { margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; }
       .reel-legend b { color: var(--gold-hi); }
     `);
     const root = api.root;
@@ -74,6 +87,14 @@ MB.register({
       <div class="outs-count" id="mb-o-count">0 / ${s.outs.length}</div>
       <div class="outs-deck" id="mb-o-deck">${grid.map(c => cardHTML(c, known.has(key(c)) ? 'known' : 'tap')).join('')}</div>
       <div class="actions"><button class="btn ghost" id="mb-o-give">わからない（答えを見る）</button></div>`;
+    await api.rules({
+      key: 'outs', title: 'アウツさがし',
+      goal: 'グラーノの賭けに<em>付いていく</em>か<em>降りる</em>か、得な方を決める。' + (s.real ? '答え合わせはこの手の決着の後' : ''),
+      how: '残りの札から、最後の1枚でミミがストレートかフラッシュになる<em>当たり札</em>を全部さがす。当たり札1枚で、当たる見込みは約2%',
+      risk: '当たり札を数え違えると、見込みも違う。外れの札を押すと、ご褒美が減る',
+      look: [['当たり札', '同じマークの札・両はしの数字'], ['付いていくか降りるか', '見込みの棒が、割に合う線を超えるか'], ['自信', '棒と線の差']],
+    });
+    if (!api.alive()) return;
     api.tipOnce('outs', 'うすい札は場とミミの手札');
     api.mission('当たり札は何枚？ すべてタップ');
     const outKeys = new Set(s.outs.map(key));
@@ -111,18 +132,39 @@ MB.register({
     meter.className = 'outs-meter pop';
     meter.innerHTML = `<div class="prompt mb-ask"><span class="mb-bet"><b>当たり ${s.outs.length}枚</b></span>${api.betTag('払う ' + s.B, 3)}</div>
       <div class="outs-bar"><div class="outs-fill" id="mb-o-fill"></div><div class="outs-line" id="mb-o-line"><span>割に合う線 ${pct(s.need)}%</span></div><div class="outs-val">約 ${s.outs.length * 2}%</div></div>
-      <div class="actions"><button class="btn" id="mb-o-call">コール<small>${s.B} 払って最後の1枚へ</small></button><button class="btn quiet" id="mb-o-fold">降りる<small>ここまでの分をあきらめる</small></button>${api.more(`当たり札 ${s.outs.length}枚 × 2 ＝ <b>約${s.outs.length * 2}%</b>（正確には ${s.outs.length}÷${s.rest.length}＝${pct(s.eq)}%）<br>払う ${s.B} ÷（もらえる ${s.P + s.B} ＋ 払う ${s.B}）＝ <b>${pct(s.need)}%</b> 以上当たれば得`)}</div>`;
+      <div class="ox-more">${api.more(`当たり札 ${s.outs.length}枚 × 2 ＝ <b>約${s.outs.length * 2}%</b>（正確には ${s.outs.length}÷${s.rest.length}＝${pct(s.eq)}%）<br>払う ${s.B} ÷（もらえる ${s.P + s.B} ＋ 払う ${s.B}）＝ <b>${pct(s.need)}%</b> 以上当たれば得`)}</div>`;
     root.querySelector('#mb-o-deck').after(meter);
+    // 押す所は画面の一番下の段に（上の方に置くと押しづらい）
+    const oxAct = document.createElement('div');
+    oxAct.className = 'ox-act';
+    oxAct.innerHTML = `<button class="btn" id="mb-o-call">コール<small>${s.B} 払って最後の1枚へ</small></button><button class="btn quiet" id="mb-o-fold">降りる<small>ここまでの分をあきらめる</small></button>`;
+    root.appendChild(oxAct);
     api.coach('');
     await api.wait(250);
     meter.querySelector('#mb-o-fill').style.width = pct(s.eq) + '%';
     meter.querySelector('#mb-o-line').style.left = pct(s.need) + '%';
-    const called = await new Promise(res => { meter.querySelector('#mb-o-call').onclick = () => res(true); meter.querySelector('#mb-o-fold').onclick = () => res(false); });
+    const called = await new Promise(res => { oxAct.querySelector('#mb-o-call').onclick = () => res(true); oxAct.querySelector('#mb-o-fold').onclick = () => res(false); });
     if (!api.alive()) return;
-    meter.querySelector('.actions').remove();
+    oxAct.remove();
     const right = called === (s.eq >= s.need);
-    await api.wager({ question: called ? '「付いていく」と決めた。この判断、自信は？' : '「降りる」と決めた。この判断、自信は？', base: 30, mission: 'この判断への自信を選ぶ' });
+    const base0 = gaveUp ? 15 : Math.max(10, 30 - miss * 5);
+    await api.wager(s.real ? { question: `「${called ? '付いていく' : '降りる'}」— 見込み 約${s.outs.length * 2}% ／ 線 ${pct(s.need)}%`, base: base0, mission: '棒と線の差で、自信を決める', note: '差が大きいほど、自信を上げてよい', stakes: STAKES } : { question: called ? '「付いていく」と決めた。この判断、自信は？' : '「降りる」と決めた。この判断、自信は？', base: 30, mission: 'この判断への自信を選ぶ' });
     if (!api.alive()) return;
+    if (s.real) {
+      // 本当の手：最後の1枚は卓で配られる。判断を預けて戻る
+      const m = api.mult || 1, need = Math.round(s.need * 100);
+      const mimiEq = Math.round(api.headsUp(s.hole, s.her, s.board) * 100);
+      api.entrust({
+        pick: called ? '付いていく' : '降りる', win: base0 * m, lose: base0 * STAKES[m - 1],
+        advice: called ? '「付いていく」と決めた。卓でコールして、最後の1枚を待とう' : '「降りる」と決めた。卓で降りよう',
+        pending: { kind: 'logic', title: 'アウツさがし', charId: api.charId, pick: called ? 'call' : 'fold', truth: mimiEq >= need ? 'call' : 'fold', mimiEq, need,
+          endLines: { bc: 'く……計算どおりですな', bw: '賢いお方だ', sc: '慎重なお方ですな', sw: 'まいど、ありがとうございます' },
+          board: s.board, mine: s.hole, her: s.her, base: base0, mult: m, stakes: STAKES, perfect: right && !gaveUp && miss === 0 && m === 3, notes: [],
+          why: right ? (called ? '当たり札の見込みが線を超えていた。' : '当たり札の見込みが線に届かなかった。') : (called ? '当たり札の見込みは線に届かなかった。' : '当たり札の見込みは線を超えていた。'),
+          extra: `当たり札 ${s.outs.length}枚（約${s.outs.length * 2}%）／ 線 ${pct(s.need)}%` },
+      });
+      return;
+    }
     // 確率スロット：残り46枚のうち当たり札だけ金。止まる札は本当に引く1枚
     root.querySelector('.steps').outerHTML = api.steps(['当たり札をさがす', '値段とくらべる', '決める', 'スロット'], 3);
     api.mission('スロットが止まるのを見届ける');

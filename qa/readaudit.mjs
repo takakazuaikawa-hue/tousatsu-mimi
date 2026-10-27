@@ -58,7 +58,7 @@ async function runGame(gameId0, opp, group, first) {
     await page.eval(`startBattle(${JSON.stringify(opp)}); true`);
     await sleep(2500);
     for (let i = 0; i < 6; i++) { await page.eval(`(() => { const b = [...document.querySelectorAll('button')].find(b => /開始|対戦開始/.test(b.textContent)); if (b) b.click(); return true; })()`); await sleep(900); }
-    await page.eval(`(() => { READ_BATTLE_POOLS[${JSON.stringify(opp)}][${JSON.stringify(group)}] = [${JSON.stringify(gameId)}]; ${process.env.QA_REAL ? 'if ((state.community || []).length < 3) { state.community = [state.deck.pop(), state.deck.pop(), state.deck.pop()]; state.handPhase = "flop"; render(); }' : ''} state.psychPending = true; startReadBattle(${JSON.stringify(group)}); return true; })()`);
+    await page.eval(`(() => { READ_BATTLE_POOLS[${JSON.stringify(opp)}][${JSON.stringify(group)}] = [${JSON.stringify(gameId)}]; ${process.env.QA_PRE || ''} ${process.env.QA_REAL ? 'if ((state.community || []).length < 3) { state.community = [state.deck.pop(), state.deck.pop(), state.deck.pop()]; state.handPhase = "flop"; render(); }' : ''} state.psychPending = true; startReadBattle(${JSON.stringify(group)}); return true; })()`);
     await sleep(2500);
     let lastSig = '', stuck = 0, n = 0, wasIn = false, gone = 0;
     const clicked = {};
