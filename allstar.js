@@ -1056,6 +1056,112 @@ const Allstar = (() => {
     return { kind: 'check', intent: 'check' };
   }
 
+  // =============================================================
+  // 考え方のヒント（ミミの手番だけ）：プロが見る5つの点と、プロならどうするかの目安。
+  // AI と同じ式を使うが、乱数のブラフは入れない（何度押しても同じ答え）。相手の伏せ札は見ない。
+  // 5つの点：持ち点の深さ／位置／勝ち目と値段／相手／賞金。key は結論を決めた点。
+  // =============================================================
+  const PRO_ST = { loose: 1, respect: 0.25 };
+  function coach(t) {
+    const h = t.hand;
+    const L = legalActions(t);
+    if (!L || !t.players[L.seat].human) return null;
+    const seat = L.seat, bb = h.bb, hole = h.holes[seat], N = NS(t);
+    const pre = h.street === 'preflop';
+    const others = [], behind = [];
+    for (let s = 0; s < N; s++) if (s !== seat && inPlay(h, s)) others.push(s);
+    for (let k = 1; k < N; k++) { const s = (seat + k) % N; if (canAct(h, s) && h.needs[s]) behind.push(s); }
+    const nOpp = Math.max(1, others.length);
+    const stackBB = (pre ? h.startStacks[seat] : L.stack + L.committed) / bb;
+    const needPct = L.toCall > 0 ? L.toCall / (L.pot + L.toCall) : 0;
+    // 賞金：残り人数と、次に1人落ちた時に上がる額
+    const alive = liveSeats(t).length;
+    const prizes = t.cfg.prizes;
+    const ladder = [];
+    for (let place = alive; place >= 1; place--) ladder.push({ place, prize: prizes[place - 1] || 0 });
+    const jump = alive >= 2 ? (prizes[alive - 2] || 0) - (prizes[alive - 1] || 0) : 0;
+    const st = standings(t);
+    const rank = (st.find(r => r.seat === seat) || {}).rank || 1;
+    const chipLeader = rank === 1;
+    const risky = L.toCall >= 0.35 * L.stack || stackBB < 10;
+    const icm = jump >= 200 && !chipLeader && risky ? 0.03 : 0;
+    // 相手：賭けてきた人。いなければ後ろで最初に動く人
+    const agg = h.streetAggressor != null && h.streetAggressor !== seat ? h.streetAggressor : null;
+    const focus = agg != null ? agg : behind.length ? behind[0] : others[0];
+    const focusBB = focus != null ? (t.players[focus].stack + h.committed[focus]) / bb : 0;
+    const allInFacing = agg != null && h.allIn[agg];
+    const pen = agg != null ? aggPenalty({ h, st: PRO_ST, t, bb }) : 0;
+
+    const out = {
+      street: h.street, stackBB, behind: behind.length, behindSeats: behind, others, nOpp, needPct, toCall: L.toCall, pot: L.pot,
+      canCheck: L.canCheck, isBet: L.isBet, alive, ladder, jump, rank, chipLeader, icm: icm > 0,
+      focus: focus != null ? t.players[focus].id : null, focusSeat: focus, focusBB, aggressor: agg != null, allInFacing,
+      top: null, range: null, eq: null, outs: 0, made: null, lean: 'check', key: 'hand', semi: false,
+    };
+    const lean = (k, key) => { out.lean = k; out.key = key; return out; };
+    if (pre) {
+      const s = need('opponentPreflopStrength')(hole);
+      const top = topPct(s);
+      out.top = top;
+      out.eq = Math.max(0.01, eqPF(s, nOpp) - pen * 2 / (nOpp + 1));
+      if (top <= 0.012 && h.raises >= 1) return lean('allin', 'hand');
+      if (stackBB < 10) {
+        if (h.raises === 0) {
+          const nB = Math.max(1, Math.min(5, behind.length + h.limpers));
+          let range = PUSH_BASE[nB] * (1 + 0.09 * (10 - stackBB));
+          if (stackBB <= 2) range = Math.max(range, 0.7);
+          if (icm) range *= 0.95;
+          out.range = Math.min(1, range);
+          return top <= out.range ? lean('allin', 'stack') : lean(L.canCheck ? 'check' : 'fold', 'stack');
+        }
+        return out.eq >= needPct + 0.02 * behind.length + icm ? lean('allin', 'price') : lean('fold', 'price');
+      }
+      if (h.raises === 0) {
+        if (L.canCheck) { out.range = 0.09; return top <= 0.09 ? lean('raise', 'hand') : lean('check', 'hand'); }
+        const nB = Math.max(1, Math.min(5, behind.length));
+        let range = TRAITS.rico_serious.open[nB];
+        if (icm && stackBB < 20) range *= 0.94;
+        out.range = range;
+        if (h.limpers > 0) {
+          if (top <= range * 0.6) return lean('raise', 'position');
+          if (top <= range * 1.1 && L.toCall <= bb) return lean('call', 'position');
+          return lean('fold', 'position');
+        }
+        return top <= range ? lean('raise', 'position') : lean('fold', 'position');
+      }
+      const tb = h.raises === 1 ? (h.openerBehind != null && h.openerBehind <= 2 ? 0.075 : 0.04) : 0.025;
+      if (L.canRaise && top <= tb && !allInFacing) return lean('raise', 'hand');
+      const cap = h.raises === 1 ? (allInFacing ? 0.6 : 0.5) : (allInFacing ? 0.2 : 0.1);
+      const tax = 0.03 + 0.02 * behind.length + icm;
+      if (out.eq >= needPct + tax && top <= cap) return lean(L.callIsAllIn ? 'allin' : 'call', icm ? 'prize' : 'price');
+      return lean('fold', icm && out.eq >= needPct + tax - icm ? 'prize' : 'price');
+    }
+    // フロップ以降
+    const all = hole.concat(h.board);
+    try { out.made = need('evaluateHand')(all).name; } catch (e) { out.made = null; }
+    const cso = dep('countStrongOuts');
+    out.outs = cso && h.street !== 'river' ? cso(hole, h.board) : 0;
+    const rng = mulberry32(hash2(h.seed, 0xC0AC + h.actionCount));
+    const eqN = equityMulti(hole, h.board, others.length ? others.map(q => h.width[q]) : 1, 500, rng);
+    const rel = relOf(eqN, nOpp);
+    if (L.toCall > 0) {
+      const sizeRatio = Math.min(1.5, L.toCall / Math.max(bb, L.pot - L.toCall));
+      const fair = 1 / (nOpp + 1);
+      const eqAdj = Math.max(0.01, eqN - PRO_ST.respect * sizeRatio * 2 * fair);
+      const relAdj = rel - PRO_ST.respect * sizeRatio;
+      out.eq = eqAdj;
+      const tax = 0.02 * behind.length + icm;
+      const drawBonus = out.outs >= 8 ? 0.04 : 0;
+      if (L.canRaise && relAdj >= 0.82) return lean(L.stack <= 0.6 * (L.pot + L.toCall) ? 'allin' : 'raise', 'hand');
+      if (eqAdj + drawBonus >= needPct + tax) return lean(L.callIsAllIn ? 'allin' : 'call', icm ? 'prize' : 'price');
+      return lean('fold', icm && eqAdj + drawBonus >= needPct + tax - icm ? 'prize' : 'price');
+    }
+    out.eq = eqN;
+    if (L.canRaise && rel >= 0.64) return lean(L.stack <= 0.6 * L.pot ? 'allin' : 'raise', 'hand');
+    if (L.canRaise && out.outs >= 8) { out.semi = true; return lean('raise', 'hand'); }
+    return lean('check', behind.length ? 'position' : 'hand');
+  }
+
   // 今の手番が AI なら決めて適用する。人の手番なら {waiting:true}。opts.allowHuman で人の席も自動で打つ
   function stepAI(t, opts = {}) {
     const h = t.hand;
@@ -1085,7 +1191,7 @@ const Allstar = (() => {
     VERSION, CONFIG, DEFAULT_SEATS,
     configure, config, missingDeps,
     createTournament, startHand, legalActions, raisePresets, applyAction,
-    decideAction, stepAI, playHandAuto, fastForward,
+    decideAction, stepAI, playHandAuto, fastForward, coach,
     standings, audit, serialize, restore, view, positionLabels,
     levelInfo, levelTable, blindsAt: (lv) => blindsAt(CONFIG, lv), humanSeat,
     computePots: (t) => (t.hand ? computePots(t.hand) : []),

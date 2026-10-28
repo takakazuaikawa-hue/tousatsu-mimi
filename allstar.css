@@ -754,3 +754,80 @@ html.is-compact #stage > .as-host .as-pop p { font-size: var(--ty-body); line-he
 /* 2026-10-21 零時の卓：右上の道具（役の一覧・音・やめる）と賭け額の名前を折らない。道具の欄は中身の幅に */
 .as-tools { width: auto !important; left: auto !important; right: 24px; }
 .as-tool, .as-host .as-sizer span { white-space: nowrap; }
+
+/* =============================================================
+   考え方（困った時のヒント）：プロが見る5つの札＋「プロならどうする」。3列×2段。
+   文字の大きさは type-roles.css（役目の段）で決める。ここは枠と絵だけ。
+   PC：舞台の px。上の席の段だけを覆い、ポット・場の札・手札・操作は見えたまま（3列×2段）。
+   スマホ：画面の本当の px。開いている間は卓の全体を覆う（狭い画面で文が3割長くなっても入るように）。
+   札のどこかを押すか「閉じる」で閉じて、操作に戻る。3列×2段で、見出しの下の行に「絵・数字」を置く。
+   ============================================================= */
+.as-tools { left: 880px; width: 376px; }
+.as-tool.as-think:disabled { opacity: .38; cursor: default; }
+.as-tool.as-think:not(:disabled) { background: linear-gradient(180deg, #5a0a12, #2e0306); border-color: var(--as-gold); }
+.as-tool.as-think[aria-expanded="true"] { background: var(--as-brass); color: #1a1206 !important; }
+.as-tool.as-think.is-glow { animation: asThinkGlow 1.6s ease-in-out infinite; }
+@keyframes asThinkGlow { 0%, 100% { box-shadow: inset 0 0 0 2px rgba(0,0,0,.6), 0 0 0 0 rgba(239,205,130,0); } 50% { box-shadow: inset 0 0 0 2px rgba(0,0,0,.6), 0 0 14px 3px rgba(239,205,130,.75); } }
+
+.as-coach { left: 290px; top: 58px; width: 950px; height: 258px; z-index: 24; pointer-events: auto !important;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 8px;
+  background: rgba(10,5,6,.95); border: 1px solid var(--as-gold-d); border-radius: 2px;
+  box-shadow: inset 0 0 0 3px #190608, inset 0 0 0 4px rgba(227,185,100,.5), 0 18px 40px rgba(0,0,0,.75);
+  animation: asRiseIn .2s ease-out; }
+.as-ck { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 6px 12px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(58,10,16,.55), rgba(20,6,8,.75)); border: 1px solid rgba(216,181,108,.32); border-radius: 2px; }
+.as-ck-r { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.as-ck-h { flex: none; font-family: var(--as-min); font-weight: 700; letter-spacing: .06em; color: var(--as-gold-hi); white-space: nowrap; }
+.as-ck-n { margin-left: auto; font-style: normal; font-weight: 700; color: var(--as-ivory); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.as-ck-t { margin: 0; color: var(--as-ivory); line-height: 1.4; word-break: keep-all; overflow-wrap: anywhere; }
+.as-ck-r > :is(.as-gauge, .as-bar) { flex: 1 1 60px; min-width: 40px; }
+.as-ck.is-key { border-color: var(--as-gold-hi); box-shadow: inset 0 0 0 1px var(--as-gold-hi), 0 0 16px rgba(239,205,130,.35); }
+
+/* 持ち点：0〜30 BB の目盛り。10 未満＝深紅、10〜20＝琥珀、20 以上＝金緑 */
+.as-gauge { position: relative; display: block; height: 14px; border: 1px solid rgba(216,181,108,.5);
+  background: linear-gradient(90deg, #8e1520 0 33.3%, #a8701e 33.3% 66.6%, #5d7a3a 66.6% 100%); }
+.as-gauge u, .as-bar u { position: absolute; top: -5px; bottom: -5px; width: 4px; margin-left: -2px; background: var(--as-ivory); box-shadow: 0 0 0 1px #000; }
+/* 位置：自分（金）・まだ動く人（深紅）・もう動いた人（暗い） */
+.as-dots { display: flex; gap: 5px; flex: none; }
+.as-dots b { width: 13px; height: 13px; transform: rotate(45deg); border: 1px solid rgba(216,181,108,.5); background: rgba(60,40,30,.6); }
+.as-dots b.me { background: var(--as-gold-hi); border-color: var(--as-gold-hi); }
+.as-dots b.on { background: #c0202e; border-color: #ff8a8a; }
+/* 勝ち目：見込み（金の帯）と必要（白の線）。目安の時は、内側（金）と自分の手（白の線） */
+.as-bar { position: relative; display: block; height: 14px; border: 1px solid rgba(216,181,108,.5); background: rgba(40,20,20,.8); }
+.as-bar s { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #b8904a, #efcd82); }
+/* 賞金：残りの順位の段（左が今の最下位、右が優勝）。ミミの順位を金に */
+.as-steps { display: flex; align-items: flex-end; gap: 3px; height: 26px; flex: none; }
+.as-steps b { width: 9px; background: rgba(216,181,108,.38); }
+.as-steps b.me { background: var(--as-gold-hi); box-shadow: 0 0 6px rgba(239,205,130,.7); }
+/* 相手の顔：斜めの窓（丸で囲まない） */
+.as-ck-face { flex: none; width: 34px; height: 34px; overflow: hidden; clip-path: polygon(18% 0, 100% 0, 82% 100%, 0 100%); background: #2a0d10; }
+.as-ck-face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
+
+/* プロならどうする（押すまで伏せる） */
+.as-ck-fin { border-color: var(--as-gold); background: linear-gradient(180deg, rgba(90,10,18,.7), rgba(30,4,8,.9)); }
+.as-ck-fin .as-ck-lean { margin-left: 4px; }
+.as-ck-go { position: absolute !important; inset: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--as-gold); border-radius: 2px; background: var(--as-brass); color: #1a1206 !important; }
+.as-ck-go b { font-family: var(--as-min); font-weight: 800; letter-spacing: .1em; }
+.as-ck-go span { color: #3a240c; }
+.as-ck-lean { font-family: var(--as-min); font-weight: 800; letter-spacing: .1em; color: var(--as-gold-hi); }
+.as-ck-lean[data-k="fold"], .as-ck-lean[data-k="check"] { color: #9fc3e0; }
+
+/* スマホ：上の段（44px）の下から、手札と操作の上まで。端から端まで使う */
+html.is-compact #stage > .as-host .as-tools { width: 216px; }
+html.is-compact #stage > .as-host .as-coach { left: 8px; right: 8px; width: auto; top: 46px; bottom: 8px; height: auto; gap: 4px; padding: 4px;
+}
+html.is-compact #stage > .as-host .as-ck { gap: 2px; padding: 3px 7px; }
+html.is-compact #stage > .as-host .as-ck-r { flex-wrap: wrap; row-gap: 2px; line-height: 1.25; }
+html.is-compact #stage > .as-host .as-ck-r > .as-ck-h { flex-basis: 100%; }
+html.is-compact #stage > .as-host .as-ck-fin .as-ck-r > .as-ck-h { flex-basis: auto; }
+html.is-compact #stage > .as-host .as-ck-r { gap: 6px; }
+html.is-compact #stage > .as-host .as-ck-t { line-height: 1.3; }
+html.is-compact #stage > .as-host .as-gauge, html.is-compact #stage > .as-host .as-bar { height: 9px; }
+html.is-compact #stage > .as-host .as-gauge u, html.is-compact #stage > .as-host .as-bar u { top: -4px; bottom: -4px; width: 3px; }
+html.is-compact #stage > .as-host .as-dots { gap: 3px; }
+html.is-compact #stage > .as-host .as-dots b { width: 9px; height: 9px; }
+html.is-compact #stage > .as-host .as-steps { height: 18px; gap: 2px; }
+html.is-compact #stage > .as-host .as-steps b { width: 6px; }
+html.is-compact #stage > .as-host .as-ck-face { width: 24px; height: 24px; }
+html.is-compact #stage > .as-host .as-ck-go { inset: 4px; gap: 2px; }

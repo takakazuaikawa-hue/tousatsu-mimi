@@ -219,6 +219,7 @@
         <span class="as-clock-t"><b class="as-lv"></b><span class="as-left"></span></span>
       </button>
       <div class="as-tools">
+        <button type="button" class="as-tool as-think" data-as="think" aria-expanded="false" disabled>考え方</button>
         <button type="button" class="as-tool" data-as="guide">役の一覧</button>
         <button type="button" class="as-tool as-sound" data-as="sound" aria-label="音の入り切り"></button>
         <button type="button" class="as-tool" data-as="menu">やめる</button>
@@ -252,6 +253,7 @@
     stage.appendChild(host);
     ['head-1', 'head-2', 'lv', 'left', 'pot-n', 'sides', 'board', 'sub', 'sub-name', 'sub-text', 'mimi', 'made', 'mbet', 'mstack', 'hand', 'actions', 'sizer', 'ff', 'fx', 'layer', 'clock', 'probe', 'pot'].forEach(n => { ui[n] = host.querySelector('.as-' + n); });
     ui.bust = host.querySelector('.as-bust img');
+    ui.think = host.querySelector('.as-think');
     ui.seats = [];
     for (let s = 0; s < 6; s++) ui.seats[s] = s ? host.querySelector(`.as-seat[data-seat="${s}"]`) : ui.mimi;
     host.addEventListener('click', onHostClick);
@@ -905,8 +907,9 @@
     ui.actions.dataset.on = '1';
     ui.actions._L = L;
     closeSizer();
+    armThink(L);
   }
-  function hideActions() { if (!ui.actions) return; ui.actions.dataset.on = '0'; closeSizer(); }
+  function hideActions() { if (!ui.actions) return; ui.actions.dataset.on = '0'; closeSizer(); disarmThink(); }
   function openSizer() {
     const L = ui.actions._L;
     const P = AS.raisePresets(T);
@@ -918,6 +921,133 @@
     sizerOpen = true;
   }
   function closeSizer() { if (!ui.sizer) return; ui.sizer.dataset.on = '0'; if (sizerOpen && humanResolve) ui.actions.dataset.on = '1'; sizerOpen = false; }
+  // =============================================================
+  // 考え方（困った時のヒント）：プロが見る5つの点を札で並べ、押すと「プロならどうする」が開く。
+  // 先に自分で考えられるよう、結論は2段目に伏せておく。迷いどころでは、最初の数回だけボタンが光る（慣れたら光らない）。
+  // 計算は allstar.js の coach()（AI と同じ式・乱数なし・相手の伏せ札は見ない）。
+  // =============================================================
+  const LEAN_JA = { fold: '降りる', check: 'チェック', call: 'コール', allin: 'オールイン' };
+  const COACH_TRAIT = {
+    rico: '堅実。|前の席から|上げたら本物',
+    polka: '後ろの席から、|広い手で|奪いに来る',
+    selina: '人数が多いと|慎重。|賭けたら強い',
+    grano: '持ち点の少ない人を|狙う。|境目では慎重',
+    velvet: '大きな持ち点で|押す。|ブラフを見せた後は|罠',
+  };
+  let coachEl = null, coachData = null, coachOpen = false;
+  const pc = (x) => Math.round(x * 100);
+  // 見込みは5%刻み（細かい数字は当てにならない）。5%未満は「5%未満」
+  const about = (x) => x < 0.05 ? '5%未満' : `約${Math.round(x * 20) * 5}%`;
+  // 文は | の所でだけ折る（語の途中で折らない）
+  // 「19%以上」「5%未満」のように数字と続く語の間では折らない（語をつなぐ見えない印 U+2060）
+  const wb = (s) => String(s).replace(/%(?=[^|、。）\s])/g, '%⁠').split('|').map(esc).join('<wbr>');
+  const CK_LABEL = { stack: '持ち点の深さ', pos: '位置', odds: '勝ち目と値段', prize: '賞金' };
+  function armThink(L) {
+    if (!ui.think) return;
+    coachData = null; coachOpen = false;
+    ui.think.disabled = false;
+    const A = ensureSave();
+    const hard = L.toCall >= 0.25 * L.stack || (L.stack + L.committed) / L.bb < 10;
+    ui.think.classList.toggle('is-glow', hard && !!A && (A.entries || 0) <= 2);
+  }
+  function disarmThink() {
+    if (!ui.think) return;
+    ui.think.disabled = true;
+    ui.think.classList.remove('is-glow');
+    closeCoach();
+  }
+  function closeCoach() {
+    if (coachEl) { coachEl.remove(); coachEl = null; }
+    if (ui.think) { ui.think.setAttribute('aria-expanded', 'false'); ui.think.textContent = '考え方'; }
+  }
+  function openCoach() {
+    if (!humanResolve || !T) return;
+    if (!coachData) { try { coachData = AS.coach(T); } catch (e) { console.error(e); coachData = null; } }
+    if (!coachData) return;
+    closeCoach();
+    coachEl = layerEl('as-coach', coachHTML(coachData));
+    ui.think.setAttribute('aria-expanded', 'true');
+    ui.think.textContent = '閉じる';
+    ui.think.classList.remove('is-glow');
+    if (coachOpen) revealCoach();   // 一度開いた結論は、閉じて開き直しても見えたまま
+  }
+  function revealCoach() {
+    if (!coachEl || !coachData) return;
+    coachOpen = true;
+    const c = coachData;
+    const tile = { stack: 'stack', position: 'pos', price: 'odds', hand: 'odds', prize: 'prize' }[c.key];
+    coachEl.querySelectorAll('.as-ck').forEach(x => x.classList.toggle('is-key', x.dataset.k === tile));
+    const L = ui.actions._L || {};
+    const verb = c.lean === 'raise' ? (L.isBet ? '賭ける' : '上げる') : LEAN_JA[c.lean];
+    const fin = coachEl.querySelector('.as-ck-fin');
+    fin.innerHTML = `<div class="as-ck-r"><b class="as-ck-h">プロなら</b><strong class="as-ck-lean" data-k="${c.lean}">${verb}寄り</strong></div><p class="as-ck-t">${wb(CK_LABEL[tile] + '：|' + coachReason(c))}</p>`;
+  }
+  // 結論の理由。| は折ってよい所。頭に決め手の札の名前が付く
+  function coachReason(c) {
+    const eq = about(c.eq), need = pc(c.needPct);
+    const top = c.top != null ? pc(c.top) : 0, range = c.range != null ? pc(c.range) : 0;
+    const go = c.lean !== 'fold' && c.lean !== 'check';
+    switch (c.key) {
+      case 'stack': return go ? `手が目安（上位${range}%）の|内側。|全部賭けて、|ブラインドを|取りに行く` : `目安（上位${range}%）の|外。|次のよい手まで|待つ`;
+      case 'position':
+        if (c.street !== 'preflop') return '先に動く番で、|手は中くらい。|チェックで|相手を見る';
+        if (c.lean === 'call') return '前の人が|呼んだだけ。|安く入って|様子を見る';
+        return go ? `上位${top}%で、|目安の${range}%の|内側` : `目安（上位${range}%）の|外。|後ろに|まだ人がいる`;
+      case 'price': return go ? `見込み${eq}が、|必要な${need}%を|上回る` : `見込み${eq}では、|必要な${need}%に|届かない`;
+      case 'prize': return go ? '賞金の差より、|勝ち目の方が|大きい' : '値段は近いが、|ここで落ちると|賞金の損が|大きい';
+      default:
+        if (c.street === 'preflop') return c.lean === 'check' ? 'タダで|次の札が見られる。|無理に上げない' : 'とても強い手。|上げて|大きく育てる';
+        if (c.lean === 'check') return `見込み${eq}。|タダで|次の札を見る`;
+        if (c.semi) return `あと${c.outs}枚で役。|賭けて降ろすか、|当てて勝つ`;
+        return `見込み${eq}。|強いうちに|賭けて稼ぐ`;
+    }
+  }
+  function coachHTML(c) {
+    const pre = c.street === 'preflop';
+    // 札1枚：1行目に「見出し・絵・数字」、2行目から文（| の所で折る）
+    const card = (k, head, viz, num, text) => `<div class="as-ck" data-k="${k}"><div class="as-ck-r"><b class="as-ck-h">${head}</b>${viz}${num ? `<em class="as-ck-n">${num}</em>` : ''}</div><p class="as-ck-t">${wb(text)}</p></div>`;
+    // 1 持ち点の深さ（BB 何枚分。0〜30 の目盛りに 10・20 の境目）
+    const bbN = c.stackBB;
+    const stack = card('stack', CK_LABEL.stack,
+      `<i class="as-gauge" aria-hidden="true"><u style="left:${Math.min(100, bbN / 30 * 100).toFixed(1)}%"></u></i>`,
+      `BB ${bbN < 10 ? bbN.toFixed(1) : Math.round(bbN)}枚分`,
+      bbN < 10 ? '10枚分未満は、|全部賭けるか|降りるかの|2択' : bbN < 20 ? '浅い。|入るなら、|呼ぶより|上げて入る' : '深い。|いろいろな手で|戦える');
+    // 2 位置（自分＋まだ動く人＋もう動いた人）
+    const done = Math.max(0, c.others.length - c.behind);
+    const dots = '<b class="me"></b>' + '<b class="on"></b>'.repeat(c.behind) + '<b></b>'.repeat(done);
+    const pos = card('pos', CK_LABEL.pos, `<i class="as-dots" aria-hidden="true">${dots}</i>`, `後ろ${c.behind}人`, pre
+      ? (c.behind ? `後ろにまだ${c.behind}人。|少ないほど|広い手で入れる` : '最後に決める番。|前の人の動きを|見てから決められる')
+      : (c.behind ? '先に動く番。|相手の出方が|まだ分からない' : '最後に動ける。|相手を見てから|決められる'));
+    // 3 勝ち目と値段（目安の時：金＝目安の内側、白線＝自分の手。値段の時：金＝見込み、白線＝必要）
+    let odds;
+    if (pre && c.range != null) {
+      odds = card('odds', CK_LABEL.odds,
+        `<i class="as-bar is-range" aria-hidden="true"><s style="width:${pc(c.range)}%"></s><u style="left:${Math.min(100, pc(c.top))}%"></u></i>`,
+        `上位${pc(c.top)}%`,
+        (bbN < 10 ? '全部賭ける目安は、|' : 'この席で入る目安は、|') + `上位${pc(c.range)}%の|手まで`);
+    } else {
+      const made = !pre && c.made && c.made !== '-' ? `${c.made}。|` : '';
+      const outs = c.outs > 0 ? `あと${c.outs}枚で役|（約${c.outs * (c.street === 'flop' ? 4 : 2)}%）` : '';
+      odds = card('odds', CK_LABEL.odds,
+        `<i class="as-bar" aria-hidden="true"><s style="width:${pc(c.eq)}%"></s>${c.toCall > 0 ? `<u style="left:${pc(c.needPct)}%"></u>` : ''}</i>`,
+        `見込み${about(c.eq)}`,
+        c.toCall > 0 ? `${made}払うなら|${pc(c.needPct)}%以上いる${outs ? '。|' + outs : ''}` : (made + outs || (pre ? 'タダで|次の札が見られる' : '賭けなくても|次の札が見られる')));
+    }
+    // 4 相手（賭けてきた人。いなければ次に動く人）
+    const fk = c.focus;
+    const opp = card('opp', c.aggressor ? '賭けてきた人' : '次に動く人',
+      fk ? `<span class="as-ck-face"><img src="${idleFace(fk)}" alt=""></span>` : '', fk ? esc(NAMES[fk]) : '',
+      !fk ? '相手はもういない' : c.allInFacing && c.focusBB < 12 ? '持ち点が少ない人の|オールインは、|手が広い' : (COACH_TRAIT[fk] || ''));
+    // 5 賞金（残りの人数ぶんの段。ミミの今の順位を光らせる）
+    const maxP = Math.max(1, ...c.ladder.map(r => r.prize));
+    const steps = c.ladder.map(r => `<b class="${r.place === c.rank ? 'me' : ''}" style="height:${Math.max(12, r.prize / maxP * 100).toFixed(0)}%"></b>`).join('');
+    const prize = card('prize', CK_LABEL.prize, `<i class="as-steps" aria-hidden="true">${steps}</i>`, `残り${c.alive}人・${c.rank}位`,
+      c.alive <= 1 ? '' : c.alive === 2 ? `決勝。|勝てば優勝で|+${fmt(c.jump)}`
+        : `次の1人が落ちると|+${fmt(c.jump)}。|` + (c.chipLeader ? '1位は|押す側に回れる' : c.jump >= 200 ? '危ない勝負は|少し控える' : '差は小さい。|攻めてよい'));
+    const fin = `<div class="as-ck as-ck-fin"><button type="button" class="as-ck-go" data-as="think-go"><b>プロならどうする？</b><span>5つを見てから押す</span></button></div>`;
+    return stack + pos + odds + opp + prize + fin;
+  }
+
   function startFastForward() { if (T.finished) return; speed = 3; ui.ff.hidden = false; }
 
   // =============================================================
@@ -926,6 +1056,8 @@
   function onHostClick(ev) {
     const b = ev.target.closest('[data-as]');
     closePops(ev.target);
+    // 考え方の札：「プロならどうする」以外を押したら閉じる（スマホでは札が操作の上を覆うため）
+    if (coachEl && !(b && (b.dataset.as === 'think' || b.dataset.as === 'think-go'))) { closeCoach(); if (coachEl === null && ev.target.closest('.as-coach')) return; }
     if (!b || !host.contains(b) || b.disabled) return;
     const a = b.dataset.as;
     if (a === 'cc' && humanResolve) { const L = ui.actions._L; sfx('tap'); humanResolve({ kind: L.canCheck ? 'check' : 'call' }); }
@@ -934,6 +1066,8 @@
     else if (a === 'back') { closeSizer(); }
     else if (a === 'size' && humanResolve) { sfx('tap'); humanResolve({ kind: 'raise', to: +b.dataset.to }); }
     else if (a === 'ff') { speed = 1; ui.ff.hidden = true; }
+    else if (a === 'think') { sfx('tap'); coachEl ? closeCoach() : openCoach(); }
+    else if (a === 'think-go') { sfx('tap'); revealCoach(); }
     else if (a === 'guide') { try { showHandGuide(); } catch (e) { } }
     else if (a === 'sound') { try { toggleAllAudio(); } catch (e) { } paintSound(); if (isBgmOn()) playSceneBgm(finalOpp != null ? 'boss' : 'allstar'); }
     else if (a === 'menu') openMenu();
