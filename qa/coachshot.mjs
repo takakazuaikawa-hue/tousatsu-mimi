@@ -37,6 +37,16 @@ const MEASURE = `(() => {
   const rows = [...box.querySelectorAll('.as-ck')].map(el => (el.dataset.k || 'fin') + '｜' + el.innerText.replace(/\\s+/g, ' ').trim());
   return { open: true, tiny, clip, small, hit, rows, size: Math.round(b.width) + 'x' + Math.round(b.height) };
 })()`;
+const REVIEW = `(() => {
+  const box = document.querySelector('.as-review'); if (!box) return { open: false };
+  const scaleOf = (e) => { let x = e; while (x && !(x.offsetWidth > 0)) x = x.parentElement; if (!x) return 1; return x.getBoundingClientRect().width / x.offsetWidth; };
+  const tiny = []; box.querySelectorAll('.as-rv-t, .as-rv-k, .as-rv-st, .as-rv-h span, .as-rv-h b, .as-rv-btns button').forEach(el => { const px = parseFloat(getComputedStyle(el).fontSize) * scaleOf(el); if (px < 13.95) tiny.push(el.className + ' ' + px.toFixed(1)); });
+  const l = box.querySelector('.as-rv-list'); const clip = l.scrollHeight > l.clientHeight + 1 ? ['list'] : [];
+  const minTap = document.documentElement.classList.contains('is-compact') ? 43.5 : 23.5;
+  const small = [...box.querySelectorAll('button')].filter(b => { const r = b.getBoundingClientRect(); return r.width < minTap || r.height < minTap; }).map(b => b.textContent);
+  const b = box.getBoundingClientRect(); const off = b.left < 0 || b.top < 0 || b.right > innerWidth || b.bottom > innerHeight;
+  return { open: true, rows: box.querySelectorAll('.as-rv-row').length, tiny, clip, small, off, text: box.innerText.replace(/\s+/g, ' ').slice(0, 300) };
+})()`;
 const LENGTHEN = (sel = '.as-coach .as-ck-t') => `document.querySelectorAll('${sel}').forEach(el => { const t = el.textContent; el.textContent = t + 'あいうえおかきくけこさしすせそ'.slice(0, Math.ceil(t.length * 0.3)); }); true`;
 
 async function tour(kind) {
@@ -76,6 +86,7 @@ async function tour(kind) {
     const t0 = Date.now();
     while (Date.now() - t0 < ms) {
       if (await val(`${Q}.waiting() && (${cond})`)) return true;
+      if (await val(`!!document.querySelector('.as-review [data-as="review-next"]')`)) { await ev(`document.querySelector('.as-review [data-as="review-next"]').click()`); await sleep(150); continue; }
       if (await val(`${Q}.waiting()`)) await ev(`${Q}.actMimi(${JSON.stringify(mimi)})`);
       await sleep(100);
     }
@@ -101,7 +112,24 @@ async function tour(kind) {
     if (await val(`${Q}.waiting()`)) await ev(`${Q}.actMimi('fold')`);
     await sleep(40);
   }
-  if (await playTo(`${Q}.T().hand.street === 'preflop'`, 60000, 'fold')) await coachScene('short_stack');
+  if (await playTo(`${Q}.T().hand.street === 'preflop'`, 60000, 'fold')) {
+    await coachScene('short_stack');
+    // 4 答え合わせ：プロの寄りと逆を選んで、手の後の答え合わせを出す
+    const lean = await val(`Allstar.coach(${Q}.T()).lean`);
+    await ev(`${Q}.actMimi(${JSON.stringify(lean === 'fold' || lean === 'check' ? 'allin' : 'fold')})`);
+    const t0 = Date.now();
+    while (Date.now() - t0 < 60000) {
+      if (await val(`!!document.querySelector('.as-review.on')`)) break;
+      if (await val(`${Q}.waiting()`)) await ev(`${Q}.actMimi('call')`);
+      await sleep(100);
+    }
+    if (PSEUDO) await ev(LENGTHEN('.as-review .as-rv-t'));
+    await sleep(300);
+    idx++;
+    const r = (await val(REVIEW)) || { error: true }; r.name = 'review'; report.push(r);
+    await page.screenshot(path.join(OUT, `${String(idx).padStart(2, '0')}_review.png`));
+    console.log(kind, 'review', JSON.stringify(r));
+  }
   fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(report, null, 1));
   await session.close();
 }

@@ -831,3 +831,43 @@ html.is-compact #stage > .as-host .as-steps { height: 18px; gap: 2px; }
 html.is-compact #stage > .as-host .as-steps b { width: 6px; }
 html.is-compact #stage > .as-host .as-ck-face { width: 24px; height: 24px; }
 html.is-compact #stage > .as-host .as-ck-go { inset: 4px; gap: 2px; }
+
+/* =============================================================
+   手の後の答え合わせ（.as-review）：ミミの行動とプロの寄りを1行ずつ。○＝金、△＝琥珀、×＝深紅。
+   プロと違った時だけ出て止まる。全部同じ時は .as-review-ok を短く出す。文字の大きさは type-roles.css。
+   ============================================================= */
+.as-review { left: 50%; top: 50%; width: 720px; max-height: 620px; transform: translate(-50%, -50%); z-index: 27; pointer-events: auto !important;
+  display: flex; flex-direction: column; gap: 10px; padding: 14px 18px 16px; opacity: 0; transition: opacity .18s;
+  background: rgba(12,5,7,.96); border: 1px solid var(--as-gold-d); border-radius: 2px;
+  box-shadow: inset 0 0 0 3px #190608, inset 0 0 0 4px rgba(227,185,100,.5), 0 18px 40px rgba(0,0,0,.8); }
+.as-review.on { opacity: 1; }
+.as-rv-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.as-rv-h b { font-family: var(--as-min); font-weight: 800; letter-spacing: .12em; color: var(--as-gold-hi); }
+.as-rv-h span { color: var(--as-muted); white-space: nowrap; }
+.as-rv-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; overflow: auto; min-height: 0; }
+.as-rv-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; border: 1px solid rgba(216,181,108,.28); background: rgba(40,8,12,.6); }
+.as-rv-mk { flex: none; width: 34px; height: 34px; display: grid; place-items: center; font-style: normal; font-weight: 800; color: #1a1206; background: var(--as-brass); }
+.as-rv-row[data-g="near"] .as-rv-mk { background: #b07a24; }
+.as-rv-row[data-g="off"] .as-rv-mk { background: #a3182a; color: var(--as-ivory); }
+.as-rv-b { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.as-rv-r { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+.as-rv-st { font-family: var(--as-min); color: var(--as-gold-hi); letter-spacing: .06em; }
+.as-rv-k { color: var(--as-muted); white-space: nowrap; }
+.as-rv-k b { color: var(--as-ivory); }
+.as-rv-k b[data-k="fold"], .as-rv-k b[data-k="check"] { color: #9fc3e0; }
+.as-rv-t { margin: 0; color: var(--as-ivory); line-height: 1.4; word-break: keep-all; overflow-wrap: anywhere; }
+.as-rv-btns { display: flex; gap: 10px; justify-content: flex-end; }
+.as-rv-btns button { position: static; min-width: 150px; height: 48px; padding: 0 16px; border: 1px solid rgba(216,181,108,.55); border-radius: 2px; background: rgba(12,7,8,.84); color: var(--as-gold-hi); font-family: var(--as-min); font-weight: 700; letter-spacing: .1em; }
+.as-rv-btns .as-gold { background: var(--as-brass); color: #1a1206; border-color: #f3d995; }
+.as-review-ok { left: 50%; top: 300px; transform: translateX(-50%); z-index: 27; display: flex; gap: 14px; align-items: baseline; padding: 8px 18px;
+  background: rgba(12,5,7,.9); border: 1px solid var(--as-gold); animation: asRiseIn .2s ease-out; white-space: nowrap; }
+.as-review-ok b { font-family: var(--as-min); color: var(--as-gold-hi); letter-spacing: .08em; }
+.as-review-ok span { color: var(--as-muted); }
+html.is-compact #stage > .as-host .as-review { left: 8px; right: 8px; top: 46px; bottom: auto; width: auto; max-height: calc(100% - 54px); transform: none; gap: 4px; padding: 6px 10px 8px; }
+html.is-compact #stage > .as-host .as-rv-list { gap: 4px; }
+html.is-compact #stage > .as-host .as-rv-row { gap: 8px; padding: 4px 8px; }
+html.is-compact #stage > .as-host .as-rv-mk { width: 26px; height: 26px; }
+html.is-compact #stage > .as-host .as-rv-r { gap: 2px 12px; }
+html.is-compact #stage > .as-host .as-rv-t { line-height: 1.3; }
+html.is-compact #stage > .as-host .as-rv-btns button { height: 44px; min-width: 130px; }
+html.is-compact #stage > .as-host .as-review-ok { top: 150px; }

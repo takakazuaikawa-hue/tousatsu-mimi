@@ -173,6 +173,7 @@
   let pendingStart = null;
   let D = null;          // 画面に出している数字（出来事で更新する。エンジンは先に進んでいるので T は読まない）
   let handLog = [];
+  let handReview = [];   // このハンドのミミの判断と、その時のプロの寄り（手の後の答え合わせ）
   let lastShown = {};    // 席 → 最後にショーダウンで見せた役
   let finalOpp = null;   // 決勝の相手の席
   let finishEv = null;
@@ -566,6 +567,7 @@
       inHand: e.stacks.map(x => x > 0), folded: [false, false, false, false, false, false],
       allIn: [false, false, false, false, false, false], board: [], pot: 0, hole0: null, shown: {}, showdown: false };
     handLog = [];
+    handReview = [];
     hideActions();
     paintBoard([]);
     ui.made.dataset.on = '0';
@@ -788,6 +790,7 @@
     D.pot = 0; D.totalIn.fill(0); paintPot();
     paintRanks();
     paintHead();
+    await reviewHand();
   }
 
   // ---- 脱落（約4,500ms、1,000ms 以後は押して飛ばせる） ----
@@ -889,11 +892,18 @@
   }
   function humanTurn() {
     const L = AS.legalActions(T);
+    let pro = null;
+    try { pro = AS.coach(T); } catch (e) { console.warn(e); }
     setTurn(0);
     setFace(0, 'think');
     showActions(L);
+    coachData = pro;
     const g = G;
-    return new Promise((res, rej) => { humanResolve = (a) => { humanResolve = null; hideActions(); g === G ? res(a) : rej(STOP); }; });
+    return new Promise((res, rej) => { humanResolve = (a) => {
+      humanResolve = null; hideActions();
+      if (pro && L) handReview.push({ street: L.street, mine: mineKind(a, L), pro, isBet: L.isBet });
+      g === G ? res(a) : rej(STOP);
+    }; });
   }
   function showActions(L) {
     const cc = ui.actions.querySelector('.as-cc');
@@ -944,7 +954,7 @@
   const CK_LABEL = { stack: '持ち点の深さ', pos: '位置', odds: '勝ち目と値段', prize: '賞金' };
   function armThink(L) {
     if (!ui.think) return;
-    coachData = null; coachOpen = false;
+    coachOpen = false;
     ui.think.disabled = false;
     const A = ensureSave();
     const hard = L.toCall >= 0.25 * L.stack || (L.stack + L.committed) / L.bb < 10;
@@ -1048,6 +1058,62 @@
     return stack + pos + odds + opp + prize + fin;
   }
 
+  // =============================================================
+  // 手の後の答え合わせ：このハンドでミミが選んだ行動と、その時のプロの寄りを並べる。
+  // ○＝同じ、△＝近い（コールと、降りる／上げるの隣どうし）、×＝逆（降りると上げる）。
+  // プロと違った判断があった時だけ止めて見せる。全部同じなら短く知らせて進む（毎ハンド止めない）。
+  // 大会を通した「プロと同じ」の数は run().review に残す。メニューで出さないにもできる。
+  // =============================================================
+  let reviewDone = null;
+  const reviewOff = () => { const A = ensureSave(); return !!(A && A.reviewOff); };
+  // 押した行動を3つの組に：p＝降りる・チェック、c＝コール、a＝賭ける・上げる・オールイン
+  function mineKind(a, L) {
+    if (!a) return 'fold';
+    if (a.kind === 'raise' || a.kind === 'bet') return a.to >= L.maxRaiseTo && L.canRaise ? 'allin' : 'raise';
+    if (a.kind === 'call') return L.callIsAllIn ? 'allin' : 'call';
+    return a.kind;   // fold / check
+  }
+  const KIND_GROUP = { fold: 'p', check: 'p', call: 'c', raise: 'a', allin: 'a' };
+  function gradeOf(mine, pro) {
+    const m = KIND_GROUP[mine], p = KIND_GROUP[pro];
+    if (m === p) return 'ok';
+    return m === 'c' || p === 'c' ? 'near' : 'off';
+  }
+  const GRADE = { ok: ['○', '同じ'], near: ['△', '近い'], off: ['×', '逆'] };
+  function kindJA(k, isBet) { return k === 'raise' ? (isBet ? '賭ける' : '上げる') : LEAN_JA[k]; }
+  async function reviewHand() {
+    const rows = handReview.splice(0);
+    if (!rows.length || !T) return;
+    const g = G;
+    const graded = rows.map(r => Object.assign(r, { grade: gradeOf(r.mine, r.pro.lean) }));
+    const A = ensureSave();
+    const R = A && A.run ? (A.run.review = A.run.review || { same: 0, total: 0 }) : { same: 0, total: 0 };
+    R.total += graded.length;
+    R.same += graded.filter(r => r.grade === 'ok').length;
+    const allSame = graded.every(r => r.grade === 'ok');
+    if (reviewOff()) return;
+    if (allSame) {
+      const el = layerEl('as-review-ok', `<b>○ プロと同じ判断</b><span>この大会 ${R.same}／${R.total}</span>`);
+      await wait(1100);
+      el.remove();
+      return;
+    }
+    const list = graded.slice(-5).map(r => {
+      const tile = { stack: 'stack', position: 'pos', price: 'odds', hand: 'odds', prize: 'prize' }[r.pro.key];
+      const [mk, word] = GRADE[r.grade];
+      return `<li class="as-rv-row" data-g="${r.grade}"><i class="as-rv-mk" aria-label="${word}">${mk}</i>
+        <div class="as-rv-b"><div class="as-rv-r"><b class="as-rv-st">${STREET_JA[r.street] || ''}</b><span class="as-rv-k">ミミ <b>${kindJA(r.mine, r.isBet)}</b></span><span class="as-rv-k">プロ <b data-k="${r.pro.lean}">${kindJA(r.pro.lean, r.isBet)}寄り</b></span></div>
+        <p class="as-rv-t">${wb(CK_LABEL[tile] + '：|' + coachReason(r.pro))}</p></div></li>`;
+    }).join('');
+    const el = layerEl('as-review', `<div class="as-rv-h"><b>答え合わせ</b><span>この大会でプロと同じ ${R.same}／${R.total}</span></div>
+      <ol class="as-rv-list">${list}</ol>
+      <div class="as-rv-btns"><button type="button" class="as-gold" data-as="review-next">次のハンドへ</button><button type="button" data-as="review-stop">もう出さない</button></div>`);
+    requestAnimationFrame(() => el.classList.add('on'));
+    await new Promise((res) => { reviewDone = () => { reviewDone = null; res(); }; });
+    el.remove();
+    if (g !== G) throw STOP;
+  }
+
   function startFastForward() { if (T.finished) return; speed = 3; ui.ff.hidden = false; }
 
   // =============================================================
@@ -1071,6 +1137,9 @@
     else if (a === 'guide') { try { showHandGuide(); } catch (e) { } }
     else if (a === 'sound') { try { toggleAllAudio(); } catch (e) { } paintSound(); if (isBgmOn()) playSceneBgm(finalOpp != null ? 'boss' : 'allstar'); }
     else if (a === 'menu') openMenu();
+    else if (a === 'review-toggle') { const A = ensureSave(); if (A) { A.reviewOff = !A.reviewOff; try { saveProgress(); } catch (e) { } } openMenu(); }
+    else if (a === 'review-next') { if (reviewDone) reviewDone(); }
+    else if (a === 'review-stop') { const A = ensureSave(); if (A) { A.reviewOff = true; try { saveProgress(); } catch (e) { } } if (reviewDone) reviewDone(); }
     else if (a === 'levels') openLevels();
     else if (a === 'log') openLog();
     else if (a === 'seat') openSeatPop(+b.dataset.s);
@@ -1111,7 +1180,7 @@
   }
   function openMenu() {
     const on = typeof isAnyAudioOn === 'function' && isAnyAudioOn();
-    pop('as-menu', `<b class="as-pop-h">卓を離れますか？</b><p>このハンドの頭から、続きを再開できます。</p><div class="as-menu-b"><button type="button" data-as="leave" class="as-gold">中断してホームへ</button><button type="button" data-as="sound">${on ? '音を切る' : '音を入れる'}</button><button type="button" data-as="menu-close">続ける</button></div>`);
+    pop('as-menu', `<b class="as-pop-h">卓を離れますか？</b><p>このハンドの頭から、続きを再開できます。</p><div class="as-menu-b"><button type="button" data-as="leave" class="as-gold">中断してホームへ</button><button type="button" data-as="sound">${on ? '音を切る' : '音を入れる'}</button><button type="button" data-as="review-toggle">${reviewOff() ? '答え合わせを出す' : '答え合わせを出さない'}</button><button type="button" data-as="menu-close">続ける</button></div>`);
   }
   function leaveTable() {
     saveRun();

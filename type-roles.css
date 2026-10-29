@@ -100,3 +100,10 @@ html #stage > .as-host .as-coach :is(.as-ck-go b, .as-ck-lean) { font-size: calc
 html.is-compact #stage > .as-host .as-coach :is(.as-ck-t) { font-size: var(--r-body) !important; }
 html.is-compact #stage > .as-host .as-coach :is(.as-ck-h, .as-ck-n, .as-ck-go span) { font-size: var(--r-label) !important; }
 html.is-compact #stage > .as-host .as-coach :is(.as-ck-go b, .as-ck-lean) { font-size: var(--r-btn) !important; }
+/* 2026-10-29 零時の卓の答え合わせ（.as-review） */
+html #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-t, .as-rv-k) { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
+html #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-h span, .as-rv-st, .as-review-ok span) { font-size: calc(var(--r-label) / var(--game-scale, 1)) !important; }
+html #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-h b, .as-rv-mk, .as-rv-btns button, .as-review-ok b) { font-size: calc(var(--r-btn) / var(--game-scale, 1)) !important; }
+html.is-compact #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-t, .as-rv-k) { font-size: var(--r-body) !important; }
+html.is-compact #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-h span, .as-rv-st, .as-review-ok span) { font-size: var(--r-label) !important; }
+html.is-compact #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-h b, .as-rv-mk, .as-rv-btns button, .as-review-ok b) { font-size: var(--r-btn) !important; }
