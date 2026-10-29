@@ -3744,8 +3744,8 @@ const STORY_WHO = {
   grano: { name: 'グラーノ', face: 'assets/ui/face_grano.webp' },
   velvet: { name: 'ヴェルベット', face: 'assets/ui/face_velvet.webp' },
 };
-// 場面ごとの背景（無ければ assets/episodes/<場面>.webp）。苦戦の場面は一枚絵ができるまで各話の扉の絵
-const STORY_ART = { struggle_polka: 'assets/episodes/polka.webp', struggle_selina: 'assets/episodes/selina.webp', struggle_grano: 'assets/episodes/grano.webp', struggle_velvet: 'assets/episodes/velvet.webp' };
+// 場面ごとの背景（無ければ assets/episodes/<場面>.webp）。苦戦の場面のヴェルベットは一枚絵ができるまで扉の絵
+const STORY_ART = { struggle_velvet: 'assets/episodes/velvet.webp' };
 // 台帳37 初対戦の苦戦の場面：攻め方は読み合いと同じ相手の癖
 const STRUGGLE_SCENES = {
   polka: [
