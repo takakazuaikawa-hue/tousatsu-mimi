@@ -5181,6 +5181,7 @@ function showSettingsModal() {
       </div>
       <button class="btn btn-primary settings-modal-close">閉じる</button>
       <div class="settings-modal-legal">ミミのテキサスホールデムポーカー　Ver ${GAME_VERSION}　${COPYRIGHT_TEXT}</div>
+      <div class="settings-modal-legal settings-modal-diag">画面 ${innerWidth}×${innerHeight}・端末 ${screen.width}×${screen.height}・倍率 ${(+getComputedStyle(document.documentElement).getPropertyValue('--game-scale') || 0).toFixed(2)}・${document.documentElement.classList.contains('is-compact') ? 'スマホ' : 'PC'}の並び・${(window.matchMedia && matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches) ? 'ホーム画面' : 'ブラウザ'}・${devicePixelRatio}</div>
     </div>
   `;
   document.getElementById('stage').appendChild(overlay);
