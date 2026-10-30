@@ -12,6 +12,12 @@ try {
     await page.eval(`showStoryScene('struggle_${id}', () => { window.__sd = true; }); true`);
     await sleep(2500); await page.screenshot(`${OUT}/${id}_1.png`);
     await sleep(4000); await page.screenshot(`${OUT}/${id}_2.png`);
+    // 行ごとに進めて撮る（QA_STEPS=6 なら6行）
+    for (let n = 2; n <= Number(process.env.QA_STEPS || 0); n++) {
+      await page.eval(`(() => { const o = document.querySelector('.story-overlay'); o && o.click(); o && o.click(); return true; })()`); await sleep(2600);
+      await page.screenshot(`${OUT}/${id}_line${n}.png`);
+      console.log(' 行', n, await page.eval(`[...document.querySelectorAll('.story-art')].map(a => a.style.backgroundImage.split('/').pop() || 'base').join(' ') + ' | ' + (document.querySelector('.story-text') || {}).textContent`));
+    }
     console.log(id, await page.eval(`(() => { const a = document.querySelector('.story-art'); if (!a) return 'no art'; const s = getComputedStyle(a); return s.backgroundImage.split('/').pop() + ' ' + s.backgroundSize; })()`));
     await page.eval(`document.querySelectorAll('.story-overlay').forEach(e => e.remove()); true`); await sleep(500);
   }

@@ -17709,6 +17709,8 @@ body.is-tease-hot   .battle-screen.v2.t8 .v2-opp .char-opponent .t8-idle { opaci
   will-change: opacity, transform;
 }
 .story-overlay.has-art .story-art { opacity: 1; transform: scale(1); }
+/* 行ごとの絵の切り替え：前の絵の上に重ねて早めに出す */
+.story-art.is-cut { transition: opacity .55s ease, transform 18s cubic-bezier(.25, .6, .3, 1); }
 /* 下に向かって沈む影：題字と会話を、絵を隠さずに読めるようにする */
 .story-shade {
   position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .9s ease;
@@ -20410,3 +20412,9 @@ html:not(.is-compact) .battle-screen.v2.t8 > .sound-toggle { right: 276px; }
 /* 絵の窓（.h15-win）のある板は、名前の右端を窓の手前まで（小さいホームで「ぱにゅぱにゅ」が窓の下にもぐっていた）。札は縁の上へ */
 html.is-compact .home-stage.h15-sm .h15-pl:has(.h15-win) .h15-lbl { left: 21%; right: 22%; letter-spacing: 0; z-index: 2; }
 .home-stage.h15-sm .h15-pl .h15-tag { top: -16px; }
+/* 2026-10-30 小さいスマホのファイブポーカー：操作の文が3行に折れて行が高くなり、案内の枠が相手の札の段にかぶっていた（前から）。
+   ボタンの文は <wbr> の所（全部キープ｜して勝負・サレンダー｜（返却））でだけ2行に。配当表は「★フォーカード 250」が入る幅に */
+@media (max-width: 760px) {
+  html.is-compact .minipoker-overlay .mp-paytable { width: 160px; }
+  html.is-compact .minipoker-overlay .mp-actions .mp-btn { flex: 1 1 0; min-width: 0; white-space: normal; word-break: keep-all; overflow-wrap: normal; line-height: 1.15; }
+}

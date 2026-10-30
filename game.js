@@ -3744,8 +3744,8 @@ const STORY_WHO = {
   grano: { name: 'グラーノ', face: 'assets/ui/face_grano.webp' },
   velvet: { name: 'ヴェルベット', face: 'assets/ui/face_velvet.webp' },
 };
-// 場面ごとの背景（無ければ assets/episodes/<場面>.webp）。苦戦の場面のヴェルベットは一枚絵ができるまで扉の絵
-const STORY_ART = { struggle_velvet: 'assets/episodes/velvet.webp' };
+// 場面ごとの背景（無ければ assets/episodes/<場面>.webp）。行に art があれば、その行で絵を切り替える
+const STORY_ART = { struggle_velvet: 'assets/episodes/struggle_velvet_a.webp' };
 // 台帳37 初対戦の苦戦の場面：攻め方は読み合いと同じ相手の癖
 const STRUGGLE_SCENES = {
   polka: [
@@ -3763,10 +3763,14 @@ const STRUGGLE_SCENES = {
     { k: 'think', who: 'mimi', t: '払うたびに、外れてばかり……' },
     { k: 'say', who: 'rico', t: '払う額と、当たる見込みを比べな。高すぎる時は降りるのも立派な一手だよ' },
   ],
+  // 最終ボス：1行ごとに絵を切り替える（art）
   velvet: [
-    { k: 'say', who: 'velvet', t: 'ふふっ、もう半分しか残ってないの。ざぁこ♡' },
-    { k: 'think', who: 'mimi', t: '強気に言われるたびに、引いちゃってる……' },
-    { k: 'say', who: 'rico', t: 'ヴェルベットは演技がうまい。強がった時ほど怪しいよ。逆を読んでみな' },
+    { k: 'say', who: 'velvet', t: 'ようこそ、あたしの卓へ。……あら、もう震えてるの？', art: 'assets/episodes/struggle_velvet_a.webp' },
+    { k: 'say', who: 'velvet', t: 'ふふっ、もう半分しか残ってないの。ざぁこ♡', art: 'assets/episodes/struggle_velvet_6.webp' },
+    { k: 'think', who: 'mimi', t: '強気に言われるたびに、引いちゃってる……', art: 'assets/episodes/struggle_velvet_c.webp' },
+    { k: 'say', who: 'velvet', t: 'ほら、降りなさい。それが賢い子のやり方よ', art: 'assets/episodes/struggle_velvet_b.webp' },
+    { k: 'think', who: 'mimi', t: '……でも、あの笑い方、どこか作ってるみたい', art: 'assets/episodes/struggle_velvet_7.webp' },
+    { k: 'say', who: 'rico', t: 'ヴェルベットは演技がうまい。強がった時ほど怪しいよ。逆を読んでみな', art: 'assets/episodes/struggle_velvet_8.webp' },
   ],
 };
 // 苦戦の場面を出す時か：まだ勝っていない相手・チップが最初の6割以下・その相手ではまだ見ていない
@@ -3818,7 +3822,7 @@ function showStoryScene(key, onDone, voiceReady) {
   }
   const ep = EPISODES[key] || {};
   const art = STORY_ART[key] || `assets/episodes/${key}.webp`;
-  if (window.MimiAssets) window.MimiAssets.warm([art]);
+  if (window.MimiAssets) window.MimiAssets.warm([art, ...steps.map(s => s.art).filter(Boolean)]);
   const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const sub = ep.sub || String(ep.short || '').split('─').pop().trim();
   const lnLines = String(ep.title || '').split('\n').filter(Boolean);
@@ -3859,7 +3863,7 @@ function showStoryScene(key, onDone, voiceReady) {
   const textEl = ov.querySelector('.story-text');
   const voiceName = ov.querySelector('.story-voice-name');
   const voiceText = ov.querySelector('.story-voice-text');
-  let idx = -1, finished = false, typing = false, raf = 0, holdUntil = 0, full = '', shown = 0, tgt = textEl;
+  let idx = -1, finished = false, typing = false, raf = 0, holdUntil = 0, full = '', shown = 0, tgt = textEl, curArt = art;
 
   // 文字送り：まだ出ていない部分も透明で置いておくので、行の折り返しが途中で動かない
   const paint = () => { tgt.innerHTML = `${esc(full.slice(0, shown))}<span class="story-rest">${esc(full.slice(shown))}</span>`; };
@@ -3909,7 +3913,18 @@ function showStoryScene(key, onDone, voiceReady) {
       holdUntil = performance.now() + (reduce ? 0 : 900 + lnLines.length * 160);
       return;
     }
-    // 会話（say／think）
+    // 会話（say／think）。行ごとの絵があれば、上に重ねてふわっと切り替え、下の絵は消す
+    if (s.art && s.art !== curArt) {
+      curArt = s.art;
+      const olds = ov.querySelectorAll('.story-art');
+      const cut = document.createElement('div');
+      cut.className = 'story-art is-cut';
+      cut.style.backgroundImage = `url('${s.art}')`;
+      cut.style.opacity = '0';
+      olds[olds.length - 1].after(cut);
+      requestAnimationFrame(() => requestAnimationFrame(() => { cut.style.opacity = ''; }));
+      setTimeout(() => olds.forEach(e => e.remove()), 700);
+    }
     ov.classList.remove('is-title');
     ov.classList.add('is-talk');
     const who = STORY_WHO[s.who] || {};
@@ -11492,10 +11507,10 @@ function showMiniPokerGame() {
           <button class="mp-btn mp-btn-primary" data-mp="draw">
             ${drop > 0 ? `${drop}枚を引く${isLastRound ? '（最終）' : ''}` : 'そのまま勝負'}
           </button>
-          <button class="mp-btn mp-btn-ghost" data-mp="hold-all">全部キープして勝負</button>
+          <button class="mp-btn mp-btn-ghost" data-mp="hold-all">全部キープ<wbr>して勝負</button>
           ${!isLastRound ? '' : ''}
           <button class="mp-btn mp-btn-surrender" data-mp="surrender" title="負け確実なら半額返却で降りる">
-            サレンダー（${surrenderReturn}コイン返却）
+            サレンダー<wbr>（${surrenderReturn}コイン返却）
           </button>
         </div>
       `;
