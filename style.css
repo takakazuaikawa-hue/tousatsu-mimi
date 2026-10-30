@@ -20471,3 +20471,16 @@ html.is-compact .home-stage.h15-sm .h15-pl:has(.h15-win) .h15-lbl { left: 21%; r
   .preload-tip-label { margin-bottom: 2px; }
 }
 @media (prefers-reduced-motion: reduce) { .preload-bar-fill { transition: none; } }
+
+/* ===== ご褒美CGの2枚続きと秘蔵の一枚（2026-10-30 セリナ：3と4を採用、1と2は交換所の秘蔵の一枚に）===== */
+.ims-cg .ims-cg-img { transition: opacity .35s ease; }
+.ims-cg.is-swap .ims-cg-img { opacity: 0; }
+.ims-cg-count:not(:empty) { margin-left: .8em; padding-left: .8em; border-left: 1px solid rgba(29,8,14,.4); font-variant-numeric: tabular-nums; }
+.coll-cg-card .coll-cg-label small.coll-cg-more { display: inline-block; margin-left: 6px; padding: 0 6px; border: 1px solid rgba(214,176,104,.7); border-radius: 2px; color: #f2d79a; background: rgba(40,6,12,.75); line-height: 1.5; vertical-align: middle; }
+/* 秘蔵の印は名前の行に入れると名前が折れるので、絵の左上に置く */
+.coll-cg-card.is-secret { position: relative; }
+.coll-cg-card .coll-cg-tag { position: absolute; left: 6px; top: 6px; padding: 0 6px; font-size: var(--r-note); line-height: 1.5; border: 1px solid rgba(214,176,104,.7); border-radius: 2px; color: #f2d79a; background: rgba(40,6,12,.82); }
+.coll-cg-card .coll-cg-label { word-break: keep-all; }
+.coll-cg-card.is-secret { box-shadow: inset 0 0 0 1px rgba(214,176,104,.55); }
+/* 交換所の一言・品の説明・メモリの札：語の途中で折らない（折れ目は wrapHtml の <wbr>。入りきらない長い語だけは端で折る） */
+.shop-screen.v3 .sh3-desc, .shop-screen.v3 [data-bind="ricoShopComment"], .memory-card-desc, .shop-item-desc, .coll-cg-card .coll-cg-label { word-break: keep-all; overflow-wrap: anywhere; }

@@ -670,8 +670,22 @@ function settleMotionToStill(v, src) {
 function motionLocalSrc(src) { return window.MimiAssets ? window.MimiAssets.videoSrc(src) : src; }
 const MOTION_OK = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 // 動画が用意できている絵（assets/motion/cg_<id>.mp4 / ep_<id>.mp4）
-// リコ先輩とグラーノは2026-10-18、ポルカとヴェルベットは2026-10-30に絵を差し替えたので、新しい絵の動画ができるまで外す（古い絵の動画が流れないように）
-const MOTION_CG = ['selina'];
+// リコ先輩とグラーノは2026-10-18、ポルカ・ヴェルベット・セリナは2026-10-30に絵を差し替えたので、新しい絵の動画ができるまで外す（古い絵の動画が流れないように）
+const MOTION_CG = [];
+// 2枚目のご褒美がある相手：勝った時に1枚目の次に続けて見せ、コレクションでも続けて見られる（2026-10-30 ユーザー：セリナは3と4を採用）
+const REWARD_CG_MORE = { selina: ['assets/backgrounds/reward_cg_selina_2.jpg'] };
+// 交換所の「秘蔵の一枚」（2026-10-30 ユーザー：出来のよい1と2もどこかに）。手に入れるとコレクションのご褒美CGの欄に並ぶ。
+// VIPサロンの二人は前のセリナのご褒美CGで、その時の動画がそのまま使える
+const SECRET_CG = {
+  cg_selina_salon:    { src: 'assets/backgrounds/secret_cg_selina_salon.jpg', motion: 'assets/motion/cg_selina.mp4' },
+  cg_selina_fireside: { src: 'assets/backgrounds/secret_cg_selina_fireside.jpg' },
+};
+function rewardCgList(id) {
+  if (id === 'graduation') return [{ src: GRADUATION_CG }];
+  if (SECRET_CG[id]) return [SECRET_CG[id]];
+  const first = { src: (INTERMISSIONS[id] && INTERMISSIONS[id].cg) || `assets/backgrounds/reward_cg_${id}.jpg`, motion: MOTION_CG.includes(id) ? `assets/motion/cg_${id}.mp4` : '' };
+  return [first, ...(REWARD_CG_MORE[id] || []).map(src => ({ src }))];
+}
 const MOTION_EP = ['polka', 'selina', 'grano'];
 function attachMotion(img) {
   if (!MOTION_OK || !img || img.__motion || !img.dataset.motion) return;
@@ -4127,7 +4141,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
       </div>
       <div class="ims-cg-stamp" aria-hidden="true"><span>一枚絵 開放</span></div>
       <div class="ims-cg-cap"><b></b><span></span></div>
-      <div class="ims-cg-got">コレクションに追加</div>
+      <div class="ims-cg-got">コレクションに追加<span class="ims-cg-count"></span></div>
       <div class="ims-cg-hint"><span>タップして進む</span><i class="ims-cg-hint-arrow" aria-hidden="true">▼</i></div>
     </div>
   `;
@@ -4135,7 +4149,9 @@ function showIntermission(opponentId, onDone, voiceReady) {
   (stage || document.body).appendChild(overlay);
   addSoundToggle(overlay);
 
-  { const pre = new Image(); pre.src = data.cg || `assets/backgrounds/reward_cg_${opponentId}.jpg`; }
+  { const pre = new Image(); pre.src = data.cg || `assets/backgrounds/reward_cg_${opponentId}.jpg`; (REWARD_CG_MORE[opponentId] || []).forEach(src => { new Image().src = src; }); }
+  const cgMore = [...(REWARD_CG_MORE[opponentId] || [])];
+  const cgTotal = 1 + cgMore.length;
   const mimiChar = overlay.querySelector('.ims-char-mimi');
   const oppChar = overlay.querySelector('.ims-char-opp');
   const dialogueBox = overlay.querySelector('.ims-dialogue');
@@ -4254,6 +4270,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
       attachMotion(cgImg);
     }
     cgLayer.hidden = false;
+    updateCgCount();
     requestAnimationFrame(() => cgLayer.classList.add('show'));
     // 溜め → 寄りから引く → 余韻の字幕 → コレクションに追加（動きを減らす設定では寄り引きをせず、字幕と札だけ）
     const quiet = !MOTION_OK;
@@ -4264,6 +4281,24 @@ function showIntermission(opponentId, onDone, voiceReady) {
     setTimeout(() => cgLayer.classList.add('is-got'), quiet ? 600 : 4400);
   }
 
+  // 2枚目のご褒美：絵を暗転で入れ替え、寄りから引く動きをもう一度（字幕は1枚目の余韻なので消す）
+  function nextCg(src) {
+    cgShownAt = Date.now();
+    cgLayer.classList.add('is-swap');
+    setTimeout(() => {
+      cgImg.src = src;
+      cgLayer.classList.remove('is-cap', 'is-reveal');
+      void cgImg.offsetWidth;
+      cgLayer.classList.remove('is-swap');
+      if (MOTION_OK) cgLayer.classList.add('is-reveal');
+      if (typeof mpSfx === 'function') mpSfx('bigwin');
+    }, 380);
+    updateCgCount();
+  }
+  function updateCgCount() {
+    const el = cgLayer.querySelector('.ims-cg-count');
+    if (el) el.textContent = cgTotal > 1 ? `${cgTotal - cgMore.length} / ${cgTotal}` : '';
+  }
   function finish() {
     // 再入を防ぐ：CG の2回タップで onDone（エンディングの題字など）が2回走っていた
     if (phase !== 'cg') return;
@@ -4280,6 +4315,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
     if (phase === 'cg') {
       // 最後の台詞の連打がそのまま CG を閉じないよう、出てから少しだけ待つ
       if (Date.now() - cgShownAt < 600) return;
+      if (cgMore.length) { nextCg(cgMore.shift()); return; }
       finish();
     } else { advance(); }
   });
@@ -4310,20 +4346,30 @@ function showGraduationScene(onDone) {
 // コレクションの「ご褒美CG」サムネイルから開く全画面ビューア。タップで閉じる。
 function showRewardCgViewer(id) {
   const opp = id === 'graduation' ? { name: '卒業' } : (OPPONENTS[id] || {});
+  const list = rewardCgList(id);
+  let at = 0;
   const overlay = document.createElement('div');
   overlay.className = 'reward-cg-viewer-overlay';
   overlay.innerHTML = `
     <div class="reward-cg-viewer-body">
-      <img class="reward-cg-viewer-img" alt="${opp.name || ''}"
-           src="${id === 'graduation' ? GRADUATION_CG : `assets/backgrounds/reward_cg_${id}.jpg`}"
-           ${MOTION_CG.includes(id) ? `data-motion="assets/motion/cg_${id}.mp4" data-motion-replay="1"` : ''}
-           onerror="this.onerror=function(){this.onerror=null;this.style.display='none';this.closest('.reward-cg-viewer-body').classList.add('noimg');};this.src='assets/episodes/${id}.webp';">
-      <div class="reward-cg-viewer-hint">タップして閉じる</div>
+      <img class="reward-cg-viewer-img" alt="${opp.name || ''}">
+      <div class="reward-cg-viewer-hint"></div>
     </div>
   `;
+  const body = overlay.querySelector('.reward-cg-viewer-body'), img = overlay.querySelector('img'), hint = overlay.querySelector('.reward-cg-viewer-hint');
+  const show = () => {
+    const c = list[at];
+    img.onerror = () => { img.onerror = null; img.style.display = 'none'; body.classList.add('noimg'); };
+    img.style.display = ''; img.__motion = false; delete img.dataset.motion; delete img.dataset.motionReplay;
+    body.querySelectorAll('video').forEach(v => v.remove());
+    img.src = c.src;
+    if (c.motion) { img.dataset.motion = c.motion; img.dataset.motionReplay = '1'; attachMotion(img); }
+    hint.textContent = list.length > 1 ? (at < list.length - 1 ? `${at + 1} / ${list.length}　タップで次の一枚` : `${at + 1} / ${list.length}　タップして閉じる`) : 'タップして閉じる';
+  };
+  show();
   const stage = document.getElementById('stage');
   (stage || document.body).appendChild(overlay);
-  overlay.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', () => { if (at < list.length - 1) { at++; show(); } else overlay.remove(); });
 }
 
 //=============================================================
@@ -4995,10 +5041,11 @@ function isRicoOutfitViewable(o) {
 
 // ロビー：リコ先輩の状況別セリフ
 // 台詞を語の途中で折らない：文の「|」と、読点・句点・「……」の後だけを折れ目にする（置く所の CSS は word-break: keep-all）
-function setWrapLine(el, s) {
+function wrapHtml(s) {
   const e = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  el.innerHTML = String(s).replace(/([、。]|……)(?![|」])/g, '$1|').split('|').map(e).join('<wbr>');
+  return String(s).replace(/([、。]|……)(?![|」])/g, '$1|').split('|').map(e).join('<wbr>');
 }
+function setWrapLine(el, s) { el.innerHTML = wrapHtml(s); }
 function lobbyRicoLine() {
   const cleared = save.clearedStages.length;
   const lines = [];
@@ -5402,6 +5449,8 @@ const SHOP_ITEMS = [
   { id: 'gallery_rico',          cat: 'memory', name: 'リコ先輩設定資料',    price: 600,  desc: 'リコ先輩の人物設定・口調メモ・ボツ衣装の話を読める' },
   { id: 'gallery_opponents',     cat: 'memory', name: '対戦相手図鑑',        price: 800,  desc: '対戦相手の打ち筋と口癖を読める（撃破した相手のみ）' },
   { id: 'gallery_mimi',          cat: 'memory', name: 'ミミ百態',            price: 500,  desc: 'ミミの表情メモと、ぱにゅぱにゅの裏話を読める' },
+  { id: 'cg_selina_salon',       cat: 'memory', name: 'VIPサロンの二人',     price: 800,  desc: 'セリナとミミ、VIPサロンでの一枚。|手に入れると|コレクションで|いつでも見られる' },
+  { id: 'cg_selina_fireside',    cat: 'memory', name: '暖炉のセリナ',        price: 1000, desc: '眼鏡を外したセリナの、|暖炉の部屋での一枚。|手に入れると|コレクションで|いつでも見られる' },
   { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 600,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
   { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 700, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。撃破の報酬', requires: 'ending' },
   // 音声は無い。旧「ボイス集」（900）を実態どおりの「セリフ集」に改め値下げ。買った人の所持はそのまま
@@ -5490,6 +5539,8 @@ const SHOP_COMMENTS = {
   gallery_rico:          'リコさんの設定メモ……ファンには堪らぬ品ですよ。私からの内緒です',
   gallery_opponents:     '撃破された相手の図鑑。勝者の特権、というやつですな',
   gallery_mimi:          'ミミちゃんの表情メモ。読んでいるだけで顔がゆるみますよ',
+  cg_selina_salon:       'セリナ様と|ミミちゃんの一枚。|眼鏡の奥の目が、|ずいぶん柔らかいでしょう',
+  cg_selina_fireside:    '暖炉の前で|眼鏡を外した|セリナ様……|門外不出の一枚ですよ',
   omake_drama_1:         'リコさんがこの店に来た最初の日……短いお話、お楽しみあれ',
   omake_drama_2:         '決戦直前の小話。これはクリアされた方にだけ、お聞かせできる品です',
   omake_voice_pack:      'リコさんの口癖を書き留めた一冊。音は出ませんが、読むと声が聞こえてくるようですな',
@@ -5655,6 +5706,8 @@ const SHOP_UNLOCK = {
   bgm_battle_tense:      'selina',
   se_pack_casino:        'selina',
   omake_drama_1:         'selina',
+  cg_selina_salon:       'selina',
+  cg_selina_fireside:    'selina',
   memory_minipoker:      'selina',  // セリナ撃破で「ふんわり息抜き」枠を入荷
 
   // ── グラーノ撃破で入荷 ──
@@ -5739,6 +5792,7 @@ function memoryItemAction(itemId) {
   if (itemId === 'memory_ending_theme') return { action: 'play-ending-theme', label: isEndingThemePreviewOn() ? '停止' : '聴く' };
   if (itemId === 'memory_minipoker')    return { action: 'play-minipoker',    label: '遊ぶ' };
   if (itemId === 'omake_credit')        return { action: 'play-credits',      label: '再生' };
+  if (SECRET_CG[itemId])                return { action: 'view-secret-cg',    label: '観る' };
   if (MEMORY_CONTENT[itemId])           return { action: 'view-memory',       label: '読む' };
   return null;
 }
@@ -5800,7 +5854,7 @@ function renderShopItems(cat) {
       <div class="shop-item-icon shop-item-icon-${i.cat}${i.thumb ? ' has-thumb' : ''}">${i.thumb ? `<img class="shop-item-thumb" src="${i.thumb}" alt="" loading="lazy">` : shopCatIconSvg(i.cat)}</div>
       <div class="shop-item-body">
         <div class="shop-item-name">${i.name}</div>
-        <div class="shop-item-desc">${i.desc}</div>
+        <div class="shop-item-desc">${wrapHtml(i.desc)}</div>
       </div>
       <div class="shop-item-footer">
         ${priceHtml}
@@ -5868,6 +5922,7 @@ function shop3Art(item) {
   let m = id.match(/^outfit_rico_(.+)$/); if (m) return { type: 'figure', src: `assets/characters/rico_${m[1]}.webp` };
   m = id.match(/^mimi_skin_(.+)$/);        if (m) return { type: 'figure', src: `assets/characters/mimi_${m[1]}.webp` };
   m = id.match(/^pwear_(.+)$/);            if (m && PANYU_OUTFIT_IMG[m[1]]) return { type: 'scene', src: `assets/characters/${PANYU_OUTFIT_IMG[m[1]]}.webp` };
+  if (SECRET_CG[id]) return { type: 'scene', src: SECRET_CG[id].src };
   let big = '';
   const obj = SHOP3_OBJ[id] || SHOP3_OBJ[id.replace(/_(lv\d|plus_\d+)$/, '')];
   if ((m = id.match(/^chips_plus_(\d+)$/))) return { type: 'stack', big: '+' + Number(m[1]).toLocaleString(), piles: ({ 500: 1, 1500: 2, 3000: 3, 5000: 4, 10000: 5 })[m[1]] || 1 };
@@ -5889,6 +5944,7 @@ function shop3Kicker(item) {
   if (/^outfit_rico_/.test(item.id)) return 'リコ先輩の衣装';
   if (/^mimi_skin_/.test(item.id))   return 'ミミの衣装';
   if (/^pwear_/.test(item.id))       return 'ぱにゅぱにゅの衣装';
+  if (SECRET_CG[item.id])            return '秘蔵の一枚';
   return (SHOP3_GROUPS.find(g => g.id === shop3GroupOf(item)) || {}).label || '';
 }
 // まだ入荷していない品：誰に勝つと入るか
@@ -5967,7 +6023,7 @@ function shop3RenderRow(deal) {
 }
 function shop3Say(text) {
   const el = document.querySelector('[data-bind="ricoShopComment"]'); if (!el) return;
-  el.textContent = `「${text}」`;
+  setWrapLine(el, `「${text}」`);
   const box = el.closest('.sh3-say'); if (box) { box.classList.remove('is-talk'); void box.offsetWidth; box.classList.add('is-talk'); }
 }
 function shop3Select(id, speak) {
@@ -5989,7 +6045,7 @@ function shop3RenderStage(item) {
     : `<span class="sh3-bigcard">${shop3Face(item, art)}</span>`;
   model.className = 'sh3-model is-' + art.type + (/_card$/.test(item.id) ? ' is-cardback' : '');
   model.innerHTML = `<div class="sh3-model-in">${inner}</div>`;
-  info.innerHTML = `<div class="sh3-kick">${shop3Kicker(item)}</div><h2 class="sh3-name${shop3ShortName(item).length > 6 ? ' is-long' : ''}${shop3ShortName(item).length > 9 ? ' is-xlong' : ''}">${shop3ShortName(item)}</h2><p class="sh3-desc">${item.desc || ''}</p>`;
+  info.innerHTML = `<div class="sh3-kick">${shop3Kicker(item)}</div><h2 class="sh3-name${shop3ShortName(item).length >= 6 ? ' is-long' : ''}${shop3ShortName(item).length > 9 ? ' is-xlong' : ''}">${shop3ShortName(item)}</h2><p class="sh3-desc">${wrapHtml(item.desc || '')}</p>`;
   const owned = isItemOwned(item.id);
   const block = owned ? null : shopItemBlock(item);
   const play = owned ? memoryItemAction(item.id) : null;
@@ -8414,6 +8470,11 @@ function onAction(e) {
           if (isBgmOn()) playSceneBgm('victory');
         }
       });
+      break;
+    }
+    case 'view-secret-cg': {
+      const sid = e.currentTarget?.dataset?.memoryId;
+      if (sid && SECRET_CG[sid]) showRewardCgViewer(sid);
       break;
     }
     case 'view-reward-cg': {
@@ -12959,18 +13020,23 @@ function showCollectionModal() {
       return `<button class="coll-cg-card on" data-action="view-reward-cg" data-cg-id="${id}" title="${opp.name}のご褒美CGを見る">
         <img src="assets/backgrounds/reward_cg_${id}.jpg" alt="${opp.name}"
              onerror="this.onerror=function(){this.onerror=null;this.style.display='none';this.parentElement.classList.add('noimg');};this.src='assets/episodes/${id}.webp';">
-        <div class="coll-cg-label">${opp.name}</div>
+        <div class="coll-cg-label">${opp.name}${REWARD_CG_MORE[id] ? `<small class="coll-cg-more">${1 + REWARD_CG_MORE[id].length}枚</small>` : ''}</div>
       </button>`;
     }
     return `<div class="coll-cg-card off" title="未開放">
       <div class="coll-cg-locked">${GOLD_LOCK}</div>
-      <div class="coll-cg-label"><small>${id === 'rico_tutorial' ? `${opp.name}の講義を終えると開放` : `${opp.name}に勝つと開放`}</small></div>
+      <div class="coll-cg-label"><small>${id === 'rico_tutorial' ? `${opp.name}の講義を<wbr>終えると開放` : `${opp.name}に<wbr>勝つと開放`}</small></div>
     </div>`;
   }).join('') + (save.gradCgSeen
     ? `<button class="coll-cg-card on" data-action="view-reward-cg" data-cg-id="graduation" title="卒業の一枚絵を見る">
         <img src="${GRADUATION_CG}" alt="卒業"><div class="coll-cg-label">卒業</div></button>`
     : `<div class="coll-cg-card off" title="未開放"><div class="coll-cg-locked">${GOLD_LOCK}</div>
-        <div class="coll-cg-label"><small>卒業試験に合格で開放</small></div></div>`);
+        <div class="coll-cg-label"><small>卒業試験に<wbr>合格で開放</small></div></div>`);
+  const rewardCgHtmlSecret = Object.keys(SECRET_CG).filter(id => isItemOwned(id)).map(id => {
+    const meta = SHOP_ITEMS.find(i => i.id === id) || { name: '' };
+    return `<button class="coll-cg-card on is-secret" data-action="view-secret-cg" data-memory-id="${id}" title="${meta.name}を見る">
+        <img src="${SECRET_CG[id].src}" alt="${meta.name}"><span class="coll-cg-tag">秘蔵</span><div class="coll-cg-label">${meta.name}</div></button>`;
+  }).join('');
   const rewardCgCount = stageOrder.filter(id => rewardCgSeen.includes(id)).length + (save.gradCgSeen ? 1 : 0);
 
   const achHtml = achievements.map(a => `
@@ -12991,7 +13057,7 @@ function showCollectionModal() {
       <div class="coll-itemcat">
         <div class="coll-itemcat-title">${catLabels[cat] || cat} <span class="coll-itemcat-count">${have}/${list.length}</span></div>
         <div class="coll-itemcat-list">
-          ${shown.map(i => `<span class="coll-item ${i.owned ? 'on' : 'off'}" title="${i.desc}">${i.owned ? '◆' : '◇'} ${i.name}</span>`).join('')}
+          ${shown.map(i => `<span class="coll-item ${i.owned ? 'on' : 'off'}" title="${i.desc.split('|').join('')}">${i.owned ? '◆' : '◇'} ${i.name}</span>`).join('')}
           ${hiddenCount ? `<span class="coll-item off coll-item-hidden" title="まだ入荷していません">◇ ？？？ × ${hiddenCount}</span>` : ''}
         </div>
       </div>
@@ -13027,7 +13093,7 @@ function showCollectionModal() {
         </section>
         <section class="coll-section">
           <h3 class="coll-section-title">ご褒美CG <span class="coll-section-count">${rewardCgCount}/${stageOrder.length + 1}</span></h3>
-          <div class="coll-cgs">${rewardCgHtml}</div>
+          <div class="coll-cgs">${rewardCgHtml}${rewardCgHtmlSecret}</div>
         </section>
         ${(() => {
           // 台帳37：初対戦の苦戦の場面は、勝った後に思い出で見返せる
@@ -13064,7 +13130,7 @@ function showCollectionModal() {
             if (!meta || !play) return '';
             return `<button class="memory-card" data-action="${play.action}" data-memory-id="${id}">
               <div class="memory-card-title">${meta.name}</div>
-              <div class="memory-card-desc">${meta.desc}</div>
+              <div class="memory-card-desc">${wrapHtml(meta.desc)}</div>
               <div class="memory-card-play">${play.label}</div>
             </button>`;
           }).join('');
