@@ -11576,7 +11576,7 @@ function showMiniPokerGame() {
         <div class="mp-bet-display">現在のベット：<b>${ctx.bet}</b>コイン${tm > 1 ? `<small>（特別卓：×3 で ${stake}コイン）</small>` : ''}</div>
         <div class="mp-actions mp-actions-wager">
           <button class="mp-btn mp-btn-deal" data-mp="deal" ${canDeal ? '' : 'disabled'}>
-            配る${tm > 1 ? `（${stake}コイン）` : ''}
+            配る（${tm > 1 ? stake : ctx.bet}コイン）
           </button>
           <button class="mp-btn mp-btn-auto" data-mp="autoplay" ${canAuto ? '' : 'disabled'} title="${tm > 1 ? '特別卓は1戦ずつ' : '同じベットで3戦を自動で進める'}">
             ▶▶ 3連戦自動
@@ -15642,9 +15642,20 @@ function readBattleReady(group) {
   if (!window.MB || typeof window.MB.mount !== 'function') return false;
   if (!state || state.tutorialMode || state.introHandMode || state.lectureMode) return false;
   const pool = (READ_BATTLE_POOLS[readPoolKey()] || {})[group];
-  return !!(pool && pool.length);
+  if (!pool || !pool.length) return false;
+  // どの種類もこの場面でしか意味がなく、今どれも合わない時は出さない（いつもの三択の論理バトルになる）
+  if (pool.every(id => READ_GAME_OK[id]) && !pool.some(id => READ_GAME_OK[id]())) return false;
+  return true;
 }
 const READ_GAME_OK = {
+  // 容疑者しぼり：癖で組を外すと答え（付いていく／降りる）が変わる手だけ（ヴェルベットはいつも）
+  narrow: () => {
+    try {
+      const M = window.MB; if (!M || typeof M.narrowMatters !== 'function') return true;
+      const T = readBattleTable('narrow'); if (!T) return true;
+      return M.narrowMatters(T, state.opponentImgKey);
+    } catch (e) { return true; }
+  },
   // 賭け額スナイパー：相手がチェックしてミミが先に賭けられ、ミミの手が強い（今の札で、相手のありうる手の8割以上に勝つ）
   sniper: () => {
     try {

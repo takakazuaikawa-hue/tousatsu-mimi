@@ -41,17 +41,30 @@
       const pairR = (() => { const cnt = {}; cards.forEach(c => { cnt[c.r] = (cnt[c.r] || 0) + 1; }); return +Object.keys(cnt).find(r => cnt[r] >= 2); })();
       // 場札だけでペアがある時は、手札で作ったペアではない（役なし扱い）
       const boardPair = (() => { const cnt = {}; board.forEach(c => { cnt[c.r] = (cnt[c.r] || 0) + 1; }); return Object.values(cnt).some(n => n >= 2); })();
-      if (boardPair && api.category(board) >= 1 && !h.some(c => board.some(b => b.r === c.r)) && h[0].r !== h[1].r) return drawOrAir(cards);
+      if (boardPair && api.category(board) >= 1 && !h.some(c => board.some(b => b.r === c.r)) && h[0].r !== h[1].r) return drawOrAir(h, board);
       return pairR >= top ? 'big' : 'small';
     }
-    return drawOrAir(cards);
+    return drawOrAir(h, board);
   }
-  function drawOrAir(cards) {
-    const suit = {}; cards.forEach(c => { suit[c.s] = (suit[c.s] || 0) + 1; });
-    if (Object.values(suit).some(n => n >= 4)) return 'draw';
-    const rs = new Set(cards.map(c => c.r)); if (rs.has(14)) rs.add(1);
-    for (let lo = 1; lo <= 11; lo++) { let n = 0; for (let r = lo; r < lo + 4; r++) if (rs.has(r)) n++; if (n === 4) return 'draw'; }
-    return 'air';
+  // 引き（あと1枚でフラッシュ・ストレート）は、手札が関わるものだけ数える。場札だけで4枚そろう引きは誰でも同じなので引きではない
+  // （2026-10-31 場札 5678 の時、どの手も「あと1枚」に入り、役なしの組が消えていた）。
+  // リバーではもう引けないので、フロップかターンで引きがあって外れた手を「外れた引き」とする
+  function drawOrAir(h, board) {
+    return (board.length >= 5 ? [board.slice(0, 3), board.slice(0, 4)] : [board]).some(bd => hasDraw(h, bd)) ? 'draw' : 'air';
+  }
+  function hasDraw(h, bd) {
+    for (const s of ['s', 'h', 'd', 'c']) {
+      const nb = bd.filter(c => c.s === s).length, nh = h.filter(c => c.s === s).length;
+      if (nh >= 1 && nb + nh === 4) return true;
+    }
+    const ranks = (cs) => { const m = new Set(cs.map(c => c.r)); if (m.has(14)) m.add(1); return m; };
+    const all = ranks(h.concat(bd)), onBoard = ranks(bd);
+    for (let lo = 1; lo <= 10; lo++) {
+      let n = 0, nb = 0;
+      for (let r = lo; r < lo + 5; r++) { if (all.has(r)) n++; if (onBoard.has(r)) nb++; }
+      if (n === 4 && nb < 4) return true;
+    }
+    return false;
   }
 
   const CSS = `
@@ -83,6 +96,7 @@
     .nr-habit b { display: block; font-family: var(--mincho); }
     .nr-sit { display: flex; flex-direction: column; gap: 2px; font-family: var(--mincho); font-size: 14px; line-height: 1.35; color: var(--gold-pale); }
     .nr-sit b { color: var(--gold-hi); font-size: 16px; }
+    .nr-sit .nr-short { display: none; }
     .nr-row { display: flex; gap: 3px; align-items: center; flex-wrap: nowrap; }
     .nr-cap { font-family: var(--mincho); font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--gold); white-space: nowrap; margin-right: 4px; }
     .nr-bars { display: flex; flex-direction: column; gap: 4px; padding: 6px 10px; background: var(--panel); border: 1px solid var(--line); }
@@ -127,6 +141,7 @@
       g.n++; const s = api.score(h.concat(board)); g.win += sm > s ? 1 : sm === s ? .5 : 0;
       if (!g.ex || Math.random() < 2 / g.n) g.ex = h;
     }
+    if (board.length >= 5) Object.assign(G.draw, { name: '外れた引き', sub: 'フラッシュ・ストレートの外れ' });
     const tiles = GROUPS.map(g => G[g.id]).filter(g => g.n > 0);
     const shouldOut = (g) => pAct(g.id) < .2;
     const mimiName = api.CAT_NAME[api.category(mine.concat(board))];
@@ -146,7 +161,7 @@
       <div class="rb-info">
         <div class="nr-sit2"><div class="nr-cap">場札 ／ ミミの手（${mimiName}）</div><div class="nr-row">${board.map(c => api.cardHTML(c, 'small')).join('')}<i class="nr-sep"></i>${mine.map(c => api.cardHTML(c, 'small')).join('')}</div></div>
         <div class="nr-acts"><span class="h">${jp}のこの手の賭け方</span>${actsHTML}<span class="hb">癖：${HABIT[who]}</span></div>
-        <div class="nr-sit"><span>割に合う線 <b>${need}%</b>${free ? '' : `（払う ${toCall} ÷ 払った後のポット ${pot + toCall}）`}</span></div>
+        <div class="nr-sit"><span>割に合う線 <b>${need}%</b>${free ? '' : `<span class="nr-long">（払う ${toCall} ÷ 払った後のポット ${pot + toCall}）</span><span class="nr-short">（${toCall} ÷ 払った後 ${pot + toCall}）</span>`}</span></div>
         <div class="nr-bars"><div class="nr-bar-t"><span>残った容疑者に勝てる <b id="mb-nr-wn">？</b></span><span>線 ${need}%</span></div>
           <div class="nr-bar" id="mb-nr-bar">${Array.from({ length: 10 }, () => '<i class="q"></i>').join('')}<s style="left:${need}%"></s></div></div>
       </div>
@@ -204,7 +219,7 @@
     api.coach('');
     $('#mb-nr-steps').innerHTML = api.steps(STEPS, 2);
     const base = 20 + good * 10;
-    await api.wager({ mission: '棒と線の差で自信を決める', question: `「${NAMES[decide]}」— 棒 ${winPct}% ／ 線 ${need}%`, note: '差が大きいほど、自信を上げてよい', base, stakes: STAKES, into: act });
+    await api.wager({ mission: '棒と線の差で自信を決める', question: `「${NAMES[decide]}」棒 ${winPct}%・線 ${need}%`, note: '差が大きいほど自信を上げる', base, stakes: STAKES, into: act });
     if (!api.alive()) return;
     const m = api.mult || 1;
     const sensible = over ? 'call' : 'fold';
@@ -223,6 +238,30 @@
     api.finish({ correct, base, perfect: correct && good === tiles.length && m === 3,
       detail: `${jp}は ${her.map(api.label).join(' ')}。ミミが勝つ見込み ${mimiEq}%・線 ${need}%。${whyTxt}` });
   }
+
+  // この手で読み合いが成り立つか：癖で組を外すと、付いていくか降りるかの答えが変わる時だけ出す
+  // （2026-10-31 どの組もミミに勝つ手で出て、読んでも読まなくても「降りる」だった）。ヴェルベットは「外せない」と知るのが読みなので、いつも出す
+  function matters(M, T, who) {
+    if (who === 'velvet') return true;
+    const board = T.board, mine = T.mine, toCall = T.toCall || 0, pot = T.pot || 0, acts = T.acts || [];
+    const free = toCall <= 0;
+    const need = free ? 50 : Math.round(100 * toCall / (pot + toCall));
+    const last = acts[acts.length - 1];
+    const betted = last ? ['bet', 'raise', 'allin'].includes(last.t) : !free;
+    const used = new Set([...mine, ...board].map(M.key));
+    const rest = M.deck().filter(c => !used.has(M.key(c)));
+    const sm = M.score(mine.concat(board));
+    let nA = 0, wA = 0, nK = 0, wK = 0;
+    for (let i = 0; i < rest.length; i++) for (let j = i + 1; j < rest.length; j++) {
+      const h = [rest[i], rest[j]], g = groupOf(M, h, board), s = M.score(h.concat(board));
+      const w = sm > s ? 1 : sm === s ? .5 : 0;
+      nA++; wA += w;
+      if ((betted ? BET[who][g] : 1 - BET[who][g]) >= .2) { nK++; wK += w; }
+    }
+    if (!nK) return false;
+    return (100 * wA / nA > need) !== (100 * wK / nK > need);
+  }
+  MB.narrowMatters = (T, charId) => matters(MB, T, charId === 'velvet' ? 'velvet' : 'selina');
 
   MB.register({ id: 'narrow', group: 'logic', order: 7, title: '容疑者しぼり', sub: '論理 · 手の幅', isNew: true, chars: ['selina', 'velvet'], start });
 })();

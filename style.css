@@ -20552,3 +20552,9 @@ html.is-compact body #stage > :is(.settings-overlay, .equip-overlay, .collection
   .mimi-confirm-overlay, .note-article-overlay, .memory-viewer-overlay, .rule-primer-overlay, .dominance-choice-overlay) > *,
 html.is-compact body #stage > :is(.intro-win-overlay, .hands-on-overlay) > :is(.intro-win-modal, .ho-modal),
 html.is-compact body .home-dialog.as-dialog { zoom: 1 !important; }
+/* ファイブポーカー（2026-10-31 iPhone で文字が正しい大きさになり、賭けの場面の「配る」が下で切れた）：
+   今のベットは「配る（5コイン）」のボタンに出すので、スマホでは「現在のベット」の行を畳む（特別卓の ×3 の説明がある時だけ残す） */
+html.is-compact .minipoker-overlay .mp-bet-display:not(:has(small)) { display: none; }
+html.is-compact .minipoker-overlay .mp-bet-chip.on, html.is-compact .minipoker-overlay .mp-bet-max.on { box-shadow: 0 0 0 2px var(--gold-hi, #f5d77a) inset; color: var(--gold-hi, #f5d77a); }
+html.is-compact .minipoker-overlay .mp-play .mp-center:has(.mp-bet-row) { gap: 2px; padding-block: 2px; }
+html.is-compact .minipoker-overlay .mp-status-wager { line-height: 1.2; padding-block: 1px; }

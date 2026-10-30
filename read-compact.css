@@ -1133,3 +1133,14 @@ html.is-compact #stage > .read-battle-host.mb-host .aq-qs .btn > small { white-s
 html.is-compact #stage > .read-battle-host.mb-host .hv-cands { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .hv-cand { grid-template-columns: auto auto minmax(0, 1fr) 14px; gap: 3px; padding: 0 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .hv-sit > span:last-child { display: none; }
+/* 容疑者しぼり（2026-10-31 ユーザーの実機）：右の列がはみ出して「残った容疑者に勝てる」の棒がボタンに隠れていた。
+   割に合う線の式を1行に縮める。組の名前が2行に折れても、札の高さが隣の組とそろうように、札を名前の下ではなく枠の下側に置く */
+html.is-compact #stage > .read-battle-host.mb-host .nr-sit .nr-long { display: none; }
+html.is-compact #stage > .read-battle-host.mb-host .nr-sit .nr-short { display: inline; }
+html.is-compact #stage > .read-battle-host.mb-host .nr-sit { white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .nr-tile { justify-content: flex-start; }
+html.is-compact #stage > .read-battle-host.mb-host .nr-tile .ct { margin-top: auto; }
+html.is-compact #stage > .read-battle-host.mb-host .nr-tile .ct + .fb { margin-top: 2px; }
+/* 答え合わせの ○ 10/10 と10個の目盛りが、組の枠からはみ出していた */
+html.is-compact #stage > .read-battle-host.mb-host .nr-tile .fb { white-space: nowrap; gap: 3px; }
+html.is-compact #stage > .read-battle-host.mb-host .nr-tile .nr-dots { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 1px; width: 100%; }
