@@ -4925,7 +4925,8 @@ function applyNoteTellHint() {
 // 再生できた時だけ一枚絵の上に重ねてくり返す。表情が変わっている間は一枚絵に戻す（CSS の .is-expr）。
 // 画面は render のたびに作り直されるので、再生中の動画は新しい画面へそのまま移す（頭に戻すと呼吸が飛ぶ）。
 // 「視差効果を減らす」設定・データ節約の時と、動画が手元に届くまでは一枚絵のまま
-const IDLE_MOTION = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
+// ヴェルベットは2026-10-17に立ち絵を描き直したので、新しい絵の待機の動画ができるまで外す（古い座った絵の動画に切り替わって見えた）
+const IDLE_MOTION = ['rico_tutorial', 'polka', 'selina', 'grano'];
 let __idleVideo = null;
 const __idleFailed = new Set(); // 再生できなかった動画（描き直しのたびに試し直さない）
 function idleMotionOk() { return MOTION_OK && !(navigator.connection && navigator.connection.saveData); }
