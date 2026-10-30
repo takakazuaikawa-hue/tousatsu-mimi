@@ -10696,6 +10696,9 @@ function setForceSound(on) {
   return save.forceSound;
 }
 let _mpSfxScale = 1; // mpSfx 呼び出し直前にセットされる SFX 音量係数
+// 2026-10-30 効果音を +12dB（×4）。初期の音量（効果音50・曲35・声60）で、チェック・コールの音が曲より約20dB小さく埋もれていた。
+// 聞き比べ（qa/mixdemo.mjs、今／+12／+18）からユーザーが +12 を選んだ。合成音の大きさはここだけで決める
+const SFX_BOOST = 4;
 function mpTone(freq, dur, type = 'sine', gain = 0.06, attack = 0.005, release = 0.04, delayMs = 0) {
   const ctx = mpAudioCtx(); if (!ctx) return;
   const t0 = ctx.currentTime + delayMs / 1000;
@@ -10703,7 +10706,7 @@ function mpTone(freq, dur, type = 'sine', gain = 0.06, attack = 0.005, release =
   const g = ctx.createGain();
   o.type = type;
   o.frequency.setValueAtTime(freq, t0);
-  const peak = Math.max(0.0001, gain * _mpSfxScale);
+  const peak = Math.max(0.0001, gain * _mpSfxScale * SFX_BOOST);
   g.gain.setValueAtTime(0, t0);
   g.gain.linearRampToValueAtTime(peak, t0 + attack);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
@@ -10719,7 +10722,7 @@ function mpSweep(f0, f1, dur, type='sine', gain=0.05, delayMs=0) {
   o.type = type;
   o.frequency.setValueAtTime(f0, t0);
   o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
-  const peak = Math.max(0.0001, gain * _mpSfxScale);
+  const peak = Math.max(0.0001, gain * _mpSfxScale * SFX_BOOST);
   g.gain.setValueAtTime(0, t0);
   g.gain.linearRampToValueAtTime(peak, t0 + 0.01);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
