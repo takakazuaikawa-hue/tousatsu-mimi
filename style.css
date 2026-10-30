@@ -20489,3 +20489,26 @@ html.is-compact .home-stage.h15-sm .h15-pl:has(.h15-win) .h15-lbl { left: 21%; r
 canvas.live-cg { position: absolute; margin: 0; max-width: none; max-height: none; opacity: 0; transition: opacity .6s ease; pointer-events: none; }
 canvas.live-cg.on { opacity: 1; }
 .ims-cg.is-swap canvas.live-cg, .ims-cg.is-stamp canvas.live-cg { opacity: 0; }
+
+/* ===== セーブの引き継ぎ・クレジットの窓（2026-10-30 販売前の点検）：確認の窓と同じ金縁の深紅。大きさは type-roles.css ===== */
+.mimi-confirm-overlay.is-panel .mimi-confirm { box-sizing: border-box; width: min(880px, 94%); max-width: none; min-width: 0; max-height: 94%; overflow: auto; text-align: left; }
+.mimi-confirm-overlay.is-panel .mimi-confirm-title, .mimi-confirm-overlay.is-panel .mimi-confirm-body { text-align: center; word-break: keep-all; overflow-wrap: anywhere; }
+.tr-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.tr-col { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.tr-head, .cr-head { margin: 0; color: var(--c-gold-bright); letter-spacing: .12em; font-weight: 700; }
+.tr-code { box-sizing: border-box; width: 100%; height: 6.5em; resize: none; padding: 8px 10px; border: 1px solid rgba(214,176,104,.6); border-radius: 2px; background: rgba(10,3,5,.72); color: #f3e6d8; font-family: ui-monospace, Consolas, monospace; line-height: 1.4; word-break: break-all; }
+.tr-code::placeholder { color: #a8998a; }
+.tr-btns { display: flex; gap: 10px; }
+.tr-btns .btn { flex: 1; min-width: 0; padding-inline: 8px; }
+.tr-filebtn { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.tr-note { min-height: 1.6em; color: #f2d79a; text-align: center; }
+.cr-list { display: grid; gap: 4px; max-height: 26em; overflow: auto; padding-right: 6px; }
+.cr-head { margin-top: 12px; padding-bottom: 2px; border-bottom: 1px solid rgba(214,176,104,.35); }
+.cr-head:first-child { margin-top: 0; }
+.cr-line { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; color: #f3e6d8; text-align: left; }
+.cr-role { min-width: 10em; color: #c9b48a; text-align: left; }
+.cr-legal { margin: 6px 0 0; color: #c9bfb2; line-height: 1.5; overflow-wrap: anywhere; }
+/* スマホ：確認の窓は縮めずに描かれる。押す所は44px以上、余白は詰める（文字は type-roles.css） */
+html.is-compact #stage .mimi-confirm-overlay .mimi-confirm-actions .btn, html.is-compact #stage .tr-btns .btn { min-height: 44px; }
+html.is-compact #stage .mimi-confirm-overlay.is-panel .mimi-confirm { padding: 10px 16px; gap: 8px; }
+html.is-compact .tr-code { height: 4.6em; }

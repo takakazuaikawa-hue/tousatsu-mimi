@@ -161,3 +161,10 @@ html body .mp-reach .mp-reach-prob { font-size: var(--r-note) !important; }
 html body #stage .reward-chip-value { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
 html body #stage .home-stage .h15-pl .h15-tag { font-size: calc(var(--r-note) / var(--game-scale, 1)) !important; }
 html body .lv-box span { font-size: var(--r-body) !important; }
+
+/* ---------- 確認の窓・引き継ぎ・クレジット（#stage の中だが、確認の窓はスマホでも縮めずに描かれる＝÷ しない。2026-10-30 確認の窓が段に乗っていなかった） ---------- */
+html #stage .mimi-confirm-overlay .mimi-confirm-title { font-size: var(--r-mission) !important; }
+html #stage .mimi-confirm-overlay :is(.mimi-confirm-body, .cr-line, .tr-note) { font-size: var(--r-body) !important; }
+html #stage .mimi-confirm-overlay :is(.tr-head, .cr-head) { font-size: var(--r-label) !important; }
+html #stage .mimi-confirm-overlay :is(.cr-legal, .tr-code) { font-size: var(--r-note) !important; }
+html #stage .mimi-confirm-overlay :is(.mimi-confirm-actions .btn, .tr-btns .btn) { font-size: var(--r-btn2) !important; }

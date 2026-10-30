@@ -446,7 +446,9 @@ function loadProgress() {
     return normalizeSave(defaultSave());
   }
 }
+let persistAsked = false;
 function saveProgress() {
+  if (!persistAsked) { persistAsked = true; try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (_) {} }
   try {
     // ログ膨張対策：各カテゴリ最新500件のみ保持
     if (save && save.logs) {
@@ -5172,6 +5174,8 @@ function showSettingsModal() {
           ${(save.ownedItems || []).includes('memory_minipoker') ? `<button class="btn btn-secondary settings-modal-trophy" data-action="play-minipoker">${UI_ICON.card} ファイブポーカー</button>` : ''}
           <button class="btn btn-secondary settings-modal-trophy" data-pack-row><span class="kw">まとめて<wbr>ダウンロード</span> <span class="pack-row-state" data-pack-state></span></button>
           <button class="btn btn-secondary settings-modal-trophy" data-action="home-fullscreen">全画面で遊ぶ</button>
+          <button class="btn btn-secondary settings-modal-trophy" data-action="save-transfer"><span class="kw">セーブの<wbr>引き継ぎ</span></button>
+          <button class="btn btn-secondary settings-modal-trophy" data-action="show-credits">クレジット</button>
           <button class="btn btn-danger settings-modal-reset" data-action="reset-save"><span class="kw">セーブデータを<wbr>リセット</span></button>
         </section>
       </div>
@@ -8492,6 +8496,8 @@ function onAction(e) {
       });
       break;
     }
+    case 'save-transfer': showSaveTransfer(); break;
+    case 'show-credits': showCreditsPanel(); break;
     case 'view-secret-cg': {
       const sid = e.currentTarget?.dataset?.memoryId;
       if (sid && SECRET_CG[sid]) showRewardCgViewer(sid);
@@ -9063,6 +9069,8 @@ const CREDITS = [
   { type: 'line', text: 'Ver ' + GAME_VERSION, cls: 'is-legal' },
   // 声の合成に使った Irodori-TTS（と同梱の DACVAE・SilentCipher）は MIT ライセンス。著作権表示を残す義務がある
   { type: 'line', text: 'Irodori-TTS / Semantic-DACVAE © Aratako, SilentCipher © Sony Research — MIT License', cls: 'is-legal' },
+  // 書体はどれも SIL Open Font License 1.1（Google Fonts）
+  { type: 'line', text: '書体：Shippori Mincho B1・Noto Sans JP・Bebas Neue・Barlow Condensed — SIL Open Font License 1.1', cls: 'is-legal' },
 ];
 
 // コレクション・交換所の「スタッフロール再生」：エンディングと同じスタッフロールを、今の画面の上で流す。
@@ -19520,6 +19528,103 @@ function showMimiCutIn(text, narration, onClose, face) {
 // ゲーム内の確認ダイアログ（ブラウザ標準の confirm は世界観を壊し、スマホでは全画面が解ける）
 // 使い方: if (!(await showConfirm({ title: '対戦をやめる？', body: '…', ok: 'やめる', cancel: '続ける', danger: true }))) return;
 // danger のときは「続ける」側を主ボタンにして、誤タップで失うものが出ないようにする。
+// 中身を自由に入れられる窓（確認の窓と同じ見た目）。閉じる時に onClose
+function showPanel({ title, html, cls = '' }) {
+  document.querySelectorAll('.mimi-confirm-overlay.is-panel').forEach(el => el.remove());
+  const overlay = document.createElement('div');
+  overlay.className = 'mimi-confirm-overlay is-panel ' + cls;
+  overlay.innerHTML = `<div class="mimi-confirm" role="dialog" aria-modal="true" aria-label="${title}"><div class="mimi-confirm-title">${title}</div>${html}</div>`;
+  const close = () => { document.removeEventListener('keydown', onKey, true); overlay.classList.add('out'); setTimeout(() => overlay.remove(), 180); };
+  const onKey = (e) => { if (e.key === 'Escape' && !document.querySelector('.mimi-confirm-overlay:not(.is-panel)')) { e.stopPropagation(); close(); } };
+  overlay.addEventListener('click', (e) => { if (e.target === overlay || e.target.closest('[data-panel-close]')) close(); });
+  document.addEventListener('keydown', onKey, true);
+  (document.getElementById('stage') || document.body).appendChild(overlay);
+  return { overlay, close };
+}
+
+// セーブの引き継ぎ（2026-10-30 販売前の点検）：保存はこの端末のブラウザの中だけにあり、iPhone の Safari は長く開かないと消すことがある。
+// 進み具合を「引き継ぎコード」（文字の列）にして写し取る・ファイルに保存する。別の端末やブラウザで貼ると続きから遊べる。
+// コードは「MIMI1:」＋本体（JSON を base64）＋「.」＋検算の数。外に置いた記録（ぱにゅぱにゅの衣装・心の声の図鑑）も一緒に運ぶ
+const TRANSFER_PREFIX = 'MIMI1:';
+const TRANSFER_EXTRA_KEYS = ['mimi.panyuOutfit', 'mbGachaBook'];
+const transferSum = (s) => { let c = 7; for (let i = 0; i < s.length; i++) c = (c * 31 + s.charCodeAt(i)) >>> 0; return c.toString(36); };
+function makeTransferCode() {
+  const extra = {};
+  TRANSFER_EXTRA_KEYS.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) extra[k] = v; } catch (_) {} });
+  const body = { ...save, logs: {} };   // 対戦の記録（AI が癖を読む細かい履歴）は運ばない。コードが短くなり、無くても遊べる
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify({ v: 1, at: Date.now(), save: body, extra }))));
+  return TRANSFER_PREFIX + b64 + '.' + transferSum(b64);
+}
+function readTransferCode(code) {
+  const s = String(code || '').replace(/\s+/g, '');
+  if (s.indexOf(TRANSFER_PREFIX) !== 0) return null;
+  const [b64, sum] = s.slice(TRANSFER_PREFIX.length).split('.');
+  if (!b64 || transferSum(b64) !== sum) return null;
+  try { const o = JSON.parse(decodeURIComponent(escape(atob(b64)))); return o && o.v === 1 && o.save && typeof o.save === 'object' ? o : null; } catch (_) { return null; }
+}
+function showSaveTransfer() {
+  const code = makeTransferCode();
+  const day = new Date(); const stamp = `${day.getFullYear()}${String(day.getMonth() + 1).padStart(2, '0')}${String(day.getDate()).padStart(2, '0')}`;
+  const { overlay, close } = showPanel({ title: 'セーブの引き継ぎ', cls: 'is-transfer', html: `
+    <div class="mimi-confirm-body">進み具合を<wbr>引き継ぎコードにして<wbr>控えておけます。<wbr>別の端末や<wbr>ブラウザでも、<wbr>このコードで<wbr>続きから遊べます</div>
+    <div class="tr-cols">
+      <section class="tr-col">
+        <h3 class="tr-head">控えを取る</h3>
+        <textarea class="tr-code" id="tr-code-out" readonly aria-label="今の進み具合の引き継ぎコード">${code}</textarea>
+        <div class="tr-btns"><button type="button" class="btn btn-primary" data-tr="copy">コードを写す</button><button type="button" class="btn btn-secondary" data-tr="file">ファイルに保存</button></div>
+      </section>
+      <section class="tr-col">
+        <h3 class="tr-head">コードで続きから</h3>
+        <textarea class="tr-code" id="tr-code-in" placeholder="ここに引き継ぎコードを貼る" aria-label="読み込む引き継ぎコード"></textarea>
+        <div class="tr-btns"><button type="button" class="btn btn-primary" data-tr="load">読み込む</button><label class="btn btn-secondary tr-filebtn">ファイルから<input type="file" accept=".txt,text/plain" data-tr="pick" hidden></label></div>
+      </section>
+    </div>
+    <div class="tr-note" aria-live="polite"></div>
+    <div class="mimi-confirm-actions"><button type="button" class="btn btn-secondary" data-panel-close>閉じる</button></div>` });
+  const note = overlay.querySelector('.tr-note'), out = overlay.querySelector('#tr-code-out'), inp = overlay.querySelector('#tr-code-in');
+  const say = (t) => { note.textContent = t; };
+  overlay.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-tr]'); if (!b) return;
+    if (b.dataset.tr === 'copy') {
+      try { await navigator.clipboard.writeText(code); say('コードを写しました。メモ帳などに貼って控えてください'); }
+      catch (_) { out.focus(); out.select(); say('コードを選んだので、長押し（右クリック）で写してください'); }
+    } else if (b.dataset.tr === 'file') {
+      try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' })); a.download = `mimi_poker_save_${stamp}.txt`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); say('ファイルに保存しました'); }
+      catch (_) { say('この端末ではファイルに保存できません。「コードを写す」で控えてください'); }
+    } else if (b.dataset.tr === 'load') {
+      loadTransfer(inp.value);
+    }
+  });
+  overlay.querySelector('[data-tr="pick"]').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    f.text().then(t => { inp.value = t.trim(); loadTransfer(inp.value); }).catch(() => say('ファイルを読めませんでした'));
+  });
+  async function loadTransfer(text) {
+    const o = readTransferCode(text);
+    if (!o) { say('コードが正しくありません。写し間違いや、途中で切れていないか確かめてください'); return; }
+    const s = o.save, won = (Array.isArray(s.clearedStages) ? s.clearedStages : []).filter(id => id !== 'rico_tutorial').length;
+    const yes = await showConfirm({ title: 'このコードの続きから遊ぶ？', body: `コイン ${Number(s.coins) || 0}・勝った相手 ${won}人の進み具合です。\n今この端末にある進み具合は消えます。`, ok: '続きから遊ぶ', cancel: 'やめる', danger: true });
+    if (!yes) return;
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(s));
+      TRANSFER_EXTRA_KEYS.forEach(k => { try { if (o.extra && o.extra[k] != null) localStorage.setItem(k, o.extra[k]); else localStorage.removeItem(k); } catch (_) {} });
+    } catch (_) { say('この端末では保存できませんでした。プライベートモードを切ってから試してください'); return; }
+    close();
+    toast('引き継ぎました。読み込み直します', 'big');
+    setTimeout(() => location.reload(), 900);
+  }
+}
+
+// クレジット（2026-10-30 販売前の点検）：スタッフロールはクリア後にしか見られず、声のライセンス表示（MIT の義務）に届かなかった。設定からいつでも
+function showCreditsPanel() {
+  const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const rows = CREDITS.filter(c => c.type !== 'gap' && c.type !== 'title' && c.type !== 'small').map(c =>
+    c.type === 'section' ? `<h3 class="cr-head">${esc(c.text)}</h3>`
+    : c.cls === 'is-legal' ? `<p class="cr-legal">${esc(c.text)}</p>`
+    : `<p class="cr-line">${c.role ? `<span class="cr-role">${esc(c.role)}</span>` : ''}<span>${esc(c.text)}</span></p>`).join('');
+  showPanel({ title: 'クレジット', cls: 'is-credits', html: `<div class="cr-list">${rows}</div><div class="mimi-confirm-actions"><button type="button" class="btn btn-secondary" data-panel-close>閉じる</button></div>` });
+}
+
 function showConfirm({ title = '確認', body = '', ok = 'はい', cancel = 'やめる', danger = false } = {}) {
   return new Promise((resolve) => {
     document.querySelectorAll('.mimi-confirm-overlay').forEach(el => el.remove());
