@@ -20400,3 +20400,13 @@ html.is-compact .result-unlock .ru-thumbs img:nth-child(n+3) { display: none; }
 
 /* 額を選ぶ欄の見出しと「もどる」は1行で */
 .battle-screen.v2 .bet-chooser-head > span, .battle-screen.v2 .bet-chooser-head .verb-back { white-space: nowrap; }
+
+/* 2026-10-30 文字の段を全画面に当てた後の枠の直し（type-roles.css）。
+   PC の対戦の卓：右上の道具（やめる・役の一覧）が押す所の副の段17px になり、「役の一覧」が音のボタンと「やめる」に重なった → 並びを左へ */
+html:not(.is-compact) .battle-screen.v2.t8 > .v2-help-btn { right: 142px !important; }
+html:not(.is-compact) .battle-screen.v2.t8 > .sound-toggle { right: 276px; }
+/* 小さいホーム（h15-sm）：「新入荷」「あと…」の札が板の右の外に出て、リコ先輩の絵の下にもぐって切れていた（前から）→ 板の右上の内側に */
+.home-stage.h15-sm .h15-pl .h15-tag { left: auto; right: 18px; top: -10px; transform: none; }
+/* 絵の窓（.h15-win）のある板は、名前の右端を窓の手前まで（小さいホームで「ぱにゅぱにゅ」が窓の下にもぐっていた）。札は縁の上へ */
+html.is-compact .home-stage.h15-sm .h15-pl:has(.h15-win) .h15-lbl { left: 21%; right: 22%; letter-spacing: 0; z-index: 2; }
+.home-stage.h15-sm .h15-pl .h15-tag { top: -16px; }

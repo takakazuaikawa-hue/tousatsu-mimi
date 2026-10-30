@@ -107,3 +107,57 @@ html #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-h b, .as-rv-mk,
 html.is-compact #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-t, .as-rv-k) { font-size: var(--r-body) !important; }
 html.is-compact #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-h span, .as-rv-st, .as-review-ok span) { font-size: var(--r-label) !important; }
 html.is-compact #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-h b, .as-rv-mk, .as-rv-btns button, .as-review-ok b) { font-size: var(--r-btn) !important; }
+
+/* =====================================================================
+   2026-10-29 零時の卓（allstar.css）の全部の文字を役目の段に乗せる（ユーザー「零時の卓もレイアウトスキルで完成にできているか」）。
+   それまでは allstar.css に px で直接183か所書かれ、PC の本文15・押す所15〜22、小さいスマホも15のままだった（qa/allstartype.mjs で実寸を測った）。
+   PC は縮めて描く舞台なので ÷ 縮める倍率、スマホは .as-host・.as-dialog が zoom で実寸に戻すのでそのまま。
+   数字（持ち点・ポット・賭けた額・賞金・順位の大きな数字・札の数字とマーク・題字）は主役の数字の段なので、ここでは決めない（本文より小さくしない）。
+   ===================================================================== */
+html :is(#stage > .as-host, .as-dialog) :is(.as-sizer-h > b) { font-size: calc(var(--r-mission) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-rules li, .as-pop p, .as-pop li, .as-pop td, .as-res-name, .as-size em) { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-sub-text) { font-size: calc(var(--r-speech) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-pop-h, .as-head-1, .as-hand-no, .as-head-2, .as-lv-n, .as-left, .as-name, .as-pot-l, .as-made b, .as-mstack span, .as-prizes-h, .as-prizes span, .as-band-sub, .as-band-en, .as-ef b, .as-res-big span, .as-res-pay > span, .as-sub-name, .as-rec-top dt, .as-rec-vs span) { font-size: calc(var(--r-label) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-rank, .as-pos, .as-d, .as-md, .as-verb, .as-made span, .as-size span, .as-emeta, .as-inv, .as-ff span, .as-res-hand, .as-res-pl small, .as-res-pay em, .as-rec-hist li) { font-size: calc(var(--r-note) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-cc-l, .as-ebtns button, .as-res-btns button) { font-size: calc(var(--r-btn) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-fold, .as-raise, .as-tool, .as-back, .as-pop-x, .as-menu-b button, .as-size b, .as-ff b, header button) { font-size: calc(var(--r-btn2) / var(--game-scale, 1)) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-sizer-h > b) { font-size: var(--r-mission) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-rules li, .as-pop p, .as-pop li, .as-pop td, .as-res-name, .as-size em) { font-size: var(--r-body) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-sub-text) { font-size: var(--r-speech) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-pop-h, .as-head-1, .as-hand-no, .as-head-2, .as-lv-n, .as-left, .as-name, .as-pot-l, .as-made b, .as-mstack span, .as-prizes-h, .as-prizes span, .as-band-sub, .as-band-en, .as-ef b, .as-res-big span, .as-res-pay > span, .as-sub-name, .as-rec-top dt, .as-rec-vs span) { font-size: var(--r-label) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-rank, .as-pos, .as-d, .as-md, .as-verb, .as-made span, .as-size span, .as-emeta, .as-inv, .as-ff span, .as-res-hand, .as-res-pl small, .as-res-pay em, .as-rec-hist li) { font-size: var(--r-note) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-cc-l, .as-ebtns button, .as-res-btns button) { font-size: var(--r-btn) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-fold, .as-raise, .as-tool, .as-back, .as-pop-x, .as-menu-b button, .as-size b, .as-ff b, header button) { font-size: var(--r-btn2) !important; }
+
+/* =====================================================================
+   2026-10-30 全画面の残り（タイトル・ホーム・台帳・設定・図鑑・用語集・役の早見表・ログインボーナス・交換所・ぱにゅぱにゅ・
+   対戦の卓・結果・回想・ミニポーカー・エンディング・スタッフロール）を役目の段に乗せる。
+   qa/fulltour.mjs の texts（qa/lib/textsnap.mjs）で全部の文字の実寸を測り、qa/tiercheck.mjs で段の外を挙げた（PC 297・スマホ 208・小さいスマホ 255）。
+   スマホで 0.488 倍に縮んでいた部品（#stage の中）は ÷ --game-scale、倍率1の小窓はそのまま。数字・題字（24px 以上）は主役の数字の段なので触らない。
+   ===================================================================== */
+html body #stage :is(.h15-sw .h15-lbl, .credits-skip span, .result-unlock .ru-go, .sh3-back, .sh3-cat span, .v2-pause, .v2-pause span, .v2-help-btn, .verb-back, .result-sub-buttons .btn, .result-breakdown-toggle, .v2-detail-toggle, .home-ledger-row button) { font-size: calc(var(--r-btn2) / var(--game-scale, 1)) !important; }
+html body :is(.pv2-quit) { font-size: var(--r-btn2) !important; }
+html body #stage :is(.h15-ticket .h15-lbl, .t3-btn b, .sh3-buy-l) { font-size: calc(var(--r-btn) / var(--game-scale, 1)) !important; }
+html body :is(.rico-mode-opt-name, .mp-btn-deal) { font-size: var(--r-btn) !important; }
+html body #stage :is(.credits-inner .cr-title) { font-size: calc(var(--r-mission) / var(--game-scale, 1)) !important; }
+html body :is(.hand-guide-title, .as-dialog h2, .ending-prompt-song-name, .mp-result-headline) { font-size: var(--r-mission) !important; }
+html body #stage :is(.result-next-goal, .sh3-desc) { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
+html body :is(.cp-exploit, .mp-tut-steps li, .mp-tut-steps b) { font-size: var(--r-body) !important; }
+html body #stage :is(.h15-dialogue, .sh3-say span) { font-size: calc(var(--r-speech) / var(--game-scale, 1)) !important; }
+html body #stage :is(.h15-sw .h15-sub, .h15-prize span, .home-ledger-row h3, .credits-inner .cr-section, .reward-chip-label, .rank-label, .result-unlock .ru-h, .result-unlock .ru-t, .sh3-kick, .sh3-brand, .v2-band-name, .v2-pot-label, .tug-who, .tug-state, .t3-record span) { font-size: calc(var(--r-label) / var(--game-scale, 1)) !important; }
+html body :is(.coll-section-title, .gl-section-title, .rp-ladder-name, .login-bonus-day-label, .mp-pt-title, .mp-pt-lucky b, .mp-pt-name, .mp-char-name, .mp-bet-display, .mp-handname, .mp-panel-title, .mp-result-amount, .pv2-skill-eye span, .pv2-zoom span, .pv2-meter-k, .pv2-skill-name b, .pv2-outfit span, .pv2-outfit b, .cp-exploit b, .coll-itemcat-title, .ending-prompt-vol-label span) { font-size: var(--r-label) !important; }
+html body #stage :is(.h15-lbl small, .reward-chip-value, .t3-btn small, .t3-ver, .tug-goal-long) { font-size: calc(var(--r-note) / var(--game-scale, 1)) !important; }
+html body :is(.episode-hint, .gl-section-count, .settings-modal-note, .pack-row-state, .settings-modal-legal, .login-bonus-tag, .mp-pt-note, .mp-daily-bonus, .mp-cap-note, .mp-status small, .mp-status small b, .mp-mood-badge, .mp-result-sub, .pv2-hint, .pv2-pity, .cp-meta-item, .coll-cg-label small) { font-size: var(--r-note) !important; }
+/* 台帳などホームの小窓の見出し・閉じる：小窓は縮めて描く舞台の倍率のまま（zoom で戻していない）ので ÷ --game-scale（10/30 そのままにして 7.5px になった） */
+html body .home-dialog header h2 { font-size: calc(var(--r-mission) / var(--game-scale, 1)) !important; }
+html body .home-dialog header button { font-size: calc(var(--r-btn2) / var(--game-scale, 1)) !important; }
+html.is-compact body .home-dialog.as-dialog header h2 { font-size: var(--r-mission) !important; }
+html.is-compact body .home-dialog.as-dialog header button { font-size: var(--r-btn2) !important; }
+/* 役の早見表の役名（スマホ16 → 本文）と、知らせの帯（PC 14 → 本文）。早見表は強さの順に並ぶ一覧なので、大きさの差は付けずに本文で */
+html.is-compact body .hand-guide-panel .rp-ladder-help .rp-ladder-name { font-size: var(--r-body) !important; }
+html body .toast:not(.toast-big) { font-size: var(--r-body) !important; }
+html body .mp-reach { font-size: var(--r-body) !important; }
+html body .mp-reach .mp-reach-prob { font-size: var(--r-note) !important; }
+html body #stage .reward-chip-value { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
+html body #stage .home-stage .h15-pl .h15-tag { font-size: calc(var(--r-note) / var(--game-scale, 1)) !important; }
+html body .lv-box span { font-size: var(--r-body) !important; }

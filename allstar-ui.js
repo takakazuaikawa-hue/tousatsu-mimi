@@ -1355,7 +1355,7 @@
         <span class="as-res-pl">${r.place}<small>位</small></span>
         <span class="as-res-face"><img src="${idleFace(r.id)}" alt=""></span>
         <b class="as-res-name">${esc(NAMES[r.id])}</b>
-        <span class="as-res-hand">${esc(lastShown[r.seat] || '—')}</span>
+        <span class="as-res-hand">${esc(lastShown[r.seat] || '—').replace(/(ロイヤル|ストレート)(?=ストレート|フラッシュ)/g, '$1<wbr>')}</span>
         <span class="as-res-prize">${r.prize ? fmt(r.prize) : '0'}</span>
         <span class="as-res-sealc">${r.place === 1 ? '<img class="as-res-seal" src="assets/ui/home/seal.webp" alt="">' : ''}</span>
       </li>`).join('')}</ol>

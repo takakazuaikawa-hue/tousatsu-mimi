@@ -403,7 +403,8 @@
 .as-res-face { position: relative; width: 48px; height: 58px; margin-left: 6px; overflow: hidden; transform: skewX(-12deg); border: 1px solid var(--as-gold); box-shadow: inset 0 0 0 2px #120806; }
 .as-res-face img { position: absolute; left: -16%; top: 0; width: 132%; height: 100%; object-fit: cover; transform: skewX(12deg); }
 .as-res-name { font: 700 18px/1.2 var(--as-min); letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.as-res-hand { font-size: 15px; color: var(--as-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 役名は「ストレート｜フラッシュ」の所で2行まで折る（2026-10-29：小さいスマホで「スリーカ…」と切れていた） */
+.as-res-hand { color: var(--as-muted); line-height: 1.15; word-break: keep-all; overflow-wrap: anywhere; }
 .as-res-prize { font: 600 22px/1 var(--as-num); text-align: right; color: var(--as-ivory); }
 .as-res-row[data-place="1"] .as-res-prize { color: var(--as-gold-hi); }
 .as-res-sealc { display: grid; place-items: center; }
@@ -509,7 +510,8 @@ html.is-compact #stage > .as-host .as-tool[data-as="menu"] { width: 54px; }
 html.is-compact #stage > .as-host .as-sound { display: none; }
 
 /* 席：130x75 の箱（窓 60x75＋真鍮の板）。中の文字は 11px 以上 */
-html.is-compact #stage > .as-host .as-seat { inset: auto; top: 48px; width: 150px; height: 75px; }
+/* 2026-10-29 名前の札を 80→92px（見出しの段14px で「ヴェルベット」が入る幅。名前は決まった6人なので3割の余裕は要らない） */
+html.is-compact #stage > .as-host .as-seat { inset: auto; top: 48px; width: 162px; height: 75px; }
 html.is-compact #stage > .as-host .as-seat[data-slot="bl"] { left: calc(50% - 260px); }
 html.is-compact #stage > .as-host .as-seat[data-slot="bc"] { left: calc(50% - 75px); }
 html.is-compact #stage > .as-host .as-seat[data-slot="br"] { left: calc(50% + 110px); }
@@ -517,7 +519,7 @@ html.is-compact #stage > .as-host .as-seat[data-slot="left"] { left: 8px; top: 1
 html.is-compact #stage > .as-host .as-seat[data-slot="right"] { left: auto; right: 8px; top: 134px; }
 html.is-compact #stage > .as-host .as-seat .as-win { left: 0; top: 0; width: 60px; height: 75px; }
 html.is-compact #stage > .as-host .as-seat .as-win::after { bottom: -4px; height: 4px; }
-html.is-compact #stage > .as-host .as-seat :is(.as-plate, .as-out) { left: 70px; top: 0; width: 80px; }
+html.is-compact #stage > .as-host .as-seat :is(.as-plate, .as-out) { left: 70px; top: 0; width: 92px; }
 html.is-compact #stage > .as-host .as-seat .as-plate { height: 75px; display: block; padding: 2px 5px 0 7px; }
 html.is-compact #stage > .as-host .as-seat .as-plate::before, html.is-compact #stage > .as-host .as-seat .as-plate::after { top: 6px; margin-top: 0; }
 html.is-compact #stage > .as-host .as-seat .as-plate::before { left: auto; right: 3px; }
@@ -543,7 +545,7 @@ html.is-compact #stage > .as-host .as-hole .as-card:not(.is-back) .s { display: 
 html.is-compact #stage > .as-host .as-hole .as-card:not(.is-back) .c { left: auto; right: 2px; top: auto; bottom: 1px; transform: none; font-size: 15px; }
 html.is-compact #stage > .as-host .as-seat .as-d { left: 72px; top: 56px; width: 16px; height: 16px; font-size: 15px; box-shadow: none; }
 html.is-compact #stage > .as-host .as-out b { height: 22px; padding: 0 4px; font-size: 15px; line-height: 22px; letter-spacing: 0; }
-html.is-compact #stage > .as-host .as-seat[data-slot="right"] .as-win { left: 90px; }
+html.is-compact #stage > .as-host .as-seat[data-slot="right"] .as-win { left: 102px; }
 html.is-compact #stage > .as-host .as-seat[data-slot="right"] :is(.as-plate, .as-out, .as-bet) { left: 0; }
 html.is-compact #stage > .as-host .as-seat[data-slot="right"] .as-hole { left: 44px; }
 html.is-compact #stage > .as-host .as-seat[data-slot="right"] .as-hole:is([data-mode="face"], [data-mode="draw"]) { left: 30px; }
@@ -554,7 +556,7 @@ html.is-compact #stage > .as-host .as-seat[data-turn] .as-win { transform: trans
 /* 決勝（スマホ）：窓 80x100 を正面奥へ */
 html.is-compact #stage > .as-host .as-seat[data-final] { left: calc(50% - 85px) !important; right: auto !important; top: 38px; width: 170px; height: 100px; }
 html.is-compact #stage > .as-host .as-seat[data-final] .as-win { left: 0 !important; top: 0 !important; width: 80px !important; height: 100px !important; }
-html.is-compact #stage > .as-host .as-seat[data-final] :is(.as-plate, .as-out) { left: 92px !important; top: 0 !important; width: 78px !important; }
+html.is-compact #stage > .as-host .as-seat[data-final] :is(.as-plate, .as-out) { left: 92px !important; top: 0 !important; width: 92px !important; }
 html.is-compact #stage > .as-host .as-seat[data-final] .as-plate { height: 100px; }
 html.is-compact #stage > .as-host .as-seat[data-final] .as-bet { left: 92px !important; top: 36px !important; width: 78px; }
 html.is-compact #stage > .as-host .as-seat[data-final] .as-hole { left: 138px !important; top: 70px !important; }
@@ -685,7 +687,7 @@ html.is-compact #stage > .as-host .as-res-btns button { height: 44px; font-size:
   html.is-compact #stage > .as-host .as-res-mimi img { width: 180px; }
   html.is-compact #stage > .as-host .as-res-big { left: 150px; }
   html.is-compact #stage > .as-host :is(.as-res-board, .as-res-pay, .as-res-btns) { left: 210px; }
-  html.is-compact #stage > .as-host .as-res-row { grid-template-columns: 30px 32px minmax(0, 1fr) minmax(0, 80px) 50px 22px; }
+  html.is-compact #stage > .as-host .as-res-row { grid-template-columns: 30px 32px 86px minmax(0, 1fr) 50px 22px; }
 }
 /* 高さ 390 未満：上の段を詰める */
 @media (max-height: 389px) {
@@ -871,3 +873,12 @@ html.is-compact #stage > .as-host .as-rv-r { gap: 2px 12px; }
 html.is-compact #stage > .as-host .as-rv-t { line-height: 1.3; }
 html.is-compact #stage > .as-host .as-rv-btns button { height: 44px; min-width: 130px; }
 html.is-compact #stage > .as-host .as-review-ok { top: 150px; }
+html.is-compact #stage > .as-host .as-res-name { letter-spacing: 0; }
+/* 2026-10-29 字幕（相手の台詞）：スマホで1行に収まらず「……あたし」と切れていた（前から）。一番長い台詞26字＋3割が入るよう2行まで折る。
+   小さいスマホは幅が243pxしかなかったので、胸像の右から右端までに広げる */
+html.is-compact #stage > .as-host .as-sub { height: auto; min-height: 22px; }
+html.is-compact #stage > .as-host .as-sub-in { height: auto; min-height: 22px; padding: 2px 12px; white-space: normal; }
+html.is-compact #stage > .as-host .as-sub-text { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; word-break: keep-all; overflow-wrap: anywhere; }
+@media (max-width: 799px) {
+  html.is-compact #stage > .as-host .as-sub { left: 160px; right: 8px; width: auto; transform: none; }
+}

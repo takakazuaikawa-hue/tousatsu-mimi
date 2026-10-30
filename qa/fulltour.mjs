@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, sleep } from './lib/session.mjs';
 import { stdCheck, countsOf, comfortOf } from './lib/stdcheck.mjs';
+import { TEXTS } from './lib/textsnap.mjs';   // 2026-10-29 段のそろい（qa/tiercheck.mjs）
 const mode = process.argv[2] || 'pc';
 const phone = mode === 'phone';
 const sizeArg = process.argv.find((a, i) => process.argv[i - 1] === '--size') || (phone ? '844x390' : '1280x800');
@@ -27,6 +28,7 @@ async function snap(name) {
   const file = `${String(idx).padStart(2, '0')}_${name}.png`;
   let r = null;
   try { r = await page.eval(CHECK); } catch (e) { r = { error: String(e.message).slice(0, 120) }; }
+  try { r.texts = await page.eval(TEXTS); } catch (e) { r.texts = []; }
   await page.screenshot(path.join(OUT, file));
   r.name = name; r.file = file; report.push(r);
   r.comfort = comfortOf(r, phone ? {} : { note: 15, allowed: [14, 15, 18, 19, 22, 26], display: 30 });
