@@ -670,8 +670,8 @@ function settleMotionToStill(v, src) {
 function motionLocalSrc(src) { return window.MimiAssets ? window.MimiAssets.videoSrc(src) : src; }
 const MOTION_OK = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 // 動画が用意できている絵（assets/motion/cg_<id>.mp4 / ep_<id>.mp4）
-// リコ先輩とグラーノは2026-10-18に絵を差し替えたので、新しい絵の動画ができるまで外す（古い絵の動画が流れないように）
-const MOTION_CG = ['polka', 'selina', 'velvet'];
+// リコ先輩とグラーノは2026-10-18、ポルカとヴェルベットは2026-10-30に絵を差し替えたので、新しい絵の動画ができるまで外す（古い絵の動画が流れないように）
+const MOTION_CG = ['selina'];
 const MOTION_EP = ['polka', 'selina', 'grano'];
 function attachMotion(img) {
   if (!MOTION_OK || !img || img.__motion || !img.dataset.motion) return;
