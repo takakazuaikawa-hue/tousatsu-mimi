@@ -20484,3 +20484,8 @@ html.is-compact .home-stage.h15-sm .h15-pl:has(.h15-win) .h15-lbl { left: 21%; r
 .coll-cg-card.is-secret { box-shadow: inset 0 0 0 1px rgba(214,176,104,.55); }
 /* 交換所の一言・品の説明・メモリの札：語の途中で折らない（折れ目は wrapHtml の <wbr>。入りきらない長い語だけは端で折る） */
 .shop-screen.v3 .sh3-desc, .shop-screen.v3 [data-bind="ricoShopComment"], .memory-card-desc, .shop-item-desc, .coll-cg-card .coll-cg-label { word-break: keep-all; overflow-wrap: anywhere; }
+
+/* ===== ご褒美CGの網目の動き（live-cg.js、2026-10-30 台帳14）：絵と同じクラスで上に重ね、描けてから溶かし込む ===== */
+canvas.live-cg { position: absolute; margin: 0; max-width: none; max-height: none; opacity: 0; transition: opacity .6s ease; pointer-events: none; }
+canvas.live-cg.on { opacity: 1; }
+.ims-cg.is-swap canvas.live-cg, .ims-cg.is-stamp canvas.live-cg { opacity: 0; }

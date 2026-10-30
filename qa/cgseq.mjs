@@ -17,11 +17,11 @@ await page.eval(`(() => { document.querySelectorAll('.home-overlay,.login-bonus-
 const n = await page.eval(`INTERMISSIONS.selina.lines.length`);
 for (let i = 0; i < n; i++) { await sleep(500); await page.eval(`document.querySelector('.intermission-overlay').click(), true`); }
 await sleep(5200);
-log('cg1', await page.eval(`JSON.stringify({ src: document.querySelector('.ims-cg-img').getAttribute('src'), count: document.querySelector('.ims-cg-count').textContent })`));
+log('cg1', await page.eval(`JSON.stringify({ src: document.querySelector('.ims-cg-img').getAttribute('src'), count: document.querySelector('.ims-cg-count').textContent, live: [...document.querySelectorAll('.ims-cg canvas.live-cg')].map(c => c.className.includes('on')) })`));
 await shot('ims1');
 await page.eval(`document.querySelector('.intermission-overlay').click(), true`);
 await sleep(3400);
-log('cg2', await page.eval(`JSON.stringify({ src: document.querySelector('.ims-cg-img').getAttribute('src'), count: document.querySelector('.ims-cg-count').textContent, open: !!document.querySelector('.intermission-overlay') })`));
+log('cg2', await page.eval(`JSON.stringify({ src: document.querySelector('.ims-cg-img').getAttribute('src'), count: document.querySelector('.ims-cg-count').textContent, open: !!document.querySelector('.intermission-overlay'), live: [...document.querySelectorAll('.ims-cg canvas.live-cg')].map(c => c.className.includes('on')), liveSrc: document.querySelector('.ims-cg-img').__live })`));
 await shot('ims2');
 await page.eval(`document.querySelector('.intermission-overlay').click(), true`);
 await sleep(900);

@@ -680,6 +680,10 @@ const SECRET_CG = {
   cg_selina_salon:    { src: 'assets/backgrounds/secret_cg_selina_salon.jpg', motion: 'assets/motion/cg_selina.mp4' },
   cg_selina_fireside: { src: 'assets/backgrounds/secret_cg_selina_fireside.jpg' },
 };
+function attachLiveCg(img) {
+  if (!MOTION_OK || !window.LiveCG || !img) return;
+  if (img.complete && img.naturalWidth) window.LiveCG.attach(img); else img.addEventListener('load', () => window.LiveCG.attach(img), { once: true });
+}
 function rewardCgList(id) {
   if (id === 'graduation') return [{ src: GRADUATION_CG }];
   if (SECRET_CG[id]) return [SECRET_CG[id]];
@@ -4263,6 +4267,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
       cgImg.src = `assets/episodes/${opponentId}.webp`;
     };
     cgImg.src = cgPath;
+    attachLiveCg(cgImg);
     // ご褒美CGは動く（相手に勝った瞬間の最大のご褒美なので、ここは絵が生きている方がいい）
     if (MOTION_CG.includes(opponentId)) {
       cgImg.dataset.motion = `assets/motion/cg_${opponentId}.mp4`;
@@ -4286,7 +4291,9 @@ function showIntermission(opponentId, onDone, voiceReady) {
     cgShownAt = Date.now();
     cgLayer.classList.add('is-swap');
     setTimeout(() => {
+      if (window.LiveCG) window.LiveCG.detach(cgImg);
       cgImg.src = src;
+      attachLiveCg(cgImg);
       cgLayer.classList.remove('is-cap', 'is-reveal');
       void cgImg.offsetWidth;
       cgLayer.classList.remove('is-swap');
@@ -4362,7 +4369,9 @@ function showRewardCgViewer(id) {
     img.onerror = () => { img.onerror = null; img.style.display = 'none'; body.classList.add('noimg'); };
     img.style.display = ''; img.__motion = false; delete img.dataset.motion; delete img.dataset.motionReplay;
     body.querySelectorAll('video').forEach(v => v.remove());
+    if (window.LiveCG) window.LiveCG.detach(img);
     img.src = c.src;
+    attachLiveCg(img);
     if (c.motion) { img.dataset.motion = c.motion; img.dataset.motionReplay = '1'; attachMotion(img); }
     hint.textContent = list.length > 1 ? (at < list.length - 1 ? `${at + 1} / ${list.length}　タップで次の一枚` : `${at + 1} / ${list.length}　タップして閉じる`) : 'タップして閉じる';
   };
