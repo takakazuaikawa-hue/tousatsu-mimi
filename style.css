@@ -20517,3 +20517,38 @@ html.is-compact .tr-code { height: 4.6em; }
 
 /* iOS の zoom の中の文字の不具合（Bug 272351）の回避：html と zoom を掛ける部品にも none を明示する */
 html, .read-battle-host, .minipoker-overlay, .as-host { -webkit-text-size-adjust: none; text-size-adjust: none; }
+
+/* =====================================================================
+   iOS の zoom の不具合（WebKit Bug 272351）の回避の本体（2026-10-31）
+   iPhone の WebKit は zoom を掛けた中の文字の大きさだけ zoom しない（text-size-adjust: none でも直らなかった＝ユーザーの実機で確認）。
+   そこで「舞台の縮みを zoom で打ち消す」のをやめ、部品そのものを画面と同じ大きさの枠にして scale で打ち消す。
+   scale は文字ごと拡大されるので、どのブラウザでも同じに見える。中身の CSS（画面の px で書いてある）はそのまま。
+   ・枠の左上＝画面の左上（舞台の外の帯の分だけ左上へ）、大きさ＝画面の大きさ（--rb-w × --rb-h、画面の px）
+   ・後から読む CSS（read-compact.css・allstar.css）の位置の指定に勝つよう、選択子に body を足して一段強くしてある
+   ・scale の基点は左上。部品の出入りの動き（transform）とは別の指定なので重ならない
+   ===================================================================== */
+html.is-compact body #stage > .read-battle-host.mb-host,
+html.is-compact body #app > .battle-modal-overlay.v2psych,
+html.is-compact body #stage > .as-host,
+html.is-compact body #stage > :is(.settings-overlay, .equip-overlay, .collection-overlay, .glossary-overlay, .hand-guide-overlay, .hand-history-overlay,
+  .login-bonus-overlay, .char-profile-overlay, .rico-mode-overlay, .minipoker-overlay, .ending-prompt-overlay, .episode-overlay, .newgame-overlay,
+  .mimi-confirm-overlay, .note-article-overlay, .memory-viewer-overlay, .rule-primer-overlay, .dominance-choice-overlay),
+html.is-compact body #stage > :is(.intro-win-overlay, .hands-on-overlay),
+html.is-compact body #stage > .home-overlay:has(> .home-dialog.as-dialog) {
+  zoom: 1 !important;
+  inset: auto !important; right: auto !important; bottom: auto !important;
+  left: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1)) !important;
+  top: calc(-1 * var(--gut-y, 0px) / var(--game-scale, 1)) !important;
+  width: var(--rb-w, 100%) !important; height: var(--rb-h, 100%) !important;
+  scale: var(--inv-scale, 1); transform-origin: 0 0 !important;
+}
+/* 小窓の土台：紙面は左右の安全域（画面の px）の内側に。紙面そのものの zoom はやめる（土台が画面の px になった） */
+html.is-compact body #stage > :is(.settings-overlay, .equip-overlay, .collection-overlay, .glossary-overlay, .hand-guide-overlay, .hand-history-overlay,
+  .login-bonus-overlay, .char-profile-overlay, .rico-mode-overlay, .minipoker-overlay, .ending-prompt-overlay, .episode-overlay, .newgame-overlay,
+  .mimi-confirm-overlay, .note-article-overlay, .memory-viewer-overlay, .rule-primer-overlay, .dominance-choice-overlay),
+html.is-compact body #stage > .home-overlay:has(> .home-dialog.as-dialog) { padding: 0 var(--pad-x, var(--gut-x, 0px)) !important; box-sizing: border-box; }
+html.is-compact body #stage > :is(.settings-overlay, .equip-overlay, .collection-overlay, .glossary-overlay, .hand-guide-overlay, .hand-history-overlay,
+  .login-bonus-overlay, .char-profile-overlay, .rico-mode-overlay, .minipoker-overlay, .ending-prompt-overlay, .episode-overlay, .newgame-overlay,
+  .mimi-confirm-overlay, .note-article-overlay, .memory-viewer-overlay, .rule-primer-overlay, .dominance-choice-overlay) > *,
+html.is-compact body #stage > :is(.intro-win-overlay, .hands-on-overlay) > :is(.intro-win-modal, .ho-modal),
+html.is-compact body .home-dialog.as-dialog { zoom: 1 !important; }
