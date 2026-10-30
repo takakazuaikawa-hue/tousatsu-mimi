@@ -32,7 +32,9 @@ html, body {
   overflow: hidden;
   /* スマホでブラウザのオートズームを無効化、タップ反応を高速化 */
   touch-action: manipulation;
-  -webkit-text-size-adjust: 100%;
+  /* 2026-10-31 iOS の WebKit の不具合（Bug 272351）：zoom を掛けた中（読み合い・ファイブポーカー・零時の卓）で文字だけが zoom されず約半分に縮んでいた。
+     100% では起き、none で直る（iOS では「文字の自動拡大をしない」という意味） */
+  -webkit-text-size-adjust: none; text-size-adjust: none;
   -webkit-tap-highlight-color: transparent;
   /* iOSのスクロールバウンス防止 */
   overscroll-behavior: none;
@@ -20512,3 +20514,6 @@ canvas.live-cg.on { opacity: 1; }
 html.is-compact #stage .mimi-confirm-overlay .mimi-confirm-actions .btn, html.is-compact #stage .tr-btns .btn { min-height: 44px; }
 html.is-compact #stage .mimi-confirm-overlay.is-panel .mimi-confirm { padding: 10px 16px; gap: 8px; }
 html.is-compact .tr-code { height: 4.6em; }
+
+/* iOS の zoom の中の文字の不具合（Bug 272351）の回避：html と zoom を掛ける部品にも none を明示する */
+html, .read-battle-host, .minipoker-overlay, .as-host { -webkit-text-size-adjust: none; text-size-adjust: none; }

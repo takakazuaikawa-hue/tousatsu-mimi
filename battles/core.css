@@ -57,7 +57,7 @@
   width: 100%; height: 100%; box-sizing: border-box;
   color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.6; font-weight: 400; text-align: left;
   background: radial-gradient(120% 80% at 50% 0%, #3e0306 0%, #1a0608 55%, #0b0306 100%);
-  touch-action: manipulation; -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; -webkit-text-size-adjust: none; text-size-adjust: none; -webkit-tap-highlight-color: transparent;
 }
 .mb-host *, .mb-host *::before, .mb-host *::after { box-sizing: border-box; }
 .mb-host button { font: inherit; }
