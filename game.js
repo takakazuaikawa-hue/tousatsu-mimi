@@ -3380,7 +3380,7 @@ function applyBindings() {
           });
         });
         break;
-      case 'lobbyRicoLine': el.textContent = lobbyRicoLine(); break;
+      case 'lobbyRicoLine': setWrapLine(el, lobbyRicoLine()); break;
       case 'lobbyStats': el.innerHTML = renderLobbyStats(); break;
       case 'lobbySettings': el.innerHTML = renderLobbySettings();
         el.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
@@ -4993,17 +4993,22 @@ function isRicoOutfitViewable(o) {
 }
 
 // ロビー：リコ先輩の状況別セリフ
+// 台詞を語の途中で折らない：文の「|」と、読点・句点・「……」の後だけを折れ目にする（置く所の CSS は word-break: keep-all）
+function setWrapLine(el, s) {
+  const e = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  el.innerHTML = String(s).replace(/([、。]|……)(?![|」])/g, '$1|').split('|').map(e).join('<wbr>');
+}
 function lobbyRicoLine() {
   const cleared = save.clearedStages.length;
   const lines = [];
-  if (cleared === 0)               lines.push('「ようこそ、ミミ。まずはアタシの研修からだよ」');
-  else if (!save.clearedStages.includes('polka'))   lines.push('「ポルカちゃんはブラフの入口。落ち着いて行こ」');
-  else if (!save.clearedStages.includes('selina'))  lines.push('「セリナはボードを読む練習にぴったりだよ」');
-  else if (!save.clearedStages.includes('grano'))   lines.push('「グラーノの卓は、ポットオッズの感覚を鍛える場所だよ」');
-  else if (!save.clearedStages.includes('velvet'))  lines.push('「ヴェルベット……VIPルームに入る準備、できた？」');
-  else                                              lines.push('「全卓制覇、やるじゃん。零時になったら、アタシも席に着くからね」');
-  if (save.coins >= 500) lines.push('「コイン貯まってきたじゃない。交換所、覗いてみる？」');
-  if (save.coins < 100 && cleared > 0) lines.push('「軍資金、心もとないじゃん。再戦で稼ぐのもアリだよ」');
+  if (cleared === 0)               lines.push('「ようこそ、ミミ。|まずはアタシの研修からだよ」');
+  else if (!save.clearedStages.includes('polka'))   lines.push('「ポルカちゃんは|ブラフの入口。|落ち着いて行こ」');
+  else if (!save.clearedStages.includes('selina'))  lines.push('「セリナは|ボードを読む練習に|ぴったりだよ」');
+  else if (!save.clearedStages.includes('grano'))   lines.push('「グラーノの卓は、|ポットオッズの感覚を|鍛える場所だよ」');
+  else if (!save.clearedStages.includes('velvet'))  lines.push('「ヴェルベット……|VIPルームに入る準備、|できた？」');
+  else                                              lines.push('「全卓制覇、やるじゃん。|零時になったら、|アタシも席に着くからね」');
+  if (save.coins >= 500) lines.push('「コイン貯まってきたじゃない。|交換所、覗いてみる？」');
+  if (save.coins < 100 && cleared > 0) lines.push('「軍資金、心もとないじゃん。|再戦で稼ぐのもアリだよ」');
   // 衣装ごとの一言も混ぜる
   const outfit = state.screen === 'lobby' ? homeLobbyOutfit() : pickLobbyRico();
   if (outfit?.lines?.length) lines.push(pick(outfit.lines));
@@ -19732,50 +19737,51 @@ function preloadOne(url) {
   });
 }
 
+// 折れ目は「|」（読み込み画面で語の途中で折らない。setWrapLine）
 const PRELOAD_TIPS = [
   // ── 基本ルール ──
-  'ホールデムは「2枚の手札＋場の5枚」から最強の5枚を作るゲーム',
-  'ロイヤルフラッシュは同じスートのA-K-Q-J-10。出る確率は約65万分の1',
-  '強さ順：ハイカード→ペア→ツーペア→スリーカード→ストレート→フラッシュ→フルハウス→フォーカード→ストレートフラッシュ→ロイヤル',
-  '♠ ストレートとフラッシュ、強いのはフラッシュ。覚えづらいけど大事',
-  '同じ役同士はキッカー（一番強い余り札）で勝敗が決まる',
+  'ホールデムは|「2枚の手札＋場の5枚」から|最強の5枚を作るゲーム',
+  'ロイヤルフラッシュは|同じスートのA-K-Q-J-10。|出る確率は|約65万分の1',
+  '役は弱い順に|ペア→ツーペア→|スリーカード→ストレート→|フラッシュ→フルハウス→|フォーカード',
+  '♠ ストレートとフラッシュ、|強いのはフラッシュ。|覚えづらいけど大事',
+  '同じ役同士は|キッカー（一番強い余り札）で|勝敗が決まる',
 
   // ── このゲームでの判断 ──
-  '降りる（フォールド）のも立派な一手。失うのは、それまでに出したチップだけ',
-  '相手が賭けていない時は「チェック」でタダで次の場札を見られる。降りる必要はない',
-  '賭け額は相手からの手紙。急に大きくなったら「なぜ今？」と考えてみよう',
-  'セリフと賭け額が食い違ったら要注意。言葉より、チップの動きを信じて',
-  '役の強さを忘れたら、バトル中の「役の一覧」ボタンでいつでも早見表を開ける',
+  '降りる（フォールド）のも|立派な一手。|失うのは、|それまでに出したチップだけ',
+  '相手が賭けていない時は|「チェック」で|タダで次の場札を見られる。|降りる必要はない',
+  '賭け額は|相手からの手紙。|急に大きくなったら|「なぜ今？」と考えてみよう',
+  'セリフと賭け額が|食い違ったら要注意。|言葉より、|チップの動きを信じて',
+  '役の強さを忘れたら、|バトル中の「役の一覧」ボタンで|いつでも早見表を開ける',
 
   // ── 数学 ──
-  'アウツ × 2 ≒ 次の1枚で完成する確率(%)。フラッシュドロー9枚なら約18%',
-  'アウツ × 4 ≒ ターン＋リバー2枚で完成する確率(%)。9枚なら約36%',
-  '「ポットオッズ」＝コール額 ÷ (ポット＋コール額)。完成確率がこれを上回れば「乗る」',
-  'オープンエンドストレートドローはアウツ8枚 → 約32%（リバーまで）',
+  'アウツ × 2 ≒ |次の1枚で完成する確率(%)。|フラッシュドロー9枚なら|約18%',
+  'アウツ × 4 ≒ |ターン＋リバー2枚で|完成する確率(%)。|9枚なら約36%',
+  '「ポットオッズ」＝|コール額 ÷ (ポット＋コール額)。|完成確率がこれを上回れば|「乗る」',
+  'オープンエンド|ストレートドローは|アウツ8枚 → |約32%（リバーまで）',
 
   // ── 心理戦 ──
-  '強い時ほど静かに、弱い時ほど派手に振る舞う。逆も真なり',
-  '相手のチップ握る手、視線、呼吸——札より雄弁',
-  '「言葉は嘘をつくが、ベットは嘘をつかない」',
-  '自分の手の話をする相手ほど、要警戒',
+  '強い時ほど静かに、|弱い時ほど派手に振る舞う。|逆も真なり',
+  '相手のチップ握る手、|視線、呼吸——|札より雄弁',
+  '「言葉は嘘をつくが、|ベットは嘘をつかない」',
+  '自分の手の話をする相手ほど、|要警戒',
 
   // ── ベッティング ──
-  '相手が大きく賭けてきたら、払う額とポットを比べよう。安く見えても、割に合うとは限らない',
-  'ベットサイズは「ポットの 1/2 〜 2/3」が標準的',
-  'オールインは「最後の説得」。降りる選択肢を相手から奪う',
-  'チェックは「弱さ」ではなく「罠」かもしれない',
+  '相手が大きく賭けてきたら、|払う額とポットを比べよう。|安く見えても、|割に合うとは限らない',
+  'ベットサイズは|「ポットの 1/2 〜 2/3」が|標準的',
+  'オールインは|「最後の説得」。|降りる選択肢を|相手から奪う',
+  'チェックは|「弱さ」ではなく|「罠」かもしれない',
 
   // ── 心構え ──
-  '良いハンドでも負けることはある。ポーカーは長期戦',
-  '「役の強さ」より「相手の手のレンジ」を考えるのが上級者',
-  '強い手を引いた時こそ、相手から最大限引き出すベットを',
-  '「折るべき場面で折れる強さ」が、勝者の条件',
+  '良いハンドでも|負けることはある。|ポーカーは長期戦',
+  '「役の強さ」より|「相手の手のレンジ」を|考えるのが上級者',
+  '強い手を引いた時こそ、|相手から最大限|引き出すベットを',
+  '「折るべき場面で|折れる強さ」が、|勝者の条件',
 
   // ── 世界観セリフ ──
-  'ミミ：「えへへ、ぱにゅっとした感じで……勝てた、かも」',
-  'リコ先輩：「勝つことだけ考えると負けるよ。降りるのも技術だからね」',
-  'グラーノ：「数字は嘘をつかない。お嬢さん、勝算をお持ちですかな？」',
-  'ヴェルベット：「あなたの読み、見せて頂戴」',
+  'ミミ：|「えへへ、|ぱにゅっとした感じで……|勝てた、かも」',
+  'リコ先輩：|「勝つことだけ考えると負けるよ。|降りるのも技術だからね」',
+  'グラーノ：|「数字は嘘をつかない。|お嬢さん、|勝算をお持ちですかな？」',
+  'ヴェルベット：|「あなたの読み、|見せて頂戴」',
 ];
 
 async function startPreload() {
@@ -19794,17 +19800,17 @@ async function startPreload() {
   }
   const all = [...(window.MimiAssets ? window.MimiAssets.sets.title() : []), ...PRELOAD_ASSETS, ...PRELOAD_AUDIO];
   let loaded = 0;
-  // 豆知識：ランダム順に2.8秒ごと。頭の絵文字は外して、文だけを静かに切り替える
+  // 豆知識：ランダム順に5.5秒ごと（2.8秒では読み終わる前に消えた）。頭の絵文字は外して、文だけを静かに切り替える
   const plain = (t) => String(t).replace(/^[\p{Extended_Pictographic}\u2600-\u27BF\uFE0F\u200D\s]+/u, '');
   const tipOrder = [...Array(PRELOAD_TIPS.length).keys()].sort(() => Math.random() - 0.5);
   let tipIdx = 0;
-  if (tipEl) tipEl.textContent = plain(PRELOAD_TIPS[tipOrder[0]]);
+  if (tipEl) setWrapLine(tipEl, plain(PRELOAD_TIPS[tipOrder[0]]));
   const tipInterval = setInterval(() => {
     tipIdx = (tipIdx + 1) % tipOrder.length;
     if (!tipEl) return;
     tipEl.classList.add('is-swapping');
-    setTimeout(() => { tipEl.textContent = plain(PRELOAD_TIPS[tipOrder[tipIdx]]); tipEl.classList.remove('is-swapping'); }, 300);
-  }, 2800);
+    setTimeout(() => { setWrapLine(tipEl, plain(PRELOAD_TIPS[tipOrder[tipIdx]])); tipEl.classList.remove('is-swapping'); }, 400);
+  }, 5500);
   // 並列で読み込み、各完了で進捗更新
   await Promise.all(all.map(url => preloadOne(url).then(() => {
     loaded++;

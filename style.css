@@ -20420,3 +20420,54 @@ html.is-compact .home-stage.h15-sm .h15-pl:has(.h15-win) .h15-lbl { left: 21%; r
 }
 /* 「×2倍！」は1かたまりで折る（小さいスマホで「倍！」だけが1行に落ちていた） */
 .minipoker-overlay .mp-nowrap { white-space: nowrap; }
+
+/* ===== ホームの動きの品位（2026-10-30 台帳18「ホームのリコ以外の動きが安っぽい」）=====
+   屋内の札が常に揺れる・数秒ごとに光が走る・長針が前後に震える、の3つが安っぽさの元。
+   止まっている物は止め、動きは「触れた時」「入場の時」「時計が時を刻む時」に意味のあるものだけ残す */
+.home-stage .h15-sw { animation: none; }
+.home-stage .h15-ticket .h15-shine::after { animation: none; opacity: 0; }
+/* 長針：前へ「カチッ」と進んで小さく戻り、そのまま止まる。元の位置へは12秒かけて目に見えない速さで戻す（前後の震えに見せない） */
+.home-stage .h15-hand { animation: home-tick2 12s linear infinite; }
+@keyframes home-tick2 { 0% { transform: rotate(57deg); animation-timing-function: cubic-bezier(.2,1.8,.4,1); } 2% { transform: rotate(57.6deg); } 100% { transform: rotate(57deg); } }
+/* リコの台詞：語の途中で折らない（折れ目は setWrapLine の <wbr>） */
+.home-stage .h15-dialogue { word-break: keep-all; overflow-wrap: anywhere; }
+/* 「今夜の卓へ」の券：額縁の下の宝石の飾りが「コイン」に掛かっていた → 題と賞を上へ */
+.home-stage .h15-ticket .h15-lbl { top: 43%; }
+.home-stage .h15-ticket .h15-prize { top: 56%; }
+.home-stage.h15-sm .h15-ticket .h15-lbl { top: 41%; }
+.home-stage.h15-sm .h15-ticket .h15-prize { top: 53%; }
+
+/* ===== 読み込み画面の作り直し（2026-10-30 ユーザー「ロード画面も安っぽい」）=====
+   それまで：左半分が真っ黒の空き地に、2px の線と灰色の小さな字。豆知識は2.8秒で消えて読めなかった。
+   ホームと同じ舞台の部品で組む：深紅の灯り、金縁の札の中を金の光が満ちる進み具合（数字は六角の窓）、金縁の深紅の札に豆知識 */
+.preload-shade { background:
+  radial-gradient(52% 64% at 21% 50%, rgba(104,16,30,.5), rgba(104,16,30,0) 72%),
+  linear-gradient(90deg, rgba(12,5,7,.9) 0%, rgba(12,5,7,.66) 30%, rgba(12,5,7,.1) 54%, rgba(12,5,7,0) 64%); }
+#preload-overlay .preload-inner { gap: clamp(10px, 2.6vh, 22px); font-family: "Shippori Mincho B1", "Yu Mincho", serif; }
+/* 進み具合：ホームの札（plate.webp）。深紅の帯＝横21〜87%・縦25〜76%、六角の窓＝横3〜18% */
+.preload-progress { position: relative; display: block; width: 100%; aspect-ratio: 1580 / 470; background: url('assets/ui/home/plate.webp') center / 100% 100% no-repeat;
+  filter: drop-shadow(0 2px 0 rgba(58,30,4,.9)) drop-shadow(0 10px 16px rgba(0,0,0,.6)); }
+.preload-bar { position: absolute; left: 23%; right: 15.5%; top: 57%; height: 7%; background: rgba(20,2,6,.72); border-radius: 99px; box-shadow: inset 0 1px 2px rgba(0,0,0,.8), 0 1px 0 rgba(255,220,150,.18); overflow: visible; }
+.preload-bar-fill { position: relative; height: 100%; border-radius: 99px; background: linear-gradient(180deg, #fff1c8, #f0cf83 45%, #b8873a); box-shadow: 0 0 8px rgba(255,210,130,.55); transition: width .45s cubic-bezier(.2,.7,.2,1); }
+/* 光の先端：満ちていく所だけが明るい */
+.preload-bar-fill::after { content: ""; position: absolute; right: -9px; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%; mix-blend-mode: screen;
+  background: radial-gradient(closest-side, rgba(255,250,228,.95), rgba(255,214,130,.45) 45%, rgba(255,190,90,0)); }
+.preload-count { position: absolute; inset: 0; display: block; color: #fbf1dc; letter-spacing: 0; }
+.preload-count > span:first-child { position: absolute; left: 23%; top: 31%; font-size: var(--r-label, 15px); letter-spacing: .3em; color: #f2d79a; text-shadow: 0 1px 2px #000; }
+.preload-count > span:last-child { position: absolute; left: 3.4%; width: 14.6%; top: 50%; transform: translateY(-50%); text-align: center; font-size: var(--r-note, 15px); color: #f2d79a; text-shadow: 0 1px 2px #000; white-space: nowrap; }
+.preload-count b { font-family: Georgia, "Bodoni Moda", serif; font-size: var(--r-mission, 22px); font-weight: 700; letter-spacing: -.02em; margin-right: 1px; color: #fbe6b0; text-shadow: 0 1px 0 #4a2a06, 0 0 8px rgba(255,200,110,.45), 0 2px 3px #000; font-variant-numeric: tabular-nums; }
+/* 豆知識：金の細い二重線の深紅の札。見出しの頭に旗（mark.webp）を吊る */
+.preload-tip-box { position: relative; border: 1px solid rgba(214,176,104,.75); border-radius: 2px; padding: 14px 18px 14px 18px;
+  background: radial-gradient(130% 120% at 30% 0%, rgba(92,14,26,.94), rgba(38,5,11,.94) 70%);
+  box-shadow: inset 0 0 0 3px rgba(20,2,6,.85), inset 0 0 0 4px rgba(214,176,104,.35), inset 0 0 22px rgba(0,0,0,.55), 0 10px 24px rgba(0,0,0,.55); }
+.preload-tip-label { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font-size: var(--r-label, 15px); font-weight: 700; letter-spacing: .24em; color: #f2d79a; text-shadow: 0 1px 2px #000; }
+.preload-tip-label::before { content: ""; flex: none; width: 14px; height: 28px; margin: -16px 0 -4px; background: url('assets/ui/home/mark.webp') center / contain no-repeat; filter: drop-shadow(0 2px 2px rgba(0,0,0,.7)); }
+.preload-tip { font-size: var(--r-body, 17px); line-height: 1.7; color: #fbf1dc; min-height: 5.1em; word-break: keep-all; overflow-wrap: anywhere; transition: opacity .4s ease; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+/* 横向きのスマホ：縦が低いので、ロゴを少し小さく、札の幅は保つ */
+@media (max-height: 500px) and (min-aspect-ratio: 1/1) {
+  #preload-overlay .preload-inner { left: max(20px, env(safe-area-inset-left)); width: min(330px, 42vw); gap: 8px; }
+  .preload-logo-img { width: 66%; }
+  .preload-tip-box { padding: 9px 14px; }
+  .preload-tip-label { margin-bottom: 2px; }
+}
+@media (prefers-reduced-motion: reduce) { .preload-bar-fill { transition: none; } }

@@ -163,7 +163,7 @@ function homeCeremonyPlan(root, cleared, next) {
     slot?.classList.remove('h15-pending');
     setFrame();
     frame.querySelector('.h15-en')?.getAnimations().forEach(a => { if (!(a instanceof CSSAnimation)) a.cancel(); });
-    root.querySelector('.h15-dialogue').textContent = cleared === STAGE_ORDER.length ? '「全部の卓に灯りが入ったじゃん。ここはもう、あんたの劇場だよ」' : '「やるじゃん。劇場にまた灯りが入ったよ」';
+    setWrapLine(root.querySelector('.h15-dialogue'), cleared === STAGE_ORDER.length ? '「全部の卓に灯りが入ったじゃん。|ここはもう、|あんたの劇場だよ」' : '「やるじゃん。|劇場にまた灯りが入ったよ」');
     root.classList.remove('h15-rite');
   };
   const start = () => {
@@ -220,11 +220,11 @@ async function applyHomeCostume() {
     root.classList.toggle('has-costume', !uniform);
     // 制服の時は、リコ先輩を Live2D 風に動かす層を重ねる（home-live.js）。ほかの衣装の時は止める
     if (window.HomeLive) { if (uniform) window.HomeLive.start(root.querySelector('.h15-bg'), 'assets/ui/home/scene.webp'); else window.HomeLive.stop(); }
-    root.querySelector('.h15-dialogue').textContent = uniform ? lobbyRicoLine() : outfit.lines[Math.floor(rand() * outfit.lines.length)];
+    setWrapLine(root.querySelector('.h15-dialogue'), uniform ? lobbyRicoLine() : outfit.lines[Math.floor(rand() * outfit.lines.length)]);
   } catch {
     if (!root.isConnected || root._costumeRequest !== request) return;
     root.classList.remove('has-costume');
-    root.querySelector('.h15-dialogue').textContent = lobbyRicoLine();
+    setWrapLine(root.querySelector('.h15-dialogue'), lobbyRicoLine());
   }
 }
 
@@ -333,20 +333,22 @@ function mountHomeMotion(root) {
   },{signal:abort.signal});
   root.addEventListener('pointerleave',reset,{signal:abort.signal});
   const tip=root.querySelector('.h15-tip'), ticket=root.querySelector('.h15-ticket');
-  // 金縁を走る反射：額・名札・台帳・八角金具のどれか一つだけに、順番に一度ずつ
-  const glints = [...root.querySelectorAll('.h15-frame,.h15-nameplate,.h15-ledger,.h15-oct')].map(el => {
+  // 金縁を走る反射（2026-10-30 台帳18：3.3秒ごとに光るのは安っぽい）：入場が落ち着いた時に一度だけ、左上から右下へ部屋を光が通る。
+  // あとは「今夜の卓へ」の券だけに、24秒に一度
+  const glints = [...root.querySelectorAll('.h15-nameplate,.h15-ledger,.h15-oct,.h15-frame,.h15-ticket')].map(el => {
     const g = document.createElement('i'); g.className = 'h15-gl'; el.querySelector('.h15-sw')?.append(g); return g;
   });
-  let glintAt = 0, gust = 0, glint = 0;
-  const swayers = [...root.querySelectorAll('.h15-nameplate,.h15-pl')].map(el => el.querySelector('.h15-en'));
-  const frameEn = root.querySelector('.h15-frame .h15-en');
-  // 札の列に同じ風がひと吹き：上から順に少し遅れて同じ向きに振れ、鎖の額は遅れて応える
-  function blow() {
-    swayers.forEach((en,i) => en?.animate([{transform:'none'},{transform:'rotate(.7deg)',offset:.35},{transform:'rotate(-.3deg)',offset:.7},{transform:'none'}],{duration:1700,delay:i*80,easing:'ease-in-out',composite:'add'}));
-    frameEn?.animate([{transform:'none'},{transform:'rotate(.6deg)',offset:.4},{transform:'rotate(-.35deg)',offset:.75},{transform:'none'}],{duration:2200,delay:520,easing:'ease-in-out',composite:'add'});
-  }
+  let gust = 0, glint = 0;
+  const flash = (g) => { g?.classList.remove('h15-on'); void g?.offsetWidth; g?.classList.add('h15-on'); };
+  // 札は止まっている（屋内で常に揺れる札は安っぽい）。触れた札・押した札だけが、ピンを支点に一度振れて落ち着く
+  root.querySelectorAll('.h15-pl,.h15-nameplate').forEach(el => {
+    const swing = () => { if (reduce.matches) return; const en = el.querySelector('.h15-en'); if (!en || en._swing?.playState === 'running') return;
+      en._swing = en.animate([{transform:'none'},{transform:'rotate(1.1deg)',offset:.22},{transform:'rotate(-.55deg)',offset:.5},{transform:'rotate(.22deg)',offset:.75},{transform:'none'}],{duration:1100,easing:'ease-out',composite:'add'}); };
+    el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') swing(); }, {signal:abort.signal});
+    el.addEventListener('pointerdown', swing, {signal:abort.signal});
+  });
   function activity() {
-    clearInterval(interval); clearTimeout(hop); clearInterval(gust); clearInterval(glint); interval=0;
+    clearInterval(interval); clearTimeout(hop); clearTimeout(gust); clearInterval(glint); interval=0;
     root.classList.toggle('home-paused', document.hidden);
     if (reduce.matches || document.hidden) {
       reset(); tip.classList.remove('h15-on'); ticket.classList.remove('h15-hop');
@@ -355,12 +357,8 @@ function mountHomeMotion(root) {
       root.getAnimations({subtree:true}).forEach(a => { if (!(a instanceof CSSAnimation) && !(a instanceof CSSTransition)) a.finish(); });
       return;
     }
-    hop=setTimeout(blow, 4200);
-    gust=setInterval(blow, 19000);
-    glint=setInterval(() => {
-      const g = glints[glintAt++ % glints.length];
-      g?.classList.remove('h15-on'); void g?.offsetWidth; g?.classList.add('h15-on');
-    }, 3300);
+    hop=setTimeout(() => glints.forEach((g,i) => { gust = setTimeout(() => flash(g), i*170); }), 1800);
+    glint=setInterval(() => flash(glints[glints.length-1]), 24000);
   }
   reduce.addEventListener('change',activity,{signal:abort.signal});
   document.addEventListener('visibilitychange',activity,{signal:abort.signal});
