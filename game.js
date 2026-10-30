@@ -416,7 +416,15 @@ function markStageCleared(stageId) {
 
 const SAVE_VERSION = 2;
 let save = null;
+let saveFailNoticed = false;
+function noticeSaveFail() {
+  if (saveFailNoticed) return;
+  saveFailNoticed = true;
+  setTimeout(() => { if (typeof toast === 'function') toast('この端末では進み具合を保存できていません。ブラウザのプライベートモードを切るか、空き容量を確かめてください', 'big'); }, 800);
+}
 function loadProgress() {
+  // 保存の場所そのものが使えない（プライベートモード・ブラウザの設定）：壊れたのではないので、そう知らせて今回だけの進み具合で遊ぶ
+  try { localStorage.getItem(SAVE_KEY); } catch (e) { noticeSaveFail(); return normalizeSave(defaultSave()); }
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return normalizeSave(defaultSave());
@@ -431,7 +439,8 @@ function loadProgress() {
     console.warn('Save load failed; using default', e);
     try {
       const raw = localStorage.getItem(SAVE_KEY);
-      if (raw) localStorage.setItem(SAVE_KEY + '_broken_' + Date.now(), raw);
+      // 控えは1つだけ（同じ壊れたデータで起動するたびに複製が溜まり、容量を食っていた）
+      if (raw) { Object.keys(localStorage).filter(k => k.indexOf(SAVE_KEY + '_broken_') === 0).forEach(k => localStorage.removeItem(k)); localStorage.setItem(SAVE_KEY + '_broken_' + Date.now(), raw); }
     } catch (e2) {}
     setTimeout(() => { if (typeof toast === 'function') toast('セーブデータが読めなかったので、控えを残して新しく始めました', 'big'); }, 1500);
     return normalizeSave(defaultSave());
@@ -456,9 +465,11 @@ function saveProgress() {
         localStorage.setItem(SAVE_KEY, JSON.stringify(save));
       } catch (e2) {
         console.warn('Save retry failed', e2);
+        noticeSaveFail();
       }
     } else {
       console.warn('Save failed', e);
+      noticeSaveFail();
     }
   }
 }
@@ -19472,12 +19483,13 @@ function showMimiCutIn(text, narration, onClose, face) {
 }
 
 // 進行中の例外の受け皿。タイマーの連鎖の中で例外が出ると「相手の番……」のまま黙って止まっていた。
-// 描き直して続けるか、ロビーへ戻るかを選べるようにする（ゲーム本体の例外だけが対象）。
+// 描き直して続けるか、ロビーへ戻るかを選べるようにする。
+// 2026-10-30 販売前の点検：game.js の例外しか拾っておらず、ホーム・声・零時の卓・読み合いの部品の例外と、約束ごと（async）の失敗は黙って止まっていた。
+// 同じ場所から読んだ全部の部品と、約束ごとの失敗を拾う。音や動画の再生の拒否・中断（端末の決まりで起きる、害のないもの）は除く
 (function installErrorNet() {
   let shownAt = 0;
-  window.addEventListener('error', (e) => {
-    const src = String(e.filename || '');
-    if (src && src.indexOf('game.js') < 0) return;
+  const benign = (r) => { const n = r && r.name, m = String((r && r.message) || r || ''); return n === 'NotAllowedError' || n === 'AbortError' || n === 'NotSupportedError' || /play\(\)|pause\(\)|media|The operation was aborted|Load failed|Failed to fetch|NetworkError/i.test(m); };
+  const show = () => {
     if (Date.now() - shownAt < 4000 || document.querySelector('.mimi-error-net')) return;
     shownAt = Date.now();
     const el = document.createElement('div');
@@ -19495,7 +19507,14 @@ function showMimiCutIn(text, narration, onClose, face) {
       } catch (err) { console.error(err); }
     });
     (document.getElementById('stage') || document.body).appendChild(el);
+  };
+  window.addEventListener('error', (e) => {
+    const src = String(e.filename || '');
+    if (src && src.indexOf(location.origin) !== 0) return;   // 外の場所（Google Fonts など）の例外は対象外
+    if (!e.error && !src) return;                             // 画像・音の読み込み失敗は各部品が原画に戻す
+    show();
   });
+  window.addEventListener('unhandledrejection', (e) => { if (!benign(e.reason)) show(); });
 })();
 
 // ゲーム内の確認ダイアログ（ブラウザ標準の confirm は世界観を壊し、スマホでは全画面が解ける）

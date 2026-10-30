@@ -119,6 +119,8 @@
       state.ready = true; resize(); frame(performance.now());
     };
     img.src = src;
+    // 描画が失われたら（スマホの裏に回した時・メモリ不足）黒く固まらないよう、層を外して CSS の一枚絵に戻す
+    canvas.addEventListener('webglcontextlost', (ev) => { ev.preventDefault(); if (cur === state) stop(); }, { once: true });
     host.appendChild(canvas);
     function resize() {
       const r = host.getBoundingClientRect();                       // 画面上の実寸（舞台の縮みを含む）

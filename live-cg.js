@@ -127,6 +127,8 @@
     const place = () => { canvas.style.left = img.offsetLeft + 'px'; canvas.style.top = img.offsetTop + 'px'; canvas.style.width = img.offsetWidth + 'px'; canvas.style.height = img.offsetHeight + 'px'; };
     const parent = img.parentElement; if (!parent) return;
     if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
+    // 描画が失われたら層を外して一枚絵に戻す（黒く固まらないように）
+    canvas.addEventListener('webglcontextlost', (ev) => { ev.preventDefault(); detach(img); }, { once: true });
     img.insertAdjacentElement('afterend', canvas);
     if (img.complete) place(); else img.addEventListener('load', place, { once: true });
     st.ro = window.ResizeObserver ? new ResizeObserver(place) : null; if (st.ro) st.ro.observe(img);
