@@ -11324,7 +11324,7 @@ function showMiniPokerGame() {
     const luckyName = MP_PAYTABLE[luckyR].name;
     el.innerHTML = `
       <div class="mp-pt-title">配当表</div>
-      <div class="mp-pt-lucky">今日のラッキー役<br><b>${luckyName}</b> が ×2 倍！</div>
+      <div class="mp-pt-lucky">今日のラッキー役<br><b>${luckyName}</b> が<wbr><span class="mp-nowrap">×2倍！</span></div>
       <table class="mp-pt">
         ${MP_PAYTABLE.slice().reverse().map(p => {
           if (p.mult === 0) return '';

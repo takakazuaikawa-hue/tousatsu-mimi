@@ -20418,3 +20418,5 @@ html.is-compact .home-stage.h15-sm .h15-pl:has(.h15-win) .h15-lbl { left: 21%; r
   html.is-compact .minipoker-overlay .mp-paytable { width: 160px; }
   html.is-compact .minipoker-overlay .mp-actions .mp-btn { flex: 1 1 0; min-width: 0; white-space: normal; word-break: keep-all; overflow-wrap: normal; line-height: 1.15; }
 }
+/* 「×2倍！」は1かたまりで折る（小さいスマホで「倍！」だけが1行に落ちていた） */
+.minipoker-overlay .mp-nowrap { white-space: nowrap; }
