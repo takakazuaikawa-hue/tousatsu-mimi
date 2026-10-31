@@ -20564,3 +20564,9 @@ html.is-compact .minipoker-overlay .mp-status-wager { line-height: 1.2; padding-
 .hand-result-overlay .hr-card { display: flex; flex-direction: column; overflow: hidden; }
 .hand-result-overlay .hr-card > .hr-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: inherit; }
 .hand-result-overlay .hr-card > #continue-hand-btn { position: static; flex: 0 0 auto; box-shadow: none; }
+/* 2026-10-31 交換所の札とタブ：zoom（1.95・2.1）は iPhone の WebKit で中の文字だけ大きくならず、字が約半分（8px ほど）に見えていた（読み合いと同じ不具合・Bug 272351）。
+   zoom をやめて scale に替える。札は1枚ずつ 1.95 倍に描き、増えた高さは下の余白で空ける。タブは列ごと 2.1 倍に描き、幅を 2.1 で割る */
+html.is-compact .shop-screen.v2 .shop-items > .shop-item { zoom: 1; scale: 1.95; transform-origin: 0 0; width: calc(100% / 1.95); margin-bottom: calc(84px * .95); }
+html.is-compact .shop-screen.v2 .shop-cat-btn { zoom: 1; }
+html.is-compact .shop-v2-tabs { right: auto; width: calc((100% - 564px - var(--bleed, 0px)) / 2.1); gap: 7px; scale: 2.1; transform-origin: 0 0; }
+@media (max-width: 760px) { html.is-compact .shop-v2-tabs { width: calc((100% - 464px - var(--bleed, 0px)) / 2.1); } }

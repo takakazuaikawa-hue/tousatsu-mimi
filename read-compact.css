@@ -180,7 +180,7 @@ html.is-compact #stage > .read-battle-host.mb-host .gc-or > b { font-size: 14px;
 html.is-compact #stage > .read-battle-host.mb-host .gc-empty { min-height: 30px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-book small { font-size: 14px; }
 /* ガチャ台：絵だけ小さく。中の文字は演出（一瞬）だけ */
-html.is-compact #stage > .read-battle-host.mb-host .gc-mach { zoom: .36; flex: 0 0 auto; }
+html.is-compact #stage > .read-battle-host.mb-host .gc-mach { --gm: .36; flex: 0 0 auto; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-acts { flex-direction: column; gap: 5px; width: 100%; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-acts .btn { flex: 0 0 auto; width: 100%; min-width: 0; min-height: 44px; padding: 4px 6px; font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host .gc-acts .btn small { font-size: 14px; line-height: 1.25; white-space: normal; }
@@ -490,7 +490,8 @@ html.is-compact #stage > .read-battle-host.mb-host .reel-wrap { max-width: none;
 html.is-compact #stage > .read-battle-host.mb-host .reel-legend { font-size: 14px; line-height: 1.3; text-align: left; }
 /* 小さいスマホ：最後の札めくりの帯を、札ごと少し縮める（札の数字は 11px 以上のまま） */
 @media (max-width: 719px) {
-  html.is-compact #stage > .read-battle-host.mb-host .reel-wrap { zoom: .74; }
+  /* 2026-10-31 zoom をやめて scale に（iPhone は zoom の中の文字だけ縮めない）。幅は .74 で割り、減った高さは下の余白で詰める */
+  html.is-compact #stage > .read-battle-host.mb-host .reel-wrap { scale: .74; transform-origin: 0 0; width: calc(100% / .74); margin-bottom: calc(100px * -.26); }
   html.is-compact #stage > .read-battle-host.mb-host .reel-legend { line-height: 1.25; }
 }
 /* ----- outs ここまで ----- */
@@ -606,7 +607,7 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root .formula { font
   html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) > .gc-sub { grid-area: sub; }
   html.is-compact #stage > .read-battle-host.mb-host .gc-left { display: contents; }
   html.is-compact #stage > .read-battle-host.mb-host .gc-ceilg { grid-area: sub; justify-self: end; align-self: center; }
-  html.is-compact #stage > .read-battle-host.mb-host .gc-mach { position: relative; grid-area: mach; zoom: .26; align-self: start; justify-self: end; }
+  html.is-compact #stage > .read-battle-host.mb-host .gc-mach { position: relative; grid-area: mach; --gm: .26; align-self: start; justify-self: end; }
   html.is-compact #stage > .read-battle-host.mb-host .gc-in .q { font-size: 52px; }
   /* 台を縮めた分、演出の文字（レア度・UP!）は大きく描いて、画面上 12px 以上に */
   html.is-compact #stage > .read-battle-host.mb-host .gc-badge.r-N { font-size: 52px; }
@@ -699,7 +700,7 @@ html.is-compact #stage > .read-battle-host.mb-host .rb-frame .oj-pan { bottom: -
 html.is-compact #stage > .read-battle-host.mb-host .rb-frame .stare-clue { padding: 2px 8px; }
 /* 心の声ガチャ（本当の手の版・2026-10-27）：ガチャ台は遊びの枠の高さに合わせる。確率表と天井は右に縦に */
 html.is-compact #stage > .read-battle-host.mb-host .gx-play { gap: 6px; }
-html.is-compact #stage > .read-battle-host.mb-host .gx-play .gc-mach { zoom: .55; align-self: flex-start; }
+html.is-compact #stage > .read-battle-host.mb-host .gx-play .gc-mach { --gm: .55; align-self: flex-start; }
 html.is-compact #stage > .read-battle-host.mb-host .gx-side { gap: 6px; align-self: flex-start; padding-top: 2px; margin-left: 8px; }
 html.is-compact #stage > .read-battle-host.mb-host .gx-odds { padding: 3px 6px; gap: 2px; }
 html.is-compact #stage > .read-battle-host.mb-host .gx-or { grid-template-columns: 2.6em 2.5em auto; gap: 4px; }
@@ -1131,3 +1132,27 @@ html.is-compact #stage > .read-battle-host.mb-host .nq-tile .card { --w: 30px; }
 html.is-compact #stage > .read-battle-host.mb-host .nq-tile .st { position: static; padding: 0 6px; }
 html.is-compact #stage > .read-battle-host.mb-host .nq-her { padding: 3px 8px; gap: 1px; line-height: 1.25; }
 @media (max-width: 719px) { html.is-compact #stage > .read-battle-host.mb-host .nq-tile { padding: 2px 6px; gap: 1px; } html.is-compact #stage > .read-battle-host.mb-host .nq-tile .card { --w: 28px; } }
+/* 2026-10-31 心の声ガチャ（スマホ）：遊びの枠 224px にガチャ台（126px）と横の欄を並べていて、確率表の「本音」と天井の「3回目はR以上」が右の欄へはみ出し、
+   天井の「ぱにゅ」がレバーの下にもぐっていた（前の版から）。台を少し小さくしてレバーの分を空け、天井は印の下に文字を積む */
+html.is-compact #stage > .read-battle-host.mb-host .gx-play .gc-mach { --gm: .45; }
+html.is-compact #stage > .read-battle-host.mb-host .gx-side { margin-left: 16px; min-width: 0; flex: 1 1 auto; }
+html.is-compact #stage > .read-battle-host.mb-host .gx-or { grid-template-columns: 2.3em 2.2em auto; gap: 2px; }
+html.is-compact #stage > .read-battle-host.mb-host .gx-ceil { flex-direction: column; align-items: flex-start; gap: 2px; }
+@media (max-width: 719px) { html.is-compact #stage > .read-battle-host.mb-host .gx-play .gc-mach { --gm: .4; } html.is-compact #stage > .read-battle-host.mb-host .gx-side { margin-left: 12px; } }
+/* 小さいスマホ（遊びの枠 169px）：確率表は台の下に横いっぱい、台の右にぱにゅと天井（どちらも縦に積む） */
+@media (max-width: 719px) {
+  html.is-compact #stage > .read-battle-host.mb-host .gx-play { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "m p" "m c" "o o"; grid-template-rows: auto 1fr auto; column-gap: 8px; row-gap: 4px; align-content: start; }
+  html.is-compact #stage > .read-battle-host.mb-host .gx-play > .gc-mach { grid-area: m; }
+  html.is-compact #stage > .read-battle-host.mb-host .gx-side { display: contents; }
+  html.is-compact #stage > .read-battle-host.mb-host .gx-side > .gx-odds { grid-area: o; }
+  html.is-compact #stage > .read-battle-host.mb-host .gx-side > .gx-panyu { grid-area: p; flex-direction: column; align-items: flex-start; gap: 2px; margin-left: 8px; }
+  html.is-compact #stage > .read-battle-host.mb-host .gx-side > .gx-ceil { grid-area: c; margin-left: 8px; }
+}
+/* 2026-10-31 小さいスマホの左の列：長いセリフ（4行）の時、名前とセリフの箱が縦に縮められ、セリフが「賭け」の上に重なっていた。
+   箱は縮めず、セリフは顔のすぐ下から始める（20px 上げる）。縮むのはリコ先輩の一言の欄の側 */
+@media (max-width: 719px) {
+  html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row > div:not(.mb-coach):not(.mb-betchip) { flex-shrink: 0; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-speech { margin-top: 2px; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row > .mb-portrait.is-face + div > .mb-opp-name { height: 62px; min-height: 0; box-sizing: border-box; }
+  html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach { flex-shrink: 1; min-height: 0; overflow-y: auto; }
+}

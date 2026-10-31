@@ -336,7 +336,7 @@
   const CSS = `
     /* ---- 2026-10-27 本当の手の版の並び（共通の骨組み .rb-frame に載せる） ---- */
     .gx-play { display: flex; align-items: center; justify-content: center; gap: 16px; }
-    .gx-play .gc-mach { flex: 0 0 auto; zoom: 1; }
+    .gx-play .gc-mach { flex: 0 0 auto; --gm: 1; }
     .gx-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; margin-left: 18px; }
     .gx-odds { display: grid; gap: 4px; padding: 6px 10px; background: var(--panel); border: 1px solid var(--line-dim); }
     .gx-or { display: grid; grid-template-columns: 3.2em 2.8em auto; align-items: center; gap: 6px; font-size: var(--ty-note, 14px); line-height: 1.3; }

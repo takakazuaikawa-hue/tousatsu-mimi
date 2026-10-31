@@ -557,7 +557,9 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
    2026-10-16：zoom で遊び全体を縮めるのはやめた（文字が 11px を割っていた）。残すのはガチャ台だけ（台の中の文字は 16px 以上で書く前提で .8）。
    見つめ合う・つきつける・ハイ＆ロー・ねらい撃ちは、PC の並べ方を battles/read-pc.css の遊びごとの節で詰める。
    スマホ横は read-compact.css が自分の zoom（.gc-mach .36、ほかは 1）を持っているので、ここを変えても変わらない */
-.mb-host .gc-mach { zoom: .8; }
+.mb-host .gc-mach { --gm: .8; }
+/* 2026-10-31 ガチャ台の縮めは zoom をやめて scale に（iPhone・Mac の Safari は zoom の中の文字だけ縮めない）。--gm が倍率。減った分は右と下の余白で詰める（台は 230×344） */
+.mb-host .gc-mach { zoom: 1; scale: var(--gm, 1); transform-origin: 0 0; margin-right: calc(230px * (var(--gm, 1) - 1)); margin-bottom: calc(344px * (var(--gm, 1) - 1)); }
 .mb-host .gc-left { gap: 8px; }
 .mb-host .gc-acts { flex-direction: row; align-items: stretch; gap: 8px; width: 100%; }
 .mb-host .gc-acts .btn { flex: 1 1 0; min-width: 0; padding-inline: 8px; }
