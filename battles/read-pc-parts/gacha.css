@@ -1,0 +1,84 @@
+/* ===== 心の声ガチャ（gacha） =====
+   PC だけ（html:not(.is-compact)）。色・形・書体は battles/games/gacha.js の CSS と core.css の部品（.mb-ebony）が持つ。ここは並べ方と大きさ。
+   ガチャ台の zoom .8 は core.css（台の中の文字は 16px 以上で書いてあり、掛けた後で 12.8px 以上）。台の外は zoom なし。
+
+   並べ方：遊び本体（.mb-game-root）を 3 列のグリッドにし、.gc-wrap と .gc-right は display:contents で外して、中の部品を直接並べる。
+     左の列 300px  ：ぱにゅ残量の箱 → ガチャ台（zoom .8 で 184×275）→ 引くボタン2つ（縦積み）。判断ボタン（#mb-gc-decide）は引くボタンと同じ場所（引き終わると引くボタンは隠れる）
+     真ん中 1fr    ：場札（54px の札）→ 説明 → 心の声（最大3つ）→ 図鑑
+     右の列 380px  ：相手と自分の手札（縦置き）→ 説明 → 排出確率の表（心の声が出た後も全部の行と天井の説明を出したまま）
+   core.css は「心の声が出たら確率表を1行に畳む」としていたが、PC は専用の列ができたので畳まない（下で戻す）。
+
+   一番中身が多い状態＝心の声を3つ引いた後：「ぱにゅぱにゅ！」を3回押し、3回目（天井で R 以上確定）が SR か SSR（札の絵つきの心の声）になった時。
+     手順 28 ＋ 行間 10 ＋ 上の段 約 100（ぱにゅの箱 約 98／手札は縦置きで 約 102）＋ 行間 10 ＋ 左の列 約 407（台 275 ＋ 行間 10 ＋ ボタン 2つ 約 58×2 ＋ 行間 8）＝ 約 555px。
+     真ん中は 説明 約 40 ＋ 心の声 3つ（札つきの声は 約 92 ×3 ＋ 行間 20 ＝ 約 296）＋ 図鑑 約 38 ＋ 行間 20 ＝ 約 394 で、左の列 407 の内側に収まる（左の列が高さを決める）。
+     遊び本体の予算 約 605px に対して約 50px の余り。引く前（心の声なし）も、引き終わって判断ボタンが出た時も、高さは左の列で決まるので同じ約 555px。 */
+
+/* ---- 並べ方 ---- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .gc-wrap) {
+  display: grid; grid-template-columns: 300px minmax(0, 1fr) 380px;
+  grid-template-areas:
+    "steps steps steps"
+    "panyu board hands"
+    "left sub sub"
+    "left voices odds"
+    "left book book"
+    "left . .";
+  grid-template-rows: auto auto auto auto auto 1fr;
+  gap: 10px 20px; align-content: start; align-items: start;
+}
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-wrap, html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-right { display: contents; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-gc-steps { grid-area: steps; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-panyu { grid-area: panyu; align-self: stretch; padding: 10px 14px; gap: 6px 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-board { grid-area: board; align-self: center; flex-wrap: nowrap; justify-content: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-hands { grid-area: hands; align-self: center; flex-wrap: nowrap; justify-content: center; align-items: flex-start; gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-sub { grid-area: sub; margin: 0; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-left { grid-area: left; gap: 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-voices { grid-area: voices; min-width: 0; min-height: 0; gap: 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-odds { grid-area: odds; min-width: 0; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-book { grid-area: book; }
+
+/* 場札：54px の札（高さ 76px） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-board .card { --w: 54px; }
+
+/* 手札：名前の札・札2枚・役の名前を縦に置く（横に置くと右の列 380px に2人分が入らない）。VS は2人の間 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-hand { flex: 1 1 0; min-width: 0; flex-direction: column; align-items: center; gap: 3px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-vs { flex: 0 0 auto; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-hn { font-size: 14px; line-height: 1.4; text-align: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-hn.is-strong, html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-hn.is-bluff { font-size: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-sub { text-align: left; }
+
+/* ぱにゅの箱（左の列の一番上）：ラベル 13px・残りの説明 13px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-basebox b { font-size: 22px; }
+
+/* ガチャ台と、引く／やめるのボタン（縦積み・幅いっぱい・58px 以上）。台の中：札の名前 16px・顔 16px（掛けた後 12.8px） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-plate span { font-size: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-face b { font-size: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-acts { flex-direction: column; align-items: stretch; gap: 8px; width: 100%; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-acts .btn { flex: 0 0 auto; width: 100%; min-width: 0; min-height: 58px; padding: 8px 10px; }
+
+/* 判断ボタン（ブラフと読む／強い手と読む）：左の列の、引くボタンのあった場所（台 275px ＋ 行間 10px の下）に縦積み */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-gc-decide { grid-area: left; align-self: start; margin-top: 285px; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-gc-decide .btn { width: 100%; min-width: 0; min-height: 58px; padding: 8px 10px; }
+
+/* 心の声（黒檀の札）：札の高さ 44px 以上・文 15px・補足 12px。希少度の札の列は 56px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-voice { grid-template-columns: 56px minmax(0, 1fr); gap: 4px 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-bub { padding: 9px 16px; min-height: 44px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-meta { font-size: 12px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-meta em { font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-empty { min-height: 56px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-empty span { font-size: 13px; }
+
+/* 排出確率の表：札＋棒の長さ＋数字＋短い名前。心の声が出た後も出したまま。「詳しく」は右の縦いっぱいの押す所 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-odds { gap: 6px 12px; padding: 10px 14px 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-odds-h { font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-or { grid-template-columns: 54px minmax(0, 1fr) 52px 60px; gap: 10px; font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-or > b { font-size: 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-bar { height: 12px; }
+
+/* 図鑑：/40種 と 希少度ごとの数は 12px（<small> は 10px になるので戻す） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-book { padding: 8px 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-book b { font-size: 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-book small { font-size: 12px; }
+
+/* 結果の札の補足 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .gc-res-extra { font-size: 13px; }

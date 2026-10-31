@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import { launch, sleep } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/cdp.mjs';
+import { serve } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/server.mjs';
+const REPO = 'C:/Users/takakazu/projects/mp_panyu', OUT = process.argv[2];
+const server = await serve(REPO, 0); const br = await launch({ width: 1280, height: 800 }); const page = await br.newPage();
+await page.setViewport(1280, 800); await page.goto('about:blank', 1);
+await page.goto(`http://127.0.0.1:${server.port}/docs/design-ref/panyu-mesh.html`, 8000); await sleep(1500);
+const clip = async (name, c) => { const r = await page.send('Page.captureScreenshot', { format: 'png', clip: { ...c, scale: 2 } }); fs.writeFileSync(OUT + name, Buffer.from(r.data, 'base64')); };
+const FACE = { x: 470, y: 60, width: 340, height: 200 }, BELLY = { x: 430, y: 420, width: 420, height: 380 };
+await clip('-face0.png', FACE);
+await page.eval(`(()=>{const st=document.getElementById('stage');const iw=1400,ih=788,z=1.28,w=innerWidth,h=innerHeight;const s=Math.max(w/iw,h/ih)*z;let ox=w/2-701*s,oy=h*0.56-548*s;ox=Math.min(0,Math.max(w-iw*s,ox));oy=Math.min(0,Math.max(h-ih*s,oy));
+ const q=[ox+700*s,oy+663*s];st.dispatchEvent(new PointerEvent('pointerdown',{clientX:q[0],clientY:q[1],pointerId:77,bubbles:true}));st.dispatchEvent(new PointerEvent('pointerup',{clientX:q[0],clientY:q[1],pointerId:77,bubbles:true}));return 1;})()`);
+await sleep(300); await clip('-face1.png', FACE); await sleep(1500); await clip('-bellypop.png', BELLY);
+await sleep(2500); await clip('-face2.png', FACE);
+await br.close(); await server.close(); process.exit(0);

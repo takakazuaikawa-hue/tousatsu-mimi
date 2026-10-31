@@ -1,0 +1,10 @@
+import path from 'node:path';
+import { openSession, sleep } from './lib/session.mjs';
+const session = await openSession({ width: 1280, height: 800, speed: 1 });
+const { page } = session;
+for (let i = 0; i < 60 && !(await page.eval('typeof render === "function" && typeof save === "object"').catch(() => false)); i++) await sleep(500);
+await sleep(2500);
+await page.eval(`(() => { state.screen = 'shop'; render(); const d = document.createElement('div'); d.style.cssText='position:absolute;left:100px;top:100px;width:300px;height:200px;background:red;z-index:9000'; document.getElementById('stage').appendChild(d); const w = document.createElement('div'); w.className='scr-wipe'; w.style.animation='none'; w.innerHTML='<i class=\"scr-wipe-slab\" style=\"animation:none\"></i>'; document.getElementById('stage').appendChild(w); return true; })()`);
+await sleep(600);
+await page.screenshot(path.resolve('qa/out/wipeshot/red.png'));
+await session.close();

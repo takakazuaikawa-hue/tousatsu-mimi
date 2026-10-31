@@ -1,0 +1,170 @@
+/* =====================================================================
+   文字の役目の段（type-roles.css）2026-10-27
+   ユーザー指摘「対戦中のリコの声は他より大きくて不自然、論理バトルでは小さい。CSS がバグを抱えていないか」への仕組みの直し。
+   それまでは同じ部品の大きさが style.css・core.css・read-pc.css・read-compact.css・各遊びの CSS の5〜8か所で上書きし合い、
+   場所ごとにばらついていた（相手の台詞だけで 16.5/17/18/20px）。ここを一番最後に読み、役目ごとの大きさはここだけで決める。
+   - 大きさは「画面上の px」で書く（docs/design-ref/typography.md の段）。
+   - 卓・結果画面など縮めて描く舞台（#stage の中）は ÷ --game-scale、読み合い（.read-battle-host は縮めない）はそのまま。
+   - 遊びの CSS（実行時に head へ足される）にも勝つよう、ここは !important で書く（ここが唯一の決め所）。
+   - 新しい部品は、下の役目のどれかに足す。px を直接書かない。
+   ===================================================================== */
+/* ---------- 段の数字（PC・スマホ・小さいスマホは別の段。混ぜない） ----------
+   調べた目安：スマホの本文14〜16px・説明12〜14px、下限はユーザーとの約束で14px。PC は見る距離が遠くマウスで押すので一段大きく。
+   古い変数（--ty-* は全画面、--fx-* は縮めて描く卓・結果画面）も、ここから同じ段で上書きする。 */
+:root {
+  --r-mission: 22px; --r-body: 17px; --r-speech: 17px; --r-label: 15px; --r-note: 15px; --r-btn: 20px; --r-btn2: 17px;
+  --ty-t1: 22px; --ty-head: 17px; --ty-body: 17px; --ty-btn: 20px; --ty-btn2: 17px; --ty-note: 15px;
+}
+/* スマホ（指で押す・近くで見る） */
+html.is-compact {
+  --r-mission: 18px; --r-body: 15px; --r-speech: 15px; --r-label: 14px; --r-note: 14px; --r-btn: 17px; --r-btn2: 15px;
+  --ty-t1: 18px; --ty-head: 15px; --ty-body: 15px; --ty-btn: 17px; --ty-btn2: 15px; --ty-note: 14px;
+}
+/* 小さいスマホ（幅720px未満・667×375 など）：枠が狭いので一段下げる。14 は下げない */
+@media (max-width: 719px) {
+  html.is-compact {
+    --r-mission: 16px; --r-body: 14px; --r-speech: 14px; --r-label: 14px; --r-note: 14px; --r-btn: 16px; --r-btn2: 14px;
+    --ty-t1: 16px; --ty-head: 14px; --ty-body: 14px; --ty-btn: 16px; --ty-btn2: 14px; --ty-note: 14px;
+  }
+}
+/* 縮めて描く舞台（卓・結果画面・持ち込みの小窓・手の結果）：画面上の px ÷ 縮める倍率 */
+html.is-compact #stage :is(.battle-screen.v2.t8, .result-screen, .rebuy-overlay, .hand-result-overlay) {
+  --fx-cap: calc(var(--r-note) / var(--game-scale, 1)) !important;
+  --fx-sub: calc(var(--r-label) / var(--game-scale, 1)) !important;
+  --fx-body: calc(var(--r-body) / var(--game-scale, 1)) !important;
+  --fx-main: calc(var(--r-btn) / var(--game-scale, 1)) !important;
+}
+
+/* ---------- 台詞・一言（卓）：縮めて描く舞台なので ÷ --game-scale ---------- */
+html #stage .battle-screen.v2 .opponent-speech.v2-band-text,
+html #stage .battle-screen.v2 .opponent-speech.v2-band-text.speech-long,
+html #stage .battle-screen.v2.t8 .opponent-speech.v2-band-text,
+html #stage .battle-screen.v2.t8 .opponent-speech.v2-band-text.speech-long,
+html #stage .battle-screen.v2.t8 .rico-bubble.v2-com-text {
+  font-size: calc(var(--r-speech) / var(--game-scale, 1)) !important;
+}
+
+/* ---------- 台詞・一言（読み合い）：縮めないのでそのまま ---------- */
+html #stage > .read-battle-host.mb-host .mb-speech,
+html #stage > .read-battle-host.mb-host .mb-speech > span,
+html #stage > .read-battle-host.mb-host .mb-coach-line,
+html #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-line {
+  font-size: var(--r-speech) !important;
+}
+
+/* ---------- 本文（読み合い・2026-10-27 に作り替えた遊び） ---------- */
+html #stage > .read-battle-host.mb-host :is(
+  .hv-cand, .hv-sit, .hv-bar-t, .hv-res, .hv-big-t,
+  .nq-tile .nm, .nq-me, .nq-her,
+  .gx-voice .h, .gx-lean, .gx-voice.is-empty .gx-lean, .gx-pop,
+  .dx-row, .dx-four, .dx-row .q, .dx-four .q,
+  .aq-row, .aq-pop,
+  .mb-bal-odds b
+) {
+  font-size: var(--r-body) !important;
+}
+
+/* ---------- 中身の見出し・数字の段 ---------- */
+html #stage > .read-battle-host.mb-host :is(.hv-big-bar s b, .hv-cands-h, .nq-tile .st, .vd-note, .hv-ladder, .hv-ladder i, .hv-cand .n, .hv-cand .m, .gx-voice .h .gc-rar, .dx-chip .n, .dx-chip .mark) {
+  font-size: var(--r-label) !important;
+}
+
+/* ---------- 補足（小さくてよい物だけ） ---------- */
+html #stage > .read-battle-host.mb-host :is(
+  .hv-cap, .hv-cap small, .hv-cands-h small, .hv-res small, .hv-big small, .gx-sit-cap, .dx-sit-cap, .aq-sit-cap, .nq-cap, .nq-tile .ex small, .nq-me small,
+  .gx-or, .gx-ceil .t, .gx-panyu .h, .gx-pop small, .aq-pop small,
+  .mb-bal-pan, .mb-bal-odds small, .mb-bal-rec, .dx-row .trap, .dx-chip .tr
+) {
+  font-size: var(--r-note) !important;
+}
+
+/* ---------- 今やること（読み合いの上の段） ---------- */
+html #stage > .read-battle-host.mb-host .rb-top .mb-mission,
+html #stage > .read-battle-host.mb-host .rb-top .mb-mission > span {
+  font-size: var(--r-mission) !important;
+}
+
+/* 異議ありの発言の番号：菱形の飾りの中で 0.8 倍に縮めて描くので、その分を戻す（画面で9.1pxになっていた） */
+html #stage > .read-battle-host.mb-host .oj-no { font-size: calc(var(--r-label) / .8) !important; }
+
+/* 答え合わせの画面の補足の行（PC で 13.5px になっていた） */
+html #stage > .read-battle-host.mb-host .vd-truth small { font-size: var(--r-label) !important; }
+
+/* 2026-10-28 ボタンの上の札（リコのおすすめ・狙った額に一番近い・ここを押そう）：卓は縮めて描くので ÷ 縮める倍率（スマホで約7pxに縮んでいた） */
+html #stage .battle-screen.v2 :is(.is-suggest, .is-intro-go)::before { font-size: calc(var(--r-note) / var(--game-scale, 1)) !important; padding: calc(2px / var(--game-scale, 1)) calc(10px / var(--game-scale, 1)) !important; top: calc(-26px / var(--game-scale, 1)) !important; line-height: 1.3; }
+
+/* 2026-10-28 零時の卓の「考え方」（allstar.css .as-coach）。PC は縮めて描く舞台なので ÷ 縮める倍率、スマホは .as-host が zoom で実寸に戻すのでそのまま */
+html #stage > .as-host .as-coach :is(.as-ck-t) { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
+html #stage > .as-host .as-coach :is(.as-ck-h, .as-ck-n, .as-ck-go span) { font-size: calc(var(--r-label) / var(--game-scale, 1)) !important; }
+html #stage > .as-host .as-coach :is(.as-ck-go b, .as-ck-lean) { font-size: calc(var(--r-btn) / var(--game-scale, 1)) !important; }
+html.is-compact #stage > .as-host .as-coach :is(.as-ck-t) { font-size: var(--r-body) !important; }
+html.is-compact #stage > .as-host .as-coach :is(.as-ck-h, .as-ck-n, .as-ck-go span) { font-size: var(--r-label) !important; }
+html.is-compact #stage > .as-host .as-coach :is(.as-ck-go b, .as-ck-lean) { font-size: var(--r-btn) !important; }
+/* 2026-10-29 零時の卓の答え合わせ（.as-review） */
+html #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-t, .as-rv-k) { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
+html #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-h span, .as-rv-st, .as-review-ok span) { font-size: calc(var(--r-label) / var(--game-scale, 1)) !important; }
+html #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-h b, .as-rv-mk, .as-rv-btns button, .as-review-ok b) { font-size: calc(var(--r-btn) / var(--game-scale, 1)) !important; }
+html.is-compact #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-t, .as-rv-k) { font-size: var(--r-body) !important; }
+html.is-compact #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-h span, .as-rv-st, .as-review-ok span) { font-size: var(--r-label) !important; }
+html.is-compact #stage > .as-host :is(.as-review, .as-review-ok) :is(.as-rv-h b, .as-rv-mk, .as-rv-btns button, .as-review-ok b) { font-size: var(--r-btn) !important; }
+
+/* =====================================================================
+   2026-10-29 零時の卓（allstar.css）の全部の文字を役目の段に乗せる（ユーザー「零時の卓もレイアウトスキルで完成にできているか」）。
+   それまでは allstar.css に px で直接183か所書かれ、PC の本文15・押す所15〜22、小さいスマホも15のままだった（qa/allstartype.mjs で実寸を測った）。
+   PC は縮めて描く舞台なので ÷ 縮める倍率、スマホは .as-host・.as-dialog が zoom で実寸に戻すのでそのまま。
+   数字（持ち点・ポット・賭けた額・賞金・順位の大きな数字・札の数字とマーク・題字）は主役の数字の段なので、ここでは決めない（本文より小さくしない）。
+   ===================================================================== */
+html :is(#stage > .as-host, .as-dialog) :is(.as-sizer-h > b) { font-size: calc(var(--r-mission) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-rules li, .as-pop p, .as-pop li, .as-pop td, .as-res-name, .as-size em) { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-sub-text) { font-size: calc(var(--r-speech) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-pop-h, .as-head-1, .as-hand-no, .as-head-2, .as-lv-n, .as-left, .as-name, .as-pot-l, .as-made b, .as-mstack span, .as-prizes-h, .as-prizes span, .as-band-sub, .as-band-en, .as-ef b, .as-res-big span, .as-res-pay > span, .as-sub-name, .as-rec-top dt, .as-rec-vs span) { font-size: calc(var(--r-label) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-rank, .as-pos, .as-d, .as-md, .as-verb, .as-made span, .as-size span, .as-emeta, .as-inv, .as-ff span, .as-res-hand, .as-res-pl small, .as-res-pay em, .as-rec-hist li) { font-size: calc(var(--r-note) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-cc-l, .as-ebtns button, .as-res-btns button) { font-size: calc(var(--r-btn) / var(--game-scale, 1)) !important; }
+html :is(#stage > .as-host, .as-dialog) :is(.as-fold, .as-raise, .as-tool, .as-back, .as-pop-x, .as-menu-b button, .as-size b, .as-ff b, header button) { font-size: calc(var(--r-btn2) / var(--game-scale, 1)) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-sizer-h > b) { font-size: var(--r-mission) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-rules li, .as-pop p, .as-pop li, .as-pop td, .as-res-name, .as-size em) { font-size: var(--r-body) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-sub-text) { font-size: var(--r-speech) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-pop-h, .as-head-1, .as-hand-no, .as-head-2, .as-lv-n, .as-left, .as-name, .as-pot-l, .as-made b, .as-mstack span, .as-prizes-h, .as-prizes span, .as-band-sub, .as-band-en, .as-ef b, .as-res-big span, .as-res-pay > span, .as-sub-name, .as-rec-top dt, .as-rec-vs span) { font-size: var(--r-label) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-rank, .as-pos, .as-d, .as-md, .as-verb, .as-made span, .as-size span, .as-emeta, .as-inv, .as-ff span, .as-res-hand, .as-res-pl small, .as-res-pay em, .as-rec-hist li) { font-size: var(--r-note) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-cc-l, .as-ebtns button, .as-res-btns button) { font-size: var(--r-btn) !important; }
+html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-fold, .as-raise, .as-tool, .as-back, .as-pop-x, .as-menu-b button, .as-size b, .as-ff b, header button) { font-size: var(--r-btn2) !important; }
+
+/* =====================================================================
+   2026-10-30 全画面の残り（タイトル・ホーム・台帳・設定・図鑑・用語集・役の早見表・ログインボーナス・交換所・ぱにゅぱにゅ・
+   対戦の卓・結果・回想・ミニポーカー・エンディング・スタッフロール）を役目の段に乗せる。
+   qa/fulltour.mjs の texts（qa/lib/textsnap.mjs）で全部の文字の実寸を測り、qa/tiercheck.mjs で段の外を挙げた（PC 297・スマホ 208・小さいスマホ 255）。
+   スマホで 0.488 倍に縮んでいた部品（#stage の中）は ÷ --game-scale、倍率1の小窓はそのまま。数字・題字（24px 以上）は主役の数字の段なので触らない。
+   ===================================================================== */
+html body #stage :is(.h15-sw .h15-lbl, .credits-skip span, .result-unlock .ru-go, .sh3-back, .sh3-cat span, .v2-pause, .v2-pause span, .v2-help-btn, .verb-back, .result-sub-buttons .btn, .result-breakdown-toggle, .v2-detail-toggle, .home-ledger-row button) { font-size: calc(var(--r-btn2) / var(--game-scale, 1)) !important; }
+html body :is(.pv2-quit) { font-size: var(--r-btn2) !important; }
+html body #stage :is(.h15-ticket .h15-lbl, .t3-btn b, .sh3-buy-l) { font-size: calc(var(--r-btn) / var(--game-scale, 1)) !important; }
+html body :is(.rico-mode-opt-name, .mp-btn-deal) { font-size: var(--r-btn) !important; }
+html body #stage :is(.credits-inner .cr-title) { font-size: calc(var(--r-mission) / var(--game-scale, 1)) !important; }
+html body :is(.hand-guide-title, .as-dialog h2, .ending-prompt-song-name, .mp-result-headline) { font-size: var(--r-mission) !important; }
+html body #stage :is(.result-next-goal, .sh3-desc) { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
+html body :is(.cp-exploit, .mp-tut-steps li, .mp-tut-steps b) { font-size: var(--r-body) !important; }
+html body #stage :is(.h15-dialogue, .sh3-say span) { font-size: calc(var(--r-speech) / var(--game-scale, 1)) !important; }
+html body #stage :is(.h15-sw .h15-sub, .h15-prize span, .home-ledger-row h3, .credits-inner .cr-section, .reward-chip-label, .rank-label, .result-unlock .ru-h, .result-unlock .ru-t, .sh3-kick, .sh3-brand, .v2-band-name, .v2-pot-label, .tug-who, .tug-state, .t3-record span) { font-size: calc(var(--r-label) / var(--game-scale, 1)) !important; }
+html body :is(.coll-section-title, .gl-section-title, .rp-ladder-name, .login-bonus-day-label, .mp-pt-title, .mp-pt-lucky b, .mp-pt-name, .mp-char-name, .mp-bet-display, .mp-handname, .mp-panel-title, .mp-result-amount, .pv2-skill-eye span, .pv2-zoom span, .pv2-meter-k, .pv2-skill-name b, .pv2-outfit span, .pv2-outfit b, .cp-exploit b, .coll-itemcat-title, .ending-prompt-vol-label span) { font-size: var(--r-label) !important; }
+html body #stage :is(.h15-lbl small, .reward-chip-value, .t3-btn small, .t3-ver, .tug-goal-long) { font-size: calc(var(--r-note) / var(--game-scale, 1)) !important; }
+html body :is(.episode-hint, .gl-section-count, .settings-modal-note, .pack-row-state, .settings-modal-legal, .login-bonus-tag, .mp-pt-note, .mp-daily-bonus, .mp-cap-note, .mp-status small, .mp-status small b, .mp-mood-badge, .mp-result-sub, .pv2-hint, .pv2-pity, .cp-meta-item, .coll-cg-label small) { font-size: var(--r-note) !important; }
+/* 台帳などホームの小窓の見出し・閉じる：小窓は縮めて描く舞台の倍率のまま（zoom で戻していない）ので ÷ --game-scale（10/30 そのままにして 7.5px になった） */
+html body .home-dialog header h2 { font-size: calc(var(--r-mission) / var(--game-scale, 1)) !important; }
+html body .home-dialog header button { font-size: calc(var(--r-btn2) / var(--game-scale, 1)) !important; }
+html.is-compact body .home-dialog.as-dialog header h2 { font-size: var(--r-mission) !important; }
+html.is-compact body .home-dialog.as-dialog header button { font-size: var(--r-btn2) !important; }
+/* 役の早見表の役名（スマホ16 → 本文）と、知らせの帯（PC 14 → 本文）。早見表は強さの順に並ぶ一覧なので、大きさの差は付けずに本文で */
+html.is-compact body .hand-guide-panel .rp-ladder-help .rp-ladder-name { font-size: var(--r-body) !important; }
+html body .toast:not(.toast-big) { font-size: var(--r-body) !important; }
+html body .mp-reach { font-size: var(--r-body) !important; }
+html body .mp-reach .mp-reach-prob { font-size: var(--r-note) !important; }
+html body #stage .reward-chip-value { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
+html body #stage .home-stage .h15-pl .h15-tag { font-size: calc(var(--r-note) / var(--game-scale, 1)) !important; }
+html body .lv-box span { font-size: var(--r-body) !important; }
+
+/* ---------- 確認の窓・引き継ぎ・クレジット（#stage の中だが、確認の窓はスマホでも縮めずに描かれる＝÷ しない。2026-10-30 確認の窓が段に乗っていなかった） ---------- */
+html #stage .mimi-confirm-overlay .mimi-confirm-title { font-size: var(--r-mission) !important; }
+html #stage .mimi-confirm-overlay :is(.mimi-confirm-body, .cr-line, .tr-note) { font-size: var(--r-body) !important; }
+html #stage .mimi-confirm-overlay :is(.tr-head, .cr-head) { font-size: var(--r-label) !important; }
+html #stage .mimi-confirm-overlay :is(.cr-legal, .tr-code) { font-size: var(--r-note) !important; }
+html #stage .mimi-confirm-overlay :is(.mimi-confirm-actions .btn, .tr-btns .btn) { font-size: var(--r-btn2) !important; }

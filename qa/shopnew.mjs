@@ -1,0 +1,21 @@
+// 交換所の「新入荷」札と全体の見た目を撮る。使い方: node qa/shopnew.mjs [pc|phone] [outDir]
+import fs from 'node:fs';
+import path from 'node:path';
+import { openSession, sleep } from './lib/session.mjs';
+const phone = process.argv[2] === 'phone';
+const OUT = path.resolve(process.argv[3] || 'qa/out/shopnew');
+fs.mkdirSync(OUT, { recursive: true });
+const session = await openSession({ width: phone ? 844 : 1280, height: phone ? 390 : 800, mobile: phone, speed: 2 });
+const { page } = session;
+for (let i = 0; i < 60 && !(await page.eval('typeof render === "function" && typeof save === "object"').catch(() => false)); i++) await sleep(500);
+const ev = (js) => page.eval(`(() => { ${js}; return true; })()`).catch(e => console.log('ERR', e.message.slice(0, 160)));
+await ev(`save.coins = 3000; save.clearedStages = ['rico_tutorial','polka']; save.shopSeenItems = []; state.screen = 'shop'; render();`);
+for (let i = 0; i < 40 && await page.eval(`!!document.querySelector(".loading-screen, #loading:not(.hidden)")`).catch(()=>false); i++) await sleep(500);
+await sleep(phone ? 1500 : 7000);
+const tag = phone ? 'phone' : 'pc';
+await page.screenshot(path.join(OUT, `${tag}_1.png`));
+const info = await page.eval(`JSON.stringify([...document.querySelectorAll('.shop-item-newtag')].slice(0,3).map(t => { const r = t.getBoundingClientRect(); const c = t.closest('.shop-items').getBoundingClientRect(); return { top: Math.round(r.top), boxTop: Math.round(c.top), clipped: r.top < c.top }; }))`).catch(e => e.message);
+console.log(tag, info);
+const cats = await page.eval(`JSON.stringify([...document.querySelectorAll('.shop-cat-btn')].map(b=>b.textContent.trim()))`).catch(()=> '[]');
+console.log('cats', cats);
+await session.close();

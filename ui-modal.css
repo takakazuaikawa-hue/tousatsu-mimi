@@ -1,0 +1,674 @@
+/* 小窓の共通の型 — 黒・深紅・金。style.css / read-compact.css の後に読む。
+ * 舞台やゲーム盤には適用しない。既存の疑似要素・背景の扉絵を保持する。
+ * !important は旧テーマの important、inline の文字縮小、compact の全子要素
+ * overflow:auto を打ち消す箇所に限定する。
+ */
+:is(.settings-overlay, .equip-overlay, .collection-overlay, .glossary-overlay,
+    .hand-guide-overlay, .hand-history-overlay, .login-bonus-overlay,
+    .char-profile-overlay, .rico-mode-overlay, .minipoker-overlay,
+    .ending-prompt-overlay, .newgame-overlay, .mimi-confirm-overlay,
+    .note-article-overlay, .rule-primer-overlay, .intro-win-overlay,
+    .dominance-choice-overlay, .hands-on-overlay, .home-overlay) {
+  background: rgba(8, 2, 4, .72);
+}
+/* 扉絵・動画を消さず、幕だけ暖色へ。art-only の表示切替も保持。 */
+.episode-overlay { background-color: rgba(8, 2, 4, .72); }
+.episode-overlay.has-art::before { background: rgba(8, 2, 4, .72); }
+
+:is(.settings-modal, .equip-modal, .collection-modal, .glossary-modal,
+    .hand-guide-panel, .hand-history-modal, .login-bonus-modal, .char-profile-modal,
+    .rico-mode-modal, .minipoker-modal, .ending-prompt-modal, .episode-card,
+    .newgame-modal, .mimi-confirm, .note-article-panel, .rp-card, .intro-win-modal,
+    .dominance-choice-modal, .ho-modal, .home-dialog, .mp-tut-card, .mp-summary-card) {
+  --um-serif: "Shippori Mincho B1", "Yu Mincho", serif;
+  --um-corner: 44px;
+  --c-purple: #3e0306;
+  --c-purple-light: #4a1712;
+  --c-purple-dark: #130406;
+  --c-bg-dark: #130406;
+  --c-bg-mid: #22090c;
+  --c-gold: #d9b269;
+  --c-gold-bright: #efcd82;
+  --c-text: #ead9b8;
+  --c-text-dim: #b19a74;
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  border: 2px solid #8a5a1e;
+  border-image: none;
+  border-radius: 2px;
+  background-color: #130406;
+  background-image: url("assets/ui/modal_corner_tl.webp"), url("assets/ui/modal_corner_tr.webp"),
+    url("assets/ui/modal_corner_bl.webp"), url("assets/ui/modal_corner_br.webp"),
+    linear-gradient(180deg, #22090c, #130406);
+  background-position: left top, right top, left bottom, right bottom, center;
+  background-size: var(--um-corner) var(--um-corner), var(--um-corner) var(--um-corner),
+    var(--um-corner) var(--um-corner), var(--um-corner) var(--um-corner), 100% 100%;
+  background-repeat: no-repeat;
+  /* 内側6pxの透明な隙間を残した明金線。疑似要素は専有しない。 */
+  box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px rgba(227, 185, 100, .55),
+    0 24px 64px rgba(0, 0, 0, .65);
+  color: #ead9b8;
+  font: 400 var(--ty-body)/var(--ty-lh) "Noto Sans JP", sans-serif;
+  text-shadow: none;
+  scrollbar-width: thin;
+  scrollbar-color: #9b7944 #100808;
+}
+/* 属性の部分一致を使わず、モーダル内だけを対象にする。 */
+:is(.settings-modal, .equip-modal, .collection-modal, .glossary-modal,
+    .hand-guide-panel, .hand-history-modal, .login-bonus-modal, .char-profile-modal,
+    .rico-mode-modal, .minipoker-modal, .ending-prompt-modal, .episode-card,
+    .newgame-modal, .mimi-confirm, .note-article-panel, .rp-card, .intro-win-modal,
+    .dominance-choice-modal, .ho-modal, .home-dialog, .mp-tut-card, .mp-summary-card) * {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #9b7944 #100808;
+}
+
+/* 操作部品。ミニゲームの札・盤面の大きさや配置は変更しない。 */
+:is(.settings-modal, .equip-modal, .collection-modal, .glossary-modal,
+    .hand-guide-panel, .hand-history-modal, .login-bonus-modal, .char-profile-modal,
+    .rico-mode-modal, .minipoker-modal, .ending-prompt-modal, .episode-card,
+    .newgame-modal, .mimi-confirm, .note-article-panel, .rp-card, .intro-win-modal,
+    .dominance-choice-modal, .ho-modal, .home-dialog, .mp-tut-card, .mp-summary-card)
+  :is(button, .btn, [role="button"]) {
+  min-height: 44px;
+  min-width: 44px;
+  border: 1px solid #8a5a1e;
+  border-image: none;
+  border-radius: 2px;
+  background: #1b0d0b;
+  color: #d9b269;
+  font-family: var(--um-serif);
+  font-size: var(--ty-btn2);
+  line-height: 1.4;
+  text-shadow: none;
+  box-shadow: none;
+  transform: none;
+  transition: background-color .15s, border-color .15s, transform .15s;
+}
+:is(.settings-modal, .equip-modal, .collection-modal, .glossary-modal,
+    .hand-guide-panel, .hand-history-modal, .login-bonus-modal, .char-profile-modal,
+    .rico-mode-modal, .minipoker-modal, .ending-prompt-modal, .episode-card,
+    .newgame-modal, .mimi-confirm, .note-article-panel, .rp-card, .intro-win-modal,
+    .dominance-choice-modal, .ho-modal, .home-dialog, .mp-tut-card, .mp-summary-card)
+  :is(.btn-primary, .mp-btn-primary, .login-bonus-claim-btn) {
+  min-height: 48px;
+  background: linear-gradient(180deg, #7a0e16, #4e0509);
+  border: 1px solid #d9b269;
+  color: #f0d08a;
+}
+:is(.settings-modal, .equip-modal, .collection-modal, .glossary-modal,
+    .hand-guide-panel, .hand-history-modal, .login-bonus-modal, .char-profile-modal,
+    .rico-mode-modal, .minipoker-modal, .ending-prompt-modal, .episode-card,
+    .newgame-modal, .mimi-confirm, .note-article-panel, .rp-card, .intro-win-modal,
+    .dominance-choice-modal, .ho-modal, .home-dialog, .mp-tut-card, .mp-summary-card)
+  :is(button, .btn, [role="button"]):hover:not(:disabled) {
+  filter: none;
+  transform: none;
+  background: #32100c;
+  border-color: #efcd82;
+  box-shadow: inset 0 0 0 1px rgba(227, 185, 100, .25);
+}
+:is(.settings-modal, .equip-modal, .collection-modal, .glossary-modal,
+    .hand-guide-panel, .hand-history-modal, .login-bonus-modal, .char-profile-modal,
+    .rico-mode-modal, .minipoker-modal, .ending-prompt-modal, .episode-card,
+    .newgame-modal, .mimi-confirm, .note-article-panel, .rp-card, .intro-win-modal,
+    .dominance-choice-modal, .ho-modal, .home-dialog, .mp-tut-card, .mp-summary-card)
+  :is(.btn-primary, .mp-btn-primary, .login-bonus-claim-btn):hover:not(:disabled) {
+  background: linear-gradient(180deg, #86141b, #58080c);
+  color: #f0d08a;
+}
+:is(.settings-modal, .equip-modal, .collection-modal, .glossary-modal,
+    .hand-guide-panel, .hand-history-modal, .login-bonus-modal, .char-profile-modal,
+    .rico-mode-modal, .minipoker-modal, .ending-prompt-modal, .episode-card,
+    .newgame-modal, .mimi-confirm, .note-article-panel, .rp-card, .intro-win-modal,
+    .dominance-choice-modal, .ho-modal, .home-dialog, .mp-tut-card, .mp-summary-card)
+  :is(button, .btn, [role="button"]):active:not(:disabled) { transform: translateY(1px); }
+:is(.settings-modal, .equip-modal, .collection-modal, .glossary-modal,
+    .hand-guide-panel, .hand-history-modal, .login-bonus-modal, .char-profile-modal,
+    .rico-mode-modal, .minipoker-modal, .ending-prompt-modal, .episode-card,
+    .newgame-modal, .mimi-confirm, .note-article-panel, .rp-card, .intro-win-modal,
+    .dominance-choice-modal, .ho-modal, .home-dialog, .mp-tut-card, .mp-summary-card)
+  :is(button, a, input, select, [tabindex]):focus-visible {
+  outline: 2px solid #f3d58e;
+  outline-offset: 2px;
+}
+.settings-modal .settings-modal-reset,
+.settings-modal .settings-modal-reset:hover,
+.mimi-confirm-overlay.is-danger .mimi-confirm-ok,
+.newgame-modal [data-action="new-game-full"] {
+  background: #241010 !important;
+  border: 1px solid #6e1c24 !important;
+  color: #cdb3a6 !important;
+}
+
+/* 見出しと帯。右上の閉じる領域は文字・並べ替えから独立させる。 */
+:is(.settings-modal-title, .equip-modal-title, .collection-title, .glossary-title,
+    .hand-guide-title, .hh-title, .login-bonus-modal-title, .cp-name, .rico-mode-title,
+    .minipoker-title, .mp-title, .ending-prompt-title, .episode-no, .newgame-title,
+    .mimi-confirm-title, .na-title, .iw2-title, .dominance-choice-title, .ho-title,
+    .home-dialog :where(h2), .mp-tut-title, .mp-summary-title) {
+  font-family: var(--um-serif);
+  font-weight: 700;
+  font-size: var(--ty-t1);
+  line-height: 1.4;
+  letter-spacing: .08em;
+  color: #efcd82;
+  text-shadow: none;
+}
+:is(.collection-header, .glossary-header, .hand-guide-head, .na-head,
+    .settings-modal-title, .equip-modal-title, .hh-title, .login-bonus-modal-title,
+    .cp-head, .rico-mode-title, .mp-header, .ending-prompt-title, .episode-no,
+    .newgame-title, .mimi-confirm-title, .iw2-title, .dominance-choice-title,
+    .ho-title, .home-dialog :where(header), .mp-tut-title, .mp-summary-title) {
+  background: #3e0306;
+  border-bottom: 1px solid #8a5a1e;
+  border-radius: 0;
+  padding: 12px 18px;
+  margin-top: 0;
+  flex-shrink: 0;
+}
+:is(.collection-header, .glossary-header, .hand-guide-head, .na-head, .equip-modal-title, .hh-title) {
+  margin: 8px 8px 0;
+  padding-right: 64px;
+  min-height: 56px;
+}
+:is(.settings-modal-title, .equip-modal-title, .login-bonus-modal-title, .minipoker-title,
+    .ending-prompt-title, .ho-title, .rico-mode-title) :is(.ui-icon, svg),
+.char-profile-modal .cp-icon, .dominance-choice-modal .dchoice-icon { display: none; }
+:is(.collection-modal .collection-close, .glossary-modal .glossary-close,
+    .equip-modal .equip-modal-close, .char-profile-modal .cp-close,
+    .hand-history-modal .hh-close, .hand-guide-panel .hand-guide-close,
+    .note-article-panel .na-close, .minipoker-modal .minipoker-close) {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid #80613c;
+  border-radius: 2px;
+  background: #1b0d0b;
+  color: #e8d7b7;
+  font: 400 22px/1 sans-serif;
+  display: grid;
+  place-items: center;
+  z-index: 4;
+}
+:is(.settings-modal-note, .equip-modal-footer, .equip-row-note, .coll-stage-theme,
+    .coll-stage-meta, .coll-ach-desc, .coll-note-desc, .coll-outfit-label,
+    .coll-locked-hint, .cp-title, .cp-section-label, .cp-stat-label, .cp-locked-hint,
+    .hand-guide-hint, .hh-title small, .episode-hint, .na-kicker, .iw2-desc,
+    .rico-mode-opt-desc, .newgame-opt-desc) {
+  font: 400 var(--ty-note)/1.6 "Noto Sans JP", sans-serif;
+  color: #b19a74;
+  opacity: 1;
+}
+:is(.gl-body, .cp-appearance, .cp-desc, .cp-traits li, .na-p, .mimi-confirm-body,
+    .ho-situation, .ho-hint, .hh-row-detail, .rico-mode-sub, .newgame-sub) {
+  font: 400 var(--ty-body)/var(--ty-lh) "Noto Sans JP", sans-serif;
+  color: #ead9b8;
+}
+:is(.collection-progress-text, .collection-coins, .coll-section-count,
+    .coll-itemcat-count, .cp-stat-val, .ending-prompt-vol-num, .login-bonus-amount,
+    .login-bonus-modal-sub, .iw2-coins, .hh-handno, .hh-pot) {
+  font-family: var(--um-serif);
+  color: #efcd82;
+  text-shadow: none;
+}
+
+/* 設定：真鍮スイッチ。44pxの当たりを実体で確保する。 */
+.settings-modal { width: min(820px, 94%); max-height: 94%; overflow-y: auto; gap: 10px; padding: 16px 22px; }
+.settings-modal-row, .settings-modal-debug {
+  border: 1px solid #584027;
+  border-radius: 2px;
+  padding: 8px 12px;
+  background: #170d0b;
+}
+.settings-modal-label { font-size: var(--ty-body); letter-spacing: .02em; }
+.settings-modal .settings-modal-toggle {
+  flex: 0 0 80px;
+  width: 80px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid #a68148;
+  border-radius: 2px;
+  background: #211411;
+}
+.settings-modal .settings-modal-toggle.on,
+.settings-modal .settings-modal-toggle.on:hover:not(:disabled) { background: #7a5a26; }
+.settings-modal-toggle .stm-knob {
+  top: 6px;
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(145deg, #f0d08a, #a68148 65%, #705024);
+  border: 1px solid #d9b269;
+  box-shadow: 0 2px 3px #100808;
+}
+.settings-modal-toggle.on .stm-knob { left: 43px; }
+.settings-modal-toggle.off .stm-knob { left: 5px; }
+.settings-modal-toggle .stm-status { top: 12px; font: 700 14px/18px var(--um-serif); }
+.settings-modal-toggle.on .stm-status { left: 7px; color: #f4e4bd; }
+.settings-modal-toggle.off .stm-status { right: 6px; color: #c9b89b; }
+.settings-modal-debug-label { color: #d9b269; }
+
+/* 共通の選択肢と状態表示。ロックの文字は薄くしない。 */
+:is(.equip-modal .equip-chip, .glossary-modal .gl-sort-btn, .glossary-modal .gl-cat-pill) {
+  min-height: 44px;
+  padding: 8px 12px;
+  background: #170d0b;
+  border: 1px solid #584027;
+  border-radius: 2px;
+  color: #c9b89b;
+  font-size: 14px;
+}
+:is(.equip-modal .equip-chip.active, .glossary-modal .gl-sort-btn.active,
+    .glossary-modal .gl-cat-pill.active, .glossary-modal [aria-selected="true"]),
+:is(.equip-modal .equip-chip.active, .glossary-modal .gl-sort-btn.active,
+    .glossary-modal .gl-cat-pill.active):hover:not(:disabled) {
+  background: #4a1712;
+  color: #f1d69e;
+  border-color: #8a5a1e;
+  border-bottom: 2px solid #d7b370;
+  box-shadow: none;
+}
+.equip-modal .equip-chip:is(.locked, :disabled) { opacity: 1; color: #b19a74; background: #160c0b; border-style: dashed; }
+.equip-modal { width: 920px; }
+.equip-modal-body { padding: 12px 24px; }
+.equip-row { grid-template-columns: 116px minmax(0, 1fr); }
+.equip-row-label { font-family: var(--um-serif); }
+.equip-modal-footer { margin: 0 8px; background: #130406; }
+.equip-modal-footer.equip-modal-note { color: #b19a74; }
+
+/* 各窓は外枠を固定し、中身だけをスクロールさせる。 */
+:is(.collection-body, .glossary-body, .hh-list, .na-body, .cp-panel) { min-height: 0; overflow-y: auto; }
+:is(.collection-header, .glossary-header, .hh-title, .na-head) { flex-shrink: 0; }
+.glossary-overlay { display: flex; align-items: center; justify-content: center; }
+.glossary-modal { position: relative; margin: auto; inset: auto; width: 900px; }
+.glossary-top-row { min-height: 44px; gap: 16px; flex-wrap: wrap; }
+.glossary-sort-toggle { flex-shrink: 0; gap: 4px; border: 0; border-radius: 0; background: none; padding: 0; }
+.glossary-title { font-size: 20px; }
+.glossary-search { min-height: 44px; border: 1px solid #80613c; border-radius: 2px; color: #ead9b8; background: #130406; }
+.glossary-search::placeholder { color: #b19a74; }
+.glossary-cats { gap: 6px; }
+.gl-section-title { background: #3e0306; border-color: #8a5a1e; border-radius: 0; font-family: var(--um-serif); }
+.gl-entry { border-radius: 0; background: #170d0b; border-color: #8a5a1e; }
+.collection-modal { width: 960px; }
+.collection-progress-bar, .cp-stat-bar { border-radius: 0; background: #100808; }
+.collection-progress-fill, .cp-stat-fill { border-radius: 0; box-shadow: none; background: linear-gradient(90deg, #8a5a1e, #d9b269); }
+:is(.coll-stage, .coll-ach, .coll-note, .coll-outfit, .coll-item, .coll-cg-card,
+    .coll-section-count, .coll-itemcat-count, .gl-section-count, .gl-cat-tag,
+    .cp-meta-item, .cp-section, .cp-exploit) { border-radius: 2px; }
+.coll-stage.cleared, .coll-ach.on, .coll-note.on, .coll-item.on,
+.cp-meta-item.cp-cleared, .na-effect.on { background: #32100c; border-color: #a68148; color: #efcd82; }
+.coll-stage.cleared .coll-stage-icon { color: #d9b269; text-shadow: none; }
+:is(.coll-stage.locked, .coll-ach.off, .coll-item.off, .coll-outfit.off, .coll-note.off) { opacity: 1; background: #170d0b; }
+.collection-modal .coll-cg-card.off { opacity: 1; background: #170d0b; }
+.collection-modal .coll-cg-label small { font-size: 14px; line-height: 1.7; opacity: 1; color: #b19a74; }
+:is(.coll-section-count, .coll-itemcat-count, .gl-section-count) { background: #4a1712; color: #efcd82; }
+.cp-art { min-height: 0; border-radius: 0; background: linear-gradient(180deg, #32100c, #130406); }
+.cp-art img { width: 100%; height: 100%; object-fit: contain; }
+.cp-head { padding-right: 48px; }
+.cp-exploit { background: #32100c; color: #ead9b8; border-color: #8a5a1e; }
+.cp-exploit b { color: #efcd82; }
+.hand-history-modal { display: flex; flex-direction: column; }
+.hh-list { padding: 16px 24px; }
+.hh-empty { color: #b19a74; font-size: var(--ty-body); }
+.hh-row { border-radius: 2px; background: #170d0b; }
+.hh-row.win { border-color: #a68148; background: #32100c; }
+
+/* 役一覧。研修用の同名はしご図には波及させない。 */
+.hand-guide-panel { width: 1040px; }
+.hand-guide-panel .rp-ladder-help { width: 100%; max-width: none; }
+.hand-guide-panel .rp-ladder-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(180px, 1.5fr) auto;
+  gap: 12px;
+  padding: 7px 12px;
+  opacity: 1;
+  background: #170d0b;
+  border: 1px solid #584027;
+  border-radius: 2px;
+}
+.hand-guide-panel .rp-ladder-name { font-family: var(--um-serif); color: #efcd82; font-size: var(--ty-head) !important; }
+.hand-guide-panel .rp-ladder-desc { color: #b19a74; font-size: var(--ty-note); }
+.hand-guide-panel .rp-ladder-cards .card { opacity: 1; filter: none; }
+.hand-guide-panel .rp-ladder-cards .card .rank { font-size: 14px; }
+.hand-guide-panel .rp-ladder-cards .card .suit { font-size: 14px; }
+
+.login-bonus-modal { padding: 18px 24px; gap: 12px; }
+.login-bonus-modal-title { align-self: stretch; }
+.login-bonus-modal-sub { font-size: 28px; margin: 0; }
+.login-bonus-calendar { margin: 10px 0 4px; }
+.login-bonus-day { border-radius: 2px; border-color: #584027; background: #170d0b; padding-top: 18px; }
+.login-bonus-day-label { font-size: 14px; }
+.login-bonus-amount { font-size: 28px; line-height: 1.4; }
+.login-bonus-day-future { opacity: 1; }
+.login-bonus-day-today, .login-bonus-day-claimed { background: #4a1712; border-color: #d9b269; box-shadow: none; animation: none; }
+.login-bonus-modal .login-bonus-day-today::after { box-shadow: none; animation: none; }
+.login-bonus-day-claimed .login-bonus-amount { color: #efcd82; }
+.login-bonus-check, .login-bonus-tag { border-radius: 2px; background: #d9b269; color: #130406; font-size: 14px; }
+.login-bonus-modal .login-bonus-claim-btn { width: 200px; min-height: 48px; padding: 10px 18px; }
+
+.episode-card.episode-card-bottom { display: flex; flex-direction: column; max-height: 70%; padding: 16px 24px; overflow: hidden; }
+.episode-card .episode-scroll { min-height: 0; flex: 1 1 auto; overflow-y: auto; }
+/* fitEpisodeTitle が inline で縮小するため、本文サイズをここで固定する。 */
+.episode-card .episode-title, .episode-card .episode-title .ep-line {
+  font: 400 var(--ty-body)/1.75 "Noto Sans JP", sans-serif !important;
+  color: #ead9b8;
+  text-align: left;
+  letter-spacing: .02em;
+  text-shadow: none;
+}
+.episode-card .episode-no { margin: 0 0 12px; font-size: 18px; }
+.episode-card .episode-foot { flex: 0 0 auto; margin-top: 8px; background: #130406; border-color: #8a5a1e; }
+.episode-card .episode-continue { position: static; min-height: 48px; font-size: 15px; padding: 10px 28px; }
+.rico-mode-opt-name, .newgame-opt-name, .dchoice-name { font-family: var(--um-serif); color: #efcd82; }
+.rico-mode-modal, .newgame-modal, .ending-prompt-modal, .mimi-confirm,
+.dominance-choice-modal, .ho-modal, .intro-win-modal { max-height: 94%; overflow-y: auto; }
+.dominance-choice-modal .dominance-choice-btn { background: #170d0b; border-color: #8a5a1e; }
+.dominance-choice-modal .dchoice-desc { font: 400 var(--ty-body)/1.6 "Noto Sans JP", sans-serif; color: #b19a74; }
+.ending-prompt-vol, .home-dialog input[type="range"] { min-height: 44px; accent-color: #a68148; }
+.rp-card { overflow-y: auto; }
+.rp-card .rp-skip-btn { opacity: 1; }
+.rp-card .rp-dots { min-height: 44px; align-items: center; }
+.rp-card .rp-rico-bubble { background: #32100c; border-color: #8a5a1e; color: #ead9b8; }
+.rp-card .rp-rico-bubble::before { border-right-color: #32100c; }
+.rp-card .rp-visual { align-items: flex-start; }
+.minipoker-modal .mp-header { padding-right: 64px; }
+.minipoker-modal .mp-title { font-size: 22px; }
+.ho-modal .ho-tag { background: #4a1712; color: #efcd82; border: 1px solid #8a5a1e; border-radius: 2px; box-shadow: none; }
+.ho-modal .ho-choice-btn.correct { background: #4a1712; border-color: #d9b269; color: #f1d69e; box-shadow: none; opacity: 1; }
+.ho-modal .ho-choice-btn.correct::after { content: "　✓ 正解"; color: #efcd82; }
+.ho-modal .ho-choice-btn.wrong { background: #241010; border-color: #6e1c24; color: #cdb3a6; opacity: 1; }
+.ho-modal .ho-result.good { color: #efcd82; }
+.ho-modal .ho-result.bad { color: #cdb3a6; }
+.mp-tutorial, .mp-session-summary { background: rgba(8, 2, 4, .72); }
+.mp-tut-card, .mp-summary-card { max-height: 95%; overflow-y: auto; }
+.mp-tut-steps li { background: #32100c; border-color: #8a5a1e; border-radius: 0; }
+
+/* ホームだけは舞台pxのまま。compactでは倍率から実寸を求める。 */
+.home-dialog { display: flex; flex-wrap: wrap; gap: 12px; max-width: 94%; padding: 18px; overflow-y: auto; }
+.home-dialog header { position: sticky; top: 0; z-index: 3; width: 100%; margin: 0; min-height: 68px; }
+.home-dialog h2 { font-size: 22px; }
+.home-dialog [data-home-close] { min-width: 64px; padding: 8px; border-color: #80613c; color: #e8d7b7; }
+.home-ledger-rows { width: 100%; }
+.home-ledger-row h3 { font: 700 18px/1.7 var(--um-serif); color: #efcd82; }
+.home-ledger-row > span { font-size: var(--ty-note); color: #b19a74; }
+.home-settings label { width: 100%; margin: 4px 0; font-size: var(--ty-body); }
+.home-settings > button { margin: 0; flex: 1 1 auto; }
+
+/* compact: style.cssの舞台の逆zoomを維持し、紙面のみ実寸で調整。
+ * body直下の確認・決着窓には逆zoomを掛けない。 */
+html.is-compact #stage > :is(.intro-win-overlay, .hands-on-overlay) {
+  left: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1));
+  right: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1));
+  top: calc(-1 * var(--gut-y, 0px) / var(--game-scale, 1));
+  bottom: calc(-1 * var(--gut-y, 0px) / var(--game-scale, 1));
+  padding: 0;
+}
+html.is-compact #stage > :is(.intro-win-overlay, .hands-on-overlay) > :is(.intro-win-modal, .ho-modal) { zoom: var(--inv-scale, 1); }
+html.is-compact :is(.settings-modal, .equip-modal, .collection-modal, .glossary-modal,
+    .hand-guide-panel, .hand-history-modal, .login-bonus-modal, .char-profile-modal,
+    .rico-mode-modal, .minipoker-modal, .ending-prompt-modal, .episode-card,
+    .newgame-modal, .mimi-confirm, .note-article-panel, .rp-card, .intro-win-modal,
+    .dominance-choice-modal, .ho-modal, .mp-tut-card, .mp-summary-card) {
+  --um-corner: 28px;
+  min-width: 0;
+  max-width: 97%;
+  max-height: 95%;
+}
+html.is-compact :is(.equip-modal, .collection-modal, .glossary-modal, .hand-guide-panel,
+    .hand-history-modal, .char-profile-modal, .note-article-panel) { width: 97%; height: 95%; }
+/* 旧規則の > * { overflow:auto } による二重スクロールを防ぐ。 */
+html.is-compact #stage > :is(.equip-overlay, .collection-overlay, .glossary-overlay,
+    .hand-guide-overlay, .hand-history-overlay, .char-profile-overlay,
+    .note-article-overlay, .episode-overlay) > :is(.equip-modal, .collection-modal,
+    .glossary-modal, .hand-guide-panel, .hand-history-modal, .char-profile-modal,
+    .note-article-panel, .episode-card) { overflow: hidden; }
+html.is-compact .char-profile-modal {
+  grid-template-columns: minmax(0, 34%) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px;
+}
+html.is-compact .cp-name { font-size: var(--ty-t1); }
+html.is-compact .cp-panel { gap: 8px; }
+html.is-compact .cp-meta-item { font-size: var(--ty-note); padding: 4px 8px; }
+html.is-compact .cp-title { font-size: var(--ty-head); }
+html.is-compact :is(.cp-appearance, .cp-desc, .cp-traits li) { font-size: var(--ty-body); }
+html.is-compact .equip-row { grid-template-columns: 100px minmax(0, 1fr); gap: 12px; padding: 10px 0; }
+html.is-compact :is(.equip-modal-title, .collection-title, .glossary-title, .hand-guide-title, .hh-title) { font-size: var(--ty-t1); }
+html.is-compact :is(.collection-header, .glossary-header, .hand-guide-head, .equip-modal-title, .hh-title) { padding-top: 8px; padding-bottom: 8px; }
+html.is-compact .collection-title { margin-bottom: 4px; }
+html.is-compact .collection-progress-bar { height: 8px; }
+html.is-compact .glossary-header { gap: 6px; }
+html.is-compact .glossary-cats { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+html.is-compact .glossary-cats button { flex: 0 0 auto; }
+html.is-compact .glossary-top-row { gap: 8px; }
+html.is-compact .glossary-sort-toggle button { padding: 8px; font-size: 14px; }
+html.is-compact .login-bonus-modal { width: 97%; gap: 6px; padding: 12px 18px; }
+html.is-compact .login-bonus-modal-title { font-size: var(--ty-t1); padding: 8px; margin: 0; }
+html.is-compact .login-bonus-calendar { gap: 6px; margin-top: 10px; }
+html.is-compact .login-bonus-day { padding-bottom: 4px; }
+html.is-compact .episode-card.episode-card-bottom { width: 97%; height: 95%; margin: auto; padding: 12px 18px; }
+html.is-compact .episode-card .episode-no { margin-bottom: 6px; padding: 6px 12px; }
+html.is-compact .episode-card .episode-foot { padding-top: 6px; margin-top: 6px; }
+html.is-compact .intro-win-modal.iw2 { min-width: 0; width: 97%; gap: 8px; padding: 12px 18px; }
+html.is-compact .iw2-title { font-size: 22px; padding: 6px 16px; }
+html.is-compact .iw2-eyebrow { font-size: 14px; }
+html.is-compact .iw2-stamps { gap: 12px; }
+html.is-compact .iw2-seal { width: 44px; height: 44px; font-size: 24px; }
+html.is-compact .iw2-coins { font-size: 28px; }
+html.is-compact .intro-win-buttons { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; width: 100%; }
+html.is-compact .intro-win-buttons .btn { min-width: 0; font-size: 14px; padding: 8px 12px; }
+html.is-compact .mimi-confirm-actions { flex-wrap: wrap; }
+html.is-compact .rp-card { gap: 8px; padding: 12px 18px; }
+html.is-compact .mp-tut-card { padding: 12px 18px; }
+html.is-compact .mp-tut-title { font-size: var(--ty-t1); padding: 8px; margin-bottom: 8px; }
+
+/* 設定（1枚にまとめた窓）：音・遊び方・ひらく の3組。スマホ横では3列に並べ、閉じるは下に */
+@media (orientation: landscape) {
+  html.is-compact .settings-modal { width: 97%; display: flex; flex-direction: column; gap: 6px; padding: 12px 18px; }
+  html.is-compact .settings-modal-title { font-size: var(--ty-t1); padding: 6px 12px; }
+  html.is-compact .settings-modal-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 18px; margin: 0; }
+  html.is-compact .settings-modal-row { min-height: 44px; padding: 0 4px; }
+  html.is-compact .settings-modal-note { font-size: var(--ty-note); padding: 0; text-align: left; }
+  html.is-compact .settings-modal-divider { display: none; }
+  html.is-compact .settings-modal-trophy { min-height: 44px; padding: 6px 10px; }
+  html.is-compact .settings-modal-reset { margin: 6px 0 0; }
+  html.is-compact .settings-modal { position: relative; }
+  html.is-compact .settings-modal-close { position: absolute; top: 12px; right: 18px; min-width: 96px; margin: 0; min-height: 44px; }
+
+  html.is-compact .rp-step1-table { display: grid; grid-template-columns: auto auto; gap: 8px 20px; }
+  html.is-compact .rp-step1-note { grid-column: 1 / -1; text-align: center; }
+  html.is-compact .rp-step1-cards { gap: 6px; }
+  html.is-compact .rp-card .rp-mini-card { width: 40px; height: 56px; padding: 2px 4px; }
+  html.is-compact .rp-card .rp-mini-card .rank { font-size: 14px; }
+  html.is-compact .rp-card .rp-mini-card .suit { font-size: 14px; }
+  html.is-compact .rp-card .rp-mini-card .center-suit { font-size: 22px; }
+
+  html.is-compact .hand-guide-body { padding: 6px 12px; }
+  html.is-compact .hand-guide-panel .rp-ladder-help {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(5, auto);
+    grid-auto-flow: column;
+    gap: 4px 8px;
+  }
+  html.is-compact .hand-guide-panel .rp-ladder-row { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 6px; padding: 4px 8px; }
+  html.is-compact .hand-guide-panel .rp-ladder-name { font-size: var(--ty-head) !important; line-height: 1.3; }
+  html.is-compact .hand-guide-panel .rp-ladder-desc { grid-column: 1; font-size: 14px; line-height: 1.4; }
+  html.is-compact .hand-guide-panel .rp-ladder-cards { grid-column: 2; grid-row: 1 / 3; gap: 2px; }
+  html.is-compact .hand-guide-panel .rp-ladder-cards .card { width: 24px; height: 34px; padding: 1px 2px; border-radius: 2px; }
+  html.is-compact .hand-guide-panel .rp-ladder-cards .center-suit { font-size: 15px; }
+  html.is-compact .hand-guide-hint { padding: 2px 0 8px; font-size: 14px; }
+}
+
+html.is-compact .home-dialog {
+  --um-corner: calc(28px * var(--inv-scale, 1));
+  width: 94%;
+  max-height: 95%;
+  padding: calc(12px * var(--inv-scale, 1));
+  gap: calc(8px * var(--inv-scale, 1));
+  font-size: calc(14px * var(--inv-scale, 1));
+}
+html.is-compact .home-dialog button {
+  min-width: calc(44px * var(--inv-scale, 1));
+  min-height: calc(44px * var(--inv-scale, 1));
+  padding: calc(8px * var(--inv-scale, 1)) calc(12px * var(--inv-scale, 1));
+  font-size: calc(15px * var(--inv-scale, 1));
+}
+html.is-compact .home-dialog header { padding: calc(8px * var(--inv-scale, 1)); gap: 16px; }
+html.is-compact .home-dialog h2 { font-size: calc(20px * var(--inv-scale, 1)); }
+html.is-compact .home-ledger-row h3 { font-size: calc(16px * var(--inv-scale, 1)); }
+html.is-compact .home-ledger-row > span { font-size: calc(14px * var(--inv-scale, 1)); }
+html.is-compact .home-settings label { font-size: calc(14px * var(--inv-scale, 1)); }
+html.is-compact .home-settings input { height: calc(44px * var(--inv-scale, 1)); }
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.settings-modal, .equip-modal, .collection-modal, .glossary-modal,
+      .hand-guide-panel, .hand-history-modal, .login-bonus-modal, .char-profile-modal,
+      .rico-mode-modal, .ending-prompt-modal, .episode-card, .newgame-modal,
+      .mimi-confirm, .note-article-panel, .rp-card, .intro-win-modal,
+      .dominance-choice-modal, .ho-modal, .home-dialog) { animation: none; }
+  .settings-modal .stm-knob { transition: none; }
+}
+
+/* スマホ版の基準（2026-10-18）：小さいスマホ（安全域の内側が 600px 未満）では設定を2列に（3列だと切り替えが文字に重なっていた） */
+@media (max-width: 760px) {
+  html.is-compact .settings-modal-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.is-compact .settings-modal-groups > :nth-child(3) { grid-column: 1 / -1; }
+  html.is-compact .settings-modal-groups > .settings-modal-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; align-content: start; }
+  html.is-compact .settings-modal-links > h3 { grid-column: 1 / -1; }
+}
+
+/* 設定の「音」の行（BGM・効果音・キャラの声）：トグルが行の右端からはみ出さない（2026-10-20）。
+   音の列を広く取り、ラベルは折り返さず、スライダーが余りを使って縮む（トグル 80×44 は固定） */
+.settings-modal-groups { grid-template-columns: 1.5fr 1fr 1fr; }
+.settings-modal-sound { flex-wrap: nowrap; }
+.settings-modal-sound .settings-modal-label { flex: 0 0 5.2em; white-space: nowrap; }
+.settings-modal-sound .settings-modal-volume { flex: 1 1 0; min-width: 0; }
+.settings-modal-sound .settings-modal-toggle { flex: 0 0 80px; }
+@media (orientation: landscape) {
+  /* スマホ横（幅 761px 以上＝844・932）：音を広く、ひらくは2列にして縦スクロールなしで収める */
+  html.is-compact .settings-modal-groups { grid-template-columns: 1.35fr 1fr 1.28fr; gap: 4px 12px; }
+  html.is-compact .settings-modal-groups > .settings-modal-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 8px; align-content: start; }
+  html.is-compact .settings-modal-links > h3, html.is-compact .settings-modal-links > .settings-modal-reset, html.is-compact .settings-modal-links > [data-pack-row] { grid-column: 1 / -1; }
+  html.is-compact .settings-modal-links .btn[data-pack-row] { white-space: normal; }
+  html.is-compact .settings-modal-links .pack-row-state { margin-left: 6px; font-size: 14px; }
+  html.is-compact .settings-modal-links .btn { padding: 4px 6px; font-size: 14px; line-height: 1.25; white-space: nowrap; text-align: left; gap: 4px; }
+  html.is-compact .settings-modal-note { line-height: 1.4; }
+  html.is-compact .settings-modal-links .settings-modal-reset { margin-top: 2px; }
+  html.is-compact .settings-modal-group .settings-modal-row { min-height: 44px; }
+  html.is-compact .settings-modal-group { gap: 4px; }
+  html.is-compact .settings-modal-title { padding: 3px 12px; }
+  html.is-compact .settings-modal-group-title { padding-bottom: 2px; }
+  html.is-compact .settings-modal { gap: 2px; padding: 8px 18px 6px; }
+  html.is-compact .settings-modal-legal { margin: 0; line-height: 1.2; }
+  /* スクロールが要る時は、そうと分かる金の細いバーを出す */
+  html.is-compact .settings-modal { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #c9a25a rgba(0,0,0,.35); overscroll-behavior: contain; }
+}
+@media (max-width: 760px) and (orientation: landscape) {
+  /* 667（iPhone SE）：音と遊び方の2列、ひらくは下に3列で並べる */
+  html.is-compact .settings-modal-groups { grid-template-columns: 1.4fr 1fr; }
+  html.is-compact .settings-modal-groups > .settings-modal-links { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* 縦に収まらない：下にまだあると分かる帯（金の矢印）を窓の下に重ねる */
+  html.is-compact .settings-modal::after { content: "▼ スクロールできます"; position: sticky; bottom: -6px; display: block; flex: 0 0 auto; margin-top: -4px; padding-top: 14px; text-align: center; font: 700 14px/22px var(--um-serif, serif); color: #efcd82; background: linear-gradient(rgba(18,10,9,0), #120a09 55%); pointer-events: none; }
+}
+
+/* 2026-10-21 文字の段（本文17・ボタン17・補足14）に合わせた設定のスマホ横：
+   「ひらく」は1列（2列だとボタンの文字が切れていた）。ボタンの文字は副ボタンの段、ダウンロードの状態は2行目に */
+@media (orientation: landscape) {
+  html.is-compact .settings-modal-groups > .settings-modal-links { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  html.is-compact .settings-modal-links .btn { font-size: var(--ty-btn2); padding: 4px 10px; white-space: normal; line-height: 1.3; }
+  html.is-compact .settings-modal-links .pack-row-state { display: block; margin: 0; font-size: var(--ty-note); }
+  html.is-compact .settings-modal-group .settings-modal-note { font-size: var(--ty-note); }
+  html.is-compact .settings-modal-group-title { font-size: var(--ty-head); }
+}
+
+/* ===== 2026-10-21 スマホ横：画面ごとに役目の段を当てる（typography.md 0-2）=====
+   小窓は zoom で CSS の px＝画面の px。本文17・見出し16・副ボタン17・補足14。補足は1画面の字数の2割まで */
+/* 各話の導入文・思い出：物語の文は本文 */
+html.is-compact .episode-card .episode-continue { font-size: var(--ty-btn); }
+/* 装備：選ぶ札は副ボタン、行の名前は見出し */
+html.is-compact .equip-modal .equip-chip { font-size: var(--ty-btn2); }
+html.is-compact .equip-modal .equip-row-label { font-size: var(--ty-head); }
+/* コレクション：話の名前は見出し、話の説明は本文、数は補足 */
+html.is-compact .collection-modal .coll-stage-name { font-size: var(--ty-head); }
+html.is-compact .collection-modal .coll-stage-theme { font-size: var(--ty-body); line-height: 1.5; }
+html.is-compact .collection-modal :is(.collection-progress-text, .collection-coins) { font-size: var(--ty-head); }
+/* 用語集：用語は見出し、分類と並べ替えは副ボタン */
+html.is-compact .glossary-modal .gl-term { font-size: var(--ty-head); }
+html.is-compact .glossary-modal :is(.gl-cat-pill, .gl-sort-btn) { font-size: var(--ty-btn2); }
+/* プロフィール：欄の名前は見出し */
+html.is-compact .char-profile-modal .cp-section-label { font-size: var(--ty-head); }
+/* リコ先輩の部屋（遊び方を選ぶ）：説明は本文、賞金は見出し */
+html.is-compact .rico-mode-modal .rico-mode-opt-desc { font-size: var(--ty-body); line-height: 1.5; }
+html.is-compact .rico-mode-modal .rico-mode-opt-prize { font-size: var(--ty-head); }
+/* エンディングの音の確かめ：説明は本文、見出しは見出し */
+html.is-compact .ending-prompt-modal .ending-prompt-sub { font-size: var(--ty-body); }
+html.is-compact .ending-prompt-modal .ending-prompt-kicker { font-size: var(--ty-head); }
+/* 役の一覧：例の札は数字とマークが本文の大きさ（札の幅 30px）、役の説明は補足 */
+@media (orientation: landscape) {
+  html.is-compact .hand-guide-panel .rp-ladder-cards .card { width: 30px; height: 44px; padding: 2px; }
+  html.is-compact .hand-guide-panel .rp-ladder-cards .card .rank, html.is-compact .hand-guide-panel .rp-ladder-cards .card .suit { font-size: var(--ty-body); line-height: 1; }
+}
+/* ミニポーカー：説明・お題は本文、役の名前は見出し、ボタンは副ボタン、配当表は補足のまま */
+html.is-compact .minipoker-modal :is(.mp-tut-hint, .mp-status, .mp-mission-name) { font-size: var(--ty-body); }
+html.is-compact .minipoker-modal .mp-tut-card li { font-size: var(--ty-body); }
+html.is-compact .minipoker-modal :is(.mp-handname, .mp-mission-reward, .mp-pt-lucky) { font-size: var(--ty-head); }
+html.is-compact .minipoker-modal .mp-btn { font-size: var(--ty-btn2); }
+html.is-compact .minipoker-modal .mp-double-pitch b { font-size: var(--ty-head); }
+
+/* ===== 2026-10-21 PC：画面ごとに役目の段を当てる（スマホと同じ役目。値は :root の PC の段：本文19・見出し18・副ボタン19・補足15）=====
+*/
+/* 各話の導入文・思い出：物語の文は本文 */
+.episode-card .episode-continue { font-size: var(--ty-btn); }
+/* 装備：選ぶ札は副ボタン、行の名前は見出し */
+.equip-modal .equip-chip { font-size: var(--ty-btn2); }
+.equip-modal .equip-row-label { font-size: var(--ty-head); }
+/* コレクション：話の名前は見出し、話の説明は本文、数は補足 */
+.collection-modal .coll-stage-name { font-size: var(--ty-head); }
+.collection-modal .coll-stage-theme { font-size: var(--ty-body); line-height: 1.5; }
+.collection-modal :is(.collection-progress-text, .collection-coins) { font-size: var(--ty-head); }
+/* 用語集：用語は見出し、分類と並べ替えは副ボタン */
+.glossary-modal .gl-term { font-size: var(--ty-head); }
+.glossary-modal :is(.gl-cat-pill, .gl-sort-btn) { font-size: var(--ty-btn2); }
+/* プロフィール：欄の名前は見出し */
+.char-profile-modal .cp-section-label { font-size: var(--ty-head); }
+/* リコ先輩の部屋（遊び方を選ぶ）：説明は本文、賞金は見出し */
+.rico-mode-modal .rico-mode-opt-desc { font-size: var(--ty-body); line-height: 1.5; }
+.rico-mode-modal .rico-mode-opt-prize { font-size: var(--ty-head); }
+/* エンディングの音の確かめ：説明は本文、見出しは見出し */
+.ending-prompt-modal .ending-prompt-sub { font-size: var(--ty-body); }
+.ending-prompt-modal .ending-prompt-kicker { font-size: var(--ty-head); }
+/* ミニポーカー：説明・お題は本文、役の名前は見出し、ボタンは副ボタン、配当表は補足のまま */
+.minipoker-modal :is(.mp-tut-hint, .mp-status, .mp-mission-name) { font-size: var(--ty-body); }
+.minipoker-modal .mp-tut-card li { font-size: var(--ty-body); }
+.minipoker-modal :is(.mp-handname, .mp-mission-reward, .mp-pt-lucky) { font-size: var(--ty-head); }
+.minipoker-modal .mp-btn { font-size: var(--ty-btn2); }
+.minipoker-modal .mp-double-pitch b { font-size: var(--ty-head); }
+
+/* ===== 2026-10-21 折れの直し（設定・役の一覧・ミニポーカー）===== */
+/* 設定：項目の名前とボタンの名前は折らない。ダウンロードの状態は名前の下の行に */
+.settings-modal .settings-modal-label, .settings-modal-links .btn { white-space: nowrap; }
+.settings-modal-links .pack-row-state { display: block; margin: 0; }
+.settings-modal-links .btn[data-pack-row] { flex-direction: column; align-items: flex-start; white-space: nowrap; }
+/* 役の一覧：役の名前は1行（字間を詰める） */
+.hand-guide-panel .rp-ladder-name { white-space: nowrap; letter-spacing: 0; }
+/* ミニポーカーの配当表：役の名前は1行 */
+.minipoker-modal .mp-pt-name { white-space: nowrap; }
+
+/* 2026-10-21 わずかに縮む所の補足は15px（画面で14px以上）。設定の「ひらく」は欄を広げて長い名前を1行に */
+.minipoker-modal :is(.mp-pt-payout, .mp-pt-mult, .mp-pt-name, .mp-stat, .mp-header span) { font-size: 15px; }
+.settings-modal-toggle .stm-status { font-size: 15px; }
+html:not(.is-compact) .settings-modal-groups { grid-template-columns: 1.3fr .95fr 1.35fr; }
+/* 図鑑・用語集：文字を大きくした分、札の高さは中身に合わせる（下が切れていた） */
+.collection-modal .coll-stage-card, .collection-modal .coll-stage, .glossary-modal .gl-entry { height: auto; max-height: none; }
+.glossary-modal .gl-body { -webkit-line-clamp: unset; max-height: none; overflow: visible; display: block; }
+html.is-compact .minipoker-modal td:is(.mp-pt-payout, .mp-pt-mult, .mp-pt-name), .minipoker-modal .mp-card-corner { font-size: 15px; }
+@media (orientation: landscape) { html.is-compact .settings-modal-groups { grid-template-columns: 1.55fr 1fr 1.05fr; } }

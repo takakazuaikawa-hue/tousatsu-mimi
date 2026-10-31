@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import { launch } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/cdp.mjs';
+import { serve } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/server.mjs';
+const SP = process.argv[2];
+const server = await serve(SP, 0); const br = await launch({ width: 800, height: 600 }); const page = await br.newPage();
+await page.goto(`http://127.0.0.1:${server.port}/align.html`, 8000);
+const r = await page.eval('window.run()');
+fs.writeFileSync(SP + '/surprise_face.webp', Buffer.from(r.face.split(',')[1], 'base64'));
+fs.writeFileSync(SP + '/surprise_cmp.png', Buffer.from(r.cmp.split(',')[1], 'base64'));
+console.log(JSON.stringify({ best: r.best, ident: r.ident, size: [r.nw, r.nh] }));
+await br.close(); await server.close(); process.exit(0);
