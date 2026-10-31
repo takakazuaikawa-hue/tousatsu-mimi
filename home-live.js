@@ -4,7 +4,9 @@
 // 網目でわずかにゆがめて、呼吸・首のかしげ・うさ耳の揺れ・髪のなびきを付ける。描き足しはしないので画質は落ちない。
 // ・キャンバスは画面の実寸（舞台の縮み × 端末の画素比）で描く。絵は 1 枚の手触りそのまま
 // ・動きは小さく（最大でも数 px）。縁はなめらかに重みを落とし、背景の伸びが目に見えないようにする
-// ・30fps に間引き、ホームが見えていない・タブが裏・動きを減らす設定の時は止める
+// ・20fps に間引き（揺れは時間で決めるので速さは変わらない）。タブが裏・画面の外・不透明な窓が上に重なった時は描かない（rAF ごと止める）
+// ・動きを減らす設定、または localStorage 'mimi.stillArt'＝'1'（設定の「絵の動きを止める」）の時は動かさず CSS の一枚絵のまま
+// ・外から止める入口：HomeLive.setPaused(true/false)、HomeLive.isPaused()
 // ・WebGL が無い時は何もしない（今までどおり CSS の背景の絵が出る）
 // =============================================================
 (function () {
@@ -54,17 +56,57 @@
   const FS = `precision mediump float; uniform sampler2D uTex; varying vec2 vUV; void main() { gl_FragColor = texture2D(uTex, vUV); }`;
 
   let cur = null;
-  function stop() {
+  let paused = false;
+  try { paused = localStorage.getItem('mimi.stillArt') === '1'; } catch (e) { /* 読めなければ動かす */ }
+  let want = null;   // 止めている間に頼まれた表示（動かし始める時に start し直す）
+  // 描くかどうか：止めていない・タブが表・画面に出ている・不透明な窓が上に重なっていない
+  const active = (st) => st.ready && !paused && !document.hidden && st.vis && !st.covered;
+  const kick = (st) => { if (!st.raf && active(st)) st.raf = requestAnimationFrame(st.frame); };
+  // 上に重なった窓の検出：絵の見えている範囲の5点で、いちばん上の要素が絵と無関係で不透明（単色・画像の背景）なら隠れているとみなす
+  const opaque = (e) => {
+    const cs = getComputedStyle(e);
+    if (cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.9) return false;
+    const m = cs.backgroundColor.match(/rgba?\(([^)]+)\)/);
+    if (m) { const a = m[1].split(/[ ,\/]+/).filter(Boolean); if (a.length < 4 || parseFloat(a[3]) >= 0.9) return true; }
+    return /url\(/.test(cs.backgroundImage);
+  };
+  const isCovered = (st) => {
+    const r = st.canvas.getBoundingClientRect();
+    const x0 = Math.max(r.left, 0), x1 = Math.min(r.right, innerWidth), y0 = Math.max(r.top, 0), y1 = Math.min(r.bottom, innerHeight);
+    if (x1 - x0 < 4 || y1 - y0 < 4) return false;
+    for (const [fx, fy] of [[0.5, 0.5], [0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]]) {
+      const t = document.elementFromPoint(x0 + (x1 - x0) * fx, y0 + (y1 - y0) * fy);
+      if (!t || t === st.canvas || st.host.contains(t) || t.contains(st.canvas) || !opaque(t)) return false;
+    }
+    return true;
+  };
+  // 点検の時計は、動いている間（止めていない・タブが表）だけ回す
+  function sync() {
+    const st = cur, need = !!st && !paused && !document.hidden;
+    if (need && !st.timer) st.timer = setInterval(() => { st.covered = isCovered(st); kick(st); }, 700);
+    else if (st && !need && st.timer) { clearInterval(st.timer); st.timer = 0; }
+  }
+  function setPaused(p) {
+    paused = !!p;
+    if (paused) { if (cur) { cancelAnimationFrame(cur.raf); cur.raf = 0; } }
+    else if (cur) { cur.last = 0; kick(cur); }
+    else if (want && want.host.isConnected) start(want.host, want.src);
+    sync();
+  }
+  function stop() { want = null; teardown(); }
+  function teardown() {
     if (!cur) return;
-    cancelAnimationFrame(cur.raf); cur.ro && cur.ro.disconnect(); cur.mo && cur.mo.disconnect();
+    cancelAnimationFrame(cur.raf); cur.io && cur.io.disconnect(); if (cur.timer) clearInterval(cur.timer); cur.ro && cur.ro.disconnect(); cur.mo && cur.mo.disconnect();
     document.removeEventListener('visibilitychange', cur.onVis);
     const lose = cur.gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
     cur.canvas.remove(); cur.host.classList.remove('is-live'); cur = null;
   }
   function start(host, src) {
     if (cur && cur.host === host && cur.src === src) return;
-    stop();
+    teardown();
+    want = null;
     if (!host || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    if (paused) { want = { host, src }; return; }
     const canvas = document.createElement('canvas');
     canvas.className = 'h15-live';
     const gl = canvas.getContext('webgl', { alpha: false, antialias: false, premultipliedAlpha: false });
@@ -107,7 +149,7 @@
     const tex = gl.createTexture();
     const img = new Image();
     img.decoding = 'async';
-    const state = { host, src, canvas, gl, raf: 0, ready: false, last: 0, t0: performance.now() };
+    const state = { host, src, canvas, gl, raf: 0, ready: false, last: 0, t0: performance.now(), vis: true, covered: false, timer: 0, frame: null };
     cur = state;
     img.onload = () => {
       if (cur !== state) return;
@@ -120,7 +162,7 @@
     };
     img.src = src;
     // 描画が失われたら（スマホの裏に回した時・メモリ不足）黒く固まらないよう、層を外して CSS の一枚絵に戻す
-    canvas.addEventListener('webglcontextlost', (ev) => { ev.preventDefault(); if (cur === state) stop(); }, { once: true });
+    canvas.addEventListener('webglcontextlost', (ev) => { ev.preventDefault(); if (cur === state) teardown(); }, { once: true });
     host.appendChild(canvas);
     function resize() {
       const r = host.getBoundingClientRect();                       // 画面上の実寸（舞台の縮みを含む）
@@ -134,20 +176,24 @@
       gl.uniform2f(U('uView'), W, H); gl.uniform4f(U('uPlace'), (W - dw) * 0.5, (H - dh) * 0.4, dw, dh);
     }
     function frame(now) {
-      if (cur !== state) return;
+      state.raf = 0;
+      if (cur !== state || !active(state)) return;   // 止める時は次の rAF を予約しない（点検の時計・表示の変化で kick される）
       state.raf = requestAnimationFrame(frame);
-      if (!state.ready || document.hidden || now - state.last < 33) return;   // 30fps
+      if (now - state.last < 48) return;   // 20fps
       state.last = now;
       gl.uniform1f(U('uT'), (now - state.t0) / 1000);
       gl.drawElements(gl.TRIANGLES, idx.length, big ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
       if (!host.classList.contains('is-live')) host.classList.add('is-live');
     }
-    state.onVis = () => { state.last = 0; };
+    state.frame = frame;
+    state.onVis = () => { state.last = 0; kick(state); sync(); };
+    if (window.IntersectionObserver) { state.io = new IntersectionObserver((es) => { state.vis = es[es.length - 1].isIntersecting; kick(state); }); state.io.observe(canvas); }
     document.addEventListener('visibilitychange', state.onVis);
     if (window.ResizeObserver) { state.ro = new ResizeObserver(() => state.ready && resize()); state.ro.observe(host); }
     // ホームが消えたら止める
     state.mo = new MutationObserver(() => { if (!host.isConnected) stop(); });
     state.mo.observe(document.body, { childList: true, subtree: true });
+    sync();
   }
-  window.HomeLive = { start, stop };
+  window.HomeLive = { start, stop, setPaused, isPaused: () => paused };
 })();

@@ -71,11 +71,12 @@
       const r = pairRank(cards);
       if (r > me.pr) return { key: 'p+', name: `${M.rn(me.pr)}より|大きいペア`, danger: true };
       if (r < me.pr) return { key: 'p-', name: `${M.rn(me.pr)}より|小さいペア`, danger: false };
-      return { key: 'p=', name: `同じ|${M.rn(me.pr)}のペア`, danger: false };
+      // 同じペアでも、残りの札（キッカー）で勝ち負けが決まる（2026-11-01 外部の批評：一律に「負けない」にしていて、残りの札で負ける手でも付いていくが正解になっていた）
+      return M.score(cards) > me.score ? { key: 'p=+', name: `同じ${M.rn(me.pr)}のペアで|残りの札が強い`, danger: true } : { key: 'p=-', name: `同じ${M.rn(me.pr)}のペアで|残りの札が弱い`, danger: false };
     }
     const s = M.score(cards);
     if (cat === 0) return s > me.score ? { key: 's+', name: '役なし|（ミミより|大きい札）', danger: true } : { key: 's-', name: '役なし|（ミミより|小さい札）', danger: false };
-    return s > me.score ? { key: 's+', name: `ミミより上の|${name}`, danger: true } : { key: 's-', name: `ミミと同じか|下の${name}`, danger: false };
+    return s > me.score ? { key: 's+', name: `ミミより上の|${name}`, danger: true } : { key: 's-', name: `ミミと同じか|下の${name}`, danger: false };  // 同じ強さは引き分け＝負けない
   }
   // 相手の手として考えられる全部の組み合わせを、役の札に分ける
   function survey(M, board, mine) {

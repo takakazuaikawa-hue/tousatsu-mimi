@@ -947,7 +947,6 @@
   let coachEl = null, coachData = null, coachOpen = false;
   const pc = (x) => Math.round(x * 100);
   // 見込みは5%刻み（細かい数字は当てにならない）。5%未満は「5%未満」
-  const about = (x) => x < 0.05 ? '5%未満' : `約${Math.round(x * 20) * 5}%`;
   // 文は | の所でだけ折る（語の途中で折らない）
   // 「19%以上」「5%未満」のように数字と続く語の間では折らない（語をつなぐ見えない印 U+2060）
   const wb = (s) => String(s).replace(/%(?=[^|、。）\s])/g, '%⁠').split('|').map(esc).join('<wbr>');
@@ -994,7 +993,7 @@
   }
   // 結論の理由。| は折ってよい所。頭に決め手の札の名前が付く
   function coachReason(c) {
-    const eq = about(c.eq), need = pc(c.needPct);
+    const eq = `約${pc(c.eq)}%`, need = pc(c.needPct);
     const top = c.top != null ? pc(c.top) : 0, range = c.range != null ? pc(c.range) : 0;
     const go = c.lean !== 'fold' && c.lean !== 'check';
     switch (c.key) {
@@ -1003,7 +1002,7 @@
         if (c.street !== 'preflop') return '先に動く番で、|手は中くらい。|チェックで|相手を見る';
         if (c.lean === 'call') return '前の人が|呼んだだけ。|安く入って|様子を見る';
         return go ? `上位${top}%で、|目安の${range}%の|内側` : `目安（上位${range}%）の|外。|後ろに|まだ人がいる`;
-      case 'price': return go ? `見込み${eq}が、|必要な${need}%を|上回る` : `見込み${eq}では、|必要な${need}%に|届かない`;
+      case 'price': return priceReason(c, go);
       case 'prize': return go ? '賞金の差より、|勝ち目の方が|大きい' : '値段は近いが、|ここで落ちると|賞金の損が|大きい';
       default:
         if (c.street === 'preflop') return c.lean === 'check' ? 'タダで|次の札が見られる。|無理に上げない' : 'とても強い手。|上げて|大きく育てる';
@@ -1011,6 +1010,28 @@
         if (c.semi) return `あと${c.outs}枚で役。|賭けて降ろすか、|当てて勝つ`;
         return `見込み${eq}。|強いうちに|賭けて稼ぐ`;
     }
+  }
+  // 払うかどうかの理由。見込みと必要な勝率の大小は、画面に出す丸めた数字（%）で比べて言葉を決める。
+  // 判断（allstar.js の coach）は大小のほかに、後ろの人数・賞金・手の強さも使うので、効いた理由をそのまま言う
+  function priceReason(c, go) {
+    const e = pc(c.eq), n = pc(c.needPct);
+    const pre = c.street === 'preflop';
+    if (go) {
+      if (e > n) return `見込み約${e}%が、|必要な${n}%を|上回る`;
+      const d = c.outs > 0 ? `あと${c.outs}枚で役が付くので、|` : '';
+      return `見込み約${e}%は、|必要な${n}%${e === n ? 'と同じ' : 'に少し届かない'}。|${d}呼んでよい`;
+    }
+    if (e < n) return `見込み約${e}%では、|必要な${n}%に|届かない`;
+    // 見込みは足りているのに降りる：式に足される上乗せ（後ろの人数 0.02 ずつ・降りた時の賞金 0.03・プリフロップの上げられた後 0.03）
+    const tax = (pre && c.stackBB >= 10 ? 0.03 : 0) + 0.02 * c.behind + (c.icm ? 0.03 : 0);
+    const why = [];
+    if (pre && c.top != null && c.eq - c.needPct >= tax) why.push(`手が上位${pc(c.top)}%で|強くない`);
+    else {
+      if (c.behind > 0) why.push(`後ろに|まだ${c.behind}人いる`);
+      if (c.icm) why.push('ここで落ちると|賞金の損が大きい');
+      if (!why.length) why.push('差が小さく|余裕がない');
+    }
+    return `必要な勝率（${n}%）${e === n ? 'と同じ（見込み約' + e + '%）で、' : 'は超えているが、'}|${why.join('、|')}ので|降りる`;
   }
   function coachHTML(c) {
     const pre = c.street === 'preflop';
@@ -1040,7 +1061,7 @@
       const outs = c.outs > 0 ? `あと${c.outs}枚で役|（約${c.outs * (c.street === 'flop' ? 4 : 2)}%）` : '';
       odds = card('odds', CK_LABEL.odds,
         `<i class="as-bar" aria-hidden="true"><s style="width:${pc(c.eq)}%"></s>${c.toCall > 0 ? `<u style="left:${pc(c.needPct)}%"></u>` : ''}</i>`,
-        `見込み${about(c.eq)}`,
+        `見込み約${pc(c.eq)}%`,
         c.toCall > 0 ? `${made}払うなら|${pc(c.needPct)}%以上いる${outs ? '。|' + outs : ''}` : (made + outs || (pre ? 'タダで|次の札が見られる' : '賭けなくても|次の札が見られる')));
     }
     // 4 相手（賭けてきた人。いなければ次に動く人）

@@ -560,7 +560,7 @@ const OPPONENTS = {
     imgKey: 'rico',
     theme: `ポーカー基礎講義（全${LESSON_CHAPTERS.length}章・${LESSON_ORDER.length}問）`,
     desc: '歴史・用語・流れ・役・確率・定石・心理戦まで、じっくり学ぶリコ先輩の講義',
-    rewardFirst: 300, rewardRematch: 50, rewardSBonus: 0,
+    rewardFirst: 300, rewardRematch: 100, rewardSBonus: 0,
     unlockNoteOnClear: null,
     isLecture: true,
   },
@@ -575,7 +575,7 @@ const OPPONENTS = {
     imgKey: 'polka',
     theme: 'ブラフ入門',
     desc: '弱い時ほど声が大きい、調子乗りの初心者客',
-    rewardFirst: 500, rewardRematch: 200, rewardSBonus: 200,
+    rewardFirst: 500, rewardRematch: 400, rewardSBonus: 200,
     unlockNoteOnClear: null,
     fullHand: true,
   },
@@ -590,7 +590,7 @@ const OPPONENTS = {
     imgKey: 'selina',
     theme: 'ボード危険度・ベットサイズ',
     desc: '丁寧で落ち着いた常連プレイヤー。理屈っぽく試してくる',
-    rewardFirst: 700, rewardRematch: 300, rewardSBonus: 300,
+    rewardFirst: 700, rewardRematch: 600, rewardSBonus: 300,
     unlockNoteOnClear: 'board_danger',
     fullHand: true,
   },
@@ -605,7 +605,7 @@ const OPPONENTS = {
     imgKey: 'grano',
     theme: 'ポットオッズ・割に合う判断',
     desc: '商人系プレイヤー。ポーカーを商談のように考える',
-    rewardFirst: 900, rewardRematch: 400, rewardSBonus: 400,
+    rewardFirst: 900, rewardRematch: 800, rewardSBonus: 400,
     unlockNoteOnClear: 'pot_odds',
     fullHand: true,
   },
@@ -620,7 +620,7 @@ const OPPONENTS = {
     imgKey: 'velvet',
     theme: 'レンジ・証拠突きつけ・ブラフブレイク・総合判断',
     desc: 'VIPルームを仕切る妖艶なボスディーラー。言葉と圧で相手を降ろしてくる',
-    rewardFirst: 1500, rewardRematch: 700, rewardSBonus: 700,
+    rewardFirst: 1500, rewardRematch: 1400, rewardSBonus: 700,
     unlockNoteOnClear: 'range_basic',
     isBoss: true,
     fullHand: true,
@@ -2074,8 +2074,9 @@ const PSYCH_QUESTIONS = {
     type: 'logic',
     rule: 'アウツ計算：完成までに有効な残りカード数 × 2 ＝ 次の1枚で当たる確率(%)',
     situationFn: (state) => `状況整理\n` +
-      `・場札：${renderCardsText(state.community)}\n` +
-      `・ミミの手札：${renderCardsText(state.playerHand)}\n` +
+      // 2026-11-01 問題専用の例の札で出す（外部の批評：本物の場札に固定の説明を付けていて、手と説明が食い違った）
+      `・場札（例）：A♥ 9♥ 4♣ K♥\n` +
+      `・ミミの手札（例）：Q♥ 2♠\n` +
       `・既に同スートが4枚見えている＝フラッシュ完成にはあと1枚必要\n` +
       `・デッキ内に同スート札は残り <b>9枚</b>（アウツ）\n\n` +
       `簡易公式\n` +
@@ -2103,8 +2104,8 @@ const PSYCH_QUESTIONS = {
     type: 'logic',
     rule: '完成役 vs 未完成ドロー：フロップ時点で見ると完成役の方が勝率が高い',
     situationFn: (state) => `状況整理\n` +
-      `・場札：${renderCardsText(state.community)}（フロップ）\n` +
-      `・ミミ：トップペア成立（例：Aを含む1ペア、約65%の勝率）\n` +
+      `・場札（例）：A♣ 8♥ 3♥（フロップ）\n` +
+      `・ミミ（例）：A♠ K♦ でAのワンペア（約65%の勝率）\n` +
       `・想定される相手：フラッシュドロー9アウツ（ターン+リバーで完成率約35%＝rule of 4）\n\n` +
       `ポイント\n` +
       `「完成してる役」は確定の強さ＝65%。\n` +
@@ -2263,7 +2264,7 @@ const PSYCH_QUESTIONS = {
     type: 'logic',
     rule: 'ドライボードでのCベット：相手がヒットしてない確率が高い',
     situationFn: (state) => `状況整理\n` +
-      `・場札：${renderCardsText(state.community)}（ドライボード）\n` +
+      `・場札（例）：K♠ 7♦ 2♣（ドライボード）\n` +
       `・プリフロップでミミがレイズ → 相手はコール\n` +
       `・ドライボード＝連番なし・同スートなし・ペアなし\n\n` +
       `ポイント\n` +
@@ -3696,7 +3697,8 @@ function showEpisodeTitle(key, onContinue, onBack) {
   if (document.querySelector('.episode-overlay:not(.out)')) return;
   const continueLabel = onContinue ? '▶ 開始' : '閉じる';
   const overlay = document.createElement('div');
-  overlay.className = `episode-overlay ep-bg-${ep.bg}`;
+  // 2026-11-01 最初は絵を見せ、長い題名は1行目だけ（外部の批評：題名の全文が絵を隠し、初戦の前に読む物が多すぎた）。全文は「題名を全部読む」で開く
+  overlay.className = `episode-overlay ep-bg-${ep.bg} is-brief`;
   const imgPath = `assets/episodes/${key}.webp`;
   const probe = new Image();
   probe.onload = () => {
@@ -3709,7 +3711,7 @@ function showEpisodeTitle(key, onContinue, onBack) {
   probe.src = imgPath;
   overlay.innerHTML = `
     <div class="episode-card episode-card-bottom">
-      <div class="episode-no">${ep.no}　<small class="episode-hint">（背景をクリックで絵だけ表示）</small></div>
+      <div class="episode-no">${ep.no}　<small class="episode-hint">（背景をクリックで絵だけ表示）</small><button type="button" class="episode-more">題名を全部読む</button></div>
       <div class="episode-scroll">
       <h1 class="episode-title">${ep.title.split('\n').map(l => `<span class="ep-line">${l}</span>`).join('<br>')}</h1>
       </div>
@@ -3722,6 +3724,8 @@ function showEpisodeTitle(key, onContinue, onBack) {
   // 長文タイトルを枠内スクロールなしで全文見せる（文字の読み込みで行の幅が変わるので、読み込み後にもう一度合わせる）
   fitEpisodeTitle(overlay);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (overlay.isConnected) fitEpisodeTitle(overlay); });
+  const moreBtn = overlay.querySelector('.episode-more');
+  moreBtn.addEventListener('click', (e) => { e.stopPropagation(); overlay.classList.remove('is-brief'); fitEpisodeTitle(overlay); });
   const continueBtn = overlay.querySelector('.episode-continue');
   let leaving = false;
   continueBtn.addEventListener('click', (e) => {
@@ -5107,6 +5111,13 @@ function renderLobbyBottomPanel() {
   `;
 }
 
+// 絵を止める（home-live.js・live-cg.js の入口。localStorage 'mimi.stillArt' が '1' なら起動時から止まる）
+function stillArtOn() { try { return localStorage.getItem('mimi.stillArt') === '1'; } catch (e) { return false; } }
+function setStillArt(on) {
+  try { localStorage.setItem('mimi.stillArt', on ? '1' : '0'); } catch (e) {}
+  if (window.HomeLive && window.HomeLive.setPaused) window.HomeLive.setPaused(on);
+  if (window.LiveCG && window.LiveCG.setPaused) window.LiveCG.setPaused(on);
+}
 // 設定モーダル（タップしやすい大きいスイッチ）
 function showSettingsModal() {
   document.querySelectorAll('.settings-overlay').forEach(el => el.remove());
@@ -5158,6 +5169,11 @@ function showSettingsModal() {
             ${sw('logic', log, '論理バトル')}
           </div>
           <div class="settings-modal-note">講義の間は、この設定にかかわらず両方とも出ます</div>
+          <div class="settings-modal-row">
+            <span class="settings-modal-label">ホームとご褒美の絵を動かす</span>
+            ${sw('liveart', !stillArtOn(), 'ホームとご褒美の絵を動かす')}
+          </div>
+          <div class="settings-modal-note">OFF にすると絵は止まった1枚になり、スマホが熱くなりにくく電池も長持ちします</div>
           ${save.backdoorUnlocked ? `
           <div class="settings-modal-row settings-modal-practice">
             <span class="settings-modal-label">練習用：相手の手札を見る</span>
@@ -5212,6 +5228,7 @@ function showSettingsModal() {
       else if (kind === 'logic') save.logicEnabled = !(save.logicEnabled !== false);
       else if (kind === 'backdoor') save.backdoorOn = !save.backdoorOn;
       else if (kind === 'forcesound') setForceSound(!save.forceSound); // 内部でsaveProgress+即反映
+      else if (kind === 'liveart') setStillArt(!stillArtOn());
       else if (kind === 'bgm') toggleLobbyBgm();
       else if (kind === 'sfx') { toggleSfx(); mpSfx('tap'); }
       else if (kind === 'voice') { save.voiceOn = !(save.voiceOn !== false); if (!save.voiceOn && window.stopVoice) stopVoice(); }
@@ -5220,6 +5237,7 @@ function showSettingsModal() {
       if (kind === 'psych') isOn = (save.psychEnabled !== false);
       else if (kind === 'logic') isOn = (save.logicEnabled !== false);
       else if (kind === 'forcesound') isOn = !!save.forceSound;
+      else if (kind === 'liveart') isOn = !stillArtOn();
       else if (kind === 'bgm') isOn = !!save.bgmOn;
       else if (kind === 'sfx') isOn = !!save.sfxOn;
       else if (kind === 'voice') isOn = save.voiceOn !== false;
@@ -6045,6 +6063,9 @@ function shop3RenderRow(deal) {
   if (deal) { row.scrollLeft = 0; row.classList.remove('is-deal'); void row.offsetWidth; row.classList.add('is-deal'); }
   row.querySelectorAll('.sh3-card').forEach(shop3BindCard);
   shop3Select(shop3.sel, false);
+  // 2026-11-01 選んでいる品を棚の真ん中に見せる（外部の批評：棚は先頭に戻り、選ばれている品が画面の外にあって、何を買う欄か分からなかった）
+  const selCard = row.querySelector('.sh3-card.is-sel');
+  if (selCard) row.scrollLeft = Math.max(0, selCard.offsetLeft - (row.clientWidth - selCard.offsetWidth) / 2);
 }
 function shop3Say(text) {
   const el = document.querySelector('[data-bind="ricoShopComment"]'); if (!el) return;
@@ -11701,7 +11722,7 @@ function showMiniPokerGame() {
       return `
         <div class="mp-status mp-status-double">
           Hi-Lo ダブルアップ（×${Math.pow(2, stack)} → ×${Math.pow(2, stack + 1)}）<br>
-          <small>見せ札より「高い」「低い」を予想　獲得：<b>${total}</b> → 当てれば <b>${total * 2}</b></small>
+          <small>見せ札より「高い」「低い」を予想　<span style="white-space:nowrap">獲得：<b>${total}</b> → 当てれば <b>${total * 2}</b></span></small>
         </div>
         <div class="mp-double-cards">
           <div class="mp-card ${red ? 'mp-red' : 'mp-black'} mp-card-shown">
@@ -13116,13 +13137,14 @@ function showCollectionModal() {
         <div class="collection-coins">${UI_ICON.coin} 所持コイン：${save.coins}</div>
       </div>
       <div class="collection-body">
-        <section class="coll-section">
-          <h3 class="coll-section-title">対戦相手 <span class="coll-section-count">${stageCleared}/${stages.length}</span></h3>
-          <div class="coll-stages">${stagesHtml}</div>
-        </section>
+        <!-- 2026-11-01 一枚絵を集める作品なので、ご褒美CGを一番上に（外部の批評：文字の一覧が先頭を占めていた） -->
         <section class="coll-section">
           <h3 class="coll-section-title">ご褒美CG <span class="coll-section-count">${rewardCgCount}/${stageOrder.length + 1}</span></h3>
           <div class="coll-cgs">${rewardCgHtml}${rewardCgHtmlSecret}</div>
+        </section>
+        <section class="coll-section">
+          <h3 class="coll-section-title">対戦相手 <span class="coll-section-count">${stageCleared}/${stages.length}</span></h3>
+          <div class="coll-stages">${stagesHtml}</div>
         </section>
         ${(() => {
           // 台帳37：初対戦の苦戦の場面は、勝った後に思い出で見返せる
@@ -13748,7 +13770,7 @@ function startBattleInternal(opponentId) {
     state.mimiThought = '「相手のチップは私の倍……一発勝負じゃ勝てない。まずは相手をよく見よう」';
     state.ricoAdvice = pickRicoOpeningAdvice(state.opponentId);
     render();
-    maybeShowHouseRules();
+    offerBattleResume(() => maybeShowHouseRules());
   }
 }
 
@@ -14639,16 +14661,7 @@ function showMustKnow(pages, opts = {}) {
 function houseRulesPages() {
   const opp = (state.opponentName || '相手').replace(/（.*）/, '');
   const P = state.playerChips, O = state.opponentChips;
-  const carry = Math.max(0, P - startingBaseChips(state.opponentId, state.seriousRicoMode));
   const share = Math.round(P / Math.max(1, P + O) * 1000) / 10;
-  const chipCol = (cols) => `<span class="mk-chipcol" style="--n:${cols.length}">${cols.map((c, i) => `<img src="assets/ui/chip_${c}.webp" alt="" style="--i:${i}">`).join('')}</span>`;
-  // 参加費の段：数字の行・棒・何ハンド目の行。いまの段（1〜4ハンド目）は金
-  const top = ANTE_LEVELS[ANTE_LEVELS.length - 1];
-  const steps = '<span class="mk-sk is-v">参加費</span><span class="mk-sk is-r">ハンド目</span><i class="mk-steps-base"></i>' + ANTE_LEVELS.map((v, i) => {
-    const from = i * ANTE_STEP + 1, col = `grid-column:${i + 2}`, now = i === 0 ? ' is-now' : '';
-    const range = i === ANTE_LEVELS.length - 1 ? `${from}〜` : `${from}〜${from + ANTE_STEP - 1}`;
-    return `${i === 0 ? `<em class="mk-snow" style="${col}">いまここ</em>` : ''}<b class="mk-sv${now}" style="${col}">${v}</b><i class="mk-sb${now}" style="${col};--h:${(v / top).toFixed(3)}"></i><small class="mk-sr${now}" style="${col}">${range}</small>`;
-  }).join('');
   return [
     { eyebrow: 'HOUSE RULES', target: '.battle-screen .v2-stack-gauge.is-opp',
       title: `${opp}のチップを <b>0</b> にしたら勝ち`,
@@ -14657,22 +14670,10 @@ function houseRulesPages() {
           <div class="mk-tug-bar"><i class="mk-tug-mimi" style="width:${share}%"></i><i class="mk-tug-opp"></i></div>
           <div class="mk-tug-ends"><span class="mk-tug-end is-lose">ミミが <b>0</b> になったら負け</span><span class="mk-tug-end is-win">${opp}が <b>0</b> になったら勝ち</span></div>
         </div>`,
-      note: 'ハンドの数に決まりはありません。ミミが 0 になっても、1回だけ座り直せます（それまでに読み合いか「降りる」を使っていれば）。',
-      rico: '上の帯は、チップの綱引き。金色を右の端まで押し切ったら勝ちだよ' },
-    { eyebrow: 'HOUSE RULES', target: '.battle-screen .v2-stack-gauge.is-opp',
-      title: `${opp}は <b>2</b> 倍のチップで始まる`,
-      fig: `<div class="mk-stacks">
-          <figure class="mk-stack">${chipCol(['gold', 'red', 'gold', 'red', 'gold'])}<figcaption>ミミ <b>${P}</b>${carry ? `<small>チップ拡張 +${carry} を含む</small>` : ''}</figcaption></figure>
-          <span class="mk-times">×2</span>
-          <figure class="mk-stack is-opp">${chipCol(['red', 'white', 'blue', 'red', 'white', 'blue', 'red', 'white', 'blue', 'red'])}<figcaption>${opp} <b>${O}</b></figcaption></figure>
-        </div>`,
-      note: '1回勝っただけでは、終わりません。',
-      rico: '一発で全部取ろうとしないで。勝てる時に勝って、少しずつ削っていこう' },
-    { eyebrow: 'HOUSE RULES', target: '.battle-screen .t8-ante',
-      title: '参加費は <b>4</b> ハンドごとに上がる',
-      fig: `<div class="mk-steps">${steps}</div>`,
-      note: '参加費は、毎ハンドの始めにふたりが同じだけ出すチップ。いまの額は左上に出ています。',
-      rico: '様子見ばかりだと、参加費だけで削られていくよ。勝負どころで仕掛けよう',
+      // 2026-11-01 初戦の前の説明は1ページに（外部の批評：扉・卓の説明3ページ・読み合いの説明と続いて、ポーカーの前に疲れる）。
+      // 「2倍で始まる」は帯の数字で見せ、参加費が上がることは最初に上がる直前に結果の札で知らせる（hr-ante）
+      note: `${opp}はミミの <b>2</b> 倍のチップで始まります。1回勝っただけでは終わりません。ミミが 0 になっても、1回だけ座り直せます。`,
+      rico: '上の帯は、チップの綱引き。金色を右の端まで押し切ったら勝ち。少しずつ削っていこう',
       next: '対戦へ' },
   ];
 }
@@ -14792,6 +14793,7 @@ function startHand() {
   if (state.playerChips <= 0 || state.opponentChips <= 0) { return endBattle(); }
   state.handNo++;
   if (state.handNo > state.maxHands) { return endBattle(); }
+  saveBattleResume();
   setOpponentExpression('default'); // 新ハンドは平常表情から
   setMimiExpression('default');
   resetHandJuice();
@@ -15368,6 +15370,8 @@ function opponentTurnDecide() {
     render();
     if (triggerBoss) state.bossPsychFiredThisHand = true;
     if (readBattleReady('psych')) { state.psychPending = true; battleTimeout(() => startReadBattle('psych'), 900); return; }
+    // 2026-11-01 本編では古い三択に回さない（外部の批評：場札だけ本物で手は固定の問題文が出ていた・画面の作りもちぐはぐ）。三択は研修・講義だけ
+    if (!threeChoiceOk()) { state.isPlayerTurn = true; render(); return; }
     const qid = pickPsychQuestion();
     battleTimeout(() => triggerPsychBattle(qid), 900);
     return;
@@ -15388,7 +15392,7 @@ function opponentTurnDecide() {
     battleTimeout(() => startReadBattle('logic'), 900);
     return;
   }
-  if (triggerLogic) {
+  if (triggerLogic && threeChoiceOk()) {
     const lqid = pickLogicQuestion();
     if (lqid) {
       state.logicCount = (state.logicCount || 0) + 1;
@@ -15638,9 +15642,13 @@ const READ_BATTLE_TELL = {
   detective: '手がかりを読んだ', stare: '見つめ合いに勝った', doubt: 'ウソを見抜いた', gacha: '心の声を聞いた', objection: '矛盾を突いた',
   handbuild: '最強の役を作った', highlow: '強さを比べ切った', danger: '危険札を見抜いた', sniper: '賭け額を当てた', outs: 'アウツを数えた', suspects: '容疑者を絞った',
 };
+// 古い三択の心理・論理バトルを出してよいのは研修・講義・最初の手の練習だけ
+function threeChoiceOk() { return !!(state && (state.tutorialMode || state.introHandMode || state.lectureMode)); }
 function readBattleReady(group) {
   if (!window.MB || typeof window.MB.mount !== 'function') return false;
   if (!state || state.tutorialMode || state.introHandMode || state.lectureMode) return false;
+  // 2026-11-01 読み合いは1ハンドに1回まで。預けた読みの答え合わせが済むまで次は出さない（同じ手で2回目が出ると、1回目の読みが上書きされて消えていた）
+  if (state.pendingRead || state.readHandNo === state.handNo) return false;
   const pool = (READ_BATTLE_POOLS[readPoolKey()] || {})[group];
   if (!pool || !pool.length) return false;
   // どの種類もこの場面でしか意味がなく、今どれも合わない時は出さない（いつもの三択の論理バトルになる）
@@ -15748,6 +15756,7 @@ function startReadBattle(group) {
   }
   state.readBattle = { inst, host };
   state.readBattlePlayed[gameId] = (state.readBattlePlayed[gameId] || 0) + 1;
+  state.readHandNo = state.handNo;
   save.readBattleSeen[gameId] = true;
   saveProgress();
 }
@@ -17968,7 +17977,7 @@ function showDominanceComplete(choice) {
 //=============================================================
 // 本気のリコ先輩（クリア後の最強戦）の報酬。講義（rico_tutorial 300）とは別の記録キー 'rico_serious' で払う。
 // 初回2000はヴェルベット（1500）より上、再戦・Sボーナスはヴェルベットと同じ（周回で稼げすぎないように）
-const SERIOUS_RICO_REWARD = { rewardFirst: 2000, rewardRematch: 700, rewardSBonus: 700 };
+const SERIOUS_RICO_REWARD = { rewardFirst: 2000, rewardRematch: 1400, rewardSBonus: 700 };
 const SCORE_TABLE = { win:50, psychSuccess:10, bluffCatch:15, goodFold:10, goodCall:10, allInWin:20, bluffBreak:25, comebackWin:30 };
 const RANK_THRESHOLDS = [
   { rank: 'SS', min: 120 },
@@ -17978,7 +17987,34 @@ const RANK_THRESHOLDS = [
   { rank: 'C',  min:   0 },
 ];
 
+// 2026-11-01 本編の対戦の途中保存（外部の批評：3ハンド目で読み込み直すと1ハンド目に戻った）。
+// 各ハンドの始まりに、持ち点・終えたハンドの数・座り直しの残り・読み合いのコインを保存し、同じ卓に入り直した時に「続きから」を選べる
+function saveBattleResume() {
+  if (!state || state.tutorialMode || state.lectureMode || state.introHandMode || (typeof isDominanceMode === 'function' && isDominanceMode())) return;
+  save.battleResume = { opp: state.opponentId, serious: !!state.seriousRicoMode, playerChips: state.playerChips, opponentChips: state.opponentChips,
+    handsDone: state.handNo - 1, rebuysLeft: state.rebuysLeft, purse: state.readBattlePurse || null, wins: state.consecutiveWins || 0, at: Date.now() };
+  saveProgress();
+}
+function clearBattleResume() { if (save && save.battleResume) { delete save.battleResume; saveProgress(); } }
+function offerBattleResume(after) {
+  const r = save.battleResume;
+  if (!r || r.opp !== state.opponentId || !!r.serious !== !!state.seriousRicoMode || state.tutorialMode) return after();
+  const name = state.opponentName || '相手';
+  showConfirm({ title: '続きから遊びますか？', body: `前回は Hand ${r.handsDone + 1} の前で中断しました。
+ミミ ${r.playerChips} ／ ${name} ${r.opponentChips}`, ok: '続きから', cancel: '最初から' }).then(yes => {
+    if (yes && state.screen === 'battle' && state.opponentId === r.opp) {
+      state.playerChips = r.playerChips; state.opponentChips = r.opponentChips; state.handNo = r.handsDone;
+      state.rebuysLeft = r.rebuysLeft; if (r.purse) state.readBattlePurse = r.purse; state.consecutiveWins = r.wins || 0;
+      state.mimiThought = `「Hand ${r.handsDone + 1} から再開……さっきの続きだ」`;
+      render();
+      return;
+    }
+    clearBattleResume();
+    after();
+  });
+}
 function endBattle() {
+  clearBattleResume();
   battleGen++; // 以後、前の卓の予約処理（崩れ演出など）が結果画面の上で動かないように
   document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
   cancelTease(); // 溜め演出も必ず解除
@@ -18045,16 +18081,15 @@ function endBattle() {
       rewards.push(`初回クリア報酬：+${rewardOpp.rewardFirst}`);
       save.firstClearRewardClaimed.push(rewardKey);
     } else {
-      // 再戦周回防止：同じ相手に勝つほど報酬が減少（0回:100%/4回:75%/8回:50%/12回:30%/20回+:20%）
+      // 再戦の報酬：同じ相手に勝つほど少し減る（0回:100%/6回:80%/12回+:60%）。
+      // 2026-11-01 以前は 20 回で 20% まで下げていたが、外部の批評「買い切りなのに、集めるための周回を求めながら周回の報酬を削る」で緩めた
       if (!save.rematchWins) save.rematchWins = {};
       const wins = save.rematchWins[rewardKey] || 0;
       save.rematchWins[rewardKey] = wins + 1;
       let mult;
-      if (wins < 4)       mult = 1.00;
-      else if (wins < 8)  mult = 0.75;
-      else if (wins < 12) mult = 0.50;
-      else if (wins < 20) mult = 0.30;
-      else                mult = 0.20;
+      if (wins < 6)       mult = 1.00;
+      else if (wins < 12) mult = 0.80;
+      else                mult = 0.60;
       const adjusted = Math.max(10, Math.round(rewardOpp.rewardRematch * mult));
       earned += adjusted;
       const noteStr = mult < 1.0 ? `（${wins+1}勝目: ${Math.round(mult*100)}%）` : '';

@@ -1156,3 +1156,28 @@ html.is-compact #stage > .read-battle-host.mb-host .gx-ceil { flex-direction: co
   html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row > .mb-portrait.is-face + div > .mb-opp-name { height: 62px; min-height: 0; box-sizing: border-box; }
   html.is-compact #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach { flex-shrink: 1; min-height: 0; overflow-y: auto; }
 }
+/* 2026-11-01 役くらべ（スマホ）：外部の批評で、候補の「勝ち・負け」の札が「勝」「負」に切れ、結論の行「線を超えた → 付いていくのが得」がボタンに隠れ、
+   見出しの「割に合う線」が右で切れていた。候補の番号は数字だけ（「候補」の字を畳む）、見出しは折れてよい、結論の箱は棒を低くして詰める */
+html.is-compact #stage > .read-battle-host.mb-host .hv-cand { grid-template-columns: 1.1em auto minmax(2.6em, 1fr) 14px; }
+html.is-compact #stage > .read-battle-host.mb-host .hv-cand .n i { display: none; }
+html.is-compact #stage > .read-battle-host.mb-host .hv-cand .r { overflow: visible; text-overflow: clip; }
+html.is-compact #stage > .read-battle-host.mb-host .hv-bar-t { flex-wrap: wrap; white-space: normal; row-gap: 0; }
+html.is-compact #stage > .read-battle-host.mb-host .hv-big { gap: 2px; padding: 4px 10px 6px; }
+html.is-compact #stage > .read-battle-host.mb-host .hv-big-bar { height: 20px; margin-top: 1.4em; }
+html.is-compact #stage > .read-battle-host.mb-host .hv-big-t { row-gap: 0; line-height: 1.3; }
+/* 結論の箱：左の「勝てる候補 N%」は右の欄の見出しと同じなので、スマホでは畳む（補足の1行がボタンに隠れていた） */
+html.is-compact #stage > .read-battle-host.mb-host .hv-big-t > span:first-child { display: none; }
+@media (max-width: 719px) {
+  html.is-compact #stage > .read-battle-host.mb-host .hv-cands { grid-template-columns: minmax(0, 1fr); }
+  html.is-compact #stage > .read-battle-host.mb-host .hv-cand { min-height: 0; }
+  html.is-compact #stage > .read-battle-host.mb-host .hv-big-bar { height: 12px; margin-top: 1.3em; }
+  html.is-compact #stage > .read-battle-host.mb-host .hv-big { padding: 2px 8px 4px; }
+}
+/* 決める画面（結論の箱 .hv-big が出た後）：右の欄の棒は結論の箱と同じことを示すので畳む。小さいスマホはご褒美の段の行も畳む */
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.hv-big) .hv-bars { display: none; }
+@media (max-width: 719px) { html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.hv-big) .hv-ladder { display: none; } }
+/* 2026-11-01 ダウト（スマホ）：始める前の「相手の癖」の欄が、顔の窓と並んで幅約110pxに押しつぶされ、1〜4字ずつで折れていた（外部の批評）。
+   癖の欄がある間（始める前）は欄を横いっぱいにし、顔の窓は畳む */
+html.is-compact #stage > .read-battle-host.mb-host .doubt-area:has(#mb-doubt-rule) .doubt-rule { left: 6px; right: 6px; width: auto; top: 6px; bottom: 6px; transform: none; z-index: 2; display: flex; flex-direction: column; justify-content: center; }
+html.is-compact #stage > .read-battle-host.mb-host .doubt-area:has(#mb-doubt-rule) .doubt-win { display: none; }  /* 顔は左の列に出ている */
+html.is-compact #stage > .read-battle-host.mb-host .doubt-rule-ex span { word-break: keep-all; }

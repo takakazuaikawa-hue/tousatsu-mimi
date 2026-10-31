@@ -331,7 +331,7 @@
         <div class="doubt-win"><img class="doubt-face main" src="${api.asset('art/face/' + api.charId + '_smug.webp')}" alt="${api.char.jp}"><img class="doubt-face alt" src="${api.asset('art/face/' + api.charId + '_panic.webp')}" alt=""></div>
         <div class="doubt-rule" id="mb-doubt-rule"><small>ポルカの癖</small>
           <div class="doubt-rule-main" aria-label="声が大きいほどウソ"><span class="dv-end">本音</span><span class="dv-bars"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="dv-end lie">ウソ</span></div>
-          <div class="doubt-rule-ex"><span class="is-honest">……　短い ＝ 本音</span><span class="is-lie">！！　のびる　（棒）＝ ウソ</span></div>
+          <div class="doubt-rule-ex"><span class="is-honest">…… 短い＝本音</span><span class="is-lie">！！ のびる<wbr>（棒）＝ウソ</span></div>
           <div class="doubt-rule-note">例外は、多くて1つ</div>
         </div>
       </div>

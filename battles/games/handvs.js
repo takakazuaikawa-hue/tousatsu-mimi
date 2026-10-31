@@ -114,6 +114,7 @@
     .hv-cands { display: flex; flex-direction: column; gap: 3px; }
     .hv-cand { display: grid; grid-template-columns: 3.4em auto minmax(0, 1fr) 22px; gap: 6px; align-items: center; padding: 1px 8px; min-height: 26px; background: var(--panel); border: 1px solid var(--line-dim); font-size: 14px; line-height: 1.3; }
     .hv-cand .n { font-family: var(--mincho); font-weight: 700; color: var(--dim); white-space: nowrap; }
+    .hv-cand .n i { font-style: normal; }
     .hv-cand .c { display: flex; gap: 2px; font-weight: 800; font-family: var(--mincho); white-space: nowrap; }
     .hv-cand .c .rd { color: #ff8f9c; }
     .hv-cand .r { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -168,7 +169,6 @@
     const free = toCall <= 0;
     const need = free ? 50 : Math.round(100 * toCall / (pot + toCall));
     const NAMES = free ? { call: '賭ける', fold: '様子見' } : { call: '付いていく', fold: '降りる' };
-    const truth = mimiEq >= need ? 'call' : 'fold';
     const cands = makeCands(api, mine, board, her, prior);
 
     api.css('handvs', CSS);
@@ -187,7 +187,7 @@
       <div class="rb-info">
         <div class="hv-sit"><span>ポット <b>${pot}</b>　${free ? '相手は様子見' : `払う額 <b>${toCall}</b>`}</span><span>割に合う線 <b>${need}%</b><span class="hv-why">${free ? '（勝っている方が多ければ賭ける）' : '（払う額 ÷ 払った後のポット）'}</span></span></div>
         <div class="hv-cands-h">${jp}が持っていそうな手<small>（候補）</small></div>
-        <div class="hv-cands" id="mb-hv-cands">${cands.map((c, i) => `<div class="hv-cand" data-i="${i}"><span class="n">候補${i + 1}</span><span class="c">？？</span><span class="r"></span><b class="m"></b></div>`).join('')}</div>
+        <div class="hv-cands" id="mb-hv-cands">${cands.map((c, i) => `<div class="hv-cand" data-i="${i}"><span class="n"><i>候補</i>${i + 1}</span><span class="c">？？</span><span class="r"></span><b class="m"></b></div>`).join('')}</div>
         <div class="hv-bars"><div class="hv-bar-t"><span>勝てる候補 <b id="mb-hv-wn">？</b></span><span>割に合う線 ${need}%</span></div>
           <div class="hv-bar" id="mb-hv-bar">${Array.from({ length: 10 }, () => '<i class="q"></i>').join('')}<s style="left:${need}%"></s></div></div>
       </div>
@@ -318,13 +318,15 @@
       api.entrust({
         pick: NAMES[decide], win: base * m, lose: base * STAKES[m - 1],
         advice: decide === 'call' ? (free ? '「賭ける」と決めた。卓で賭けよう' : '「付いていく」と決めた。卓でコールしよう') : (free ? '「様子見」と決めた。卓でチェックしよう' : '「降りる」と決めた。卓で降りよう'),
-        pending: { kind: 'logic', names: NAMES, title: '役くらべ', charId: api.charId, pick: decide, truth, mimiEq, need, endLines: END[who], board, mine, her, base, mult: m, stakes: STAKES,
+        // 2026-11-01 正解は「画面の候補で見て正しい判断か」（外部の批評：画面は候補の割合で考えさせ、正解は見えない本当の札で決めていて、表示どおりに考えても×になり得た）。本当の見込みは答え合わせに並べて見せる
+        pending: { kind: 'logic', names: NAMES, title: '役くらべ', charId: api.charId, pick: decide, truth: sensible, mimiEq, need, endLines: END[who], board, mine, her, base, mult: m, stakes: STAKES, herWeak: mimiEq >= 50,
+          truthText: `候補で見れば「${NAMES[sensible]}」が正解<small>候補で勝てる ${winPct}%・線 ${need}%（本当の見込みは ${mimiEq}%）</small>`,
           perfect: !stopped && m === 3, notes: [], why: whyTxt, extra: `勝てる候補 ${winPct}% ／ 線 ${need}%・ご褒美のもと ${base}` },
       });
       return;
     }
     api.lossK = STAKES;
-    const correct = decide === truth;
+    const correct = decide === sensible;
     api.finish({ correct, base, perfect: correct && !stopped && m === 3,
       detail: `${jp}は ${her.map(api.label).join(' ')}（${handName(api, her.concat(board))}）。ミミが勝つ見込み ${mimiEq}%・線 ${need}%。${whyTxt}` });
     void notes;

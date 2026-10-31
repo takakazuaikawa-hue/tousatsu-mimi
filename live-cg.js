@@ -4,7 +4,9 @@
 // そこでホームのリコ先輩（home-live.js）と同じく、一枚絵を網目でわずかにゆがめて、呼吸・首のかしげ・髪の揺れを付ける。
 // ・描き足さないので画質は落ちない。動きは最大でも数 px。人物ごとに周期をずらす（2人が同時に息をしない）
 // ・キャンバスは絵と同じクラスを持たせて上に重ねる（object-fit・寄りから引く演出も絵と同じに効く）
-// ・30fps に間引き、見えていない・タブが裏・動きを減らす設定の時は止める。WebGL が無ければ一枚絵のまま
+// ・20fps に間引き（揺れは時間で決めるので速さは変わらない）。タブが裏・画面の外・不透明な窓が上に重なった時は描かない（rAF ごと止める）
+// ・動きを減らす設定、または localStorage 'mimi.stillArt'＝'1'（設定の「絵の動きを止める」）の時は一枚絵のまま。WebGL が無い時も一枚絵
+// ・外から止める入口：LiveCG.setPaused(true/false)、LiveCG.isPaused()
 // 髪の範囲は、手・持ったカード・腕・背景の小物に掛からない所だけ（掛かるとカードが髪と一緒に揺れる。10/30 差の絵で確かめた）。
 // 座標は絵（1600×900）の px。chest＝胸の楕円 [中心x,中心y,半径x,半径y]、head＝頭（うさ耳を含む）、neck＝首（かしげの支点）、hair＝垂れた髪の四角 [x0,y0,x1,y1]
 // =============================================================
@@ -49,11 +51,58 @@
   const FS = 'precision mediump float; uniform sampler2D uTex; varying vec2 vUV; void main() { gl_FragColor = texture2D(uTex, vUV); }';
 
   const live = new Set();
+  const pending = new Set();   // 止めている間に来た絵（動かし始める時に attach し直す）
+  let paused = false;
+  try { paused = localStorage.getItem('mimi.stillArt') === '1'; } catch (e) { /* 読めなければ動かす */ }
+  // 描くかどうか：止めていない・タブが表・画面に出ている・不透明な窓が上に重なっていない
+  const active = (st) => st.ready && !paused && !document.hidden && st.vis && !st.covered;
+  const kick = (st) => { if (!st.raf && active(st)) st.raf = requestAnimationFrame(st.frame); };
+  // 上に重なった窓の検出：絵の見えている範囲の5点で、いちばん上の要素が絵と無関係で不透明（単色・画像の背景）なら隠れているとみなす
+  const opaque = (e) => {
+    const cs = getComputedStyle(e);
+    if (cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.9) return false;
+    const m = cs.backgroundColor.match(/rgba?\(([^)]+)\)/);
+    if (m) { const a = m[1].split(/[ ,\/]+/).filter(Boolean); if (a.length < 4 || parseFloat(a[3]) >= 0.9) return true; }
+    return /url\(/.test(cs.backgroundImage);
+  };
+  const isCovered = (st) => {
+    const r = st.canvas.getBoundingClientRect();
+    const x0 = Math.max(r.left, 0), x1 = Math.min(r.right, innerWidth), y0 = Math.max(r.top, 0), y1 = Math.min(r.bottom, innerHeight);
+    if (x1 - x0 < 4 || y1 - y0 < 4) return false;
+    for (const [fx, fy] of [[0.5, 0.5], [0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]]) {
+      const t = document.elementFromPoint(x0 + (x1 - x0) * fx, y0 + (y1 - y0) * fy);
+      if (!t || t === st.canvas || t === st.img || t.contains(st.canvas) || !opaque(t)) return false;
+    }
+    return true;
+  };
+  let timer = 0;
+  const tick = () => {
+    for (const st of [...live]) {
+      if (st.ready && !st.canvas.isConnected) { detach(st.img); continue; }
+      st.covered = !document.hidden && isCovered(st);
+      kick(st);
+    }
+    sync();
+  };
+  // 点検の時計は、動いている絵があって止めていない間だけ回す
+  const sync = () => {
+    const need = live.size > 0 && !paused && !document.hidden;
+    if (need && !timer) timer = setInterval(tick, 700);
+    else if (!need && timer) { clearInterval(timer); timer = 0; }
+  };
+  document.addEventListener('visibilitychange', () => { live.forEach(st => { st.last = 0; kick(st); }); sync(); });
+  function setPaused(p) {
+    paused = !!p;
+    if (paused) live.forEach(st => { cancelAnimationFrame(st.raf); st.raf = 0; });
+    else { const imgs = [...pending]; pending.clear(); imgs.forEach(i => i.isConnected && attach(i)); live.forEach(st => { st.last = 0; kick(st); }); }
+    sync();
+  }
   function attach(img) {
     const key = keyOf(img && img.getAttribute('src'));
     if (!key || img.__live === img.getAttribute('src')) return;
     if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     detach(img);
+    if (paused) { pending.add(img); return; }
     img.__live = img.getAttribute('src');
     const canvas = document.createElement('canvas');
     canvas.className = img.className.replace(/\bmotion-covered\b/, '') + ' live-cg';
@@ -88,7 +137,7 @@
     const lp = gl.getAttribLocation(prog, 'aPos'); gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW);
     const tex = gl.createTexture();
-    const st = { img, canvas, gl, raf: 0, last: 0, t0: performance.now(), ready: false };
+    const st = { img, canvas, gl, raf: 0, last: 0, t0: performance.now(), ready: false, vis: true, covered: false, frame: null };
     const src = new Image();
     src.onload = () => {
       if (img.__live !== img.getAttribute('src')) return;
@@ -98,12 +147,15 @@
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.viewport(0, 0, W, H);
       st.ready = true;
+      kick(st);
     };
     src.src = img.getAttribute('src');
     function frame(now) {
-      if (!canvas.isConnected && st.ready) { detach(img); return; }
+      st.raf = 0;
+      if (!canvas.isConnected) { detach(img); return; }
+      if (!active(st)) return;   // 止める時は次の rAF を予約しない（点検の時計・表示の変化で kick される）
       st.raf = requestAnimationFrame(frame);
-      if (!st.ready || document.hidden || now - st.last < 33) return;
+      if (now - st.last < 48) return;   // 20fps
       st.last = now;
       const t = window.__liveT != null ? window.__liveT : (now - st.t0) / 1000;   // __liveT は検査で時計を1コマずつ進める時だけ
       pos.set(base);
@@ -132,14 +184,16 @@
     img.insertAdjacentElement('afterend', canvas);
     if (img.complete) place(); else img.addEventListener('load', place, { once: true });
     st.ro = window.ResizeObserver ? new ResizeObserver(place) : null; if (st.ro) st.ro.observe(img);
-    img.__liveState = st; live.add(st);
-    st.raf = requestAnimationFrame(frame);
+    st.frame = frame;
+    if (window.IntersectionObserver) { st.io = new IntersectionObserver((es) => { st.vis = es[es.length - 1].isIntersecting; kick(st); }); st.io.observe(canvas); }
+    img.__liveState = st; live.add(st); sync();
   }
   function detach(img) {
+    if (img) pending.delete(img);
     const st = img && img.__liveState; if (!st) return;
-    cancelAnimationFrame(st.raf); if (st.ro) st.ro.disconnect();
+    cancelAnimationFrame(st.raf); if (st.ro) st.ro.disconnect(); if (st.io) st.io.disconnect();
     const lose = st.gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
-    st.canvas.remove(); img.classList.remove('live-covered'); img.__liveState = null; img.__live = null; live.delete(st);
+    st.canvas.remove(); img.classList.remove('live-covered'); img.__liveState = null; img.__live = null; live.delete(st); sync();
   }
-  window.LiveCG = { attach, detach, has: (src) => !!keyOf(src) };
+  window.LiveCG = { attach, detach, setPaused, isPaused: () => paused, has: (src) => !!keyOf(src) };
 })();

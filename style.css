@@ -20570,3 +20570,70 @@ html.is-compact .shop-screen.v2 .shop-items > .shop-item { zoom: 1; scale: 1.95;
 html.is-compact .shop-screen.v2 .shop-cat-btn { zoom: 1; }
 html.is-compact .shop-v2-tabs { right: auto; width: calc((100% - 564px - var(--bleed, 0px)) / 2.1); gap: 7px; scale: 2.1; transform-origin: 0 0; }
 @media (max-width: 760px) { html.is-compact .shop-v2-tabs { width: calc((100% - 464px - var(--bleed, 0px)) / 2.1); } }
+
+/* 2026-11-01 各話の扉：最初は題名の1行目だけを下の帯に出して絵を見せる。全文は「題名を全部読む」で開く */
+#stage .episode-overlay.is-brief .episode-card { max-height: none !important; height: auto; }
+#stage .episode-overlay.is-brief .episode-title .ep-line:not(:first-child),
+#stage .episode-overlay.is-brief .episode-title br,
+#stage .episode-overlay.is-brief .episode-hint { display: none; }
+#stage .episode-overlay.is-brief .episode-title .ep-line:first-child::after { content: "……"; }
+#stage .episode-overlay.is-brief .episode-title { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; line-height: 1.5 !important; }
+#stage .episode-overlay.is-brief .episode-title .ep-line:first-child { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* スマホは扉が画面の実寸で描かれる（全画面の小窓）ので、倍率で割らない */
+html.is-compact #stage .episode-overlay.is-brief .episode-title { font-size: var(--r-body) !important; }
+html.is-compact #stage .episode-overlay .episode-more { padding: 0 12px; min-height: 36px; font-size: var(--r-label); }
+#stage .episode-overlay .episode-more { display: none; margin-left: 12px; padding: 0 calc(12px / var(--game-scale, 1)); min-height: calc(32px / var(--game-scale, 1)); border: 1px solid #d9b35a; background: rgba(0,0,0,.4); color: #f5d77a; font: inherit; font-size: calc(var(--r-label) / var(--game-scale, 1)); cursor: pointer; }
+#stage .episode-overlay.is-brief .episode-more { display: inline-block; }
+/* 2026-11-01 研修修了（スマホ）：2つ目のボタン「リコの教室で…」が画面の下で切れていた（外部の批評）。横に並べて高さを空ける */
+html.is-compact #stage .intro-win-modal.iw2 .intro-win-buttons { flex-direction: row; width: min(640px, 100%); gap: 12px; }
+html.is-compact #stage .intro-win-modal.iw2 .intro-win-buttons .btn { flex: 1 1 0; min-height: 44px; font-size: var(--r-btn2) !important; white-space: normal; line-height: 1.3; }
+/* 2026-11-01 ファイブポーカーのダブルアップ（スマホ）：真ん中の枠に説明2行・札・ボタン・没収の注意を縦に積んでいて、上下が切れていた（外部の批評）。
+   札の右に「低い／高い」を並べ、説明は上に1行、注意は下に */
+html.is-compact .minipoker-overlay .mp-play .mp-center:has(> .mp-status-double) { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "st st" "cd ac" "ht ht"; align-items: center; align-content: center; column-gap: 16px; row-gap: 4px; }
+html.is-compact .minipoker-overlay .mp-center > .mp-status-double { grid-area: st; line-height: 1.3; padding: 2px 10px; }
+html.is-compact .minipoker-overlay .mp-center > .mp-status-double br { display: none; }
+html.is-compact .minipoker-overlay .mp-center > .mp-status-double small { margin-left: .6em; }
+html.is-compact .minipoker-overlay .mp-center > .mp-double-cards { grid-area: cd; margin: 0; }
+html.is-compact .minipoker-overlay .mp-center > .mp-hilo-actions { grid-area: ac; display: flex; flex-direction: column; gap: 8px; margin: 0; }
+html.is-compact .minipoker-overlay .mp-center > .mp-hilo-actions .mp-btn { width: 100%; }
+html.is-compact .minipoker-overlay .mp-center > .mp-double-hint { grid-area: ht; }
+html.is-compact .minipoker-overlay .mp-center > .mp-status-double { font-size: 0 !important; }
+html.is-compact .minipoker-overlay .mp-center > .mp-status-double small { font-size: var(--r-body) !important; margin-left: 0; white-space: nowrap; }
+html.is-compact .minipoker-overlay .mp-center > .mp-status-double small b { font-size: inherit; }
+html.is-compact .minipoker-overlay .mp-center > .mp-hilo-actions { gap: 6px; }
+html.is-compact .minipoker-overlay .mp-center > .mp-status-double small { white-space: normal; }
+html.is-compact .minipoker-overlay .mp-center > .mp-double-cards .mp-card { width: 46px; height: 64px; }
+html.is-compact .minipoker-overlay .mp-center > .mp-hilo-actions { flex-direction: row; }
+html.is-compact .minipoker-overlay .mp-center > .mp-hilo-actions .mp-btn { flex: 1 1 0; min-height: 44px; }
+@media (max-width: 760px) {
+  html.is-compact .minipoker-overlay .mp-center > .mp-status-double small { display: block; }
+  html.is-compact .minipoker-overlay .mp-center > .mp-double-cards .mp-card-back { display: none; }
+  html.is-compact .minipoker-overlay .mp-center > .mp-hilo-actions .mp-btn { padding: 0 6px; white-space: nowrap; }
+}
+/* ===== 2026-11-01 三択の心理・論理バトル（研修・リコの教室）を劇場の作風に（外部の批評：金と赤の劇場から、青と紫の集中線・白い吹き出し・ピンクのボタンの画面へ突然切り替わる） =====
+   集中線をやめて深紅の灯りと金の細い線。論理も青ではなく同じ深紅（見出しの字で区別）。吹き出しは黒檀の板に金の縁、ぱにゅぱにゅは金の縁の板 */
+.battle-modal-overlay.v2psych, .battle-modal-overlay.v2psych:has(.psych-modal.logic-mode) { background: #140507 !important; }
+.battle-modal-overlay.v2psych .battle-vignette,
+.battle-modal-overlay.v2psych:has(.psych-modal.logic-mode) .battle-vignette {
+  background: radial-gradient(ellipse at 24% 58%, rgba(168, 33, 50, .28) 0%, rgba(0,0,0,0) 50%),
+    linear-gradient(180deg, rgba(20,5,7,.3) 0%, rgba(20,5,7,0) 38%, rgba(20,5,7,.88) 100%) !important;
+}
+.battle-modal-overlay.v2psych .psych-modal::after,
+.battle-modal-overlay.v2psych .psych-modal.logic-mode::after { background: linear-gradient(104deg, rgba(0,0,0,0) 0 46%, rgba(217,179,90,.22) 46% 46.4%, rgba(0,0,0,0) 46.4%) !important; }
+.battle-modal-overlay.v2psych .psych-speech { background: linear-gradient(180deg, #2a0c10, #170507) !important; box-shadow: inset 0 0 0 1px #d9b35a, 0 16px 34px rgba(0,0,0,.7) !important; color: #f3e6c8 !important; }
+.battle-modal-overlay.v2psych .psych-speech * { color: inherit; }
+.battle-modal-overlay.v2psych .panyu-floating-btn { background: linear-gradient(180deg, #3a1016, #1d0709) !important; color: #f5d77a !important; box-shadow: inset 0 0 0 1px #d9b35a !important; }
+.battle-modal-overlay.v2psych .psych-modal.logic-mode .psych-situation b,
+.battle-modal-overlay.v2psych .psych-modal.logic-mode .psych-opponent-name,
+.battle-modal-overlay.v2psych .psych-modal.logic-mode .battle-portrait .portrait-name { color: #f5d77a !important; }
+.battle-modal-overlay.v2psych .psych-opponent-quote { color: #f3e6c8 !important; }
+.battle-modal-overlay.v2psych .zazazo-hint { background: linear-gradient(180deg, #2a0c10, #170507) !important; color: #f3e6c8 !important; border-left-color: #d9b35a !important; box-shadow: inset 0 0 0 1px rgba(217,179,90,.6) !important; }
+.battle-modal-overlay.v2psych .logic-rule-box { background: linear-gradient(180deg, #2a0c10, #170507) !important; border: 1px solid #d9b35a !important; color: #f3e6c8 !important; box-shadow: none !important; }
+.battle-modal-overlay.v2psych .logic-rule-box * { color: inherit !important; }
+.battle-modal-overlay.v2psych .logic-rule-box :is(b, strong, .logic-rule-title, h3, h4) { color: #f5d77a !important; }
+.battle-modal-overlay.v2psych .psych-modal.logic-mode .choice-btn .choice-label { background: #f5d77a !important; color: #1d080e !important; }
+.battle-modal-overlay.v2psych .psych-title.logic-mode .v2p-title-en { color: #d9b35a !important; }
+.battle-modal-overlay.v2psych .psych-speech :is(.psych-opponent-line, .psych-opponent-quote, .psych-question, p, span:not(.psych-opponent-name)) { color: #f3e6c8 !important; }
+.battle-modal-overlay.v2psych .psych-speech, .battle-modal-overlay.v2psych .psych-modal.logic-mode .psych-speech { color: #f3e6c8 !important; }
+#stage .episode-overlay.is-brief { align-items: center; justify-content: flex-end; }
+#stage .episode-overlay.is-brief .episode-card { margin-top: auto; margin-bottom: 10px; }
