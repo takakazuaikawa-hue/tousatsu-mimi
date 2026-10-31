@@ -55,7 +55,7 @@ html #stage > .read-battle-host.mb-host .mb-opp-row .mb-coach-line {
 /* ---------- 本文（読み合い・2026-10-27 に作り替えた遊び） ---------- */
 html #stage > .read-battle-host.mb-host :is(
   .hv-cand, .hv-sit, .hv-bar-t, .hv-res, .hv-big-t,
-  .nr-acts, .nr-bar-t, .nr-sit, .nr-tile .fb,
+  .nq-tile .nm, .nq-me, .nq-her,
   .gx-voice .h, .gx-lean, .gx-voice.is-empty .gx-lean, .gx-pop,
   .dx-row, .dx-four, .dx-row .q, .dx-four .q,
   .aq-row, .aq-pop,
@@ -65,13 +65,13 @@ html #stage > .read-battle-host.mb-host :is(
 }
 
 /* ---------- 中身の見出し・数字の段 ---------- */
-html #stage > .read-battle-host.mb-host :is(.hv-big-bar s b, .hv-cands-h, .nr-tile .ct, .vd-note, .hv-ladder, .hv-ladder i, .hv-cand .n, .hv-cand .m, .gx-voice .h .gc-rar, .dx-chip .n, .dx-chip .mark) {
+html #stage > .read-battle-host.mb-host :is(.hv-big-bar s b, .hv-cands-h, .nq-tile .st, .vd-note, .hv-ladder, .hv-ladder i, .hv-cand .n, .hv-cand .m, .gx-voice .h .gc-rar, .dx-chip .n, .dx-chip .mark) {
   font-size: var(--r-label) !important;
 }
 
 /* ---------- 補足（小さくてよい物だけ） ---------- */
 html #stage > .read-battle-host.mb-host :is(
-  .hv-cap, .hv-cap small, .hv-cands-h small, .hv-res small, .hv-big small, .gx-sit-cap, .dx-sit-cap, .aq-sit-cap, .nr-cap, .nr-tile .sb,
+  .hv-cap, .hv-cap small, .hv-cands-h small, .hv-res small, .hv-big small, .gx-sit-cap, .dx-sit-cap, .aq-sit-cap, .nq-cap, .nq-tile .ex small, .nq-me small,
   .gx-or, .gx-ceil .t, .gx-panyu .h, .gx-pop small, .aq-pop small,
   .mb-bal-pan, .mb-bal-odds small, .mb-bal-rec, .dx-row .trap, .dx-chip .tr
 ) {

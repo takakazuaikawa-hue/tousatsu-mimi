@@ -718,16 +718,7 @@ html.is-compact #stage > .read-battle-host.mb-host .gx-choice { gap: 8px; }
   html.is-compact #stage > .read-battle-host.mb-host .hv-name { flex: 0 0 100%; margin-left: 3em; font-size: 15px; line-height: 1.3; }
   html.is-compact #stage > .read-battle-host.mb-host .hv-vs { display: none; }
   html.is-compact #stage > .read-battle-host.mb-host .hv-res { font-size: 15px; line-height: 1.3; }
-  html.is-compact #stage > .read-battle-host.mb-host .nr-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
-  html.is-compact #stage > .read-battle-host.mb-host .nr-tile { padding: 2px 6px; gap: 0; }
-  html.is-compact #stage > .read-battle-host.mb-host .nr-tile .nm { font-size: 15px; line-height: 1.25; }
 }
-/* 容疑者しぼり（2026-10-27）：遊びの枠は容疑者の札だけ（3列×2段）。札の説明の小さい行は出さない */
-html.is-compact #stage > .read-battle-host.mb-host .nr-tiles { gap: 5px; }
-html.is-compact #stage > .read-battle-host.mb-host .nr-tile { padding: 3px 6px; }
-html.is-compact #stage > .read-battle-host.mb-host .nr-tile .sb { display: none; }
-html.is-compact #stage > .read-battle-host.mb-host .nr-acts { padding: 2px 8px; gap: 0; }
-html.is-compact #stage > .read-battle-host.mb-host .nr-bars { padding: 3px 8px; gap: 3px; }
 /* 役くらべ（2026-10-27）：遊びの枠 約265×248。札は幅32px（7枚が1列に入る） */
 html.is-compact #stage > .read-battle-host.mb-host .hv-play { gap: 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .hv-play .card { --w: 32px; }
@@ -1091,7 +1082,6 @@ html.is-compact #stage > .read-battle-host.mb-host .aq-qs .btn { padding: 2px 2p
 html.is-compact #stage > .read-battle-host.mb-host .hv-cands, html.is-compact #stage > .read-battle-host.mb-host .dx-list, html.is-compact #stage > .read-battle-host.mb-host .gx-voices, html.is-compact #stage > .read-battle-host.mb-host .aq-log { gap: 2px; }
 html.is-compact #stage > .read-battle-host.mb-host .hv-cand { min-height: 0; padding: 0 6px; line-height: 1.3; }
 html.is-compact #stage > .read-battle-host.mb-host .hv-sit { line-height: 1.25; gap: 0; }
-html.is-compact #stage > .read-battle-host.mb-host .nr-acts { line-height: 1.3; }
 html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-info { gap: 4px; }
 /* 小さいスマホ（幅720px未満）：右の欄が3〜11px足りなかった。天秤の絵を低く、欄の間を詰める */
 @media (max-width: 719px) {
@@ -1099,7 +1089,7 @@ html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-info { gap: 4px
   html.is-compact #stage > .read-battle-host.mb-host .rb-frame :is(.st-svg, .oj-svg, .mb-bal-svg) { max-height: 32px; }
   html.is-compact #stage > .read-battle-host.mb-host .rb-frame :is(.st-scale, .mb-bal) { padding: 1px 6px 2px; gap: 0; }
 }
-@media (max-width: 719px) { html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-info :is(.nr-acts, .nr-sit, .oj-log, .oj-says, .oj-ev, .oj-say p) { line-height: 1.25; } }
+@media (max-width: 719px) { html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-info :is(.oj-log, .oj-says, .oj-ev, .oj-say p) { line-height: 1.25; } }
 @media (max-width: 719px) { html.is-compact #stage > .read-battle-host.mb-host .rb-frame .oj-evs { gap: 2px !important; } html.is-compact #stage > .read-battle-host.mb-host .rb-frame .oj-ev { padding: 1px 8px 2px; } }
 
 /* ===== 2026-10-27 枠の直し（文を3割長くした検査で見つけた所。文は削らず枠の側を直す。screen-inventory.md） ===== */
@@ -1116,7 +1106,7 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root.rb-frame { --rb
   html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wchip { height: 48px; min-width: 80px; }
   html.is-compact #stage > .read-battle-host.mb-host .rb-frame .mb-wager { padding: 2px 8px; gap: 0 8px; }
 }
-html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-info :is(.nr-acts, .nr-sit, .oj-log, .oj-says, .oj-ev, .oj-say p) { line-height: 1.25; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame .rb-info :is(.oj-log, .oj-says, .oj-ev, .oj-say p) { line-height: 1.25; }
 html.is-compact #stage > .read-battle-host.mb-host .rb-frame .oj-evs { gap: 2px !important; }
 html.is-compact #stage > .read-battle-host.mb-host .rb-frame .oj-ev { padding: 1px 8px 2px; }
 /* 2026-10-27 枠の直し（3回目の検査）：答え合わせの札は1列のまま・問いかけの補足は「動揺」と「平気」の間で折れてよい・小さいスマホのチップと前の4つの行 */
@@ -1133,14 +1123,11 @@ html.is-compact #stage > .read-battle-host.mb-host .aq-qs .btn > small { white-s
 html.is-compact #stage > .read-battle-host.mb-host .hv-cands { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .hv-cand { grid-template-columns: auto auto minmax(0, 1fr) 14px; gap: 3px; padding: 0 4px; }
 html.is-compact #stage > .read-battle-host.mb-host .hv-sit > span:last-child { display: none; }
-/* 容疑者しぼり（2026-10-31 ユーザーの実機）：右の列がはみ出して「残った容疑者に勝てる」の棒がボタンに隠れていた。
-   割に合う線の式を1行に縮める。組の名前が2行に折れても、札の高さが隣の組とそろうように、札を名前の下ではなく枠の下側に置く */
-html.is-compact #stage > .read-battle-host.mb-host .nr-sit .nr-long { display: none; }
-html.is-compact #stage > .read-battle-host.mb-host .nr-sit .nr-short { display: inline; }
-html.is-compact #stage > .read-battle-host.mb-host .nr-sit { white-space: nowrap; }
-html.is-compact #stage > .read-battle-host.mb-host .nr-tile { justify-content: flex-start; }
-html.is-compact #stage > .read-battle-host.mb-host .nr-tile .ct { margin-top: auto; }
-html.is-compact #stage > .read-battle-host.mb-host .nr-tile .ct + .fb { margin-top: 2px; }
-/* 答え合わせの ○ 10/10 と10個の目盛りが、組の枠からはみ出していた */
-html.is-compact #stage > .read-battle-host.mb-host .nr-tile .fb { white-space: nowrap; gap: 3px; }
-html.is-compact #stage > .read-battle-host.mb-host .nr-tile .nr-dots { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 1px; width: 100%; }
+
+/* 容疑者しぼり（2026-10-31 作り直し）：役の札は2列×2段。例の札は小さく */
+html.is-compact #stage > .read-battle-host.mb-host .nq-tiles { gap: 5px; }
+html.is-compact #stage > .read-battle-host.mb-host .nq-tile { padding: 4px 6px; gap: 3px; }
+html.is-compact #stage > .read-battle-host.mb-host .nq-tile .card { --w: 30px; }
+html.is-compact #stage > .read-battle-host.mb-host .nq-tile .st { position: static; padding: 0 6px; }
+html.is-compact #stage > .read-battle-host.mb-host .nq-her { padding: 3px 8px; gap: 1px; line-height: 1.25; }
+@media (max-width: 719px) { html.is-compact #stage > .read-battle-host.mb-host .nq-tile { padding: 2px 6px; gap: 1px; } html.is-compact #stage > .read-battle-host.mb-host .nq-tile .card { --w: 28px; } }

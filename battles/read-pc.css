@@ -825,3 +825,6 @@ html:not(.is-compact) #stage > .read-battle-host.mb-host .hv-cand { min-height: 
 
 /* 2026-10-28 PC：リコ先輩の一言の欄を広げる（文が3割長いと3行になり、画面が4px溢れた） */
 html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-opp-row { grid-template-columns: auto minmax(0, 1fr) minmax(0, 540px) auto; }
+/* 容疑者しぼり（2026-10-31 作り直し）：PC は役の札の枠が大きいので、例の札と場札を大きく */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .nq-tile .card.small { --w: 66px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .nq-row .card.small { --w: 52px; }

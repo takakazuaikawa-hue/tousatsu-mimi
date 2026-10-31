@@ -795,6 +795,8 @@
 
   window.MB = {
     register, mount, boot, config,
+    // 本編が「この手で読み合いが成り立つか」を調べる時に使う役の計算（2026-10-31 まで出しておらず、容疑者しぼり・狙撃の判定がいつも失敗していた）
+    deck, key, label, rn, SYM, score, category, CAT_NAME, headsUp,
     get games() { return games.map(g => ({ id: g.id, group: g.group, title: g.title, chars: g.chars ? g.chars.slice() : null })); },
     get vol() { return VOL; }, set vol(v) { VOL = v; },
     P: P_DEFAULT,

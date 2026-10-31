@@ -5,6 +5,7 @@
 (() => {
   const NAME = { bluff: 'ブラフ', strong: '本物' };
   const MEAN = { bluff: 'ミミの方が強かった', strong: 'ミミより強かった' };
+  // p.truthText（容疑者しぼり：相手の役で言う1行）・p.herWeak があればそれを使う（%は出さない）
   // 論理の遊び（kind:'logic'）：読みは「付いていく／降りる」。正解は、読んだ時にミミが勝つ見込みが割に合う線（need）を超えていたか
   const CSS = `
     .vd-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 6px; }
@@ -36,7 +37,7 @@
     const L = p.kind === 'logic';
     const ACT = Object.assign({ call: '付いていく', fold: '降りる' }, p.names || {});
     const truth = p.truth || (L ? 'fold' : 'strong'), pick = p.pick || (L ? 'call' : 'bluff');
-    const herWeak = L ? (p.mimiEq ?? 50) >= 50 : truth === 'bluff';
+    const herWeak = p.herWeak ?? (L ? (p.mimiEq ?? 50) >= 50 : truth === 'bluff');
     const correct = pick === truth;
     api.say('……さあ、めくるよ', 'think'); api.bet('—'); api.coach('');
     const root = api.root;
@@ -47,7 +48,7 @@
           <div class="vd-grp"><span class="vd-tag">ミミ</span>${(p.mine || []).map(c => api.cardHTML(c, 'small')).join('')}</div>
           <div class="vd-grp"><span class="vd-tag">${jp}</span><span class="vd-grp" id="mb-vd-her">${api.backHTML('small')}${api.backHTML('small')}</span></div>
         </div>
-        <div class="vd-truth" id="mb-vd-truth">${L ? `${ACT[truth]}のが正解だった<small>読んだ時、ミミが勝つ見込み ${Math.round(p.mimiEq ?? 50)}%・割に合う線 ${Math.round(p.need ?? 33)}%</small>` : `${jp}は ${NAME[truth]}だった<small>読んだ時、${MEAN[truth]}（ミミが勝つ見込み ${Math.round(p.mimiEq ?? 50)}%）</small>`}</div>
+        <div class="vd-truth" id="mb-vd-truth">${p.truthText ? p.truthText : L ? `${ACT[truth]}のが正解だった<small>読んだ時、ミミが勝つ見込み ${Math.round(p.mimiEq ?? 50)}%・割に合う線 ${Math.round(p.need ?? 33)}%</small>` : `${jp}は ${NAME[truth]}だった<small>読んだ時、${MEAN[truth]}（ミミが勝つ見込み ${Math.round(p.mimiEq ?? 50)}%）</small>`}</div>
         <div class="vd-pick" id="mb-vd-pick">${L ? 'ミミの判断：' + ACT[pick] : 'ミミの読み：' + NAME[pick]}<span class="mk ${correct ? 'ok' : 'ng'}">${correct ? '○' : '×'}</span></div>
         ${p.extra ? `<div class="vd-extra" id="mb-vd-extra">${p.extra}</div>` : ''}
         <div class="vd-notes">${(p.notes || []).map(n => `<span class="vd-note ${n.lean === truth ? 'ok' : 'ng'}">${n.label}<b>${n.lean === truth ? '当たっていた' : '外れの手がかり'}</b></span>`).join('')}</div>
@@ -73,7 +74,7 @@
     api.mult = p.mult || 1; api.lossK = p.stakes || null;
     api.finish({
       correct, base: p.base || 20, perfect: !!(correct && p.perfect),
-      detail: L ? `${ACT[truth]}のが正解（ミミが勝つ見込み ${Math.round(p.mimiEq ?? 50)}%・線 ${Math.round(p.need ?? 33)}%）。${correct ? 'ミミの判断どおり。' : 'ミミの判断は外れ。'}${p.why || ''}` : `${jp}は${NAME[truth]}（${MEAN[truth]}）。${correct ? 'ミミの読みどおり。' : 'ミミの読みは外れ。'}${p.why || ''}`,
+      detail: p.truthText && L ? `${ACT[truth]}のが正解。${correct ? 'ミミの判断どおり。' : 'ミミの判断は外れ。'}${p.why || ''}` : L ? `${ACT[truth]}のが正解（ミミが勝つ見込み ${Math.round(p.mimiEq ?? 50)}%・線 ${Math.round(p.need ?? 33)}%）。${correct ? 'ミミの判断どおり。' : 'ミミの判断は外れ。'}${p.why || ''}` : `${jp}は${NAME[truth]}（${MEAN[truth]}）。${correct ? 'ミミの読みどおり。' : 'ミミの読みは外れ。'}${p.why || ''}`,
     });
   }
 
