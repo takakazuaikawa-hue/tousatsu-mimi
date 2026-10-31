@@ -11564,7 +11564,7 @@ function showMiniPokerGame() {
       <div class="mp-card-corner mp-card-tl">${c.label}<br>${c.suit}</div>
       <div class="mp-card-suit-big">${c.suit}</div>
       <div class="mp-card-corner mp-card-br">${c.label}<br>${c.suit}</div>
-      ${held ? '<div class="mp-card-keep">KEEP</div>' : ''}
+      ${held ? '<div class="mp-card-keep">残す</div>' : ''}
     </div>`;
   }
 
@@ -11619,8 +11619,8 @@ function showMiniPokerGame() {
       const isLastRound = (ctx.drawRound || 0) >= 1;  // 2回引き終わったら強制勝負
       return `
         <div class="mp-status">
-          <b>${round}回目の交換</b> ／ 残すカードはそのまま、いらない札をタップで外す<br>
-          <small>${drop > 0 ? `${drop}枚を引き直す（KEEPマーク付きは残す）` : '全部キープ＝そのまま勝負'}</small>
+          <b>${round}回目の交換</b> ／ 残したい札をタップ（もう一度押すと戻る）<br>
+          <small>${drop > 0 ? `「残す」の印のない ${drop}枚を引き直す` : '全部残す＝そのまま勝負'}</small>
         </div>
         ${reach ? `<div class="mp-reach">${reach}${reachProb ? ` <span class="mp-reach-prob">(完成${reachProb}%)</span>` : ''}</div>` : ''}
         <div class="mp-actions">
@@ -13570,25 +13570,20 @@ function skipStageWithCoins(opponentId) {
   });
 }
 
+// 再戦の報酬の倍率（支払いと予告で同じ計算を使う。2026-11-01 外部の批評：予告だけ古い減り方のままだった）：0回:100%／6回:80%／12回+:60%
+function rematchMult(wins) { return wins < 6 ? 1.00 : wins < 12 ? 0.80 : 0.60; }
 // 次の再戦勝利でもらえる金額のプレビュー（diminishing 反映）
 function rematchPreview(opponentId) {
   const opp = OPPONENTS[opponentId];
   if (!opp) return 0;
   const wins = (save.rematchWins && save.rematchWins[opponentId]) || 0;
-  let mult;
-  if (wins < 4)       mult = 1.00;
-  else if (wins < 8)  mult = 0.75;
-  else if (wins < 12) mult = 0.50;
-  else if (wins < 20) mult = 0.30;
-  else                mult = 0.20;
-  return Math.max(10, Math.round(opp.rewardRematch * mult));
+  return Math.max(10, Math.round(opp.rewardRematch * rematchMult(wins)));
 }
 
 // 本気のリコ先輩の再戦報酬の見込み（記録キー 'rico_serious'。逓減は rematchPreview と同じ）
 function seriousRicoRematchPreview() {
   const wins = (save.rematchWins && save.rematchWins.rico_serious) || 0;
-  const mult = wins < 4 ? 1.00 : wins < 8 ? 0.75 : wins < 12 ? 0.50 : wins < 20 ? 0.30 : 0.20;
-  return Math.max(10, Math.round(SERIOUS_RICO_REWARD.rewardRematch * mult));
+  return Math.max(10, Math.round(SERIOUS_RICO_REWARD.rewardRematch * rematchMult(wins)));
 }
 
 // 卓の基本チップ（持ち込み前）。本気のリコ先輩は2000
@@ -15656,6 +15651,8 @@ function readBattleReady(group) {
   return true;
 }
 const READ_GAME_OK = {
+  // 役くらべ：場札が5枚そろったリバーだけ（2026-11-01 2回目の外部の批評：フロップ・ターンでは「今勝っている候補の割合」が最後の勝ち負けと違うのに、付いていくかの判断に使っていた）
+  handvs: () => (state.community || []).length === 5,
   // 容疑者しぼり：癖で組を外すと答え（付いていく／降りる）が変わる手だけ（ヴェルベットはいつも）
   narrow: () => {
     try {
@@ -17991,10 +17988,17 @@ const RANK_THRESHOLDS = [
 // 各ハンドの始まりに、持ち点・終えたハンドの数・座り直しの残り・読み合いのコインを保存し、同じ卓に入り直した時に「続きから」を選べる
 function saveBattleResume() {
   if (!state || state.tutorialMode || state.lectureMode || state.introHandMode || (typeof isDominanceMode === 'function' && isDominanceMode())) return;
-  save.battleResume = { opp: state.opponentId, serious: !!state.seriousRicoMode, playerChips: state.playerChips, opponentChips: state.opponentChips,
-    handsDone: state.handNo - 1, rebuysLeft: state.rebuysLeft, purse: state.readBattlePurse || null, wins: state.consecutiveWins || 0, at: Date.now() };
+  // 2026-11-01（2回目の外部の批評）：持ち点だけでなく、読み合いの報酬・座り直しの資格に使う回数・成績の数字もまとめて保存する
+  // （以前は持ち点とハンド数だけで、続きから終えると読み合いの報酬が払われず、座り直しの資格も消えていた）。
+  // 卓の状態の数字・文字・印は全部、入れ物は報酬と成績に使う物だけ
+  const snap = {};
+  Object.keys(state).forEach(k => { const v = state[k]; if (v === null || ['number', 'boolean', 'string'].includes(typeof v)) snap[k] = v; });
+  ['readBattlePurse', 'readBattlePlayed', 'handResults'].forEach(k => { if (state[k] != null) { try { snap[k] = JSON.parse(JSON.stringify(state[k])); } catch (e) {} } });
+  save.battleResume = { opp: state.opponentId, serious: !!state.seriousRicoMode, handsDone: state.handNo - 1, playerChips: state.playerChips, opponentChips: state.opponentChips, snap, at: Date.now() };
   saveProgress();
 }
+// 戻す時に外す値：ハンドの途中の値（次のハンドを配る時に決め直す）
+const RESUME_SKIP = new Set(['screen', 'handNo', 'handPhase', 'isPlayerTurn', 'psychPending', 'psychResolving', 'psychResolved', 'pot', 'currentBetPlayer', 'currentBetOpponent', 'pendingRead', 'readHandNo', 'logicHandNo', 'logicResolvedStreet']);
 function clearBattleResume() { if (save && save.battleResume) { delete save.battleResume; saveProgress(); } }
 function offerBattleResume(after) {
   const r = save.battleResume;
@@ -18003,8 +18007,8 @@ function offerBattleResume(after) {
   showConfirm({ title: '続きから遊びますか？', body: `前回は Hand ${r.handsDone + 1} の前で中断しました。
 ミミ ${r.playerChips} ／ ${name} ${r.opponentChips}`, ok: '続きから', cancel: '最初から' }).then(yes => {
     if (yes && state.screen === 'battle' && state.opponentId === r.opp) {
+      Object.keys(r.snap || {}).forEach(k => { if (!RESUME_SKIP.has(k)) state[k] = r.snap[k]; });
       state.playerChips = r.playerChips; state.opponentChips = r.opponentChips; state.handNo = r.handsDone;
-      state.rebuysLeft = r.rebuysLeft; if (r.purse) state.readBattlePurse = r.purse; state.consecutiveWins = r.wins || 0;
       state.mimiThought = `「Hand ${r.handsDone + 1} から再開……さっきの続きだ」`;
       render();
       return;
@@ -18086,10 +18090,7 @@ function endBattle() {
       if (!save.rematchWins) save.rematchWins = {};
       const wins = save.rematchWins[rewardKey] || 0;
       save.rematchWins[rewardKey] = wins + 1;
-      let mult;
-      if (wins < 6)       mult = 1.00;
-      else if (wins < 12) mult = 0.80;
-      else                mult = 0.60;
+      const mult = rematchMult(wins);
       const adjusted = Math.max(10, Math.round(rewardOpp.rewardRematch * mult));
       earned += adjusted;
       const noteStr = mult < 1.0 ? `（${wins+1}勝目: ${Math.round(mult*100)}%）` : '';

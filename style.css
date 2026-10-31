@@ -20637,3 +20637,35 @@ html.is-compact .minipoker-overlay .mp-center > .mp-hilo-actions .mp-btn { flex:
 .battle-modal-overlay.v2psych .psych-speech, .battle-modal-overlay.v2psych .psych-modal.logic-mode .psych-speech { color: #f3e6c8 !important; }
 #stage .episode-overlay.is-brief { align-items: center; justify-content: flex-end; }
 #stage .episode-overlay.is-brief .episode-card { margin-top: auto; margin-bottom: 10px; }
+/* 2026-11-01 ファイブポーカーの「今夜のセッション」（スマホ）：「続ける／またね」が札の下に切れて押せなかった（2回目の外部の批評）。成績は2列×2段、余白を詰める */
+html.is-compact .mp-summary-card { max-height: calc(100% - 12px); padding-top: 8px !important; padding-bottom: 10px !important; gap: 6px !important; display: flex; flex-direction: column; }
+html.is-compact .mp-summary-card .mp-summary-title { padding: 4px 0 !important; margin: 0 !important; }
+html.is-compact .mp-summary-stats { display: grid !important; grid-template-columns: 1fr 1fr; column-gap: 20px; padding: 4px 14px !important; margin: 0 !important; }
+html.is-compact .mp-sum-row { padding: 3px 0 !important; }
+html.is-compact .mp-sum-row:nth-last-child(2) { border-bottom: none; }
+html.is-compact .mp-summary-tomorrow { padding: 4px 10px !important; margin: 0 !important; }
+html.is-compact .mp-summary-actions { margin-top: 0 !important; flex-shrink: 0; }
+html.is-compact .mp-summary-actions .mp-btn { min-height: 44px; }
+/* 2026-11-01 ご褒美の一枚絵を見る窓（スマホ）：舞台の中で「画面の高さの82%」を上限にしていて、縮めて描く舞台の分と二重に縮み、約277×156の見本になっていた（2回目の外部の批評）。
+   窓は画面の端まで広げ、絵の上限は画面の実寸（÷ 縮める倍率）で決める */
+html.is-compact #stage .reward-cg-viewer-overlay { padding: 0; left: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1)); right: calc(-1 * var(--gut-x, 0px) / var(--game-scale, 1)); top: calc(-1 * var(--gut-y, 0px) / var(--game-scale, 1)); bottom: calc(-1 * var(--gut-y, 0px) / var(--game-scale, 1)); }
+html.is-compact #stage .reward-cg-viewer-img { max-height: calc(100vh / var(--game-scale, 1) - 64px / var(--game-scale, 1)); max-width: calc(100vw / var(--game-scale, 1)); border-radius: 0; }
+html.is-compact #stage .reward-cg-viewer-hint { margin-top: calc(6px / var(--game-scale, 1)); font-size: calc(var(--r-label) / var(--game-scale, 1)); }
+/* ===== 2026-11-01 講義（リコの教室）の小窓を劇場の作風に（2回目の外部の批評：淡い黄色に赤い強調枠を大量に置いた入口だけ、別の作品の教材に見えた）。
+   深紅の板に金の縁、強調は金の字だけ（赤い札をやめる）。コースの札は金の細い縁、おすすめだけ金の縁を太く ===== */
+.tutorial-bubble.lecture-bubble { background: linear-gradient(180deg, #2a0c10, #140507) !important; border: 1px solid #d9b35a !important; border-image: none !important; border-radius: 2px !important;
+  box-shadow: inset 0 0 0 5px #140507, inset 0 0 0 6px rgba(217,179,90,.45), 0 24px 60px rgba(0,0,0,.75) !important; color: #f3e6c8 !important; }
+.tutorial-bubble.lecture-bubble::before, .tutorial-bubble.lecture-bubble::after { opacity: .7; }
+.tutorial-bubble.lecture-bubble .lec-title { color: #f5d77a !important; font-family: "Shippori Mincho B1", "Yu Mincho", serif; text-shadow: none !important; }
+.tutorial-bubble.lecture-bubble .tutorial-step { background: #5a0c14 !important; color: #f5d77a !important; border: 1px solid #d9b35a !important; box-shadow: none !important; }
+.tutorial-bubble.lecture-bubble :is(p, small, .lec-lead, .lec-resume) { color: #e8dcc0 !important; }
+.tutorial-bubble.lecture-bubble b { background: none !important; color: #f5d77a !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; }
+.tutorial-bubble.lecture-bubble .lec-course { background: rgba(0,0,0,.32) !important; border: 1px solid rgba(217,179,90,.45) !important; border-radius: 2px !important; box-shadow: none !important; }
+.tutorial-bubble.lecture-bubble .lec-course.is-lite { border-color: #d9b35a !important; box-shadow: inset 0 0 0 1px #d9b35a !important; }
+.tutorial-bubble.lecture-bubble .lec-course-name { background: none !important; color: #f5d77a !important; font-family: "Shippori Mincho B1", "Yu Mincho", serif; padding: 0 !important; }
+.tutorial-bubble.lecture-bubble .lec-note { color: #b8a98a !important; }
+.tutorial-bubble.lecture-bubble .lec-actions button { border-radius: 2px !important; font-family: "Shippori Mincho B1", "Yu Mincho", serif; }
+.tutorial-bubble.lecture-bubble .lec-actions .next-btn { background: linear-gradient(180deg, #7a0e16, #4e0509) !important; border: 1px solid #d9b269 !important; color: #f5d77a !important; }
+.tutorial-bubble.lecture-bubble .lec-actions :is(.full-btn, .restart-btn) { background: #1b0d0b !important; border: 1px solid #8a5a1e !important; color: #d9b269 !important; }
+.tutorial-bubble.lecture-bubble .lec-actions .skip-btn { background: transparent !important; border: 1px solid rgba(217,179,90,.3) !important; color: #b8a98a !important; }
+.tutorial-bubble.lecture-bubble .tutorial-actions, .tutorial-bubble.lecture-bubble .lec-actions { background: linear-gradient(180deg, rgba(20,5,7,0), #140507 40%) !important; border-top: 1px solid rgba(217,179,90,.3) !important; box-shadow: none !important; }

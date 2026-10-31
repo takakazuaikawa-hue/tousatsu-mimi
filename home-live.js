@@ -70,13 +70,18 @@
     if (m) { const a = m[1].split(/[ ,\/]+/).filter(Boolean); if (a.length < 4 || parseFloat(a[3]) >= 0.9) return true; }
     return /url\(/.test(cs.backgroundImage);
   };
+  // 全画面の窓（コレクション・設定・辞典・ファイブポーカー・一枚絵など）が開いている時は、推測せずに隠れているとみなす
+  // （2026-11-01 2回目の外部の批評：コレクションの裏で5秒に95回描いていた。いちばん上の文字だけを見て、親の不透明な窓を見落としていた）
+  const COVER_SEL = '.collection-overlay, .settings-overlay, .glossary-overlay, .minipoker-overlay, .reward-cg-viewer-overlay, .intermission-overlay, .episode-overlay';
+  const opaqueUp = (t, st) => { for (let e = t; e && e !== document.body && !e.contains(st.canvas); e = e.parentElement) if (opaque(e)) return true; return false; };
   const isCovered = (st) => {
+    if (document.querySelector(COVER_SEL)) return true;
     const r = st.canvas.getBoundingClientRect();
     const x0 = Math.max(r.left, 0), x1 = Math.min(r.right, innerWidth), y0 = Math.max(r.top, 0), y1 = Math.min(r.bottom, innerHeight);
     if (x1 - x0 < 4 || y1 - y0 < 4) return false;
     for (const [fx, fy] of [[0.5, 0.5], [0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]]) {
       const t = document.elementFromPoint(x0 + (x1 - x0) * fx, y0 + (y1 - y0) * fy);
-      if (!t || t === st.canvas || st.host.contains(t) || t.contains(st.canvas) || !opaque(t)) return false;
+      if (!t || t === st.canvas || st.host.contains(t) || t.contains(st.canvas) || !opaqueUp(t, st)) return false;
     }
     return true;
   };

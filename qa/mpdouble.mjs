@@ -22,4 +22,10 @@ for (let h = 0; h < 40 && !ok; h++) {
 }
 await page.screenshot(path.join(OUT, `${size}.png`));
 console.log('double', ok, await page.eval(`JSON.stringify(window.__clipText(document.querySelector('.minipoker-overlay')).filter(o => o.px > 4 || o.why === 'もぐり'))`));
+// 「今夜のセッション」：ダブルアップを1回選び、結果の後に閉じて終了の札を出す
+await ev(`document.querySelector('.minipoker-overlay [data-mp-hilo]:not([disabled])')?.click()`); await sleep(3000);
+for (let i = 0; i < 4; i++) { if (await has('[data-mp="next"]')) break; await ev(`document.querySelectorAll('.minipoker-overlay .mp-garapon button').forEach(b => b.click())`); await sleep(800); }
+await ev(`document.querySelector('.minipoker-overlay .minipoker-close').click()`); await sleep(1500);
+await page.screenshot(path.join(OUT, `${size}_summary.png`));
+console.log('summary', await page.eval(`JSON.stringify([...document.querySelectorAll('.mp-summary-actions .mp-btn')].map(b => { const r = b.getBoundingClientRect(); return Math.round(r.bottom) <= innerHeight && document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest('.mp-btn') === b ? 'ok' : '隠れ ' + Math.round(r.bottom); }))`));
 await s.close(); process.exit(0);

@@ -175,7 +175,9 @@
     api.say(OPEN[who], 'smug'); api.bet(free ? '—' : toCall);
     const root = api.root;
     const seven = mine.concat(board);
-    const doBuild = seven.length > 5;
+    // 5枚を作る段は初めての時だけ（2026-11-01 2回目の外部の批評：毎回、作る→候補5つ→決める→自信で、ポーカーの途中に挟む手続きが長い）
+    let seenBefore = false; try { seenBefore = !!localStorage.getItem('mbRulesSeen:handvs'); } catch (e) {}
+    const doBuild = seven.length > 5 && !seenBefore;
     const STEPS = doBuild ? ['5枚を作る', 'くらべる', '決める', '賭ける'] : ['くらべる', '決める', '賭ける'];
     const S = (k) => STEPS.indexOf(k);
     const mimiName = handName(api, seven);
@@ -290,8 +292,8 @@
       <div class="hv-row"><span class="hv-cap">ミミ</span>${mine.map(x => api.cardHTML(x, '')).join('')}<span class="hv-name">${mimiName}</span></div>
       <div class="hv-big">
         <div class="hv-big-bar">${Array.from({ length: 10 }, (_, k) => `<i class="${k < Math.round(winPct / 10) ? 'on' : ''}"></i>`).join('')}<s style="left:${need}%"><b>割に合う線 ${need}%</b></s></div>
-        <div class="hv-big-t"><span>勝てる候補 <b>${winPct}%</b></span><span class="${over ? 'ok' : 'ng'}">${over ? `線を超えた → ${NAMES.call}のが得` : `線に届かない → ${NAMES.fold}のが得`}</span></div>
-        <small>決着までの札で変わることもある</small>
+        <!-- 2026-11-01 決める前に「付いていくのが得」と答えを書かない（2回目の外部の批評：答えを見せてから自信を賭けさせていた）。リバーだけで出すので「変わることもある」も外した -->
+        <div class="hv-big-t"><span>勝てる候補 <b>${winPct}%</b> と <span style="white-space:nowrap">線 <b>${need}%</b>、</span>どちらが上？</span></div>
       </div>`;
     api.coach('');;
     drawLadder();
@@ -308,7 +310,8 @@
     $('#mb-hv-steps').innerHTML = api.steps(STEPS, S('賭ける'));
     const base = LADDER[lad];
     const gap = Math.abs(winPct - need);
-    await api.wager({ mission: '棒と線の差で自信を決める', question: `「${NAMES[decide]}」— 棒 ${winPct}% ／ 線 ${need}%`, note: '差が大きいほど、自信を上げてよい', base, stakes: STAKES, into: act });
+    // 問いは1行に（2回目の外部の批評：問いが2行になって、下の説明がスマホで切れていた）
+    await api.wager({ mission: '棒と線の差で自信を決める', question: `「${NAMES[decide]}」と決めた`, note: `棒 ${winPct}%・線 ${need}%。<span style="white-space:nowrap">差が大きいほど上げてよい</span>`, base, stakes: STAKES, into: act });
     if (!api.alive()) return;
     const m = api.mult || 1;
     const sensible = over ? 'call' : 'fold';
