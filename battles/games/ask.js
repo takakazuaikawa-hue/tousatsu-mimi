@@ -173,7 +173,7 @@
     if (T) {
       api.entrust({
         pick: NAME[decide], win: base * m, lose: base * STAKES[m - 1],
-        advice: decide === 'bluff' ? '「ブラフ」と読んだ。信じるなら、付いていく（コール）' : '「本物」と読んだ。信じるなら、降りる',
+        advice: api.readAdvice(decide),
         pending: { title: '問いかけ', charId: api.charId, pick: decide, truth, mimiEq, endLines: ch.end, board, mine, her, base, mult: m, stakes: STAKES,
           perfect: asked.length === 1 && m === 3, notes, why },
       });

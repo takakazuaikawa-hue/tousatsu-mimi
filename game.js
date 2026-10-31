@@ -3689,13 +3689,13 @@ function fitEpisodeTitle(overlay) {
 
 // onContinue が無い呼び出し（研修完了画面の「第1話のタイトルを読む」やコレクションからの見返し）は
 // 何も始まらないので、ボタンは「閉じる」にする。
-function showEpisodeTitle(key, onContinue, onBack) {
+function showEpisodeTitle(key, onContinue, onBack, contLabel) {
   const ep = EPISODES[key];
   if (!ep) { if (onContinue) onContinue(); return; }
   // 二重表示を防ぐ：表示中（フェードアウト前）の題字があれば新しく作らない
   //（「エンディングへ」の二度押し、幕間の二重終了などで同じ後続が2回走っていた）
   if (document.querySelector('.episode-overlay:not(.out)')) return;
-  const continueLabel = onContinue ? '▶ 開始' : '閉じる';
+  const continueLabel = contLabel || (onContinue ? '▶ 開始' : '閉じる');
   const overlay = document.createElement('div');
   // 2026-11-01 最初は絵を見せ、長い題名は1行目だけ（外部の批評：題名の全文が絵を隠し、初戦の前に読む物が多すぎた）。全文は「題名を全部読む」で開く
   overlay.className = `episode-overlay ep-bg-${ep.bg} is-brief`;
@@ -7188,7 +7188,7 @@ function renderTugOfWar(host) {
     <div class="tug-bar" role="img" aria-label="ミミ ${P}、${oppName} ${O}">
       <i class="tug-mimi" style="width:${pct}%"></i><i class="tug-opp" style="width:${100 - pct}%"></i><i class="tug-mid"></i>
     </div>
-    <div class="tug-goal">${O > 0 ? `<span class="tug-goal-long">${oppName}のチップを 0 にしたら勝ち（あと <b>${O}</b>）</span><span class="tug-goal-short">勝ちまで あと <b>${O}</b></span>` : '勝ち！'}</div>`;
+    <div class="tug-goal">${O > 0 ? `<span class="tug-goal-long">${oppName}のチップを 0 にしたら勝ち（あと <b>${O}</b>）</span><span class="tug-goal-short">勝ちまで あと <b>${O}</b></span>` : (state.pot > 0 ? '相手は全額勝負中。この手で決まる' : '勝ち！')}</div>`;
 }
 function renderStreetList() {
   const order = ['preflop', 'flop', 'turn', 'river', 'showdown'];
@@ -8228,13 +8228,15 @@ function renderVerbActions(slots, need) {
   }
   const foldEnabled = foldS && foldS.enabled && need > 0;
   const ccLabel = raising ? 'コール' : 'チェック';
-  const ccSub = raising ? `${need} 払って付いていく` : 'タダで次の札を見る';
+  // 持ち点より多い額は払えない（足りない分は残り全部で付いていく）。ボタンには実際に減る額を出す
+  const pay = Math.min(need, Math.max(0, state.playerChips || 0));
+  const ccSub = raising ? (pay < need ? `残り全部（${pay}）で付いていく` : `${need} 払って付いていく`) : 'タダで次の札を見る';
   // スマホは「上乗せ」まで（ボタンが約100px幅で「上乗せする ▸」が入らない）。PC は「上乗せする」
   const betLabel = raising ? '上乗せ<span class="vl-long">する</span>' : '賭ける';
   const onlyAllin = betS.length === 1 && betS[0].kind === 'allin';
   const betSub = !betS.length ? 'チップが足りない' : onlyAllin ? `残り全部（${betS[0].chipAmount}）だけ` : (raising ? 'レイズ：額を選ぶ' : 'ベット：額を選ぶ');
   return `<div class="verb-grid">
-    <button class="btn verb-btn verb-cc${tag('call')}" ${attrs(ccS)}><span class="verb-label">${ccLabel}</span><small class="verb-sub">${ccSub}</small>${num(raising ? need : 0)}</button>
+    <button class="btn verb-btn verb-cc${tag('call')}" ${attrs(ccS)}><span class="verb-label">${ccLabel}</span><small class="verb-sub">${ccSub}</small>${num(raising ? pay : 0)}</button>
     <button class="btn verb-btn verb-fold${tag('fold')}" ${foldEnabled ? attrs(foldS) : 'disabled'}><span class="verb-label">降りる</span><small class="verb-sub">${foldEnabled ? 'このハンドをあきらめる' : '今は降りなくていい'}</small></button>
     <button class="btn verb-btn verb-bet${tag('bet')}" ${betS.length ? 'data-action="open-bet-chooser"' : 'disabled'}><span class="verb-label">${betLabel} ▸</span><small class="verb-sub">${betSub}</small></button>
   </div>`;
@@ -8501,9 +8503,13 @@ function onAction(e) {
       // 第6話の題字（エピローグ）はエンディング本編の前ではなく、スタッフロールとタイトルの後（showEndingFinalButtons）で出す
       state.screen = 'ending'; render();
       break;
-    case 'recall-episode':
-      showEpisodeTitle(data.episode, null);
+    case 'recall-episode': {
+      // 物語の回想：題名のあと、勝った後の会話（幕間）を再戦せずに読み返す（3回目の外部の批評：題名しか開かなかった）
+      const ek = data.episode;
+      const canRead = INTERMISSIONS[ek] && Array.isArray(save.rewardCgSeen) && save.rewardCgSeen.includes(ek);
+      showEpisodeTitle(ek, canRead ? () => showIntermission(ek, () => startBgmForScreen()) : null, canRead ? () => {} : undefined, canRead ? '▶ 勝った後の会話を読む' : undefined);
       break;
+    }
     case 'go-intermission': {
       // リザルトの主ボタン「幕間へ」→会話→ご褒美CG開放。終わったら通常の勝利ボタン群を組み立て直す。
       // ヴェルベットだけは幕間の流れ（「このあとはご褒美の時間」）のままエンディングへ直行する
@@ -12285,8 +12291,8 @@ function showMiniPokerGame() {
     if (round === 0 && !wasAllKeep) {
       // 1回目の交換完了。CPUはまだ動かさず、プレイヤーに 2回目の選択肢を与える
       ctx.drawRound = 1;
-      // 2回目用に再 auto-hold（新しい配り直し札を踏まえて）
-      ctx.held = cpuPickHolds(ctx.player);
+      // 2回目：自分で残した札はそのまま残す。新しく来た札は交換する側から始める（2026-11-01 外部の批評：おすすめで選び直して、残した札を勝手に外していた）
+      ctx.held = ctx.held.slice();
       ctx.phase = 'choose';
       renderPhase();
       mpSfx('flip');
@@ -15769,7 +15775,7 @@ function readBattleTable(gameId) {
   if (!save.readRecord) save.readRecord = {};
   return {
     board: state.community.map(rbCard), mine: state.playerHand.map(rbCard), her: state.opponentHand.map(rbCard),
-    pot: state.pot || 0, toCall: Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0)), phase: state.handPhase,
+    pot: state.pot || 0, toCall: Math.min(Math.max(0, state.playerChips || 0), Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0))), phase: state.handPhase,
     record: save.readRecord[state.opponentImgKey] || null,
     acts: (state.handActs || []).filter(a => a.ph !== 'preflop').map(a => ({ ...a })),
     // 卒業試験：ミミの癖（最近20回）と、これまでに先輩の予想を外して当てた回数

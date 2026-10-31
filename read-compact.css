@@ -1180,3 +1180,11 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-game-root:has(.hv-big) .h
 html.is-compact #stage > .read-battle-host.mb-host .doubt-area:has(#mb-doubt-rule) .doubt-rule { left: 6px; right: 6px; width: auto; top: 6px; bottom: 6px; transform: none; z-index: 2; display: flex; flex-direction: column; justify-content: center; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-area:has(#mb-doubt-rule) .doubt-win { display: none; }  /* 顔は左の列に出ている */
 html.is-compact #stage > .read-battle-host.mb-host .doubt-rule-ex span { word-break: keep-all; }
+
+/* 見つめ合い：スマホは「もう一度 見つめる」と10回の目盛りを1行に並べ、下の2行（こらえる／目をそらす）を画面の中に収める
+   （2026-11-01 3回目の外部の批評：失敗した時の説明が 390px の下に切れていた） */
+html.is-compact #stage > .read-battle-host.mb-host .st-choice .st-go { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; align-content: center; column-gap: 10px; row-gap: 2px; }
+html.is-compact #stage > .read-battle-host.mb-host .st-choice .st-go small { flex: 0 0 100%; text-align: center; }
+html.is-compact #stage > .read-battle-host.mb-host .st-choice .st-go { flex: 2.6 1 0; padding-left: 6px; padding-right: 6px; }
+html.is-compact #stage > .read-battle-host.mb-host .st-choice .st-go small { white-space: nowrap; }
+html.is-compact #stage > .read-battle-host.mb-host .st-choice .st-stop { flex: 1 1 0; }

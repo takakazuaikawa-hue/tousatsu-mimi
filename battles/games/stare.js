@@ -315,7 +315,7 @@
     });
 
     api.css('stare', CSS);
-    api.say(ch.open, ch.openE); api.bet(500);
+    api.say(ch.open, ch.openE); api.bet(T ? (T.toCall || '—') : 500);
     const root = api.root;
     const pct = (a) => Math.round(a * 100);
     // 見込みの天秤：左の皿＝ブラフ、右の皿＝強い手。最初は「これまでの記録」の重り1つ、手がかりが出るたびに重りが1つずつ乗る。
@@ -510,7 +510,7 @@
       api.say(decide === 'bluff' ? ch.react[Math.min(2, stage)] : ch.open, decide === 'bluff' ? 'panic' : 'smug');
       api.entrust({
         pick: NAME[decide], win: base * m, lose,
-        advice: decide === 'bluff' ? '「ブラフ」と読んだ。信じるなら、付いていく（コール）' : '「本物」と読んだ。信じるなら、降りる',
+        advice: api.readAdvice(decide),
         pending: {
           title: '見つめ合い', charId: api.charId, pick: decide, truth, mimiEq, endLines: ch.end, gloat: ch.gloat, board, mine, her, base, mult: m, stakes: STAKES,
           perfect: stage === 3 && m === 3,

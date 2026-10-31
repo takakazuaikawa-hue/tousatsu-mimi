@@ -60,3 +60,6 @@
   .pack-actions { gap: 8px; }
   .pack-actions .btn { min-height: 40px; min-width: 120px; padding: 6px 14px; font-size: 14px; }
 }
+
+/* スマホは body に出す（offline.js）：画面の実寸で覆う */
+body > .pack-overlay { position: fixed; z-index: 9000; }

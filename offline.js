@@ -156,7 +156,8 @@
   function openPanel(mode) {
     if (!supported) return;
     closePanel();
-    const host = document.getElementById('stage') || document.body;
+    // スマホ（舞台が縮む is-compact）は舞台の外の body に出す。舞台の中だと全体の縮小に巻き込まれ、本文が7px相当・ボタンが20px相当になっていた（2026-11-01 外部の批評）
+    const host = document.documentElement.classList.contains('is-compact') ? document.body : (document.getElementById('stage') || document.body);
     const overlay = document.createElement('div');
     overlay.className = 'pack-overlay';
     host.appendChild(overlay);

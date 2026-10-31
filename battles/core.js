@@ -618,6 +618,18 @@
         },
         // 読みを預ける（本当の手の勝負）：答え合わせは手の決着の後。ここでは読みと自信と、当たり・外れのコインを見せて卓に戻す。
         // o = { pending（決着後の答え合わせに渡す中身）, pick（読みの名前）, advice（卓でどうするかの一言）, win, lose }
+        // 心理の読み（ブラフ／本物）から、卓でどうするかの一言。「本物なら降りる」と強い・弱いだけで決めず、
+        // 払う額から必要な勝ち目を出す（2026-11-01 外部の批評：払う額が小さければ、負けている時でも付いていく価値がある）
+        readAdvice(decide) {
+          const T = api.table;
+          if (decide === 'bluff') return '「ブラフ」と読んだ。信じるなら、付いていく（コール）';
+          if (!T || !(T.toCall > 0)) return '「本物」と読んだ。信じるなら、無理に賭けず様子見';
+          const need = Math.round(T.toCall / Math.max(1, (T.pot || 0) + T.toCall) * 100);
+          if ((T.board || []).length >= 5) return `「本物」と読んだ。もう札は来ないので、信じるなら降りる（払う ${T.toCall}）`;
+          return need <= 20
+            ? `「本物」と読んだ。でも払う ${T.toCall} は小さい（要る勝ち目 約${need}%）。逆転の札が来そうなら付いていく手もある`
+            : `「本物」と読んだ。払う ${T.toCall} には勝ち目 約${need}% が要る。逆転の札が少ないなら降りる`;
+        },
         entrust(o) {
           if (!live()) return;
           api.mission('読みを持って、卓へ');
@@ -625,7 +637,7 @@
           el.className = 'mb-result mb-entrust';
           el.innerHTML = `<div class="mb-result-card"><div>
               <div class="mb-result-stamp">読みを預けた</div>
-              <div class="mb-entrust-pick">ミミの読み<b>${o.pick}</b><span>自信 ×${api.mult || 1}</span></div>
+              <div class="mb-entrust-pick">ミミの読み<b>${o.pick}</b>${o.noMult ? "" : `<span>自信 ×${api.mult || 1}</span>`}</div>
               <div class="mb-entrust-coin"><span class="w">当たれば +${o.win}</span><span class="l">外れたら ${o.lose ? '−' + o.lose : '±0'}</span></div>
               <div class="mb-result-detail">${o.advice}<br>答え合わせは、この手の決着の後。降りても、相手の札はめくって確かめる。</div>
             </div><div class="mb-result-actions"><button class="btn gold" id="mb-next">${opts.exitLabel || '卓にもどる'}</button></div></div>`;

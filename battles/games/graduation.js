@@ -176,7 +176,7 @@
     if (T) {
       api.entrust({
         pick: NAME[decide], win: BASE * m, lose: BASE * STAKES[m - 1],
-        advice: (decide === 'bluff' ? '「ブラフ」と読んだ。信じるなら、付いていく（コール）' : '「本物」と読んだ。信じるなら、降りる') + (defy ? '（先輩の予想を外した）' : ''),
+        advice: api.readAdvice(decide) + (defy ? '（先輩の予想を外した）' : ''),
         pending: {
           title: '卒業試験', charId: 'rico', pick: decide, pred, truth, mimiEq, endLines: END, board, mine, her, base: BASE, mult: m, stakes: STAKES,
           perfect: correct && defy && m === 3, extra,

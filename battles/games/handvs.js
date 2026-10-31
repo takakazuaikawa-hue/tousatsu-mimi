@@ -178,7 +178,10 @@
     // 5枚を作る段は初めての時だけ（2026-11-01 2回目の外部の批評：毎回、作る→候補5つ→決める→自信で、ポーカーの途中に挟む手続きが長い）
     let seenBefore = false; try { seenBefore = !!localStorage.getItem('mbRulesSeen:handvs'); } catch (e) {}
     const doBuild = seven.length > 5 && !seenBefore;
-    const STEPS = doBuild ? ['5枚を作る', 'くらべる', '決める', '賭ける'] : ['くらべる', '決める', '賭ける'];
+    // 2回目からは、候補を1つずつ比べる段も省き「候補を見て決める」1回だけ（3回目の外部の批評：同じ一手に区切りが多すぎる）。
+    // 自信を賭ける段は無くした（3回目の外部の批評：答え合わせ済みの棒と線を比べてから倍率を選ぶので、毎回最大を押すだけになる）。ご褒美は段の額で固定
+    const repeat = seenBefore;
+    const STEPS = doBuild ? ['5枚を作る', 'くらべる', '決める'] : repeat ? ['候補を見る', '決める'] : ['くらべる', '決める'];
     const S = (k) => STEPS.indexOf(k);
     const mimiName = handName(api, seven);
     root.classList.add('rb-frame');
@@ -206,7 +209,7 @@
       goal: `<em>${NAMES.call}</em>か<em>${NAMES.fold}</em>か、得な方を決める。答え合わせはこの手の決着の後`,
       how: `${doBuild ? 'ミミの一番強い5枚を選ぶ。次に、' : ''}${jp}の手の候補5つとミミの手を1つずつ比べる。勝てる候補の数が棒になる`,
       risk: '比べ違えると、ご褒美の上がり（20→150）がそこで止まる',
-      look: [['どちらが勝つか', '役の強さ。同じ役なら大きい数字'], [`${NAMES.call}か${NAMES.fold}か`, `棒が線（${need}%）を超えるか`], ['自信', '棒と線の差']],
+      look: [['どちらが勝つか', '役の強さ。同じ役なら大きい数字'], [`${NAMES.call}か${NAMES.fold}か`, `棒が線（${need}%）を超えるか`], ['2回目から', '候補を見て、すぐ決める']],
     });
     if (!api.alive()) return;
 
@@ -240,12 +243,16 @@
     }
 
     // ② くらべる：候補を1つずつ
-    $('#mb-hv-steps').innerHTML = api.steps(STEPS, S('くらべる'));
-    api.mission(`どちらが強い？`);
-    // 候補の意味は最初の1回だけ一言で（2回目からは「同じ役なら…」）
-    api.coach(`候補は、${jp}の賭け方から考えた「持っていそうな手」。1つずつ比べよう`, 'think');
     let wins = 0;
-    for (let i = 0; i < cands.length; i++) {
+    if (repeat) {
+      // 2回目から：候補の札だけ並べ、勝ち負けは自分で見て決める（数えた結果は答え合わせまで出さない）
+      cands.forEach((c, i) => { if (c.res === 'win') wins += 1; else if (c.res === 'tie') wins += .5; root.querySelector(`.hv-cand[data-i="${i}"] .c`).innerHTML = cardsTxt(c.h); });
+    } else {
+      $('#mb-hv-steps').innerHTML = api.steps(STEPS, S('くらべる'));
+      api.mission(`どちらが強い？`);
+      api.coach(`候補は、${jp}の賭け方から考えた「持っていそうな手」。1つずつ比べよう`, 'think');
+    }
+    for (let i = 0; !repeat && i < cands.length; i++) {
       const c = cands[i];
       const row = root.querySelector(`.hv-cand[data-i="${i}"]`);
       root.querySelectorAll('.hv-cand').forEach(r => r.classList.remove('is-now'));
@@ -281,20 +288,20 @@
     }
     root.querySelectorAll('.hv-cand').forEach(r => r.classList.remove('is-now'));
     const winPct = Math.round(wins / cands.length * 100);
-    $('#mb-hv-wn').textContent = `${wins % 1 ? wins.toFixed(1) : wins}／5（${winPct}%）`;
+    if (!repeat) $('#mb-hv-wn').textContent = `${wins % 1 ? wins.toFixed(1) : wins}／5（${winPct}%）`;
 
     // ③ 決める
     $('#mb-hv-steps').innerHTML = api.steps(STEPS, S('決める'));
     const over = winPct > need;
-    api.mission(`棒が線を超えている？`);
+    api.mission(repeat ? `勝てる候補は ${need}% を超える？` : `棒が線を超えている？`);
     play.innerHTML = `${ladderHTML()}
       <div class="hv-row"><span class="hv-cap">場札</span>${board.map(x => api.cardHTML(x, 'small')).join('')}</div>
       <div class="hv-row"><span class="hv-cap">ミミ</span>${mine.map(x => api.cardHTML(x, '')).join('')}<span class="hv-name">${mimiName}</span></div>
-      <div class="hv-big">
+      ${repeat ? `<div class="hv-big is-repeat"><div class="hv-big-t"><span>候補5つのうち、ミミが勝てるのは <b>${Math.floor(need / 20) + 1}つ以上</b>？<small style="display:block">（線 ${need}%）</small></span></div></div>` : `<div class="hv-big">
         <div class="hv-big-bar">${Array.from({ length: 10 }, (_, k) => `<i class="${k < Math.round(winPct / 10) ? 'on' : ''}"></i>`).join('')}<s style="left:${need}%"><b>割に合う線 ${need}%</b></s></div>
         <!-- 2026-11-01 決める前に「付いていくのが得」と答えを書かない（2回目の外部の批評：答えを見せてから自信を賭けさせていた）。リバーだけで出すので「変わることもある」も外した -->
         <div class="hv-big-t"><span>勝てる候補 <b>${winPct}%</b> と <span style="white-space:nowrap">線 <b>${need}%</b>、</span>どちらが上？</span></div>
-      </div>`;
+      </div>`}`;
     api.coach('');;
     drawLadder();
     act.innerHTML = `<div class="hv-act2">
@@ -307,30 +314,26 @@
     });
     if (!api.alive()) return;
     act.innerHTML = '';
-    $('#mb-hv-steps').innerHTML = api.steps(STEPS, S('賭ける'));
-    const base = LADDER[lad];
+    const base = repeat ? LADDER[3] : LADDER[lad];
     const gap = Math.abs(winPct - need);
-    // 問いは1行に（2回目の外部の批評：問いが2行になって、下の説明がスマホで切れていた）
-    await api.wager({ mission: '棒と線の差で自信を決める', question: `「${NAMES[decide]}」と決めた`, note: `棒 ${winPct}%・線 ${need}%。<span style="white-space:nowrap">差が大きいほど上げてよい</span>`, base, stakes: STAKES, into: act });
-    if (!api.alive()) return;
-    const m = api.mult || 1;
+    api.mult = 1; const m = 1;
     const sensible = over ? 'call' : 'fold';
     const whyTxt = (decide === sensible ? `棒と線のとおりの判断（差 ${gap}）。` : `棒と線からは「${NAMES[sensible]}」だった。`);
     const notes = cands.map((c, i) => ({ label: `候補${i + 1} ${c.h.map(api.label).join(' ')}：${RES[c.res]}`, lean: c.res === 'lose' ? 'fold' : 'call' }));
     if (T) {
       api.entrust({
-        pick: NAMES[decide], win: base * m, lose: base * STAKES[m - 1],
+        pick: NAMES[decide], win: base, lose: 0, noMult: true,
         advice: decide === 'call' ? (free ? '「賭ける」と決めた。卓で賭けよう' : '「付いていく」と決めた。卓でコールしよう') : (free ? '「様子見」と決めた。卓でチェックしよう' : '「降りる」と決めた。卓で降りよう'),
         // 2026-11-01 正解は「画面の候補で見て正しい判断か」（外部の批評：画面は候補の割合で考えさせ、正解は見えない本当の札で決めていて、表示どおりに考えても×になり得た）。本当の見込みは答え合わせに並べて見せる
         pending: { kind: 'logic', names: NAMES, title: '役くらべ', charId: api.charId, pick: decide, truth: sensible, mimiEq, need, endLines: END[who], board, mine, her, base, mult: m, stakes: STAKES, herWeak: mimiEq >= 50,
           truthText: `候補で見れば「${NAMES[sensible]}」が正解<small>候補で勝てる ${winPct}%・線 ${need}%（本当の見込みは ${mimiEq}%）</small>`,
-          perfect: !stopped && m === 3, notes: [], why: whyTxt, extra: `勝てる候補 ${winPct}% ／ 線 ${need}%・ご褒美のもと ${base}` },
+          perfect: !repeat && !stopped, notes: [], why: whyTxt, extra: `勝てる候補 ${winPct}% ／ 線 ${need}%・ご褒美のもと ${base}` },
       });
       return;
     }
     api.lossK = STAKES;
     const correct = decide === sensible;
-    api.finish({ correct, base, perfect: correct && !stopped && m === 3,
+    api.finish({ correct, base, perfect: correct && !repeat && !stopped,
       detail: `${jp}は ${her.map(api.label).join(' ')}（${handName(api, her.concat(board))}）。ミミが勝つ見込み ${mimiEq}%・線 ${need}%。${whyTxt}` });
     void notes;
   }

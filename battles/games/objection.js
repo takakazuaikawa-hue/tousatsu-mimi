@@ -14,12 +14,12 @@
   const STN = { flop: 'フロップ', turn: 'ターン', river: 'リバー' };
   const recordOf = (prior, n = 20) => { const k = Math.round(prior * n); const o = [3, 11, 6, 17, 0, 9, 14, 2, 19, 7, 12, 4, 16, 1, 10, 18, 5, 13, 8, 15]; const s = new Set(o.slice(0, k)); return Array.from({ length: n }, (_, i) => s.has(i)); };
   const pips = (n) => `<span class="oj-pips" aria-label="確かさ${n}">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
-  // 賭けの大きさ（賭ける前のポットに対して）。卓の記録の文字は4字まで（スマホの札1枚の幅に収める）
+  // 賭けの大きさ（賭ける前のポットに対して）。半分＝.4〜.6、3分の2＝.6〜.85（2026-11-01 外部の批評：133/200 を「半分」と言っていた）。卓の記録の文字は4字まで（スマホの札1枚の幅に収める）
   const ratio = (a) => a.a / Math.max(1, a.p);
   const actWord = (a) => a.t === 'check' ? 'チェック' : a.t === 'call' ? 'コール' : a.t === 'allin' ? '全部' : a.t === 'raise' ? 'レイズ'
-    : ratio(a) < .4 ? '小さく' : ratio(a) < .75 ? '半分' : ratio(a) < 1.25 ? '同額' : '大きく';
+    : ratio(a) < .4 ? '小さく' : ratio(a) < .6 ? '半分' : ratio(a) < .85 ? '3分の2' : ratio(a) < 1.25 ? '同額' : '大きく';
   const actSay = (a) => a.t === 'check' ? 'チェック|したの' : a.t === 'call' ? 'コール|しただけ' : a.t === 'allin' ? '全部|賭けたの' : a.t === 'raise' ? '上乗せ|したの'
-    : ratio(a) < .4 ? '小さく|賭けただけ' : ratio(a) < .75 ? 'ポットの|半分を|賭けたの' : ratio(a) < 1.25 ? 'ポットと|同じだけ|賭けたの' : 'ポットより|多く|賭けたの';
+    : ratio(a) < .4 ? '小さく|賭けただけ' : ratio(a) < .6 ? 'ポットの|半分くらい|賭けたの' : ratio(a) < .85 ? 'ポットの|3分の2ほど|賭けたの' : ratio(a) < 1.25 ? 'ポットと|同じくらい|賭けたの' : 'ポットより|多く|賭けたの';
   const POW = { check: 0, call: 1, bet: 2, raise: 3, allin: 4 };
   // 文の中の | は「ここで折ってよい」印。画面では <wbr> にし、ほかの所では折らない（word-break: keep-all）。自動の文節判定は語の途中で折ることがあった
   const W = (t) => String(t).split('|').join('<wbr>');
@@ -313,7 +313,7 @@
       api.say(found ? 'ふ、ふん……読めたつもり？' : 'ふふ、あたしの言葉、信じればいいの♡', found ? 'panic' : 'smug');
       api.entrust({
         pick: NAME[decide], win: base * m, lose: base * STAKES[m - 1],
-        advice: decide === 'bluff' ? '「ブラフ」と読んだ。信じるなら、付いていく（コール）' : '「本物」と読んだ。信じるなら、降りる',
+        advice: api.readAdvice(decide),
         pending: {
           title: '異議あり！', charId: api.charId, pick: decide, truth, mimiEq, endLines: END, board, mine, her, base, mult: m, stakes: STAKES,
           perfect: found && misses === 0 && m === 3,

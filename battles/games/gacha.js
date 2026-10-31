@@ -318,7 +318,7 @@
       api.say(decide === 'bluff' ? V.N.bluff[0] : V.open, decide === 'bluff' ? 'panic' : 'smug');
       api.entrust({
         pick: NAME[decide], win: b0 * m, lose: b0 * STAKES[m - 1],
-        advice: decide === 'bluff' ? '「ブラフ」と読んだ。信じるなら、付いていく（コール）' : '「本物」と読んだ。信じるなら、降りる',
+        advice: api.readAdvice(decide),
         pending: { title: '心の声ガチャ', charId: api.charId, pick: decide, truth, mimiEq, endLines: V.end, board, mine, her, base: b0, mult: m, stakes: STAKES,
           perfect: m === 3 && pulls <= 1, notes, why, extra: `残したぱにゅ ${panyu} → ご褒美のもと ${b0}` },
       });
