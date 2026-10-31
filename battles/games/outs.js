@@ -131,7 +131,7 @@ MB.register({
     const meter = document.createElement('div');
     meter.className = 'outs-meter pop';
     meter.innerHTML = `<div class="prompt mb-ask"><span class="mb-bet"><b>当たり ${s.outs.length}枚</b></span>${api.betTag('払う ' + s.B, 3)}</div>
-      <div class="outs-bar"><div class="outs-fill" id="mb-o-fill"></div><div class="outs-line" id="mb-o-line"><span>割に合う線 ${pct(s.need)}%</span></div><div class="outs-val">約 ${s.outs.length * 2}%</div></div>
+      <div class="outs-bar"><div class="outs-fill" id="mb-o-fill"></div><div class="outs-line" id="mb-o-line"><span>割に合う線 ${pct(s.need)}%</span></div><div class="outs-val">約 ${Math.round(s.eq * 100)}%</div></div>
       <div class="ox-more">${api.more(`当たり札 ${s.outs.length}枚 × 2 ＝ <b>約${s.outs.length * 2}%</b>（正確には ${s.outs.length}÷${s.rest.length}＝${pct(s.eq)}%）<br>払う ${s.B} ÷（もらえる ${s.P + s.B} ＋ 払う ${s.B}）＝ <b>${pct(s.need)}%</b> 以上当たれば得`)}</div>`;
     root.querySelector('#mb-o-deck').after(meter);
     // 押す所は画面の一番下の段に（上の方に置くと押しづらい）
@@ -148,20 +148,23 @@ MB.register({
     oxAct.remove();
     const right = called === (s.eq >= s.need);
     const base0 = gaveUp ? 15 : Math.max(10, 30 - miss * 5);
-    await api.wager(s.real ? { question: `「${called ? '付いていく' : '降りる'}」— 見込み 約${s.outs.length * 2}% ／ 線 ${pct(s.need)}%`, base: base0, mission: '棒と線の差で自信を決める', note: '差が大きいほど、自信を上げてよい', stakes: STAKES } : { question: called ? '「付いていく」と決めた。この判断、自信は？' : '「降りる」と決めた。この判断、自信は？', base: 30, mission: 'この判断への自信は？' });
+    // 本当の手：棒と線がもう見えている計算問題なので、自信は聞かない（2026-11-01 外部の批評：確認の区切りが多すぎる）
+    if (s.real) api.mult = 1;
+    else await api.wager(s.real ? { question: `「${called ? '付いていく' : '降りる'}」— 見込み 約${Math.round(s.eq * 100)}% ／ 線 ${pct(s.need)}%`, base: base0, mission: '棒と線の差で自信を決める', note: '差が大きいほど、自信を上げてよい', stakes: STAKES } : { question: called ? '「付いていく」と決めた。この判断、自信は？' : '「降りる」と決めた。この判断、自信は？', base: 30, mission: 'この判断への自信は？' });
     if (!api.alive()) return;
     if (s.real) {
       // 本当の手：最後の1枚は卓で配られる。判断を預けて戻る
       const m = api.mult || 1, need = Math.round(s.need * 100);
       const mimiEq = Math.round(api.headsUp(s.hole, s.her, s.board) * 100);
       api.entrust({
-        pick: called ? '付いていく' : '降りる', win: base0 * m, lose: base0 * STAKES[m - 1],
+        pick: called ? '付いていく' : '降りる', win: base0, lose: 0, noMult: true,
         advice: called ? '「付いていく」と決めた。卓でコールして、最後の1枚を待とう' : '「降りる」と決めた。卓で降りよう',
-        pending: { kind: 'logic', title: 'アウツさがし', charId: api.charId, pick: called ? 'call' : 'fold', truth: mimiEq >= need ? 'call' : 'fold', mimiEq, need,
+        pending: { kind: 'logic', title: 'アウツさがし', charId: api.charId, pick: called ? 'call' : 'fold', truth: s.eq >= s.need ? 'call' : 'fold', mimiEq, need,
+          truthText: `${s.eq >= s.need ? '付いていく' : '降りる'}のが正解だった<small>当たり札 ${s.outs.length}枚で見込み 約${pct(s.eq)}%・線 ${pct(s.need)}%（相手の札は使わずに採点）</small>`,
           endLines: { bc: 'く……計算どおりですな', bw: '賢いお方だ', sc: '慎重なお方ですな', sw: 'まいど、ありがとうございます' },
-          board: s.board, mine: s.hole, her: s.her, base: base0, mult: m, stakes: STAKES, perfect: right && !gaveUp && miss === 0 && m === 3, notes: [],
+          board: s.board, mine: s.hole, her: s.her, base: base0, mult: m, stakes: STAKES, perfect: right && !gaveUp && miss === 0, notes: [],
           why: right ? (called ? '当たり札の見込みが線を超えていた。' : '当たり札の見込みが線に届かなかった。') : (called ? '当たり札の見込みは線に届かなかった。' : '当たり札の見込みは線を超えていた。'),
-          extra: `当たり札 ${s.outs.length}枚（約${s.outs.length * 2}%）／ 線 ${pct(s.need)}%` },
+          extra: `当たり札 ${s.outs.length}枚（約${pct(s.eq)}%）／ 線 ${pct(s.need)}%` },
       });
       return;
     }

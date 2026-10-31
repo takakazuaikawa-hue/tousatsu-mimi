@@ -882,3 +882,21 @@ html.is-compact #stage > .as-host .as-sub-text { white-space: normal; overflow: 
 @media (max-width: 799px) {
   html.is-compact #stage > .as-host .as-sub { left: 160px; right: 8px; width: auto; transform: none; }
 }
+
+/* 2026-11-01 初めての大会の1ハンド目：席の札（D・SB・BB）を光らせて意味を見せる（.as-posguide は .as-review と同じ窓） */
+.as-review.as-posguide { width: 560px; }
+.as-posguide .as-rv-mk { width: auto; min-width: 34px; padding: 0 6px; }
+.as-host .is-guide { animation: asGuidePulse 1s ease-in-out infinite; z-index: 28; }
+@keyframes asGuidePulse { 50% { box-shadow: 0 0 0 3px rgba(245,215,122,.9), 0 0 18px rgba(245,215,122,.8); } }
+/* 席の札が見えるように、窓は右下（行動の欄が出る所。まだ配る前なので空いている）に寄せる */
+/* 席の札が見えるように、窓は卓の真ん中（ポットの所。配る前なので空いている）に置き、「わかった」は見出しの右に */
+.as-review.as-posguide { top: 330px; transform: translateX(-50%); }
+.as-posguide .as-rv-h { align-items: center; }
+.as-posguide .as-rv-h span { margin-left: auto; }
+.as-posguide .as-pg-ok { flex: none; height: 44px; min-width: 120px; padding: 0 14px; border: 1px solid #f3d995; border-radius: 2px; background: var(--as-brass); color: #1a1206; font-family: var(--as-min); font-weight: 700; letter-spacing: .1em; }
+html #stage > .as-host .as-posguide .as-pg-ok { font-size: calc(var(--r-btn) / var(--game-scale, 1)) !important; }
+html.is-compact #stage > .as-host .as-posguide .as-pg-ok { font-size: var(--r-btn) !important; height: 40px; min-width: 100px; }
+html.is-compact #stage > .as-host .as-review.as-posguide { left: 50%; right: auto; top: 128px; width: 384px; transform: translateX(-50%); }
+html.is-compact #stage > .as-host .as-posguide .as-rv-h span { display: none; }
+/* 小さいスマホは真ん中だと左右の席の札を覆う。右下へ */
+@media (max-width: 760px) { html.is-compact #stage > .as-host .as-review.as-posguide { left: auto; right: 6px; top: auto; bottom: 4px; width: 372px; transform: none; } }

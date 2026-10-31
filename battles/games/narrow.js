@@ -202,8 +202,12 @@
     const herS = strengthOf(api, her, board);
     const lv = ['strong', 'set'].includes(herS) ? 'hi' : ['big', 'small'].includes(herS) ? 'mid' : 'lo';
     const [line, face] = LINES[who][betted ? 'bet' : 'check'][lv];
-    const truth = herTile.danger ? 'fold' : 'call';
     const mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+    // 払う額と勝ち目をくらべる（2026-11-01 外部の批評：払い50・ポット1000で勝ち目11%でも「降りるのが正解」になっていた）。
+    // 負けている役でも、まだ札が来るなら、払う額が小さいうちは付いていく方が得。リバーで負けていれば札は来ないので降りる
+    const need = free ? 0 : Math.round(toCall / Math.max(1, (pot || 0) + toCall) * 100);
+    const priced = (eq) => free ? null : (eq >= need ? 'call' : 'fold');
+    const truth = free ? (herTile.danger ? 'fold' : 'call') : priced(mimiEq);
     const core = new Set(coreCards(api, mine.concat(board)).map(api.key));
     const mineCore = mine.filter(c => core.has(api.key(c)));
 
@@ -279,8 +283,12 @@
       });
     });
     if (!api.alive()) return;
-    const decide = pickT.danger ? 'fold' : 'call';
-    api.coach(pickT.danger ? `${plain(pickT.name)}ならミミの負け。${NAMES.fold}のが得` : `${plain(pickT.name)}ならミミは負けない。${NAMES.call}のが得`, 'think');
+    // 読んだ役の例の手に対して、ミミが勝つ見込み。払う額の線とくらべて決める
+    const hs = pickT.hands.length > 12 ? api.shuffle(pickT.hands.slice()).slice(0, 12) : pickT.hands;
+    const eqPick = free ? 0 : Math.round(hs.reduce((t, h) => t + api.headsUp(mine, h, board), 0) / hs.length * 100);
+    const decide = free ? (pickT.danger ? 'fold' : 'call') : priced(eqPick);
+    api.coach(free ? (pickT.danger ? `${plain(pickT.name)}ならミミの負け。${NAMES.fold}のが得` : `${plain(pickT.name)}ならミミは負けない。${NAMES.call}のが得`)
+      : `${plain(pickT.name)}なら勝ち目 約${eqPick}%。払う額の線 ${need}%${decide === 'call' ? 'を超える。付いていくのが得' : 'に届かない。降りるのが得'}`, 'think');
     $('#mb-nq-steps').innerHTML = api.steps(STEPS, 2);
     const good = tiles.length - miss;
     const base = 20 + good * 10;
@@ -291,7 +299,7 @@
     const herRole = roleName(api, her.concat(board));
     const pending = { kind: 'logic', names: NAMES, title: '容疑者しぼり', charId: api.charId, pick: decide, truth, mimiEq, endLines: END[who], board, mine, her, base, mult: m, stakes: STAKES,
       herWeak: !herTile.danger, perfect: miss === 0 && pickT.key === herTile.key && m === 3, notes: [], why: whyTxt,
-      truthText: `${jp}は ${herRole}${herTile.danger ? '（ミミより強い）' : '（ミミは負けない）'}<small>${NAMES[truth]}のが正解だった</small>`,
+      truthText: `${jp}は ${herRole}${herTile.danger ? '（ミミより強い）' : '（ミミは負けない）'}<small>${NAMES[truth]}のが正解だった${free ? '' : `（勝ち目 約${mimiEq}%・線 ${need}%）`}</small>`,
       extra: `ミミの読み：${plain(pickT.name)}${pickT.key === herTile.key ? ' ○' : ''}` };
     if (T) {
       api.entrust({

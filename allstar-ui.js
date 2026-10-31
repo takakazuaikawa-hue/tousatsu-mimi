@@ -484,6 +484,21 @@
     } catch (e) { }
   }
 
+  // 席の札（D・SB・BB）の意味。答え合わせと同じ窓の形で、札を光らせて「わかった」まで止める
+  let posGuideDone = null;
+  async function showPosGuide() {
+    const g = G;
+    const lit = [...host.querySelectorAll('.as-pos'), ...host.querySelectorAll('.as-d[data-on="1"]')].filter(x => x.textContent.trim());
+    lit.forEach(x => x.classList.add('is-guide'));
+    const row = (mk, t) => `<li class="as-rv-row"><i class="as-rv-mk">${mk}</i><div class="as-rv-b"><p class="as-rv-t">${wb(t)}</p></div></li>`;
+    const el = layerEl('as-review as-posguide', `<div class="as-rv-h"><b>本編とちがう所</b><span>光っている札を見て</span><button type="button" class="as-gold as-pg-ok" data-as="posguide-ok">わかった</button></div>
+      <ol class="as-rv-list">${row('D', '毎ハンド、|左どなりへ|動く印')}${row('SB', 'Dの左の2人だけが|先払い（SB 小・BB 大）。|全員の参加費はない')}${row('▶', 'BBの次の人から|順に動く')}</ol>`);
+    requestAnimationFrame(() => el.classList.add('on'));
+    await new Promise((res) => { posGuideDone = () => { posGuideDone = null; res(); }; });
+    el.remove();
+    lit.forEach(x => x.classList.remove('is-guide'));
+    if (g !== G) throw STOP;
+  }
   // 重ね窓（帯・判・カットイン）を layer に出す
   function layerEl(cls, html) {
     const el = document.createElement('div');
@@ -592,6 +607,8 @@
     paintHead();
     paintRanks();
     paintPot();
+    // 初めての大会の1ハンド目：本編（全員が参加費）から変わる所を、実際の席の札で1回だけ見せる（2026-11-01 外部の批評）
+    if (e.hand === 1) { const A = ensureSave(); if (A && !A.posGuideSeen) { A.posGuideSeen = true; try { saveProgress(); } catch (err) { } await showPosGuide(); } }
     // 相手同士の掛け合い（たまに・文字だけ）
     if (e.hand > 1 && finalOpp == null && Math.random() < 0.14) {
       const cand = LINES.banter.filter(b => b.every(([k]) => aliveId(k)));
@@ -901,7 +918,7 @@
     const g = G;
     return new Promise((res, rej) => { humanResolve = (a) => {
       humanResolve = null; hideActions();
-      if (pro && L) handReview.push({ street: L.street, mine: mineKind(a, L), pro, isBet: L.isBet });
+      if (pro && L) handReview.push({ street: L.street, mine: mineKind(a, L), pro, isBet: L.isBet, free: !!L.canCheck });
       g === G ? res(a) : rej(STOP);
     }; });
   }
@@ -1095,7 +1112,11 @@
     return a.kind;   // fold / check
   }
   const KIND_GROUP = { fold: 'p', check: 'p', call: 'c', raise: 'a', allin: 'a' };
-  function gradeOf(mine, pro) {
+  // 払わずに残れる時（チェックできる時）に降りるのは、いつも損。プロの「降りる寄り」も、その時はチェックのこと
+  // （2026-11-01 外部の批評：無料のチェックと降りるを同じ組にして「プロと同じ」と言っていた）
+  function gradeOf(mine, pro, free) {
+    if (free && mine === 'fold') return 'off';
+    if (free && mine === 'check' && (pro === 'fold' || pro === 'check')) return 'ok';
     const m = KIND_GROUP[mine], p = KIND_GROUP[pro];
     if (m === p) return 'ok';
     return m === 'c' || p === 'c' ? 'near' : 'off';
@@ -1106,7 +1127,7 @@
     const rows = handReview.splice(0);
     if (!rows.length || !T) return;
     const g = G;
-    const graded = rows.map(r => Object.assign(r, { grade: gradeOf(r.mine, r.pro.lean) }));
+    const graded = rows.map(r => Object.assign(r, { grade: gradeOf(r.mine, r.pro.lean, r.free), proLean: r.free && r.pro.lean === 'fold' ? 'check' : r.pro.lean }));
     const A = ensureSave();
     const R = A && A.run ? (A.run.review = A.run.review || { same: 0, total: 0 }) : { same: 0, total: 0 };
     R.total += graded.length;
@@ -1123,8 +1144,8 @@
       const tile = { stack: 'stack', position: 'pos', price: 'odds', hand: 'odds', prize: 'prize' }[r.pro.key];
       const [mk, word] = GRADE[r.grade];
       return `<li class="as-rv-row" data-g="${r.grade}"><i class="as-rv-mk" aria-label="${word}">${mk}</i>
-        <div class="as-rv-b"><div class="as-rv-r"><b class="as-rv-st">${STREET_JA[r.street] || ''}</b><span class="as-rv-k">ミミ <b>${kindJA(r.mine, r.isBet)}</b></span><span class="as-rv-k">プロ <b data-k="${r.pro.lean}">${kindJA(r.pro.lean, r.isBet)}寄り</b></span></div>
-        <p class="as-rv-t">${wb(CK_LABEL[tile] + '：|' + coachReason(r.pro))}</p></div></li>`;
+        <div class="as-rv-b"><div class="as-rv-r"><b class="as-rv-st">${STREET_JA[r.street] || ''}</b><span class="as-rv-k">ミミ <b>${kindJA(r.mine, r.isBet)}</b></span><span class="as-rv-k">プロ <b data-k="${r.proLean}">${kindJA(r.proLean, r.isBet)}寄り</b></span></div>
+        <p class="as-rv-t">${r.free && r.mine === 'fold' ? wb('チェックなら|払わずに残れた。|降りる必要はなかった') : wb(CK_LABEL[tile] + '：|' + coachReason(r.pro))}</p></div></li>`;
     }).join('');
     const el = layerEl('as-review', `<div class="as-rv-h"><b>答え合わせ</b><span>この大会でプロと同じ ${R.same}／${R.total}</span></div>
       <ol class="as-rv-list">${list}</ol>
@@ -1160,6 +1181,7 @@
     else if (a === 'menu') openMenu();
     else if (a === 'review-toggle') { const A = ensureSave(); if (A) { A.reviewOff = !A.reviewOff; try { saveProgress(); } catch (e) { } } openMenu(); }
     else if (a === 'review-next') { if (reviewDone) reviewDone(); }
+    else if (a === 'posguide-ok') { sfx('tap'); if (posGuideDone) posGuideDone(); }
     else if (a === 'review-stop') { const A = ensureSave(); if (A) { A.reviewOff = true; try { saveProgress(); } catch (e) { } } if (reviewDone) reviewDone(); }
     else if (a === 'levels') openLevels();
     else if (a === 'log') openLog();

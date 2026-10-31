@@ -632,6 +632,15 @@
         },
         entrust(o) {
           if (!live()) return;
+          // 論理の「付いていく／降りる」は、卓にもどると同じ行動をそのまま実行する（game.js holdReadBattle）。押し直しを頼む文にしない
+          const autoLine = (o) => {
+            const p = o.pending, T = api.table;
+            if (!p || p.kind !== 'logic' || !T) return '';
+            const free = !(T.toCall > 0);
+            if (p.pick === 'fold') return free ? '卓にもどると、そのままチェック（様子見）する' : '卓にもどると、そのまま降りる';
+            if (p.pick === 'call' && !free) return `卓にもどると、そのままコール（${T.toCall}）する`;
+            return '';
+          };
           api.mission('読みを持って、卓へ');
           const el = document.createElement('div');
           el.className = 'mb-result mb-entrust';
@@ -639,7 +648,7 @@
               <div class="mb-result-stamp">読みを預けた</div>
               <div class="mb-entrust-pick">ミミの読み<b>${o.pick}</b>${o.noMult ? "" : `<span>自信 ×${api.mult || 1}</span>`}</div>
               <div class="mb-entrust-coin"><span class="w">当たれば +${o.win}</span><span class="l">外れたら ${o.lose ? '−' + o.lose : '±0'}</span></div>
-              <div class="mb-result-detail">${o.advice}<br>答え合わせは、この手の決着の後。降りても、相手の札はめくって確かめる。</div>
+              <div class="mb-result-detail">${autoLine(o) || o.advice}<br>答え合わせは、この手の決着の後。降りても、相手の札はめくって確かめる。</div>
             </div><div class="mb-result-actions"><button class="btn gold" id="mb-next">${opts.exitLabel || '卓にもどる'}</button></div></div>`;
           layer.appendChild(el); sfx.fanfare();
           el.querySelector('#mb-next').addEventListener('click', () => {

@@ -77,7 +77,11 @@
     const T = api.table;
     const pot = T ? Math.max(100, T.pot || 0) : api.pick([400, 480, 600, 800]);
     const step = pot / 40;
-    const minBet = pot / 4, maxBet = pot * 2;
+    // 本当の手：卓で押せる額（1/2・2/3・ポット・ぜんぶ。持ち点まで）だけを選ばせる（2026-11-01 外部の批評：持ち点1000で1220を選べ、卓では近いボタンに寄せていた）
+    const OPTS0 = T && Array.isArray(T.betOpts) && T.betOpts.length ? T.betOpts : null;
+    const maxBet = OPTS0 ? Math.max(pot / 2, Math.min(pot * 2, Math.max(...OPTS0))) : pot * 2;
+    const OPTS = OPTS0 ? OPTS0.filter(a => a <= maxBet + 1e-6) : null;
+    const minBet = OPTS ? Math.min(pot / 4, ...OPTS) : pot / 4;
     let C = T ? null : makeCurve(pot, step);
     // ミミの強い手（ほぼ勝てる）と、セリナが付いてきた時の手（ミミより弱い）を先に決めておく
     let hole = null, board = null, eq = -1;
@@ -90,7 +94,10 @@
       if (eq >= .86) break;
     }
     if (!hole) { const d = api.shuffle(api.deck()); hole = d.slice(0, 2); board = d.slice(2, 7); eq = api.equity(hole, board, 300); }
-    if (T) { hole = T.mine; board = T.board; C = realCurve(api, hole, board, pot, step); eq = C.beat; }
+    if (T) {
+      hole = T.mine; board = T.board; C = realCurve(api, hole, board, pot, step); eq = C.beat;
+      if (OPTS) { let b = OPTS[0]; OPTS.forEach(a => { if (C.ev(a) > C.ev(b)) b = a; }); C.bestBet = Math.round(b); C.best = C.ev(b); }
+    }
     const used = new Set(hole.concat(board).map(api.key));
     const rest = api.deck().filter(c => !used.has(api.key(c)));
     const myScore = api.score(hole.concat(board));
@@ -248,7 +255,7 @@
           </svg>
           <span class="sn-axis-y">↑ ${T ? '勝てる割合' : '付いてくる確率'}　→ 賭け額</span>
           ${[[1, '100%'], [.5, '50%'], [0, '0%']].map(([p, t]) => `<span class="sn-ylab" style="top:${Y(p)}%">${t}</span>`).join('')}
-          ${[[minBet, '¼'], [pot / 2, '½'], [pot, 'ポット'], [pot * 1.5, '1.5×'], [maxBet, '2×']].map(([b, t]) => `<span class="sn-xlab" style="left:${X(b)}%">${t}</span>`).join('')}
+          ${(maxBet >= pot * 2 - 1e-6 ? [[minBet, '¼'], [pot / 2, '½'], [pot, 'ポット'], [pot * 1.5, '1.5×'], [maxBet, '2×']] : [[pot / 4, '¼'], [pot / 2, '½'], [pot, 'ポット'], [pot * 1.5, '1.5×']].filter(([b]) => b < maxBet * .9).concat([[maxBet, '全部']])).map(([b, t]) => `<span class="sn-xlab" style="left:${X(b)}%">${t}</span>`).join('')}
           <span class="sn-floor">最低額</span>
           <span class="sn-area" id="mb-sn-area">見込み</span>
           <div class="sn-ret is-cue" id="mb-sn-ret"><i class="x1"></i><i class="x2"></i><i class="dia"></i><i class="dot"></i><div class="num"><span><b id="mb-sn-rb">0</b><small id="mb-sn-rp">コール 0%</small></span></div></div>
@@ -274,7 +281,7 @@
     const fire = $('#mb-sn-fire');
     let bet = init, locked = false, moved = false, lastTick = 0;
     const set = (v, byUser) => {
-      v = Math.max(minBet, Math.min(maxBet, Math.round(v / step) * step));
+      v = OPTS ? OPTS.reduce((a, b) => Math.abs(b - v) < Math.abs(a - v) ? b : a) : Math.max(minBet, Math.min(maxBet, Math.round(v / step) * step));
       v = Math.round(v * 100) / 100;
       const changed = v !== bet; bet = v;
       const p = C.p(bet);

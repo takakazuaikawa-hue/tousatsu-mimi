@@ -1819,7 +1819,13 @@ function evaluateBoardDanger(board) {
     if (uniqRanks[i + 1] - uniqRanks[i] <= 2) { straightAlert = true; break; }
   }
   const pairBoard = uniqRanks.length < ranks.length;
-  const flushAlert = maxSuit >= 2;
+  // 同じマーク2枚は「あと2枚要る」形。場札が出そろった（5枚）なら、もう誰も完成できない
+  const flushAlert = maxSuit >= 3 || (maxSuit >= 2 && board.length < 5);
+  if (board.length >= 5) {
+    // リバー：場の3枚が5つの幅に入っていなければストレートは作れない（Aは1としても数える）
+    const rs = [...new Set(board.map(c => c.rank).concat(board.some(c => c.rank === 14) ? [1] : []))].sort((a, b) => a - b);
+    straightAlert = rs.some((r, i) => rs[i + 2] !== undefined && rs[i + 2] - r <= 4);
+  }
   return {
     flushAlert,
     flushMade: maxSuit >= 3,
@@ -5170,10 +5176,10 @@ function showSettingsModal() {
           </div>
           <div class="settings-modal-note">講義の間は、この設定にかかわらず両方とも出ます</div>
           <div class="settings-modal-row">
-            <span class="settings-modal-label">ホームとご褒美の絵を動かす</span>
+            <span class="settings-modal-label is-wrap">絵を動かす</span>
             ${sw('liveart', !stillArtOn(), 'ホームとご褒美の絵を動かす')}
           </div>
-          <div class="settings-modal-note">OFF にすると絵は止まった1枚になり、スマホが熱くなりにくく電池も長持ちします</div>
+          <div class="settings-modal-note">ホームとご褒美の絵。OFF にすると止まった1枚になり、スマホが熱くなりにくく電池も長持ちします</div>
           ${save.backdoorUnlocked ? `
           <div class="settings-modal-row settings-modal-practice">
             <span class="settings-modal-label">練習用：相手の手札を見る</span>
@@ -7406,7 +7412,7 @@ function getPreflopNickname(h) {
 // ポストフロップ：自分が持っているブロッカー情報
 
 // キッカー強さラベル（最大ランク値から判定）
-function kickerStrengthLabel(maxRank) {
+function _kickerStrengthLabel(maxRank) {
   if (maxRank >= 13) return '（強め）';     // A,K
   if (maxRank >= 11) return '（中）';       // Q,J
   if (maxRank >= 8)  return '（並）';       // 10,9,8
@@ -7487,6 +7493,10 @@ function renderCurrentHandKicker() {
     .map(([r, n]) => ({ r: +r, n }))
     .sort((a, b) => b.n - a.n || b.r - a.r);
 
+  // 場札の余り札はふたりとも使う。自分の手札でない余り札で「強め」と言うと、自分だけ強いように見える
+  const holeR = new Set(state.playerHand.map(c => c.rank));
+  const boardR = new Set(visibleCommunity().map(c => c.rank));
+  const kickerStrengthLabel = (r) => (holeR.has(r) || !boardR.has(r)) ? _kickerStrengthLabel(r) : '（場の札・相手も同じ）';
   let mainInfo = '';     // 役の中身：ペアのランク等
   let kickerLine = '';   // キッカー部分
   let strength = '';
@@ -11327,6 +11337,14 @@ function showMiniPokerGame() {
   const overlay = document.createElement('div');
   overlay.className = 'minipoker-overlay';
   document.getElementById('stage').appendChild(overlay);
+  // 閉じたら、下の画面の所持額と「買える」表示を今のコインで描き直す（2026-11-01 外部の批評：交換所の財布が遊ぶ前の額のままだった）
+  const coinsAtOpen = save.coins;
+  const closeWatch = new MutationObserver(() => {
+    if (overlay.isConnected) return;
+    closeWatch.disconnect();
+    if (save.coins !== coinsAtOpen && (state.screen === 'shop' || state.screen === 'lobby')) render();
+  });
+  closeWatch.observe(overlay.parentNode, { childList: true });
 
   // ── 初期 render（wager フェーズ） ──
   // 今日のカード裏スタイル（日替わり5種）
@@ -11619,7 +11637,13 @@ function showMiniPokerGame() {
       const keep = ctx.held.filter(Boolean).length;
       const drop = 5 - keep;
       const reach = detectReach(ctx.player);
-      const reachProb = computeReachProb(ctx.player, ctx.deck.length);
+      // 完成の見込みは、いまの「残す」指定で引いた時の数字（2026-11-01 外部の批評：残し方を変えても「完成21%」が残っていた）。
+      // リーチの札を残していなければ「〜を残せば」と条件を付ける。全部残すと交換しないので出さない
+      const rk = reachCards(ctx.player);
+      const rkHeld = rk && rk.idx.every(i => ctx.held[i]);
+      // k 枚引いて当たり札を1枚でも引く見込み＝1 −（外れだけ k 枚）
+      const hitP = (k) => { const n = Math.max(1, ctx.deck.length); let miss = 1; for (let j = 0; j < k; j++) miss *= (n - rk.outs - j) / (n - j); return Math.round((1 - miss) * 100); };
+      const reachProb = !rk ? null : rkHeld ? (drop === 0 ? '全部残すと完成しない' : `完成${hitP(drop)}%`) : `${rk.idx.length}枚を残せば完成${hitP(5 - rk.idx.length)}%`;
       const surrenderReturn = Math.floor((ctx.effectiveBet || ctx.bet) / 2);
       const round = (ctx.drawRound || 0) + 1;  // 表示用 1-indexed
       const isLastRound = (ctx.drawRound || 0) >= 1;  // 2回引き終わったら強制勝負
@@ -11628,7 +11652,7 @@ function showMiniPokerGame() {
           <b>${round}回目の交換</b> ／ 残したい札をタップ（もう一度押すと戻る）<br>
           <small>${drop > 0 ? `「残す」の印のない ${drop}枚を引き直す` : '全部残す＝そのまま勝負'}</small>
         </div>
-        ${reach ? `<div class="mp-reach">${reach}${reachProb ? ` <span class="mp-reach-prob">(完成${reachProb}%)</span>` : ''}</div>` : ''}
+        ${reach ? `<div class="mp-reach">${reach}${reachProb ? ` <span class="mp-reach-prob">(${reachProb})</span>` : ''}</div>` : ''}
         <div class="mp-actions">
           <button class="mp-btn mp-btn-primary" data-mp="draw">
             ${drop > 0 ? `${drop}枚を引く${isLastRound ? '（最終）' : ''}` : 'そのまま勝負'}
@@ -11764,6 +11788,28 @@ function showMiniPokerGame() {
   }
 
   // 残デッキから役完成確率を計算（防御的）
+  // リーチの元の札（手札の何枚目か）と、1枚引いて完成する札の枚数。detectReach と同じ順で見る
+  function reachCards(cards) {
+    if (!cards || cards.length < 5) return null;
+    const bySuit = {};
+    cards.forEach((c, i) => (bySuit[c.suit] = bySuit[c.suit] || []).push(i));
+    const fl = Object.values(bySuit).find(v => v.length === 4);
+    if (fl) return { idx: fl, outs: 9 };
+    const uniq = [...new Set(cards.map(c => c.rank))].sort((a, b) => a - b);
+    const pickRanks = (rs) => rs.map(r => cards.findIndex(c => c.rank === r));
+    for (let i = 0; i + 3 < uniq.length; i++) {
+      if (uniq[i + 3] - uniq[i] === 3) return { idx: pickRanks(uniq.slice(i, i + 4)), outs: (uniq[i] === 2 || uniq[i + 3] === 14) ? 4 : 8 };
+    }
+    if (uniq.includes(14)) {
+      const low = uniq.filter(r => r <= 5);
+      if (low.length >= 3) return null; // A-2-3-4-5 狙いは2枚以上要ることがあるので数字を出さない
+    }
+    const rc = {};
+    cards.forEach(c => rc[c.rank] = (rc[c.rank] || 0) + 1);
+    const t = Object.keys(rc).find(r => rc[r] === 3);
+    if (t) return { idx: cards.map((c, i) => c.rank === +t ? i : -1).filter(i => i >= 0), outs: 1 };
+    return null;
+  }
   function computeReachProb(cards, deckLen) {
     try {
       if (!cards || !Array.isArray(cards) || cards.length === 0) return null;
@@ -14038,6 +14084,8 @@ const INTRO_HANDS = [
 //   第1話の導入（黒地のモノローグ→扉絵と題字→扉絵の上の会話、約1分・いつでもスキップ可）を卓の前に戻した。
 //   会話の中で「ここはどこ・リコは誰・ポーカーで何をすれば勝ちか・今日は3回だけ」を先に渡しておき、卓の一言は操作に絞る。
 function startIntroHand() {
+  // 「はじめる」の二重押し：2回目で battleGen が進むと、1回目の続き（卓へ）が捨てられタイトルへ戻っていた
+  if (_storyVoiceWait || document.querySelector('.story-overlay')) return;
   battleGen++;
   const gen = battleGen;
   showStoryScene('rico_tutorial', () => { if (gen === battleGen) beginIntroHand(); });
@@ -14673,7 +14721,8 @@ function houseRulesPages() {
         </div>`,
       // 2026-11-01 初戦の前の説明は1ページに（外部の批評：扉・卓の説明3ページ・読み合いの説明と続いて、ポーカーの前に疲れる）。
       // 「2倍で始まる」は帯の数字で見せ、参加費が上がることは最初に上がる直前に結果の札で知らせる（hr-ante）
-      note: `${opp}はミミの <b>2</b> 倍のチップで始まります。1回勝っただけでは終わりません。ミミが 0 になっても、1回だけ座り直せます。`,
+      // チップ拡張を買っていると2倍ではない（2026-11-01 外部の批評：2700対2400なのに「2倍」と書いていた）。基本値と上乗せを数字で言う
+      note: `${P * 2 === O ? `${opp}はミミの <b>2</b> 倍のチップで始まります。` : P * 2 < O ? `${opp}は ${O}、ミミは ${P} で始まります。` : `基本は${opp}がミミの2倍。チップ拡張でミミに <b>+${P - Math.round(O / 2)}</b> 上乗せされています。`}1回勝っただけでは終わりません。ミミが 0 になっても、1回だけ座り直せます。`,
       rico: '上の帯は、チップの綱引き。金色を右の端まで押し切ったら勝ち。少しずつ削っていこう',
       next: '対戦へ' },
   ];
@@ -15341,8 +15390,9 @@ function opponentTurnDecide() {
   const isBluffBet = (action.intent === 'bluff' || action.intent === 'forced_bluff' || action.intent === 'tutorial_bluff');
   const isPostFlop = (state.handPhase === 'flop' || state.handPhase === 'turn' || state.handPhase === 'river');
   const triggerFirstHand = (state.handNo === 1 && state.handPhase === 'flop' && bigEnough && !state.isBoss);
-  // フルハンド：どのストリートでもブラフ意図の大ベットで50%発動
-  const triggerBluff = (isPostFlop && bigEnough && isBluffBet && rand() < 0.5);
+  // フルハンド：大きな賭けなら、ブラフでも本物でも同じ割合で出す。
+  // 以前はブラフ意図の時だけ50%で出ていて、「読み合いが出た」こと自体が答えを漏らしていた（2026-11-01 外部の批評）
+  const triggerBluff = (isPostFlop && bigEnough && rand() < 0.35);
   // ヴェルベット（ボス戦）：条件付き発動
   //   ・1ハンドにつき最大1回（state.bossPsychFiredThisHand）
   //   ・ボスは「優勢時こそ追い込む」心理的支配タイプ
@@ -15775,6 +15825,8 @@ function readBattleTable(gameId) {
   if (!save.readRecord) save.readRecord = {};
   return {
     board: state.community.map(rbCard), mine: state.playerHand.map(rbCard), her: state.opponentHand.map(rbCard),
+    // 賭け額スナイパー：卓の「賭ける」で押せる額（renderActions の 1/2・2/3・ポット・ぜんぶ と同じ計算）
+    betOpts: [...new Set([Math.floor((state.pot || 0) / 2), Math.floor((state.pot || 0) * 2 / 3), state.pot || 0].map(a => Math.max(50, Math.min(a, state.playerChips || 0))).concat(state.playerChips > 0 ? [state.playerChips] : []))].filter(a => a > 0).sort((a, b) => a - b),
     pot: state.pot || 0, toCall: Math.min(Math.max(0, state.playerChips || 0), Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0))), phase: state.handPhase,
     record: save.readRecord[state.opponentImgKey] || null,
     acts: (state.handActs || []).filter(a => a.ph !== 'preflop').map(a => ({ ...a })),
@@ -15792,10 +15844,24 @@ function holdReadBattle(group, gameId, r) {
   const logic = r.pending.kind === 'logic';
   const pickName = logic ? ((r.pending.names || {})[r.pending.pick] || (r.pending.pick === 'call' ? '付いていく' : '降りる')) : (r.pending.pick === 'bluff' ? 'ブラフ' : '本物');
   const name = (state.opponentName || '相手').replace(/（.*）/, '');
-  state.mimiThought = logic ? `「判断：${pickName}。${r.pending.pick === 'call' ? '次は付いていく（コール）' : '次は降りる'}」` : `「読み：${name}は${pickName}。${r.pending.pick === 'bluff' ? '信じるなら、付いていく' : '信じるなら、降りる'}」`;
+  // 「本物なら降りる」と強い・弱いだけで決めない。払う額が小さく、まだ札が来るなら付いていく手もある（読み合いの中の助言 readAdvice と同じ基準）
+  const toCallNow = Math.min(Math.max(0, state.playerChips || 0), Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0)));
+  const needNow = Math.round(toCallNow / Math.max(1, (state.pot || 0) + toCallNow) * 100);
+  const strongTip = !(toCallNow > 0) ? '信じるなら、無理に賭けず様子見' : visibleCommunity().length >= 5 ? '信じるなら、降りる' : needNow <= 20 ? `払う額は小さい（要る勝ち目 約${needNow}%）。逆転の札が来そうなら付いていく` : `要る勝ち目は約${needNow}%。逆転の札が少ないなら降りる`;
+  state.mimiThought = logic ? `「判断：${pickName}。${r.pending.pick === 'call' ? '次は付いていく（コール）' : '次は降りる'}」` : `「読み：${name}は${pickName}。${r.pending.pick === 'bluff' ? '信じるなら、付いていく' : strongTip}」`;
   state.ricoAdvice = `「${logic ? '判断' : '読み'}は『${pickName}』。答え合わせは手の後で」`;
   state.isPlayerTurn = true;
   render();
+  // 論理の読み合いで「付いていく／降りる」まで決めたら、卓で同じボタンを押し直させない（2026-11-01 外部の批評：確認の区切りが多すぎる）。
+  // 払わずに残れる時の「賭ける」だけは額を選ぶので、いつもどおり自分で押す
+  const autoAct = !logic ? null : r.pending.pick === 'fold' ? (toCallNow > 0 ? 'player-fold' : 'player-checkcall') : (r.pending.pick === 'call' && toCallNow > 0 ? 'player-checkcall' : null);
+  if (autoAct) {
+    const hand = state.handNo;
+    battleTimeout(() => {
+      if (state.screen !== 'battle' || state.handNo !== hand || !state.isPlayerTurn || state.psychPending) return;
+      if (autoAct === 'player-fold') playerFold(); else playerCheckCall();
+    }, 700);
+  }
 }
 // 手の決着の後：相手の札をめくって読みの答え合わせ
 function showReadVerdict() {

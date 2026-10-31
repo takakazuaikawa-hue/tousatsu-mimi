@@ -672,3 +672,7 @@ html:not(.is-compact) .settings-modal-groups { grid-template-columns: 1.3fr .95f
 .glossary-modal .gl-body { -webkit-line-clamp: unset; max-height: none; overflow: visible; display: block; }
 html.is-compact .minipoker-modal td:is(.mp-pt-payout, .mp-pt-mult, .mp-pt-name), .minipoker-modal .mp-card-corner { font-size: 15px; }
 @media (orientation: landscape) { html.is-compact .settings-modal-groups { grid-template-columns: 1.55fr 1fr 1.05fr; } }
+
+/* 長い設定名は折り返して、切替の幅を先に取る（2026-11-01 外部の批評：スマホで「絵を動かす」の切替が隣の列のボタンに覆われていた） */
+.settings-modal .settings-modal-label.is-wrap { white-space: normal; word-break: keep-all; min-width: 0; flex: 1 1 0; line-height: 1.3; }
+.settings-modal .settings-modal-toggle { flex-shrink: 0; }
