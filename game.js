@@ -17680,6 +17680,7 @@ function showHandResultBanner(snapshot) {
 
   tpl.innerHTML = `
     <div class="hr-card hr-${winnerClass}">
+      <div class="hr-body">
       <div class="hr-head">
         <span class="hr-handno">Hand ${last.hand}</span>
         ${verdict ? `<span class="hr-verdict ${verdict.cls}">${verdict.label}</span>` : '<span class="hr-verdict hr-verdict-empty">—</span>'}
@@ -17703,6 +17704,7 @@ function showHandResultBanner(snapshot) {
         <span>${opponentName} <b>${opponentChips}</b></span>
       </div>
       ${anteHtml}
+      </div>
       ${isReplay
         ? `<button class="btn btn-primary big" id="continue-hand-btn">閉じる</button>`
         : `<button class="btn btn-primary big" id="continue-hand-btn">${anteUp ? `参加費 ${anteUp.to} で、次のハンドへ` : continueButtonLabel()}</button>`}

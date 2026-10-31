@@ -20558,3 +20558,9 @@ html.is-compact .minipoker-overlay .mp-bet-display:not(:has(small)) { display: n
 html.is-compact .minipoker-overlay .mp-bet-chip.on, html.is-compact .minipoker-overlay .mp-bet-max.on { box-shadow: 0 0 0 2px var(--gold-hi, #f5d77a) inset; color: var(--gold-hi, #f5d77a); }
 html.is-compact .minipoker-overlay .mp-play .mp-center:has(.mp-bet-row) { gap: 2px; padding-block: 2px; }
 html.is-compact .minipoker-overlay .mp-status-wager { line-height: 1.2; padding-block: 1px; }
+
+/* 2026-10-31 結果の窓：進むボタンを下端に貼り付ける作り（sticky）では、中身が窓より少しでも高いと手札・持ち点の欄の上に重なった（ユーザーの iPhone）。
+   中身（.hr-body）だけを窓の中でスクロールさせ、ボタンは中身の外の段に置く。重なりは起こらない */
+.hand-result-overlay .hr-card { display: flex; flex-direction: column; overflow: hidden; }
+.hand-result-overlay .hr-card > .hr-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: inherit; }
+.hand-result-overlay .hr-card > #continue-hand-btn { position: static; flex: 0 0 auto; box-shadow: none; }
