@@ -342,6 +342,12 @@ function normalizeSave(s) {
     note_position:      350,
     note_outs:          400,
     note_equity:        600,
+    // 2026-11-01 9回目の批評：古い三択の心理バトル用の5品。今の読み合いと卓には出番が無かった
+    panyu_range_lv2:     500,
+    panyu_range_lv3:    1400,
+    panyu_gauge_plus_20: 900,
+    panyu_gauge_plus_50: 2200,
+    panyu_chrono:       1600,
   };
   let refundTotal = 0;
   const refundedNames = [];
@@ -359,6 +365,7 @@ function normalizeSave(s) {
       }
     }
   });
+  if (refundedNames.some(id => id.startsWith('panyu_'))) { s.panyuGaugeMax = 100; if (s.panyuSkills) s.panyuSkills.rangeLevel = 1; }
   if (refundTotal > 0) {
     s.coins = (s.coins || 0) + refundTotal;
     // ロード直後にトーストで知らせるため、次のrender後に一度だけ表示するフラグを立てる
@@ -820,6 +827,14 @@ function setMimiExpression(expr) {
     };
     // v2 バトル画面：バストアップ差分（think / shock / win）を優先。無ければ従来PNGへ
     if (img.closest('.battle-screen.v2')) {
+      // 買った衣装はバストアップの差分が無いので、装備中は衣装の立ち絵の上半身を出す（2026-11-01 9回目の批評：桃色を買っても卓は黒のままだった）
+      if (skin) {
+        img.classList.add('is-skin-full');
+        img.onerror = () => { img.onerror = null; img.classList.remove('is-skin-full'); img.src = 'assets/characters/mimi_bust_calm.webp'; };
+        img.src = `assets/characters/mimi_${skin}.webp`;
+        return;
+      }
+      img.classList.remove('is-skin-full');
       // ★主人公の表情が「悩み顔」で固定される問題への対処。
       //   従来は default→think 固定だったため、ほぼ全編ずっと悩んでいる絵になっていた。
       //   平常時は落ち着いた顔（calm、未納品なら think にフォールバック）、
@@ -5314,7 +5329,6 @@ function renderLobbyStats() {
       <li><span class="stats-label">所持コイン</span><span class="stats-value">${save.coins}</span></li>
       <li><span class="stats-label">最高ランク</span><span class="stats-value rank-${topRank}">${topRank}</span></li>
       <li><span class="stats-label">ぱにゅぱにゅ</span><span class="stats-value">Lv${panyuLv}</span></li>
-      <li><span class="stats-label">レンジ視</span><span class="stats-value">Lv${rangeLv}</span></li>
       <li><span class="stats-label">ゲージ上限</span><span class="stats-value">${gaugeMax}</span></li>
     </ul>
   `;
@@ -5354,11 +5368,11 @@ const NOTE_ARTICLES = {
     ],
   },
   pot_odds: {
-    effect: 'コール判断時に「必要◯%」（勝つのに最低限いる勝率）が出る',
+    effect: 'コールの札に「要る勝ち目◯%」（勝つのに最低限いる勝率）が出る',
     body: [
       { h: '「安いか高いか」だけの計算', p: 'コールするかどうかは、手の強さではなく<b>値段</b>で決められます。払う額に対してもらえるポットが大きいほど、弱い手でも続ける価値が出ます。' },
       { h: '必要勝率の出し方', p: '<b>必要勝率 ＝ コール額 ÷（コール後の総ポット）</b>。ポット300に相手が100賭けてきたなら、100 ÷（400+100）= 20%。<b>20%以上勝てそうなら、コールは長い目で見て得</b>です。逆に必要勝率が40%を超えるような高い要求は、よほど自信がなければ降りるのが正解。' },
-      { h: 'このゲームでは', p: 'グラーノ撃破（または交換所の「ポットオッズ入門」購入）で解放。ミミの思考欄に<b>「（必要◯%）」</b>が出ます。ここに出るのは<b>必要な勝率だけ</b>で、実際の勝率は出ません。実際の勝率は、場札の危険度と相手のレンジから自分で見積もる——そのための2冊が [[board_danger]] と [[range_basic]] です。' },
+      { h: 'このゲームでは', p: 'グラーノ撃破（または交換所の「ポットオッズ入門」購入）で解放。卓のコールの札に<b>「要る勝ち目◯%」</b>が出ます。ここに出るのは<b>必要な勝率だけ</b>で、実際の勝率は出ません。実際の勝率は、場札の危険度と相手のレンジから自分で見積もる——そのための2冊が [[board_danger]] と [[range_basic]] です。' },
     ],
   },
   range_basic: {
@@ -5422,10 +5436,8 @@ function showNoteArticle(id) {
 }
 
 const SHOP_ITEMS = [
-  { id: 'panyu_sense_lv2',     cat: 'panyu', name: 'ぱにゅぱにゅLv2',         price: 300, desc: '心理バトルのハズレ選択肢を1つグレーアウトして選べなくする' },
-  { id: 'panyu_range_lv2',     cat: 'panyu', name: 'ぱにゅレンジLv2',         price: 500, desc: '心理バトルに成功すると、リコの助言に相手の傾向（ブラフ寄り／バリュー寄り／五分）が1行付く' },
-  { id: 'panyu_gauge_plus_20', cat: 'panyu', name: 'ぱにゅゲージ上限+20',      price: 900, desc: 'ぱにゅゲージの最大値が100→120に' },
-  { id: 'note_pot_odds',       cat: 'note',  name: 'ポットオッズ入門',         price: 350, desc: 'コールを迫られた時、ミミの思考欄に「（必要◯%）」＝勝つのに最低限いる勝率が出る' },
+  { id: 'panyu_sense_lv2',     cat: 'panyu', name: 'ぱにゅぱにゅLv2',         price: 300, desc: '読み合いで読みを外した時に失うコインが半分になる' },
+  { id: 'note_pot_odds',       cat: 'note',  name: 'ポットオッズ入門',         price: 350, desc: 'コールの札に「要る勝ち目◯%」＝勝つのに最低限いる勝率が出る' },
   { id: 'skin_red_gold_card',  cat: 'skin',  name: '赤金カジノカード',         price: 300, desc: 'カード裏：深紅の地に金の菱格子とダイヤ紋のカジノ柄' },
   { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 500, desc: 'テーブル：卓を暗く沈め、画面を金の額縁で囲み、天井から光を落としてVIPルーム風に' },
   // エンディング・主題歌・スタッフロールの見返しは有料で売らない。ヴェルベット撃破で無料になる「クリア特典」（clearBonus）。
@@ -5441,10 +5453,7 @@ const SHOP_ITEMS = [
 
   /* ===== 追加：ぱにゅ強化（中盤以降の差別化） ===== */
   { id: 'panyu_combo_x2',      cat: 'panyu', name: 'ぱにゅコンボ倍率',        price: 700,  desc: 'ロビーのぱにゅぱにゅ（30タップ）完走でもらえるコインが2倍に' },
-  { id: 'panyu_sense_lv3',     cat: 'panyu', name: 'ぱにゅぱにゅLv3',         price: 1200, desc: '心理バトルのハズレ選択肢を2つグレーアウトして選べなくする' },
-  { id: 'panyu_range_lv3',     cat: 'panyu', name: 'ぱにゅレンジLv3',         price: 1400, desc: '心理バトル成功時の1行が「その相手がブラフを打つ割合の目安（約◯%）」になる' },
-  { id: 'panyu_chrono',        cat: 'panyu', name: 'ぱにゅクロノ',             price: 1600, desc: '1バトルにつき1回、ぱにゅぱにゅをゲージ25を使わずに発動できる' },
-  { id: 'panyu_gauge_plus_50', cat: 'panyu', name: 'ぱにゅゲージ上限+50',      price: 2200, desc: 'ぱにゅゲージの最大値が120→170に' },
+  { id: 'panyu_sense_lv3',     cat: 'panyu', name: 'ぱにゅぱにゅLv3',         price: 1200, desc: '読み合いで読みを外した時に失うコインが4分の1になる（Lv2の上位）' },
 
   /* ===== ぱにゅ衣装：ロビーのぱにゅぱにゅで着られる服。最初はバニーだけで、買うと衣装替えの候補に増える（2026-10-17） ===== */
   { id: 'pwear_pajama', cat: 'panyu', name: 'ぱにゅ衣装：パジャマ', price: 400, thumb: 'assets/ui/shop/pwear_pajama.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ふわふわのパジャマ。寝る前のゆるい揺れ' },
@@ -5518,7 +5527,7 @@ const SHOP_ITEMS = [
 ];
 
 const SHOP_COMMENTS = {
-  panyu_sense_lv2:     'ふむ、迷うお嬢さんにこそ、これ。ハズレを1枚お引きしますから、お買い得ですよ',
+  panyu_sense_lv2:     'ふむ、迷うお嬢さんにこそ、これ。読みを外しても、痛手は半分で済みますよ',
   panyu_range_lv2:     'レンジが見える品、と言いましょうか。次の一手の読みが冴える、中級者向けの逸品ですな',
   panyu_gauge_plus_20: '長くお遊びになるなら、上限拡張は必須。お買い得な投資です',
   note_pot_odds:       'ふふ、私の専門分野ですな。「安いか、高いか」が即座に見える品。私との商談で必要になりますよ',
@@ -5534,7 +5543,7 @@ const SHOP_COMMENTS = {
 
   /* 追加：ぱにゅ強化 */
   panyu_combo_x2:      'コンボを繋ぐ快感、倍にしませんか？　ぱにゅぱにゅが止まらなくなりますよ',
-  panyu_sense_lv3:     'Lv3、これはもう「ほぼ答え」が見える領域です。中級を超えたい方に',
+  panyu_sense_lv3:     'Lv3、外した時の痛手は4分の1。思い切った読みに賭けたい方に',
   panyu_range_lv3:     'ブラフの匂いまで嗅ぎ分ける逸品。ヴェルベット様には……必要かもしれませんな',
   panyu_chrono:        'もう一度だけ「ぱにゅっ」と。1バトルに1度、ゲージを使わず発動できる特権ですよ',
   panyu_gauge_plus_50: '上限170、もはや別格。長丁場の決戦で物を言いますよ',
@@ -8257,7 +8266,9 @@ function renderVerbActions(slots, need) {
   const ccLabel = raising ? 'コール' : 'チェック';
   // 持ち点より多い額は払えない（足りない分は残り全部で付いていく）。ボタンには実際に減る額を出す
   const pay = Math.min(need, Math.max(0, state.playerChips || 0));
-  const ccSub = raising ? (pay < need ? `残り全部（${pay}）で付いていく` : `${need} 払って付いていく`) : 'タダで次の札を見る';
+  // ポットオッズのノートを持っていれば、コールの札に要る勝ち目を出す（2026-11-01 9回目の批評：説明の「思考欄」は卓で隠れていて見えなかった）
+  const hasOdds = (save.ownedItems || []).includes('note_pot_odds') || (save.unlockedNotes || []).includes('pot_odds');
+  const ccSub = raising ? (hasOdds && pay > 0 ? `要る勝ち目 ${Math.round(pay / Math.max(1, (state.pot || 0) + pay) * 100)}%` : pay < need ? `残り全部（${pay}）で付いていく` : `${need} 払って付いていく`) : 'タダで次の札を見る';
   // スマホは「上乗せ」まで（ボタンが約100px幅で「上乗せする ▸」が入らない）。PC は「上乗せする」
   const betLabel = raising ? '上乗せ<span class="vl-long">する</span>' : '賭ける';
   const onlyAllin = betS.length === 1 && betS[0].kind === 'allin';
@@ -13064,6 +13075,11 @@ function showMemoryViewer(memoryId) {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
 
+// コレクションのリコ先輩の欄：研修と講義を分けて数える（2026-11-01 9回目の批評：3ハンドの研修だけで講義まで「修了」に見えた）
+function lectureMeta() {
+  const done = new Set((save.lectureRewarded || []).filter(id => LESSON_ORDER.includes(id))).size;
+  return `研修 修了 ／ 講義 ${done}/${LESSON_ORDER.length}問 正解`;
+}
 function showCollectionModal() {
   const stageOrder = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
   const stages = stageOrder.map(id => {
@@ -13139,7 +13155,7 @@ function showCollectionModal() {
         <div class="coll-stage-name">${s.name}</div>
         <div class="coll-stage-theme">${s.theme || ''}</div>
         ${s.exempt ? '<div class="coll-stage-meta">研修は免除（講義はいつでも受けられます）</div>'
-          : s.cleared ? `<div class="coll-stage-meta">${[s.rank ? `最高ランク ${s.rank}` : '', s.wins != null ? `再戦勝利 ${s.wins}回` : (s.id === 'rico_tutorial' ? '修了' : '')].filter(Boolean).join(' ／ ')}</div>` : ''}
+          : s.cleared ? `<div class="coll-stage-meta">${[s.rank ? `最高ランク ${s.rank}` : '', s.wins != null ? `再戦勝利 ${s.wins}回` : (s.id === 'rico_tutorial' ? lectureMeta() : '')].filter(Boolean).join(' ／ ')}</div>` : ''}
       </div>
     </div>
   `).join('');
@@ -15755,11 +15771,23 @@ const READ_BATTLE_TELL = {
 };
 // 古い三択の心理・論理バトルを出してよいのは研修・講義・最初の手の練習だけ
 function threeChoiceOk() { return !!(state && (state.tutorialMode || state.introHandMode || state.lectureMode)); }
+// 交換所のぱにゅぱにゅLv2/Lv3：読み合いで外した時に失うコインを減らす割合（2026-11-01 9回目の批評：古い三択の「ハズレ除外」は本編の読み合いに出番が無かった）
+function senseLossCut() { const lv = (save.panyuSkills && save.panyuSkills.senseLevel) || 1; return lv >= 3 ? 0.75 : lv >= 2 ? 0.5 : 0; }
+function lockedSplit() {
+  try {
+    const M = window.MB; if (!M || !M.score) return false;
+    if ((state.community || []).length !== 5 || (state.playerHand || []).length !== 2 || (state.opponentHand || []).length !== 2) return false;
+    const board = state.community.map(rbCard);
+    return M.score([...state.playerHand.map(rbCard), ...board]) === M.score([...state.opponentHand.map(rbCard), ...board]);
+  } catch (e) { return false; }
+}
 function readBattleReady(group) {
   if (!window.MB || typeof window.MB.mount !== 'function') return false;
   if (!state || state.tutorialMode || state.introHandMode || state.lectureMode) return false;
   // 2026-11-01 読み合いは1ハンドに1回まで。預けた読みの答え合わせが済むまで次は出さない（同じ手で2回目が出ると、1回目の読みが上書きされて消えていた）
   if (state.pendingRead || state.readHandNo === state.handNo) return false;
+  // 場札5枚で、どちらも同じ役になる手（必ず引き分け）は「本物かブラフか」が決まらないので出さない（2026-11-01 9回目の批評：折半の後に「ミミの方が強かった」と採点した）
+  if (lockedSplit()) return false;
   const pool = (READ_BATTLE_POOLS[readPoolKey()] || {})[group];
   if (!pool || !pool.length) return false;
   // どの種類もこの場面でしか意味がなく、今どれも合わない時は出さない（いつもの三択の論理バトルになる）
@@ -15855,7 +15883,7 @@ function startReadBattle(group) {
   let inst = null;
   try {
     inst = window.MB.mount(host, {
-      gameId, charId: state.opponentImgKey, purse: state.readBattlePurse, exitLabel: '卓にもどる',
+      gameId, charId: state.opponentImgKey, purse: state.readBattlePurse, exitLabel: '卓にもどる', lossCut: senseLossCut(),
       table: readBattleTable(gameId),
       volume: isSfxOn() ? sfxVolFloat() : 0,
       onExit: (r) => {
@@ -15944,7 +15972,7 @@ function showReadVerdict() {
     const gen = battleGen;
     try {
       inst = window.MB.mount(host, {
-        gameId: '__verdict', charId: p.oppKey, purse: state.readBattlePurse, exitLabel: '次へ', noIntro: true, pending: p,
+        gameId: '__verdict', charId: p.oppKey, purse: state.readBattlePurse, exitLabel: '次へ', noIntro: true, pending: p, lossCut: senseLossCut(),
         volume: isSfxOn() ? sfxVolFloat() : 0,
         onExit: (r) => {
           try { inst && inst.destroy(); } catch (e) {}
@@ -16431,7 +16459,7 @@ function applyPanyuBg(overlay) {
 // ぱにゅぱにゅ30タップミニゲーム
 // ぱにゅぱにゅの衣装（網目＋ばねの描画は docs/design-ref/panyu-mesh.html を埋め込んで使う）
 // 網目のページを直したら PANYU_MESH_V を上げる（ブラウザに残った古いページを使わせない）
-const PANYU_MESH_V = '20261018';
+const PANYU_MESH_V = '20261101';
 const PANYU_OUTFITS = [
   { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'gothic', name: 'ゴスロリ' }, { id: 'jirai', name: '地雷系' }, { id: 'vintage', name: '古着' }, { id: 'nurse', name: 'ナース' }, { id: 'santa', name: 'サンタ' },
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },

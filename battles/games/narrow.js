@@ -225,11 +225,14 @@
       <div class="rb-info">
         <div class="nq-sit"><div class="nq-cap">場札</div><div class="nq-row">${board.map(c => api.cardHTML(c, 'small' + (core.has(api.key(c)) ? ' glow' : ''))).join('')}</div>
           <div class="nq-me">ミミの役：${meName}${mineCore.length ? `<small>${mineCore.length < core.size ? `手札の${mineCore.map(api.label).join('・')}も使う` : `手札の${mineCore.map(api.label).join('・')}で`}</small>` : ''}</div></div>
+        <div class="nq-tip" id="mb-nq-tip"></div>
         <div class="nq-her" id="mb-nq-her" hidden><span class="sp">${jp}「${wb(line)}」</span><span>${jp}の賭け方</span>${actsHTML}<span class="hb">${HABIT[who]}</span></div>
       </div>
       <div class="rb-act" id="mb-nq-act"></div>`;
     const $ = (s) => root.querySelector(s);
     const act = $('#mb-nq-act');
+    // リコの一言は、スマホでは右の広い欄にも出す（2026-11-01 9回目の批評：左の細い枠では「ミミはQと9のツーペア」が切れて読めなかった）
+    const tip = (html, ex) => { api.coach(html, ex); const el = $('#mb-nq-tip'); if (el) el.innerHTML = html; };
     await api.rules({
       key: 'narrow2', title: '容疑者しぼり',
       goal: `${jp}にミミより強い役が来ているかを読んで、<em>${NAMES.call}</em>か<em>${NAMES.fold}</em>かを決める`,
@@ -244,7 +247,7 @@
     let found = 0, miss = 0;
     const left = () => api.mission(`危ない役を全部タップ（あと${nDanger - found}つ）`);
     left();
-    api.coach(kw(`ミミは${meName}。|これより強い役が|危ない（ミミの負け）`), 'think');
+    tip(kw(`ミミは${meName}。|これより強い役が|危ない（ミミの負け）`), 'think');
     await new Promise(res => {
       root.querySelectorAll('.nq-tile').forEach(b => b.addEventListener('click', () => {
         if (b.disabled || found >= nDanger) return;
@@ -256,7 +259,7 @@
         } else {
           miss++; api.sfx.nope();
           b.classList.add('is-safe', 'is-miss'); b.insertAdjacentHTML('beforeend', '<span class="st">× 負けない</span>');
-          api.coach(`${plain(t.name)}なら、ミミの${meName}は負けないよ`, 'think');  // 役の名前が長いと、折らない指定では枠からはみ出す
+          tip(`${plain(t.name)}なら、ミミの${meName}は負けないよ`, 'think');  // 役の名前が長いと、折らない指定では枠からはみ出す
         }
         if (found >= nDanger) res(); else left();
       }));
@@ -266,7 +269,7 @@
       if (b.disabled) return;
       b.disabled = true; b.classList.add('is-safe'); b.insertAdjacentHTML('beforeend', '<span class="st">負けない</span>');
     });
-    api.coach(kw(miss ? `危ない役は${nDanger}つ。|赤い札が来ていたら|ミミの負け` : '全部見つけた！|赤い札が来ていたら|ミミの負け'), miss ? 'think' : 'win');
+    tip(kw(miss ? `危ない役は${nDanger}つ。|赤い札が来ていたら|ミミの負け` : '全部見つけた！|赤い札が来ていたら|ミミの負け'), miss ? 'think' : 'win');
     await api.wait(api.reduce ? 400 : 1200); if (!api.alive()) return;
 
     // 2問目：ありそうな役を2つまで（2026-11-01 外部の批評：癖とセリフだけでは役を1つに絞れず、最後が当てずっぽうになっていた）。
@@ -276,7 +279,7 @@
     $('#mb-nq-tiles').classList.add('is-q2');
     api.say(line, face);
     api.mission(`${jp}にありそうな役を2つまで`);
-    api.coach(kw(`${jp}の癖は|「${HABIT[who]}」。|ありそうな役を2つまで選んで`), 'think');
+    tip(kw(`${jp}の癖は|「${HABIT[who]}」。|ありそうな役を2つまで選んで`), 'think');
     act.innerHTML = '<div class="nq-act1"><button class="btn" id="mb-nq-go" disabled>この読みで決める</button></div>';
     const picks = await new Promise(res => {
       const sel = [];
@@ -301,7 +304,7 @@
     const hs = allH.length > 16 ? api.shuffle(allH.slice()).slice(0, 16) : allH;
     const eqPick = api.eqPct(hs.reduce((t, h) => t + api.headsUp(mine, h, board), 0) / hs.length);
     const decide = free ? (eqPick < 50 ? 'fold' : 'call') : priced(eqPick);
-    api.coach(free ? `${pickName}なら勝ち目 約${eqPick}%。${decide === 'call' ? NAMES.call : NAMES.fold}のが得`
+    tip(free ? `${pickName}なら勝ち目 約${eqPick}%。${decide === 'call' ? NAMES.call : NAMES.fold}のが得`
       : `${pickName}なら勝ち目 約${eqPick}%。払う額の線 ${need}%${decide === 'call' ? 'を超える。付いていくのが得' : 'に届かない。降りるのが得'}`, 'think');
     $('#mb-nq-steps').innerHTML = api.steps(STEPS, 2);
     const good = tiles.length - miss;

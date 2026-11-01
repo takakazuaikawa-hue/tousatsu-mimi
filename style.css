@@ -20740,3 +20740,6 @@ html:not(.is-compact) .minipoker-overlay .mp-paytable { width: 290px; overflow-x
 /* PC の幕間：大きい版の無いミミ・リコは引き伸ばしを約1.3倍までに抑える（2026-11-01 8回目の批評） */
 html:not(.is-compact) .intermission-overlay .ims-scene-mimi .eps-portrait-frame,
 html:not(.is-compact) .intermission-overlay .ims-scene-rico .eps-portrait-frame { height: min(190%, 1350px); }
+
+/* 2026-11-01 9回目の批評：買った衣装（立ち絵だけの絵）を卓のミミの枠に上半身で出す。バストアップの絵と同じくらいの顔の大きさ */
+.battle-screen.v2.t8 .v2-mimi-frame img.is-skin-full { height: 1080px !important; top: -20px !important; }

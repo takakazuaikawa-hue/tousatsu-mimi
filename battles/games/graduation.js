@@ -92,7 +92,7 @@
       <div class="rb-info gd-info">
         <div class="gd-sit"><span class="gd-cap">場札 ／ ミミの手（${mimiHandName}）</span><span class="gd-cards">${board.map(c => api.cardHTML(c, 'small')).join('')}<i class="gd-sep"></i>${mine.map(c => api.cardHTML(c, 'small')).join('')}</span></div>
         <div class="gd-scale"><div class="gd-scalebox"><svg class="gd-svg" viewBox="34 0 192 76" aria-hidden="true" id="mb-gd-svg"></svg><span class="gd-pan is-b">ブラフ</span><span class="gd-pan is-s">本物</span></div><div class="gd-odds" id="mb-gd-odds"></div></div>
-        <div class="gd-habit" aria-label="ミミが大きな賭けを受けた最近の${habit.length}回のうち、降りた${folds}回"><span class="h">${real ? `最近の大きな賭け${habit.length}回` : `まだ記録なし。見本の${habit.length}回`}：<b class="f">降りた${folds}</b>・<b class="c">付いた${habit.length - folds}</b></span><span class="d">${habit.map(f => `<i class="${f ? 'f' : 'c'}"></i>`).join('')}</span></div>
+        <div class="gd-habit" aria-label="ミミが大きな賭けを受けた最近の${habit.length}回のうち、降りた${folds}回"><span class="h">${real ? `最近の大きな賭け${habit.length}回` : `まだ記録なし。見本の${habit.length}回`}：<wbr><b class="f">降りた${folds}</b>・<b class="c">付いた${habit.length - folds}</b></span><span class="d">${habit.map(f => `<i class="${f ? 'f' : 'c'}"></i>`).join('')}</span></div>
       </div>
       <div class="rb-act gd-act" id="mb-gd-act"></div>`;
     const $ = (s) => root.querySelector(s);
@@ -212,19 +212,20 @@
     .gd-pred .gd-grad b { font-size: var(--ty-head); color: var(--gold-hi); margin-left: 4px; }
     .gd-pred p { margin: 2px 0 0; font-weight: 800; font-size: var(--ty-body); line-height: 1.4; color: var(--text); word-break: keep-all; overflow-wrap: anywhere; }
     .gd-pred.is-defied { border-color: var(--gold-hi); }
+    .gd-root.is-cp .gd-pred .gd-grad { position: static; display: block; width: max-content; margin: 4px 0 0 auto; } /* スマホは枠が細く、上の縁に置くと「先輩の予想」の見出しに重なった */
     .gd-stamp { position: absolute; right: 8px; top: -12px; padding: 0 8px; font-family: var(--mincho); font-weight: 800; font-size: var(--ty-head); line-height: 1.3; color: #1d080e; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border: 1px solid var(--crimson); transform: rotate(-5deg); animation: mb-gdStamp .4s cubic-bezier(.2,1.6,.4,1) both; }
     .gd-stamp.is-kept { color: #f0d08a; background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); border-color: var(--gold); }
     @keyframes mb-gdStamp { from { transform: rotate(-5deg) scale(2.4); opacity: 0; } }
     .gd-lessons { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
     .gd-lesson { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n s" "d d"; gap: 0 8px; align-items: baseline; text-align: left; padding: 5px 12px 6px; cursor: pointer; color: var(--parch-ink); background: var(--parch); border: 0; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--line), 0 4px 10px rgba(0,0,0,.4); font: inherit; }
-    .gd-lesson .gd-ln { grid-area: n; font-family: var(--mincho); font-weight: 800; font-size: var(--ty-btn2); line-height: 1.3; color: var(--crimson); }
+    .gd-lesson .gd-ln { grid-area: n; white-space: nowrap; font-family: var(--mincho); font-weight: 800; font-size: var(--ty-btn2); line-height: 1.3; color: var(--crimson); }
     .gd-lesson .gd-sure { grid-area: s; }
     .gd-shape { font-style: normal; font-size: var(--ty-note); color: #5a4a36; display: none; }
     .gd-root.is-cp .gd-lesson small, .gd-root.is-cp .gd-sw { display: none; }
     .gd-clue[hidden], .gd-lessons[hidden] { display: none !important; }
     .gd-off { font-style: normal; } .gd-made { font-style: normal; }
-    @media (max-width: 759px) { .gd-clue .gd-sure, .gd-hl, .gd-made { display: none; } .gd-clue p { line-height: 1.3; } .gd-play { gap: 4px; } .gd-pred { margin-top: 8px; } .gd-lessons { gap: 4px; } .gd-root.is-cp .gd-lesson { padding: 3px 10px; } }
-    .gd-root.is-cp .gd-lesson { padding: 4px 12px; }
+    @media (max-width: 759px) { .gd-clue .gd-sure, .gd-hl, .gd-made { display: none; } .gd-clue p { line-height: 1.3; } .gd-play { gap: 4px; } .gd-pred { margin-top: 8px; } .gd-lessons { gap: 4px; } .gd-root.is-cp .gd-lesson { padding: 3px 10px; min-height: 44px; } }
+    .gd-root.is-cp .gd-lesson { padding: 4px 12px; min-height: 44px; align-items: center; align-content: center; } /* 指で押せる高さ（2026-11-01 9回目の批評：約26pxで押し間違えた） */
     .gd-lesson small { grid-area: d; font-size: var(--ty-note); font-weight: 700; line-height: 1.35; color: #5a4a36; }
     .gd-lesson:not([disabled]):hover, .gd-lesson:not([disabled]):focus-visible { box-shadow: inset 0 0 0 2px var(--gold-hi), 0 4px 10px rgba(0,0,0,.4); }
     .gd-lesson[disabled] { cursor: default; }
@@ -252,7 +253,7 @@
     .gd-odds b { font-size: var(--ty-head); font-weight: 800; white-space: nowrap; } .gd-odds b.is-bluff { color: #ff8f9c; } .gd-odds b.is-strong { color: var(--gold-hi); }
     .gd-habit { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; font-size: var(--ty-note); color: var(--dim); }
     .gd-habit .d { display: flex; gap: 1px; } .gd-habit .d i { flex: 1 1 0; height: 12px; background: var(--gold); } .gd-habit .d i.f { background: var(--red-hi); }
-    .gd-habit .h { white-space: nowrap; } .gd-habit b { font-weight: 800; } .gd-habit b.f { color: #ff8f9c; } .gd-habit b.c { color: var(--gold-hi); }
+    .gd-habit .h { white-space: normal; word-break: keep-all; } /* 見本の時は文が長く、1行だと右へはみ出した（9回目の批評の後の検査） */ .gd-habit b { font-weight: 800; } .gd-habit b.f { color: #ff8f9c; } .gd-habit b.c { color: var(--gold-hi); }
     .gd-clue { padding: 4px 10px 6px; background: var(--parch); color: var(--parch-ink); border-radius: 2px; box-shadow: 0 0 0 2px #130406, 0 0 0 3px var(--gold-hi); }
     .gd-clue .gd-h { color: var(--crimson); }
     .gd-clue p { margin: 0; font-weight: 700; font-size: var(--ty-body); line-height: 1.4; word-break: keep-all; overflow-wrap: anywhere; }

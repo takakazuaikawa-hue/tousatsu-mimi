@@ -62,6 +62,7 @@ MB.register({
       .outs-deck.is-collapsed .card { display: none; }
       .outs-deck.is-collapsed .card.found, .outs-deck.is-collapsed .card.shown { display: flex; width: 42px; flex: 0 0 42px; transform: none; }
       .outs-deck.is-collapsed .card b { font-size: 16px; } .outs-deck.is-collapsed .card i { font-size: 14px; }
+      .outs-tabs { display: none; }
       .outs-count { font-family: var(--disp); font-size: 30px; text-align: center; color: var(--gold-hi); font-variant-numeric: tabular-nums; }
       .outs-count small { font-family: var(--sans); font-size: 14px; color: var(--dim); margin-left: 6px; }
       .outs-meter { max-width: 620px; width: 100%; margin: 0 auto; display: grid; gap: 8px; }
@@ -92,7 +93,8 @@ MB.register({
       <div class="row">${s.board.map(c => cardHTML(c, 'big')).join('')}${backHTML('big')}<span style="width:14px"></span>${s.hole.map(c => cardHTML(c, 'big')).join('')}</div>
       <div class="prompt mb-ask"><span class="mb-legend" aria-label="最後の1枚でストレートかフラッシュになる札は、残りの山に何枚？"><span class="mb-threat"><span class="tc"><span>5 6 7 8</span><span class="q">?</span></span></span><span class="mb-threat"><span class="tc"><span class="rd">♥♥♥♥</span><span class="q">?</span></span></span></span></div>
       <div class="outs-count" id="mb-o-count">0 / ${s.outs.length}</div>
-      <div class="outs-deck" id="mb-o-deck">${grid.map(c => cardHTML(c, known.has(key(c)) ? 'known' : 'tap')).join('')}</div>
+      <div class="outs-tabs" id="mb-o-tabs">${SUITS.map((su, i) => `<button type="button" class="outs-tab${i === 0 ? ' on' : ''}${su === 'h' || su === 'd' ? ' rd' : ''}" data-s="${su}">${SYM[su]}<small></small></button>`).join('')}</div>
+      <div class="outs-deck" id="mb-o-deck" data-suit="${SUITS[0]}">${grid.map(c => cardHTML(c, known.has(key(c)) ? 'known' : 'tap')).join('')}</div>
       <div class="actions"><button class="btn ghost" id="mb-o-give">わからない（答えを見る）</button></div>`;
     await api.rules({
       key: 'outs', title: 'アウツさがし',
@@ -106,13 +108,17 @@ MB.register({
     api.mission('当たり札を全部タップ');
     const outKeys = new Set(s.outs.map(key));
     const found = new Set(); let miss = 0, gaveUp = false;
+    // スマホはマークごとに切り替えて、札を大きく出す（2026-11-01 9回目の批評：52枚を一度に並べると札が約31px幅で、押し間違えて失点した）
+    const tabs = root.querySelector('#mb-o-tabs');
+    const tabCount = () => tabs.querySelectorAll('.outs-tab').forEach(t => { const n = [...found].filter(k => k.endsWith(t.dataset.s)).length; t.querySelector('small').textContent = n ? n : ''; });
+    tabs.addEventListener('click', (e) => { const t = e.target.closest('.outs-tab'); if (!t) return; api.sfx.tap(); tabs.querySelectorAll('.outs-tab').forEach(x => x.classList.toggle('on', x === t)); root.querySelector('#mb-o-deck').dataset.suit = t.dataset.s; });
     await new Promise(res => {
       root.querySelector('#mb-o-deck').addEventListener('click', (e) => {
         const el = e.target.closest('.card');
         if (!el || el.classList.contains('known') || el.classList.contains('found') || found.size === s.outs.length || gaveUp) return;
         if (outKeys.has(el.dataset.k)) {
           el.classList.add('found'); found.add(el.dataset.k); api.sfx.good();
-          root.querySelector('#mb-o-count').firstChild.textContent = `${found.size} / ${s.outs.length}`;
+          root.querySelector('#mb-o-count').firstChild.textContent = `${found.size} / ${s.outs.length}`; tabCount();
           if (found.size === s.outs.length) { api.emote('panic'); api.coach(''); res(); } else if (found.size === Math.ceil(s.outs.length / 2)) api.emote('think');
         } else {
           el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); api.sfx.nope(); miss++;
@@ -133,7 +139,7 @@ MB.register({
     api.mission('値段とくらべて決める');
     root.querySelector('.actions').remove();
     // 探し終えたら 52 枚の一覧は畳み、当たり札だけを1列に並べる（1画面に収めるため。何が当たりかも一目で分かる）
-    root.querySelector('#mb-o-deck').classList.add('is-collapsed');
+    root.querySelector('#mb-o-deck').classList.add('is-collapsed'); delete root.querySelector('#mb-o-deck').dataset.suit; tabs.remove();
     const nD = s.dirty.length, effOuts = s.outs.length - nD / 2;
     // 見込みと線が近い時は小数1桁まで見せる（2026-11-01 外部の批評：「約10%・線10%」と見せて、9.8%＜10%で不正解にしていた）
     const close = Math.abs(s.eq - s.need) < .015;

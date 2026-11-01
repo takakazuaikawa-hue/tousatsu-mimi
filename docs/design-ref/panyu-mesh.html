@@ -948,7 +948,7 @@
     touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (touches.size === 2 && !EMBED) {   // 本編の中では2本指は「両手で叩く」なのでピンチにしない（寄りはメーター）
       pinch = { d0: tdist(), z0: zTarget };
-      ptrs.forEach((g) => { P[g.i].grab = null; }); ptrs.clear();
+      ptrs.forEach((g) => { P[g.i].grab = null; clearInterval(g.hold); }); ptrs.clear();
     }
   }, true);
   stageEl.addEventListener('pointermove', (e) => {
@@ -997,7 +997,10 @@
       p.v[1] = pv1 + (p.v[1] - pv1) * ride; p.v[0] *= 0.6 + 0.4 * ride;
       p.lf = LIFT_T; p.lfA = LIFT_A * (amp / 1.95) * (0.55 + 0.45 * edge) * room * (1 - ride * 0.5); sqz(-0.8 * (-uy) * edge * amp); p.lift = 1;
     }
-    ptrs.set(e.pointerId, { i, x0: e.clientX, y0: e.clientY, t0: performance.now() });
+    // 長押し・引っぱりでも数を進める（2026-11-01 9回目の批評：「長押しでも」と案内しているのに、押した瞬間の1回しか数えなかった）
+    const g0 = { i, x0: e.clientX, y0: e.clientY, t0: performance.now(), lx: e.clientX, ly: e.clientY, path: 0, x: e.clientX, y: e.clientY };
+    g0.hold = setInterval(() => { if (g0.moved) { g0.moved = false; return; } addHeat(); tell({ t: 'tap', side: i, x: g0.x, y: g0.y }); kick(); }, 420);
+    ptrs.set(e.pointerId, g0);
     kick();
   });
   stageEl.addEventListener('pointermove', (e) => {
@@ -1005,10 +1008,12 @@
     const dx = (e.clientX - g.x0) / view.s, dy = (e.clientY - g.y0) / view.s;
     if (!P[g.i].grab && (Math.hypot(dx, dy) > 6 || performance.now() - g.t0 > 220)) P[g.i].grab = { dx: 0, dy: 0 };
     if (P[g.i].grab) { P[g.i].grab.dx = dx; P[g.i].grab.dy = dy; }
+    g.x = e.clientX; g.y = e.clientY; g.path += Math.hypot(e.clientX - g.lx, e.clientY - g.ly); g.lx = e.clientX; g.ly = e.clientY;
+    if (g.path >= 90) { g.path = 0; g.moved = true; addHeat(); tell({ t: 'tap', side: g.i, x: g.x, y: g.y }); }
     kick();
   });
   const up = (e) => {
-    const g = ptrs.get(e.pointerId); if (!g) return; ptrs.delete(e.pointerId);
+    const g = ptrs.get(e.pointerId); if (!g) return; ptrs.delete(e.pointerId); clearInterval(g.hold);
     const p = P[g.i]; if (p.grab) { p.grab = null; p.svy += 1.2 * opt.amp * (1 + HEAT_PUSH * heatNow()); }   // 離した瞬間の弾み
     kick();
   };

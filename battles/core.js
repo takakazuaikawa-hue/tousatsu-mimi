@@ -573,7 +573,7 @@
             const box = document.createElement('div');
             box.className = 'mb-wager mb-pop' + (o.stakes ? ' has-stakes' : '');
             const fv = P.fever > 0 ? 2 : 1;
-            const chip = (m, name) => `<button class="mb-wchip x${m}" data-m="${m}"><span>${name}<b>×${m}</b></span>${o.stakes ? `<em class="mb-wchip-st"><i class="w">+${b * m * fv}</i><i class="l">${o.stakes[m - 1] ? '−' + b * o.stakes[m - 1] : '±0'}</i></em>` : ''}</button>`;
+            const chip = (m, name) => `<button class="mb-wchip x${m}" data-m="${m}"><span>${name}<b>×${m}</b></span>${o.stakes ? `<em class="mb-wchip-st"><i class="w">+${b * m * fv}</i><i class="l">${o.stakes[m - 1] ? '−' + (b * o.stakes[m - 1] - Math.round(b * o.stakes[m - 1] * (opts.lossCut || 0))) : '±0'}</i></em>` : ''}</button>`;
             box.innerHTML = `<div class="mb-wager-q">${o.question || 'その読み、どのくらい自信ある？'}</div>
               <div class="mb-wager-chips">${chip(1, 'たぶん')}${chip(2, '確信')}${chip(3, 'ぜったい')}</div>
               <div class="mb-wager-note">${o.note || (o.stakes ? `札の下は、当たった時／外れた時のコイン${fv > 1 ? '（フィーバー中は当たりが2倍）' : ''}` : `当たれば ${b}×倍率、外れたら その半分を失う${P.fever > 0 ? '（フィーバー中は当たりがさらに2倍）' : ''}`)}</div>`;
@@ -666,7 +666,7 @@
           const coins0 = P.coins;
           const feverOn = P.fever > 0; // この当たりが2倍になったか（表示用。入った瞬間の当たりは含まない）
           const feverDone = o.correct && P.fever === 1; // この当たりでフィーバーを当て切る
-          let gain;
+          let gain, cut = 0;
           if (o.correct) {
             P.combo++; P.best = Math.max(P.best, P.combo);
             const fever = P.fever > 0 ? 2 : 1;
@@ -675,6 +675,8 @@
             if (o.perfect) P.perfect++;
           } else {
             gain = api.lossK ? -b * (api.lossK[mult - 1] || 0) : -Math.round(b * mult / 2);
+            // ぱにゅぱにゅLv2/Lv3（交換所）：読み違いで失うコインを減らす。opts.lossCut＝減らす割合
+            if (opts.lossCut > 0 && gain < 0) { cut = Math.round(-gain * opts.lossCut); gain += cut; }
             P.combo = 0; P.fever = 0;
           }
           P.coins = Math.max(0, P.coins + gain);
@@ -708,7 +710,7 @@
               <div>
                 <div class="mb-result-stamp">${o.title || (o.correct ? (o.perfect ? 'PERFECT READ!' : '読み勝ち！') : '読み違い……')}</div>
                 <div class="mb-result-detail">${o.detail || ''}</div>
-                <div class="mb-result-gain">${gain >= 0 ? '+' : '−'}${Math.abs(gain)}<small class="mb-result-sub"> コイン（×${mult}${o.correct && feverOn ? '・FEVER ×2' : ''}${o.perfect ? '・PERFECT +30' : ''}）</small></div>
+                <div class="mb-result-gain">${gain >= 0 ? '+' : '−'}${Math.abs(gain)}<small class="mb-result-sub"> コイン（×${mult}${o.correct && feverOn ? '・FEVER ×2' : ''}${o.perfect ? '・PERFECT +30' : ''}${cut ? `・ぱにゅぱにゅで ${cut} 戻る` : ''}）</small></div>
                 ${o.extra || ''}
               </div>
               <div class="mb-result-actions"><button class="btn gold" id="mb-next"${feverDone ? ' disabled' : ''}>${exitMode ? opts.exitLabel : `次の勝負へ<small>${o.nextHint || '同じ種類をもう一回'}</small>`}</button></div>
