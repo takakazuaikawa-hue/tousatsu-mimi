@@ -20686,3 +20686,8 @@ html.is-compact #stage .reward-cg-viewer-hint { margin-top: calc(6px / var(--gam
 .pv2 .pv2-heat > span { white-space: nowrap; }
 .pv2.is-mesh .pv2-heat { justify-content: flex-start; }
 .pv2.is-mesh .pv2-heat > i { width: 96px; flex: none; }
+
+/* ファイブポーカーの「残す」印（2026-11-01 6回目の批評：スマホで縦に折れて札の数字と模様を覆っていた）。
+   横1行の小さな帯にして、札の下端（逆さの隅の数字＝同じ情報の写し）だけに掛ける。選んだことは金の縁でも示す */
+.minipoker-overlay .mp-card-keep { white-space: nowrap; writing-mode: horizontal-tb; line-height: 16px; padding: 0 4px !important; bottom: 2px; top: auto; left: 50%; right: auto; transform: translateX(-50%); border-radius: 3px; letter-spacing: 0; }
+html.is-compact .minipoker-overlay .mp-card-keep { font-size: 14px !important; line-height: 16px; padding: 0 3px !important; }

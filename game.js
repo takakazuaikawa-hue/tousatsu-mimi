@@ -8216,7 +8216,10 @@ function renderVerbActions(slots, need) {
   const foldS = slots.find(s => s.kind === 'fold');
   const ccS = slots.find(s => s.kind === 'callcheck');
   // チップが少なく、どの額を選んでもオールインになる時は「ぜんぶ」1つだけにする（同じ額のボタンが4つ並ぶのを防ぐ）
-  const betS = slots.filter(s => ['sm', 'md', 'lg', 'allin'].includes(s.kind) && s.enabled && (s.kind === 'allin' || s.action !== 'player-allin'));
+  const betS0 = slots.filter(s => ['sm', 'md', 'lg', 'allin'].includes(s.kind) && s.enabled && (s.kind === 'allin' || s.action !== 'player-allin'));
+  // 実際に払う額でも重ねない：持ち点ちょうどの「ふつう」と「ぜんぶ」が同じ額で並んでいた（2026-11-01 6回目の批評）
+  const allinAmt = (betS0.find(s => s.kind === 'allin') || {}).chipAmount;
+  const betS = betS0.filter((s, i) => s.kind === 'allin' || !((allinAmt && (s.chipAmount || 0) >= allinAmt) || betS0.slice(0, i).some(o => o.chipAmount && o.chipAmount === s.chipAmount)));
   const sug = state.__suggest;
   const tag = (verb) => (sug === verb ? ' is-suggest' : '');
   const attrs = (s) => (s && s.enabled ? `data-action="${s.action}"` : 'disabled') + (s && s.dataSize ? ` data-size="${s.dataSize}"` : '');
@@ -10030,7 +10033,7 @@ function showRicoModeChooser() {
       </button>
       <button class="btn btn-primary rico-mode-opt" data-action="rico-mode-serious">
         <span class="rico-mode-opt-name">本気のリコ先輩と対戦</span>
-        <span class="rico-mode-opt-desc">チュートリアル無し。開始チップ2000で、最強の打ち筋</span>
+        <span class="rico-mode-opt-desc">チュートリアル無し。${seriousRicoStartText()}で、最強の打ち筋</span>
         <span class="rico-mode-opt-prize">${save.firstClearRewardClaimed.includes('rico_serious') ? `再戦 ＋${seriousRicoRematchPreview()}` : `賞金 ${SERIOUS_RICO_REWARD.rewardFirst}`}</span>
       </button>
       <button class="btn btn-ghost rico-mode-opt" data-action="rico-mode-cancel">キャンセル</button>
@@ -10286,7 +10289,7 @@ const MEMORY_CONTENT = {
       // 1人につき「打ち筋」「攻め方のヒント」「口癖」の3行。リコ先輩を含む5人
       const list = [
         { id: 'rico_tutorial', name: 'リコ先輩', trait: 'ミミの教育係。講義では、ミミがコールするのを待ってヒントを出してくれる面倒見のいい先輩',
-          tip: '研修のあとは「本気のリコ先輩」を選べる。開始チップ2000で、ブラフもバリューも隙のない最強の打ち筋', line: '「まずはアタシが基礎から叩き込む。安心してかかってきな」' },
+          tip: '研修のあとは「本気のリコ先輩」を選べる。開始チップ2000（持ち込みは別に足す）で、ブラフもバリューも隙のない最強の打ち筋', line: '「まずはアタシが基礎から叩き込む。安心してかかってきな」' },
         { id: 'polka',  name: 'ポルカ',     trait: '強気のブラファー。弱い手ほど大きく賭けて騒ぎ、めったに降りない',
           tip: '中くらいの手でも受けて立つと勝ちやすい。ブラフは通らないので、強い手の時はしっかり賭けて稼ぎたい', line: '「ボクの読みは外れないんだから〜」' },
         { id: 'selina', name: 'セリナ',     trait: '理屈派。ブラフは少なめで、場札が荒れると大きく賭けて圧をかけてくる',
@@ -13058,7 +13061,8 @@ function showCollectionModal() {
     const at = stages.findIndex(s => s.id === 'rico_tutorial');
     stages.splice(at + 1, 0, { id: 'rico_serious', name: '本気のリコ先輩', theme: 'クリア後の手加減なしの勝負', cleared: true, exempt: false, rank: save.bestRanks.rico_serious, wins: null });
   }
-  const stageCleared = clearedStageCount();
+  // 一覧に足した本気のリコ先輩も、見出しと完成度に数える（2026-11-01 6回目の批評：6人に印が付いて「5/6」だった）
+  const stageCleared = clearedStageCount() + (stages.some(s => s.id === 'rico_serious') ? 1 : 0);
   ensureAchievements();
 
   const allItems = SHOP_ITEMS;
@@ -13649,6 +13653,12 @@ function seriousRicoRematchPreview() {
 function startingBaseChips(opponentId, seriousRico) {
   if (seriousRico) return 2000;
   return (OPPONENTS[opponentId] && OPPONENTS[opponentId].chips) || 1000;
+}
+
+// 本気のリコ先輩の入口に出す開始チップ（卓の計算と同じ式。持ち込みがあれば内訳も）
+function seriousRicoStartText() {
+  const base = startingBaseChips('rico_tutorial', true), carry = carryInChips();
+  return carry > 0 ? `開始チップ ${base}＋持ち込み${carry}＝${base + carry}（リコ ${base * 2}）` : `開始チップ${base}（リコ ${base * 2}）`;
 }
 
 function chipBonusTotal() {
@@ -14783,16 +14793,28 @@ function readIntroPages(group, gameId) {
     eyebrow: 'LOGIC BATTLE',
     title: 'いま賭かっている手で、付いていくか決める',
     fig: `<div class="mk-dilemma"><div class="mk-dl"><span class="mk-dl-q">?</span><b>付いていく</b><small>勝てる見込みが、払う額に見合う時</small></div><span class="mk-dl-or">か</span><div class="mk-dl"><span class="mk-dl-q">?</span><b>降りる</b><small>見込みが、払う額に届かない時</small></div></div>`,
-    note: '札を比べて勝てる見込みを作り、どちらかを決めて、自信を賭けます。答え合わせは、この手の決着の後。外れても、卓のチップは減りません。',
-    rico: '数えて比べれば、答えは出せる。3回続けて当てると、ご褒美が2倍になるよ',
+    note: '札を比べて勝てる見込みを作り、どちらかを決めます。',
+    rico: '数えて比べれば、答えは出せる',
+  }, {
+    eyebrow: 'HOW IT WORKS',
+    title: '決めた後の流れ',
+    fig: '<div class="mk-dilemma"><div class="mk-dl"><span class="mk-dl-q">1</span><b>自信を賭ける</b><small>迷わなければ上げる</small></div><span class="mk-dl-or">→</span><div class="mk-dl"><span class="mk-dl-q">2</span><b>答え合わせ</b><small>この手の決着の後</small></div></div>',
+    note: '外れても、卓のチップは減りません。',
+    rico: '3回続けて当てると、ご褒美が2倍になるよ',
     next: '読み合いへ',
   }];
   if (REAL_READ_GAMES.has(gameId)) return [first, {
     eyebrow: 'READ BATTLE',
     title: `いま賭かっている手を読む`,
     fig: `<div class="mk-dilemma"><div class="mk-dl">${back}<b>本物</b><small>ミミより強い手。安くなければ降りる</small></div><span class="mk-dl-or">か</span><div class="mk-dl">${back}<b>ブラフ</b><small>ミミの方が強い。付いていけば取れる</small></div></div>`,
-    note: '手がかりを集めて、どちらかを読み、自信を賭けます。本物でも、払う額が小さければ付いていく価値があります。答え合わせは、この手の決着の後。降りても札はめくって確かめます。読み違えても、卓のチップは減りません。',
-    rico: '読みを信じて、付いていくか降りるか決めよう。3回続けて当てると、ご褒美が2倍になるよ',
+    note: '手がかりを集めて、どちらかを読みます。本物でも、払う額が小さければ付いていく価値があります。',
+    rico: '読みを信じて、付いていくか降りるか決めよう',
+  }, {
+    eyebrow: 'HOW IT WORKS',
+    title: '決めた後の流れ',
+    fig: '<div class="mk-dilemma"><div class="mk-dl"><span class="mk-dl-q">1</span><b>自信を賭ける</b><small>迷わなければ上げる</small></div><span class="mk-dl-or">→</span><div class="mk-dl"><span class="mk-dl-q">2</span><b>答え合わせ</b><small>この手の決着の後。<br>降りても確かめる</small></div></div>',
+    note: '外れても、卓のチップは減りません。',
+    rico: '3回続けて当てると、ご褒美が2倍になるよ',
     next: '読み合いへ',
   }];
   return [first, {
@@ -17620,15 +17642,15 @@ function showHandResultBanner(snapshot) {
     // バッドビート判定：プレイヤーが70%以上だったのに負けた
     if (peakEq >= 70 && last.winner === 'opponent') {
       const turnAt = (eq.find((e, i) => i > 0 && e.pct < 50 && eq[i - 1].pct >= 50) || eq[eq.length - 1]).street;
-      verdict = { label: 'バッドビート', desc: `ピーク${peakEq}%まで有利だったのに、${turnAt}で逆転負け……`, cls: 'verdict-badbeat' };
+      verdict = { label: '有利から逆転負け', desc: `ピーク${peakEq}%まで有利だったのに、${turnAt}で逆転負け……（バッドビート）`, cls: 'verdict-badbeat' };
     }
     // サックアウト：プレイヤーが30%以下だったのに勝った
     else if (minEq <= 30 && last.winner === 'player') {
-      verdict = { label: 'サックアウト勝ち', desc: `ピンチ${minEq}%から大逆転！運も実力のうち`, cls: 'verdict-suckout' };
+      verdict = { label: '不利から逆転勝ち', desc: `ピンチ${minEq}%から大逆転！運も実力のうち（サックアウト）`, cls: 'verdict-suckout' };
     }
     // クーラー：両者ストレート以上
     else if (last.pEv?.rank >= 4 && last.oEv?.rank >= 4) {
-      verdict = { label: 'クーラー', desc: '両者とも強い役だった。避けようがない大勝負', cls: 'verdict-cooler' };
+      verdict = { label: '強い役どうしの激突', desc: '両者とも強い役だった。避けようがない大勝負（クーラー）', cls: 'verdict-cooler' };
     }
     // ドミネートされて負け：相手の役のほうが上位カテゴリ
     else if (last.winner === 'opponent' && last.oEv && last.pEv && last.oEv.rank > last.pEv.rank + 1) {

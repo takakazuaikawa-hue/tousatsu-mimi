@@ -300,14 +300,15 @@
     // 1〜4つ目：本音かウソかを裏で決める（全部同じにはしない）。例外は多くて1つ
     let kinds;
     do { kinds = [0, 1, 2, 3].map(() => Math.random() < .5); } while (kinds.every(k => k === kinds[0]));
-    const trapAt = Math.random() < .75 ? api.rand(4) : -1;
+    // 5つ目が例外なら、1〜4つ目に例外は出さない（2026-11-01 6回目の批評：例外が2つ出ていた）
+    const ruleOk = Math.random() < RULE_ACC;
+    const trapAt = ruleOk && Math.random() < .75 ? api.rand(4) : -1;
     const lines = kinds.map((lie, i) => {
       const trap = i === trapAt;
       return { lie, trap, text: take(lie ? (trap ? P.trapLie : P.lie) : (trap ? P.trapHonest : P.honest)) };
     });
     // 5つ目：今の賭けの話。ブラフならウソ。声は規則どおりに 85% で出る（残りは逆の声＝静かなウソ・元気な本音）
     const betLie = truth === 'bluff';
-    const ruleOk = Math.random() < RULE_ACC;
     const loud = ruleOk ? betLie : !betLie;
     lines.push({ lie: betLie, trap: !ruleOk, bet: true, text: take(loud ? P.betLie : P.betHonest) });
     // 顔：ウソなら焦り顔、本音なら得意顔が 65% で出る（規則ほど確かではない、おまけの手がかり）

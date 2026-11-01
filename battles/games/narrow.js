@@ -311,9 +311,13 @@
     const m = api.mult || 1;
     const whyTxt = hit ? `${jp}の役は読んだ幅に入っていた（${plain(herTile.name)}）。` : `${jp}は「${plain(herTile.name)}」だった（ミミの読みは「${pickName}」）。`;
     const herRole = roleName(api, her.concat(board));
-    const pending = { kind: 'logic', names: NAMES, title: '容疑者しぼり', charId: api.charId, pick: decide, truth, mimiEq, endLines: END[who], board, mine, her, base, mult: m, stakes: STAKES,
+    // 読んだ幅に本当の役が入っていたら、その幅で決めた判断を正解にする（2026-11-01 6回目の批評：先輩の案内どおりに付いていって、隠れた札の結果だけで減点していた）
+    const grade = hit ? decide : truth;
+    const pending = { kind: 'logic', names: NAMES, title: '容疑者しぼり', charId: api.charId, pick: decide, truth: grade, mimiEq, endLines: END[who], board, mine, her, base, mult: m, stakes: STAKES,
       herWeak: !herTile.danger, perfect: miss === 0 && hit && picks.length === 1 && m === 3, notes: [], why: whyTxt,
-      truthText: `${jp}は ${herRole}${herTile.danger ? '（ミミより強い）' : '（ミミは負けない）'}<small>${NAMES[truth]}のが正解だった${free ? '' : `（勝ち目 約${mimiEq}%・線 ${need}%）`}</small>`,
+      truthText: hit
+        ? `${jp}は ${herRole}。読んだ幅に入っていた<small>読んだ幅で考えて${NAMES[decide]}のが正解（幅の勝ち目 約${eqPick}%${free ? '' : `・線 ${need}%`}）。決着の勝ち負けは運の側</small>`
+        : `${jp}は ${herRole}${herTile.danger ? '（ミミより強い）' : '（ミミは負けない）'}<small>読んだ幅の外だった。${NAMES[truth]}のが正解${free ? '' : `（勝ち目 約${mimiEq}%・線 ${need}%）`}</small>`,
       extra: `ミミの読み：${pickName}${hit ? ' ○' : ''}` };
     if (T) {
       api.entrust({
@@ -324,7 +328,7 @@
       return;
     }
     api.lossK = STAKES;
-    const correct = decide === truth;
+    const correct = decide === grade;
     api.finish({ correct, base, perfect: correct && pending.perfect,
       detail: `${jp}は ${her.map(api.label).join(' ')}（${herRole}）。${whyTxt}` });
   }

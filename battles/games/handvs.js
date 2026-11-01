@@ -102,6 +102,12 @@
     .hv-pick .card { cursor: pointer; transition: transform .15s, box-shadow .15s, opacity .15s; }
     .hv-pick .card.is-on { transform: translateY(-8px); box-shadow: 0 0 0 2px var(--gold-hi), 0 8px 16px rgba(0,0,0,.5); }
     .hv-pick .card.is-off { opacity: .55; }
+    /* 5枚を作る段は、まだ開かない候補の欄を畳み、7枚を真ん中に大きく並べる（2026-11-01 6回目の批評：スマホで札が約29px幅だった） */
+    .mb-host .mb-game-root.rb-frame.hv-building { --rb-info-w: 0px !important; column-gap: 0 !important; }
+    .rb-frame.hv-building > .rb-info { display: none; }
+    .hv-building .hv-play { align-items: center; justify-content: center; }
+    .hv-building .hv-pick { justify-content: center; gap: 10px; }
+    .mb-host .rb-frame.hv-building .hv-pick .card { --w: 76px !important; flex-shrink: 0; }
     .hv-pick .card.is-best { box-shadow: 0 0 0 3px var(--gold-hi), 0 0 16px rgba(245,215,122,.7); }
     .hv-res { font-family: var(--mincho); font-weight: 800; font-size: var(--ty-body, 17px); line-height: 1.4; min-height: 1.4em; }
     .hv-res .ok { color: var(--gold-hi); } .hv-res .ng { color: #ff8f9c; }
@@ -218,6 +224,7 @@
       api.mission('一番強い5枚を選ぶ');
       api.tipOnce('handvs', '役の強さ順は、上の「役の一覧」と同じ', 'think');
       const sel = new Set();
+      root.classList.add('hv-building');
       play.innerHTML = `${ladderHTML()}<div class="hv-cap">ミミの札（手札＋場札）</div><div class="hv-row hv-pick" id="mb-hv-seven">${seven.map((c, i) => api.cardHTML(c, '').replace('class="card', `data-i="${i}" class="card`)).join('')}</div>
         <div class="hv-res" id="mb-hv-bres">選んだ5枚：<span id="mb-hv-bname" class="hv-name q">あと5枚</span></div>`;
       drawLadder();
@@ -230,6 +237,7 @@
       act.innerHTML = `<div class="hv-act1"><button class="btn gold" id="mb-hv-build" type="button" disabled><span>この5枚で決める</span><small>一番強ければ ご褒美 20→30</small></button></div>`;
       play.querySelectorAll('#mb-hv-seven .card').forEach((el, i) => el.addEventListener('click', () => { if (sel.has(i)) sel.delete(i); else if (sel.size < 5) sel.add(i); api.sfx.tap(); draw(); }));
       await new Promise(res => { $('#mb-hv-build').onclick = () => { api.sfx.tap(); res(); }; });
+      root.classList.remove('hv-building');
       if (!api.alive()) return;
       const picked = [...sel].map(i => seven[i]);
       const ok = api.score(picked) === api.score(seven);

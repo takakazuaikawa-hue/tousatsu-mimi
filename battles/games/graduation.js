@@ -90,7 +90,7 @@
       <div class="rb-info gd-info">
         <div class="gd-sit"><span class="gd-cap">場札 ／ ミミの手（${mimiHandName}）</span><span class="gd-cards">${board.map(c => api.cardHTML(c, 'small')).join('')}<i class="gd-sep"></i>${mine.map(c => api.cardHTML(c, 'small')).join('')}</span></div>
         <div class="gd-scale"><div class="gd-scalebox"><svg class="gd-svg" viewBox="34 0 192 76" aria-hidden="true" id="mb-gd-svg"></svg><span class="gd-pan is-b">ブラフ</span><span class="gd-pan is-s">本物</span></div><div class="gd-odds" id="mb-gd-odds"></div></div>
-        <div class="gd-habit" aria-label="ミミが大きな賭けを受けた20回のうち、降りた${folds}回"><span class="h">大きな賭け20回：<b class="f">降りた${folds}</b>・<b class="c">付いた${habit.length - folds}</b></span><span class="d">${habit.map(f => `<i class="${f ? 'f' : 'c'}"></i>`).join('')}</span></div>
+        <div class="gd-habit" aria-label="ミミが大きな賭けを受けた最近の${habit.length}回のうち、降りた${folds}回"><span class="h">最近の大きな賭け${habit.length}回：<b class="f">降りた${folds}</b>・<b class="c">付いた${habit.length - folds}</b></span><span class="d">${habit.map(f => `<i class="${f ? 'f' : 'c'}"></i>`).join('')}</span></div>
       </div>
       <div class="rb-act gd-act" id="mb-gd-act"></div>`;
     const $ = (s) => root.querySelector(s);

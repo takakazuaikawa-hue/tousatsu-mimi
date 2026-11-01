@@ -38,9 +38,11 @@ MB.register({
       const outs = rest.filter(c => category([...known, c]) >= 4 && category([...board, c]) < 4);
       // 汚れた当たり札（2026-11-01 外部の批評：完成しても相手のフルハウスに負ける札まで「得」の根拠にしていた）：
       // 場にペアを作る札（相手のフルハウス・フォーカード）と、ストレートだけ完成して場に同じマークが3枚になる札（相手のフラッシュ）は半分で数える。相手の札は使わない
-      const dirtyOf = (c) => board.some(b => b.r === c.r) || (category([...known, c]) === 4 && [...board, c].filter(b => b.s === c.s).length >= 3);
+      // 場にもうペアがある時は、どの当たり札でも相手のフルハウスがありうる（2026-11-01 6回目の批評）
+      const boardPaired = board.some((b, i) => board.some((x, j) => j > i && x.r === b.r));
+      const dirtyOf = (c) => boardPaired || board.some(b => b.r === c.r) || (category([...known, c]) === 4 && [...board, c].filter(b => b.s === c.s).length >= 3);
       const dirty = outs.filter(dirtyOf);
-      if (outs.length >= 4) { const B = T.toCall, P = Math.max(0, (T.pot || 0) - B); s = { hole, board, rest, outs, dirty, eq: (outs.length - dirty.length / 2) / rest.length, need: B / (P + 2 * B), P, B, real: true, her: T.her }; }
+      if (outs.length >= 4) { const B = T.toCall, P = Math.max(0, (T.pot || 0) - B); s = { hole, board, rest, outs, dirty, boardPaired, eq: (outs.length - dirty.length / 2) / rest.length, need: B / (P + 2 * B), P, B, real: true, her: T.her }; }
     }
     if (!s) { s = gen(); if (s) s.dirty = []; }
     const STAKES = [0, 1, 3];
@@ -140,7 +142,7 @@ MB.register({
     meter.className = 'outs-meter pop';
     meter.innerHTML = `<div class="prompt mb-ask"><span class="mb-bet"><b>当たり ${nD ? effOuts + '枚分' : s.outs.length + '枚'}</b></span>${api.betTag('払う ' + s.B, 3)}</div>
       <div class="outs-bar"><div class="outs-fill" id="mb-o-fill"></div><div class="outs-line" id="mb-o-line"><span>割に合う線 ${pct(s.need)}%</span></div><div class="outs-val">約 ${Math.round(s.eq * 100)}%</div></div>
-      <div class="ox-more">${api.more(`${nD ? `当たり札 ${s.outs.length}枚のうち、場にペアを作る札・相手のフラッシュを作る札 ${nD}枚は、完成しても負けることがあるので半分で数える＝${effOuts}枚分<br>` : ''}当たり札 ${effOuts}枚 × 2 ＝ <b>約${Math.round(effOuts * 2)}%</b>（正確には ${effOuts}÷${s.rest.length}＝${pct(s.eq)}%）<br>払う ${s.B} ÷（もらえる ${s.P + s.B} ＋ 払う ${s.B}）＝ <b>${pct(s.need)}%</b> 以上当たれば得`)}</div>`;
+      <div class="ox-more">${api.more(`${nD ? `当たり札 ${s.outs.length}枚のうち、${s.boardPaired ? "場にもうペアがあるので（相手のフルハウスがありうる）全部の" : "場にペアを作る札・相手のフラッシュを作る札 "}${nD}枚は、完成しても負けることがあるので半分で数える＝${effOuts}枚分<br>` : ''}当たり札 ${effOuts}枚 × 2 ＝ <b>約${Math.round(effOuts * 2)}%</b>（正確には ${effOuts}÷${s.rest.length}＝${pct(s.eq)}%）<br>払う ${s.B} ÷（もらえる ${s.P + s.B} ＋ 払う ${s.B}）＝ <b>${pct(s.need)}%</b> 以上当たれば得`)}</div>`;
     root.querySelector('#mb-o-deck').after(meter);
     // 押す所は画面の一番下の段に（上の方に置くと押しづらい）
     const oxAct = document.createElement('div');

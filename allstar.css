@@ -903,3 +903,20 @@ html.is-compact #stage > .as-host .as-posguide .as-rv-h span { display: none; }
 /* 2026-11-01 5回目の批評：真ん中の窓がミミの席（BBの時は札ごと）を覆っていた。スマホは右下の空いた所へ */
 html.is-compact #stage > .as-host .as-review.as-posguide { left: auto; right: 6px; top: auto; bottom: 4px; width: 372px; transform: none; }
 @media (max-width: 760px) { html.is-compact #stage > .as-host .as-review.as-posguide { width: 300px; } }
+
+/* 手番の時、右の操作欄（左端は舞台の中央＋50px前後）が自分の2枚目の札に掛かっていた（2026-11-01 6回目の批評）。
+   札・役の名前・持ち点を左へ寄せ、札の右端と操作欄の間を空ける */
+html.is-compact #stage > .as-host .as-hand { left: calc(50% - 78px); }
+html.is-compact #stage > .as-host :is(.as-made, .as-mbet, .as-mstack) { left: calc(50% - 150px); }
+html.is-compact #stage > .as-host .as-md { left: calc(50% + 48px); }
+html.is-compact #stage > .as-host .as-mimi-allin { left: calc(50% - 88px); }
+@media (max-width: 799px) {
+  html.is-compact #stage > .as-host :is(.as-actions, .as-sizer, .as-ff) { width: 264px; }
+  html.is-compact #stage > .as-host .as-cc { width: 264px; }
+  html.is-compact #stage > .as-host .as-fold { width: 128px; }
+  html.is-compact #stage > .as-host .as-raise { left: 134px; width: 130px; }
+  html.is-compact #stage > .as-host .as-hand { left: calc(50% - 98px); }
+  html.is-compact #stage > .as-host :is(.as-made, .as-mbet, .as-mstack) { left: calc(50% - 166px); }
+  html.is-compact #stage > .as-host .as-md { left: calc(50% + 10px); }
+  html.is-compact #stage > .as-host .as-mimi-allin { left: calc(50% - 108px); }
+}

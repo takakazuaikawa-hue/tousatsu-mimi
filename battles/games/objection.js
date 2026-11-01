@@ -81,7 +81,7 @@
       const d = hi.find(c => (bRanks.has(c.r) || pair0) && decisive(c));
       if (d) L.push({ id: 's_rank', topic: { rank: d.r }, key: 'wit', say: `${R(d.r)}？ |そんなの|持ってないの♡`, short: `「${R(d.r)}は|持ってない」`, fact: `本当は|${lab(d)}を|持っている`,
         wit: { head: '鏡の目撃', text: `後ろの鏡に、|札が|一瞬|映った。|${lab(d)}|だった` }, panic: 'か、鏡なんてずるいの！ 反則なの！' });
-      if (nX >= 3 && herX >= 1 && cat(herAll) === 5) L.push({ id: 's_suit', topic: { suit: X }, key: 'wit', say: `${SN}は|1枚も|持ってないの♡`, short: `「${SN}は|1枚も|持ってない」`, fact: `本当は|${SN}を|持っている|（フラッシュ）`,
+      if (nX >= 3 && herX >= 1 && cat(herAll) === 5) L.push({ id: 's_suit', topic: { suit: X }, key: 'wit', say: `${SN}は|1枚も|持ってないの♡`, short: `「${SN}は|1枚も|持ってない」`, fact: `本当は|${SN}を|持っている|（少なくとも1枚）`,
         wit: { head: 'めくれた札', text: `配る時、|札が|1枚|めくれかけた。|角に|${sym(X)}が|見えた` }, panic: 'な、なんで見てるのよ！ ディーラーのくせに！' });
       [4, 3].forEach(i => { if (i < board.length && helps(i)) { const c = board[i], st = stOf(i); L.push({ id: 's_fell', topic: { card: api.key(c), rank: c.r, street: st }, key: 'wit', say: `${STN[st]}の${lab(c)}？ |あたしには|関係ないの`, short: `「${STN[st]}の${api.label(c)}は|関係ない」`, fact: `本当は|${lab(c)}で|手が|強くなった`,
         wit: { head: '仕草', text: `${STN[st]}の${lab(c)}が|落ちた瞬間、|<b>チップへ手が伸びた</b>` }, panic: 'て、手が勝手に動いただけなの！' }); } });
