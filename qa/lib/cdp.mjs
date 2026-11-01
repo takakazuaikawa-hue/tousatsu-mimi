@@ -147,7 +147,8 @@ export async function launch({ port = 9400 + Math.floor(Math.random() * 500), wi
       try { proc.kill(); } catch {}
       await sleep(300);
       if (path.dirname(path.resolve(profile)) !== root || !path.basename(profile).startsWith('edge-prof-')) throw new Error('unexpected QA profile path');
-      try { fs.rmSync(profile, { recursive: true, force: true }); } catch {}
+      // Chrome が閉じ切る前だと消えずに残り、Cドライブを埋めていた（2026-11-01）。少し待って数回やり直す
+      for (let i = 0; i < 6; i++) { try { fs.rmSync(profile, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 }); } catch {} if (!fs.existsSync(profile)) break; await sleep(500); }
     },
   };
 }
