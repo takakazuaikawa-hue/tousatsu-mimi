@@ -20796,3 +20796,26 @@ body:has(.epilogue-screen) #fullscreen-btn-group { display: none !important; }
 @media (max-width: 760px) {
   html.is-compact .minipoker-overlay .mp-actions .mp-btn-surrender { flex-grow: 1.45; padding: 0 4px; letter-spacing: 0; }
 }
+
+/* 別のタブで新しく保存された時の案内（2026-11-01 12回目の批評） */
+.tab-stale-overlay { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8,2,4,.82); }
+.tab-stale-card { max-width: 440px; padding: 22px 24px; text-align: center; color: #f3ece0; background: linear-gradient(180deg, #2a0a10, #14050a); border: 1px solid rgba(239,205,130,.6); box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+.tab-stale-title { font-size: 19px; font-weight: 700; color: #efcd82; margin-bottom: 10px; }
+.tab-stale-card p { font-size: 16px; line-height: 1.6; margin: 0 0 16px; word-break: keep-all; }
+.tab-stale-card .btn { min-height: 44px; padding: 0 22px; font-size: 16px; }
+
+/* 卒業試験：中身の無い下段（#mb-gd-act）が教えのボタンの上に重なり、「言葉と顔」が押せなかった（2026-11-01 12回目の批評）。空の時は押せる物として扱わない */
+.gd-act:empty { pointer-events: none; }
+
+/* コレクション：区切りへ飛ぶ見出しの列（2026-11-01 12回目の批評） */
+.coll-jump { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 6px 22px 8px; flex: none; }
+.coll-jump::-webkit-scrollbar { display: none; }
+.coll-jump button { flex: none; min-height: 40px; padding: 0 12px; font-size: 14px; font-weight: 700; color: #efcd82; background: rgba(12,3,6,.7); border: 1px solid rgba(239,205,130,.45); border-radius: 2px; cursor: pointer; white-space: nowrap; }
+.coll-jump button:active { background: rgba(239,205,130,.2); }
+
+/* 設定：文字の速さ・対戦の速さ（2026-11-01 12回目の批評）。列が狭いので、選ぶボタンは名前の下に1行で並べる */
+.settings-modal .settings-modal-row:has(.settings-seg) { flex-wrap: wrap; row-gap: 6px; }
+.settings-modal .settings-seg { display: flex; width: 100%; border: 1px solid rgba(239,205,130,.45); }
+.settings-modal .settings-seg-btn { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 0 4px; font-size: 14px; font-weight: 700; white-space: nowrap; color: rgba(243,236,224,.85); background: rgba(12,3,6,.6); border: 0; border-left: 1px solid rgba(239,205,130,.25); border-radius: 0; cursor: pointer; }
+.settings-modal .settings-seg-btn:first-child { border-left: 0; }
+.settings-modal .settings-seg-btn.on { color: #1a0608; background: linear-gradient(180deg, #f5d77a, #c99a3a); }

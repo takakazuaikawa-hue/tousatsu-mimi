@@ -434,6 +434,7 @@ function noticeSaveFail() {
 function loadProgress() {
   // 保存の場所そのものが使えない（プライベートモード・ブラウザの設定）：壊れたのではないので、そう知らせて今回だけの進み具合で遊ぶ
   try { localStorage.getItem(SAVE_KEY); } catch (e) { noticeSaveFail(); return normalizeSave(defaultSave()); }
+  saveSeqMine = readSaveSeq(); // 読み込んだ時点の保存の通し番号（これより新しい保存が出たら、このタブは古い）
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return normalizeSave(defaultSave());
@@ -455,8 +456,26 @@ function loadProgress() {
     return normalizeSave(defaultSave());
   }
 }
+// 別のタブの新しい保存を、古いタブが丸ごと書き戻さない（2026-11-01 12回目の批評：古いタブの音ボタンで、別タブで稼いだコインが消えた）。
+// 保存するたびに通し番号を1つ進めて別の鍵に置く。読み込んだ時より番号が進んでいたら、このタブはもう古いので書かずに読み込み直しを頼む
+const SAVE_SEQ_KEY = SAVE_KEY + '_seq';
+let saveSeqMine = 0, tabStale = false;
+function readSaveSeq() { try { return +localStorage.getItem(SAVE_SEQ_KEY) || 0; } catch (_) { return 0; } }
+function bumpSaveSeq() { saveSeqMine = readSaveSeq() + 1; try { localStorage.setItem(SAVE_SEQ_KEY, String(saveSeqMine)); } catch (_) {} }
+function markTabStale() {
+  if (tabStale) return;
+  tabStale = true;
+  const ov = document.createElement('div');
+  ov.className = 'tab-stale-overlay';
+  ov.innerHTML = '<div class="tab-stale-card"><div class="tab-stale-title">別のタブで遊んだ記録があります</div><p>このタブの進み具合は古いので、<wbr>ここでは保存しません。<br>読み込み直すと、<wbr>新しい記録の続きから<wbr>遊べます。</p><button class="btn gold" type="button">読み込み直す</button></div>';
+  ov.querySelector('button').addEventListener('click', () => location.reload());
+  document.body.appendChild(ov);
+}
+window.addEventListener('storage', (e) => { if (e.key === SAVE_SEQ_KEY && (+e.newValue || 0) > saveSeqMine) markTabStale(); });
 let persistAsked = false;
 function saveProgress() {
+  if (tabStale) return;
+  if (readSaveSeq() > saveSeqMine) { markTabStale(); return; }
   if (!persistAsked) { persistAsked = true; try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (_) {} }
   try {
     // ログ膨張対策：各カテゴリ最新500件のみ保持
@@ -468,12 +487,14 @@ function saveProgress() {
       });
     }
     localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+    bumpSaveSeq();
   } catch (e) {
     // クォータ超過なら logs を切り詰めて再試行
     if (e && e.name === 'QuotaExceededError' && save) {
       try {
         save.logs = { actions: [], bets: [], reactions: [], psych: [] };
         localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+        bumpSaveSeq();
       } catch (e2) {
         console.warn('Save retry failed', e2);
         noticeSaveFail();
@@ -499,6 +520,7 @@ async function resetProgress() {
 // 「すべて消えて最初から」：セーブ本体に加え、外に置いた記録（ぱにゅぱにゅの衣装・心の声の図鑑）も消し、装備の見た目を戻す
 function wipeAllProgress() {
   localStorage.removeItem(SAVE_KEY);
+  bumpSaveSeq();
   ['mimi.panyuOutfit', 'mbGachaBook'].forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
   save = defaultSave();
   if (typeof reapplyAllOwnedEffects === 'function') reapplyAllOwnedEffects();
@@ -3047,9 +3069,10 @@ function defaultState() {
 // 対戦の世代番号：ロビーへ戻る・次の対戦を始める・対戦を終える度に進める。
 // battleTimeout で予約した進行は、予約時と世代が違えば実行しない（前の対戦のタイマーが新しい卓を動かしていた）。
 let battleGen = 0;
+// 設定の「対戦の速さ：速い」では、配る・相手が考える・次へ移る間をまとめて縮める（2026-11-01 12回目の批評：周回で待ちが目立った）
 function battleTimeout(fn, ms) {
   const gen = battleGen;
-  return setTimeout(() => { if (gen === battleGen) fn(); }, ms);
+  return setTimeout(() => { if (gen === battleGen) fn(); }, save && save.battleSpeed === 'fast' ? ms * 0.55 : ms);
 }
 
 function log(category, entry) {
@@ -3930,12 +3953,14 @@ function showStoryScene(key, onDone, voiceReady) {
   // delay：光が満ちてから文字を出し始める（待つ間に押せば、その場で全文）
   const type = (t, el = textEl, delay = 0) => {
     tgt = el; full = t; shown = 0; ov.classList.remove('can-next');
-    if (reduce) { finishTyping(); return; }
+    // 設定の「文字の速さ」：ふつう＝1秒に42字・速い＝90字・すぐ＝全文（2026-11-01 12回目の批評）
+    const rate = save.textSpeed === 'fast' ? 0.09 : 0.042;
+    if (reduce || save.textSpeed === 'instant') { finishTyping(); return; }
     typing = true; paint();
     let last = performance.now() + delay;
     const tick = (now) => {
       if (!typing) return;
-      const add = Math.floor((now - last) * 0.042); // 1秒に42字
+      const add = Math.floor((now - last) * rate);
       if (add > 0) { shown = Math.min(full.length, shown + add); last = now; paint(); }
       if (shown >= full.length) { finishTyping(); return; }
       raf = requestAnimationFrame(tick);
@@ -5160,6 +5185,8 @@ function showSettingsModal() {
           <span class="stm-knob"></span>
           <span class="stm-status">${on ? 'ON' : 'OFF'}</span>
         </button>`;
+  // いくつかから1つを選ぶ行（文字の速さ・対戦の速さ）
+  const seg = (key, opts, cur) => `<span class="settings-seg">${opts.map(([v, t]) => `<button type="button" class="settings-seg-btn ${v === cur ? 'on' : ''}" data-seg="${key}" data-val="${v}" aria-pressed="${v === cur}">${t}</button>`).join('')}</span>`;
   // 設定はこの1枚にまとめる（以前はホームの「音量・設定」と「ゲーム設定」の2段で、音とその他が別の窓にあった）
   overlay.innerHTML = `
     <div class="settings-modal" role="dialog" aria-modal="true" aria-label="設定">
@@ -5199,6 +5226,15 @@ function showSettingsModal() {
             ${sw('logic', log, '論理バトル')}
           </div>
           <div class="settings-modal-note">講義の間は、この設定にかかわらず両方とも出ます</div>
+          <div class="settings-modal-row">
+            <span class="settings-modal-label">文字の速さ</span>
+            ${seg('textSpeed', [['normal', 'ふつう'], ['fast', '速い'], ['instant', 'すぐ']], save.textSpeed || 'normal')}
+          </div>
+          <div class="settings-modal-row">
+            <span class="settings-modal-label">対戦の速さ</span>
+            ${seg('battleSpeed', [['normal', 'ふつう'], ['fast', '速い']], save.battleSpeed || 'normal')}
+          </div>
+          <div class="settings-modal-note">会話の文字の出方と、配る・相手が考える間の長さ。慣れたら「速い」がおすすめ</div>
           <div class="settings-modal-row">
             <span class="settings-modal-label is-wrap">絵を動かす</span>
             ${sw('liveart', !stillArtOn(), 'ホームとご褒美の絵を動かす')}
@@ -5250,6 +5286,13 @@ function showSettingsModal() {
   if (voiceSlider) voiceSlider.addEventListener('change', () => {
     if (!window.playVoice) return;
     playVoice('mimi', 'bark_win_1', { noRepeat: false, prio: 2, maxLateMs: 2500 });
+  });
+  overlay.querySelectorAll('[data-seg]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      save[btn.dataset.seg] = btn.dataset.val;
+      saveProgress(); mpSfx('tap');
+      btn.parentNode.querySelectorAll('[data-seg]').forEach(b => { const on = b === btn; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    });
   });
   overlay.querySelectorAll('[data-toggle]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -5352,11 +5395,11 @@ function tacticNoteName(id) { return (TACTIC_NOTES[id] && TACTIC_NOTES[id].name)
 // effect は「解放すると対戦画面で何が増えるか」。効果の無いノートを作らないための対応表でもある。
 const NOTE_ARTICLES = {
   bluff_basic: {
-    effect: 'ベット／レイズのボタンに「通る見込み（高・中・低）」が出る',
+    effect: 'ベット／レイズのボタンに「降ろせる（高・中・低）」が出る',
     body: [
       { h: 'ブラフは「嘘」ではなく「条件」', p: 'ブラフは強い手のフリをすることではなく、<b>相手が降りる理由を作ること</b>です。相手に降りる理由が無い場面では、どんなに大きく賭けても通りません。逆に理由さえ揃えば、こちらの手札が何であっても関係なく通ります。' },
       { h: '通る条件は3つ', p: '① <b>場札が相手に刺さっていない</b>（バラバラの低い札＝相手も何も持っていない）。② <b>相手が降りられる性格</b>（勝負手以外は手放すタイプ）。③ <b>それまでの自分の賭け方と矛盾しない</b>（急に大きくすると嘘がバレる）。3つ揃うほど成功率が上がります。' },
-      { h: 'このゲームでは', p: 'ノート解放後、自分から賭けられる場面でベット／レイズの各ボタンに<b>「通る見込み」</b>が出ます。<b>場札の乾き具合・相手が降りやすい性格・その額の大きさ</b>だけから出した目安で、手札は一切見ていません（見てしまうと読み合いでなく答えの表示になるため）。<b>「高」なら弱い手でも押していい</b>合図。「低」の時に弱い手で押すのは、ただチップを捨てるのと同じです。' },
+      { h: 'このゲームでは', p: 'ノート解放後、自分から賭けられる場面でベット／レイズの各ボタンに<b>「降ろせる 高・中・低」</b>が出ます。勝てる見込みではなく、<b>賭けた時に相手を降ろせる見込み</b>です。<b>場札の乾き具合・相手が降りやすい性格・その額の大きさ</b>だけから出した目安で、手札は一切見ていません（見てしまうと読み合いでなく答えの表示になるため）。<b>「高」なら弱い手でも押していい</b>合図。「低」の時に弱い手で押すのは、ただチップを捨てるのと同じです。' },
     ],
   },
   board_danger: {
@@ -8220,7 +8263,7 @@ function renderActionArea(el) {
       : '';
     const subHtml = s.subText ? `<small class="slot-sub">${s.subText}</small>` : '';
     const hintHtml = s.noteHint
-      ? `<small class="slot-note-hint fe-${s.noteHint.tier}" title="戦術ノート『ブラフの基本』：相手が降りる見込みの目安">通る見込み ${s.noteHint.label}</small>`
+      ? `<small class="slot-note-hint fe-${s.noteHint.tier}" title="戦術ノート『ブラフの基本』：相手が降りる見込みの目安">降ろせる ${s.noteHint.label}</small>`
       : '';
     return `
       <button
@@ -8264,7 +8307,7 @@ function renderVerbActions(slots, need) {
       <div class="bet-chooser-grid">${betS.map(s => {
         const label = (state.handPhase === 'preflop' && s.kind !== 'allin') ? s.label : (sizeName[s.kind] || s.label);
         const sub = s.kind === 'allin' ? 'オールイン' : (state.handPhase === 'preflop' ? '' : s.label);
-        const fe = s.noteHint ? `<small class="verb-fe fe-${s.noteHint.tier}">通る見込み ${s.noteHint.label}</small>` : '';
+        const fe = s.noteHint ? `<small class="verb-fe fe-${s.noteHint.tier}">降ろせる ${s.noteHint.label}</small>` : '';
         return `<button class="btn verb-size size-${s.kind}" ${attrs(s)}><span class="verb-label">${label}</span>${sub ? `<small class="verb-sub">${sub}</small>` : ''}${num(s.chipAmount)}${fe}</button>`;
       }).join('')}</div>
     </div>`.replace(`size-${sniperNear || 'none'}"`, sniperNear ? `size-${sniperNear} is-suggest is-sniper"` : 'size-none"');
@@ -13363,6 +13406,21 @@ function showCollectionModal() {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
+  // 区切りへ飛ぶ見出しの列（2026-11-01 12回目の批評：一覧が18画面分あり、買った読み物へ戻るのが面倒だった）
+  const SHORT = { 'リコ衣装ギャラリー': '衣装', 'メモリ閲覧': '読み物', '交換所アイテム': '交換品', '苦戦の思い出': '思い出' };
+  const body = overlay.querySelector('.collection-body'), secs = [...overlay.querySelectorAll('.coll-section')];
+  if (body && secs.length > 2) {
+    const nav = document.createElement('nav');
+    nav.className = 'coll-jump';
+    secs.forEach(sec => {
+      const t = sec.querySelector('.coll-section-title'); if (!t) return;
+      const name = (t.firstChild && t.firstChild.textContent || '').trim();
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = SHORT[name] || name;
+      b.addEventListener('click', () => { body.scrollTo({ top: sec.offsetTop - body.offsetTop, behavior: 'smooth' }); });
+      nav.appendChild(b);
+    });
+    body.parentNode.insertBefore(nav, body);
+  }
 }
 
 // === ポーカー辞典 ===
@@ -14471,7 +14529,7 @@ async function introHand1(gen) {
   render();
   await introCoach('Aが3枚！『スリーカード』。手札と場札から5枚を選んで役を作るよ', '.v2-role, .v2-myhand'); if (!introAlive(gen)) return;
   await introCoach('役の強い順は、この『役の一覧』でいつでも見られる', '.v2-help-btn'); if (!introAlive(gen)) return;
-  await introWaitAction('check', 0, 'もう十分強い。ここは『チェック』。タダで次の札を見よう', '.verb-cc'); if (!introAlive(gen)) return;
+  await introWaitAction('check', 0, '強すぎる時は、わざと『チェック』で待つ手もある。今賭けると相手が降りちゃう。もう1枚引かせて、次で大きく取ろう', '.verb-cc'); if (!introAlive(gen)) return;
   state.mimiThought = '「チェック」';
   introBet('mimi', 0);
   await introWait(600); if (!introAlive(gen)) return;
@@ -14482,7 +14540,7 @@ async function introHand1(gen) {
   introReveal(1, 'turn');
   await introWait(900); if (!introAlive(gen)) return;
   await introCoach('4枚目（ターン）。役はスリーカードのまま', '.community-cards'); if (!introAlive(gen)) return;
-  await introWaitAction('bet', 150, '最後の札の前に、もう一度『賭ける』', '.verb-bet'); if (!introAlive(gen)) return;
+  await introWaitAction('bet', 150, '相手も札が増えて、付いてきやすくなった。今度は『賭ける』で取り分を増やそう', '.verb-bet'); if (!introAlive(gen)) return;
   introBet('mimi', 150);
   await introWait(700); if (!introAlive(gen)) return;
   state.opponentSpeech = '「……いいよ、付いていく」';
@@ -15814,9 +15872,17 @@ function senseLossCut() { const lv = (save.panyuSkills && save.panyuSkills.sense
 function lockedSplit() {
   try {
     const M = window.MB; if (!M || !M.score) return false;
-    if ((state.community || []).length !== 5 || (state.playerHand || []).length !== 2 || (state.opponentHand || []).length !== 2) return false;
-    const board = state.community.map(rbCard);
-    return M.score([...state.playerHand.map(rbCard), ...board]) === M.score([...state.opponentHand.map(rbCard), ...board]);
+    const n = (state.community || []).length;
+    if (n < 3 || (state.playerHand || []).length !== 2 || (state.opponentHand || []).length !== 2) return false;
+    // 場札が5枚そろう前でも、残りの札がどう来ても同じ役なら必ず引き分け（2026-11-01 12回目の批評：場札3枚で K3 と K3 を「ミミの方が強い」と採点した）
+    const mine = state.playerHand.map(rbCard), hers = state.opponentHand.map(rbCard), board = state.community.map(rbCard);
+    const used = new Set([...mine, ...hers, ...board].map(M.key));
+    const rest = M.deck().filter(c => !used.has(M.key(c)));
+    const tie = (bd) => M.score([...mine, ...bd]) === M.score([...hers, ...bd]);
+    if (n === 5) return tie(board);
+    if (n === 4) return rest.every(c => tie([...board, c]));
+    for (let i = 0; i < rest.length; i++) for (let j = i + 1; j < rest.length; j++) if (!tie([...board, rest[i], rest[j]])) return false;
+    return true;
   } catch (e) { return false; }
 }
 function readBattleReady(group) {
@@ -15824,7 +15890,7 @@ function readBattleReady(group) {
   if (!state || state.tutorialMode || state.introHandMode || state.lectureMode) return false;
   // 2026-11-01 読み合いは1ハンドに1回まで。預けた読みの答え合わせが済むまで次は出さない（同じ手で2回目が出ると、1回目の読みが上書きされて消えていた）
   if (state.pendingRead || state.readHandNo === state.handNo) return false;
-  // 場札5枚で、どちらも同じ役になる手（必ず引き分け）は「本物かブラフか」が決まらないので出さない（2026-11-01 9回目の批評：折半の後に「ミミの方が強かった」と採点した）
+  // どちらも必ず同じ役になる手（必ず引き分け）は「本物かブラフか」が決まらないので出さない（2026-11-01 9回目の批評：折半の後に「ミミの方が強かった」と採点した）
   if (lockedSplit()) return false;
   const pool = (READ_BATTLE_POOLS[readPoolKey()] || {})[group];
   if (!pool || !pool.length) return false;
@@ -18815,7 +18881,8 @@ function lectureChaptersBefore(order, idx) {
 }
 
 // review：まちがえた問題の id の並び。渡すと、その問題だけを章の区切り・演習なしで出す（2026-11-01 11回目の批評：34%でも「基本はバッチリ」と送り出していた）
-function startLecture(opponentId, review) {
+// rest：今回の復習に入らなかった、まちがえた問題（復習の締めで「まだN問あるよ」と続きを出す。2026-11-01 12回目の批評）
+function startLecture(opponentId, review, rest) {
   state = defaultState();
   state.opponentId = opponentId;
   const opp = OPPONENTS[opponentId];
@@ -18825,6 +18892,7 @@ function startLecture(opponentId, review) {
   // 中断進捗があれば引き継ぎ（コース種別も復元）
   const saved = review ? null : (save.lectureProgress || null);
   state.lectureReview = review || null;
+  state.lectureReviewRest = rest || [];
   state.lectureWrong = saved && Array.isArray(saved.wrong) ? saved.wrong.slice() : [];
   state.lectureLite = saved ? !!saved.lite : false;
   state.lectureIdx = saved ? saved.idx : 0;
@@ -19183,9 +19251,14 @@ function finishLecture(skipped) {
   const nextName = nextId && OPPONENTS[nextId] ? OPPONENTS[nextId].name : '';
   const nextLine = nextName ? `次は<b>「${nextName}」</b>の卓で試してみよう。` : '本編の卓や零時の卓で、覚えたことを試してみよう。';
   const wrongIds = [...new Set(state.lectureWrong || [])];
-  const reviewIds = !skipped && scorePct < 70 ? wrongIds.slice(0, 5) : [];
+  // 復習では、今回まちがえた問題と、まだ復習していない問題の両方が残り
+  const pending = state.lectureReview ? [...new Set([...wrongIds, ...(state.lectureReviewRest || [])])] : wrongIds;
+  const reviewIds = !skipped && (state.lectureReview ? pending.length > 0 : scorePct < 70) ? pending.slice(0, 5) : [];
+  const restIds = reviewIds.length ? pending.slice(5) : [];
   const lecLead = state.lectureReview
-    ? (state.lectureCorrect === total ? 'ぜんぶ正解！ 苦手はもう大丈夫。<br>' + nextLine : 'まだ迷う所は、実戦で出たらこの考え方を思い出してね。<br>' + nextLine)
+    ? (!pending.length ? 'ぜんぶ正解！ 苦手はもう大丈夫。<br>' + nextLine
+      : !wrongIds.length ? `この${total}問はぜんぶ正解！<br>まちがえた問題が、まだ${pending.length}問あるよ。`
+      : `まだ迷う所があるね。<br>残りの${pending.length}問を、もう一度見ておこう。`)
     : scorePct >= 70 ? 'これで基本はバッチリ。<br>' + nextLine
     : scorePct >= 50 ? 'だいたい分かってきたね。<br>迷った所だけ、もう一度見ておくと安心。'
     : 'まだ迷う所があるみたい。<br>まちがえた問題を少しだけ復習しよう。';
@@ -19214,7 +19287,7 @@ function finishLecture(skipped) {
     closed = true;
     overlay.remove();
     const opp = state.opponentId;
-    startLecture(opp, reviewIds);
+    startLecture(opp, reviewIds, restIds);
   });
   overlay.querySelector('.lec-done-btn').addEventListener('click', () => {
     if (closed) return;
@@ -19929,6 +20002,7 @@ function showSaveTransfer() {
     if (!yes) return;
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(s));
+      bumpSaveSeq();
       TRANSFER_EXTRA_KEYS.forEach(k => { try { if (o.extra && o.extra[k] != null) localStorage.setItem(k, o.extra[k]); else localStorage.removeItem(k); } catch (_) {} });
     } catch (_) { say('この端末では保存できませんでした。プライベートモードを切ってから試してください'); return; }
     close();
