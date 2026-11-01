@@ -5206,7 +5206,7 @@ function showSettingsModal() {
           <div class="settings-modal-note">ホームとご褒美の絵。OFF にすると止まった1枚になり、スマホが熱くなりにくく電池も長持ちします</div>
           ${save.backdoorUnlocked ? `
           <div class="settings-modal-row settings-modal-practice">
-            <span class="settings-modal-label">練習用：相手の手札を見る</span>
+            <span class="settings-modal-label is-wrap">練習用：<wbr>相手の手札を見る</span>
             ${sw('backdoor', !!save.backdoorOn, '練習用：相手の手札を見る')}
           </div>
           <div class="settings-modal-note">対戦中に相手の手札と、手の強さ・場札の注意を表示します（対戦画面の目のボタンでも切り替え）。使っている間の対戦は、称号・ランク・初回クリア報酬の記録対象外です</div>
@@ -15360,7 +15360,9 @@ function opponentTurnDecide() {
     state.opponentSpeech = opponentSpeech(action);
     voiceBark('opp', 'fold');
     log('actions', { actor: 'opponent', type: 'fold' });
-    state.handResults.push({ hand: state.handNo, winner: 'player', reason: 'opponentFold', pot: state.pot, by: '相手降伏' });
+    // 降ろした時点のミミの役も残す（強い役で取ったのに「ブラフ成功」と言っていた：2026-11-01 外部の批評）
+    const pEvFold = state.community.length >= 3 ? evaluateHand(state.playerHand.concat(state.community)) : null;
+    state.handResults.push({ hand: state.handNo, winner: 'player', reason: 'opponentFold', pot: state.pot, by: '相手降伏', pEv: pEvFold });
     const potWon = state.pot;
     state.playerChips += state.pot;
     state.pot = 0; resetPotChips();
@@ -16125,6 +16127,8 @@ function triggerPsychBattle(qid) {
   // v2舞台演出は「心理／論理バトル」時のみ。講義モードは従来レイアウトのまま
   // （既存の講義UI・演出との衝突を避けるため）。
   root.classList.toggle('v2psych', !isLecture);
+  // スマホの講義も、読み合いと同じ画面の実寸の配置で（舞台ごと縮めると本文が7px台になっていた）
+  root.classList.toggle('lec-cp', isLecture);
   const titleEl = root.querySelector('.psych-title');
   if (titleEl) {
     if (isLecture) {
@@ -16265,6 +16269,21 @@ function triggerPsychBattle(qid) {
     });
     choicesEl.appendChild(btn);
   });
+  // スマホの講義：右の列は本文の下に選択肢を必ず残す。選択肢の高さを測って本文の上限にする（はみ出す分は本文の中でスクロール）
+  if (isLecture && document.documentElement.classList.contains('is-compact')) {
+    const pm = root.querySelector('.psych-modal'), sit = root.querySelector('.psych-situation');
+    if (pm && sit) {
+      const cs = getComputedStyle(pm);
+      const inner = pm.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      sit.style.maxHeight = Math.max(64, inner - choicesEl.offsetHeight - 8) + 'px';
+      // 左の列も同じ：題と付箋の残りに、リコ先輩の吹き出しを収める（長い題の章で付箋が右の列へ押し出されていた）
+      const sp = root.querySelector('.psych-speech'), ttl = root.querySelector('.psych-title'), hint = root.querySelector('.zazazo-hint');
+      if (sp && ttl) {
+        sp.style.maxHeight = Math.max(56, inner - ttl.offsetHeight - (hint && hint.offsetHeight ? hint.offsetHeight + 6 : 0) - 10) + 'px';
+        sp.style.overflowY = 'auto';
+      }
+    }
+  }
 
   // 研修Hand3の再挑戦：外した回数だけハズレを潰しておく（答えは教えない）。
   // 潰し切ると残るのは正解だけになるので、必ず「読めた」状態で先へ進める。
@@ -17275,6 +17294,7 @@ function resolvePsych(qid, choice, btn) {
         state.lectureCombo = 0;
       }
       state.lectureIdx++;
+      saveLectureProgress();
       updateLectureHud();
       const resultPrefix = isCorrect ? '✓ 正解！' + rewardMsg + '　' : '✗ 残念……　';
       showRicoCutIn(resultPrefix + state.ricoAdvice.replace(/^「|」$/g, ''), isCorrect, () => {
@@ -17840,8 +17860,9 @@ function showHandResultBanner(snapshot) {
   } else if (last.reason === 'opponentFold') {
     let mimiLine;
     if (last.pEv && last.pEv.rank >= 4) mimiLine = pick(['最強手だったのに……まあいいか', '完成役を見せず読み勝ち']);
-    else if (last.pEv && last.pEv.rank >= 2) mimiLine = pick(['降りられた……勝ちは勝ち', 'ふぅ、ヒヤヒヤしたけど取れた']);
-    else mimiLine = pick(['ブラフ通った……心臓に悪い', 'うわ、ブラフ成功……']);
+    else if (last.pEv && last.pEv.rank >= 1) mimiLine = pick(['降りられた……勝ちは勝ち', 'ふぅ、ヒヤヒヤしたけど取れた']);
+    else if (last.pEv) mimiLine = pick(['ブラフ通った……心臓に悪い', 'うわ、ブラフ成功……']);
+    else mimiLine = pick(['押し切れた……！', '場札の前に、取れちゃった']);
     charLine = `<div class="hr-line hr-line-mimi">「${mimiLine}」 — ミミ</div>`;
   } else if (last.reason === 'showdown') {
     let mimiLine;
@@ -18912,10 +18933,10 @@ const HANDS_ON_AFTER = {
   },
   6: {
     title: '実戦演習③：ブラフの読み合い',
-    situation: 'リバー：場札 <b>J♦ 7♣ 4♥ 2♠ 8♣</b>。<br>あなたの手札 <b>10♠ 10♦</b>（オーバーペア）。<br>相手がいきなり ＜オールイン＞。<br>相手は普段ブラフが多い性格。',
+    situation: 'リバー：場札 <b>J♦ 7♣ 4♥ 2♠ 8♣</b>。<br>あなたの手札 <b>Q♠ Q♦</b>（場のどの札よりも高いペア＝オーバーペア）。<br>相手がいきなり300のオールイン。ポットはそれを足して <b>900</b>、コールに払うのは <b>300</b>。<br>この相手は、ここまでの5回の大きな賭けのうち3回がブラフだった。',
     choices: [
-      { text: 'ヒーローコール（ブラフ捕獲狙い）', correct: true, hint: 'ブラフ多めな相手＋自分のオーバーペア。+EVなコール' },
-      { text: '安全にフォールド', correct: false, hint: '間違いではないが、ブラフ多発派にはコールが+EV' },
+      { text: 'コールする（ブラフを捕まえに行く）', correct: true, hint: '300払って1200を取りに行く勝負。4回に1回より多く勝てれば得。ブラフが半分を超える相手なら十分に届く' },
+      { text: '安全にフォールドする', correct: false, hint: '300で1200を狙えて、相手はブラフが多い。ここで降りると、取れる分を毎回捨てることになる' },
     ],
   },
 };
@@ -19018,11 +19039,16 @@ function showHandsOnExercise(ex, onClose) {
   });
 }
 
+// 受講位置の保存（中断の時だけでなく、毎問の回答のあとにも。読み込み直しで35問の位置が消えていた）
+function saveLectureProgress() {
+  save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect, earned: state.lectureEarned || 0, lite: !!state.lectureLite };
+  saveProgress();
+}
+
 function exitLectureMidway() {
   battleGen++;
   // 進捗を保存して中断（コース種別も保存）
-  save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect, earned: state.lectureEarned || 0, lite: !!state.lectureLite };
-  saveProgress();
+  saveLectureProgress();
   goLobby();
   toast('講義を中断しました。続きはリコ先輩から再開できます');
 }

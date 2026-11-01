@@ -573,6 +573,11 @@
             const box = document.createElement('div');
             box.className = 'mb-wager mb-pop' + (o.stakes ? ' has-stakes' : '');
             const fv = P.fever > 0 ? 2 : 1;
+            // 「何%超ならどの自信が得か」の目安は、ぱにゅぱにゅの軽減とフィーバーで変わる。決まり文句のままだと、Lv3で55%なのに×3の方が得だった（2026-11-01 外部の批評）
+            if (o.stakes && /67%超/.test(o.note || '')) {
+              const k = 1 - (opts.lossCut || 0), th = (ds) => Math.round(k * ds / (fv + k * ds) * 100);
+              o.note = `${th(o.stakes[2] - o.stakes[1])}%超→ぜったい　${th(o.stakes[1] - o.stakes[0])}%超→確信`;
+            }
             const chip = (m, name) => `<button class="mb-wchip x${m}" data-m="${m}"><span>${name}<b>×${m}</b></span>${o.stakes ? `<em class="mb-wchip-st"><i class="w">+${b * m * fv}</i><i class="l">${o.stakes[m - 1] ? '−' + (b * o.stakes[m - 1] - Math.round(b * o.stakes[m - 1] * (opts.lossCut || 0))) : '±0'}</i></em>` : ''}</button>`;
             box.innerHTML = `<div class="mb-wager-q">${o.question || 'その読み、どのくらい自信ある？'}</div>
               <div class="mb-wager-chips">${chip(1, 'たぶん')}${chip(2, '確信')}${chip(3, 'ぜったい')}</div>
@@ -644,7 +649,7 @@
           el.innerHTML = `<div class="mb-result-card"><div>
               <div class="mb-result-stamp">読みを預けた</div>
               <div class="mb-entrust-pick">ミミの読み<b>${o.pick}</b>${o.noMult ? "" : `<span>自信 ×${api.mult || 1}</span>`}</div>
-              <div class="mb-entrust-coin"><span class="w">当たれば +${o.win}</span><span class="l">外れたら ${o.lose ? '−' + o.lose : '±0'}</span></div>
+              <div class="mb-entrust-coin"><span class="w">当たれば +${o.win}</span><span class="l">外れたら ${o.lose ? '−' + (o.lose - Math.round(o.lose * (opts.lossCut || 0))) : '±0'}</span></div>
               <div class="mb-result-detail">${autoLine(o) || o.advice}<br>答え合わせは、この手の決着の後。降りても、相手の札はめくって確かめる。</div>
             </div><div class="mb-result-actions"><button class="btn gold" id="mb-next">${opts.exitLabel || '卓にもどる'}</button></div></div>`;
           layer.appendChild(el); sfx.fanfare();
