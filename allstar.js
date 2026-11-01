@@ -1075,7 +1075,8 @@ const Allstar = (() => {
     const stackBB = (pre ? h.startStacks[seat] : L.stack + L.committed) / bb;
     const needPct = L.toCall > 0 ? L.toCall / (L.pot + L.toCall) : 0;
     // 賞金：残り人数と、次に1人落ちた時に上がる額
-    const alive = liveSeats(t).length;
+    // 手の途中は、全額を賭けて手元が0の人もまだ脱落していない。手の始めの人数で数える（2026-11-01 11回目の批評）
+    const alive = h.aliveAtStart || liveSeats(t).length;
     const prizes = t.cfg.prizes;
     const ladder = [];
     for (let place = alive; place >= 1; place--) ladder.push({ place, prize: prizes[place - 1] || 0 });

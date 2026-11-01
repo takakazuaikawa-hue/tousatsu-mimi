@@ -565,6 +565,8 @@
         // 読みに賭ける：自信の度合いを選ぶ。×1/×2/×3 を返す
         // o.stakes を渡すと、外れた時に失う額を倍率ごとに変える（例 [0, 1, 3]：たぶん＝失わない／確信＝元の額／ぜったい＝元の3倍）。
         // こうすると「見込みが五分ならたぶん、半分を超えたら確信、3分の2を超えたらぜったい」が一番得になり、自信を選ぶ意味が出る
+        // 外れた時に本当に失う額：ぱにゅぱにゅの軽減を引き、手持ちのコインを超えない
+        realLoss(raw) { const v = raw - Math.round(raw * (opts.lossCut || 0)); return Math.max(0, Math.min(P.coins, v)); },
         wager(o = {}) {
           return new Promise(res => {
             const b = o.base || 20;
@@ -574,11 +576,14 @@
             box.className = 'mb-wager mb-pop' + (o.stakes ? ' has-stakes' : '');
             const fv = P.fever > 0 ? 2 : 1;
             // 「何%超ならどの自信が得か」の目安は、ぱにゅぱにゅの軽減とフィーバーで変わる。決まり文句のままだと、Lv3で55%なのに×3の方が得だった（2026-11-01 外部の批評）
+            // 外れた時に本当に失う額（軽減のあと、手持ちのコインまで）。選ぶ・預ける・答え合わせ・目安で同じ額を使う（2026-11-01 11回目の批評：残高0で−22と出ていた）
+            const L = (m) => o.stakes ? api.realLoss(b * (o.stakes[m - 1] || 0)) : 0;
             if (o.stakes && /67%超/.test(o.note || '')) {
-              const k = 1 - (opts.lossCut || 0), th = (ds) => Math.round(k * ds / (fv + k * ds) * 100);
-              o.note = `${th(o.stakes[2] - o.stakes[1])}%超→ぜったい　${th(o.stakes[1] - o.stakes[0])}%超→確信`;
+              const th = (dL) => Math.round(dL / (b * fv + dL) * 100);
+              const d3 = L(3) - L(2), d2 = L(2) - L(1);
+              o.note = !L(3) ? '今回は外れても失うコインなし→ぜったいが得' : `${th(d3)}%超→ぜったい　${th(d2)}%超→確信`;
             }
-            const chip = (m, name) => `<button class="mb-wchip x${m}" data-m="${m}"><span>${name}<b>×${m}</b></span>${o.stakes ? `<em class="mb-wchip-st"><i class="w">+${b * m * fv}</i><i class="l">${o.stakes[m - 1] ? '−' + (b * o.stakes[m - 1] - Math.round(b * o.stakes[m - 1] * (opts.lossCut || 0))) : '±0'}</i></em>` : ''}</button>`;
+            const chip = (m, name) => `<button class="mb-wchip x${m}" data-m="${m}"><span>${name}<b>×${m}</b></span>${o.stakes ? `<em class="mb-wchip-st"><i class="w">+${b * m * fv}</i><i class="l">${L(m) ? '−' + L(m) : '±0'}</i></em>` : ''}</button>`;
             box.innerHTML = `<div class="mb-wager-q">${o.question || 'その読み、どのくらい自信ある？'}</div>
               <div class="mb-wager-chips">${chip(1, 'たぶん')}${chip(2, '確信')}${chip(3, 'ぜったい')}</div>
               <div class="mb-wager-note">${o.note || (o.stakes ? `札の下は、当たった時／外れた時のコイン${fv > 1 ? '（フィーバー中は当たりが2倍）' : ''}` : `当たれば ${b}×倍率、外れたら その半分を失う${P.fever > 0 ? '（フィーバー中は当たりがさらに2倍）' : ''}`)}</div>`;
@@ -649,7 +654,7 @@
           el.innerHTML = `<div class="mb-result-card"><div>
               <div class="mb-result-stamp">読みを預けた</div>
               <div class="mb-entrust-pick">ミミの読み<b>${o.pick}</b>${o.noMult ? "" : `<span>自信 ×${api.mult || 1}</span>`}</div>
-              <div class="mb-entrust-coin"><span class="w">当たれば +${o.win}</span><span class="l">外れたら ${o.lose ? '−' + (o.lose - Math.round(o.lose * (opts.lossCut || 0))) : '±0'}</span></div>
+              <div class="mb-entrust-coin"><span class="w">当たれば +${o.win * (P.fever > 0 ? 2 : 1)}${P.fever > 0 ? '（FEVER）' : ''}</span><span class="l">外れたら ${api.realLoss(o.lose || 0) ? '−' + api.realLoss(o.lose) : '±0'}</span></div>
               <div class="mb-result-detail">${autoLine(o) || o.advice}<br>答え合わせは、この手の決着の後。降りても、相手の札はめくって確かめる。</div>
             </div><div class="mb-result-actions"><button class="btn gold" id="mb-next">${opts.exitLabel || '卓にもどる'}</button></div></div>`;
           layer.appendChild(el); sfx.fanfare();
@@ -682,6 +687,8 @@
             gain = api.lossK ? -b * (api.lossK[mult - 1] || 0) : -Math.round(b * mult / 2);
             // ぱにゅぱにゅLv2/Lv3（交換所）：読み違いで失うコインを減らす。opts.lossCut＝減らす割合
             if (opts.lossCut > 0 && gain < 0) { cut = Math.round(-gain * opts.lossCut); gain += cut; }
+            // 手持ちより多くは失わない。表示も本当に減った額にする
+            if (gain < 0) gain = -Math.min(P.coins, -gain);
             P.combo = 0; P.fever = 0;
           }
           P.coins = Math.max(0, P.coins + gain);

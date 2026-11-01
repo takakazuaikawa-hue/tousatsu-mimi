@@ -20785,3 +20785,14 @@ html.is-compact #app > .battle-modal-overlay.lec-cp .psych-situation small { fon
   html.is-compact #app > .battle-modal-overlay.lec-cp .psych-modal > * { width: calc(100% - 210px - 14px) !important; }
   html.is-compact #app > .battle-modal-overlay.lec-cp .psych-modal > :is(.psych-title, .psych-speech, .zazazo-hint) { width: 196px !important; }
 }
+
+/* エンディングと後日談の間は全画面の案内を出さない。最後の台詞を踏んでいた（2026-11-01 11回目の批評） */
+body:has(.ending-screen) #fullscreen-btn-group,
+body:has(.epilogue-screen) #fullscreen-btn-group { display: none !important; }
+
+/* ファイブポーカー：相手の交換の癖を名前の下に一言（2026-11-01 11回目の批評） */
+.minipoker-overlay .mp-char-style { display: inline-block; padding: 3px 8px; font-size: 14px; font-weight: 700; line-height: 1.35; letter-spacing: .02em; text-align: center; color: var(--c-gold-bright, #efcd82); border: 1px solid rgba(239,205,130,.45); background: rgba(12,3,6,.72); }
+/* 小さいスマホ：「（2コイン返却）」が1行に入る幅をサレンダーに回す（2026-11-01 切れていた） */
+@media (max-width: 760px) {
+  html.is-compact .minipoker-overlay .mp-actions .mp-btn-surrender { flex-grow: 1.45; padding: 0 4px; letter-spacing: 0; }
+}

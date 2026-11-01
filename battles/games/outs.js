@@ -35,7 +35,9 @@ MB.register({
     if (T && T.board.length === 4 && (T.toCall || 0) > 0) {
       const hole = T.mine, board = T.board, known = [...hole, ...board];
       const rest = deck().filter(c => !known.some(k => key(k) === key(c)));
-      const outs = rest.filter(c => category([...known, c]) >= 4 && category([...board, c]) < 4);
+      // 「ストレートかフラッシュを探せ」なので、フルハウス・フォーカードになるだけの札は当たりにしない（2026-11-01 11回目の批評）
+      const isDraw = (k) => k === 4 || k === 5 || k === 8;
+      const outs = rest.filter(c => isDraw(category([...known, c])) && category([...board, c]) < 4);
       // 汚れた当たり札（2026-11-01 外部の批評：完成しても相手のフルハウスに負ける札まで「得」の根拠にしていた）：
       // 場にペアを作る札（相手のフルハウス・フォーカード）と、ストレートだけ完成して場に同じマークが3枚になる札（相手のフラッシュ）は半分で数える。相手の札は使わない
       // 場にもうペアがある時は、どの当たり札でも相手のフルハウスがありうる（2026-11-01 6回目の批評）

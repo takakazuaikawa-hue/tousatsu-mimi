@@ -7519,7 +7519,14 @@ function renderCurrentHandKicker() {
   // 場札の余り札はふたりとも使う。自分の手札でない余り札で「強め」と言うと、自分だけ強いように見える
   const holeR = new Set(state.playerHand.map(c => c.rank));
   const boardR = new Set(visibleCommunity().map(c => c.rank));
-  const kickerStrengthLabel = (r) => (holeR.has(r) || !boardR.has(r)) ? _kickerStrengthLabel(r) : '（場の札・相手も同じ）';
+  // 余り札は1枚ずつ手札か場札かを見る。まとめて「相手も同じ」と言わない（2026-11-01 11回目の批評：J が手札なのに場の札と言った）
+  const isMineR = (r) => holeR.has(r) || !boardR.has(r);
+  const kickerStrengthLabel = (list) => {
+    const mine = list.filter(isMineR);
+    if (!mine.length) return '（場の札・相手も同じ）';
+    if (mine.length === list.length) return _kickerStrengthLabel(mine[0]);
+    return `（${mine.map(nameOf).join('・')}は手札・ほかは場の札）`;
+  };
   let mainInfo = '';     // 役の中身：ペアのランク等
   let kickerLine = '';   // キッカー部分
   let strength = '';
@@ -7530,7 +7537,7 @@ function renderCurrentHandKicker() {
       const ks = sortedRanks.slice(1, 3);
       mainInfo = `${nameOf(top)} ハイ`;
       kickerLine = `キッカー：${ks.map(nameOf).join(' ')}`;
-      strength = kickerStrengthLabel(Math.max(top, ks[0]));
+      strength = kickerStrengthLabel([top, ...ks]);
       break;
     }
     case 1: { // ワンペア
@@ -7538,7 +7545,7 @@ function renderCurrentHandKicker() {
       const ks = sortedRanks.filter(r => r !== pair.r).slice(0, 3);
       mainInfo = `${nameOf(pair.r)}`;
       kickerLine = `キッカー：${ks.map(nameOf).join(' ')}`;
-      strength = kickerStrengthLabel(ks[0]);
+      strength = kickerStrengthLabel(ks);
       break;
     }
     case 2: { // ツーペア
@@ -7546,7 +7553,7 @@ function renderCurrentHandKicker() {
       const k = sortedRanks.find(r => r !== pairs[0].r && r !== pairs[1].r);
       mainInfo = `${nameOf(pairs[0].r)} & ${nameOf(pairs[1].r)}`;
       kickerLine = `キッカー：${nameOf(k)}`;
-      strength = kickerStrengthLabel(k);
+      strength = kickerStrengthLabel([k]);
       break;
     }
     case 3: { // スリーカード
@@ -7554,7 +7561,7 @@ function renderCurrentHandKicker() {
       const ks = sortedRanks.filter(r => r !== trip.r).slice(0, 2);
       mainInfo = `${nameOf(trip.r)}`;
       kickerLine = `キッカー：${ks.map(nameOf).join(' ')}`;
-      strength = kickerStrengthLabel(ks[0]);
+      strength = kickerStrengthLabel(ks);
       break;
     }
     case 4: { // ストレート
@@ -7577,7 +7584,7 @@ function renderCurrentHandKicker() {
       const k = sortedRanks.find(r => r !== quad.r);
       mainInfo = `${nameOf(quad.r)}`;
       kickerLine = `キッカー：${nameOf(k)}`;
-      strength = kickerStrengthLabel(k);
+      strength = kickerStrengthLabel([k]);
       break;
     }
     case 8: { // ストレートフラッシュ／ロイヤル
@@ -11321,6 +11328,12 @@ function showMiniPokerGame() {
                lose: 'う、うそ……あたしが……！', tie: '引き分け？ つまんないの',
                reach: 'なにか企んでるの？ 顔に出てるの♡', big: 'う、うそ……その役……' } },
   ];
+  // 相手ごとの交換の癖（2026-11-01 11回目の批評：相手が替わっても考え方が替わらなかった）。札の上に一言で出す
+  //   chase：役を崩してでもフラッシュ・ストレートを狙う＝外れも多い → ペアのままでも勝てることが多い
+  //   tight：小さいペアでも余り札を1枚残して守る＝ワンペア止まりが多い → ペアより上を狙う価値がある
+  //   std：そろい目は逃さない普通の打ち方　twice：普通の打ち方で2回交換する
+  const MP_STYLE = { polka: ['chase', '大穴ねらい・外れも多い'], selina: ['tight', '堅実・ペアを守る'], grano: ['std', '計算・よく見て引く'], velvet: ['twice', '2回交換する'] };
+  oppPool.forEach(o => { const s = MP_STYLE[o.key]; if (s) { o.style = s[0]; o.styleTag = s[1]; } });
   const cleared = save.clearedStages || [];
   const available = oppPool.filter(o => o.key === 'polka' || o.key === 'selina' || cleared.includes(o.key));
 
@@ -11592,7 +11605,7 @@ function showMiniPokerGame() {
       </div>
       ${cardsHtml}
       <div class="mp-handname ${ev && ev.rank >= 4 ? 'mp-handname-big' : ''}">
-        ${showHandName ? ev.name : (cards.length === 5 ? '？？？' : '')}
+        ${showHandName ? ev.name : (!isPlayer && charInfo.styleTag ? `<span class="mp-char-style">${charInfo.styleTag.replace('・', '<br>')}</span>` : (cards.length === 5 ? '？？？' : ''))}
       </div>
     `;
   }
@@ -12381,9 +12394,12 @@ function showMiniPokerGame() {
       return;
     }
     // 最終ラウンド：CPU も引き直し → reveal
-    const cpuHold = cpuPickHolds(ctx.cpu);
-    for (let i = 0; i < 5; i++) {
-      if (!cpuHold[i]) ctx.cpu[i] = ctx.deck.shift();
+    const cpuStyle = ctx.opp.style || 'std';
+    for (let d = 0; d < (cpuStyle === 'twice' ? 2 : 1); d++) {
+      const cpuHold = cpuPickHolds(ctx.cpu, cpuStyle);
+      for (let i = 0; i < 5; i++) {
+        if (!cpuHold[i]) ctx.cpu[i] = ctx.deck.shift();
+      }
     }
     ctx.phase = 'reveal';
     renderPhase();
@@ -13031,7 +13047,7 @@ function showMiniPokerGame() {
   }
 
   // ── CPU AI（保持選択） ──
-  function cpuPickHolds(cards) {
+  function cpuPickHolds(cards, style = 'std') {
     const ev = evaluateHand(cards);
     const hold = [false, false, false, false, false];
     if (ev.rank >= 4) { return [true, true, true, true, true]; } // ストレート以上は全キープ
@@ -13041,13 +13057,33 @@ function showMiniPokerGame() {
     const sc = {};
     cards.forEach(c => sc[c.suit] = (sc[c.suit] || 0) + 1);
     const flushSuit = Object.entries(sc).find(([s, n]) => n === 4)?.[0];
-    if (flushSuit) {
+    // 堅実：ツーペア以上か、ワンペアならフラッシュを追わずにペアを守る
+    if (flushSuit && !(style === 'tight' && ev.rank >= 1)) {
       cards.forEach((c, i) => { hold[i] = (c.suit === flushSuit); });
       return hold;
+    }
+    if (style === 'chase' && ev.rank <= 1) {
+      // 大穴ねらい：4枚続き（ストレートまであと1枚）なら小さいペアを崩してでも残す。同じマーク3枚でも追う
+      const rs = [...new Set(cards.map(c => c.rank))].sort((a, b) => a - b);
+      for (let lo = 0; lo + 3 < rs.length; lo++) {
+        if (rs[lo + 3] - rs[lo] === 3) {
+          const run = new Set(rs.slice(lo, lo + 4)), used = new Set();
+          cards.forEach((c, i) => { if (run.has(c.rank) && !used.has(c.rank)) { hold[i] = true; used.add(c.rank); } });
+          return hold;
+        }
+      }
+      const pairR = ev.rank === 1 ? +Object.keys(rc).find(r => rc[r] === 2) : 0;
+      const s3 = Object.entries(sc).find(([s, n]) => n === 3)?.[0];
+      if (s3 && pairR < 10) { cards.forEach((c, i) => { hold[i] = (c.suit === s3); }); return hold; }
     }
     // ペア以上は役構成だけ保持
     if (ev.rank >= 1) {
       cards.forEach((c, i) => { if (rc[c.rank] >= 2) hold[i] = true; });
+      // 堅実：ワンペアなら一番高い余り札も残す（スリーカードは出にくいが、崩れない）
+      if (style === 'tight' && ev.rank === 1) {
+        let best = -1; cards.forEach((c, i) => { if (!hold[i] && (best < 0 || c.rank > cards[best].rank)) best = i; });
+        if (best >= 0) hold[best] = true;
+      }
       return hold;
     }
     // ハイカード：A/K のみ
@@ -15831,7 +15867,9 @@ const READ_GAME_OK = {
       if (board.length !== 4 || mine.length !== 2 || toCall <= 0) return false;
       const known = [...mine, ...board]; if (M.category(known) >= 4) return false;
       const used = new Set(known.map(M.key));
-      const outs = M.deck().filter(c => !used.has(M.key(c)) && M.category([...known, c]) >= 4 && M.category([...board, c]) < 4);
+      // 数えるのはストレート・フラッシュ（とストレートフラッシュ）だけ。フルハウスになる札は課題と違う（2026-11-01 11回目の批評）
+      const isDraw = (k) => k === 4 || k === 5 || k === 8;
+      const outs = M.deck().filter(c => !used.has(M.key(c)) && isDraw(M.category([...known, c])) && M.category([...board, c]) < 4);
       return outs.length >= 4;
     } catch (e) { return false; }
   },
@@ -17292,6 +17330,8 @@ function resolvePsych(qid, choice, btn) {
         }
       } else {
         state.lectureCombo = 0;
+        if (!Array.isArray(state.lectureWrong)) state.lectureWrong = [];
+        state.lectureWrong.push(qid);
       }
       state.lectureIdx++;
       saveLectureProgress();
@@ -18756,6 +18796,7 @@ function updateLectureHud() {
 
 // 現在のコースに応じた出題順を返す（⚡ライトコース＝LESSON_LITE_KEYS の章だけ）
 function lectureOrder() {
+  if (state && state.lectureReview) return state.lectureReview;
   if (state && state.lectureLite) return LESSON_LITE_CHAPTERS.flatMap(c => c.ids);
   return LESSON_ORDER;
 }
@@ -18773,7 +18814,8 @@ function lectureChaptersBefore(order, idx) {
   return done;
 }
 
-function startLecture(opponentId) {
+// review：まちがえた問題の id の並び。渡すと、その問題だけを章の区切り・演習なしで出す（2026-11-01 11回目の批評：34%でも「基本はバッチリ」と送り出していた）
+function startLecture(opponentId, review) {
   state = defaultState();
   state.opponentId = opponentId;
   const opp = OPPONENTS[opponentId];
@@ -18781,7 +18823,9 @@ function startLecture(opponentId) {
   state.opponentImgKey = opp.imgKey;
   state.lectureMode = true;
   // 中断進捗があれば引き継ぎ（コース種別も復元）
-  const saved = save.lectureProgress || null;
+  const saved = review ? null : (save.lectureProgress || null);
+  state.lectureReview = review || null;
+  state.lectureWrong = saved && Array.isArray(saved.wrong) ? saved.wrong.slice() : [];
   state.lectureLite = saved ? !!saved.lite : false;
   state.lectureIdx = saved ? saved.idx : 0;
   state.lectureCorrect = saved ? saved.correct : 0;
@@ -18797,8 +18841,9 @@ function startLecture(opponentId) {
   state.lectureCombo = 0; // コンボは再開時リセット（earned は saved から復元済み）
   render();
   // 新規はコースを選ぶまで問題数が決まらない（「0/35問」のあとライトで「0/9問」に変わっていた）。HUD は1問目から出す
-  if (saved) updateLectureHud();
-  showLectureIntro(() => {
+  if (saved || review) updateLectureHud();
+  if (review) triggerLectureQuestion();
+  else showLectureIntro(() => {
     triggerLectureQuestion();
   }, saved);
 }
@@ -18957,7 +19002,7 @@ function triggerLectureQuestion() {
   }
   // 章タイトルが変わるタイミングで章バナーを表示
   const prevChapter = state.lectureIdx > 0 ? PSYCH_QUESTIONS[order[state.lectureIdx - 1]]?.chapter : null;
-  if (q.chapter !== prevChapter) {
+  if (q.chapter !== prevChapter && !state.lectureReview) {
     // 前の章を受け終えた直後にハンズオン演習を挿入。
     // 飛ばした章・演習済みの章（再開前に通った章を含む）では出さない
     if (!state.lectureHandsOnDone) state.lectureHandsOnDone = {};
@@ -19041,7 +19086,8 @@ function showHandsOnExercise(ex, onClose) {
 
 // 受講位置の保存（中断の時だけでなく、毎問の回答のあとにも。読み込み直しで35問の位置が消えていた）
 function saveLectureProgress() {
-  save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect, earned: state.lectureEarned || 0, lite: !!state.lectureLite };
+  if (state.lectureReview) return; // 復習は短いので、途中の位置は残さない（本編の講義の続きを上書きしない）
+  save.lectureProgress = { idx: state.lectureIdx, correct: state.lectureCorrect, earned: state.lectureEarned || 0, lite: !!state.lectureLite, wrong: state.lectureWrong || [] };
   saveProgress();
 }
 
@@ -19132,9 +19178,20 @@ function finishLecture(skipped) {
       ? [`成績ボーナス（${grade}）：<b>+${gradeBonus}コイン</b>`, `初回クリア報酬：<b>+${clearBonus}コイン</b>`]
       : ['成績ボーナス・初回クリア報酬は受け取り済み']),
   ];
+  // 締めの一言は成績と進み具合で変える。次の行き先は、まだ勝っていない一番手前の相手
+  const nextId = STAGE_ORDER.find(id => id !== 'rico_tutorial' && !save.clearedStages.includes(id));
+  const nextName = nextId && OPPONENTS[nextId] ? OPPONENTS[nextId].name : '';
+  const nextLine = nextName ? `次は<b>「${nextName}」</b>の卓で試してみよう。` : '本編の卓や零時の卓で、覚えたことを試してみよう。';
+  const wrongIds = [...new Set(state.lectureWrong || [])];
+  const reviewIds = !skipped && scorePct < 70 ? wrongIds.slice(0, 5) : [];
+  const lecLead = state.lectureReview
+    ? (state.lectureCorrect === total ? 'ぜんぶ正解！ 苦手はもう大丈夫。<br>' + nextLine : 'まだ迷う所は、実戦で出たらこの考え方を思い出してね。<br>' + nextLine)
+    : scorePct >= 70 ? 'これで基本はバッチリ。<br>' + nextLine
+    : scorePct >= 50 ? 'だいたい分かってきたね。<br>迷った所だけ、もう一度見ておくと安心。'
+    : 'まだ迷う所があるみたい。<br>まちがえた問題を少しだけ復習しよう。';
   overlay.innerHTML = `
     <div class="tutorial-bubble lecture-bubble">
-      <div class="tutorial-step">講義完了</div>
+      <div class="tutorial-step">${state.lectureReview ? '復習完了' : '講義完了'}</div>
       <h2 class="lec-title">講義お疲れさま！</h2>
       ${skipped
         ? '<p class="lec-lead">スキップでもOK。実戦で覚えていこ〜<br>講義はロビーの「リコの教室」からいつでも受けられるよ。</p>'
@@ -19142,16 +19199,24 @@ function finishLecture(skipped) {
         <div class="lec-grade" style="color:${gradeColor};text-shadow:0 0 24px ${gradeColor};">${grade}</div>
         <p class="lec-score">${total}問中 <b>${state.lectureCorrect}問正解</b>（${scorePct}%）</p>
         <div class="lec-rewards">${rewardLines.join('<br>')}</div>
-        <p class="lec-lead">これで基本はバッチリ。<br>次は<b>第2戦「ポルカ」</b>で実戦練習だよ。</p>`
+        <p class="lec-lead">${lecLead}</p>`
       }
       <div class="tutorial-actions lec-actions">
-        <button class="next-btn" type="button">${showStory ? '▶ 次へ' : '▶ ロビーへ'}</button>
+        ${reviewIds.length ? `<button class="next-btn lec-review-btn" type="button">まちがえた問題をもう一度（${reviewIds.length}問）</button>` : ''}
+        <button class="next-btn lec-done-btn" type="button">${showStory ? '▶ 次へ' : '▶ ロビーへ'}</button>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
   let closed = false;
-  overlay.querySelector('.next-btn').addEventListener('click', () => {
+  overlay.querySelector('.lec-review-btn')?.addEventListener('click', () => {
+    if (closed) return;
+    closed = true;
+    overlay.remove();
+    const opp = state.opponentId;
+    startLecture(opp, reviewIds);
+  });
+  overlay.querySelector('.lec-done-btn').addEventListener('click', () => {
     if (closed) return;
     closed = true;
     overlay.remove();
