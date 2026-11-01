@@ -642,6 +642,9 @@
               <div class="mb-result-detail">${autoLine(o) || o.advice}<br>答え合わせは、この手の決着の後。降りても、相手の札はめくって確かめる。</div>
             </div><div class="mb-result-actions"><button class="btn gold" id="mb-next">${opts.exitLabel || '卓にもどる'}</button></div></div>`;
           layer.appendChild(el); sfx.fanfare();
+          // 2回目からは、読んで分かる間（約2.6秒）を置いて自分で卓にもどる。押せばすぐもどる（2026-11-01 外部の批評：読み合いは確認の区切りが多すぎる）
+          let seenE = false; try { seenE = !!localStorage.getItem('mbEntrustSeen'); localStorage.setItem('mbEntrustSeen', '1'); } catch (e) {}
+          if (seenE) { const nb = el.querySelector('#mb-next'); nb.classList.add('is-auto'); setTimeout(() => { if (!exited && live() && nb.isConnected) nb.click(); }, 2600); }
           el.querySelector('#mb-next').addEventListener('click', () => {
             if (exited) return; exited = true; sfx.tap();
             const res = { gameId: g.id, group: g.group, charId: api.charId, deferred: true, pending: o.pending, mult: api.mult || 1, gain: 0, correct: false };

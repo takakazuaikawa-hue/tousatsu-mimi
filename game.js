@@ -1004,7 +1004,7 @@ function mkScore(rank, name, tiebreak) {
   for (let i = 0; i < tiebreak.length && i < 5; i++) {
     s += tiebreak[i] * Math.pow(15, 4 - i);
   }
-  return { rank, name, score: s };
+  return { rank, name, score: s, tb: tiebreak };
 }
 
 // 手札強度（0..1）：ハンド評価値を正規化（簡易）
@@ -5990,6 +5990,11 @@ function shop3CardName(item) {
   return shop3ShortName(item).replace(/^(カットイン)・/, '');
 }
 function shop3ShortName(item) { return /^chips_plus_/.test(item.id) ? '持ち込み' + item.name.replace(/^チップ拡張 /, ' ') : item.name.replace(/^(リコ・|ミミ・|ぱにゅ衣装：)/, ''); }
+// 衣装の札の角に、だれが着るかの印（2026-11-01 外部の批評：リコ用とぱにゅぱにゅ用が混ざり、名前だけでは分からなかった）
+function shop3Who(item) {
+  const w = /^outfit_rico_/.test(item.id) ? ['rico', 'リコ'] : /^mimi_skin_/.test(item.id) ? ['mimi', 'ミミ'] : /^pwear_/.test(item.id) ? ['panyu', 'ぱにゅ'] : null;
+  return w ? `<span class="sh3-who is-${w[0]}">${w[1]}</span>` : '';
+}
 function shop3Kicker(item) {
   if (/^outfit_rico_/.test(item.id)) return 'リコ先輩の衣装';
   if (/^mimi_skin_/.test(item.id))   return 'ミミの衣装';
@@ -6021,7 +6026,7 @@ function shop3CardHTML(item, k) {
   }
   const owned = isItemOwned(item.id);
   const cls = ['sh3-card', owned ? 'is-owned' : '', isShopItemNew(item.id) ? 'is-new' : '', shop3.sel === item.id ? 'is-sel' : ''].filter(Boolean).join(' ');
-  return `<button type="button" class="${cls}" data-sh3="${item.id}" style="--k:${k}" aria-label="${item.name}">${shop3Face(item, shop3Art(item))}<span class="sh3-cap">${shop3CardName(item)}</span>${owned ? '<span class="sh3-owned">入手済</span>' : ''}</button>`;
+  return `<button type="button" class="${cls}" data-sh3="${item.id}" style="--k:${k}" aria-label="${item.name}">${shop3Face(item, shop3Art(item))}${shop3Who(item)}<span class="sh3-cap">${shop3CardName(item)}</span>${owned ? '<span class="sh3-owned">入手済</span>' : ''}</button>`;
 }
 function shop3RenderCats() {
   const nav = document.querySelector('.sh3-cats'); if (!nav) return;
@@ -11963,6 +11968,7 @@ function showMiniPokerGame() {
 
   function doSurrender() {
     if (ctx.phase !== 'choose') return;
+    delete save.minipoker.openStake;
     // 実際に支払った額（ボス夜は×3）の半額を返却
     const stake = ctx.effectiveBet || ctx.bet;
     const refund = Math.floor(stake / 2);
@@ -12285,6 +12291,8 @@ function showMiniPokerGame() {
     const effectiveBet = ctx.bet * tableMult();
     if (ctx.bet < 1 || effectiveBet > MP_BET_MAX || save.coins < effectiveBet) return;
     save.coins -= effectiveBet;
+    // 勝負の途中で読み直されたら、起動時にサレンダー扱いで半額を戻す（2026-11-01 外部の批評：再読み込みで賭け金だけ消えた）
+    save.minipoker.openStake = effectiveBet;
     ctx.effectiveBet = effectiveBet;
     ctx.lastBetUsed = ctx.bet;
     ctx.quickMode = !!quick;
@@ -12382,6 +12390,7 @@ function showMiniPokerGame() {
 
   function judge() {
     if (ctx.phase !== 'reveal') return;
+    delete save.minipoker.openStake;
     const handId = ctx.handSeq;
     const pe = evaluateHand(ctx.player);
     const ce = evaluateHand(ctx.cpu);
@@ -13779,6 +13788,7 @@ function startBattleInternal(opponentId) {
     setTimeout(() => { if (gen === battleGen && state && state.screen === 'battle') toast(`チップ拡張 +${carry}`); }, 700);
   }
   state.rebuysLeft = state.tutorialMode ? 0 : 1;
+  state.__rebuyEarnedShown = false;
   state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
   state.__oppInitialChips = state.opponentChips;
   state.tauntLevel = 0; applyTauntAura();
@@ -14744,7 +14754,7 @@ function houseRulesPages() {
       // 2026-11-01 初戦の前の説明は1ページに（外部の批評：扉・卓の説明3ページ・読み合いの説明と続いて、ポーカーの前に疲れる）。
       // 「2倍で始まる」は帯の数字で見せ、参加費が上がることは最初に上がる直前に結果の札で知らせる（hr-ante）
       // チップ拡張を買っていると2倍ではない（2026-11-01 外部の批評：2700対2400なのに「2倍」と書いていた）。基本値と上乗せを数字で言う
-      note: `${P * 2 === O ? `${opp}はミミの <b>2</b> 倍のチップで始まります。` : P * 2 < O ? `${opp}は ${O}、ミミは ${P} で始まります。` : `基本は${opp}がミミの2倍。チップ拡張でミミに <b>+${P - Math.round(O / 2)}</b> 上乗せされています。`}1回勝っただけでは終わりません。ミミが 0 になっても、1回だけ座り直せます。`,
+      note: `${P * 2 === O ? `${opp}はミミの <b>2</b> 倍のチップで始まります。` : P * 2 < O ? `${opp}は ${O}、ミミは ${P} で始まります。` : `基本は${opp}がミミの2倍。チップ拡張でミミに <b>+${P - Math.round(O / 2)}</b> 上乗せされています。`}1回勝っただけでは終わりません。<b>心理・論理バトルか「降りる」を1回でも使えば</b>、ミミが 0 になっても1回だけ座り直せます。`,
       rico: '上の帯は、チップの綱引き。金色を右の端まで押し切ったら勝ち。少しずつ削っていこう',
       next: '対戦へ' },
   ];
@@ -15052,7 +15062,11 @@ function playerFold() {
   let eqF = null;
   try { eqF = equityVsRandom(state.playerHand, state.community || [], 220); } catch (e) {}
   const oddsF = needF > 0 ? needF / ((state.pot || 0) + needF) : 0;
-  const foldQuality = (eqF == null || needF === 0) ? 'ok' : eqF < oddsF ? 'good' : eqF >= oddsF + 0.18 ? 'waste' : 'ok';
+  let foldQuality = (eqF == null || needF === 0) ? 'ok' : eqF < oddsF ? 'good' : eqF >= oddsF + 0.18 ? 'waste' : 'ok';
+  // この手で読み合いをした時は、その読みを基準にする（2026-11-01 外部の批評：読み合いで「降りるのが正解」と褒めた直後に「付いていく手もあった」と否定していた）
+  const prF = state.pendingRead && state.pendingRead.handNo === state.handNo ? state.pendingRead : null;
+  if (prF && prF.kind === 'logic' && prF.truth === 'fold') foldQuality = 'good';
+  else if (prF && foldQuality === 'waste') foldQuality = 'ok';
   if (foldQuality === 'good') state.goodFolds = (state.goodFolds || 0) + 1;
   state.playerFolds = (state.playerFolds || 0) + 1;
   state.opponentSpeech = opponentReactToPlayerFold();
@@ -17690,6 +17704,21 @@ function showHandResultBanner(snapshot) {
        </div>`
     : '';
 
+  // 同じ役どうしの決着：どの札を比べて決まったかを1行で（2026-11-01 外部の批評：両者ツーペアで負けた理由が分からなかった）
+  const tieWhy = (() => {
+    const p = last.pEv, o = last.oEv;
+    if (last.reason !== 'showdown' || !p || !o || p.rank !== o.rank || !Array.isArray(p.tb) || !Array.isArray(o.tb)) return '';
+    const i = p.tb.findIndex((v, k) => v !== o.tb[k]);
+    if (i < 0) return '';
+    const R = (r) => ({ 14: 'A', 13: 'K', 12: 'Q', 11: 'J' })[r] || String(r);
+    const c = p.rank;
+    const part = c === 2 ? ['上のペア', '下のペア', '残りの1枚'][i]
+      : c === 6 ? ['3枚の組', '2枚の組'][i]
+      : (c === 1 || c === 3 || c === 7) ? (i === 0 ? '組の数字' : '残りの札')
+      : (c === 4 || c === 8) ? 'いちばん上の札'
+      : (i === 0 ? 'いちばん上の札' : `上から${i + 1}枚目`);
+    return `<div class="hr-tiebreak">同じ${p.name}。${part}で決着：ミミ <b class="${p.tb[i] > o.tb[i] ? 'is-win' : ''}">${R(p.tb[i])}</b> 対 ${opponentName} <b class="${o.tb[i] > p.tb[i] ? 'is-win' : ''}">${R(o.tb[i])}</b></div>`;
+  })();
   // ショーダウン詳細
   let showdownHtml = '';
   if (last.reason === 'showdown') {
@@ -17707,6 +17736,7 @@ function showHandResultBanner(snapshot) {
           <div class="hr-player-eval ${last.winner === 'opponent' ? 'winning' : ''}">${last.oEv?.name || '-'}</div>
         </div>
       </div>
+      ${tieWhy}
       <div class="hr-board">
         <div class="hr-board-label">場札</div>
         <div class="hr-board-cards">${renderBoardWithHi(community, bestFiveWinner)}</div>
@@ -17915,6 +17945,8 @@ function continueAfterHand() {
     return startDominanceMode();
   }
   state.mimiThought = '「次のハンドだ。集中していこう」';
+  // 座り直しの条件を満たしたら、その場で1回だけ知らせる（2026-11-01 外部の批評：条件を負けてから明かしていた）
+  if (!state.tutorialMode && !state.__rebuyEarnedShown && (state.rebuysLeft || 0) > 0 && usedReads()) { state.__rebuyEarnedShown = true; toast('お守り成立：ミミが 0 になっても1回だけ座り直せる'); }
   // 台帳37：初対戦で苦戦し始めたら、1回だけ一枚絵と会話で攻め方を伝える
   const struggle = struggleSceneDue();
   if (struggle) {
@@ -19838,6 +19870,8 @@ function fitStage() {
   const safeX = compact ? Math.max(47, safeAreaInsetX()) : 0;
   const stageW = compact ? Math.max(1280, Math.floor((window.innerWidth - 2 * safeX) / scale)) : 1280;
   document.documentElement.style.setProperty('--stage-w', stageW + 'px');
+  // 横の狭いスマホ（667×375 など）：舞台が 1280 幅のまま。賭け額の欄などを場札・手札から外す配置に切り替える
+  document.documentElement.classList.toggle('is-narrow-stage', compact && stageW < 1400);
   document.documentElement.style.setProperty('--safe-x', safeX + 'px');
   // 全画面の小窓の紙面を寄せる幅（画面の px）：舞台の外の帯か安全域の広い方
   document.documentElement.style.setProperty('--pad-x', Math.max(safeX, (window.innerWidth - stageW * scale) / 2) + 'px');
@@ -20209,6 +20243,14 @@ reapplyAllOwnedEffects();
 startPreload().then(() => {
   render();
   initGlobalAudioBar();
+  // ファイブポーカーの勝負の途中で読み直された：閉じる時と同じくサレンダー扱いで半額を戻して知らせる
+  if (save.minipoker && save.minipoker.openStake > 0) {
+    const back = Math.floor(save.minipoker.openStake / 2);
+    save.coins += back;
+    delete save.minipoker.openStake;
+    saveProgress();
+    setTimeout(() => toast(`ファイブポーカーの勝負が途中で切れたので、サレンダー扱いで ${back}コインを戻しました`), 900);
+  }
   // 廃止商品の自動返金があれば、起動後に一度だけ通知
   if (save.__pendingRefundNotice) {
     const { total } = save.__pendingRefundNotice;

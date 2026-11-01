@@ -81,8 +81,10 @@
       const d = hi.find(c => (bRanks.has(c.r) || pair0) && decisive(c));
       if (d) L.push({ id: 's_rank', topic: { rank: d.r }, key: 'wit', say: `${R(d.r)}？ |そんなの|持ってないの♡`, short: `「${R(d.r)}は|持ってない」`, fact: `本当は|${lab(d)}を|持っている`,
         wit: { head: '鏡の目撃', text: `後ろの鏡に、|札が|一瞬|映った。|${lab(d)}|だった` }, panic: 'か、鏡なんてずるいの！ 反則なの！' });
-      if (nX >= 3 && herX >= 1 && cat(herAll) === 5) L.push({ id: 's_suit', topic: { suit: X }, key: 'wit', say: `${SN}は|1枚も|持ってないの♡`, short: `「${SN}は|1枚も|持ってない」`, fact: `本当は|${SN}を|持っている|（少なくとも1枚）`,
-        wit: { head: 'めくれた札', text: `配る時、|札が|1枚|めくれかけた。|角に|${sym(X)}が|見えた` }, panic: 'な、なんで見てるのよ！ ディーラーのくせに！' });
+      // 証拠だけでフラッシュまで言えるときに限る（2026-11-01 外部の批評：場の3枚＋見えた1枚ではフラッシュと言えない）。場に4枚なら1枚、3枚なら2枚とも見えた時
+      const need = nX >= 4 ? 1 : 2;
+      if (nX >= 3 && herX >= need && cat(herAll) === 5) L.push({ id: 's_suit', topic: { suit: X }, key: 'wit', say: `${SN}は|1枚も|持ってないの♡`, short: `「${SN}は|1枚も|持ってない」`, fact: need === 1 ? `本当は|${SN}を|持っている＝|場の${nX}枚と|合わせて|フラッシュ` : `本当は|${SN}を|2枚|持っている＝|場の3枚と|合わせて|フラッシュ`,
+        wit: { head: 'めくれた札', text: need === 1 ? `配る時、|札が|1枚|めくれかけた。|角に|${sym(X)}が|見えた` : `配る時、|札が|2枚とも|めくれかけた。|どちらの角にも|${sym(X)}` }, panic: 'な、なんで見てるのよ！ ディーラーのくせに！' });
       [4, 3].forEach(i => { if (i < board.length && helps(i)) { const c = board[i], st = stOf(i); L.push({ id: 's_fell', topic: { card: api.key(c), rank: c.r, street: st }, key: 'wit', say: `${STN[st]}の${lab(c)}？ |あたしには|関係ないの`, short: `「${STN[st]}の${api.label(c)}は|関係ない」`, fact: `本当は|${lab(c)}で|手が|強くなった`,
         wit: { head: '仕草', text: `${STN[st]}の${lab(c)}が|落ちた瞬間、|<b>チップへ手が伸びた</b>` }, panic: 'て、手が勝手に動いただけなの！' }); } });
       const flop = board.slice(0, 3);
@@ -282,7 +284,7 @@
     evs.classList.remove('is-next'); evs.classList.add('is-read');
     thread.innerHTML = '';
     evs.innerHTML = `
-      ${found ? `<div class="oj-found"><div class="oj-eh">見つけたウソ<span class="oj-sure">確かさ${pips(3)}</span></div><p>${W(lie.short)}</p><p class="oj-fact">→ ${W(lie.fact)}</p><b class="oj-dir is-${truth}">${DIR[truth]} → ${NAME[truth]}</b></div>`
+      ${found ? `<div class="oj-found"><div class="oj-eh">見つけたウソ<span class="oj-sure">確かさ${pips(3)}</span></div><p>${W(lie.short)}</p><p class="oj-fact">→ ${W(lie.fact)}</p><b class="oj-dir is-${truth}">${DIR[truth]}＝${NAME[truth]}寄り</b></div>`
         : `<div class="oj-found is-none"><div class="oj-eh">ウソは見つからず</div><p>記録だけで読む</p></div>`}
       <div class="oj-scale"><div class="oj-scalebox"><svg class="oj-svg" viewBox="34 0 192 76" aria-hidden="true"><path class="post" d="M130 20 V68 M114 74 H146 L139 68 H121 Z"/>
         <g transform="rotate(${ang.toFixed(2)} 130 19.5)"><rect class="beam" x="58" y="17" width="144" height="5" rx="1"/><circle class="beam" cx="130" cy="19.5" r="5"/></g>${pan('b', -66)}${pan('s', 66)}</svg><span class="oj-pan is-b">ブラフ</span><span class="oj-pan is-s">本物</span></div>
@@ -317,7 +319,7 @@
         pending: {
           title: '異議あり！', charId: api.charId, pick: decide, truth, mimiEq, endLines: END, board, mine, her, base, mult: m, stakes: STAKES,
           perfect: found && misses === 0 && m === 3,
-          notes: [{ label: found ? `ウソ${P(lie.short)} → ${NAME[truth]}` : `ウソは${P(lie.short)}だった`, lean: truth }],
+          notes: [{ label: found ? `ウソ${P(lie.short)} → ${NAME[truth]}寄り` : `ウソは${P(lie.short)}だった`, lean: truth }],
           why: decide === side ? why : `天秤の見込みは${NAME[side]} ${pSide}%だった。${why}`,
         },
       });

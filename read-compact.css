@@ -1198,3 +1198,7 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-rl-gain { font-size: 34px
 html.is-compact #stage > .read-battle-host.mb-host .mb-rl-gain.big { font-size: 42px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-rl-gain small { font-size: 15px; }
 html.is-compact #stage > .read-battle-host.mb-host .mb-rl-foot { gap: 6px; min-height: 52px; }
+/* 2026-11-01 7回目の批評：スマホのダウトは、時間内に読む発言が細い欄で数文字ずつ折れていた。発言は欄の横幅いっぱい・下段に、顔は右上の小窓に寄せる（顔の変化も手がかりなので消さない） */
+html.is-compact #stage > .read-battle-host.mb-host .doubt-area:not(.is-sum):not(:has(#mb-doubt-rule)) .doubt-win { top: 4px; bottom: auto; height: 44%; right: 6px; width: 34%; }
+html.is-compact #stage > .read-battle-host.mb-host .doubt-area:not(.is-sum) .doubt-bubble { left: 6px; right: 6px; width: auto; top: auto; bottom: 14px; transform: none; padding: 8px 12px; line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
+html.is-compact #stage > .read-battle-host.mb-host .doubt-area:not(.is-sum) .doubt-count { left: 6px; top: 4px; max-width: 62%; flex-wrap: wrap; gap: 2px 8px; }

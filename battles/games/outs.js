@@ -135,13 +135,17 @@ MB.register({
     // 探し終えたら 52 枚の一覧は畳み、当たり札だけを1列に並べる（1画面に収めるため。何が当たりかも一目で分かる）
     root.querySelector('#mb-o-deck').classList.add('is-collapsed');
     const nD = s.dirty.length, effOuts = s.outs.length - nD / 2;
+    // 見込みと線が近い時は小数1桁まで見せる（2026-11-01 外部の批評：「約10%・線10%」と見せて、9.8%＜10%で不正解にしていた）
+    const close = Math.abs(s.eq - s.need) < .015;
+    const dg = (s.eq * 100).toFixed(1) === (s.need * 100).toFixed(1) ? 2 : 1;
+    const shw = (x) => close ? (x * 100).toFixed(dg) : String(pct(x));
     const dirtyKeys = new Set(s.dirty.map(key));
     root.querySelectorAll('#mb-o-deck .card').forEach(x => { if (dirtyKeys.has(x.dataset.k)) x.classList.add('dirty'); });
     const cnt = root.querySelector('#mb-o-count'); if (cnt) cnt.innerHTML = nD ? `当たり札 ${s.outs.length}枚<small>うち ${nD}枚は相手の上の役にも化ける＝半分で数える</small>` : `当たり札 ${s.outs.length}枚`;
     const meter = document.createElement('div');
     meter.className = 'outs-meter pop';
     meter.innerHTML = `<div class="prompt mb-ask"><span class="mb-bet"><b>当たり ${nD ? effOuts + '枚分' : s.outs.length + '枚'}</b></span>${api.betTag('払う ' + s.B, 3)}</div>
-      <div class="outs-bar"><div class="outs-fill" id="mb-o-fill"></div><div class="outs-line" id="mb-o-line"><span>割に合う線 ${pct(s.need)}%</span></div><div class="outs-val">約 ${Math.round(s.eq * 100)}%</div></div>
+      <div class="outs-bar"><div class="outs-fill" id="mb-o-fill"></div><div class="outs-line" id="mb-o-line"><span>割に合う線 ${shw(s.need)}%</span></div><div class="outs-val">${close ? "" : "約 "}${shw(s.eq)}%</div></div>
       <div class="ox-more">${api.more(`${nD ? `当たり札 ${s.outs.length}枚のうち、${s.boardPaired ? "場にもうペアがあるので（相手のフルハウスがありうる）全部の" : "場にペアを作る札・相手のフラッシュを作る札 "}${nD}枚は、完成しても負けることがあるので半分で数える＝${effOuts}枚分<br>` : ''}当たり札 ${effOuts}枚 × 2 ＝ <b>約${Math.round(effOuts * 2)}%</b>（正確には ${effOuts}÷${s.rest.length}＝${pct(s.eq)}%）<br>払う ${s.B} ÷（もらえる ${s.P + s.B} ＋ 払う ${s.B}）＝ <b>${pct(s.need)}%</b> 以上当たれば得`)}</div>`;
     root.querySelector('#mb-o-deck').after(meter);
     // 押す所は画面の一番下の段に（上の方に置くと押しづらい）
@@ -160,7 +164,7 @@ MB.register({
     const base0 = gaveUp ? 15 : Math.max(10, 30 - miss * 5);
     // 本当の手：棒と線がもう見えている計算問題なので、自信は聞かない（2026-11-01 外部の批評：確認の区切りが多すぎる）
     if (s.real) api.mult = 1;
-    else await api.wager(s.real ? { question: `「${called ? '付いていく' : '降りる'}」— 見込み 約${Math.round(s.eq * 100)}% ／ 線 ${pct(s.need)}%`, base: base0, mission: '棒と線の差で自信を決める', note: '差が大きいほど、自信を上げてよい', stakes: STAKES } : { question: called ? '「付いていく」と決めた。この判断、自信は？' : '「降りる」と決めた。この判断、自信は？', base: 30, mission: 'この判断への自信は？' });
+    else await api.wager(s.real ? { question: `「${called ? '付いていく' : '降りる'}」— 見込み ${shw(s.eq)}% ／ 線 ${shw(s.need)}%`, base: base0, mission: '棒と線の差で自信を決める', note: '差が大きいほど、自信を上げてよい', stakes: STAKES } : { question: called ? '「付いていく」と決めた。この判断、自信は？' : '「降りる」と決めた。この判断、自信は？', base: 30, mission: 'この判断への自信は？' });
     if (!api.alive()) return;
     if (s.real) {
       // 本当の手：最後の1枚は卓で配られる。判断を預けて戻る
@@ -170,7 +174,7 @@ MB.register({
         pick: called ? '付いていく' : '降りる', win: base0, lose: 0, noMult: true,
         advice: called ? '「付いていく」と決めた。卓でコールして、最後の1枚を待とう' : '「降りる」と決めた。卓で降りよう',
         pending: { kind: 'logic', title: 'アウツさがし', charId: api.charId, pick: called ? 'call' : 'fold', truth: s.eq >= s.need ? 'call' : 'fold', mimiEq, need,
-          truthText: `${s.eq >= s.need ? '付いていく' : '降りる'}のが正解だった<small>当たり札 ${nD ? effOuts + '枚分' : s.outs.length + '枚'}で見込み 約${pct(s.eq)}%・線 ${pct(s.need)}%。相手の札は使わずに採点（完成しても上の役に負けることはある。それは運の側）</small>`,
+          truthText: `${s.eq >= s.need ? '付いていく' : '降りる'}のが正解だった<small>当たり札 ${nD ? effOuts + '枚分' : s.outs.length + '枚'}で見込み ${shw(s.eq)}%・線 ${shw(s.need)}%。相手の札は使わずに採点（完成しても上の役に負けることはある。それは運の側）</small>`,
           endLines: { bc: 'く……計算どおりですな', bw: '賢いお方だ', sc: '慎重なお方ですな', sw: 'まいど、ありがとうございます' },
           board: s.board, mine: s.hole, her: s.her, base: base0, mult: m, stakes: STAKES, perfect: right && !gaveUp && miss === 0, notes: [],
           why: right ? (called ? '当たり札の見込みが線を超えていた。' : '当たり札の見込みが線に届かなかった。') : (called ? '当たり札の見込みは線に届かなかった。' : '当たり札の見込みは線を超えていた。'),

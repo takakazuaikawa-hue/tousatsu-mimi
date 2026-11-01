@@ -379,7 +379,7 @@
     }
 
     api.mission('本音か、ウソか？');
-    area.insertAdjacentHTML('beforeend', `<div class="doubt-count"><b id="mb-doubt-n">1/5</b><span>ウソほど声が大きい</span></div>
+    area.insertAdjacentHTML('beforeend', `<div class="doubt-count"><b id="mb-doubt-n">1/5</b><span style="word-break:keep-all">ウソほど<wbr>声が大きい</span></div>
       <div class="doubt-bubble mb-ebony" id="mb-doubt-bubble"></div><div class="doubt-timer" id="mb-doubt-timer"><i></i></div>`);
     pad.innerHTML = `<button class="doubt-btn is-honest" data-a="honest" type="button"><kbd>←</kbd><span class="w"><span>本音</span><small>ほんとのこと</small></span></button>
       <button class="doubt-btn is-lie" data-a="lie" type="button"><span class="w"><span>ウソ</span><small>ダウト！</small></span><kbd>→</kbd></button>`;
