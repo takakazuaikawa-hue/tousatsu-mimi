@@ -267,7 +267,7 @@
     hostEl.classList.add('mb-host');
     hostEl.classList.toggle('is-dev', dev);
     hostEl.innerHTML = `<div class="mb-purse" aria-live="polite">
-        <div>コイン<b id="mb-p-coins">0</b></div>
+        <div title="この対戦の読み合いで稼いだコイン。対戦の終わりに財布へ入る">読みの稼ぎ<b id="mb-p-coins">0</b></div>
         <div>コンボ<b id="mb-p-combo">0</b></div>
         <div class="mb-fever-box">フィーバー<b id="mb-p-fever">0/3</b><span class="mb-lamps" id="mb-p-lamps"><i></i><i></i><i></i></span><i class="mb-fever-bar" id="mb-p-fever-bar"></i></div>
       </div>

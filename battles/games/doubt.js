@@ -414,16 +414,24 @@
       tone(440 + i * 40, .05, 'sine', .03);
       bar.style.transition = 'none'; bar.style.width = '100%'; timer.classList.remove('is-low'); void bar.offsetWidth;
       bar.style.transition = `width ${LIMIT[i]}ms linear`; bar.style.width = '0%';
-      const lowT = setTimeout(() => timer.classList.add('is-low'), LIMIT[i] * .65);
+      // ルールを読んでいる間・端末を縦にして案内が出ている間・裏に回った間は、制限時間を止める
+      // （2026-11-01 13回目の批評：ルールを5秒読むと1問目が「聞き逃し」、縦にすると3問分の失敗が付いていた）
+      const paused = () => !!(document.querySelector('.mb-rules') || document.hidden || (() => { const w = document.getElementById('portrait-warning'); return w && getComputedStyle(w).display !== 'none'; })());
       const a = await new Promise(res => {
-        let done = false;
-        const fin = (v) => { if (done) return; done = true; clearTimeout(to); answer = null; res(v); };
-        const to = setTimeout(() => fin('miss'), LIMIT[i]);
-        answer = fin;
+        let done = false, remain = LIMIT[i], last = performance.now(), frozen = false;
+        const fin = (v) => { if (done) return; done = true; clearInterval(tk); answer = null; res(v); };
+        const tk = setInterval(() => {
+          const now = performance.now(), p = paused();
+          if (!api.alive()) return fin('miss');
+          if (p && !frozen) { remain -= now - last; frozen = true; const w = getComputedStyle(bar).width; bar.style.transition = 'none'; bar.style.width = w; }
+          else if (!p && frozen) { frozen = false; bar.style.transition = `width ${Math.max(0, remain)}ms linear`; bar.style.width = '0%'; }
+          else if (!p) { remain -= now - last; if (remain <= LIMIT[i] * .35) timer.classList.add('is-low'); if (remain <= 0) fin('miss'); }
+          last = now;
+        }, 50);
+        answer = (v) => { if (!paused()) fin(v); };
       });
-      clearTimeout(lowT);
       if (!api.alive()) { document.removeEventListener('keydown', onKey); return; }
-      bar.style.transition = 'none'; bar.style.width = getComputedStyle(bar).width;
+      { const w = getComputedStyle(bar).width; bar.style.transition = 'none'; bar.style.width = w; }
       picks.push(a);
       const st = bubble.querySelector('.doubt-stamp');
       st.textContent = a === 'lie' ? 'ダウト！' : a === 'honest' ? '本音？' : '聞き逃し…';
