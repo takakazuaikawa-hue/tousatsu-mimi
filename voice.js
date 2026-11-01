@@ -41,7 +41,7 @@
   function enabled() {
     try {
       if (typeof save === 'undefined' || !save) return false;
-      if (typeof isSfxOn === 'function' && !isSfxOn()) return false;   // 効果音OFF・音まるごとOFF
+      if (save.allMute) return false;   // 音まるごとOFF だけ。効果音 OFF とは別（2026-11-01）
       if (save.voiceOn === false) return false;
       return volume() > 0;
     } catch (e) { return false; }

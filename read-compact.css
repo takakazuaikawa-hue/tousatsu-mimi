@@ -1202,3 +1202,10 @@ html.is-compact #stage > .read-battle-host.mb-host .mb-rl-foot { gap: 6px; min-h
 html.is-compact #stage > .read-battle-host.mb-host .doubt-area:not(.is-sum):not(:has(#mb-doubt-rule)) .doubt-win { top: 4px; bottom: auto; height: 44%; right: 6px; width: 34%; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-area:not(.is-sum) .doubt-bubble { left: 6px; right: 6px; width: auto; top: auto; bottom: 14px; transform: none; padding: 8px 12px; line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
 html.is-compact #stage > .read-battle-host.mb-host .doubt-area:not(.is-sum) .doubt-count { left: 6px; top: 4px; max-width: 62%; flex-wrap: wrap; gap: 2px 8px; }
+
+/* 役くらべの5枚選び：スマホは 4枚＋3枚の2段で7枚とも見せる（2026-11-01 8回目の批評：844幅で右端の札が切れた） */
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame.hv-building .hv-pick { flex-wrap: wrap; max-width: 350px; margin: 0 auto; row-gap: 14px; justify-content: center; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame.hv-building .hv-pick { max-width: 300px; row-gap: 12px; }
+html.is-compact #stage > .read-battle-host.mb-host .rb-frame.hv-building .hv-pick .card { --w: 62px !important; }
+html.is-compact.is-narrow-stage #stage > .read-battle-host.mb-host .rb-frame.hv-building .hv-pick { max-width: 270px; row-gap: 10px; }
+html.is-compact.is-narrow-stage #stage > .read-battle-host.mb-host .rb-frame.hv-building .hv-pick .card { --w: 54px !important; }

@@ -284,7 +284,7 @@
     let board, mine, her, truth, mimiEq;
     if (T) {
       board = T.board; mine = T.mine; her = T.her;
-      mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+      mimiEq = api.eqPct(api.headsUp(mine, her, board));
       truth = mimiEq >= 50 ? 'bluff' : 'strong';
     } else {
       truth = Math.random() < .65 ? 'bluff' : 'strong';
@@ -292,7 +292,7 @@
       board = [{ r: 12, s: X }, { r: 8, s: X }, { r: 3, s: X }, { r: 10, s: o[0] }, { r: 2, s: o[1] }];
       mine = [{ r: 12, s: o[1] }, { r: 14, s: o[2] }];
       her = dealHer(api, truth === 'bluff', X, board);
-      mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+      mimiEq = api.eqPct(api.headsUp(mine, her, board));
     }
     const mimiHandName = api.CAT_NAME[api.category([...mine, ...board])];
     const P = Object.fromEntries(Object.entries(POOL).map(([k, v]) => [k, v.slice()]));

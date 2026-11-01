@@ -202,7 +202,7 @@
     const herS = strengthOf(api, her, board);
     const lv = ['strong', 'set'].includes(herS) ? 'hi' : ['big', 'small'].includes(herS) ? 'mid' : 'lo';
     const [line, face] = LINES[who][betted ? 'bet' : 'check'][lv];
-    const mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+    const mimiEq = api.eqPct(api.headsUp(mine, her, board));
     // 払う額と勝ち目をくらべる（2026-11-01 外部の批評：払い50・ポット1000で勝ち目11%でも「降りるのが正解」になっていた）。
     // 負けている役でも、まだ札が来るなら、払う額が小さいうちは付いていく方が得。リバーで負けていれば札は来ないので降りる
     const need = free ? 0 : Math.round(toCall / Math.max(1, (pot || 0) + toCall) * 100);
@@ -299,7 +299,7 @@
     // 読んだ役の例の手に対して、ミミが勝つ見込み。払う額の線とくらべて決める
     const allH = picks.flatMap(t => t.hands);
     const hs = allH.length > 16 ? api.shuffle(allH.slice()).slice(0, 16) : allH;
-    const eqPick = Math.round(hs.reduce((t, h) => t + api.headsUp(mine, h, board), 0) / hs.length * 100);
+    const eqPick = api.eqPct(hs.reduce((t, h) => t + api.headsUp(mine, h, board), 0) / hs.length);
     const decide = free ? (eqPick < 50 ? 'fold' : 'call') : priced(eqPick);
     api.coach(free ? `${pickName}なら勝ち目 約${eqPick}%。${decide === 'call' ? NAMES.call : NAMES.fold}のが得`
       : `${pickName}なら勝ち目 約${eqPick}%。払う額の線 ${need}%${decide === 'call' ? 'を超える。付いていくのが得' : 'に届かない。降りるのが得'}`, 'think');

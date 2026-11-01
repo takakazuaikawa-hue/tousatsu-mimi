@@ -170,7 +170,7 @@
       const d = api.shuffle(api.deck());
       mine = d.slice(0, 2); her = d.slice(2, 4); board = d.slice(4, 9); pot = 400; toCall = 200;
     }
-    const mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+    const mimiEq = api.eqPct(api.headsUp(mine, her, board));
     // 払う額が0（相手がチェック）の時は「賭けるか、様子見か」の判断にする。線は50%（勝っている方が多ければ賭ける）
     const free = toCall <= 0;
     const need = free ? 50 : Math.round(100 * toCall / (pot + toCall));

@@ -69,6 +69,12 @@
     return w / samples;
   }
   // 2人の手の勝負：a が b に勝つ見込み（0-1、引き分けは半分）。残りの場札は全部の組み合わせを数える（場札3枚でも 1081 通り）
+  // 見込みを%で見せる。50%に丸まる時は小数1桁で、半分より上か下かを隠さない（採点は丸める前の値の側と一致する）
+  function eqPct(p) {
+    const r = p * 100, n = Math.round(r);
+    if (n !== 50 || r === 50) return n;
+    return r < 50 ? Math.min(49.9, Math.floor(r * 10) / 10) : Math.max(50.1, Math.ceil(r * 10) / 10);
+  }
   function headsUp(a, b, board) {
     const used = new Set([...a, ...b, ...board].map(key));
     const rest = deck().filter(c => !used.has(key(c)));
@@ -407,7 +413,7 @@
       const CHARS = {}; for (const k in CHARS_RAW) { const c = CHARS_RAW[k]; CHARS[k] = { ...c, face: A(c.face), panic: A(c.panic), smug: A(c.smug) }; }
       const MIMI = {}; for (const k in MIMI_RAW) MIMI[k] = A(MIMI_RAW[k]);
       const api = {
-        alive: live, $, wait, rand, pick, shuffle, deck, key, label, rn, SYM, SUITS, SUIT_NAME, score, category, CAT_NAME, equity, headsUp, cardHTML, backHTML, sfx, CHARS, MIMI, reduce, sparkles, reveal,
+        alive: live, $, wait, rand, pick, shuffle, deck, key, label, rn, SYM, SUITS, SUIT_NAME, score, category, CAT_NAME, equity, headsUp, eqPct, cardHTML, backHTML, sfx, CHARS, MIMI, reduce, sparkles, reveal,
         root: gameRoot, host, stage, layer, asset: A,
         // 卓の本当の手（本編から渡る時だけ）：{ board, mine, her, pot, toCall, phase, record }。札は { r, s }。無ければ架空の場面で遊ぶ
         table: opts.table || null, opts,
@@ -811,7 +817,7 @@
   window.MB = {
     register, mount, boot, config,
     // 本編が「この手で読み合いが成り立つか」を調べる時に使う役の計算（2026-10-31 まで出しておらず、容疑者しぼり・狙撃の判定がいつも失敗していた）
-    deck, key, label, rn, SYM, score, category, CAT_NAME, headsUp,
+    deck, key, label, rn, SYM, score, category, CAT_NAME, headsUp, eqPct,
     get games() { return games.map(g => ({ id: g.id, group: g.group, title: g.title, chars: g.chars ? g.chars.slice() : null })); },
     get vol() { return VOL; }, set vol(v) { VOL = v; },
     P: P_DEFAULT,

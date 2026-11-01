@@ -62,6 +62,9 @@ function renderHomeLobby() {
   const places = root.querySelectorAll('.h15-pl');
   places[3].dataset.action = save.clearedStages.includes('rico_tutorial') ? 'rico-mode-chooser' : 'battle-start';
   places[3].dataset.opponent = 'rico_tutorial';
+  // クリア後は本気のリコ戦が目玉なので札の名前で見せる。講義はその先の選ぶ画面で続けられる（2026-11-01 8回目の批評）
+  places[3].querySelector('.h15-lbl').textContent = allCleared ? '本気のリコ' : 'リコの教室';
+  places[3].title = allCleared ? '本気のリコ先輩に挑む（講義の続きもここから）' : 'リコの教室';
   places[4].title = isRicoViewerUnlocked() ? 'リコ先輩の衣装を眺める・切り替える' : '衣装を見る（交換所で購入すると解放）';
   const fresh = newItemCount();
   const badge = root.querySelector('[data-home="new"]');

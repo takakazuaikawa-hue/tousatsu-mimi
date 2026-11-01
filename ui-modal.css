@@ -682,3 +682,8 @@ html.is-compact .minipoker-modal td:is(.mp-pt-payout, .mp-pt-mult, .mp-pt-name),
   html.is-compact .settings-modal .settings-modal-groups { grid-template-columns: 1fr; }
   html.is-compact .settings-modal-volume { min-width: 120px; }
 }
+
+/* 2026-11-01 8回目の批評：PC（1280×800）で音量のつまみが約41px。PC は名前と切替を1行目、つまみを2行目に横幅いっぱい */
+html:not(.is-compact) .settings-modal-sound { flex-wrap: wrap; row-gap: 0; }
+html:not(.is-compact) .settings-modal-sound .settings-modal-label { flex: 1 1 auto; }
+html:not(.is-compact) .settings-modal-sound .settings-modal-volume { order: 3; flex: 1 1 100%; min-width: 120px; height: 32px; }

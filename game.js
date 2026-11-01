@@ -275,7 +275,7 @@ function defaultSave() {
     sfxOn: true,         // SFX 全体 ON/OFF（minipoker SFX 等すべて従う）
     forceSound: false,   // 端末が消音でも音を出す（iOS消音スイッチより優先）。既定OFF＝端末を尊重
     voiceVolume: 60,     // キャラの声の音量（0-100）。初めての人は控えめ（以前80）。効果音の音量は掛けない（声が効果音より小さいと聞こえない）
-    voiceOn: true,       // キャラの声 ON/OFF。効果音OFF・音まるごとOFFの時も鳴らさない（voice.js）
+    voiceOn: true,       // キャラの声 ON/OFF。音まるごとOFF（allMute）の時も鳴らさない。効果音 OFF とは別（voice.js）
 
     // ── ミニポーカー（mpEnsureSaveで初期化される） ──
     minipoker: null,
@@ -322,6 +322,8 @@ function normalizeSave(s) {
   if (typeof s.sfxVolume !== 'number') s.sfxVolume = 60;
   s.sfxVolume = Math.max(0, Math.min(100, s.sfxVolume));
   if (typeof s.sfxOn !== 'boolean') s.sfxOn = true;
+  // 音まるごと消音（声も止める）。効果音だけ OFF とは別に持つ（2026-11-01 外部の批評：効果音 OFF で声まで止まっていた）
+  if (typeof s.allMute !== 'boolean') s.allMute = s.bgmOn === false && s.sfxOn === false;
   if (typeof s.forceSound !== 'boolean') s.forceSound = false;
   if (typeof s.voiceVolume !== 'number' || isNaN(s.voiceVolume)) s.voiceVolume = 80;
   s.voiceVolume = Math.max(0, Math.min(100, s.voiceVolume));
@@ -4028,14 +4030,14 @@ function showStoryScene(key, onDone, voiceReady) {
   volRange.addEventListener('input', () => {
     const v = +volRange.value;
     save.voiceVolume = v; save.sfxVolume = Math.round(v * 0.75); save.bgmVolume = Math.round(v * 0.45);
-    save.sfxOn = v > 0;
+    save.sfxOn = v > 0; save.allMute = !save.sfxOn;
     if (!save.sfxOn && window.stopVoice) stopVoice();
     if (typeof applyBgmVolume === 'function') applyBgmVolume();
     volMute.innerHTML = save.sfxOn ? UI_ICON.sound : UI_ICON.mute; volEl.classList.toggle('is-muted', !save.sfxOn);
   });
   volRange.addEventListener('change', () => saveProgress());
   volMute.addEventListener('click', () => {
-    save.sfxOn = !isSfxOn();
+    save.sfxOn = !isSfxOn(); save.allMute = !save.sfxOn;
     if (save.sfxOn && !(save.voiceVolume > 0)) { save.voiceVolume = 40; save.sfxVolume = 30; save.bgmVolume = 18; }
     if (!save.sfxOn && window.stopVoice) stopVoice();
     if (typeof applyBgmVolume === 'function') applyBgmVolume();
@@ -4201,8 +4203,13 @@ function showIntermission(opponentId, onDone, voiceReady) {
     if (speaker === 'rico') return { name: 'リコ先輩', img: 'assets/ui/face_rico.webp', portrait: 'assets/characters/rico_default.webp', side: 'rico' };
     const o = OPPONENTS[speaker];
     const key = (o && o.imgKey) || speaker;
-    return { name: o ? o.name : oppName, img: `assets/ui/face_${key}.webp`, portrait: `assets/characters/${key}_default.webp`, side: 'opp' };
+    // PC は大きく映すので、大きい版（縦2000px）があればそれを使う（2026-11-01 8回目の批評：667×1000 を約1.5倍に引き伸ばして顔がぼけた）
+    const lo = `assets/characters/${key}_default.webp`;
+    const hd = IMS_HD_KEYS.has(key) && !document.documentElement.classList.contains('is-compact');
+    return { name: o ? o.name : oppName, img: `assets/ui/face_${key}.webp`, portrait: hd ? `assets/characters/hd/${key}_default.webp` : lo, lo, side: 'opp' };
   }
+  // 立ち絵は会話の前に読んでおく（出てから描かれると興ざめ）
+  ['mimi', 'rico', opponentId].forEach(sp => { new Image().src = speakerMeta(sp).portrait; });
 
   // 会話はエンディングと同じ見せ方：話している人の立ち絵を中央に大きく、下に名前と台詞を大きく（2026-10-20 ユーザー指摘：
   // 「会話のウィンドウ内の顔と文字が小さい。エンディングの時の会話表示方法の方がよっぽど良い」）。
@@ -4238,7 +4245,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
     w.innerHTML = `<div class="ims-cam"><div class="ims-cam-bg"></div><div class="eps-portrait-frame"><img class="eps-portrait" alt=""></div></div><div class="ek-caption"></div>`;
     const im = w.querySelector('.eps-portrait');
     im.alt = meta.name;
-    im.onerror = () => { im.onerror = null; im.src = 'assets/characters/mimi_default.webp'; };
+    im.onerror = () => { im.onerror = null; im.src = meta.lo || 'assets/characters/mimi_default.webp'; };
     im.src = meta.portrait;
     fillCaption(w.querySelector('.ek-caption'), meta, text);
     overlay.insertBefore(w, skipBtn);
@@ -4354,6 +4361,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
   renderLine();
 }
 
+const IMS_HD_KEYS = new Set(['grano', 'polka', 'selina', 'velvet']);
 // 卒業の一枚絵：本気のリコ先輩の予想を外して3回読み当てた瞬間に1度だけ出す（ご褒美ではなく物語の名場面。2026-10-26 候補4を採用）
 const GRADUATION_CG = 'assets/backgrounds/graduation_cg.jpg';
 function showGraduationScene(onDone) {
@@ -4361,7 +4369,7 @@ function showGraduationScene(onDone) {
   overlay.className = 'grad-scene-overlay';
   overlay.innerHTML = `
     <img class="grad-scene-img" src="${GRADUATION_CG}" alt="リコ先輩がミミの頭をなでる">
-    <div class="grad-scene-title">卒業</div>
+    <div class="grad-scene-title"><small>読み合いの試験</small>卒業</div>
     <div class="grad-scene-line"><b>リコ</b>「……合格よ、ミミ。<wbr>もう、アタシが<wbr>教えることは<wbr>何もないわ」</div>
     <div class="grad-scene-hint">タップして続ける</div>`;
   (document.getElementById('stage') || document.body).appendChild(overlay);
@@ -4854,8 +4862,8 @@ const RICO_TRIVIA = {
     title: '制服のリコ先輩',
     cards: [
       { tag: '私生活', text: 'ボタンの裏に♠を自分で彫った。新人時代の覚悟の印。' },
-      { tag: '豆知識', text: 'AAでも勝率85%。「天井のない手なんてないの」。' },
-      { tag: '戦術', text: 'ポジションは価値の半分。ボタンのレンジはUTGの3倍まで広げていい。' },
+      { tag: '豆知識', text: '1対1なら、最強のAAでも負けは7回に1回ほど。「無敵の手なんてないの」。' },
+      { tag: '戦術', text: '後から動ける席は、相手の出方を見てから決められる。だから参加していい手も広がる。' },
       { tag: 'こぼれ話', text: 'ロッカーには塩飴と推理小説3冊。冷めた頭を戻す道具。' },
     ],
   },
@@ -4863,8 +4871,8 @@ const RICO_TRIVIA = {
     title: 'パジャマのリコ先輩',
     cards: [
       { tag: '私生活', text: '枕は3つ抱えて寝る。「四方が空いてると不安なのよ」。' },
-      { tag: '豆知識', text: '5時間睡眠の翌日はブラフ頻度が無意識に約20%上がる。' },
-      { tag: '戦術', text: '眠い日はポットコントロールに徹する。派手な仕掛けは寝てから。' },
+      { tag: '豆知識', text: '寝不足の日は、気づかないうちにブラフが増える。先輩は自分の癖を知っている。' },
+      { tag: '戦術', text: '眠い日は賭けを小さく保つ。派手な仕掛けは寝てから。' },
       { tag: 'こぼれ話', text: '朝はホットミルクに蜂蜜とシナモン。冬はジンジャー追加。' },
     ],
   },
@@ -4881,7 +4889,7 @@ const RICO_TRIVIA = {
     title: '私服のリコ先輩',
     cards: [
       { tag: '私生活', text: '休日は古本屋3軒巡り。買うのは心理学とミステリーばかり。' },
-      { tag: '豆知識', text: 'プレイヤーの85%が「自分は平均以上」と思っている。算数的に不可能。' },
+      { tag: '豆知識', text: 'ほとんどの人が「自分は平均より上手」と思っている。全員がそうなはずはない。' },
       { tag: '戦術', text: '隣席の注文を予測する遊びが、卓での先読みを鍛える。' },
       { tag: 'こぼれ話', text: '行きつけのカフェでは無言でアールグレイが出てくる。' },
     ],
@@ -4899,7 +4907,7 @@ const RICO_TRIVIA = {
     title: '和装のリコ先輩',
     cards: [
       { tag: '私生活', text: '帯は自分で結ぶ。「1cmの締まりで立ち居振る舞いが変わる」。' },
-      { tag: '豆知識', text: '日本にポーカーが来たのは明治初期、横浜から。最初は花札と混ざってた。' },
+      { tag: '豆知識', text: '袖の中に札を隠すイカサマは、和装の時代からの定番。だから先輩は袖を見る。' },
       { tag: '戦術', text: '袖が動作を隠す。和装は最強のポーカーフェイスかも。' },
       { tag: 'こぼれ話', text: '茶筅の音で集中スイッチ。茶碗は祖母譲りの金継ぎ。' },
     ],
@@ -4908,8 +4916,8 @@ const RICO_TRIVIA = {
     title: '水着のリコ先輩',
     cards: [
       { tag: '私生活', text: '泳ぎは平泳ぎ専門。「クロールはバレるじゃない」。何が？' },
-      { tag: '豆知識', text: '夏のカジノは湿度30%以下。手汗で読まれる季節は逆に冬。' },
-      { tag: '戦術', text: 'リゾート客はリスク許容度が2割上がる。オールインは本気で来てる。' },
+      { tag: '豆知識', text: 'カジノの中は一年中、乾いて涼しい。手汗を隠せる季節なんてない。' },
+      { tag: '戦術', text: '旅先の客は財布のひもがゆるむ。大きな賭けも、意外と本気で来てる。' },
       { tag: 'こぼれ話', text: '砂にチップ模様を描いて練習する。完全な職業病。' },
     ],
   },
@@ -4917,7 +4925,7 @@ const RICO_TRIVIA = {
     title: 'ジム服のリコ先輩',
     cards: [
       { tag: '私生活', text: '週3、4年継続。「下半身が安定すると表情も安定するの」。' },
-      { tag: '豆知識', text: '3時間連続プレイで-EV判断が時速2〜3回増える。' },
+      { tag: '豆知識', text: '長く打ち続けるほど、損な判断が増えていく。疲れは顔より先に賭け方に出る。' },
       { tag: '戦術', text: '休憩で10秒だけ全力で背伸び。脳の霧が晴れる。' },
       { tag: 'こぼれ話', text: 'プロテインはバニラ一択。「結婚相手と同じ、無難で長く付き合える」。' },
     ],
@@ -4926,7 +4934,7 @@ const RICO_TRIVIA = {
     title: '学生風のリコ先輩',
     cards: [
       { tag: '私生活', text: '数学だけ得意。確率の問題を解く時間が一番好きだった。' },
-      { tag: '豆知識', text: 'ポットオッズ：コール額 ÷ コール後のポット = 必要勝率。' },
+      { tag: '豆知識', text: '付いていく額 ÷ 付いていった後の場の合計 ＝ 勝たなきゃいけない割合。' },
       { tag: '戦術', text: '結局ポーカーは期待値ゲーム。感情を排した算数の延長。' },
       { tag: 'こぼれ話', text: '屋上で初めてカードを教わった。相手は「内緒」、今も年に一度卓を挟む。' },
     ],
@@ -4945,7 +4953,7 @@ const RICO_TRIVIA = {
     cards: [
       { tag: '私生活', text: '仕事納め後、一人でケーキ。「年に一度の贅沢」。3年連続予約の店。' },
       { tag: '豆知識', text: '年末は寄付付きトーナメントが多い。負けても気分はあったかい。' },
-      { tag: '戦術', text: 'バブル局面：小スタックは極端にタイト化する。狙うのは中堅。' },
+      { tag: '戦術', text: '大会で入賞の目前になると、点の少ない人ほど慎重になる。狙うならそこ。' },
       { tag: 'こぼれ話', text: 'ラッピングが異常に上手い。同僚からの依頼殺到、報酬はお菓子。' },
     ],
   },
@@ -5160,7 +5168,7 @@ function showSettingsModal() {
             ${sw('voice', save.voiceOn !== false, 'キャラの声')}
           </div>
           <div class="settings-modal-row">
-            <span class="settings-modal-label">端末が消音でも音を出す</span>
+            <span class="settings-modal-label is-wrap">端末が消音でも<wbr>音を出す</span>
             ${sw('forcesound', !!save.forceSound, '端末が消音でも音を出す')}
           </div>
           <div class="settings-modal-note">OFF（既定）は iPhone の消音スイッチに従います。ON にすると消音中でも鳴ります</div>
@@ -5236,9 +5244,9 @@ function showSettingsModal() {
       else if (kind === 'backdoor') save.backdoorOn = !save.backdoorOn;
       else if (kind === 'forcesound') setForceSound(!save.forceSound); // 内部でsaveProgress+即反映
       else if (kind === 'liveart') setStillArt(!stillArtOn());
-      else if (kind === 'bgm') toggleLobbyBgm();
-      else if (kind === 'sfx') { toggleSfx(); mpSfx('tap'); }
-      else if (kind === 'voice') { save.voiceOn = !(save.voiceOn !== false); if (!save.voiceOn && window.stopVoice) stopVoice(); }
+      else if (kind === 'bgm') { toggleLobbyBgm(); if (isBgmOn()) save.allMute = false; }
+      else if (kind === 'sfx') { toggleSfx(); mpSfx('tap'); if (isSfxOn()) save.allMute = false; }
+      else if (kind === 'voice') { save.voiceOn = !(save.voiceOn !== false); if (save.voiceOn) save.allMute = false; if (!save.voiceOn && window.stopVoice) stopVoice(); }
       saveProgress();
       let isOn;
       if (kind === 'psych') isOn = (save.psychEnabled !== false);
@@ -8357,7 +8365,7 @@ function onAction(e) {
         'coins', 'ownedItems', 'shopSeenItems', 'unlockedNotes', 'panyuGaugeMax', 'panyuSkills', 'panyuComboMultiplier', 'carryChips',
         'equippedCardSkin', 'equippedTableSkin', 'equippedRicoOutfit', 'equippedChipSkin', 'equippedMimiSkin', 'equippedCutin',
         'equippedBgmLobby', 'equippedBgmBattle', 'equippedSePack',
-        'loginBonus', 'panyuFreeDaily', 'bgmVolume', 'bgmOn', 'sfxVolume', 'sfxOn', 'voiceVolume', 'voiceOn', 'forceSound', 'psychEnabled', 'logicEnabled',
+        'loginBonus', 'panyuFreeDaily', 'bgmVolume', 'bgmOn', 'sfxVolume', 'sfxOn', 'voiceVolume', 'voiceOn', 'allMute', 'forceSound', 'psychEnabled', 'logicEnabled',
       ];
       save = defaultSave();
       KEEP_KEYS.forEach(k => { if (prev[k] !== undefined) save[k] = JSON.parse(JSON.stringify(prev[k])); });
@@ -8725,7 +8733,7 @@ function showEndingMusicPrompt() {
     chosen = true;
     overlay.remove();
     // 音を切っていた人が「音をオンにして流す」を選んだら、BGM を入れる（設定の窓・隅の音の表示もそろえる）
-    if (withMusic && !isBgmOn()) { save.bgmOn = true; saveProgress(); refreshAudioBars(); }
+    if (withMusic && !isBgmOn()) { save.bgmOn = true; save.allMute = false; saveProgress(); refreshAudioBars(); }
     startEndingShow(withMusic);
   };
   overlay.querySelector('#ending-with-music').addEventListener('click', () => choose(true));
@@ -8804,7 +8812,7 @@ function startEndingShow(playMusic) {
       themeOn = false;
     } else {
       // 音を切っていた人が押したら BGM を入れる（流さないを選んだ後でも、ここから流せる）
-      if (!isBgmOn()) { save.bgmOn = true; saveProgress(); refreshAudioBars(); }
+      if (!isBgmOn()) { save.bgmOn = true; save.allMute = false; saveProgress(); refreshAudioBars(); }
       if (!themeStarted) { endA.currentTime = 0; themeStarted = true; }
       endA.volume = Math.min(1, bgmVolFloat() * 1.6);
       const p = endA.play();
@@ -9826,6 +9834,8 @@ function toggleAllAudio() {
   const turnOff = isAnyAudioOn();
   save.bgmOn = !turnOff;
   save.sfxOn = !turnOff;
+  save.allMute = turnOff;
+  if (turnOff && window.stopVoice) stopVoice();
   saveProgress();
   if (turnOff) {
     _stopNonSceneBgm();
@@ -9921,6 +9931,7 @@ function toggleSoundPanel(btn) {
       p.querySelector(`[data-sp-val="${k}"]`).textContent = v;
       // 消している時につまみを動かしたら、音を戻す
       if (!isAnyAudioOn()) { save.bgmOn = true; save.sfxOn = true; startBgmForScreen(); }
+      save.allMute = false;
       if (k === 'voice') { save.voiceVolume = v; if (v > 0) save.voiceOn = true; if (v === 0 && window.stopVoice) stopVoice(); }
       else if (k === 'sfx') save.sfxVolume = v;
       else { save.bgmVolume = v; applyBgmVolume(); }
@@ -13789,6 +13800,7 @@ function startBattleInternal(opponentId) {
   }
   state.rebuysLeft = state.tutorialMode ? 0 : 1;
   state.__rebuyEarnedShown = false;
+  state.gradLastHand = null;
   state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
   state.__oppInitialChips = state.opponentChips;
   state.tauntLevel = 0; applyTauntAura();
@@ -15755,6 +15767,8 @@ function readBattleReady(group) {
   return true;
 }
 const READ_GAME_OK = {
+  // 卒業試験：卒業した後は3ハンドに1回まで（2026-11-01 8回目の批評：本気のリコ戦が5ハンドとも試験で、ポーカーが細切れになった）
+  graduation: () => (save.gradCount || 0) < 3 || (state.handNo - (state.gradLastHand ?? -99)) >= 3,
   // 役くらべ：場札が5枚そろったリバーだけ（2026-11-01 2回目の外部の批評：フロップ・ターンでは「今勝っている候補の割合」が最後の勝ち負けと違うのに、付いていくかの判断に使っていた）
   handvs: () => (state.community || []).length === 5,
   // 容疑者しぼり：癖で組を外すと答え（付いていく／降りる）が変わる手だけ（ヴェルベットはいつも）
@@ -15827,6 +15841,7 @@ function startReadBattle(group) {
   }
   const gameId = state.__nextReadGame || pickReadBattle(group);
   state.__nextReadGame = null;
+  if (gameId === 'graduation') state.gradLastHand = state.handNo;
   const stage = document.getElementById('stage') || document.body;
   document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
   if (typeof dismissCutIn === 'function') dismissCutIn();
@@ -15952,7 +15967,8 @@ function showReadVerdict() {
             state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
             state.psychSuccessCount++;
           }
-          if (graduatedNow) { save.gradCgSeen = true; saveProgress(); showGraduationScene(resolve); return; }
+          // 卒業の一枚絵は勝負の決着（結果の画面）の後に出す（2026-11-01 8回目の批評：持ち点が尽きた直後に合格の台詞→敗北の画面で、何に合格したのか分からなかった）
+          if (graduatedNow) save.gradCgPending = true;
           saveProgress();
           resolve();
         },
@@ -17967,6 +17983,8 @@ function isDominanceMode() {
   const wins = state.showdownStreak || 0;
   const playerAhead = state.playerChips > initial && state.playerChips >= state.opponentChips * 2;
   if (playerAhead && wins >= 5) return 'complete';
+  // 相手の残りが次の参加費2回分に満たない大差は、連勝を待たずに申し出る（2026-11-01 8回目の批評：3978対22から5ハンドも後片付けが続いた）
+  if (playerAhead && (state.opponentChips || 0) < anteForHand((state.handNo || 0) + 1) * 2) return 'complete';
   return false;
 }
 
@@ -18460,6 +18478,11 @@ function endBattle() {
   // リザルト演出（段階表示・コインカウントアップ・ランクスタンプ）
   // → 全ての表示内容（ヴェルベット特殊分岐含む）が確定した最後にだけ起動する
   startResultFx();
+  // 卒業試験に3回目で受かった勝負は、勝ち負けを見せた後に卒業の一枚絵を別の達成として開く
+  if (save.gradCgPending && !save.gradCgSeen) {
+    const g0 = battleGen;
+    setTimeout(() => { if (g0 !== battleGen || state.screen !== 'result') return; save.gradCgPending = false; save.gradCgSeen = true; saveProgress(); showGraduationScene(); }, 2600);
+  }
 }
 
 // 勝利リザルトの主ボタン群（次ステージ／再戦／ロビー）のHTMLを組み立てる。

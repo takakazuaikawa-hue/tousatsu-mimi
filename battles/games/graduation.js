@@ -58,13 +58,15 @@
     else { const f = dealFake(api); board = f.board; mine = f.mine; her = f.her; bet = f.bet; }
     api.setOpp('rico', api.pick(OPEN), bet, 'smug');
     const jp = 'リコ先輩';
-    const habit = (T && Array.isArray(T.habit) && T.habit.length >= 5) ? T.habit.slice(-20) : seedHabit();
+    // 1件でも本当の記録があればそれを使う。0件の時だけ見本の20回（見本と書く）（2026-11-01 外部の批評）
+    const real = !!(T && Array.isArray(T.habit) && T.habit.length);
+    const habit = real ? T.habit.slice(-20) : seedHabit();
     const folds = habit.filter(Boolean).length, foldRate = folds / habit.length;
     const pred = foldRate >= .5 ? 'strong' : 'bluff';            // 先輩の予想：ミミの癖どおりの読み
     const predLine = pred === 'strong' ? 'ミミは『本物』と読んで、|降りる' : 'ミミは『ブラフ』と読んで、|付いてくる';
     // 天秤の最初の重り：先輩はミミの癖の逆を突く（降りがちならブラフ寄り）。AI のブラフの多さと同じ式
     const prior = Math.max(.25, Math.min(.85, .25 + .7 * foldRate));
-    const mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+    const mimiEq = api.eqPct(api.headsUp(mine, her, board));
     const truth = mimiEq >= 50 ? 'bluff' : 'strong';
     const grad0 = T ? (T.grad || 0) : 0;
     const shape = boardShape(api, board);
@@ -90,7 +92,7 @@
       <div class="rb-info gd-info">
         <div class="gd-sit"><span class="gd-cap">場札 ／ ミミの手（${mimiHandName}）</span><span class="gd-cards">${board.map(c => api.cardHTML(c, 'small')).join('')}<i class="gd-sep"></i>${mine.map(c => api.cardHTML(c, 'small')).join('')}</span></div>
         <div class="gd-scale"><div class="gd-scalebox"><svg class="gd-svg" viewBox="34 0 192 76" aria-hidden="true" id="mb-gd-svg"></svg><span class="gd-pan is-b">ブラフ</span><span class="gd-pan is-s">本物</span></div><div class="gd-odds" id="mb-gd-odds"></div></div>
-        <div class="gd-habit" aria-label="ミミが大きな賭けを受けた最近の${habit.length}回のうち、降りた${folds}回"><span class="h">最近の大きな賭け${habit.length}回：<b class="f">降りた${folds}</b>・<b class="c">付いた${habit.length - folds}</b></span><span class="d">${habit.map(f => `<i class="${f ? 'f' : 'c'}"></i>`).join('')}</span></div>
+        <div class="gd-habit" aria-label="ミミが大きな賭けを受けた最近の${habit.length}回のうち、降りた${folds}回"><span class="h">${real ? `最近の大きな賭け${habit.length}回` : `まだ記録なし。見本の${habit.length}回`}：<b class="f">降りた${folds}</b>・<b class="c">付いた${habit.length - folds}</b></span><span class="d">${habit.map(f => `<i class="${f ? 'f' : 'c'}"></i>`).join('')}</span></div>
       </div>
       <div class="rb-act gd-act" id="mb-gd-act"></div>`;
     const $ = (s) => root.querySelector(s);

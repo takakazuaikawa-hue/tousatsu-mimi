@@ -169,7 +169,7 @@ MB.register({
     if (s.real) {
       // 本当の手：最後の1枚は卓で配られる。判断を預けて戻る
       const m = api.mult || 1, need = Math.round(s.need * 100);
-      const mimiEq = Math.round(api.headsUp(s.hole, s.her, s.board) * 100);
+      const mimiEq = api.eqPct(api.headsUp(s.hole, s.her, s.board));
       api.entrust({
         pick: called ? '付いていく' : '降りる', win: base0, lose: 0, noMult: true,
         advice: called ? '「付いていく」と決めた。卓でコールして、最後の1枚を待とう' : '「降りる」と決めた。卓で降りよう',

@@ -78,7 +78,7 @@
     let board, mine, her, truth, mimiEq;
     if (T) { board = T.board; mine = T.mine; her = T.her; }
     else { const d = api.shuffle(api.deck()); mine = d.slice(0, 2); her = d.slice(2, 4); board = d.slice(4, 8); }
-    mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+    mimiEq = api.eqPct(api.headsUp(mine, her, board));
     truth = mimiEq >= 50 ? 'bluff' : 'strong';
     const mimiHandName = api.CAT_NAME[api.category([...mine, ...board])];
     // 反応の重さ（その結果が出た時に当たる率に直す）

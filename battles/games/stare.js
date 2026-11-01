@@ -293,12 +293,12 @@
     if (T) {
       // 本物＝読んだ時点でミミより強い手（ミミが勝つ見込みが半分未満）、ブラフ＝ミミの方が強い
       board = T.board; mine = T.mine; her = T.her;
-      mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+      mimiEq = api.eqPct(api.headsUp(mine, her, board));
       truth = mimiEq >= 50 ? 'bluff' : 'strong';
       const cnt = {}; board.forEach(c => { cnt[c.s] = (cnt[c.s] || 0) + 1; }); X = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0] || X;
     } else {
       her = dealHer(api, truth, X, board, mine);
-      mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+      mimiEq = api.eqPct(api.headsUp(mine, her, board));
     }
     const mimiHandName = api.CAT_NAME[api.category([...mine, ...board])];
 

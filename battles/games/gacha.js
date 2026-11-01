@@ -125,13 +125,13 @@
     let board, mine, her, truth, mimiEq;
     if (T) {
       board = T.board; mine = T.mine; her = T.her;
-      mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+      mimiEq = api.eqPct(api.headsUp(mine, her, board));
       truth = mimiEq >= 50 ? 'bluff' : 'strong';
     } else {
       truth = force.truth || (Math.random() < PRIOR[who] ? 'bluff' : 'strong');
       const D = deal(api, truth) || { board: [{ r: 13, s: 'h' }, { r: 9, s: 'h' }, { r: 4, s: 'c' }, { r: 2, s: 'h' }, { r: 7, s: 's' }], mine: [{ r: 13, s: 'c' }, { r: 14, s: 'd' }], her: truth === 'strong' ? [{ r: 12, s: 'h' }, { r: 6, s: 'h' }] : [{ r: 6, s: 'd' }, { r: 5, s: 'c' }] };
       ({ board, mine, her } = D);
-      mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+      mimiEq = api.eqPct(api.headsUp(mine, her, board));
     }
     const mimiHandName = api.CAT_NAME[api.category([...mine, ...board])];
     const other = (t) => (t === 'bluff' ? 'strong' : 'bluff');
@@ -170,7 +170,9 @@
     bal.draw();
     const $ = (s) => root.querySelector(s);
     const mach = $('#mb-gc-mach'), act = $('#mb-gc-act');
-    let panyu = 30, pulls = 0, busy = false;
+    let panyu = 30, pulls = 0, busy = false, fast = false;
+    let SP = 1; try { SP = localStorage.getItem('mbGachaPlayed') ? .6 : 1; localStorage.setItem('mbGachaPlayed', '1'); } catch (e) {}
+    root.addEventListener('pointerdown', () => { if (busy) fast = true; }, true);
     const got = [];
     const base = () => 20 + panyu * 2;
     const drawPanyu = () => {
@@ -212,31 +214,33 @@
 
     // 1回引く：レバー → カプセルが落ちて揺れる（ため）→ 開いてレア度の色 → 心の声 → 天秤に重り
     const pull = async () => {
-      busy = true; pulls++; panyu -= 10; drawPanyu();
+      busy = true; fast = false; pulls++; panyu -= 10; drawPanyu();
       act.querySelectorAll('button').forEach(b => { b.disabled = true; });
       const rar = roll(); const v = voiceOf(rar);
-      api.sfx.tap(); api.coach('');
+      api.sfx.tap(); api.coach('タップで すぐ結果');
       mach.classList.remove('is-pull'); void mach.offsetWidth; mach.classList.add('is-pull');
       const R = api.reduce;
-      await api.wait(R ? 60 : 480); if (!api.alive()) return;
+      // 待ち：タップで早送り、2回目の遊びからは短め（2026-11-01 8回目の批評：1回引くのに約3.8秒）
+      const w = (a, b) => api.wait(R ? a : fast ? Math.min(b, 80) : Math.round(b * SP));
+      await w(60, 480); if (!api.alive()) return;
       const cap = document.createElement('div');
       cap.className = 'gc-cap';
       cap.innerHTML = '<div class="gc-in"><i class="t"></i><i class="b"></i><b class="q">?</b></div>';
       mach.appendChild(cap); api.sfx.tick();
-      await api.wait(R ? 60 : 560); if (!api.alive()) return;
+      await w(60, 560); if (!api.alive()) return;
       const spot = document.createElement('i'); spot.className = 'gc-spot'; mach.appendChild(spot);
       cap.classList.add('rise'); api.sfx.whoosh();
-      await api.wait(R ? 60 : 460); if (!api.alive()) return;
+      await w(60, 460); if (!api.alive()) return;
       cap.classList.add('wob');
       const up = async (cls, label, ms) => {
         [cap, spot].forEach(el => { el.classList.remove('g-R', 'g-SR', 'g-SSR'); if (cls) el.classList.add(cls); });
         if (label) { const u = document.createElement('b'); u.className = 'gc-up' + (label === '…おしい' ? ' fizz' : ''); u.textContent = label; mach.appendChild(u); setTimeout(() => u.remove(), 900); if (label === '…おしい') api.sfx.nope(); else api.sfx.good(); }
         else api.sfx.tick();
-        await api.wait(R ? 60 : ms);
+        await w(60, ms);
       };
       // 昇格しそうで、しない（ニアミス）。レア度は引いた時に決まっていて、光り方は見せ方だけ
       const fizz = !R && Math.random() < .3;
-      if (rar === 'N') { await api.wait(R ? 60 : 600); if (fizz) { await up('g-R', null, 380); await up(null, '…おしい', 420); } else await api.wait(R ? 0 : 300); }
+      if (rar === 'N') { await w(60, 600); if (fizz) { await up('g-R', null, 380); await up(null, '…おしい', 420); } else await w(0, 300); }
       else { await up('g-R', null, 800); if (rar === 'R' && fizz) { await up('g-SR', null, 320); await up('g-R', '…おしい', 480); } }
       if (!api.alive()) return;
       if (rar === 'SR' || rar === 'SSR') { await up('g-SR', 'UP!', 750); if (!api.alive()) return; }
@@ -254,7 +258,7 @@
       } else if (rar === 'SR') { api.sfx.fanfare(); const r = mach.getBoundingClientRect(); api.sparkles(r.left + r.width / 2, r.top + r.height * .45, 22); }
       else if (rar === 'R') api.sfx.good();
       else api.sfx.tap();
-      await api.wait(R ? 100 : 650); if (!api.alive()) return;
+      await w(100, 650); if (!api.alive()) return;
       // 心の声を欄に書き、天秤に重りを乗せる
       const isNew = !book.has(v.key); book.add(v.key); saveBook(); got.push(v);
       const row = root.querySelector(`.gx-voice[data-i="${pulls - 1}"]`);

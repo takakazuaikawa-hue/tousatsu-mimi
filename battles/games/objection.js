@@ -101,8 +101,9 @@
       const b = board.slice().sort((a, b2) => b2.r - a.r)[0];
       L.push({ id: 'b_board', topic: { rank: b.r, card: api.key(b) }, key: 'log', say: `手札に|${lab(b)}が|あるの。|これで|勝ちよ♡`, short: `「手札に|${api.label(b)}が|ある」`, fact: `${lab(b)}は|場札にある＝|持っていない`,
         panic: 'う、うそ……場札なんて見てなかったの……！' });
-      if (nX >= 3 && herX <= 1) { const d = her.find(c => c.s !== X); L.push({ id: 'b_suit2', topic: { suit: X }, key: 'wit', say: `2枚とも|${SN}なの。|フラッシュよ♡`, short: `「2枚とも|${SN}」`, fact: `${SN}でない札が|ある＝|フラッシュは|無い`,
-        wit: { head: 'めくれた札', text: `配る時、|札が|1枚|めくれかけた。|角に|${sym(d.s)}が|見えた` }, panic: 'み、見てたの！？ ディーラーのくせに！' }); }
+      // 1枚の証拠で否定できるのは場に3枚の時だけ。4枚なら2枚とも同じ印でないと見えた時だけ（2026-11-01 外部の批評）
+      if ((nX === 3 && herX <= 1) || (nX === 4 && herX === 0)) { const two = nX === 4, d = her.find(c => c.s !== X), d2 = her.find(c => c !== d); L.push({ id: 'b_suit2', topic: { suit: X }, key: 'wit', say: `2枚とも|${SN}なの。|フラッシュよ♡`, short: `「2枚とも|${SN}」`, fact: two ? `2枚とも|${SN}でない＝|フラッシュは|無い` : `${SN}でない札が|ある＝|場の3枚と|合わせても|4枚＝|フラッシュは|無い`,
+        wit: { head: 'めくれた札', text: two ? `配る時、|札が|2枚とも|めくれかけた。|角は|${sym(d.s)}と|${sym(d2.s)}` : `配る時、|札が|1枚|めくれかけた。|角に|${sym(d.s)}が|見えた` }, panic: 'み、見てたの！？ ディーラーのくせに！' }); }
       const small = sts.slice(0, -1).find(clearlySmall);
       if (small) L.push({ id: 'b_log', topic: { street: 'all' }, key: 'log', say: 'フロップから|ずっと|大きく|賭けてるの♡', short: '「フロップから|ずっと|大きく|賭けてる」', fact: `${STN[small]}は|「${actWord(top(small))}」|だった＝|最初から|強くはない`,
         panic: 'き、記録なんて反則なの！' });
@@ -136,7 +137,7 @@
     const jp = api.char.jp;
     const record = [...recordOf(PRIOR), ...((T && Array.isArray(T.record)) ? T.record : [])].slice(-20);
     const prior = Math.min(.9, Math.max(.1, record.filter(Boolean).length / record.length));
-    const mimiEq = Math.round(api.headsUp(mine, her, board) * 100);
+    const mimiEq = api.eqPct(api.headsUp(mine, her, board));
     const truth = mimiEq >= 50 ? 'bluff' : 'strong';
     const B = build(api, truth, board, mine, her, acts);
     const { lie, wit, lab } = B;

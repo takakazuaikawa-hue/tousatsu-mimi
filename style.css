@@ -20721,3 +20721,22 @@ html.is-compact .hand-result-overlay .hr-tiebreak { font-size: var(--fx-cap); ma
 .shop-screen.v3 .sh3-who.is-mimi { background: #7a0e16; color: #f6e2b4; }
 .shop-screen.v3 .sh3-who.is-panyu { background: #f3ece0; color: #8a1424; }
 html.is-compact .shop-screen.v3 .sh3-who { font-size: calc(14px * var(--inv-scale, 1)); padding: 0 calc(6px * var(--inv-scale, 1)); }
+
+/* 2026-11-01 8回目の批評：ヴェルベットの初回の勝ちは台詞札と解放の札で縦にあふれ、スマホで「幕間へ」が画面の外に落ちていた。
+   札の中身はスクロールさせ、進むボタンは札の下端に貼り付けて必ず見せる */
+html.is-compact .result-screen .rz-panel { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #c9a25a rgba(0,0,0,.35); }
+html.is-compact .result-screen .rz-panel > * { flex-shrink: 0; }
+html.is-compact .result-screen .rz-panel > .result-buttons { position: sticky; bottom: 0; z-index: 4; margin-top: auto; padding: 10px 0 14px; background: linear-gradient(rgba(10,4,7,0), rgba(10,4,7,.94) 28%); }
+/* 2026-11-01 8回目の批評：667幅で額が4つの時、欄の見出しと「もどる」が上の音のボタンに重なった。札を1行（名前・見込み・額）にして欄を低くする */
+html.is-compact.is-narrow-stage .battle-screen.v2.t8 .bet-chooser-grid .verb-size { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 8px; min-height: calc(46px * var(--inv-scale, 1)); padding-top: 0; padding-bottom: 0; }
+html.is-compact.is-narrow-stage .battle-screen.v2.t8 .bet-chooser-grid .verb-size .verb-label { grid-column: 1; grid-row: 1; text-align: left; }
+html.is-compact.is-narrow-stage .battle-screen.v2.t8 .bet-chooser-grid .verb-size .verb-fe { grid-column: 2; grid-row: 1; justify-self: start; margin: 0; white-space: nowrap; }
+html.is-compact.is-narrow-stage .battle-screen.v2.t8 .bet-chooser-grid .verb-size .verb-num { grid-column: 3; grid-row: 1; }
+html.is-compact.is-narrow-stage .battle-screen.v2.t8 .bet-chooser-grid .verb-size .verb-fe { white-space: normal; line-height: 1.1; word-break: keep-all; }
+html.is-compact.is-narrow-stage .battle-screen.v2.t8 > .bottom-bar.v2-actions:has(.bet-chooser) { width: 410px !important; }
+/* 2026-11-01 8回目の批評：PC でも配当表の額の右端が切れていた（幅198に中身228）。PC は広げて役名・倍率・額を同時に見せる */
+html:not(.is-compact) .minipoker-overlay .mp-paytable { width: 290px; overflow-x: visible; }
+.grad-scene-title small { display: block; font-size: 22px; letter-spacing: .2em; margin-bottom: 4px; color: #e8c98a; }
+/* PC の幕間：大きい版の無いミミ・リコは引き伸ばしを約1.3倍までに抑える（2026-11-01 8回目の批評） */
+html:not(.is-compact) .intermission-overlay .ims-scene-mimi .eps-portrait-frame,
+html:not(.is-compact) .intermission-overlay .ims-scene-rico .eps-portrait-frame { height: min(190%, 1350px); }
