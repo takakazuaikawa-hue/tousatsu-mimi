@@ -361,7 +361,7 @@
         const seq = []; for (let r = 0; r < 8; r++) seq.push(...RL_CELLS);
         const el = document.createElement('div'); el.className = 'mb-roulette';
         el.innerHTML = `<div class="mb-rl-card mb-pop">
-            <div class="mb-rl-title">BONUS CHANCE!<small>フィーバー完走のご褒美。止めた倍率 × ${unit} コイン</small></div>
+            <div class="mb-rl-title">BONUS CHANCE!<small>フィーバー完走のご褒美。止めた倍率 × ${unit} コイン。押した所から少し滑って止まる</small></div>
             <div class="mb-rl-window"><i class="mb-rl-bulbs top"></i><i class="mb-rl-bulbs bot"></i><div class="mb-rl-track">${seq.map(v => `<span class="mb-rl-cell v${v}">×${v}</span>`).join('')}</div><div class="mb-rl-mark"></div></div>
             <div class="mb-rl-foot"><button class="btn gold" id="mb-rl-stop">ストップ！<small>好きな所でタップ</small></button></div>
           </div>`;
@@ -374,18 +374,11 @@
         const ticker = setInterval(() => { if (!alive()) { clearInterval(ticker); return; } sfx.tick(); }, 95);
         const stop = () => {
           if (!spinning) return; spinning = false; clearInterval(ticker); sfx.tap();
-          const r = Math.random();
-          const want = r < .07 ? 10 : r < .22 ? 5 : r < .47 ? 3 : r < .77 ? 2 : 1;
+          // 目押し：押した瞬間の位置から決まった距離だけ滑って止まる（抽選も寄せもしない）
           const center = win.clientWidth / 2;
-          const from = Math.floor((x + center) / W) + N * 2;
-          const cands = []; for (let i = from; i < from + N; i++) if (RL_CELLS[i % N] === want) cands.push(i);
-          // 惜しい：×10 の隣に止まる候補があれば半分の確率でそちらへ寄せ、しかも×10 側ぎりぎりで止める
-          const near = cands.filter(i => RL_CELLS[(i + 1) % N] === 10 || RL_CELLS[(i + N - 1) % N] === 10);
-          const tease = want !== 10 && near.length && Math.random() < .5;
-          const i = tease ? near[0] : cands[0];
-          const toward = tease ? (RL_CELLS[(i + 1) % N] === 10 ? 1 : -1) : 0;
-          const jitter = tease ? toward * W * .38 : (Math.random() - .5) * W * .4;
-          const target = i * W + W / 2 - center + jitter;
+          const i = Math.floor((x + N * W * 2.5 + center) / W);
+          const want = RL_CELLS[i % N];
+          const target = i * W + W / 2 - center;
           const dur = reduce ? 0 : 2400;
           track.style.transition = `transform ${dur}ms cubic-bezier(.1,.72,.16,1)`;
           track.style.transform = `translateX(${-target}px)`;
@@ -395,14 +388,12 @@
             const cell = track.children[i]; cell.classList.add('hit');
             const gain = unit * want; P.coins += gain; purse();
             if (want >= 5) sfx.jackpot(); else sfx.fanfare();
-            // 大当たり（×5・×10）は後光と揺れ、×10 の隣で止まった「惜しい」は赤い閃き
+            // 大当たり（×5・×10）は後光と揺れ
             const card = el.querySelector('.mb-rl-card');
             if (want >= 5) { card.classList.add(want >= 10 ? 'is-jackpot' : 'is-big'); const rays = document.createElement('i'); rays.className = 'mb-fv-rays mb-rl-rays'; el.insertBefore(rays, card); }
-            else if (tease) card.classList.add('is-tease');
             el.classList.add('is-stopped');
             const r2 = cell.getBoundingClientRect(); sparkles(r2.left + r2.width / 2, r2.top + r2.height / 2, want >= 5 ? 50 : 24);
             foot.innerHTML = `<div class="mb-rl-gain ${want >= 5 ? 'big' : ''}">×${want}　+${gain}<small> コイン</small></div>
-              ${tease ? '<div class="mb-rl-tease">あと少しで ×10 だった……！</div>' : ''}
               <button class="btn gold" id="mb-rl-ok">受け取る</button>`;
             foot.querySelector('#mb-rl-ok').addEventListener('click', () => { sfx.tap(); el.remove(); res(gain); });
           }, dur + 60);

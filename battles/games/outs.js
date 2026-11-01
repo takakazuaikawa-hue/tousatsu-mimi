@@ -36,9 +36,13 @@ MB.register({
       const hole = T.mine, board = T.board, known = [...hole, ...board];
       const rest = deck().filter(c => !known.some(k => key(k) === key(c)));
       const outs = rest.filter(c => category([...known, c]) >= 4 && category([...board, c]) < 4);
-      if (outs.length >= 4) { const B = T.toCall, P = Math.max(0, (T.pot || 0) - B); s = { hole, board, rest, outs, eq: outs.length / rest.length, need: B / (P + 2 * B), P, B, real: true, her: T.her }; }
+      // 汚れた当たり札（2026-11-01 外部の批評：完成しても相手のフルハウスに負ける札まで「得」の根拠にしていた）：
+      // 場にペアを作る札（相手のフルハウス・フォーカード）と、ストレートだけ完成して場に同じマークが3枚になる札（相手のフラッシュ）は半分で数える。相手の札は使わない
+      const dirtyOf = (c) => board.some(b => b.r === c.r) || (category([...known, c]) === 4 && [...board, c].filter(b => b.s === c.s).length >= 3);
+      const dirty = outs.filter(dirtyOf);
+      if (outs.length >= 4) { const B = T.toCall, P = Math.max(0, (T.pot || 0) - B); s = { hole, board, rest, outs, dirty, eq: (outs.length - dirty.length / 2) / rest.length, need: B / (P + 2 * B), P, B, real: true, her: T.her }; }
     }
-    if (!s) s = gen();
+    if (!s) { s = gen(); if (s) s.dirty = []; }
     const STAKES = [0, 1, 3];
     const pct = (x) => Math.round(x * 1000) / 10;
     api.say(api.pick(['この値段で付いてくるかい？', 'お代はこれだけ。安いもんだろう？', '払うかどうか、よく計算してごらん']), 'smug');
@@ -50,6 +54,7 @@ MB.register({
       .outs-deck .card.known { opacity: .2; cursor: default; }
       .outs-deck .card.found { background: linear-gradient(180deg, #fff7d6, #f5d77a); border-color: #b8860b; transform: translateY(-3px); box-shadow: 0 0 12px rgba(245,215,122,.8); }
       .outs-deck .card.shown { border-color: var(--gold-hi); border-style: dashed; }
+      .outs-deck .card.found.dirty { background: linear-gradient(90deg, #f5d77a 50%, #d8cdb8 50%); }
       .outs-deck .card.hint { box-shadow: 0 0 0 2px rgba(245,215,122,.6); }
       .outs-deck.is-collapsed { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: none; }
       .outs-deck.is-collapsed .card { display: none; }
@@ -127,12 +132,15 @@ MB.register({
     root.querySelector('.actions').remove();
     // 探し終えたら 52 枚の一覧は畳み、当たり札だけを1列に並べる（1画面に収めるため。何が当たりかも一目で分かる）
     root.querySelector('#mb-o-deck').classList.add('is-collapsed');
-    const cnt = root.querySelector('#mb-o-count'); if (cnt) cnt.innerHTML = `当たり札 ${s.outs.length}枚`;
+    const nD = s.dirty.length, effOuts = s.outs.length - nD / 2;
+    const dirtyKeys = new Set(s.dirty.map(key));
+    root.querySelectorAll('#mb-o-deck .card').forEach(x => { if (dirtyKeys.has(x.dataset.k)) x.classList.add('dirty'); });
+    const cnt = root.querySelector('#mb-o-count'); if (cnt) cnt.innerHTML = nD ? `当たり札 ${s.outs.length}枚<small>うち ${nD}枚は相手の上の役にも化ける＝半分で数える</small>` : `当たり札 ${s.outs.length}枚`;
     const meter = document.createElement('div');
     meter.className = 'outs-meter pop';
-    meter.innerHTML = `<div class="prompt mb-ask"><span class="mb-bet"><b>当たり ${s.outs.length}枚</b></span>${api.betTag('払う ' + s.B, 3)}</div>
+    meter.innerHTML = `<div class="prompt mb-ask"><span class="mb-bet"><b>当たり ${nD ? effOuts + '枚分' : s.outs.length + '枚'}</b></span>${api.betTag('払う ' + s.B, 3)}</div>
       <div class="outs-bar"><div class="outs-fill" id="mb-o-fill"></div><div class="outs-line" id="mb-o-line"><span>割に合う線 ${pct(s.need)}%</span></div><div class="outs-val">約 ${Math.round(s.eq * 100)}%</div></div>
-      <div class="ox-more">${api.more(`当たり札 ${s.outs.length}枚 × 2 ＝ <b>約${s.outs.length * 2}%</b>（正確には ${s.outs.length}÷${s.rest.length}＝${pct(s.eq)}%）<br>払う ${s.B} ÷（もらえる ${s.P + s.B} ＋ 払う ${s.B}）＝ <b>${pct(s.need)}%</b> 以上当たれば得`)}</div>`;
+      <div class="ox-more">${api.more(`${nD ? `当たり札 ${s.outs.length}枚のうち、場にペアを作る札・相手のフラッシュを作る札 ${nD}枚は、完成しても負けることがあるので半分で数える＝${effOuts}枚分<br>` : ''}当たり札 ${effOuts}枚 × 2 ＝ <b>約${Math.round(effOuts * 2)}%</b>（正確には ${effOuts}÷${s.rest.length}＝${pct(s.eq)}%）<br>払う ${s.B} ÷（もらえる ${s.P + s.B} ＋ 払う ${s.B}）＝ <b>${pct(s.need)}%</b> 以上当たれば得`)}</div>`;
     root.querySelector('#mb-o-deck').after(meter);
     // 押す所は画面の一番下の段に（上の方に置くと押しづらい）
     const oxAct = document.createElement('div');
@@ -160,11 +168,11 @@ MB.register({
         pick: called ? '付いていく' : '降りる', win: base0, lose: 0, noMult: true,
         advice: called ? '「付いていく」と決めた。卓でコールして、最後の1枚を待とう' : '「降りる」と決めた。卓で降りよう',
         pending: { kind: 'logic', title: 'アウツさがし', charId: api.charId, pick: called ? 'call' : 'fold', truth: s.eq >= s.need ? 'call' : 'fold', mimiEq, need,
-          truthText: `${s.eq >= s.need ? '付いていく' : '降りる'}のが正解だった<small>当たり札 ${s.outs.length}枚で見込み 約${pct(s.eq)}%・線 ${pct(s.need)}%（相手の札は使わずに採点）</small>`,
+          truthText: `${s.eq >= s.need ? '付いていく' : '降りる'}のが正解だった<small>当たり札 ${nD ? effOuts + '枚分' : s.outs.length + '枚'}で見込み 約${pct(s.eq)}%・線 ${pct(s.need)}%。相手の札は使わずに採点（完成しても上の役に負けることはある。それは運の側）</small>`,
           endLines: { bc: 'く……計算どおりですな', bw: '賢いお方だ', sc: '慎重なお方ですな', sw: 'まいど、ありがとうございます' },
           board: s.board, mine: s.hole, her: s.her, base: base0, mult: m, stakes: STAKES, perfect: right && !gaveUp && miss === 0, notes: [],
           why: right ? (called ? '当たり札の見込みが線を超えていた。' : '当たり札の見込みが線に届かなかった。') : (called ? '当たり札の見込みは線に届かなかった。' : '当たり札の見込みは線を超えていた。'),
-          extra: `当たり札 ${s.outs.length}枚（約${pct(s.eq)}%）／ 線 ${pct(s.need)}%` },
+          extra: `当たり札 ${nD ? effOuts + '枚分' : s.outs.length + '枚'}（約${pct(s.eq)}%）／ 線 ${pct(s.need)}%` },
       });
       return;
     }

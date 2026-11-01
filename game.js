@@ -3008,6 +3008,7 @@ function defaultState() {
     bestHandRank: -1,
     bestHandName: '-',
     bluffBreakHappened: false,
+    dominanceUsed: false, dominanceMode: false, surrenderAccepted: false,
     coinsEarned: 0,
     // v4 C1: ログ機能（Phase1から記録、画面表示は不要）
     logs: { actions: [], bets: [], reactions: [], psych: [] },
@@ -4471,7 +4472,7 @@ function renderStageList() {
     const opp = OPPONENTS[sid];
     const unlocked = isStageUnlocked(sid);
     const cleared = save.clearedStages.includes(sid);
-    const bestRank = save.bestRanks[sid];
+    const bestRank = sid === 'rico_tutorial' ? save.bestRanks.rico_serious : save.bestRanks[sid];
     const isNextDoor = sid === nextStageId;
     const doorNo = String(i).padStart(2, '0');
     // リコクリア後はモードチューザー、それ以外は通常バトル開始
@@ -11582,7 +11583,7 @@ function showMiniPokerGame() {
         if (matches && ev.rank >= 1) winnerClass = 'mp-card-winner';
       }
     }
-    return `<div class="mp-card ${red ? 'mp-red' : 'mp-black'} ${held ? 'mp-held' : ''} ${tapClass} mp-card-dealt ${winnerClass}"
+    return `<div class="mp-card ${red ? 'mp-red' : 'mp-black'} ${held ? 'mp-held' : ''} ${tapClass} ${ctx.noDealAnim ? '' : 'mp-card-dealt'} ${winnerClass}"
                  style="animation-delay:${i * 0.08}s"
                  data-i="${i}" ${isPlayer && ctx.phase === 'choose' ? 'data-mp-tap="1"' : ''}>
       <div class="mp-card-corner mp-card-tl">${c.label}<br>${c.suit}</div>
@@ -11894,7 +11895,8 @@ function showMiniPokerGame() {
         const i = +el.dataset.i;
         ctx.held[i] = !ctx.held[i];
         spawnTapParticles(el);
-        renderPhase();
+        // 選ぶたびに配る演出が最初から流れ直し、次に押す札まで動いていた（2026-11-01 外部の批評）。描き直しても配る演出は付けない
+        ctx.noDealAnim = true; renderPhase(); ctx.noDealAnim = false;
         playFx('tap');
         mpSfx('tap');
       });
@@ -13047,10 +13049,15 @@ function showCollectionModal() {
     // 数え方はホーム・物語の台帳・タイトルと同じ（isStageCleared／clearedStageCount）。研修を飛ばしてポルカに勝った人のリコ先輩は「免除」
     const cleared = isStageCleared(id);
     const exempt = isStageExempt(id);
-    const rank = save.bestRanks && save.bestRanks[id];
+    // リコ先輩の欄は講義・研修。本気戦の成績は下の別の欄に出す
+    const rank = id === 'rico_tutorial' ? null : save.bestRanks && save.bestRanks[id];
     const wins = (save.rematchWins && save.rematchWins[id]) || 0;
-    return { id, name: opp.name, theme: opp.theme, cleared, exempt, rank, wins };
+    return { id, name: opp.name, theme: opp.theme, cleared, exempt, rank, wins: id === 'rico_tutorial' ? null : wins };
   }).filter(Boolean);
+  if (save.bestRanks && save.bestRanks.rico_serious) {
+    const at = stages.findIndex(s => s.id === 'rico_tutorial');
+    stages.splice(at + 1, 0, { id: 'rico_serious', name: '本気のリコ先輩', theme: 'クリア後の手加減なしの勝負', cleared: true, exempt: false, rank: save.bestRanks.rico_serious, wins: null });
+  }
   const stageCleared = clearedStageCount();
   ensureAchievements();
 
@@ -13108,7 +13115,7 @@ function showCollectionModal() {
         <div class="coll-stage-name">${s.name}</div>
         <div class="coll-stage-theme">${s.theme || ''}</div>
         ${s.exempt ? '<div class="coll-stage-meta">研修は免除（講義はいつでも受けられます）</div>'
-          : s.cleared ? `<div class="coll-stage-meta">${s.rank ? `最高ランク ${s.rank} ／ ` : ''}再戦勝利 ${s.wins}回</div>` : ''}
+          : s.cleared ? `<div class="coll-stage-meta">${[s.rank ? `最高ランク ${s.rank}` : '', s.wins != null ? `再戦勝利 ${s.wins}回` : (s.id === 'rico_tutorial' ? '修了' : '')].filter(Boolean).join(' ／ ')}</div>` : ''}
       </div>
     </div>
   `).join('');
@@ -13814,7 +13821,12 @@ function startBattleInternal(opponentId) {
         '<u>各ボタンにマウスを乗せると詳しい説明が出るよ。</u>')
     ), 600);
   } else {
-    state.mimiThought = '「相手のチップは私の倍……一発勝負じゃ勝てない。まずは相手をよく見よう」';
+    // 開始の独白は実際の持ち点で（2026-11-01 外部の批評：チップ拡張でミミが上回っても「相手は私の倍」と言っていた）
+    const P0 = state.playerChips || 0, O0 = state.opponentChips || 0;
+    state.mimiThought = P0 >= O0
+      ? '「チップは私の方が多い……！ でも油断は禁物。まずは相手をよく見よう」'
+      : P0 * 2 <= O0 ? '「相手のチップは私の倍……一発勝負じゃ勝てない。まずは相手をよく見よう」'
+      : '「相手の方がチップは多い……一発勝負は避けたい。まずは相手をよく見よう」';
     state.ricoAdvice = pickRicoOpeningAdvice(state.opponentId);
     render();
     offerBattleResume(() => maybeShowHouseRules());
@@ -14750,7 +14762,7 @@ function readIntroPages(group, gameId) {
     ? { eyebrow: 'READ BATTLE',
         title: `${opp}が <b>${bet}</b> 賭けてきた`,
         fig: `<div class="mk-dilemma">
-            <div class="mk-dl">${back}<b>本当に強い手</b><small>なら、降りるのが正解</small></div>
+            <div class="mk-dl">${back}<b>本当に強い手</b><small>なら勝ち目は小さい。払う額しだいで降りる</small></div>
             <span class="mk-dl-or">それとも</span>
             <div class="mk-dl">${back}<b>ハッタリ</b><small>なら、受けて立てば取れる</small></div>
           </div>`,
@@ -14778,8 +14790,8 @@ function readIntroPages(group, gameId) {
   if (REAL_READ_GAMES.has(gameId)) return [first, {
     eyebrow: 'READ BATTLE',
     title: `いま賭かっている手を読む`,
-    fig: `<div class="mk-dilemma"><div class="mk-dl">${back}<b>本物</b><small>ミミより強い手。降りるのが筋</small></div><span class="mk-dl-or">か</span><div class="mk-dl">${back}<b>ブラフ</b><small>ミミの方が強い。付いていけば取れる</small></div></div>`,
-    note: '手がかりを集めて、どちらかを読み、自信を賭けます。答え合わせは、この手の決着の後。降りても札はめくって確かめます。読み違えても、卓のチップは減りません。',
+    fig: `<div class="mk-dilemma"><div class="mk-dl">${back}<b>本物</b><small>ミミより強い手。安くなければ降りる</small></div><span class="mk-dl-or">か</span><div class="mk-dl">${back}<b>ブラフ</b><small>ミミの方が強い。付いていけば取れる</small></div></div>`,
+    note: '手がかりを集めて、どちらかを読み、自信を賭けます。本物でも、払う額が小さければ付いていく価値があります。答え合わせは、この手の決着の後。降りても札はめくって確かめます。読み違えても、卓のチップは減りません。',
     rico: '読みを信じて、付いていくか降りるか決めよう。3回続けて当てると、ご褒美が2倍になるよ',
     next: '読み合いへ',
   }];
@@ -15929,7 +15941,7 @@ function finishReadBattle(group, gameId, r, gain) {
     if (!state.tellTags) state.tellTags = [];
     state.tellTags.push(hint.tag);
     state.mimiThought = `「${READ_BATTLE_TELL[gameId] || '読み勝った'}……！ ${hint.text}」`;
-    if (gameId === 'sniper' && window.__mbSuggestBet) state.mimiThought = `「狙う額は ${window.__mbSuggestBet}。『賭ける』で一番近い額を選ぼう」`;
+    if (gameId === 'sniper' && state.sniperBetHand === state.handNo) state.mimiThought = `「狙う額は ${state.sniperBet}。そのまま賭ける」`;
     // ご褒美の一言は、このハンドの間ずっと右の吹き出しに残す（決める時に読み返せるように。吹き出しは2行まで）
     const T = READ_TELLS.find(t => t.k === hint.k) || READ_TELLS[1];
     state.ricoAdvice = `「読み：${(state.opponentName || '相手').replace(/（.*）/, '')}は${T.word}。${READ_ADVICE_SHORT[T.k]}」`;
@@ -15957,6 +15969,17 @@ function finishReadBattle(group, gameId, r, gain) {
     if (gen !== battleGen || state.screen !== 'battle') return;
     if (bb) triggerBluffBreak();
     if (rv) battleTimeout(() => showPersonalityRevealBanner(), bb ? 2600 : 200);
+    // 賭け額スナイパーで選んだ額は、卓でもう一度選ばせずにそのまま賭ける（2026-11-01 外部の批評：決めた額を卓で選び直させていた）
+    if (gameId === 'sniper' && state.sniperBet && state.sniperBetHand === state.handNo) {
+      const hand = state.handNo;
+      battleTimeout(() => {
+        if (state.screen !== 'battle' || state.handNo !== hand || !state.isPlayerTurn || state.psychPending) return;
+        if (Math.max(0, state.currentBetOpponent - state.currentBetPlayer) > 0) return;
+        const kinds = ['pot_1_3', 'pot_1_2', 'pot_2_3', 'pot_1', 'allin'];
+        const near = kinds.slice().sort((a, b) => Math.abs(betSizeToChips(a, state.pot, state.playerChips) - state.sniperBet) - Math.abs(betSizeToChips(b, state.pot, state.playerChips) - state.sniperBet))[0];
+        if (near === 'allin') playerAllIn(); else playerBet(near);
+      }, bb || rv ? 3200 : 600);
+    }
   });
 }
 
@@ -16430,6 +16453,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     <footer class="pv2-meter">
       <div class="pv2-meter-row"><span class="pv2-meter-k">ぱにゅ</span><b class="pv2-meter-n">0</b><span class="pv2-meter-of">/ ${totalTaps}</span></div>
       <div class="pv2-bar"><i class="pv2-bar-fill"></i></div>
+      ${cfg.lobby ? '<div class="pv2-heat" aria-live="polite"><span>勢い</span><i><b class="pv2-heat-fill"></b></i><em class="pv2-heat-word">ふつう</em></div>' : ''}
       <div class="pv2-hint">タップ・長押し・引っぱり、どれでも。速いほど当たりやすい${cfg.lobby ? `<span class="pv2-pity">SR 以上まで あと ${PANYU_PITY - ((save && save.panyuPity) || 0)} 回</span>` : ''}</div>
     </footer>
     <div class="panyu-combo pv2-combo" data-bind="panyuCombo"></div>
@@ -16635,7 +16659,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
   // タップ／ドラッグ中の連続カウント共通処理
   // フィーバー（途中でときどき起きる「金のぱにゅ」）と、押す速さ。どちらも当たりを出やすくする
   const tapTimes = [];
-  let feverPts = 0, feverOn = false;
+  let feverPts = 0, feverOn = false, lastBoost = 0;
   const feverAt = (cfg.lobby && rand() < 0.4) ? 8 + Math.floor(rand() * 9) : -1;
   const startFever = () => {
     feverOn = true;
@@ -16670,6 +16694,13 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
       const x = (opts.x != null ? opts.x : r.left + r.width / 2) - o.left, y = (opts.y != null ? opts.y : r.top + r.height * 0.35) - o.top;
       if (!opts.fromDrag || tapped % 3 === 0) spawnPanyuWord(overlay, x, y, feverOn || tapped % 10 === 0);
     }
+    if (cfg.lobby) {
+      const bst = boostNow(), hf = overlay.querySelector('.pv2-heat-fill'), hw = overlay.querySelector('.pv2-heat-word');
+      const word = bst >= .75 ? '最高！ 当たりやすい' : bst >= .45 ? '高い' : bst >= .2 ? '上がってきた' : 'ふつう';
+      if (hf) hf.style.width = Math.round(bst * 100) + '%';
+      if (hw && hw.textContent !== word) { hw.textContent = word; overlay.querySelector('.pv2-heat').dataset.lv = bst >= .75 ? '3' : bst >= .45 ? '2' : bst >= .2 ? '1' : '0'; }
+      lastBoost = Math.max(lastBoost, bst);
+    }
     if (tapped === 10) showCombo(10);
     else if (tapped === 20) showCombo(20);
     else if (tapped === 25) showCombo(25);
@@ -16699,7 +16730,8 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
         return;
       }
       // ぱにゅ判定 → ごほうび（倍率つき）→ 当たりの札。以前は画面を閉じてから小さな知らせだけ
-      const roll = panyuRoll(boostNow());
+      const boostEnd = boostNow();
+      const roll = panyuRoll(boostEnd);
       const res = (onComplete && onComplete(roll)) || null;
       const tierClass = 'is-' + roll.id.toLowerCase();
       const hint = roll.id === 'LEG' || roll.id === 'SSR' ? 'is-rainbow' : roll.id === 'SR' ? 'is-gold' : (rand() < 0.25 ? 'is-gold' : 'is-pink'); // 金の光は「もしかして」の予感（外れることもある）
@@ -16729,6 +16761,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
           <div class="pv2-res-title">《ぱにゅぱにゅ》<em>発動</em></div>
           ${coin}${note ? `<div class="pv2-res-note">${note}</div>` : ''}
           <div class="pv2-res-line">「${pick(PANYU_LINES[roll.id])}」<span>ミミ</span></div>
+          <div class="pv2-res-heat">勢い ${boostEnd >= .75 ? '最高' : boostEnd >= .45 ? '高い' : boostEnd >= .2 ? 'ふつうより上' : 'ふつう'}で判定${boostEnd < .45 ? '。最後まで速く触るほど、当たりやすい' : ''}</div>
           <div class="pv2-res-meta"><span>ぱにゅ図鑑 ${dexN} / ${PANYU_RARITY.length}</span><span>SR 以上まで、あと ${pityLeft} 回で確定</span></div>
           <div class="pv2-res-btns"><button type="button" class="pv2-res-again">もう一回</button><button type="button" class="pv2-res-btn">ロビーへ</button></div>`;
         overlay.appendChild(card);
@@ -17896,7 +17929,7 @@ function showDominanceIntro(onContinue) {
   const overlay = document.createElement('div');
   overlay.className = 'dominance-overlay dominance-intro';
   const titleText = '圧倒モード';
-  const subText = `${state.consecutiveWins}連勝！ 完全に流れを掴んだ！`;
+  const subText = `${state.consecutiveWins}連勝！ 相手が追い詰められた`;
   overlay.innerHTML = `
     <div class="dominance-flash"></div>
     <div class="dominance-banner">
@@ -17916,29 +17949,26 @@ function showDominanceIntro(onContinue) {
   setTimeout(() => { overlay.remove(); onContinue(); }, 3000);
 }
 
-// 3つの選択肢モーダル
+// 降参の申し出（2026-11-01 外部の批評：優勢になると札の勝負が終わり、演出で相手のチップを削って、打っていないハンドと勝ちまで記録していた）。
+// 受ければその場で勝ち（ハンド数・勝ち数は足さない。全取りの点も付けない）。断れば、いつもどおり最後まで打つ
 function showDominanceChoiceModal() {
+  const opp = (state.opponentName || '相手').replace(/（.*）/, '');
   const overlay = document.createElement('div');
   overlay.className = 'dominance-choice-overlay';
   overlay.innerHTML = `
     <div class="dominance-choice-modal">
-      <h2 class="dominance-choice-title">どう仕留める？</h2>
-      <p class="dominance-choice-sub">完勝の決め手を選ぼう</p>
+      <h2 class="dominance-choice-title">${opp}が降参を申し出た</h2>
+      <p class="dominance-choice-sub">チップ ${state.playerChips} 対 ${state.opponentChips}。受けるか、最後まで打つか</p>
       <div class="dominance-choice-list">
-        <button class="dominance-choice-btn" data-choice="full">
-          <div class="dchoice-icon">${goldMark('全')}</div>
-          <div class="dchoice-name">全取り</div>
-          <div class="dchoice-desc">相手のチップを0まで削り切る。スコア +20（相手のチップを0に）</div>
+        <button class="dominance-choice-btn" data-choice="accept">
+          <div class="dchoice-icon">${goldMark('受')}</div>
+          <div class="dchoice-name">降参を受ける</div>
+          <div class="dchoice-desc">ここで勝ち。相手の残りのチップをもらう（全取りの点は付かない）</div>
         </button>
-        <button class="dominance-choice-btn dchoice-mid" data-choice="break">
-          <div class="dchoice-icon">${goldMark('折')}</div>
-          <div class="dchoice-name">心を折る</div>
-          <div class="dchoice-desc">いちばん派手なとどめ。ほぼ削り切るが、相手のチップが少し残る（+20 は付かない）</div>
-        </button>
-        <button class="dominance-choice-btn dchoice-mercy" data-choice="mercy">
-          <div class="dchoice-icon">${goldMark('赦')}</div>
-          <div class="dchoice-name">見逃す</div>
-          <div class="dchoice-desc">余裕の貫禄。相手のチップを7割ほど取って終わる（+20 は付かない）</div>
+        <button class="dominance-choice-btn dchoice-mid" data-choice="play">
+          <div class="dchoice-icon">${goldMark('打')}</div>
+          <div class="dchoice-name">最後まで打つ</div>
+          <div class="dchoice-desc">断って勝負を続ける。札で0まで削り切れば、全取りの点が付く</div>
         </button>
       </div>
     </div>
@@ -17954,55 +17984,26 @@ function showDominanceChoiceModal() {
   });
 }
 
-// 選んだ分岐に応じて演出を実行
 function executeDominance(choice) {
-  // 演出パラメータ
-  const settings = {
-    full:   { drainRate: 1.0,  hands: 5, mimiLine: '全部、もらった！',       oppLine: 'うう……これが、実力か……',     bursts: 8 },
-    break:  { drainRate: 0.95, hands: 6, mimiLine: 'ここまでよ。降参して！', oppLine: 'もう……立ち上がれない……', bursts: 12 },
-    mercy:  { drainRate: 0.5,  hands: 3, mimiLine: '今回はここまでにしとく', oppLine: 'く……感謝するわ……',         bursts: 4 },
-  };
-  const s = settings[choice] || settings.full;
-  // ミミ宣言カットイン
-  showMimiCutIn(s.mimiLine, null, () => {
-    // 相手の反応
-    showOpponentCutIn(s.oppLine, 'defeat');
-    battleTimeout(() => dominanceActionLoop(s, 0), 1800);
-  }, 'mimi_bust_smug');
-}
-
-// 派手なアクションループ
-function dominanceActionLoop(s, iteration) {
-  if (state.opponentChips <= 0 || iteration >= s.hands) {
-    battleTimeout(() => {
-      // 完了画面
-      showDominanceComplete(state.dominanceChoice);
-    }, 800);
+  state.dominanceMode = false;
+  if (choice === 'play') {
+    state.mimiThought = '「降参はなし。最後まで札で決着をつける」';
+    render();
+    startHand();
     return;
   }
-  state.handNo++;
-  // 削減量計算（選択により最終的に相手チップが何%残るか）
-  const remainingHands = s.hands - iteration;
-  const drainPortion = remainingHands > 0 ? state.opponentChips / remainingHands : state.opponentChips;
-  const drain = Math.min(state.opponentChips, Math.floor(drainPortion * s.drainRate));
-  state.opponentChips -= drain;
-  state.playerChips += drain;
-  state.handResults.push({
-    hand: state.handNo, winner: 'player', reason: 'dominance', pot: drain, by: '圧倒',
-  });
-  // 派手バースト
-  for (let i = 0; i < s.bursts; i++) {
-    setTimeout(() => spawnDominanceBurst(drain, i), i * 40);
-  }
-  // 画面振動
-  const stage = document.getElementById('stage');
-  if (stage) {
-    stage.classList.add('shake-strong');
-    setTimeout(() => stage.classList.remove('shake-strong'), 500);
-  }
-  if (navigator.vibrate) navigator.vibrate(50);
-  render();
-  battleTimeout(() => dominanceActionLoop(s, iteration + 1), 800);
+  state.surrenderAccepted = true;
+  showMimiCutIn('降参、受けてあげる', null, () => {
+    showOpponentCutIn('く……参りました……', 'defeat');
+    battleTimeout(() => {
+      const drain = state.opponentChips;
+      state.opponentChips = 0;
+      state.playerChips += drain;
+      for (let i = 0; i < 8; i++) setTimeout(() => spawnDominanceBurst(drain, i), i * 40);
+      render();
+      battleTimeout(() => showDominanceComplete('accept'), 900);
+    }, 1600);
+  }, 'mimi_bust_smug');
 }
 
 function spawnDominanceBurst(amount, index) {
@@ -18023,6 +18024,7 @@ function spawnDominanceBurst(amount, index) {
 // 完了演出（選択によって違うメッセージ）
 function showDominanceComplete(choice) {
   const messages = {
+    accept: { title: '降参', sub: '相手が負けを認めた', color: '#ffd55a' },
     full:  { title: '完勝！', sub: '全チップを奪い取った', color: '#ffd55a' },
     break: { title: '心折！', sub: '相手の戦意を完全に折った', color: '#c8253a' },
     mercy: { title: '見逃し', sub: '余裕の貫禄で締めくくった', color: '#f4e4bd' },
@@ -18129,7 +18131,7 @@ function endBattle() {
   if (won && state.isBoss) { score += 40; reasons.push(`ボス撃破ボーナス +40`); }
   // オールイン勝利・逆転勝利の簡易検出
   const lastHand = state.handResults[state.handResults.length - 1];
-  if (won && lastHand && lastHand.winner === 'player' && state.opponentChips === 0) {
+  if (won && lastHand && lastHand.winner === 'player' && state.opponentChips === 0 && !state.surrenderAccepted) {
     score += SCORE_TABLE.allInWin;
     reasons.push(`相手のチップを0に +${SCORE_TABLE.allInWin}`);
   }
@@ -18190,14 +18192,16 @@ function endBattle() {
       unlockAchievement('first_clear');
     }
     // 圧倒（相手チップ0で勝利）
-    if (state.opponentChips <= 0) unlockAchievement('dominate');
+    if (state.opponentChips <= 0 && !state.surrenderAccepted) unlockAchievement('dominate');
     // ベストランク・スコア更新（練習中は記録しない）
     if (!practice) {
       const rankOrder = ['C','B','A','S','SS'];
-      const prevRank = save.bestRanks[state.opponentId];
+      // 本気のリコ戦の成績は講義・研修の欄と分ける（2026-11-01 外部の批評：本気戦のSが「ポーカー基礎講義」の欄に載っていた）
+      const rankKey = state.seriousRicoMode ? 'rico_serious' : state.opponentId;
+      const prevRank = save.bestRanks[rankKey];
       const newIdx = rankOrder.indexOf(rank);
       // 初めての記録は C でも残す（以前は「前が無ければ C」とみなして比べ、C の勝ちが記録されなかった）
-      if (!prevRank || newIdx > rankOrder.indexOf(prevRank)) save.bestRanks[state.opponentId] = rank;
+      if (!prevRank || newIdx > rankOrder.indexOf(prevRank)) save.bestRanks[rankKey] = rank;
       if (!save.bestScores[state.opponentId] || score > save.bestScores[state.opponentId]) {
         save.bestScores[state.opponentId] = score;
       }
@@ -19668,7 +19672,7 @@ function showPanel({ title, html, cls = '' }) {
 // 進み具合を「引き継ぎコード」（文字の列）にして写し取る・ファイルに保存する。別の端末やブラウザで貼ると続きから遊べる。
 // コードは「MIMI1:」＋本体（JSON を base64）＋「.」＋検算の数。外に置いた記録（ぱにゅぱにゅの衣装・心の声の図鑑）も一緒に運ぶ
 const TRANSFER_PREFIX = 'MIMI1:';
-const TRANSFER_EXTRA_KEYS = ['mimi.panyuOutfit', 'mbGachaBook'];
+const TRANSFER_EXTRA_KEYS = ['mimi.panyuOutfit', 'mbGachaBook', 'mimi.stillArt'];   // 絵を動かす設定も運ぶ（2026-11-01 外部の批評）
 const transferSum = (s) => { let c = 7; for (let i = 0; i < s.length; i++) c = (c * 31 + s.charCodeAt(i)) >>> 0; return c.toString(36); };
 function makeTransferCode() {
   const extra = {};

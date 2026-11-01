@@ -233,7 +233,7 @@
     await api.rules({
       key: 'narrow2', title: '容疑者しぼり',
       goal: `${jp}にミミより強い役が来ているかを読んで、<em>${NAMES.call}</em>か<em>${NAMES.fold}</em>かを決める`,
-      how: `①この場札でミミが負ける役を<em>全部タップ</em>　②${jp}のセリフと賭け方から、来ている役を<em>1つ選ぶ</em>`,
+      how: `①この場札でミミが負ける役を<em>全部タップ</em>　②${jp}のセリフと賭け方から、ありそうな役を<em>2つまで選ぶ</em>`,
       risk: '負けない役をタップすると×。答え合わせはこの手の決着の後',
       look: [['危ない役', `ミミの役（${meName}）より強い役`], ['来てる役', `${jp}の癖とセリフ`], ['自信', '迷わなかったら上げる']],
     });
@@ -269,41 +269,55 @@
     api.coach(kw(miss ? `危ない役は${nDanger}つ。|赤い札が来ていたら|ミミの負け` : '全部見つけた！|赤い札が来ていたら|ミミの負け'), miss ? 'think' : 'win');
     await api.wait(api.reduce ? 400 : 1200); if (!api.alive()) return;
 
-    // 2問目：どの役が来てると思う？
+    // 2問目：ありそうな役を2つまで（2026-11-01 外部の批評：癖とセリフだけでは役を1つに絞れず、最後が当てずっぽうになっていた）。
+    // 選んだ役の手をまとめて、ミミの勝ち目を出す
     $('#mb-nq-steps').innerHTML = api.steps(STEPS, 1);
     $('#mb-nq-her').hidden = false;
     $('#mb-nq-tiles').classList.add('is-q2');
     api.say(line, face);
-    api.mission(`${jp}に来ている役はどれ？`);
-    api.coach(kw(`${jp}の癖は|「${HABIT[who]}」。|セリフも聞いてみて`), 'think');
-    const pickT = await new Promise(res => {
+    api.mission(`${jp}にありそうな役を2つまで`);
+    api.coach(kw(`${jp}の癖は|「${HABIT[who]}」。|ありそうな役を2つまで選んで`), 'think');
+    act.innerHTML = '<div class="nq-act1"><button class="btn" id="mb-nq-go" disabled>この読みで決める</button></div>';
+    const picks = await new Promise(res => {
+      const sel = [];
+      const go = act.querySelector('#mb-nq-go');
       root.querySelectorAll('.nq-tile').forEach(b => {
         b.disabled = false;
-        b.onclick = () => { root.querySelectorAll('.nq-tile').forEach(x => { x.disabled = true; x.classList.toggle('is-pick', x === b); }); api.sfx.tap(); res(tiles.find(x => x.key === b.dataset.k)); };
+        b.onclick = () => {
+          const t = tiles.find(x => x.key === b.dataset.k);
+          const at = sel.indexOf(t);
+          if (at >= 0) sel.splice(at, 1); else { sel.push(t); if (sel.length > 2) sel.shift(); }
+          root.querySelectorAll('.nq-tile').forEach(x => x.classList.toggle('is-pick', sel.some(t2 => t2.key === x.dataset.k)));
+          go.disabled = !sel.length; api.sfx.tap();
+        };
       });
+      go.onclick = () => { if (!sel.length) return; root.querySelectorAll('.nq-tile').forEach(x => { x.disabled = true; }); act.innerHTML = ''; res(sel.slice()); };
     });
     if (!api.alive()) return;
+    const pickName = picks.map(t => plain(t.name)).join('か');
+    const hit = picks.some(t => t.key === herTile.key);
     // 読んだ役の例の手に対して、ミミが勝つ見込み。払う額の線とくらべて決める
-    const hs = pickT.hands.length > 12 ? api.shuffle(pickT.hands.slice()).slice(0, 12) : pickT.hands;
-    const eqPick = free ? 0 : Math.round(hs.reduce((t, h) => t + api.headsUp(mine, h, board), 0) / hs.length * 100);
-    const decide = free ? (pickT.danger ? 'fold' : 'call') : priced(eqPick);
-    api.coach(free ? (pickT.danger ? `${plain(pickT.name)}ならミミの負け。${NAMES.fold}のが得` : `${plain(pickT.name)}ならミミは負けない。${NAMES.call}のが得`)
-      : `${plain(pickT.name)}なら勝ち目 約${eqPick}%。払う額の線 ${need}%${decide === 'call' ? 'を超える。付いていくのが得' : 'に届かない。降りるのが得'}`, 'think');
+    const allH = picks.flatMap(t => t.hands);
+    const hs = allH.length > 16 ? api.shuffle(allH.slice()).slice(0, 16) : allH;
+    const eqPick = Math.round(hs.reduce((t, h) => t + api.headsUp(mine, h, board), 0) / hs.length * 100);
+    const decide = free ? (eqPick < 50 ? 'fold' : 'call') : priced(eqPick);
+    api.coach(free ? `${pickName}なら勝ち目 約${eqPick}%。${decide === 'call' ? NAMES.call : NAMES.fold}のが得`
+      : `${pickName}なら勝ち目 約${eqPick}%。払う額の線 ${need}%${decide === 'call' ? 'を超える。付いていくのが得' : 'に届かない。降りるのが得'}`, 'think');
     $('#mb-nq-steps').innerHTML = api.steps(STEPS, 2);
     const good = tiles.length - miss;
     const base = 20 + good * 10;
-    await api.wager({ mission: 'その読みの自信を選ぶ', question: `「${plain(pickT.name)}」<span style="white-space:nowrap">と読んだ → ${NAMES[decide]}</span>`, note: '迷わなかったら上げる', base, stakes: STAKES, into: act });
+    await api.wager({ mission: 'その読みの自信を選ぶ', question: `「${pickName}」<span style="white-space:nowrap">と読んだ → ${NAMES[decide]}</span>`, note: '迷わなかったら上げる', base, stakes: STAKES, into: act });
     if (!api.alive()) return;
     const m = api.mult || 1;
-    const whyTxt = pickT.key === herTile.key ? `${jp}の役を当てた（${plain(herTile.name)}）。` : `${jp}は「${plain(herTile.name)}」だった（ミミの読みは「${plain(pickT.name)}」）。`;
+    const whyTxt = hit ? `${jp}の役は読んだ幅に入っていた（${plain(herTile.name)}）。` : `${jp}は「${plain(herTile.name)}」だった（ミミの読みは「${pickName}」）。`;
     const herRole = roleName(api, her.concat(board));
     const pending = { kind: 'logic', names: NAMES, title: '容疑者しぼり', charId: api.charId, pick: decide, truth, mimiEq, endLines: END[who], board, mine, her, base, mult: m, stakes: STAKES,
-      herWeak: !herTile.danger, perfect: miss === 0 && pickT.key === herTile.key && m === 3, notes: [], why: whyTxt,
+      herWeak: !herTile.danger, perfect: miss === 0 && hit && picks.length === 1 && m === 3, notes: [], why: whyTxt,
       truthText: `${jp}は ${herRole}${herTile.danger ? '（ミミより強い）' : '（ミミは負けない）'}<small>${NAMES[truth]}のが正解だった${free ? '' : `（勝ち目 約${mimiEq}%・線 ${need}%）`}</small>`,
-      extra: `ミミの読み：${plain(pickT.name)}${pickT.key === herTile.key ? ' ○' : ''}` };
+      extra: `ミミの読み：${pickName}${hit ? ' ○' : ''}` };
     if (T) {
       api.entrust({
-        pick: `${plain(pickT.name)} → ${NAMES[decide]}`, win: base * m, lose: base * STAKES[m - 1],
+        pick: `${pickName} → ${NAMES[decide]}`, win: base * m, lose: base * STAKES[m - 1],
         advice: decide === 'call' ? (free ? '「賭ける」と決めた。卓で賭けよう' : '「付いていく」と決めた。卓でコールしよう') : (free ? '「様子見」と決めた。卓でチェックしよう' : '「降りる」と決めた。卓で降りよう'),
         pending,
       });

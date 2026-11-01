@@ -403,7 +403,7 @@
     if (!api.alive()) return;
     api.finish({
       correct, perfect, base: 20 + Math.round(Math.min(1, ratio) * 20),
-      detail: `ベストは ${C.bestBet}（見込み ${Math.round(C.best)}）。あなたは ${myBet}（見込み ${Math.round(myEV)}＝ベストの${pct}%）。${T ? `卓で ${myBet} を賭けよう。` : luck ? luck + '。' : call ? `${api.char.jp}は付いてきた。` : `${api.char.jp}は降りた。`}`,
+      detail: `ベストは ${C.bestBet}（見込み ${Math.round(C.best)}）。あなたは ${myBet}（見込み ${Math.round(myEV)}＝ベストの${pct}%）。${T ? `卓にもどると、そのまま ${myBet} を賭ける。` : luck ? luck + '。' : call ? `${api.char.jp}は付いてきた。` : `${api.char.jp}は降りた。`}`,
     });
   }
 

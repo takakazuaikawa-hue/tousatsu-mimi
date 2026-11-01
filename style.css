@@ -12182,7 +12182,8 @@ body.has-shop-atlas .atlas-badge-locked { background-position: -256px  -64px; }
   inset: -8px;
   z-index: 1;
 }
-.mp-card.mp-tap > * { position: relative; z-index: 2; }
+/* 札の中の部品（隅の数字・残す印）は絶対配置のまま重ねる。position: relative で上書きすると印が札の下へ流れ、スマホでは画面外に出ていた */
+.mp-card.mp-tap > * { z-index: 2; }
 /* KEEPマーク：より目立つ（自動おすすめが見えやすいように） */
 .mp-card-keep {
   font-size: 14px !important;
@@ -20669,3 +20670,19 @@ html.is-compact #stage .reward-cg-viewer-hint { margin-top: calc(6px / var(--gam
 .tutorial-bubble.lecture-bubble .lec-actions :is(.full-btn, .restart-btn) { background: #1b0d0b !important; border: 1px solid #8a5a1e !important; color: #d9b269 !important; }
 .tutorial-bubble.lecture-bubble .lec-actions .skip-btn { background: transparent !important; border: 1px solid rgba(217,179,90,.3) !important; color: #b8a98a !important; }
 .tutorial-bubble.lecture-bubble .tutorial-actions, .tutorial-bubble.lecture-bubble .lec-actions { background: linear-gradient(180deg, rgba(20,5,7,0), #140507 40%) !important; border-top: 1px solid rgba(217,179,90,.3) !important; box-shadow: none !important; }
+
+/* ファイブポーカー：「残す」の印は札の内側の下に固定（札の外の下に出すと、スマホで画面の外に切れていた） */
+.minipoker-overlay .mp-card-keep { bottom: 6px; top: auto; z-index: 3; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+
+/* ぱにゅぱにゅの勢い：速さ・フィーバーで当たりやすさが上がるのを、その場で見せる */
+.pv2 .pv2-heat { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; font-family: "Noto Sans JP", sans-serif; font-weight: 700; font-size: 14px; color: #fff4f8; text-shadow: 0 1px 6px rgba(40,0,16,.8); }
+.pv2 .pv2-heat > i { position: relative; width: min(180px, 30vw); height: 8px; border-radius: 4px; background: rgba(0,0,0,.45); overflow: hidden; }
+.pv2 .pv2-heat-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #ff9ab8, #ffd55a); transition: width .25s ease; }
+.pv2 .pv2-heat-word { font-style: normal; min-width: 7em; text-align: left; }
+.pv2 .pv2-heat[data-lv="2"] .pv2-heat-word { color: #ffd9a0; }
+.pv2 .pv2-heat[data-lv="3"] .pv2-heat-word { color: #ffd55a; animation: pv2HeatPulse .6s ease infinite alternate; }
+@keyframes pv2HeatPulse { to { transform: scale(1.08); } }
+.pv2 .pv2-res-heat { font-size: 14px; color: rgba(255,236,243,.85); }
+.pv2 .pv2-heat > span { white-space: nowrap; }
+.pv2.is-mesh .pv2-heat { justify-content: flex-start; }
+.pv2.is-mesh .pv2-heat > i { width: 96px; flex: none; }

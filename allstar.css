@@ -900,3 +900,6 @@ html.is-compact #stage > .as-host .as-review.as-posguide { left: 50%; right: aut
 html.is-compact #stage > .as-host .as-posguide .as-rv-h span { display: none; }
 /* 小さいスマホは真ん中だと左右の席の札を覆う。右下へ */
 @media (max-width: 760px) { html.is-compact #stage > .as-host .as-review.as-posguide { left: auto; right: 6px; top: auto; bottom: 4px; width: 372px; transform: none; } }
+/* 2026-11-01 5回目の批評：真ん中の窓がミミの席（BBの時は札ごと）を覆っていた。スマホは右下の空いた所へ */
+html.is-compact #stage > .as-host .as-review.as-posguide { left: auto; right: 6px; top: auto; bottom: 4px; width: 372px; transform: none; }
+@media (max-width: 760px) { html.is-compact #stage > .as-host .as-review.as-posguide { width: 300px; } }
