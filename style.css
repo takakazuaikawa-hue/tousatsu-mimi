@@ -20833,3 +20833,8 @@ body:has(.epilogue-screen) #fullscreen-btn-group { display: none !important; }
 html.is-compact .trial-end-card { padding: 14px 18px 14px; }
 html.is-compact .trial-end-lead { font-size: 19px; margin-bottom: 6px; }
 html.is-compact .trial-end-body { margin-bottom: 10px; line-height: 1.55; }
+
+/* ファイブポーカー：配当の内訳（2026-11-02 14回目の批評）。スマホでも計算の1行は出す */
+.mp-pt-unit { display: block; font-size: 14px; font-weight: 400; opacity: .85; }
+.mp-pt-ups { font-size: 14px; line-height: 1.35; color: #ffd060; word-break: keep-all; margin: 2px 0 4px; }
+html.is-compact .minipoker-overlay .mp-result-sub.mp-result-calc { display: block; }

@@ -218,6 +218,8 @@
       look: [['どちらが勝つか', '役の強さ。同じ役なら大きい数字'], [`${NAMES.call}か${NAMES.fold}か`, `棒が線（${need}%）を超えるか`], ['2回目から', '候補を見て、すぐ決める']],
     });
     if (!api.alive()) return;
+    // 「ルール」の横に役の早見表（2026-11-02 14回目の批評：「上の役の一覧」が読み合いの裏に隠れて開けなかった）
+    { const top = root.querySelector('.rb-top'); if (top && window.showHandGuide && !top.querySelector('.hv-guide-btn')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'mb-rules-btn hv-guide-btn'; b.textContent = '役の一覧'; b.addEventListener('click', () => window.showHandGuide()); top.appendChild(b); } }
 
     // ① 5枚を作る（場札が4枚以上の時）
     if (doBuild) {

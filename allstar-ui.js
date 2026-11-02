@@ -1134,6 +1134,9 @@
     R.same += graded.filter(r => r.grade === 'ok').length;
     const allSame = graded.every(r => r.grade === 'ok');
     if (reviewOff()) return;
+    // 「卓を離れますか？」を開いている間は答え合わせを出さずに待つ。中断を選べばそのまま止まり、続けるを選んだら出す（2026-11-02 14回目の批評：中断の確認の上に答え合わせが重なり、次のハンドが始まった）
+    while (host.querySelector('.as-menu')) { await new Promise(r => setTimeout(r, 200)); if (g !== G) throw STOP; }
+    if (reviewOff()) return;
     if (allSame) {
       const el = layerEl('as-review-ok', `<b>○ プロと同じ判断</b><span>この大会 ${R.same}／${R.total}</span>`);
       await wait(1100);

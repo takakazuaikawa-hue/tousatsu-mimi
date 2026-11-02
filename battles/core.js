@@ -617,7 +617,8 @@
             el.querySelector('#mb-rules-ok').addEventListener('click', () => { sfx.tap(); el.remove(); res(); });
           });
           api.showRules = card;
-          const top = gameRoot.querySelector('.rb-top');
+          // 上の段の無い遊び（スナイパー・アウツ）は手順の欄の横に置く（2026-11-02 14回目の批評：説明を閉じた後に開き直せなかった）
+          const top = gameRoot.querySelector('.rb-top') || gameRoot.querySelector('.mb-steps-hold');
           if (top && !top.querySelector('.mb-rules-btn')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'mb-rules-btn'; b.textContent = 'ルール'; b.addEventListener('click', () => { sfx.tap(); card(); }); top.appendChild(b); }
           let seen = false; const k = 'mbRulesSeen:' + o.key;
           try { seen = !!localStorage.getItem(k); localStorage.setItem(k, '1'); } catch (e) {}

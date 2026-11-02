@@ -91,7 +91,7 @@ MB.register({
     const known = new Set([...s.hole, ...s.board].map(key));
     const grid = SUITS.flatMap(su => Array.from({ length: 13 }, (_, i) => ({ r: i + 2, s: su })));
     root.innerHTML = `
-      ${api.steps(['当たり札をさがす', '値段とくらべる', '決める', 'スロット'], 0)}
+      <div class="mb-steps-hold">${api.steps(['当たり札をさがす', '値段とくらべる', '決める', 'スロット'], 0)}</div>
       <div class="row">${s.board.map(c => cardHTML(c, 'big')).join('')}${backHTML('big')}<span style="width:14px"></span>${s.hole.map(c => cardHTML(c, 'big')).join('')}</div>
       <div class="prompt mb-ask"><span class="mb-legend" aria-label="最後の1枚でストレートかフラッシュになる札は、残りの山に何枚？"><span class="mb-threat"><span class="tc"><span>5 6 7 8</span><span class="q">?</span></span></span><span class="mb-threat"><span class="tc"><span class="rd">♥♥♥♥</span><span class="q">?</span></span></span></span></div>
       <div class="outs-count" id="mb-o-count">0 / ${s.outs.length}</div>

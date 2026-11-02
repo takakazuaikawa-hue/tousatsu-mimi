@@ -737,6 +737,8 @@ html:not(.is-compact) .mb-host .mb-body::after {
 /* 上の段の右の「ルール」 */
 .mb-host .mb-rules-btn { flex: 0 0 auto; margin-left: 8px; min-height: 28px; padding: 2px 12px; font-family: var(--mincho); font-weight: 700; font-size: 14px; color: var(--gold-pale); background: rgba(19,4,6,.85); border: 1px solid var(--line); border-radius: 2px; cursor: pointer; }
 .mb-host .mb-rules-btn:hover { border-color: var(--gold-hi); }
+.mb-host .mb-steps-hold { display: flex; align-items: center; min-width: 0; }
+.mb-host .mb-steps-hold > .steps { flex: 1 1 auto; min-width: 0; }
 .mb-host .rb-top > .rb-steps { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; }
 /* 預けた後、自分で卓にもどるまでの残りをボタンの下の線で見せる（2026-11-01） */
 .mb-host .mb-entrust #mb-next.is-auto { position: relative; overflow: hidden; }

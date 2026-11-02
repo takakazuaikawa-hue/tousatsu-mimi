@@ -569,7 +569,7 @@ html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-verdict small { mar
 
 /* ---------- (a) 当たり札をさがす：左＝一覧、右＝手札・問い・数・わからない ---------- */
 html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) { display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: repeat(5, auto); gap: 10px 28px; align-content: start; padding-top: 2px; }
-html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .steps { grid-column: 1 / -1; grid-row: 1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .mb-steps-hold { grid-column: 1 / -1; grid-row: 1; }
 html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .outs-deck { grid-column: 1; grid-row: 2 / 6; align-self: start; }
 html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .row { grid-column: 2; grid-row: 2; justify-content: flex-start; gap: 8px; }
 html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .prompt { grid-column: 2; grid-row: 3; align-self: center; text-align: left; font-size: 20px; line-height: 1.4; }

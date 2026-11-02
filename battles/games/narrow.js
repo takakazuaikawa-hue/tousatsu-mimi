@@ -65,18 +65,20 @@
   // 役の札：役の種類で分ける。ミミと同じ役の時だけ「ミミより上／下」に分ける（ワンペアはペアの数字で）
   function tileOf(M, h, board, me) {
     const cards = h.concat(board), cat = M.category(cards);
-    const name = M.CAT_NAME[cat];
+    // 札の幅は小さいスマホで6字まで。長い役名は意味の切れ目で折る
+    const name = M.CAT_NAME[cat].replace('ストレートフラッシュ', 'ストレート|フラッシュ').replace('ロイヤルストレート', 'ロイヤル|ストレート');
     if (cat !== me.cat) return { key: 'c' + cat, name, danger: cat > me.cat };
     if (cat === 1) {
       const r = pairRank(cards);
       if (r > me.pr) return { key: 'p+', name: `${M.rn(me.pr)}より|大きいペア`, danger: true };
       if (r < me.pr) return { key: 'p-', name: `${M.rn(me.pr)}より|小さいペア`, danger: false };
+      // 小さいスマホの札の幅（約82px）に5字ずつ3行で収める（2026-11-02 14回目の批評：「同じ5のペアで」が枠から切れていた）
       // 同じペアでも、残りの札（キッカー）で勝ち負けが決まる（2026-11-01 外部の批評：一律に「負けない」にしていて、残りの札で負ける手でも付いていくが正解になっていた）
-      return M.score(cards) > me.score ? { key: 'p=+', name: `同じ${M.rn(me.pr)}のペアで|残りの札が強い`, danger: true } : { key: 'p=-', name: `同じ${M.rn(me.pr)}のペアで|残りの札が弱い`, danger: false };
+      return M.score(cards) > me.score ? { key: 'p=+', name: `${M.rn(me.pr)}のペア・|残りの札は|相手が上`, danger: true } : { key: 'p=-', name: `${M.rn(me.pr)}のペア・|残りの札は|ミミが上`, danger: false };
     }
     const s = M.score(cards);
     if (cat === 0) return s > me.score ? { key: 's+', name: '役なし|（ミミより|大きい札）', danger: true } : { key: 's-', name: '役なし|（ミミより|小さい札）', danger: false };
-    return s > me.score ? { key: 's+', name: `ミミより上の|${name}`, danger: true } : { key: 's-', name: `ミミと同じか|下の${name}`, danger: false };  // 同じ強さは引き分け＝負けない
+    return s > me.score ? { key: 's+', name: `ミミより上の|${name}`, danger: true } : { key: 's-', name: `ミミと同じか|下の|${name}`, danger: false };  // 同じ強さは引き分け＝負けない
   }
   // 相手の手として考えられる全部の組み合わせを、役の札に分ける
   function survey(M, board, mine) {

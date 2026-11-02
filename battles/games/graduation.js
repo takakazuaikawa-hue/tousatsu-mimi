@@ -77,7 +77,11 @@
     const root = api.root;
     root.classList.add('rb-frame', 'gd-root');
     // スマホ横は真ん中が 260px。教えの説明の1行を省き、場の形は名前の横に出す（api.css は html.is-compact を書けないので印で分ける）
-    if (document.documentElement.classList.contains('is-compact')) root.classList.add('is-cp');
+    // 開いた後に画面の大きさが変わっても（PC の窓を縮めた等）印を付け直す。選んだ教えや進み具合はそのまま（2026-11-02 14回目の批評：縮めると3つ目の教えが画面の外へ落ちた）
+    const syncCp = () => root.classList.toggle('is-cp', document.documentElement.classList.contains('is-compact'));
+    syncCp();
+    const cpWatch = new MutationObserver(() => { if (!root.isConnected) { cpWatch.disconnect(); return; } syncCp(); });
+    cpWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     const steps = ['記録と予想', '教えを使う', '読む', '賭ける'];
     const lessonHTML = LESSONS.map((l, i) => { const off = l.needShape && !shape; const n = sure(l.acc);
       return `<button type="button" class="gd-lesson" data-i="${i}" ${off ? 'disabled' : ''}><span class="gd-ln">${l.name}${l.id === 'board' && shape ? `<i class="gd-shape">（${shape}）</i>` : ''}</span><span class="gd-sure">${off ? '<i class="gd-off">強い形なし</i>' : `<i class="gd-sw">確かさ</i>${pips(n)}`}</span><small>${off ? '今の場には強い形が無い' : l.id === 'board' ? `場の${shape}を、先輩が持っていそうか` : l.how}</small></button>`; }).join('');

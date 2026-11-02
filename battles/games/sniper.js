@@ -224,7 +224,7 @@
     const curvePts = []; for (let b = 0; b <= maxBet + 1e-6; b += maxBet / 120) curvePts.push(`${(X(b) * 10).toFixed(1)},${(Y(C.p(b)) * 10).toFixed(1)}`);
     const init = Math.round((pot * (.95 + Math.random() * .6)) / step) * step;
     root.innerHTML = `
-      <div id="mb-sn-steps">${api.steps(STEPS, 0)}</div>
+      <div id="mb-sn-steps" class="mb-steps-hold">${api.steps(STEPS, 0)}</div>
       <div class="sn-me">
         <span class="hl">${hole.map(c => api.cardHTML(c, 'small')).join('')}<span class="plus">＋</span>${board.map(c => api.cardHTML(c, 'small')).join('')}</span>
         <span class="sn-me-name"><span class="mb-handtag"><b class="nm">${handName(api, hole.concat(board))}</b></span>${api.gauge('勝率', eq * 100)}</span>
@@ -336,11 +336,11 @@
     api.bet(myBet);
     $('#mb-sn-acts').hidden = true;
     $('#mb-sn-prompt').hidden = true; range.closest('.sn-rangebox').hidden = true;
-    $('#mb-sn-steps').innerHTML = api.steps(STEPS, 2);
+    $('#mb-sn-steps .steps').outerHTML = api.steps(STEPS, 2);
     api.coach('');
     await api.wager(T ? { question: 'ここがベストの額？', base: 20 + Math.round(Math.min(1, ratio) * 20), mission: 'この額への自信は？', note: 'ベストに近いほど、自信を上げてよい', stakes: STAKES } : { question: 'ここがベストの額？', base: '20〜40', mission: 'この額への自信は？' });
     if (!api.alive()) return;
-    $('#mb-sn-steps').innerHTML = api.steps(STEPS, 3);
+    $('#mb-sn-steps .steps').outerHTML = api.steps(STEPS, 3);
     let call = null;
     const out = $('#mb-sn-out');
     if (!T) {

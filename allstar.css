@@ -369,6 +369,7 @@
   background: #130406; border: 1px solid var(--as-gold-d); color: var(--as-ivory); font-size: 15px; line-height: 1.6;
   box-shadow: inset 0 0 0 3px #190608, inset 0 0 0 4px rgba(227,185,100,.5), 0 14px 30px rgba(0,0,0,.75); }
 .as-pop:is(.as-levels, .as-log, .as-menu) { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.as-pop.as-menu { z-index: 28; } /* 中断の確認は答え合わせ（27）より上 */
 .as-pop-h { display: block; margin-bottom: 6px; font: 700 16px/1.4 var(--as-min); letter-spacing: .08em; color: var(--as-gold-hi); }
 .as-pop p { margin: 0; }
 .as-pop :is(ul, ol) { margin: 6px 0; padding-left: 1.2em; color: var(--as-muted); }

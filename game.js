@@ -11474,6 +11474,15 @@ function showMiniPokerGame() {
     if (overlay.isConnected) return;
     closeWatch.disconnect();
     if (save.coins !== coinsAtOpen && (state.screen === 'shop' || state.screen === 'lobby')) render();
+    // コレクションから開いた時は、その所持金と記録も描き直す（読んでいた位置はそのまま。2026-11-02 14回目の批評：遊ぶ前の残高のままだった）
+    const coll = document.querySelector('.collection-overlay');
+    if (coll && (save.coins !== coinsAtOpen || ctx.sessionPlays > 0)) {
+      const body = coll.querySelector('.collection-body'), top = body ? body.scrollTop : 0;
+      coll.remove();
+      showCollectionModal();
+      const nb = document.querySelector('.collection-overlay .collection-body');
+      if (nb) nb.scrollTop = top;
+    }
   });
   closeWatch.observe(overlay.parentNode, { childList: true });
 
@@ -11597,8 +11606,11 @@ function showMiniPokerGame() {
     const luckyR = ctx.luckyRank;
     const el = overlay.querySelector('[data-mpb="paytable"]');
     const luckyName = MP_PAYTABLE[luckyR].name;
+    // 今の勝負で表の額に掛かる上乗せ（judge の計算と同じ。2026-11-02 14回目の批評：表の額と実際の配当が食い違って見えた）
+    const ups = [[!ctx.dailyBonusUsed ? 2 : 1, '初戦'], [ctx.bossNight ? 3 : 1, '特別卓'], [ctx.streak >= 5 ? 2 : ctx.streak >= 3 ? 1.5 : 1, '連勝']].filter(([m]) => m > 1).map(([m, n]) => `×${n}${m}`).join('・');
     el.innerHTML = `
-      <div class="mp-pt-title">配当表</div>
+      <div class="mp-pt-title">配当表<small class="mp-pt-unit">（ベット${cur}で戻る額）</small></div>
+      ${ups ? `<div class="mp-pt-ups">今は表の額に<wbr><b>${ups}</b></div>` : ''}
       <div class="mp-pt-lucky">今日のラッキー役<br><b>${luckyName}</b> が<wbr><span class="mp-nowrap">×2倍！</span></div>
       <table class="mp-pt">
         ${MP_PAYTABLE.slice().reverse().map(p => {
@@ -11810,7 +11822,7 @@ function showMiniPokerGame() {
       if (ctx.doubleLost) {
         cls = 'lose'; head = 'ダブルアップ失敗'; amount = `獲得分は没収（${signedCoins(net)}コイン）`;
       } else if (r === 'win') {
-        head = '勝利！'; amount = `${signedCoins(net)}コイン`; sub = `配当 ${ctx.reward}コイン（賭け ${stake}コイン）`;
+        head = '勝利！'; amount = `${signedCoins(net)}コイン`; sub = ctx.payCalc ? `配当 ${ctx.payCalc}（賭け ${stake}）` : `配当 ${ctx.reward}コイン（賭け ${stake}コイン）`;
       } else if (r === 'push') {
         cls = 'tie'; head = '引き分け（返金）'; amount = `賭けた ${stake}コインが戻った（±0）`; sub = 'J以上のペアは ×1＝賭けた分が戻るだけ';
       } else if (r === 'tie') {
@@ -11835,7 +11847,7 @@ function showMiniPokerGame() {
         <div class="mp-result-banner mp-result-${cls}">
           <div class="mp-result-headline">${head}</div>
           <div class="mp-result-amount">${amount}</div>
-          ${sub ? `<div class="mp-result-sub">${sub}</div>` : ''}
+          ${sub ? `<div class="mp-result-sub${ctx.payCalc && r === 'win' ? ' mp-result-calc' : ''}">${sub}</div>` : ''}
         </div>
         ${(r === 'win' && ctx.canDouble && ctx.doubleStack < 3) ? `
           <div class="mp-double-pitch">
@@ -12096,6 +12108,7 @@ function showMiniPokerGame() {
     const refund = Math.floor(stake / 2);
     save.coins += refund;
     ctx.reward = refund;
+    ctx.payCalc = '';
     ctx.result = 'surrender';
     ctx.streak = 0; // サレンダーは連勝途切れ
     ctx.phase = 'result';
@@ -12155,6 +12168,7 @@ function showMiniPokerGame() {
         const newReward = ctx.reward * 2;
         save.coins += (newReward - ctx.reward);
         ctx.reward = newReward;
+        ctx.payCalc = '';
         save.minipoker.totalEarned = (save.minipoker.totalEarned || 0) + (newReward / 2);
         ctx.sessionEarned += newReward / 2;
         if (ctx.curHist) ctx.curHist.reward = ctx.reward - stake;
@@ -12175,6 +12189,7 @@ function showMiniPokerGame() {
         // 履歴もこの勝負の実際の収支（賭けた分を失った）に書き換える
         if (ctx.curHist) { ctx.curHist.reward = -stake; ctx.curHist.result = 'lose'; }
         ctx.reward = 0;
+        ctx.payCalc = '';
         ctx.result = 'lose';
         ctx.doubleLost = true;
         ctx.streak = 0;
@@ -12540,8 +12555,13 @@ function showMiniPokerGame() {
     // ボス夜は配当×3
     const bossMult = ctx.bossNight ? 3 : 1;
     let payout = 0;
+    ctx.payCalc = '';
     if (showdown === 'win' && mult > 0) {
       payout = Math.max(1, Math.floor(ctx.bet * mult * bonusMult * luckyMult * dailyMult * bossMult));
+      // 結果に「配当表の額 × 上乗せ ＝ 配当」を出すための内訳（2026-11-02 14回目の批評：初戦・特別卓の上乗せが見えず、額の理由を追えなかった）
+      //   左端は配当表に出ている額（ラッキー役の×2は表に入っている）
+      const ups = [[dailyMult, '初戦'], [bossMult, '特別卓'], [bonusMult, '連勝']].filter(([m]) => m > 1);
+      ctx.payCalc = ups.length ? `表の${ctx.bet * mult * luckyMult}${ups.map(([m, n]) => ` ×${n}${m}`).join('')} ＝ ${payout}` : '';
     } else if (showdown === 'tie') {
       // 返金は実際に支払った額（ボス夜は×3を払っているので×3返す）
       payout = stake;
@@ -12552,6 +12572,7 @@ function showMiniPokerGame() {
       jackpotPayout = save.minipoker.jackpot || 5000;
       save.minipoker.jackpot = 5000;
       payout += jackpotPayout;
+      if (ctx.payCalc) ctx.payCalc += ` ＋JP${jackpotPayout}`;
       unlockAchievement('jackpot_win');
     }
     // 結果は差し引きで決める：×1 で賭け金が戻るだけなら「勝利」ではなく引き分け（返金）
@@ -12827,6 +12848,7 @@ function showMiniPokerGame() {
         const newReward = ctx.reward * 2;
         save.coins += (newReward - ctx.reward); // 差分を追加
         ctx.reward = newReward;
+        ctx.payCalc = '';
         save.minipoker.totalEarned = (save.minipoker.totalEarned || 0) + (newReward - ctx.reward / 2);
         saveProgress();
         updateBoardStats();
@@ -12843,6 +12865,7 @@ function showMiniPokerGame() {
         saveProgress();
         updateBoardStats();
         ctx.reward = 0;
+        ctx.payCalc = '';
         ctx.result = 'lose';
         ctx.streak = 0;
         playFx('double-lose');
@@ -13364,6 +13387,13 @@ function showCollectionModal() {
           <h3 class="coll-section-title">ご褒美CG <span class="coll-section-count">${rewardCgCount}/${stageOrder.length + 1}</span></h3>
           <div class="coll-cgs">${rewardCgHtml}${rewardCgHtmlSecret}</div>
         </section>
+        ${(() => {
+          // 勝った後の会話も一枚絵の隣で読み返せるように（2026-11-02 14回目の批評：ホームの物語の台帳にしか入口が無かった）
+          const ids = stageOrder.filter(id => INTERMISSIONS[id] && Array.isArray(save.rewardCgSeen) && save.rewardCgSeen.includes(id));
+          if (!ids.length) return '';
+          return `<section class="coll-section"><h3 class="coll-section-title">会話 <span class="coll-section-count">${ids.length}/${stageOrder.length}</span></h3>
+            <div class="memory-grid">${ids.map(id => `<button class="memory-card" data-action="recall-episode" data-episode="${id}"><div class="memory-card-title">${OPPONENTS[id].name}に勝った後の会話</div><div class="memory-card-play">読む</div></button>`).join('')}</div></section>`;
+        })()}
         <section class="coll-section">
           <h3 class="coll-section-title">対戦相手 <span class="coll-section-count">${stageCleared}/${stages.length}</span></h3>
           <div class="coll-stages">${stagesHtml}</div>
@@ -13394,25 +13424,31 @@ function showCollectionModal() {
             : `<div class="coll-locked-hint">交換所で買った衣装はここで眺められます。ヴェルベット撃破で全衣装が解放</div>`}
         </section>
         ${(() => {
-          const memoryIds = ['gallery_rico','gallery_opponents','gallery_mimi','omake_drama_1','omake_drama_2','omake_voice_pack','omake_credit','memory_ending','memory_ending_theme','memory_minipoker'];
-          const ownedMemories = memoryIds.filter(id => ownedItems.includes(id));
-          if (ownedMemories.length === 0) return '';
-          const cards = ownedMemories.map(id => {
-            const meta = SHOP_ITEMS.find(i => i.id === id);
-            const play = memoryItemAction(id);
-            if (!meta || !play) return '';
-            return `<button class="memory-card" data-action="${play.action}" data-memory-id="${id}">
+          // 2026-11-02 14回目の批評：映像・主題歌・ファイブポーカーまで「読み物」に入っていた。中身で3つに分ける
+          const GROUPS = [
+            ['読み物', ['gallery_rico','gallery_opponents','gallery_mimi','omake_drama_1','omake_drama_2','omake_voice_pack']],
+            ['音楽と映像', ['memory_ending','memory_ending_theme','omake_credit']],
+            ['ミニゲーム', ['memory_minipoker']],
+          ];
+          return GROUPS.map(([title, ids]) => {
+            const owned = ids.filter(id => ownedItems.includes(id));
+            const cards = owned.map(id => {
+              const meta = SHOP_ITEMS.find(i => i.id === id);
+              const play = memoryItemAction(id);
+              if (!meta || !play) return '';
+              return `<button class="memory-card" data-action="${play.action}" data-memory-id="${id}">
               <div class="memory-card-title">${meta.name}</div>
               <div class="memory-card-desc">${wrapHtml(meta.desc)}</div>
               <div class="memory-card-play">${play.label}</div>
             </button>`;
-          }).join('');
-          return `
+            }).join('');
+            if (!cards) return '';
+            return `
             <section class="coll-section">
-              <h3 class="coll-section-title">メモリ閲覧 <span class="coll-section-count">${ownedMemories.length}件</span></h3>
+              <h3 class="coll-section-title">${title} <span class="coll-section-count">${owned.length}件</span></h3>
               <div class="memory-grid">${cards}</div>
-            </section>
-          `;
+            </section>`;
+          }).join('');
         })()}
         ${(() => {
           ensureAchievements();
@@ -13451,7 +13487,7 @@ function showCollectionModal() {
     if (e.target === overlay) overlay.remove();
   });
   // 区切りへ飛ぶ見出しの列（2026-11-01 12回目の批評：一覧が18画面分あり、買った読み物へ戻るのが面倒だった）
-  const SHORT = { 'リコ衣装ギャラリー': '衣装', 'メモリ閲覧': '読み物', '交換所アイテム': '交換品', '苦戦の思い出': '思い出' };
+  const SHORT = { 'リコ衣装ギャラリー': '衣装', '交換所アイテム': '交換品', '苦戦の思い出': '思い出', 'ご褒美CG': '一枚絵', '音楽と映像': '音と映像' };
   const body = overlay.querySelector('.collection-body'), secs = [...overlay.querySelectorAll('.coll-section')];
   if (body && secs.length > 2) {
     const nav = document.createElement('nav');
@@ -14088,6 +14124,8 @@ function showHandGuide() {
     </div>
   `;
   const stage = document.getElementById('stage');
+  // 読み合いの中（役くらべ）から開いた時は、読み合いの画面より上に出す
+  if (document.querySelector('#stage > .read-battle-host')) overlay.style.zIndex = '9600';
   (stage || document.body).appendChild(overlay);
   // 見るだけの表なので、どこを押しても閉じる（「タップして閉じる」の通り。スマホでは紙面が画面いっぱいで外側が無い）。Esc でも閉じる
   const onKey = (e) => { if (e.key === 'Escape') close(); };
@@ -15896,7 +15934,9 @@ function advanceAfterCall() {
 const READ_BATTLE_POOLS = {
   // 論理：役づくり＋ハイ＆ローは「役くらべ」（handvs）にまとめた（2026-10-27）
   // 心理：手がかり探偵は「問いかけ」（ask）に作り替えた（2026-10-27）
-  polka:  { psych: ['ask', 'stare', 'doubt', 'gacha'], logic: ['handvs'] },
+  // 最初の相手は見つめ合いとダウトの2種類だけ。同じ読みを繰り返して勝てる手応えを先に（2026-11-02 14回目の批評：ポルカ戦で5種類を覚えさせていた）。
+  // 説明の多い役くらべ・問いかけ・ガチャは次の相手から（ダウトはポルカの台詞しか無いのでポルカに残す）
+  polka:  { psych: ['stare', 'doubt'], logic: [] },
   selina: { psych: ['ask', 'stare', 'gacha'],          logic: ['narrow', 'sniper'] },
   grano:  { psych: ['gacha'],                                 logic: ['outs', 'handvs'] },
   // 論理：危険札さがし＋容疑者しぼりは、本当の手の「容疑者しぼり」（narrow）にまとめた（2026-10-27）
