@@ -3188,7 +3188,8 @@ function updateDangerState() {
 
 /* ===== ゲームシェア ===== */
 function shareGame() {
-  const url = 'https://takakazuaikawa-hue.github.io/tousatsu-mimi/';
+  // 体験版は作品紹介のページ（無ければ体験版そのもの）を共有する
+  const url = IS_TRIAL ? new URL(TRIAL_STORE_URL || './', location.href).href : 'https://takakazuaikawa-hue.github.io/tousatsu-mimi/';
   const title = 'ミミのテキサスホールデムポーカー';
   const text = '夜霧のカジノで、セリフの裏を読む心理戦ポーカーADV。ブラウザですぐ遊べる！';
   // Web Share API 優先（スマホ）
@@ -8398,7 +8399,7 @@ function showTrialEnd(feature) {
     ? '交換所・ぱにゅぱにゅ・<wbr>零時の卓などは<wbr>製品版の<wbr>お楽しみ。'
     : 'このあと、<wbr>セリナ・グラーノ・<wbr>ヴェルベットとの<wbr>勝負と、<wbr>ミミの物語の<wbr>結末が<wbr>待っています。<br>製品版では<wbr>キャラの声も<wbr>付きます。';
   const store = TRIAL_STORE_URL
-    ? `<a class="btn btn-primary trial-end-store" href="${TRIAL_STORE_URL}" target="_blank" rel="noopener">製品版のページへ</a>`
+    ? `<a class="btn btn-primary trial-end-store" href="${TRIAL_STORE_URL}"${/^https?:/.test(TRIAL_STORE_URL) ? ' target="_blank" rel="noopener"' : ''}>製品版のページへ</a>`
     : '<div class="trial-end-soon">製品版は<wbr>近日発売</div>';
   ov.innerHTML = `<div class="trial-end-card" role="dialog" aria-modal="true" aria-label="体験版">
       <div class="trial-end-badge">体験版</div>

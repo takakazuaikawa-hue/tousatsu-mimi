@@ -9,7 +9,9 @@ import { REPO } from './lib/session.mjs';
 const [W, H] = (process.argv[2] || '844x390').split('x').map(Number);
 const OUT = path.join(REPO, 'qa', 'out', 'trial');
 fs.mkdirSync(OUT, { recursive: true });
-const ROOT = path.join(REPO, 'dist', 'trial');
+// QA_TRIAL_SITE＝配る場所の根、QA_TRIAL_PATH＝その中の体験版の場所（HPのサブフォルダーに置いた形で試す）
+const ROOT = process.env.QA_TRIAL_SITE ? path.resolve(process.env.QA_TRIAL_SITE) : path.join(REPO, 'dist', 'trial');
+const SUB = (process.env.QA_TRIAL_PATH || '').replace(/^\/+|\/+$/g, '');
 const log = { bad: [], voiceReq: 0, errors: [] };
 
 const server = await serve(ROOT, 0, 'no-store');
@@ -24,7 +26,7 @@ page.on('Network.responseReceived', (p) => {
   if (u.includes('/assets/voice/')) log.voiceReq++;
 });
 page.on('Runtime.exceptionThrown', (p) => { const d = p.exceptionDetails || {}; log.errors.push(String((d.exception && d.exception.description) || d.text).slice(0, 200)); });
-const url = `http://127.0.0.1:${server.port}/index.html`;
+const url = `http://127.0.0.1:${server.port}/${SUB ? SUB + '/' : ''}index.html`;
 const ready = async () => { for (let i = 0; i < 60 && !(await page.eval('typeof startBattle === "function"').catch(() => false)); i++) await sleep(500); await sleep(1500); };
 const shot = (n) => page.screenshot(path.join(OUT, `${W}x${H}_${n}.png`));
 const act = (a, extra = {}) => page.eval(`(() => { onAction({ currentTarget: { dataset: ${JSON.stringify({ action: a, ...extra })} } }); return 1; })()`);

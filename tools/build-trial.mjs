@@ -1,5 +1,6 @@
 // 体験版を書き出す（製品版と同じソースから。直しは本体に入れれば両方に入る）。
-// 使い方: node tools/build-trial.mjs [出力フォルダ（既定 dist/trial）] [--store <製品版のページのURL>]
+// 使い方: node tools/build-trial.mjs [出力フォルダ（既定 dist/trial）] [--store <製品版のページのURL>] [--local-fonts]
+//   --local-fonts：Google Fonts の字体を fonts/ に落として同梱し、外部へ取りに行かない（よそのHPに置く時。字体は SIL OFL）
 // 体験版の中身：
 //  ・index.html に window.MIMI_TRIAL（と販売ページ MIMI_STORE_URL）を書き込む → game.js の IS_TRIAL が立つ
 //    （ポルカに勝ったら「続きは製品版で」、交換所・ぱにゅぱにゅ・零時の卓などは押すと製品版の案内、セーブは別の鍵）
@@ -12,9 +13,10 @@ import { execFileSync } from 'node:child_process';
 
 const repo = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const args = process.argv.slice(2);
-let out = 'dist/trial', store = '';
+let out = 'dist/trial', store = '', localFonts = false;
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--store') store = args[++i] || '';
+  else if (args[i] === '--local-fonts') localFonts = true;
   else out = args[i];
 }
 out = path.resolve(repo, out);
@@ -64,6 +66,31 @@ const flag = `<script>window.MIMI_TRIAL = true; window.MIMI_STORE_URL = ${JSON.s
 if (!idx.includes('</head>')) throw new Error('index.html に </head> がない');
 idx = idx.replace('</head>', flag + '</head>');
 idx = idx.replace(/<title>([^<]*)<\/title>/, (m, t) => `<title>${t}（体験版）</title>`);
+// 字体を同梱する：Google Fonts の CSS と woff2 を fonts/ に落とし、index.html の読み込みを fonts/fonts.css に替える
+if (localFonts) {
+  const GF = /href="(https:\/\/fonts\.googleapis\.com\/css2\?[^"]+)"/;
+  const GS = /url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g;
+  const m = idx.match(GF);
+  if (!m) throw new Error('index.html に Google Fonts の読み込みが見つからない');
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
+  let css = await (await fetch(m[1].replace(/&amp;/g, '&'), { headers: { 'User-Agent': UA } })).text();
+  const urls = [...new Set([...css.matchAll(GS)].map(x => x[1]))];
+  const fdir = path.join(out, 'fonts'); fs.mkdirSync(fdir, { recursive: true });
+  const name = (u) => u.replace('https://fonts.gstatic.com/', '').replace(/\//g, '_');
+  for (let i = 0; i < urls.length; i += 16) {
+    await Promise.all(urls.slice(i, i + 16).map(async (u) => {
+      const r = await fetch(u); if (!r.ok) throw new Error('字体の取得に失敗: ' + u);
+      fs.writeFileSync(path.join(fdir, name(u)), Buffer.from(await r.arrayBuffer()));
+    }));
+  }
+  css = css.replace(GS, (x, u) => 'url(' + name(u) + ')');
+  fs.writeFileSync(path.join(fdir, 'fonts.css'), css);
+  fs.writeFileSync(path.join(fdir, 'LICENSE.txt'), 'この中の字体（Noto Sans JP / Shippori Mincho B1 / Barlow Condensed / Bebas Neue）は Google Fonts から取得したもので、SIL Open Font License 1.1 で配布されています。\nhttps://openfontlicense.org/\n');
+  idx = idx.replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\r?\n?/, '')
+    .replace(/href="https:\/\/fonts\.googleapis\.com\/css2\?[^"]+"/g, 'href="fonts/fonts.css"');
+  if (/fonts\.googleapis\.com/.test(idx)) throw new Error('外部の字体の読み込みが残っている');
+  console.log(`字体を同梱: ${urls.length} files`);
+}
 fs.writeFileSync(idxPath, idx);
 
 // 保存先の名前を製品版と分ける
