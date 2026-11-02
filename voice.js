@@ -39,6 +39,7 @@
     return Math.max(0, Math.min(1, v / 100));
   }
   function enabled() {
+    if (window.MIMI_TRIAL) return false;   // 体験版は声なし（声のファイルを配らない）
     try {
       if (typeof save === 'undefined' || !save) return false;
       if (save.allMute) return false;   // 音まるごとOFF だけ。効果音 OFF とは別（2026-11-01）
@@ -49,6 +50,7 @@
 
   // ── 台帳（manifest.json）。最初に必要になった時に1度だけ読む ──
   function loadManifest() {
+    if (window.MIMI_TRIAL) { manifest = manifest || { clips: {}, texts: {} }; }
     if (manifest) return Promise.resolve(manifest);
     if (!manifestP) {
       manifestP = fetch(BASE + 'manifest.json').then(function (r) { return r.ok ? r.json() : null; })

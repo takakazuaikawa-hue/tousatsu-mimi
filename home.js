@@ -78,7 +78,7 @@ function renderHomeLobby() {
     const locked = !isStageUnlocked(id);
     const status = done ? 'win' : id === next ? 'now' : locked ? 'lock' : 'open';
     const mark = done ? 'seal' : id === next ? 'mark' : locked ? 'lock' : null;
-    const label = exempt ? '免除' : done ? '勝利済み' : id === next ? '今夜の相手' : locked ? '未解放' : '受講できます';
+    const label = exempt ? '免除' : done ? '勝利済み' : id === next ? '今夜の相手' : locked ? (IS_TRIAL ? '製品版で' : '未解放') : '受講できます';
     return `<span class="h15-slot h15-${status}" style="left:${positions[i]}%" title="${OPPONENTS[id].name}：${label}"><img class="h15-p" src="${face(id)}" alt="${OPPONENTS[id].name}：${label}"><span class="h15-rn">${romans[i]}</span>${mark ? `<img class="h15-st" src="assets/ui/home/${mark}.webp" alt="">` : ''}</span>`;
   }).join('');
   refreshHomeStatus();
@@ -238,7 +238,7 @@ function showHomeLedger() {
     // done＝この卓を勝ち取った（clearedStages に入っている）。exempt＝研修を飛ばしてポルカに勝った人のリコ先輩（封蝋は押すが、勝ったとは言わない）
     const o = OPPONENTS[id], done = save.clearedStages.includes(id), exempt = isStageExempt(id), unlocked = isStageUnlocked(id);
     const action = id === 'rico_tutorial' && done ? 'rico-mode-chooser' : 'battle-start';
-    const stateText = exempt ? '免除（研修は飛ばしました。受講はいつでもできます）' : done ? '勝利済み' : id === lobbyNextStageId() ? '今夜の相手' : unlocked ? '挑戦できます' : `${OPPONENTS[STAGE_ORDER[i-1]].name}に勝つと解放`;
+    const stateText = exempt ? '免除（研修は飛ばしました。受講はいつでもできます）' : done ? '勝利済み' : id === lobbyNextStageId() ? '今夜の相手' : unlocked ? '挑戦できます' : IS_TRIAL ? '製品版で遊べます' : `${OPPONENTS[STAGE_ORDER[i-1]].name}に勝つと解放`;
     // コインで飛ばせるのは研修とヴェルベット以外の、まだ勝っていない卓だけ（canSkipStage）。ヴェルベットを飛ばすとエンディングを見ないままクリア特典が開いてしまうため
     const skipBtn = canSkipStage(id) ? `<button data-action="skip-stage" data-opponent="${id}">スキップ（${skipStageCost(o)} コインで勝ち扱い）</button>` : '';
     return `<section class="home-ledger-row"><h3>${i+1}. ${o.name}</h3><span>${stateText}</span>${unlocked ? `<div><button data-action="${action}" data-opponent="${id}">${done ? (id === 'rico_tutorial' ? '受講・再戦' : '再戦') : id === 'rico_tutorial' ? '受講する' : '卓へ'}（勝てば ${done ? rematchPreview(id) : o.rewardFirst} コイン）</button><button data-action="char-profile" data-char="${id}">プロフィール</button>${skipBtn}${done && EPISODES[id] ? `<button data-action="recall-episode" data-episode="${id}">物語の回想</button>` : ''}${id === 'rico_tutorial' && !done && !exempt ? '<button data-action="rico-skip-tutorial">実戦から始める</button>' : ''}</div>` : ''}</section>`;

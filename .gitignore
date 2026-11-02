@@ -31,3 +31,6 @@ assets/_source_png/
 
 # 検証の出力
 qa/out/
+
+# 体験版の書き出し（tools/build-trial.mjs）
+dist/

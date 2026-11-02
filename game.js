@@ -8,7 +8,12 @@
 //=============================================================
 // SAVE / LOAD（Phase 2: v4 B6）
 //=============================================================
-const SAVE_KEY = 'tousatsu_mimi_save_v1';
+// 体験版（tools/build-trial.mjs が index.html に window.MIMI_TRIAL を書き込む）：声なし・ポルカに勝つまで。
+// セーブは製品版と混ざらないように別の鍵に置く。販売ページは window.MIMI_STORE_URL（空なら「近日発売」と出す）
+const IS_TRIAL = !!window.MIMI_TRIAL;
+const TRIAL_STORE_URL = (IS_TRIAL && typeof window.MIMI_STORE_URL === 'string') ? window.MIMI_STORE_URL : '';
+const TRIAL_LAST_STAGE = 'polka';
+const SAVE_KEY = IS_TRIAL ? 'tousatsu_mimi_trial_save_v1' : 'tousatsu_mimi_save_v1';
 
 // === 絵文字のかわりに出す金の八角の銘板（assets/ui/home/oct.webp の枠。中は漢字1字。CSS は .gold-mark） ===
 function goldMark(ch) {
@@ -3207,7 +3212,9 @@ function shareGame() {
 function applyTitleButtons() {
   // 下端の版と権利の表記（値は game.js 先頭の GAME_VERSION / COPYRIGHT_TEXT。設定の窓の最下行と同じ）
   const verEl = document.querySelector('.t3-ver');
-  if (verEl) verEl.textContent = `Ver ${GAME_VERSION}　${COPYRIGHT_TEXT}`;
+  if (verEl) verEl.textContent = `Ver ${GAME_VERSION}${IS_TRIAL ? ' 体験版' : ''}　${COPYRIGHT_TEXT}`;
+  // 体験版：ロゴのすぐ下に「体験版」の札（ロゴの中に置いて一緒に動かす。CSS は .t3-trial）
+  if (IS_TRIAL && !document.querySelector('.t3-trial')) { const logo = document.querySelector('.t3-logo'); if (logo) logo.insertAdjacentHTML('beforeend', '<span class="t3-trial">体験版</span>'); }
   const el = document.querySelector('[data-bind="titleButtons"]');
   if (!el) return;
   const hasSave = save.clearedStages.length > 0 || save.coins > 0;
@@ -4460,6 +4467,7 @@ const STAGE_ORDER = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
 
 function isStageUnlocked(stageId) {
   if (stageId === 'rico_tutorial') return true;
+  if (IS_TRIAL && STAGE_ORDER.indexOf(stageId) > STAGE_ORDER.indexOf(TRIAL_LAST_STAGE)) return false;
   if (stageId === 'polka') return true;
   if (stageId === 'selina') return save.clearedStages.includes('polka');
   if (stageId === 'grano') return save.clearedStages.includes('selina');
@@ -4480,6 +4488,7 @@ function clearedStageCount() {
 }
 // コインで飛ばせる卓か。研修は「実戦から始める」で飛ばし、最終卓（ヴェルベット）は飛ばせない（エンディングを見ないままクリア特典が開くため）
 function canSkipStage(stageId) {
+  if (IS_TRIAL) return false;
   return stageId !== 'rico_tutorial' && stageId !== 'velvet' && !!OPPONENTS[stageId] && !save.clearedStages.includes(stageId);
 }
 
@@ -4535,7 +4544,7 @@ function renderStageList() {
         </div>
         <div class="lobby-door-foot">
           <div class="lobby-door-name">???</div>
-          <div class="lobby-door-tag">${prevOpp ? `${prevOpp.name}に勝つと解放` : '前のステージをクリアで解放'}</div>
+          <div class="lobby-door-tag">${IS_TRIAL ? '製品版で解放' : prevOpp ? `${prevOpp.name}に勝つと解放` : '前のステージをクリアで解放'}</div>
           <div class="lobby-door-lock">${UI_ICON.lock} 施錠中</div>
         </div>
       </div>`;
@@ -5204,7 +5213,7 @@ function showSettingsModal() {
             <input class="settings-modal-volume" type="range" min="0" max="100" value="${save.sfxVolume ?? 60}" data-volume="sfx" aria-label="効果音の音量">
             ${sw('sfx', !!save.sfxOn, '効果音')}
           </div>
-          <div class="settings-modal-row settings-modal-sound">
+          <div class="settings-modal-row settings-modal-sound"${IS_TRIAL ? ' style="display:none"' : ''}>
             <span class="settings-modal-label">キャラの声</span>
             <input class="settings-modal-volume" type="range" min="0" max="100" value="${save.voiceVolume ?? 80}" data-volume="voice" aria-label="キャラの声の音量">
             ${sw('voice', save.voiceOn !== false, 'キャラの声')}
@@ -8370,6 +8379,38 @@ function bindActions() {
     el.addEventListener('click', onAction);
   });
 }
+// 体験版で押せない入口（押すと「続きは製品版で」の窓）。製品版では呼ばれない
+function trialBlocksAction(action, data) {
+  if (/^allstar-/.test(action || '')) return true;
+  if (['open-shop', 'panyu-free', 'play-minipoker', 'skip-stage', 'open-rico-viewer', 'equip-change'].includes(action)) return true;
+  if (action === 'battle-start' && data && data.opponent && !isStageUnlocked(data.opponent)) return true;
+  return false;
+}
+// 体験版の終わりの窓。feature=true は「製品版の機能を押した」時（短い文で閉じるだけ）、false はポルカに勝った後の締め
+function showTrialEnd(feature) {
+  if (document.querySelector('.trial-end-overlay')) return;
+  const ov = document.createElement('div');
+  ov.className = 'trial-end-overlay';
+  const lead = feature
+    ? 'ここから先は<wbr>製品版で<wbr>遊べるよ。'
+    : 'ポルカに勝った！<wbr>体験版は<wbr>ここまで。';
+  const body = feature
+    ? '交換所・ぱにゅぱにゅ・<wbr>零時の卓などは<wbr>製品版の<wbr>お楽しみ。'
+    : 'このあと、<wbr>セリナ・グラーノ・<wbr>ヴェルベットとの<wbr>勝負と、<wbr>ミミの物語の<wbr>結末が<wbr>待っています。<br>製品版では<wbr>キャラの声も<wbr>付きます。';
+  const store = TRIAL_STORE_URL
+    ? `<a class="btn btn-primary trial-end-store" href="${TRIAL_STORE_URL}" target="_blank" rel="noopener">製品版のページへ</a>`
+    : '<div class="trial-end-soon">製品版は<wbr>近日発売</div>';
+  ov.innerHTML = `<div class="trial-end-card" role="dialog" aria-modal="true" aria-label="体験版">
+      <div class="trial-end-badge">体験版</div>
+      <div class="trial-end-lead">${lead}</div>
+      <div class="trial-end-body">${body}</div>
+      <div class="trial-end-btns">${store}<button type="button" class="btn btn-secondary trial-end-close">${feature ? '閉じる' : 'ロビーへ'}</button></div>
+    </div>`;
+  ov.querySelector('.trial-end-close').addEventListener('click', () => { ov.remove(); if (!feature) goLobby(); });
+  ov.addEventListener('click', (ev) => { if (ev.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
 function onAction(e) {
   const action = e.currentTarget.dataset.action;
   const data = { ...e.currentTarget.dataset };
@@ -8385,6 +8426,7 @@ function onAction(e) {
   // 研修中の行動ボタンは台本が受け取る（光っている1つだけが効く）
   if (state && state.introHandMode && /^player-/.test(action || '')) { introAct(action); return; }
   // 零時の卓の入口（入場案内・着席・続きから・記録）は allstar-ui.js が受け取る
+  if (IS_TRIAL && trialBlocksAction(action, data)) { showTrialEnd(true); return; }
   if (/^allstar-/.test(action || '')) { if (window.AllstarUI) AllstarUI.onAction(action, data, e); return; }
   switch (action) {
     case 'start':
@@ -8443,6 +8485,7 @@ function onAction(e) {
       break;
     }
     case 'skip-stage': skipStageWithCoins(data.opponent); break;
+    case 'trial-end': showTrialEnd(false); break;
     case 'back-title':    stopEndingBgm(); state = defaultState(); render(); break;
     case 'back-lobby': {
       // 対戦・講義の途中で抜ける時だけ、失うものを書いた確認を挟む（誤タップ1回で対戦が消えていた）
@@ -9979,7 +10022,7 @@ function toggleSoundPanel(btn) {
     const m = p.querySelector('.sp-mute');
     m.innerHTML = on ? `${UI_ICON.mute}<span>すべて消す</span>` : `${UI_ICON.sound}<span>音を出す</span>`;
   };
-  p.innerHTML = `<div class="sp-title">音量</div>${row('voice', '声', save.voiceVolume ?? 60)}${row('sfx', '効果音', save.sfxVolume ?? 50)}${row('bgm', '曲', save.bgmVolume ?? 35)}<button type="button" class="sp-mute"></button>`;
+  p.innerHTML = `<div class="sp-title">音量</div>${IS_TRIAL ? '' : row('voice', '声', save.voiceVolume ?? 60)}${row('sfx', '効果音', save.sfxVolume ?? 50)}${row('bgm', '曲', save.bgmVolume ?? 35)}<button type="button" class="sp-mute"></button>`;
   // ボタンのすぐ下に出す（右端をボタンにそろえる）
   const hr = host.getBoundingClientRect(), br = btn.getBoundingClientRect(), k = hr.width / (host.offsetWidth || hr.width) || 1;
   p.style.top = ((br.bottom - hr.top) / k + 8) + 'px';
@@ -13834,6 +13877,7 @@ function showLoadingVeil() {
 function warmNextBattle() {
   const MA = window.MimiAssets; if (!MA || !save) return;
   const next = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'].find(id => !(save.clearedStages || []).includes(id)) || 'velvet';
+  if (!isStageUnlocked(next)) return;   // 体験版の施錠した卓は読まない（素材を配っていない）
   const key = (OPPONENTS[next] || {}).imgKey || next;
   MA.warm([...MA.sets.battleNow(next, key), ...(idleMotionOk() ? MA.sets.battleIdle(next) : [])], { set: 'battle:' + next });
   preloadBattleVoice(next, false);
@@ -18643,6 +18687,16 @@ function endBattle() {
 // 勝利リザルトの主ボタン群（次ステージ／再戦／ロビー）のHTMLを組み立てる。
 // 幕間から戻った直後にも使うため、endBattle() 本体から独立させてある（ロジックは元のまま）。
 function wonResultButtonsHtml(opponentId) {
+  // 体験版：最後の卓（ポルカ）に勝ったら、次の相手のかわりに「続きは製品版で」
+  if (IS_TRIAL && opponentId === TRIAL_LAST_STAGE) {
+    return `
+      <button class="btn btn-primary result-main-btn" data-action="trial-end"><span>続きは製品版で</span><span>→</span></button>
+      <div class="result-sub-buttons">
+        <button class="btn btn-secondary" data-action="rematch">再戦</button>
+        <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
+      </div>
+    `;
+  }
   const curIdx = STAGE_ORDER.indexOf(opponentId);
   const after = STAGE_ORDER.slice(curIdx + 1);
   const pickFrom = (list) => list.find(sid => isStageUnlocked(sid) && !save.clearedStages.includes(sid));
@@ -18693,6 +18747,7 @@ function nextGoalText() {
     const opp = OPPONENTS[nextId];
     return `次の目標：${opp.name}に挑戦`;
   }
+  if (IS_TRIAL) return '体験版はここまで。続きは製品版で';
   // 全員に勝った後：次は高難度卓（ホームから入る）。SS を取った相手には「SSを狙おう」と言わない
   const bestRank = (save.bestRanks && save.bestRanks[state.opponentId]) || '';
   const gotSS = state.rank === 'SS' || bestRank === 'SS';
