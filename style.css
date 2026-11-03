@@ -20838,3 +20838,15 @@ html.is-compact .trial-end-body { margin-bottom: 10px; line-height: 1.55; }
 .mp-pt-unit { display: block; font-size: 14px; font-weight: 400; opacity: .85; }
 .mp-pt-ups { font-size: 14px; line-height: 1.35; color: #ffd060; word-break: keep-all; margin: 2px 0 4px; }
 html.is-compact .minipoker-overlay .mp-result-sub.mp-result-calc { display: block; }
+
+/* セリフ集：押すと声（2026-11-03）。押せると分かる三角、鳴っている間は金の縁 */
+.memory-voice[data-voice] { cursor: pointer; position: relative; padding-left: 30px; transition: background .2s, border-color .2s; }
+.memory-voice[data-voice] .mv-play { position: absolute; left: 10px; top: 50%; width: 0; height: 0; margin-top: -6px; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent #d9b35a; }
+.memory-voice[data-voice]:hover, .memory-voice.is-on { background: rgba(217,179,90,.12); }
+.memory-voice.is-on .mv-play { border-left-color: #ffe08a; filter: drop-shadow(0 0 4px rgba(255,224,138,.8)); }
+
+/* ホーム：リコ先輩を押すと一言（2026-11-03 声の第3弾）。押す所は見せず、押した時だけ台詞の帯がふわっと明るむ */
+.home-stage .h15-rico-talk { position: absolute; left: 38%; right: 38%; top: 16%; bottom: 24%; z-index: 2; background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.home-stage .h15-dialogue.h15-said { animation: h15-said .5s ease-out; }
+@keyframes h15-said { from { filter: brightness(1.35); } to { filter: none; } }
+@media (prefers-reduced-motion: reduce) { .home-stage .h15-dialogue.h15-said { animation: none; } }

@@ -166,7 +166,9 @@ function homeCeremonyPlan(root, cleared, next) {
     slot?.classList.remove('h15-pending');
     setFrame();
     frame.querySelector('.h15-en')?.getAnimations().forEach(a => { if (!(a instanceof CSSAnimation)) a.cancel(); });
-    setWrapLine(root.querySelector('.h15-dialogue'), cleared === STAGE_ORDER.length ? '「全部の卓に灯りが入ったじゃん。|ここはもう、|あんたの劇場だよ」' : '「やるじゃん。|劇場にまた灯りが入ったよ」');
+    const riteLine = cleared === STAGE_ORDER.length ? '「全部の卓に灯りが入ったじゃん。|ここはもう、|あんたの劇場だよ」' : '「やるじゃん。|劇場にまた灯りが入ったよ」';
+    setWrapLine(root.querySelector('.h15-dialogue'), riteLine);
+    if (window.playVoiceForText) playVoiceForText('rico', riteLine.split('|').join(''), { prio: 1, noRepeat: false, delay: 300, maxLateMs: 1500 });
     root.classList.remove('h15-rite');
   };
   const start = () => {
@@ -303,6 +305,23 @@ function mountHomeMotion(root) {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const abort = new AbortController();
   const parts = [];
+  const talk = document.createElement('button');
+  talk.type = 'button'; talk.className = 'h15-rico-talk'; talk.setAttribute('aria-label', 'リコ先輩に話しかける');
+  root.append(talk);
+  talk.addEventListener('click', () => {
+    const outfit = homeLobbyOutfit();
+    const uniform = /rico_(default|greet)\.webp$/.test(outfit.file);
+    const say = root.querySelector('.h15-dialogue');
+    const prev = say ? say.textContent : '';
+    let line = '';
+    for (let i = 0; i < 4 && (!line || line.split('|').join('') === prev); i++) line = uniform ? lobbyRicoLine() : outfit.lines[Math.floor(rand() * outfit.lines.length)];
+    setWrapLine(say, line);
+    say?.classList.remove('h15-said'); void say?.offsetWidth; say?.classList.add('h15-said');
+    if (window.stopVoice) stopVoice();
+    if (window.playVoiceForText) playVoiceForText('rico', line.split('|').join(''), { prio: 1, noRepeat: false, maxLateMs: 1500 });
+  }, { signal: abort.signal });
+  abort.signal.addEventListener('abort', () => { talk.remove(); if (window.stopVoice) stopVoice(); });
+  if (window.MimiVoice && MimiVoice.enabled()) MimiVoice.preloadScene('lobby', /^(lobby_|outfit_|home_)/);
   for (const [selector,v] of HOME_PLACEMENT) root.querySelectorAll(selector).forEach(el => {
     const en = document.createElement('span'), sw = document.createElement('span');
     en.className = 'h15-en'; sw.className = 'h15-sw';

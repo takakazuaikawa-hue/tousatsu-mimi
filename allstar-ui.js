@@ -614,7 +614,9 @@
       const cand = LINES.banter.filter(b => b.every(([k]) => aliveId(k)));
       if (cand.length) {
         const b = pickOne(cand);
-        say(b[0][0], b[0][1], 1700).then(() => live() && say(b[1][0], b[1][1], 1700)).catch(() => { });
+        // 声がある時は声の長さまで字幕を残す。1人目の声が長いと2人目の声が待ちで捨てられていた（2026-11-03 声の第3弾）
+        const vms = (k, t) => { const id = window.MimiVoice && MimiVoice.idForText(k, t); return Math.max(1700, ((id && MimiVoice.durMs(id)) || 0) + 250); };
+        say(b[0][0], b[0][1], vms(b[0][0], b[0][1])).then(() => live() && say(b[1][0], b[1][1], vms(b[1][0], b[1][1]))).catch(() => { });
       }
     }
   }
@@ -1242,7 +1244,7 @@
   async function opening() {
     // 一枚絵（今は部屋）→ 溶けて卓へ → 文字盤が落ちる → ミミから時計回りに席へ灯り → 台詞2つ → 第1ハンド
     skippable(800);
-    if (window.MimiVoice && MimiVoice.enabled()) MimiVoice.preloadBattle(['rico', 'polka', 'selina', 'grano', 'velvet']);   // 決勝の5人の掛け声（演出の間に読む）
+    if (window.MimiVoice && MimiVoice.enabled()) MimiVoice.preloadBattle(['rico', 'polka', 'selina', 'grano', 'velvet']); if (window.MimiVoice && MimiVoice.enabled()) MimiVoice.preloadScene('banter', /^allstar_banter_/);   // 相手同士の掛け合い   // 決勝の5人の掛け声（演出の間に読む）
     host.dataset.op = 'title';
     const art = ART.opening;
     const ov = layerEl('as-open', `${art ? `<img class="as-open-art" src="${art}" alt="">` : ''}<div class="as-open-t"><span class="as-open-en">THE MIDNIGHT TABLE</span><b>零時の卓</b><span class="as-open-sub">六席の決勝卓</span></div>`);

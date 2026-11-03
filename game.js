@@ -4108,6 +4108,19 @@ function showStoryScene(key, onDone, voiceReady) {
 // speaker: 'rico' | 'mimi' | 相手ID。3〜5行、最後の1行で次の相手を予告する。
 // cg: 会話後に開放される「ご褒美CG」の想定パス（無ければ assets/episodes/<相手ID>.webp にフォールバック）。
 //=============================================================
+// セリフ集の行を押すと、その台詞の声（manifest に文言で引く）
+document.addEventListener('click', (e) => {
+  const row = e.target.closest && e.target.closest('.memory-voice[data-voice]');
+  if (!row || !window.playVoiceForText) return;
+  const m = row.textContent.match(/「(.+)」/);
+  if (!m) return;
+  if (window.stopVoice) stopVoice();
+  document.querySelectorAll('.memory-voice.is-on').forEach(x => x.classList.remove('is-on'));
+  row.classList.add('is-on');
+  playVoiceForText(row.dataset.voice, m[1], { prio: 1, noRepeat: false, maxLateMs: 1500 });
+  const id = window.MimiVoice && MimiVoice.idForText(row.dataset.voice, m[1]);
+  setTimeout(() => row.classList.remove('is-on'), Math.max(900, (id && MimiVoice.durMs(id)) || 1500));
+});
 const INTERMISSIONS = {
   rico_tutorial: {
     lines: [
@@ -5574,7 +5587,7 @@ const SHOP_ITEMS = [
   { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 600,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
   { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 700, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。撃破の報酬', requires: 'ending' },
   // 音声は無い。旧「ボイス集」（900）を実態どおりの「セリフ集」に改め値下げ。買った人の所持はそのまま
-  { id: 'omake_voice_pack',      cat: 'memory', name: 'リコ先輩セリフ集',    price: 300,  desc: 'リコ先輩の勝った時・負けた時・励ましなどのセリフを文字で読める（音声なし）' },
+  { id: 'omake_voice_pack',      cat: 'memory', name: 'リコ先輩セリフ集',    price: 300,  desc: 'リコ先輩の勝った時・負けた時・励ましなどのセリフ集。押すとリコ先輩の声で聞ける' },
   { id: 'omake_credit',          cat: 'memory', name: 'スタッフロール再生',  price: 0, clearBonus: true, desc: '本編のスタッフロールをいつでも再生できる', requires: 'ending' },
   { id: 'memory_minipoker',      cat: 'memory', name: 'ミニキャラ・ファイブポーカー', price: 700, desc: 'ミミがミニキャラ仲間と5枚交換ポーカーで対戦！勝てばコインも稼げる、ふんわり楽しいミニゲーム' },
 ];
@@ -5663,7 +5676,7 @@ const SHOP_COMMENTS = {
   cg_selina_fireside:    '暖炉の前で|眼鏡を外した|セリナ様……|門外不出の一枚ですよ',
   omake_drama_1:         'リコさんがこの店に来た最初の日……短いお話、お楽しみあれ',
   omake_drama_2:         '決戦直前の小話。これはクリアされた方にだけ、お聞かせできる品です',
-  omake_voice_pack:      'リコさんの口癖を書き留めた一冊。音は出ませんが、読むと声が聞こえてくるようですな',
+  omake_voice_pack:      'リコさんの口癖を書き留めた一冊。押せば、あの声がそのまま聞こえますぞ',
   omake_credit:          'スタッフロールは、あの夜を越えた方へのお礼。お代はいただきませんよ',
 };
 
@@ -6152,6 +6165,7 @@ function shop3RenderRow(deal) {
 function shop3Say(text) {
   const el = document.querySelector('[data-bind="ricoShopComment"]'); if (!el) return;
   setWrapLine(el, `「${text}」`);
+  if (window.playVoiceForText) playVoiceForText('grano', text, { prio: 1, noRepeat: false, maxLateMs: 1200 });
   const box = el.closest('.sh3-say'); if (box) { box.classList.remove('is-talk'); void box.offsetWidth; box.classList.add('is-talk'); }
 }
 function shop3Select(id, speak) {
@@ -10485,23 +10499,23 @@ const MEMORY_CONTENT = {
       <p class="memory-stage-note">— 扉の向こうから、チップの音がした。 —</p>
     `,
   },
-  // 旧「ボイス集」。音声は無いので「セリフ集」として文字で読む（開発者向けの注記と ▶ 表示は外した）。
+  // 「セリフ集」。行を押すとその台詞の声が鳴る（2026-11-03 声の第3弾）。
   // 口調は本編のリコ（一人称アタシ・姉御肌のギャル口調）に揃える
   omake_voice_pack: {
     title: 'リコ先輩 セリフ集',
     body: `
       <div class="memory-voice-list">
-        <div class="memory-voice"><b>はじめまして</b>「まずはアタシが基礎から叩き込む。安心してかかってきな」</div>
-        <div class="memory-voice"><b>勝った時</b>「やるじゃん、ミミ。今の読み、ちゃんと自分で出したでしょ」</div>
-        <div class="memory-voice"><b>負けた時</b>「はい、今のは授業料ってことで。次いこ、次」</div>
-        <div class="memory-voice"><b>ブラフが通った時</b>「いっくよー！……って、降りちゃうんだ？ ふふ、アタシの勝ち〜」</div>
-        <div class="memory-voice"><b>オールイン</b>「全部いくよ。ミミ、受けて立つ？」</div>
-        <div class="memory-voice"><b>チェック</b>「タダで次のカード見られるならお得じゃん」</div>
-        <div class="memory-voice"><b>ベット</b>「ガツンと攻めるからねー。怖い顔してる？」</div>
-        <div class="memory-voice"><b>フォールド</b>「今のは降りる場面、教科書通りー。降りる勇気も実力だよ」</div>
-        <div class="memory-voice"><b>おつかれ</b>「おつかれ、ミミ。反省会、付き合いな？ ジュースくらいおごるからさ」</div>
-        <div class="memory-voice"><b>励まし</b>「大丈夫。ミミならできるって、アタシが一番知ってる」</div>
-        <div class="memory-voice"><b>本気のリコ先輩</b>「練習は終わり。ここからは試験よ」</div>
+        <div class="memory-voice" data-voice="rico" role="button" tabindex="0"><i class="mv-play" aria-hidden="true"></i><b>はじめまして</b>「まずはアタシが基礎から叩き込む。安心してかかってきな」</div>
+        <div class="memory-voice" data-voice="rico" role="button" tabindex="0"><i class="mv-play" aria-hidden="true"></i><b>勝った時</b>「やるじゃん、ミミ。今の読み、ちゃんと自分で出したでしょ」</div>
+        <div class="memory-voice" data-voice="rico" role="button" tabindex="0"><i class="mv-play" aria-hidden="true"></i><b>負けた時</b>「はい、今のは授業料ってことで。次いこ、次」</div>
+        <div class="memory-voice" data-voice="rico" role="button" tabindex="0"><i class="mv-play" aria-hidden="true"></i><b>ブラフが通った時</b>「いっくよー！……って、降りちゃうんだ？ ふふ、アタシの勝ち〜」</div>
+        <div class="memory-voice" data-voice="rico" role="button" tabindex="0"><i class="mv-play" aria-hidden="true"></i><b>オールイン</b>「全部いくよ。ミミ、受けて立つ？」</div>
+        <div class="memory-voice" data-voice="rico" role="button" tabindex="0"><i class="mv-play" aria-hidden="true"></i><b>チェック</b>「タダで次のカード見られるならお得じゃん」</div>
+        <div class="memory-voice" data-voice="rico" role="button" tabindex="0"><i class="mv-play" aria-hidden="true"></i><b>ベット</b>「ガツンと攻めるからねー。怖い顔してる？」</div>
+        <div class="memory-voice" data-voice="rico" role="button" tabindex="0"><i class="mv-play" aria-hidden="true"></i><b>フォールド</b>「今のは降りる場面、教科書通りー。降りる勇気も実力だよ」</div>
+        <div class="memory-voice" data-voice="rico" role="button" tabindex="0"><i class="mv-play" aria-hidden="true"></i><b>おつかれ</b>「おつかれ、ミミ。反省会、付き合いな？ ジュースくらいおごるからさ」</div>
+        <div class="memory-voice" data-voice="rico" role="button" tabindex="0"><i class="mv-play" aria-hidden="true"></i><b>励まし</b>「大丈夫。ミミならできるって、アタシが一番知ってる」</div>
+        <div class="memory-voice" data-voice="rico_serious" role="button" tabindex="0"><i class="mv-play" aria-hidden="true"></i><b>本気のリコ先輩</b>「練習は終わり。ここからは試験よ」</div>
       </div>
     `,
   },
@@ -16380,6 +16394,8 @@ function triggerPsychBattle(qid) {
     speechEl.classList.remove('with-portrait');
   }
   root.querySelector('[data-bind="zazazoHint"]').textContent = q.zazazoHint;
+  // 心理バトルの相手の一言（研修のリコだけ声がある。manifest に無い文は素通り）
+  if (!isLogic && window.playVoiceForText) playVoiceForText(state.opponentImgKey || 'rico', q.speech, { prio: 1, noRepeat: false, delay: 450, maxLateMs: 1200 });
 
   // v2.1：初心者向けの「いま起きたこと」1行＋この読みの掛け金（重み）を選択肢の直前に出す
   if (!isLecture) {
@@ -17023,7 +17039,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
       const res = (onComplete && onComplete(roll)) || null;
       const tierClass = 'is-' + roll.id.toLowerCase();
       const hint = roll.id === 'LEG' || roll.id === 'SSR' ? 'is-rainbow' : roll.id === 'SR' ? 'is-gold' : (rand() < 0.25 ? 'is-gold' : 'is-pink'); // 金の光は「もしかして」の予感（外れることもある）
-      const closeAll = () => { window.removeEventListener('resize', onPanyuResize); overlay.classList.add('is-out'); setTimeout(() => overlay.remove(), 260); };
+      const closeAll = () => { window.removeEventListener('resize', onPanyuResize); if (window.stopVoice) stopVoice(); overlay.classList.add('is-out'); setTimeout(() => overlay.remove(), 260); };
       const showResult = () => {
         overlay.classList.add('is-revealed', tierClass);
         const dexN = Object.keys(save.panyuDex || {}).length;
@@ -17045,10 +17061,13 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
         const coin = res && res.reward ? `<div class="pv2-res-gain"><span>ごほうび</span><b>+${res.reward}</b><span>コイン（×${roll.mult}${res.mul > 1 ? `・コンボ ×${res.mul}` : ''}）</span></div>` : '';
         const note = res ? (res.reward ? (res.left > 0 ? `今日のコインのごほうび、あと ${res.left} 回` : '今日のコインのごほうびは、ここまで') : '今日のコインはおしまい。判定と図鑑は何度でも') : '';
         const pityLeft = PANYU_PITY - (save.panyuPity || 0);
+        const panyuLine = pick(PANYU_LINES[roll.id]);
+        // 第3弾の声（2026-11-03）：結果の札が出たところでミミの一言を読む
+        if (window.playVoiceForText) playVoiceForText('mimi', panyuLine, { prio: 1, noRepeat: false, delay: 350, maxLateMs: 1500 });
         card.innerHTML = `<div class="pv2-res-eye">SKILL ACTIVATED</div>
           <div class="pv2-res-title">《ぱにゅぱにゅ》<em>発動</em></div>
           ${coin}${note ? `<div class="pv2-res-note">${note}</div>` : ''}
-          <div class="pv2-res-line">「${pick(PANYU_LINES[roll.id])}」<span>ミミ</span></div>
+          <div class="pv2-res-line">「${panyuLine}」<span>ミミ</span></div>
           <div class="pv2-res-heat">勢い ${boostEnd >= .75 ? '最高' : boostEnd >= .45 ? '高い' : boostEnd >= .2 ? 'ふつうより上' : 'ふつう'}で判定${boostEnd < .45 ? '。最後まで速く触るほど、当たりやすい' : ''}</div>
           <div class="pv2-res-meta"><span>ぱにゅ図鑑 ${dexN} / ${PANYU_RARITY.length}</span><span>SR 以上まで、あと ${pityLeft} 回で確定</span></div>
           <div class="pv2-res-btns"><button type="button" class="pv2-res-again">もう一回</button><button type="button" class="pv2-res-btn">ロビーへ</button></div>`;
@@ -18300,11 +18319,13 @@ function executeDominance(choice) {
   state.dominanceMode = false;
   if (choice === 'play') {
     state.mimiThought = '「降参はなし。最後まで札で決着をつける」';
+    if (window.playVoiceForText) playVoiceForText('mimi', '降参はなし。最後まで札で決着をつける', { prio: 1, noRepeat: false, maxLateMs: 1200 });
     render();
     startHand();
     return;
   }
   state.surrenderAccepted = true;
+  if (window.playVoiceForText) playVoiceForText('mimi', '降参、受けてあげる', { prio: 2, noRepeat: false, maxLateMs: 1200 });
   showMimiCutIn('降参、受けてあげる', null, () => {
     showOpponentCutIn('く……参りました……', 'defeat');
     battleTimeout(() => {
