@@ -25,6 +25,7 @@
   var queue = [];                 // { id, opts, until }
   var delayTimer = 0;
   var token = 0;
+  var cancelGen = 0;               // stopVoice のたびに進める。読み込み待ちの声を取り消す印（token は再生のたびに進むので別に持つ）
   var duck = 1, duckTarget = 1, duckTimer = 0;
   var LOG = (window.__voiceLog = []);
 
@@ -162,12 +163,14 @@
   }
   function stopVoice() {
     token++;
+    cancelGen++;
     queue = [];
     if (delayTimer) { clearTimeout(delayTimer); delayTimer = 0; }
     stopCur();
     setDuck(1);
   }
   function startNow(id, buf, opts) {
+    if (!enabled()) return false;
     var ctx = mpAudioCtx();
     if (!ctx) return false;
     stopCur(true);
@@ -223,10 +226,11 @@
     var buf = buffers.get(id);
     if (buf) return dispatch(id, buf, opts);
     // 未取得：読み込みを始め、間に合えば鳴らす
-    var my2 = token, lateMax = opts.maxLateMs != null ? opts.maxLateMs : 350;
+    var my2 = token, myCancel = cancelGen, lateMax = opts.maxLateMs != null ? opts.maxLateMs : 350;
     if (lateMax <= 0) { load(id); return false; }
     load(id).then(function (b) {
-      if (!b || my2 !== token && !opts.queue) return;
+      // 読み込みの間に止められた・音を切られた声は鳴らさない（2026-11-05 15回目の批評：消音の後に掛け声が鳴った）
+      if (!b || my2 !== token && !opts.queue || myCancel !== cancelGen || !enabled()) return;
       if (now() - opts.__req > lateMax) return;
       dispatch(id, b, opts);
     });

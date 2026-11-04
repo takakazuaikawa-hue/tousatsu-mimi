@@ -20837,7 +20837,7 @@ html.is-compact .trial-end-body { margin-bottom: 10px; line-height: 1.55; }
 /* ファイブポーカー：配当の内訳（2026-11-02 14回目の批評）。スマホでも計算の1行は出す */
 .mp-pt-unit { display: block; font-size: 14px; font-weight: 400; opacity: .85; }
 .mp-pt-ups { font-size: 14px; line-height: 1.35; color: #ffd060; word-break: keep-all; margin: 2px 0 4px; }
-html.is-compact .minipoker-overlay .mp-result-sub.mp-result-calc { display: block; }
+html.is-compact .minipoker-overlay .mp-result-sub { display: block; } /* 配当・賭け・差し引きは毎回同じ所に（2026-11-05 15回目の批評） */
 
 /* セリフ集：押すと声（2026-11-03）。押せると分かる三角、鳴っている間は金の縁 */
 .memory-voice[data-voice] { cursor: pointer; position: relative; padding-left: 30px; transition: background .2s, border-color .2s; }
@@ -20850,3 +20850,11 @@ html.is-compact .minipoker-overlay .mp-result-sub.mp-result-calc { display: bloc
 .home-stage .h15-dialogue.h15-said { animation: h15-said .5s ease-out; }
 @keyframes h15-said { from { filter: brightness(1.35); } to { filter: none; } }
 @media (prefers-reduced-motion: reduce) { .home-stage .h15-dialogue.h15-said { animation: none; } }
+
+/* ファイブポーカー：スマホのミミの吹き出しは操作の列にかからない右横へ。どの大きさでも押す邪魔をしない（2026-11-05 「もう一回」に重なっていた） */
+.minipoker-overlay .mp-bubble { pointer-events: none; }
+html.is-compact .minipoker-overlay .mp-bubble-player { bottom: auto; top: 50%; left: 100%; transform: translate(8px, -50%); animation: mpBubbleSideIn 0.3s ease forwards, mpBubbleSideOut 0.4s ease 2.3s forwards; }
+html.is-compact .minipoker-overlay .mp-bubble-player::after { top: 50%; left: auto; right: 100%; transform: translateY(-50%); border-top-color: transparent; border-right-color: #fffdf3; }
+@keyframes mpBubbleSideIn { from { opacity: 0; transform: translate(0, -50%); } to { opacity: 1; transform: translate(8px, -50%); } }
+@keyframes mpBubbleSideOut { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { html.is-compact .minipoker-overlay .mp-bubble-player { animation: mpBubbleSideOut 0.01s linear 2.3s forwards; opacity: 1; } }

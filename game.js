@@ -11836,17 +11836,18 @@ function showMiniPokerGame() {
       if (ctx.doubleLost) {
         cls = 'lose'; head = 'ダブルアップ失敗'; amount = `獲得分は没収（${signedCoins(net)}コイン）`;
       } else if (r === 'win') {
-        head = '勝利！'; amount = `${signedCoins(net)}コイン`; sub = ctx.payCalc ? `配当 ${ctx.payCalc}（賭け ${stake}）` : `配当 ${ctx.reward}コイン（賭け ${stake}コイン）`;
+        head = '勝利！'; amount = `${signedCoins(net)}コイン`; sub = ctx.payCalc ? `配当 ${ctx.payCalc}（賭け ${stake}）` : `配当 ${ctx.reward}（賭け ${stake}）`;
       } else if (r === 'push') {
-        cls = 'tie'; head = '引き分け（返金）'; amount = `賭けた ${stake}コインが戻った（±0）`; sub = 'J以上のペアは ×1＝賭けた分が戻るだけ';
+        // 勝負には勝っている。勝ち負けと精算を分けて見せる（2026-11-05 15回目の批評：Jのペアで5のペアに勝って「引き分け」と出ていた）
+        cls = 'tie'; head = '勝ち（差し引き±0）'; amount = '±0コイン'; sub = `配当 ${ctx.reward}（賭け ${stake}）`;
       } else if (r === 'tie') {
         head = '引き分け'; amount = `賭けた ${stake}コインを返金（±0）`;
       } else if (r === 'nopay') {
-        cls = 'lose'; head = '勝ったけど配当なし'; amount = `${signedCoins(net)}コイン`; sub = '配当は J以上のペアから';
+        cls = 'lose'; head = '勝ったけど配当なし'; amount = `${signedCoins(net)}コイン`; sub = `配当 0（賭け ${stake}）`;
       } else if (r === 'surrender') {
         cls = 'lose'; head = 'サレンダー'; amount = `半額 ${ctx.reward}コインが戻った（${signedCoins(net)}コイン）`;
       } else {
-        head = `${ctx.opp.name} の勝ち`; amount = `${signedCoins(net)}コイン`;
+        head = `${ctx.opp.name} の勝ち`; amount = `${signedCoins(net)}コイン`; sub = `配当 0（賭け ${stake}）`;
       }
       // フォーカード以上のボーナス抽選が控えている間は、次へ進むボタンを出さない
       if (ctx.garaponPending) {
@@ -12575,7 +12576,7 @@ function showMiniPokerGame() {
       // 結果に「配当表の額 × 上乗せ ＝ 配当」を出すための内訳（2026-11-02 14回目の批評：初戦・特別卓の上乗せが見えず、額の理由を追えなかった）
       //   左端は配当表に出ている額（ラッキー役の×2は表に入っている）
       const ups = [[dailyMult, '初戦'], [bossMult, '特別卓'], [bonusMult, '連勝']].filter(([m]) => m > 1);
-      ctx.payCalc = ups.length ? `表の${ctx.bet * mult * luckyMult}${ups.map(([m, n]) => ` ×${n}${m}`).join('')} ＝ ${payout}` : '';
+      ctx.payCalc = ups.length ? `${ctx.bet * mult * luckyMult}${ups.map(([m, n]) => `×${n}${m}`).join('')}＝${payout}` : '';   // スマホの結果の札に1行で収める
     } else if (showdown === 'tie') {
       // 返金は実際に支払った額（ボス夜は×3を払っているので×3返す）
       payout = stake;
@@ -12649,13 +12650,14 @@ function showMiniPokerGame() {
     // セーブ蓄積（実際に動いた額＝特別卓は×3で記録する）
     save.minipoker.totalGames = (save.minipoker.totalGames || 0) + 1;
     save.minipoker.totalEarned = (save.minipoker.totalEarned || 0) + net;
-    if (result === 'win') save.minipoker.totalWins = (save.minipoker.totalWins || 0) + 1;
+    // 勝った回数は勝負の勝ち負けで数える（配当の有無によらない）
+    if (showdown === 'win') save.minipoker.totalWins = (save.minipoker.totalWins || 0) + 1;
     if (ctx.streak > (save.minipoker.bestStreak || 0)) save.minipoker.bestStreak = ctx.streak;
     if (pe.rank === 9) save.minipoker.royalCount = (save.minipoker.royalCount || 0) + 1;
     if (pe.rank === 8) save.minipoker.stfCount = (save.minipoker.stfCount || 0) + 1;
     // セッション記録
     ctx.sessionPlays += 1;
-    if (result === 'win') ctx.sessionWins += 1;
+    if (showdown === 'win') ctx.sessionWins += 1;
     ctx.sessionEarned += net;
     ctx.handsAchieved[pe.rank] = (ctx.handsAchieved[pe.rank] || 0) + 1;
     // 履歴に追記（ダブルアップ・ボーナスで額が変わったら curHist を書き換える）
@@ -13233,6 +13235,11 @@ function showMemoryViewer(memoryId) {
   document.getElementById('stage').appendChild(overlay);
   overlay.querySelector('.memory-viewer-close').addEventListener('click', () => overlay.remove());
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  // どの閉じ方でも（×・外側・画面の移動）、セリフ集で鳴らした声を止める（2026-11-05 15回目の批評：閉じてもリコが話し続けた）
+  if (overlay.querySelector('.memory-voice[data-voice]') && overlay.parentNode) {
+    const stopWatch = new MutationObserver(() => { if (overlay.isConnected) return; stopWatch.disconnect(); if (window.stopVoice) stopVoice(); });
+    stopWatch.observe(overlay.parentNode, { childList: true });
+  }
 }
 
 // コレクションのリコ先輩の欄：研修と講義を分けて数える（2026-11-01 9回目の批評：3ハンドの研修だけで講義まで「修了」に見えた）
@@ -17331,6 +17338,8 @@ function resolvePsych(qid, choice, btn) {
     st.className = 'lecture-stamp ' + (isCorrect ? 'stamp-correct' : 'stamp-wrong');
     document.body.appendChild(st);
     setTimeout(() => { st.remove(); }, 1400);
+    // 講義：正解・不正解の判子が出た瞬間にリコ先輩の短い声（2本ずつ交互。2026-11-05 ユーザー承認の文言）
+    if (window.playVoice) { state.__lectureVoiceN = (state.__lectureVoiceN || 0) + 1; playVoice('rico', (isCorrect ? 'lecture_ok_' : 'lecture_ng_') + (state.__lectureVoiceN % 2 + 1), { prio: 1, noRepeat: false, maxLateMs: 800 }); }
   } else {
     // バトル中の心理バトル：判定を即出しせず「カタ…カタ…」と溜めてから発表する
     // （ボール揺れの文法。読み切りが決まる瞬間を作る）
@@ -17366,8 +17375,6 @@ function resolvePsych(qid, choice, btn) {
         if (el2) el2.classList.remove('mimi-down');
         if (state.screen === 'battle' && !state.psychPending) setMimiExpression('default');
       }, 2600);
-      // 講義：正解・不正解の判定が出た瞬間にリコ先輩の短い声（2本ずつ交互。2026-11-05 ユーザー承認の文言）
-      if (q.type === 'lesson' && window.playVoice) { state.__lectureVoiceN = (state.__lectureVoiceN || 0) + 1; playVoice('rico', (isCorrect ? 'lecture_ok_' : 'lecture_ng_') + (state.__lectureVoiceN % 2 + 1), { prio: 1, noRepeat: false, maxLateMs: 800 }); }
       if (navigator.vibrate) navigator.vibrate(isCorrect ? [40, 30, 60] : 120);
       if (!isCorrect && state.psychRoot) {
         state.psychRoot.classList.add('psych-shake');

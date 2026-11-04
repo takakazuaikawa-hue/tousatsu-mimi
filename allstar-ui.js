@@ -425,9 +425,12 @@
     faceTimers[s] = setTimeout(() => { if (g === G && live() && T.players[s].place == null) setFace(s, s === 0 ? 'calm' : null); }, ms / speed);
   }
   // 字幕の帯（相手の台詞）。ms 後に消える。await すると読み終わるまで待つ
-  let subTimer = 0;
-  function say(k, text, ms = 1800) {
+  let subTimer = 0, subHoldUntil = 0;
+  // hold：相手同士の掛け合い。声が終わるまで字幕を残し、早送りでも縮めず、その間は動作の台詞で上書きしない（2026-11-05 15回目の批評）
+  function say(k, text, ms = 1800, hold = false) {
     if (!live()) return Promise.resolve();
+    const t0 = performance.now();
+    if (!hold && t0 < subHoldUntil) return wait(ms);
     // 声：その相手の録音がある文言だけ鳴る（動作の台詞は掛け声と同じ文言なので、ここで鳴る）。読めていなければ鳴らさない
     if (window.playVoiceForText) playVoiceForText(k, text, { prio: 0, noRepeat: false, queue: true, maxLateMs: 0 });
     ui['sub-name'].textContent = NAMES[k] || '';
@@ -436,8 +439,9 @@
     ui.sub.dataset.k = k;
     clearTimeout(subTimer);
     const g = G;
-    subTimer = setTimeout(() => { if (g === G && live()) ui.sub.dataset.on = '0'; }, Math.max(600, ms / speed));
-    return wait(ms);
+    if (hold) subHoldUntil = t0 + ms;
+    subTimer = setTimeout(() => { if (g === G && live()) ui.sub.dataset.on = '0'; }, hold ? ms : Math.max(600, ms / speed));
+    return hold ? new Promise(res => setTimeout(res, ms)) : wait(ms);
   }
   function aliveId(k) { const p = T.players.find(x => x.id === k); return p && p.place == null; }
 
@@ -616,7 +620,8 @@
         const b = pickOne(cand);
         // 声がある時は声の長さまで字幕を残す。1人目の声が長いと2人目の声が待ちで捨てられていた（2026-11-03 声の第3弾）
         const vms = (k, t) => { const id = window.MimiVoice && MimiVoice.idForText(k, t); return Math.max(1700, ((id && MimiVoice.durMs(id)) || 0) + 250); };
-        say(b[0][0], b[0][1], vms(b[0][0], b[0][1])).then(() => live() && say(b[1][0], b[1][1], vms(b[1][0], b[1][1]))).catch(() => { });
+        const g0 = G;
+        say(b[0][0], b[0][1], vms(b[0][0], b[0][1]), true).then(() => g0 === G && live() && say(b[1][0], b[1][1], vms(b[1][0], b[1][1]), true)).catch(() => { });
       }
     }
   }
