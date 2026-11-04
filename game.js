@@ -17366,6 +17366,8 @@ function resolvePsych(qid, choice, btn) {
         if (el2) el2.classList.remove('mimi-down');
         if (state.screen === 'battle' && !state.psychPending) setMimiExpression('default');
       }, 2600);
+      // 講義：正解・不正解の判定が出た瞬間にリコ先輩の短い声（2本ずつ交互。2026-11-05 ユーザー承認の文言）
+      if (q.type === 'lesson' && window.playVoice) { state.__lectureVoiceN = (state.__lectureVoiceN || 0) + 1; playVoice('rico', (isCorrect ? 'lecture_ok_' : 'lecture_ng_') + (state.__lectureVoiceN % 2 + 1), { prio: 1, noRepeat: false, maxLateMs: 800 }); }
       if (navigator.vibrate) navigator.vibrate(isCorrect ? [40, 30, 60] : 120);
       if (!isCorrect && state.psychRoot) {
         state.psychRoot.classList.add('psych-shake');
@@ -19006,6 +19008,7 @@ function startLecture(opponentId, review, rest) {
   state.opponentName = opp.name;
   state.opponentImgKey = opp.imgKey;
   state.lectureMode = true;
+  if (window.MimiVoice && MimiVoice.enabled()) MimiVoice.preloadScene('lecture', /^lecture_/);   // 正解・不正解の声4本
   // 中断進捗があれば引き継ぎ（コース種別も復元）
   const saved = review ? null : (save.lectureProgress || null);
   state.lectureReview = review || null;
