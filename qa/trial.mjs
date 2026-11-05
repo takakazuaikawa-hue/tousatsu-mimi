@@ -50,7 +50,7 @@ try {
   for (const a of ['open-shop', 'panyu-free', 'allstar-open', 'equip-change']) {
     await act(a); await sleep(500);
     log['gate_' + a] = await page.eval(`!!document.querySelector('.trial-end-overlay') && !document.querySelector('.shop-screen, .panyu-clicker-overlay')`);
-    if (a === 'open-shop') await shot('3_gate_feature');
+    if (a === 'open-shop') { await shot('3_gate_feature'); log.gateHasShare = await page.eval(`!!document.querySelector('.trial-end-share')`); }
     await closeOv();
   }
   await act('battle-start', { opponent: 'selina' }); await sleep(500);
@@ -71,8 +71,13 @@ try {
   log.won = await page.eval(`(() => { state.opponentId = 'polka'; return { btn: wonResultButtonsHtml('polka').includes('trial-end'), goal: (save.clearedStages.push('polka'), nextGoalText()) }; })()`);
   await page.eval(`(() => { showTrialEnd(false); return 1; })()`); await sleep(600);
   await shot('7_trial_end');
+  // 共有：X の投稿画面への URL（共有先が未設定なら押せない）・画像の保存・案内の文
+  log.share = await page.eval(`(async () => { const x = document.querySelector('.trial-end-x'), img = document.querySelector('.trial-end-img'); const r = img ? await fetch(img.getAttribute('href')) : null;
+    return { shareUrl: SHARE_URL, x: x ? (x.disabled ? '押せない（用意中）' : decodeURIComponent(x.getAttribute('href'))) : 'なし', img: img ? img.getAttribute('href') + ' ' + (r && r.status) + ' ' + (r && r.headers.get('content-type')) + ' download=' + img.getAttribute('download') : 'なし', note: (document.querySelector('.trial-end-share-note') || {}).textContent }; })()`);
+  log.titleShare = await page.eval(`(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); shareGame(); const t = [...document.querySelectorAll('.toast, [class*="toast"]')].map(e => e.textContent).join(' '); return t || '（知らせなし）'; })()`);
   log.endRect = await page.eval(`(() => { const r = document.querySelector('.trial-end-card').getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.right), Math.round(r.bottom)]; })()`);
-  await closeOv();
+  await page.eval(`(() => { document.querySelector('.trial-end-close').click(); return 1; })()`); await sleep(1500);
+  log.backToLobby = await page.eval(`state.screen + ' ／ 窓 ' + !!document.querySelector('.trial-end-overlay')`);
 
   // 5) コレクション（見ていない一枚絵が素材を取りに行かないか）
   await page.eval(`(() => { goLobby(); return 1; })()`); await sleep(1500);
