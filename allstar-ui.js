@@ -1280,6 +1280,8 @@
   }
   async function resumeIntro() {
     host.dataset.op = '';
+    // 読み込み直して再開した時も、開幕と同じく掛け声と掛け合いの声を先に読む（2026-11-05 16回目の批評：再開後の掛け合いが無音だった）
+    if (window.MimiVoice && MimiVoice.enabled()) { MimiVoice.preloadBattle(['rico', 'polka', 'selina', 'grano', 'velvet']); MimiVoice.preloadScene('banter', /^allstar_banter_/); }
     const b = layerEl('as-banner', `<span class="as-banner-k">再開</span><b>HAND ${T.handNo + 1}</b><span class="as-banner-lv">このハンドの頭から</span>`);
     await wait(1300);
     b.classList.add('out');

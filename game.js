@@ -5300,7 +5300,8 @@ function showSettingsModal() {
   }));
   overlay.querySelectorAll('[data-volume]').forEach(input => input.addEventListener('input', () => {
     if (input.dataset.volume === 'bgm') { save.bgmVolume = +input.value; applyBgmVolume(); }
-    else if (input.dataset.volume === 'voice') save.voiceVolume = +input.value;
+    // 声を0にしたら、鳴っている声・読み込み待ちの声もすぐ止める（対戦中の音量の窓と同じ。2026-11-05 16回目の批評）
+    else if (input.dataset.volume === 'voice') { save.voiceVolume = +input.value; if (save.voiceVolume === 0 && window.stopVoice) stopVoice(); }
     else save.sfxVolume = +input.value;
     saveProgress();
   }));
@@ -11834,7 +11835,7 @@ function showMiniPokerGame() {
       const net = ctx.reward - stake;
       let cls = r, head, amount, sub = '';
       if (ctx.doubleLost) {
-        cls = 'lose'; head = 'ダブルアップ失敗'; amount = `獲得分は没収（${signedCoins(net)}コイン）`;
+        cls = 'lose'; head = 'ダブルアップ失敗'; amount = `獲得分は没収（${signedCoins(net)}コイン）`; sub = `配当 0（賭け ${stake}）`;
       } else if (r === 'win') {
         head = '勝利！'; amount = `${signedCoins(net)}コイン`; sub = ctx.payCalc ? `配当 ${ctx.payCalc}（賭け ${stake}）` : `配当 ${ctx.reward}（賭け ${stake}）`;
       } else if (r === 'push') {
