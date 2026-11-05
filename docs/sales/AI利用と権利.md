@@ -68,6 +68,8 @@
 - [ ] 4書体とも SIL Open Font License 1.1。**書体そのものを単体で販売しなければ**、ゲームに使うのは可。OFL の全文と、各書体の著作権表示の同梱が望ましい（書体ファイルを配布物に入れる場合は特に必須）。
 - [ ] 現在は index.html が Google Fonts から**読み込んでいる**（書体ファイルは同梱していない）。ダウンロード版・オフライン版で書体が出ない可能性がある（要確認）。同梱する場合は、OFL の条件（名前の扱い・全文）に従う。
 - [ ] 各書体の著作権者名の正式な表記を、Google Fonts の各書体のページで確認する。
+- [x] 体験版（HP 用・`--local-fonts`）は書体ファイルを同梱するので、各書体の元のライセンス本文（著作権表示を含む）を `fonts/OFL-*.txt` として同梱した（2026-11-05）。元は google/fonts の `ofl/<書体>/OFL.txt` を `tools/font-licenses/` に保存したもの。著作権表示：Noto Sans JP「Copyright 2014-2021 Adobe」、Shippori Mincho B1「Copyright 2021 The Shippori Mincho Project Authors」、Barlow Condensed「Copyright 2017 The Barlow Project Authors」、Bebas Neue「Copyright © 2010 by Dharma Type」。
+- [ ] 製品版（GitHub Pages）は今も Google Fonts から読み込んでいて、書体ファイルを配っていない。ダウンロード販売の形にする時は、体験版と同じく本文を同梱する。
 
 同梱の文の案：
 > 書体：Shippori Mincho B1・Noto Sans JP・Bebas Neue・Barlow Condensed（SIL Open Font License 1.1）。【要確認：各書体の著作権表示を足す】
@@ -131,3 +133,12 @@ Irodori-TTS / Semantic-DACVAE © Aratako, SilentCipher © Sony Research — MIT 
 - 生成日・プラン（Suno・Higgsfield・ChatGPT）の一覧
 - 声の手本の出所
 - 他者の素材が無いことの確認の記録
+
+## 7. 体験版の共有画像（2026-11-05 追加）
+- ファイル：`assets/ui/share_trial.jpg`（1080×1080・JPEG）。作り方：`node tools/make-share-image.mjs`（台紙 `tools/share-image.html` を検査ブラウザで撮る）
+- 使った素材：
+  - `assets/backgrounds/title_bg.webp`（タイトル画面の背景。ChatGPT で生成した絵。タイトル画面で誰にでも見える）
+  - `assets/ui/title_logo_hd.webp`（題字。ChatGPT で生成した絵。タイトル画面とエンディングで使用）
+  - 「体験版」の文字：Shippori Mincho B1（SIL OFL 1.1。画像の中の文字として使うのはライセンス上問題ない）
+- 入れていない物：未公開の一枚絵・物語の核心・プレイヤー名・セーブの情報・成績
+- 既知の不足（この画像についても同じ）：ChatGPT で生成した絵の、生成した時のプランと規約の記録（1章・2章の未確認の項目）が、まだ一覧になっていない。

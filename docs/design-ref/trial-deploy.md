@@ -1,12 +1,12 @@
 # 体験版の配置メモ（ポメラシバスタジオのHP用）
 
 - 置き場所：`/demos/texas-holdem/`（フォルダーの中身をそのまま置く。入口は `index.html`）
-- 作り方：`node tools/build-trial.mjs dist/demos-texas-holdem --store ../../games/texas-holdem/ --local-fonts`
+- 作り方：`node tools/build-trial.mjs dist/hp/demos/texas-holdem --store ../../games/texas-holdem/ --local-fonts`（共有先の公開 URL が決まったら `--share <URL>` を足す。共有機能の改修は trial-share-delivery.md）
 - 検査：`QA_TRIAL_SITE=<根> QA_TRIAL_PATH=demos/texas-holdem node qa/trial.mjs 844x390`
 
 ## 中身
 - 静的ファイルだけ（HTML・CSS・JavaScript・画像・音楽・字体）。サーバー側の処理・データベース・ビルドは不要
-- パスはすべて相対。どのサブフォルダーに置いても動く。外部への通信なし（字体も同梱、SIL OFL：`fonts/LICENSE.txt`）
+- パスはすべて相対。どのサブフォルダーに置いても動く。外部への通信なし（字体も同梱、SIL OFL：`fonts/LICENSE.txt` と字体ごとの `fonts/OFL-*.txt`）。ただし終了画面の「Xで感想をシェア」は押した時だけ x.com の投稿画面を開く
 - 「製品版のページへ」は `../../games/texas-holdem/`（作品紹介ページ）へ同じタブで移る。置き場所を変える時は `--store` を変えて書き出し直す
 - セーブは遊ぶ人の端末のブラウザの中（localStorage、`tousatsu_mimi_trial_save_v1`）。サーバーには何も送らない
 

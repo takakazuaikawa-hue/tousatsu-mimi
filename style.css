@@ -20869,3 +20869,5 @@ html.is-compact .minipoker-overlay .mp-bubble-player::after { top: 50%; left: au
 html.is-compact .trial-end-share { margin-top: 10px; padding-top: 8px; }
 .trial-end-share-btns .btn { background: rgba(0,0,0,.25); border: 1px solid #c8a24a; color: #f3e2b0; box-shadow: none; }
 .trial-end-share-btns .btn:not([disabled]):hover { background: rgba(200,162,74,.16); }
+html.is-compact .trial-end-share { margin-top: 8px; padding-top: 6px; }
+html.is-compact .trial-end-share-note { margin-top: 4px; line-height: 1.4; }
