@@ -1,5 +1,8 @@
 // 体験版を書き出す（製品版と同じソースから。直しは本体に入れれば両方に入る）。
-// 使い方: node tools/build-trial.mjs [出力フォルダ（既定 dist/trial）] [--store <製品版のページのURL>] [--local-fonts]
+// 使い方: node tools/build-trial.mjs [出力フォルダ（既定 dist/trial）] [--store <作品紹介ページへの移動先>] [--share <共有先の公開URL>] [--local-fonts]
+//   --store：終わりの窓の「製品版のページへ」の移動先（HP の中なら相対でよい）
+//   --share：X とタイトルの共有に載せる、一般公開の作品紹介ページの URL（https のみ）。省くと「共有先を用意中」と出す。
+//            ローカル・非公開のプレビュー・旧個人の URL は受け付けない（間違って混ざらないように）
 //   --local-fonts：Google Fonts の字体を fonts/ に落として同梱し、外部へ取りに行かない（よそのHPに置く時。字体は SIL OFL）
 // 体験版の中身：
 //  ・index.html に window.MIMI_TRIAL（と販売ページ MIMI_STORE_URL）を書き込む → game.js の IS_TRIAL が立つ
@@ -13,13 +16,16 @@ import { execFileSync } from 'node:child_process';
 
 const repo = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const args = process.argv.slice(2);
-let out = 'dist/trial', store = '', localFonts = false;
+let out = 'dist/trial', store = '', share = '', localFonts = false;
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--store') store = args[++i] || '';
+  else if (args[i] === '--share') share = args[++i] || '';
   else if (args[i] === '--local-fonts') localFonts = true;
   else out = args[i];
 }
 out = path.resolve(repo, out);
+if (share && (!/^https:\/\//.test(share) || /localhost|127\.0\.0\.1|\.local\b|preview|chatgpt\.site|takakazuaikawa|github\.io/i.test(share)))
+  throw new Error('--share は一般公開の作品紹介ページの https の URL にしてください（ローカル・非公開のプレビュー・旧個人の URL は不可）: ' + share);
 if (!out.startsWith(repo) || out === repo) throw new Error('出力フォルダはリポジトリの中のサブフォルダにしてください: ' + out);
 
 // 本編の配信（.github/workflows/deploy.yml）と同じ顔ぶれ
@@ -62,7 +68,11 @@ for (const f of want) {
 // index.html：体験版の旗（game.js より前に読ませる）と題名
 const idxPath = path.join(out, 'index.html');
 let idx = fs.readFileSync(idxPath, 'utf8');
-const flag = `<script>window.MIMI_TRIAL = true; window.MIMI_STORE_URL = ${JSON.stringify(store)};</script>\n`;
+const flag = `<script>window.MIMI_TRIAL = true; window.MIMI_STORE_URL = ${JSON.stringify(store)}; window.MIMI_SHARE_URL = ${JSON.stringify(share)};</script>\n`;
+// 製品版の共有先（index.html の window.MIMI_SHARE_URL の行）は体験版に持ち込まない
+const shareLine = /<script>window\.MIMI_SHARE_URL = [^<]*<\/script>(<!--[^>]*-->)?\r?\n?/;
+if (!shareLine.test(idx)) throw new Error('index.html に製品版の共有先の行が見つからない');
+idx = idx.replace(shareLine, '');
 if (!idx.includes('</head>')) throw new Error('index.html に </head> がない');
 idx = idx.replace('</head>', flag + '</head>');
 idx = idx.replace(/<title>([^<]*)<\/title>/, (m, t) => `<title>${t}（体験版）</title>`);
@@ -85,7 +95,14 @@ if (localFonts) {
   }
   css = css.replace(GS, (x, u) => 'url(' + name(u) + ')');
   fs.writeFileSync(path.join(fdir, 'fonts.css'), css);
-  fs.writeFileSync(path.join(fdir, 'LICENSE.txt'), 'この中の字体（Noto Sans JP / Shippori Mincho B1 / Barlow Condensed / Bebas Neue）は Google Fonts から取得したもので、SIL Open Font License 1.1 で配布されています。\nhttps://openfontlicense.org/\n');
+  // ライセンスは字体ごとの元の本文（著作権表示を含む。google/fonts の OFL.txt を tools/font-licenses/ に保存したもの）をそのまま同梱する
+  const LIC = { 'Noto Sans JP': 'notosansjp', 'Shippori Mincho B1': 'shipporiminchob1', 'Barlow Condensed': 'barlowcondensed', 'Bebas Neue': 'bebasneue' };
+  for (const [fam, key] of Object.entries(LIC)) {
+    if (!css.includes(`font-family: '${fam}'`)) throw new Error('字体の CSS に ' + fam + ' が無い（ライセンスの表と食い違い）');
+    fs.copyFileSync(path.join(repo, 'tools/font-licenses', key + '.OFL.txt'), path.join(fdir, `OFL-${fam.replace(/ /g, '')}.txt`));
+  }
+  fs.writeFileSync(path.join(fdir, 'LICENSE.txt'), 'この中の字体は Google Fonts から取得したもので、どれも SIL Open Font License 1.1 で配布されています。\n' +
+    '字体ごとの著作権表示とライセンス本文は、同じフォルダーの OFL-*.txt にあります。\n\n' + Object.keys(LIC).map(fam => `- ${fam}：OFL-${fam.replace(/ /g, '')}.txt`).join('\n') + '\n');
   idx = idx.replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\r?\n?/, '')
     .replace(/href="https:\/\/fonts\.googleapis\.com\/css2\?[^"]+"/g, 'href="fonts/fonts.css"');
   if (/fonts\.googleapis\.com/.test(idx)) throw new Error('外部の字体の読み込みが残っている');
@@ -120,4 +137,4 @@ const missing = [...idx.matchAll(/(?:src|href)="([^"]+)"/g)].map(m => m[1])
   .filter(u => !/^(https?:|\/\/|data:|mailto:|#|\$)/.test(u)).map(u => u.replace(/[?#].*/, ''))
   .filter(u => u && !fs.existsSync(path.join(out, u)));
 if (missing.length) { console.error('missing:', [...new Set(missing)].join(' ')); process.exit(1); }
-console.log(`体験版: ${want.size} files → ${path.relative(repo, out)}（素材 ${skipped} 件を除外）${store ? '　販売ページ ' + store : '　販売ページ未設定（近日発売と表示）'}`);
+console.log(`体験版: ${want.size} files → ${path.relative(repo, out)}（素材 ${skipped} 件を除外）${store ? '　作品紹介へ ' + store : '　作品紹介へ 未設定（製品版は準備中と表示）'}${share ? '　共有先 ' + share : '　共有先 未設定（用意中と表示）'}`);

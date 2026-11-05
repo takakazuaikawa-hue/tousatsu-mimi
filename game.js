@@ -9,10 +9,16 @@
 // SAVE / LOAD（Phase 2: v4 B6）
 //=============================================================
 // 体験版（tools/build-trial.mjs が index.html に window.MIMI_TRIAL を書き込む）：声なし・ポルカに勝つまで。
-// セーブは製品版と混ざらないように別の鍵に置く。販売ページは window.MIMI_STORE_URL（空なら「近日発売」と出す）
+// セーブは製品版と混ざらないように別の鍵に置く。作品紹介ページへの移動は window.MIMI_STORE_URL（空なら「製品版は準備中」と出す）
 const IS_TRIAL = !!window.MIMI_TRIAL;
 const TRIAL_STORE_URL = (IS_TRIAL && typeof window.MIMI_STORE_URL === 'string') ? window.MIMI_STORE_URL : '';
 const TRIAL_LAST_STAGE = 'polka';
+// 共有先＝一般公開する作品紹介ページの URL。ここ1か所で管理し、タイトルの共有と体験版の終わりの共有の両方に使う。
+// 製品版は index.html の window.MIMI_SHARE_URL、体験版は書き出しの --share で入れる。https で始まらない・空なら「共有先を用意中」。
+// 今開いているページの場所・非公開のプレビュー・ローカルの URL で代わりにしない（2026-11-05 体験版の改修の依頼）
+const SHARE_URL = (typeof window.MIMI_SHARE_URL === 'string' && /^https:\/\//.test(window.MIMI_SHARE_URL)) ? window.MIMI_SHARE_URL : '';
+const SHARE_TAG = 'ミミのテキサスホールデムポーカー';
+const SHARE_PENDING_TEXT = '共有先のページを用意中です。公開されたら共有できます';
 const SAVE_KEY = IS_TRIAL ? 'tousatsu_mimi_trial_save_v1' : 'tousatsu_mimi_save_v1';
 
 // === 絵文字のかわりに出す金の八角の銘板（assets/ui/home/oct.webp の枠。中は漢字1字。CSS は .gold-mark） ===
@@ -3188,8 +3194,9 @@ function updateDangerState() {
 
 /* ===== ゲームシェア ===== */
 function shareGame() {
-  // 体験版は作品紹介のページ（無ければ体験版そのもの）を共有する
-  const url = IS_TRIAL ? new URL(TRIAL_STORE_URL || './', location.href).href : 'https://takakazuaikawa-hue.github.io/tousatsu-mimi/';
+  // 共有するのは一般公開の作品紹介ページ（SHARE_URL）だけ。未設定なら共有せずに知らせる
+  const url = SHARE_URL;
+  if (!url) { toast(SHARE_PENDING_TEXT); return; }
   const title = 'ミミのテキサスホールデムポーカー';
   const text = '夜霧のカジノで、セリフの裏を読む心理戦ポーカーADV。ブラウザですぐ遊べる！';
   // Web Share API 優先（スマホ）
@@ -8415,12 +8422,24 @@ function showTrialEnd(feature) {
     : 'このあと、<wbr>セリナ・グラーノ・<wbr>ヴェルベットとの<wbr>勝負と、<wbr>ミミの物語の<wbr>結末が<wbr>待っています。<br>製品版では<wbr>キャラの声も<wbr>付きます。';
   const store = TRIAL_STORE_URL
     ? `<a class="btn btn-primary trial-end-store" href="${TRIAL_STORE_URL}"${/^https?:/.test(TRIAL_STORE_URL) ? ' target="_blank" rel="noopener"' : ''}>製品版のページへ</a>`
-    : '<div class="trial-end-soon">製品版は<wbr>近日発売</div>';
+    : '<div class="trial-end-soon">製品版は<wbr>準備中です</div>';
+  // 共有はポルカに勝った締めの窓だけ（製品版の機能の案内には出さない）。押さずにロビーへ戻れる。
+  // X は投稿の画面を開くだけ（本人が書き直して投稿する。投稿できたかは分からないので「投稿しました」とは出さない）。
+  // 画像は保存の画面へ。保存できない端末は「画像を開く」から長押しで保存（保存できたかは分からないので成功とは出さない）
+  const xText = `『ミミのテキサスホールデムポーカー』体験版を遊びました！\n${SHARE_URL}\n#${SHARE_TAG}`;
+  const IMG = 'assets/ui/share_trial.jpg';
+  const share = feature ? '' : `<div class="trial-end-share">
+      <div class="trial-end-share-btns">${SHARE_URL
+        ? `<a class="btn btn-secondary trial-end-x" href="https://x.com/intent/post?text=${encodeURIComponent(xText)}" target="_blank" rel="noopener">Xで感想をシェア</a>`
+        : '<button type="button" class="btn btn-secondary trial-end-x" disabled>Xで感想をシェア</button>'}<a class="btn btn-secondary trial-end-img" href="${IMG}" download="mimi-poker-trial.jpg" target="_blank" rel="noopener">共有画像を保存</a></div>
+      <div class="trial-end-share-note">${SHARE_URL ? '' : '共有先のページを<wbr>用意中です。<wbr>'}保存した画像は、<wbr>投稿の画面で<wbr>添付できます。<wbr>保存できない時は<wbr><a href="${IMG}" target="_blank" rel="noopener">画像を開いて</a><wbr>長押しで保存。</div>
+    </div>`;
   ov.innerHTML = `<div class="trial-end-card" role="dialog" aria-modal="true" aria-label="体験版">
       <div class="trial-end-badge">体験版</div>
       <div class="trial-end-lead">${lead}</div>
       <div class="trial-end-body">${body}</div>
       <div class="trial-end-btns">${store}<button type="button" class="btn btn-secondary trial-end-close">${feature ? '閉じる' : 'ロビーへ'}</button></div>
+      ${share}
     </div>`;
   ov.querySelector('.trial-end-close').addEventListener('click', () => { ov.remove(); if (!feature) goLobby(); });
   ov.addEventListener('click', (ev) => { if (ev.target === ov) ov.remove(); });
