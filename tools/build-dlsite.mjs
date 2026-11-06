@@ -141,5 +141,6 @@ const badNames = walk(FINAL).map(x => path.relative(FINAL, x)).filter(x => /[^\x
 if (badNames.length) throw new Error('英数字でないファイル名: ' + badNames.slice(0, 5).join(' '));
 const ZIP = path.join(DL, 'Mimi_Texas_Holdem.zip');
 fs.rmSync(ZIP, { force: true });
-execFileSync('powershell', ['-NoProfile', '-Command', `Compress-Archive -Path '${FINAL}' -DestinationPath '${ZIP}' -Force`], { stdio: 'inherit' });
+// Windows の Compress-Archive（PowerShell 5.1）は区切りを \ で書き、Mac や Linux で解くとフォルダが分かれない。tar（bsdtar）で / の zip を作る
+execFileSync('C:/Windows/System32/tar.exe', ['-a', '-c', '-f', ZIP, '-C', DL, 'Mimi_Texas_Holdem'], { stdio: 'inherit' });
 console.log(`DLsite 版: ${walk(FINAL).length} files・約${totalMB}MB → ${path.relative(repo, FINAL)}　zip ${(fs.statSync(ZIP).size / 1048576).toFixed(0)}MB`);
