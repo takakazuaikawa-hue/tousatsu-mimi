@@ -16727,7 +16727,7 @@ function applyPanyuBg(overlay) {
 // ぱにゅぱにゅ30タップミニゲーム
 // ぱにゅぱにゅの衣装（網目＋ばねの描画は docs/design-ref/panyu-mesh.html を埋め込んで使う）
 // 網目のページを直したら PANYU_MESH_V を上げる（ブラウザに残った古いページを使わせない）
-const PANYU_MESH_V = '20261107';
+const PANYU_MESH_V = '20261107b';
 const PANYU_OUTFITS = [
   { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'gothic', name: 'ゴスロリ' }, { id: 'jirai', name: '地雷系' }, { id: 'vintage', name: '古着' }, { id: 'nurse', name: 'ナース' }, { id: 'santa', name: 'サンタ' },
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
@@ -16753,6 +16753,9 @@ function panyuPrefetch() {
 }
 
 function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
+  // 遊び方の名前（札に出す）。本体の playMode と同じ値になるよう、ここで決めて渡す
+  cfg.__mode = cfg.lobby ? (window.__panyuForceMode || pick(['mash', 'rhythm', 'stroke'])) : 'mash';   // __panyuForceMode は検査用
+  const PLAY_MODES_LABEL = { mash: '連打　<em>たくさん触るほど<wbr>進む</em>', rhythm: 'リズム　<em>ハートが光った時に<wbr>触ると2回分</em><i class="pv2-beat">♥</i>', stroke: 'なでる　<em>なでると2回分</em>' }[cfg.__mode];
   let count = totalTaps;
   let tapped = 0;
   let lastTapTime = 0;
@@ -16801,6 +16804,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     <footer class="pv2-meter">
       <div class="pv2-meter-row"><span class="pv2-meter-k">ぱにゅ</span><b class="pv2-meter-n">0</b><span class="pv2-meter-of">/ ${totalTaps}</span></div>
       <div class="pv2-bar"><i class="pv2-bar-fill"></i></div>
+      ${cfg.lobby ? `<div class="pv2-mode"><span>今回の遊び方</span><b>${PLAY_MODES_LABEL}</b></div>` : ''}
       <div class="pv2-clasp" hidden><span>留め</span><b class="pv2-clasp-n">0</b><i>/ <span class="pv2-clasp-of">3</span></i></div>
       ${cfg.lobby ? '<div class="pv2-heat" aria-live="polite"><span>勢い</span><i><b class="pv2-heat-fill"></b></i><em class="pv2-heat-word">ふつう</em></div>' : ''}
       <div class="pv2-hint">タップ・長押し・引っぱり、どれでも。速いほど当たりやすい${cfg.lobby ? `<span class="pv2-pity">SR 以上まで あと ${PANYU_PITY - ((save && save.panyuPity) || 0)} 回</span>` : ''}</div>
@@ -16828,7 +16832,10 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     else if (m.t === 'nogl') { meshFrame.remove(); meshFrame = null; overlay.classList.remove('is-mesh'); }
     else if (m.t === 'tap' || m.t === 'pop') {
       const fr = meshFrame.getBoundingClientRect();
-      doTick(blobs[m.side === 1 ? 1 : 0], { x: fr.left + (m.x || 0), y: fr.top + (m.y || 0), skipWobble: true });
+      const px = fr.left + (m.x || 0), py = fr.top + (m.y || 0), kind = m.kind || 'tap';
+      let n = 1;
+      if (m.t === 'tap') n = playCount(kind, px, py);
+      for (let k = 0; k < n; k++) doTick(blobs[m.side === 1 ? 1 : 0], { x: px, y: py, skipWobble: true });
       if (m.t === 'pop') {
         mpSfx('milestone'); for (let i = 0; i < 6; i++) spawnPanyuParticle(overlay);
         claspDone = Math.min(claspN, claspDone + 1); lastPopAt = performance.now(); updateClasp();
@@ -16838,6 +16845,38 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     }
   };
   window.addEventListener('message', onMeshMsg);
+  // ---- 遊び方（2026-11-07）：毎回どれか1つ。連打＝今まで／リズム＝ハートが光った時に触ると2回分／なでる＝なでると2回分 ----
+  const PLAY_MODES = { mash: { name: '連打', how: 'たくさん触るほど進む' }, rhythm: { name: 'リズム', how: 'ハートが光った時に触ると2回分' }, stroke: { name: 'なでる', how: 'なでると2回分' } };
+  const playMode = cfg.__mode;
+  const BEAT = 720; let beat0 = performance.now(), lastJiggle = 0;
+  const quick = [];
+  const jig = (k, gap = 1600) => { const t = performance.now(); if (t - lastJiggle < gap) return; lastJiggle = t; meshPost({ panyuJiggle: k }); };
+  const playCount = (kind, x, y) => {
+    const now = performance.now();
+    quick.push(now); while (quick.length && now - quick[0] > 900) quick.shift();
+    if (quick.length >= 5) jig('purupuru', 2200);                        // 速く連打した時は、ぷるぷる震える
+    if (kind === 'stroke') jig('yusa', 1800);                             // なでている時は、ゆさゆさ
+    if (playMode === 'stroke' && kind === 'stroke') return 2;
+    if (playMode === 'rhythm' && kind === 'tap') {
+      const ph = (now - beat0) % BEAT, off = Math.min(ph, BEAT - ph);
+      if (off < 150) {
+        const w = document.createElement('div'); w.className = 'pv2-word is-big is-beat'; w.textContent = 'ぴったり！';
+        const o = overlay.getBoundingClientRect(); w.style.left = (x - o.left) + 'px'; w.style.top = (y - o.top - 40) + 'px'; w.style.setProperty('--r', '0deg'); w.style.setProperty('--dx', '0px');
+        overlay.appendChild(w); setTimeout(() => w.remove(), 900);
+        jig('poyon', 900);
+        return 2;
+      }
+    }
+    return 1;
+  };
+  if (playMode === 'rhythm') {
+    const beatTimer = setInterval(() => {
+      if (!overlay.isConnected) { clearInterval(beatTimer); return; }
+      const b = overlay.querySelector('.pv2-beat'); if (!b) return;
+      b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 300);
+    }, BEAT);
+    beat0 = performance.now();
+  }
   // ---- 段1（2026-11-07）：留めに気づかせる・表情の段 ----
   // 留めは、その位置を押した時だけ外れる。遊びの中に案内が無く、気づかれていなかった。外れていない留めを6秒ごとに金に光らせ、初めての時はミミが一言
   let claspN = 0, claspDone = 0, lastPopAt = 0;
@@ -17060,7 +17099,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     count--;
     tapped++;
     tapTimes.push(performance.now());
-    if (tapped === 10 || tapped === 20) meshPost({ panyuStage: tapped / 10 });
+    if (tapped === 10 || tapped === 20) { meshPost({ panyuStage: tapped / 10 }); meshPost({ panyuJiggle: 'poyon' }); }
     if (feverOn) feverPts++;
     if (tapped === feverAt) startFever();
     countEls.forEach(el => el.textContent = Math.max(0, count));

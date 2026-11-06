@@ -10,7 +10,7 @@ const shot = async (n) => { try { await page.screenshot(path.join(OUT, `${size}_
 const st = () => page.eval(`JSON.stringify({ n: (document.querySelector('.pv2-meter-n')||{}).textContent, mesh: !!document.querySelector('.panyu-clicker-overlay.is-mesh'), cls: (document.querySelector('.panyu-clicker-overlay')||{}).className })`).catch(() => '?');
 for (let i = 0; i < 60 && !(await page.eval('typeof goLobby === "function"').catch(() => false)); i++) await sleep(500);
 await sleep(1000);
-await page.eval(`(localStorage.setItem('mimi.panyuOutfit', '${outfit}'), goLobby(), 1)`);
+await page.eval(`(localStorage.setItem('mimi.panyuOutfit', '${outfit}'), window.__panyuForceMode = '${process.env.MODE || ''}' || undefined, goLobby(), 1)`);
 for (let i = 0; i < 40 && !(await page.eval(`!!document.querySelector('[data-action="panyu-free"]') && !document.querySelector('.loading-veil')`).catch(() => false)); i++) await sleep(800);
 await sleep(1500);
 await page.eval(`(document.querySelector('[data-action="panyu-free"]').click(), 1)`);

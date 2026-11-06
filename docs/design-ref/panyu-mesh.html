@@ -983,7 +983,15 @@
     // 本編から：表情の段（0〜3）・驚き・留めの光
     if (typeof d.panyuStage === 'number') { blushFloor = [0, 0.22, 0.45, 0.72][d.panyuStage] || 0; kick(); }
     if (d.panyuSurprise) { surpT = performance.now(); kick(); }
-    if (d.panyuHint) { hintT = performance.now(); kick(); } });
+    if (d.panyuHint) { hintT = performance.now(); kick(); }
+    if (d.panyuJiggle) jiggle(d.panyuJiggle); });
+  // 揺れ方（本編から）：ぷるぷる＝小さく速く震える／ぽよん＝大きく跳ねる／ゆさゆさ＝ゆっくり左右に。どれも揺れの上限の中で、速さを足すだけ
+  function jiggle(kind) {
+    const a = opt.amp / 1.95;
+    if (kind === 'poyon') { P.forEach((p, i) => { p.v[1] -= 760 * a; p.svy += 1.6 * a; }); kick(); return; }
+    if (kind === 'purupuru') { let n = 0; const iv = setInterval(() => { const s = n % 2 ? 1 : -1; P.forEach(p => { p.v[1] += s * 230 * a; p.svy += s * 0.5 * a; }); kick(); if (++n >= 10) clearInterval(iv); }, 55); return; }
+    if (kind === 'yusa') { let n = 0; const iv = setInterval(() => { const s = n % 2 ? 1 : -1; P.forEach(p => { p.v[0] += s * 520 * a; p.v[1] += 60 * a; }); kick(); if (++n >= 4) clearInterval(iv); }, 330); return; }
+  }
   const noteEl = document.querySelector('.note');
   stageEl.addEventListener('pointerdown', (e) => {
     noteEl.classList.add('off');   // 一番下のボタンに重ならないよう、触ったら操作の説明は消す
@@ -992,7 +1000,7 @@
     const bk = BTNS.findIndex((b, k) => !popped[k] && hitPart(b, ix, iy));
     if (bk >= 0) { popButton(bk); tell({ t: 'pop', k: bk, x: e.clientX, y: e.clientY }); return; }
     const i = hit(ix, iy); if (i < 0) return;
-    tell({ t: 'tap', side: i, x: e.clientX, y: e.clientY });
+    tell({ t: 'tap', kind: 'tap', side: i, x: e.clientX, y: e.clientY });
     try { stageEl.setPointerCapture(e.pointerId); } catch (_) {}
     addHeat();
     const p = P[i], c = CUPS[i], amp = opt.amp * (1 + HEAT_PUSH * heatNow()) * lvNow().push * FEEL.push;
@@ -1022,7 +1030,7 @@
     }
     // 長押し・引っぱりでも数を進める（2026-11-01 9回目の批評：「長押しでも」と案内しているのに、押した瞬間の1回しか数えなかった）
     const g0 = { i, x0: e.clientX, y0: e.clientY, t0: performance.now(), lx: e.clientX, ly: e.clientY, path: 0, x: e.clientX, y: e.clientY };
-    g0.hold = setInterval(() => { if (g0.moved) { g0.moved = false; return; } addHeat(); tell({ t: 'tap', side: i, x: g0.x, y: g0.y }); kick(); }, 420);
+    g0.hold = setInterval(() => { if (g0.moved) { g0.moved = false; return; } addHeat(); tell({ t: 'tap', kind: 'hold', side: i, x: g0.x, y: g0.y }); kick(); }, 420);
     ptrs.set(e.pointerId, g0);
     kick();
   });
@@ -1032,7 +1040,7 @@
     if (!P[g.i].grab && (Math.hypot(dx, dy) > 6 || performance.now() - g.t0 > 220)) P[g.i].grab = { dx: 0, dy: 0 };
     if (P[g.i].grab) { P[g.i].grab.dx = dx; P[g.i].grab.dy = dy; }
     g.x = e.clientX; g.y = e.clientY; g.path += Math.hypot(e.clientX - g.lx, e.clientY - g.ly); g.lx = e.clientX; g.ly = e.clientY;
-    if (g.path >= 90) { g.path = 0; g.moved = true; addHeat(); tell({ t: 'tap', side: g.i, x: g.x, y: g.y }); }
+    if (g.path >= 90) { g.path = 0; g.moved = true; addHeat(); tell({ t: 'tap', kind: 'stroke', side: g.i, x: g.x, y: g.y }); }
     kick();
   });
   const up = (e) => {

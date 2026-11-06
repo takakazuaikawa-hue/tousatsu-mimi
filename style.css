@@ -20948,3 +20948,13 @@ html.is-compact .trial-end-share-note { margin-top: 4px; line-height: 1.4; }
 @keyframes pv2HintIn { from { opacity: 0; transform: translateY(-6px); } }
 .pv2 .pv2-hintline { word-break: keep-all; overflow-wrap: anywhere; max-width: min(340px, 44vw); }
 .pv2 .pv2-hintline { width: fit-content; }
+
+/* ぱにゅぱにゅの遊び方の札（2026-11-07）。リズムの時はハートが拍に合わせて光る */
+.pv2 .pv2-mode { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 8px; margin-top: 4px; font-family: "Shippori Mincho B1", serif; font-size: var(--r-label, 15px); color: #e9cfa0; text-shadow: 0 1px 3px #000; }
+.pv2 .pv2-mode b { color: #ffe9a8; font-weight: 700; }
+.pv2 .pv2-mode em { font-style: normal; font-weight: 400; color: #fbf1dc; }
+.pv2 .pv2-beat { display: inline-block; margin-left: 8px; font-style: normal; color: #6a2a34; transform: scale(1); transition: transform .12s, color .12s, text-shadow .12s; }
+.pv2 .pv2-beat.on { color: #ff5a78; transform: scale(1.6); text-shadow: 0 0 10px rgba(255,120,150,.9); }
+.pv2 .pv2-word.is-beat { -webkit-text-stroke-color: #b8873a; color: #fff8e6; }
+.pv2 .pv2-mode em { word-break: keep-all; overflow-wrap: anywhere; }
+.pv2.is-mesh .pv2-meter { width: min(300px, 28vw); }
