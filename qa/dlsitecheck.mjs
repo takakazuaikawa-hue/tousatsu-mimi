@@ -12,7 +12,7 @@ const url = 'file:///' + path.join(ROOT, 'index.html').replace(/\\/g, '/');
 const log = { failed: [], online: [], errors: [], console: [] };
 const UD = fs.mkdtempSync(path.join(process.env.QA_TMP || path.join(REPO, 'qa', 'out'), 'electron-prof-'));
 const port = 9900 + Math.floor(Math.random() * 90);
-const proc = spawn(path.join(ROOT, 'MimiTexasHoldem.exe'), ['--remote-debugging-port=' + port, '--user-data-dir=' + UD], { stdio: 'ignore' });
+const proc = spawn(path.join(ROOT, 'MimiTexasHoldem.exe'), ['--remote-debugging-port=' + port, '--user-data-dir=' + UD, '--disable-features=CalculateNativeWinOcclusion', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding'], { stdio: 'ignore' });
 let target = null;
 for (let i = 0; i < 150 && !target; i++) { try { const l = await (await fetch('http://127.0.0.1:' + port + '/json/list')).json(); target = l.find(t => t.type === 'page' && t.url.startsWith('app://game/')); } catch {} if (!target) await sleep(200); }
 if (!target) { proc.kill(); throw new Error('アプリの窓が見つからない'); }

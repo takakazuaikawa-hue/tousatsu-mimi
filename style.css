@@ -20876,3 +20876,6 @@ html.is-compact .trial-end-share-note { margin-top: 4px; line-height: 1.4; }
 .trunc-tip { position: fixed; z-index: 99999; max-width: min(420px, calc(100vw - 16px)); padding: 8px 12px; pointer-events: none;
   font-size: var(--r-body); line-height: 1.5; color: #fbf1dc; background: rgba(20, 6, 10, .96); border: 1px solid #c8a24a; border-radius: 4px;
   box-shadow: 0 6px 18px rgba(0,0,0,.6); white-space: pre-line; word-break: keep-all; overflow-wrap: anywhere; }
+
+/* DLsite 版（アプリ）でタイトルの共有ボタンを隠す（.t3-icon の display が hidden に勝っていた。2026-11-07） */
+.t3-icon[hidden] { display: none !important; }

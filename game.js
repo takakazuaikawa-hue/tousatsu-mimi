@@ -20652,7 +20652,13 @@ startPreload().then(() => {
   const cut = (e) => {
     const cs = getComputedStyle(e);
     const clamp = cs.webkitLineClamp && cs.webkitLineClamp !== 'none';
-    return (cs.textOverflow === 'ellipsis' && e.scrollWidth > e.clientWidth + 1) || (clamp && e.scrollHeight > e.clientHeight + 1);
+    if (clamp) return e.scrollHeight > e.clientHeight + 1;
+    if (cs.textOverflow !== 'ellipsis' || cs.overflow === 'visible' || !e.clientWidth) return false;
+    if (e.scrollWidth > e.clientWidth + 1) return true;
+    // 1px だけはみ出す文は scrollWidth が丸められて見分けられない（降りるの「今は降りなくていい」がそれだった）。文の幅を小数まで測る
+    const rg = document.createRange(); rg.selectNodeContents(e);
+    const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    return rg.getBoundingClientRect().width > e.getBoundingClientRect().width - pad + .5;
   };
   // 乗せた所から上へ5段と、押す所（ボタン）の中の文を見て、省略されている物を集める
   const findCut = (t) => {
@@ -20674,7 +20680,9 @@ startPreload().then(() => {
     tip.setAttribute('role', 'tooltip');
     tip.textContent = text;
     document.body.appendChild(tip);
-    const r = els[0].getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    // 乗せたボタンの字を隠さないよう、ボタン全体の上（入らなければ下）に出す
+    const box = anchor && anchor.contains && anchor.contains(els[0]) ? anchor : els[0];
+    const r = box.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
     const x = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2));
     const y = r.top - h - 8 >= 8 ? r.top - h - 8 : Math.min(innerHeight - h - 8, r.bottom + 8);
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
