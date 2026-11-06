@@ -3838,7 +3838,7 @@ function showEpisodeTitle(key, onContinue, onBack, contLabel) {
 // 画面上で小さくなりすぎないよう、CSS 側で --game-scale に合わせて大きくする（.story-overlay の変数）。
 //=============================================================
 const STORY_WHO = {
-  rico: { name: 'リコ先輩', face: 'assets/ui/face_rico_bunny.webp' },
+  rico: { name: 'リコ先輩', face: 'assets/ui/face_rico.webp' },   // 顔が絵の真ん中にある方（face_rico_bunny は顔が下端に寄り、会話の丸の中で下にずれていた。2026-11-07 指摘）
   mimi: { name: 'ミミ', face: 'assets/ui/face_mimi.webp' },
   goddess: { name: '女神' },
   polka: { name: 'ポルカ', face: 'assets/ui/face_polka.webp' },

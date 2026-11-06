@@ -20886,3 +20886,25 @@ html.is-compact .trial-end-share-note { margin-top: 4px; line-height: 1.4; }
 .preload-progress { container-type: inline-size; }
 .preload-count > span:last-child { left: 7.9%; width: 10.5%; top: 48%; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; gap: 2px; white-space: nowrap; }
 .preload-count b { font-size: min(var(--r-mission, 22px), 5.2cqw); margin: 0; letter-spacing: -.04em; line-height: 1; }
+
+/* ===== ロビー左のメニュー（名札＋5枚の札）の置き方：ここが唯一の決め所（2026-11-07 指摘「枠と文字の位置がデザインされていない」）=====
+   札の絵を画素で測った値で置く（qa/out の測定：赤い面・紋章・小窓の穴）。
+   ・絵は引き伸ばさない（小窓の札 1580×395 が枠に合わせて縦に19%伸び、太さが他とそろっていなかった）。上下の真ん中に置く
+   ・文字は赤い面の真ん中（紋章の札 21〜87%／小窓の札 19〜60.5%／名札 21〜89%）。字の間を空けた分の片寄りは左に同じだけ足して打ち消す
+   ・紋章の印は六角の真ん中（13.2%）、顔は小窓の穴（横 63.2〜84.7%、縦は絵の 28.4〜74.4%）
+   ・「新入荷」「あと5」の札は、どの大きさでも右上の金の縁に掛ける（外枠の上端＝真ん中から絵の幅の 11%）
+   字の大きさは段の決まり（上の各指定）のまま。ここでは位置だけを決める */
+.home-stage .h15-places .h15-pl, .home-stage .h15-nameplate { container-type: inline-size; }
+.home-stage .h15-places .h15-pl img.h15-f, .home-stage .h15-nameplate img.h15-f { object-fit: contain; object-position: 50% 50%; }
+.home-stage .h15-places .h15-pl .h15-lbl, .home-stage .h15-nameplate .h15-lbl {
+  top: 50% !important; transform: translateY(-50%) !important; text-align: center !important; line-height: 1.1;
+  letter-spacing: var(--pl-ls) !important; padding-left: var(--pl-ls) !important; box-sizing: border-box; }
+.home-stage .h15-places .h15-pl { --pl-ls: .1em; }
+.home-stage .h15-places .h15-pl .h15-lbl { left: 21% !important; right: 13% !important; }
+.home-stage .h15-places .h15-pl.h15-pic { --pl-ls: 0em; }
+.home-stage .h15-places .h15-pl.h15-pic .h15-lbl { left: 19% !important; right: 39.5% !important; }
+.home-stage .h15-nameplate { --pl-ls: .35em; }
+.home-stage .h15-nameplate .h15-lbl { left: 21% !important; right: 11% !important; }
+.home-stage .h15-places .h15-pl img.h15-ico { left: 13.2% !important; top: 50% !important; transform: translate(-50%, -50%) !important; }
+.home-stage .h15-places .h15-pl.h15-pic .h15-win { left: 63.2% !important; width: 21.5% !important; top: calc(50% - 25cqw * .216) !important; height: calc(25cqw * .46) !important; }
+.home-stage .h15-places .h15-pl .h15-tag { left: auto !important; right: 12% !important; top: calc(50% - 11cqw) !important; bottom: auto !important; transform: translateY(-62%) !important; white-space: nowrap; z-index: 2; }
