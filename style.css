@@ -20871,3 +20871,8 @@ html.is-compact .trial-end-share { margin-top: 10px; padding-top: 8px; }
 .trial-end-share-btns .btn:not([disabled]):hover { background: rgba(200,162,74,.16); }
 html.is-compact .trial-end-share { margin-top: 8px; padding-top: 6px; }
 html.is-compact .trial-end-share-note { margin-top: 4px; line-height: 1.4; }
+
+/* 省略された文の全文の吹き出し（2026-11-06）。画面の上に重ね、押す邪魔はしない */
+.trunc-tip { position: fixed; z-index: 99999; max-width: min(420px, calc(100vw - 16px)); padding: 8px 12px; pointer-events: none;
+  font-size: var(--r-body); line-height: 1.5; color: #fbf1dc; background: rgba(20, 6, 10, .96); border: 1px solid #c8a24a; border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.6); white-space: pre-line; word-break: keep-all; overflow-wrap: anywhere; }

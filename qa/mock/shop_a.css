@@ -1,0 +1,16 @@
+/* 案A 品書き：今の縦の並びを磨く。斜めの帯をやめて真っ直ぐの額縁、左に大きな絵、新入荷は枠でなく金の小さな印 */
+.shop-screen.v2.mkA .shop-cat-btn { transform: none !important; background: transparent !important; box-shadow: none !important; color: #b19a74 !important; border-bottom: 2px solid rgba(217,178,105,.25) !important; }
+.shop-screen.v2.mkA .shop-cat-btn > span { transform: none !important; }
+.shop-screen.v2.mkA .shop-cat-btn.active { color: #f5d77a !important; border-bottom: 2px solid #f5d77a !important; text-shadow: 0 0 12px rgba(245,215,122,.45); }
+.shop-screen.v2.mkA .shop-items { gap: 10px !important; }
+.shop-screen.v2.mkA .shop-item { transform: none !important; height: 92px !important; min-height: 92px !important; padding: 0 18px 0 10px !important;
+  background: linear-gradient(90deg, rgba(48,12,18,.92), rgba(22,8,11,.9)) !important;
+  box-shadow: inset 0 0 0 1px rgba(168,130,63,.55), inset 0 0 0 4px rgba(20,8,10,.9), inset 0 0 0 5px rgba(168,130,63,.25), 0 8px 18px rgba(0,0,0,.5) !important; animation: none !important; }
+.shop-screen.v2.mkA .shop-item > * { transform: none !important; }
+.shop-screen.v2.mkA .shop-item-icon { width: 72px !important; height: 72px !important; background: #120709 !important; box-shadow: inset 0 0 0 1px #a8823f !important; filter: none !important; }
+.shop-screen.v2.mkA .shop-item-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 0 !important; }
+.shop-screen.v2.mkA .shop-item-name { font-size: 18px !important; }
+.shop-screen.v2.mkA .shop-item-newtag { position: relative !important; top: auto !important; left: auto !important; display: block; margin: 0 0 2px; width: max-content; background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 0 0 12px !important; color: #f5d77a !important; font-size: 11px !important; letter-spacing: .2em !important; }
+.shop-screen.v2.mkA .shop-item-newtag::before { content: ""; position: absolute; margin: 4px 0 0 -12px; width: 6px; height: 6px; background: #f5d77a; transform: rotate(45deg); box-shadow: 0 0 8px #f5d77a; }
+.shop-screen.v2.mkA .shop-item .btn.btn-primary { background: linear-gradient(180deg, #7a0e16, #4e0509) !important; color: #f5d77a !important; box-shadow: inset 0 0 0 1px #d9b269 !important; }
+.shop-screen.v2.mkA .shop-item .btn.btn-primary:disabled { background: rgba(0,0,0,.45) !important; color: #8f7d5c !important; box-shadow: inset 0 0 0 1px rgba(168,130,63,.4) !important; }

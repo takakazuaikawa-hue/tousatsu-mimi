@@ -279,7 +279,14 @@ function openHomeDialog(overlay, audio = false) {
     if (audio && ['toggle-bgm','toggle-sfx'].includes(action)) {
       onAction(e);
       button.textContent = (action === 'toggle-bgm' ? save.bgmOn : save.sfxOn) ? 'ON' : 'OFF';
-    } else { overlay.remove(); onAction(e); }
+    } else {
+      // 押した先が「準備中」で待つ時は、待ち終わるまで窓を残す（窓が先に消えてロビーが一瞬見えていた。2026-11-06 検査）
+      onAction(e);
+      if (window.__veilPending && overlay.isConnected) {
+        overlay.style.pointerEvents = 'none';
+        addEventListener('mimi-veil-done', () => requestAnimationFrame(() => overlay.remove()), { once: true });
+      } else overlay.remove();
+    }
   }));
   overlay.querySelector('[data-home-close]').focus();
 }
@@ -342,16 +349,23 @@ function mountHomeMotion(root) {
   let frame = 0, interval = 0, hop = 0;
   let pointer = {x:0,y:0};
   const layers = root.querySelectorAll('.h15-bg,.h15-art');
-  const reset = () => { root.style.setProperty('--mx',0); root.style.setProperty('--my',0); layers.forEach(l => l.style.transform=''); };
+  // 離れた時は真ん中へ、同じくなめらかに戻す
+  const reset = () => { pointer = {x:0,y:0}; if (!frame) frame = requestAnimationFrame(follow); };
+  // マウスに合わせた奥行き：目標の位置へ毎フレーム少しずつ近づける（2026-11-06 試遊：マウスの細かい揺れがそのまま出て、がたついた）
+  let ease = {x:0,y:0};
+  const follow = () => {
+    frame = 0;
+    ease.x += (pointer.x - ease.x) * .12; ease.y += (pointer.y - ease.y) * .12;
+    const near = Math.abs(pointer.x - ease.x) < .0005 && Math.abs(pointer.y - ease.y) < .0005;
+    if (near) ease = {...pointer};
+    root.style.setProperty('--mx',(ease.x*2).toFixed(4)); root.style.setProperty('--my',(ease.y*2).toFixed(4));
+    layers.forEach(l => l.style.transform=`translate3d(${(-ease.x*10).toFixed(2)}px,${(-ease.y*6).toFixed(2)}px,0)`);
+    if (!near && root.isConnected) frame = requestAnimationFrame(follow);
+  };
   root.addEventListener('pointermove', e => {
     if (reduce.matches || innerHeight < 500 || e.pointerType !== 'mouse') return;
     pointer={x:e.clientX/innerWidth-.5,y:e.clientY/innerHeight-.5};
-    if (frame) return;
-    frame=requestAnimationFrame(() => {
-      frame=0;
-      root.style.setProperty('--mx',pointer.x*2); root.style.setProperty('--my',pointer.y*2);
-      layers.forEach(l => l.style.transform=`translate(${-pointer.x*10}px,${-pointer.y*6}px)`);
-    });
+    if (!frame) frame = requestAnimationFrame(follow);
   },{signal:abort.signal});
   root.addEventListener('pointerleave',reset,{signal:abort.signal});
   const tip=root.querySelector('.h15-tip'), ticket=root.querySelector('.h15-ticket');

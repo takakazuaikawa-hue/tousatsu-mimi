@@ -281,7 +281,8 @@ function defaultSave() {
     psychEnabled: true,
     logicEnabled: true,
     bgmVolume: 35,       // BGM 音量（0-100）
-    bgmOn: false,        // BGM 全体 ON/OFF（lobby/ending/minipoker BGM すべて従う）
+    // DLsite 版（アプリ）は自動再生の決まりが無いので最初から鳴らす（2026-11-06 試遊：初回に曲が鳴らず、音のボタンを2回押していた）
+    bgmOn: !!window.MIMI_LOCAL,  // BGM 全体 ON/OFF（lobby/ending/minipoker BGM すべて従う）
     sfxVolume: 50,       // SFX 音量（0-100）。初めての人は控えめに（2026-10-20：いきなり大きな音で困った、の指摘）
     sfxOn: true,         // SFX 全体 ON/OFF（minipoker SFX 等すべて従う）
     forceSound: false,   // 端末が消音でも音を出す（iOS消音スイッチより優先）。既定OFF＝端末を尊重
@@ -3798,11 +3799,11 @@ function showEpisodeTitle(key, onContinue, onBack, contLabel) {
     if (leaving) return;
     leaving = true;
     continueBtn.disabled = true;
+    // 次の画面（卓など）を幕の下に先に描いてから、幕を消す（2026-11-06 検査：幕が消える0.4秒の間にロビーが透けていた）
+    // 同じ流れで次の扉絵を出す時に「出ている扉絵」と数えないよう、out を先に付ける（同じフレームで卓が描かれるので透けない）
     overlay.classList.add('out');
-    setTimeout(() => {
-      overlay.remove();
-      if (onContinue) onContinue();
-    }, 400);
+    if (onContinue) onContinue();
+    setTimeout(() => overlay.remove(), 400);
   });
   const backBtn = overlay.querySelector('.episode-back');
   if (backBtn) backBtn.addEventListener('click', (e) => {
@@ -4069,8 +4070,10 @@ function showStoryScene(key, onDone, voiceReady) {
     cancelAnimationFrame(raf);
     window.removeEventListener('keydown', onKey, true);
     if (window.MimiVoice) { stopVoice(); MimiVoice.release('story'); }
+    // 次の画面を幕の下に先に描いてから、幕を消す（2026-11-06 試遊：幕が消える0.5秒の間に、下のタイトルが一瞬見えていた）
+    done();
     ov.classList.add('out');
-    setTimeout(() => { ov.remove(); done(); }, reduce ? 0 : 520);
+    setTimeout(() => ov.remove(), reduce ? 0 : 520);
   }
   // 音量：プロローグを聞きながら、その場で大きさを変えられる（2026-10-20 ユーザー指摘「いきなり声が出て周りの視線を浴びた」
   // 「音はありで遊んでもらいたいけれど大きすぎる不安。プロローグ内で音量調整しながら話を聞けるのがベスト」）。
@@ -4412,8 +4415,10 @@ function showIntermission(opponentId, onDone, voiceReady) {
     if (phase !== 'cg') return;
     phase = 'done';
     if (window.MimiVoice) { stopVoice(); MimiVoice.release('ims'); }
+    // 次の画面を幕の下に先に描いてから幕を消す（2026-11-06 検査：消える0.4秒の間に結果画面が透けていた）
     overlay.classList.add('out');
-    setTimeout(() => { overlay.remove(); if (onDone) onDone(); }, 400);
+    if (onDone) onDone();
+    setTimeout(() => overlay.remove(), 400);
   }
 
   skipBtn.addEventListener('click', (e) => { e.stopPropagation(); showCg(); });
@@ -4448,7 +4453,8 @@ function showGraduationScene(onDone) {
   overlay.addEventListener('click', () => {
     if (Date.now() - shownAt < 900 || overlay.classList.contains('out')) return;
     overlay.classList.add('out');
-    setTimeout(() => { overlay.remove(); onDone && onDone(); }, 400);
+    if (onDone) onDone();   // 次を先に描く（幕が消える間に下の画面が透けないように）
+    setTimeout(() => overlay.remove(), 400);
   });
 }
 
@@ -13951,7 +13957,15 @@ function showLoadingVeil() {
   el.className = 'loading-veil';
   el.innerHTML = '<div class="lv-box"><i class="lv-spin"></i><span>準備中…</span></div>';
   const t = setTimeout(() => { document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('on')); }, 200);
-  return () => { clearTimeout(t); el.classList.remove('on'); setTimeout(() => el.remove(), 250); };
+  // 待っている間は、押した窓（台帳・零時の入口など）を残しておく印（窓が先に消えてロビーが一瞬見えていた。2026-11-06 検査）
+  window.__veilPending = (window.__veilPending || 0) + 1;
+  let shut = false;
+  return () => {
+    clearTimeout(t); el.classList.remove('on'); setTimeout(() => el.remove(), 250);
+    if (shut) return; shut = true;
+    window.__veilPending = Math.max(0, window.__veilPending - 1);
+    if (!window.__veilPending) window.dispatchEvent(new Event('mimi-veil-done'));
+  };
 }
 // ロビーにいる間に、次の相手の対戦に入る分を読んでおく
 function warmNextBattle() {
@@ -14203,7 +14217,8 @@ function showRulePrimer(onDone) {
 
   function finish() {
     overlay.classList.add('out');
-    setTimeout(() => { overlay.remove(); if (onDone) onDone(); }, 350);
+    if (onDone) onDone();   // 次を先に描く（幕が消える間に下の画面が透けないように）
+    setTimeout(() => overlay.remove(), 350);
   }
 
   function renderStep() {
@@ -20341,12 +20356,15 @@ function updateFullscreenBtn() {
   // 一度dismissされたら再表示しない（セッション中）
   if (sessionStorage.getItem('fs-dismissed') === '1') { group.hidden = true; return; }
   const isLandscape = window.matchMedia('(orientation: landscape)').matches;
-  const shouldShow = isMobile() && isLandscape && !isFullscreen() && !IS_STANDALONE;
+  // DLsite 版（アプリ）は PC でも出す。F11 の全画面（窓ごと）は fullscreenElement に出ないので、画面の大きさでも見る
+  //（2026-11-06 試遊：F11 で全画面になるのに気づけなかった）
+  const appFull = window.MIMI_LOCAL && Math.abs(innerHeight - screen.height) < 2 && Math.abs(innerWidth - screen.width) < 2;
+  const shouldShow = (window.MIMI_LOCAL || (isMobile() && isLandscape)) && !isFullscreen() && !appFull && !IS_STANDALONE;
   group.hidden = !shouldShow;
   if (shouldShow) {
     // 頭の印は線画（四隅の括弧）。文字だけを差し替える
     const label = btn.querySelector('.fs-label') || btn;
-    label.textContent = IS_IPHONE && !fullscreenSupported() ? '全画面の遊び方' : 'タップして全画面で遊ぶ';
+    label.textContent = window.MIMI_LOCAL ? '全画面で遊ぶ（F11 キーでも切り替え）' : IS_IPHONE && !fullscreenSupported() ? '全画面の遊び方' : 'タップして全画面で遊ぶ';
   }
 }
 
@@ -20626,3 +20644,58 @@ startPreload().then(() => {
     }, 900);
   }
 });
+
+// ── 省略された文（…）は、選ぶ前に全文を吹き出しで出す（2026-11-06 試遊：降りるの下の文が「…」で読めなかった）──
+// マウスを乗せた時・キーで選んだ時、スマホは長押しで。省略はそのまま（枠の作りは変えない）。
+(function () {
+  let tip = null, cur = null, pressTimer = 0;
+  const cut = (e) => {
+    const cs = getComputedStyle(e);
+    const clamp = cs.webkitLineClamp && cs.webkitLineClamp !== 'none';
+    return (cs.textOverflow === 'ellipsis' && e.scrollWidth > e.clientWidth + 1) || (clamp && e.scrollHeight > e.clientHeight + 1);
+  };
+  // 乗せた所から上へ5段と、押す所（ボタン）の中の文を見て、省略されている物を集める
+  const findCut = (t) => {
+    if (!t || !t.closest) return [];
+    const hits = new Set();
+    for (let e = t, i = 0; e && e !== document.body && i < 5; e = e.parentElement, i++) if (cut(e)) hits.add(e);
+    const host = t.closest('button, a, [role="button"], [data-action], label, li');
+    if (host) host.querySelectorAll('*').forEach(e => { if (e.children.length < 3 && cut(e)) hits.add(e); });
+    return [...hits].filter(e => !([...hits].some(o => o !== e && o.contains(e))));
+  };
+  const hide = () => { if (tip) { tip.remove(); tip = null; } cur = null; };
+  const show = (anchor, els) => {
+    const text = els.map(e => (e.innerText || e.textContent || '').trim()).filter(Boolean).join('\n');
+    if (!text) return;
+    hide();
+    cur = anchor;
+    tip = document.createElement('div');
+    tip.className = 'trunc-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.textContent = text;
+    document.body.appendChild(tip);
+    const r = els[0].getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    const x = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    const y = r.top - h - 8 >= 8 ? r.top - h - 8 : Math.min(innerHeight - h - 8, r.bottom + 8);
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  };
+  document.addEventListener('pointerover', (ev) => {
+    if (ev.pointerType === 'touch') return;
+    const els = findCut(ev.target);
+    const anchor = els.length ? (ev.target.closest('button, a, [role="button"], [data-action], label, li') || els[0]) : null;
+    if (anchor === cur) return;
+    if (anchor) show(anchor, els); else hide();
+  }, true);
+  document.addEventListener('pointerout', (ev) => { if (cur && (!ev.relatedTarget || !cur.contains(ev.relatedTarget))) hide(); }, true);
+  document.addEventListener('focusin', (ev) => { const els = findCut(ev.target); if (els.length) show(ev.target, els); else hide(); }, true);
+  document.addEventListener('focusout', hide, true);
+  // スマホ：0.45秒の長押しで出す。指を離すと消える
+  document.addEventListener('pointerdown', (ev) => {
+    hide(); clearTimeout(pressTimer);
+    if (ev.pointerType !== 'touch') return;
+    const t = ev.target;
+    pressTimer = setTimeout(() => { const els = findCut(t); if (els.length) show(t, els); }, 450);
+  }, true);
+  ['pointerup', 'pointercancel'].forEach(k => document.addEventListener(k, () => { clearTimeout(pressTimer); if (tip && cur && !matchMedia('(hover: hover)').matches) setTimeout(hide, 1200); }, true));
+  addEventListener('scroll', hide, true);
+})();
