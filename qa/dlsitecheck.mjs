@@ -21,7 +21,8 @@ const ws = new WebSocket(ver.webSocketDebuggerUrl); await new Promise((r, j) => 
 const conn = new Conn(ws);
 const { sessionId } = await conn.send('Target.attachToTarget', { targetId: target.id, flatten: true });
 const page = new Page(conn, sessionId); await page.send('Page.enable');
-const browser = { close: async () => { try { proc.kill(); } catch {} await sleep(1500); for (let i = 0; i < 5; i++) { try { fs.rmSync(UD, { recursive: true, force: true }); } catch {} if (!fs.existsSync(UD)) break; await sleep(800); } } };
+// 子のプロセス（描画・GPU）まで止める。proc.kill() だけだと子が残り、次の検査が固まっていた（2026-11-07）
+const browser = { close: async () => { try { (await import('node:child_process')).execSync('taskkill /pid ' + proc.pid + ' /T /F', { stdio: 'ignore' }); } catch { try { proc.kill(); } catch {} } await sleep(1500); for (let i = 0; i < 5; i++) { try { fs.rmSync(UD, { recursive: true, force: true }); } catch {} if (!fs.existsSync(UD)) break; await sleep(800); } } };
 await page.send('Network.enable');
 await page.send('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
 await page.send('Runtime.enable');
