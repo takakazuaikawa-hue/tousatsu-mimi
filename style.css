@@ -19392,7 +19392,7 @@ html.is-compact .reward-cg-viewer-hint { font-size: calc(14px / var(--game-scale
 
 /* === 製品版C：クリア後の交換所・コレクション・装備・台帳・タイトル（2026-10-16） === */
 
-/* ---- 版と権利の表記：タイトルの下端に「Ver 1.0　© 2026 あいかわ」（値は game.js の GAME_VERSION / COPYRIGHT_TEXT）。
+/* ---- 版と権利の表記：タイトルの下端に「Ver 1.0」（値は game.js の GAME_VERSION / COPYRIGHT_TEXT）。
         以前は「版の表記は出さない」と隠していた。スマホ横は画面で 12px ---- */
 .title-screen.t3 .t3-ver {
   display: block; left: 28px; bottom: 16px; font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-style: normal;
