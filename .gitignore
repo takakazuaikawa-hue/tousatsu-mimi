@@ -34,3 +34,6 @@ qa/out/
 
 # 体験版の書き出し（tools/build-trial.mjs）
 dist/
+
+# 保管庫（元の曲・候補の絵・途中の画像。配信しない）
+_archive/
