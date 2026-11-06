@@ -117,7 +117,7 @@
     title: () => ['assets/backgrounds/title_bg.webp', 'assets/ui/title_logo_hd.webp'],
     // ロビー：タイトルにいる間に読む
     lobby: () => [
-      ...['scene','stage-empty','nameplate','plate','plate_pic','ledger','seal','mark','lock','oct','frame','ticket','ico_shop','ico_collection','ico_school','ico_title','ico_gift','ico_coin','ico_gear'].map(k => `assets/ui/home/${k}.webp`),
+      ...['scene','stage-empty','nameplate','plate','ledger','seal','mark','lock','oct','frame','ticket','ico_shop','ico_collection','ico_school','ico_title','ico_gift','ico_coin','ico_gear','ico_panyu','ico_costume'].map(k => `assets/ui/home/${k}.webp`),
       ...['rico_default','polka','selina','grano','velvet','mimi'].map(k => `assets/ui/face_${k}.webp`),
       // 額と台帳の小さな顔の窓は、額のために描いた肖像（home.js の framePortrait）
       ...['rico','polka','selina','grano','velvet','mimi'].map(k => `assets/ui/portrait_${k}.webp`).filter(u => MAN[u]),

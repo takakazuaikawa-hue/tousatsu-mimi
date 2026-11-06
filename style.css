@@ -20891,7 +20891,7 @@ html.is-compact .trial-end-share-note { margin-top: 4px; line-height: 1.4; }
    札の絵を画素で測った値で置く（qa/out の測定：赤い面・紋章・小窓の穴）。
    ・絵は引き伸ばさない（小窓の札 1580×395 が枠に合わせて縦に19%伸び、太さが他とそろっていなかった）。上下の真ん中に置く
    ・文字は赤い面の真ん中（紋章の札 21〜87%／小窓の札 19〜60.5%／名札 21〜89%）。字の間を空けた分の片寄りは左に同じだけ足して打ち消す
-   ・紋章の印は六角の真ん中（13.2%）、顔は小窓の穴（横 63.2〜84.7%、縦は絵の 28.4〜74.4%）
+   ・紋章の印は六角の真ん中（13.2%）。5枚とも紋章の札（11/07 案B：ぱにゅぱにゅ＝金のうさ耳カチューシャ、衣装＝金のドレス。顔の小窓の札 plate_pic は使わない）
    ・「新入荷」「あと5」の札は、どの大きさでも右上の金の縁に掛ける（外枠の上端＝真ん中から絵の幅の 11%）
    字の大きさは段の決まり（上の各指定）のまま。ここでは位置だけを決める */
 .home-stage .h15-places .h15-pl, .home-stage .h15-nameplate { container-type: inline-size; }
@@ -20901,10 +20901,14 @@ html.is-compact .trial-end-share-note { margin-top: 4px; line-height: 1.4; }
   letter-spacing: var(--pl-ls) !important; padding-left: var(--pl-ls) !important; box-sizing: border-box; }
 .home-stage .h15-places .h15-pl { --pl-ls: .1em; }
 .home-stage .h15-places .h15-pl .h15-lbl { left: 21% !important; right: 13% !important; }
-.home-stage .h15-places .h15-pl.h15-pic { --pl-ls: 0em; }
-.home-stage .h15-places .h15-pl.h15-pic .h15-lbl { left: 19% !important; right: 39.5% !important; }
 .home-stage .h15-nameplate { --pl-ls: .35em; }
 .home-stage .h15-nameplate .h15-lbl { left: 21% !important; right: 11% !important; }
 .home-stage .h15-places .h15-pl img.h15-ico { left: 13.2% !important; top: 50% !important; transform: translate(-50%, -50%) !important; }
-.home-stage .h15-places .h15-pl.h15-pic .h15-win { left: 63.2% !important; width: 21.5% !important; top: calc(50% - 25cqw * .216) !important; height: calc(25cqw * .46) !important; }
 .home-stage .h15-places .h15-pl .h15-tag { left: auto !important; right: 12% !important; top: calc(50% - 11cqw) !important; bottom: auto !important; transform: translateY(-62%) !important; white-space: nowrap; z-index: 2; }
+/* 枠を絵の比率にそろえる（描かれる絵の大きさは変えない）。スマホは札の枠 180×48（3.75）が絵（3.36）より横長で、
+   絵が左右に約10px空けて描かれ、%で置いた印と文字が絵とずれていた（2026-11-07）。
+   札：高さはそのままで幅を絵の比率に。名札：幅はそのままで高さを絵の比率に */
+.home-stage .h15-places .h15-pl { width: auto !important; aspect-ratio: 1580 / 470; justify-self: start; }
+.home-stage .h15-nameplate { height: auto !important; aspect-ratio: 1580 / 425; }
+/* スマホ：6字の札（コレクション・ぱにゅぱにゅ）が六角に詰まるので、字の間を詰めて両端に余白を残す */
+.home-stage.h15-sm .h15-places .h15-pl { --pl-ls: .03em; }
