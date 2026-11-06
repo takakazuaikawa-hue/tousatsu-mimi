@@ -16727,7 +16727,7 @@ function applyPanyuBg(overlay) {
 // ぱにゅぱにゅ30タップミニゲーム
 // ぱにゅぱにゅの衣装（網目＋ばねの描画は docs/design-ref/panyu-mesh.html を埋め込んで使う）
 // 網目のページを直したら PANYU_MESH_V を上げる（ブラウザに残った古いページを使わせない）
-const PANYU_MESH_V = '20261101';
+const PANYU_MESH_V = '20261107';
 const PANYU_OUTFITS = [
   { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'gothic', name: 'ゴスロリ' }, { id: 'jirai', name: '地雷系' }, { id: 'vintage', name: '古着' }, { id: 'nurse', name: 'ナース' }, { id: 'santa', name: 'サンタ' },
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
@@ -16801,6 +16801,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     <footer class="pv2-meter">
       <div class="pv2-meter-row"><span class="pv2-meter-k">ぱにゅ</span><b class="pv2-meter-n">0</b><span class="pv2-meter-of">/ ${totalTaps}</span></div>
       <div class="pv2-bar"><i class="pv2-bar-fill"></i></div>
+      <div class="pv2-clasp" hidden><span>留め</span><b class="pv2-clasp-n">0</b><i>/ <span class="pv2-clasp-of">3</span></i></div>
       ${cfg.lobby ? '<div class="pv2-heat" aria-live="polite"><span>勢い</span><i><b class="pv2-heat-fill"></b></i><em class="pv2-heat-word">ふつう</em></div>' : ''}
       <div class="pv2-hint">タップ・長押し・引っぱり、どれでも。速いほど当たりやすい${cfg.lobby ? `<span class="pv2-pity">SR 以上まで あと ${PANYU_PITY - ((save && save.panyuPity) || 0)} 回</span>` : ''}</div>
     </footer>
@@ -16823,15 +16824,44 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
   const onMeshMsg = (e) => {
     const m = e.data;
     if (!m || !m.panyu || !meshFrame || e.source !== meshFrame.contentWindow) return;
-    if (m.t === 'ready') overlay.classList.add('is-mesh');
+    if (m.t === 'ready') { overlay.classList.add('is-mesh'); claspN = m.parts || 0; claspDone = 0; updateClasp(); setTimeout(claspHint, 1500); }
     else if (m.t === 'nogl') { meshFrame.remove(); meshFrame = null; overlay.classList.remove('is-mesh'); }
     else if (m.t === 'tap' || m.t === 'pop') {
       const fr = meshFrame.getBoundingClientRect();
       doTick(blobs[m.side === 1 ? 1 : 0], { x: fr.left + (m.x || 0), y: fr.top + (m.y || 0), skipWobble: true });
-      if (m.t === 'pop') { mpSfx('milestone'); for (let i = 0; i < 6; i++) spawnPanyuParticle(overlay); }
+      if (m.t === 'pop') {
+        mpSfx('milestone'); for (let i = 0; i < 6; i++) spawnPanyuParticle(overlay);
+        claspDone = Math.min(claspN, claspDone + 1); lastPopAt = performance.now(); updateClasp();
+        if (save && !save.panyuClaspHintSeen) { save.panyuClaspHintSeen = true; saveProgress(); }
+        const hl = overlay.querySelector('.pv2-hintline'); if (hl) hl.classList.add('out');
+      }
     }
   };
   window.addEventListener('message', onMeshMsg);
+  // ---- 段1（2026-11-07）：留めに気づかせる・表情の段 ----
+  // 留めは、その位置を押した時だけ外れる。遊びの中に案内が無く、気づかれていなかった。外れていない留めを6秒ごとに金に光らせ、初めての時はミミが一言
+  let claspN = 0, claspDone = 0, lastPopAt = 0;
+  const meshPost = (msg) => { try { if (meshFrame && meshFrame.contentWindow) meshFrame.contentWindow.postMessage(msg, '*'); } catch (_) {} };
+  const updateClasp = () => {
+    const el = overlay.querySelector('.pv2-clasp'); if (!el) return;
+    el.hidden = !claspN;
+    el.querySelector('.pv2-clasp-n').textContent = claspDone; el.querySelector('.pv2-clasp-of').textContent = claspN;
+    el.classList.toggle('is-all', claspN > 0 && claspDone >= claspN);
+  };
+  const claspHint = () => {
+    if (!overlay.isConnected) { clearInterval(claspTimer); return; }
+    if (!claspN || claspDone >= claspN || overlay.classList.contains('is-done')) return;
+    if (performance.now() - lastPopAt < 5000) return;
+    meshPost({ panyuHint: 1 });
+    if (save && !save.panyuClaspHintSeen && !overlay.querySelector('.pv2-hintline')) {
+      const hl = document.createElement('div');
+      hl.className = 'pv2-hintline';
+      hl.innerHTML = '<span>ミミ</span>「……光ってる留め、<wbr>外れちゃいそう……」';
+      overlay.appendChild(hl);
+      setTimeout(() => hl.classList.add('out'), 4200); setTimeout(() => hl.remove(), 4800);
+    }
+  };
+  const claspTimer = setInterval(claspHint, 6000);
   new MutationObserver((_, ob) => { if (!overlay.isConnected) { window.removeEventListener('message', onMeshMsg); ob.disconnect(); } }).observe(document.body, { childList: true });
   mountMesh();
   const outfitBtn = overlay.querySelector('.pv2-outfit');
@@ -17030,6 +17060,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     count--;
     tapped++;
     tapTimes.push(performance.now());
+    if (tapped === 10 || tapped === 20) meshPost({ panyuStage: tapped / 10 });
     if (feverOn) feverPts++;
     if (tapped === feverAt) startFever();
     countEls.forEach(el => el.textContent = Math.max(0, count));
@@ -17071,6 +17102,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
       if (navigator.vibrate) navigator.vibrate([60, 30, 80, 30, 120]);
       for (let i = 0; i < 16; i++) spawnPanyuParticle(overlay);
       setPanyuFace('finish'); // ご満悦の顔でフィニッシュ
+      meshPost({ panyuStage: 3, panyuSurprise: true });   // 網目の絵：一番赤く、ぱっと目が開く
       overlay.classList.add('is-done');
       // 卓の中（本気リコ戦の心理バトル）では、以前どおり閉じてから続きへ
       if (!cfg.lobby) {
@@ -17110,10 +17142,11 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
         if (window.playVoiceForText) playVoiceForText('mimi', panyuLine, { prio: 1, noRepeat: false, delay: 350, maxLateMs: 1500 });
         card.innerHTML = `<div class="pv2-res-eye">SKILL ACTIVATED</div>
           <div class="pv2-res-title">《ぱにゅぱにゅ》<em>発動</em></div>
-          ${coin}${note ? `<div class="pv2-res-note">${note}</div>` : ''}
+          ${coin}
           <div class="pv2-res-line">「${panyuLine}」<span>ミミ</span></div>
+          <details class="pv2-res-more"><summary>詳しく</summary>${note ? `<div class="pv2-res-note">${note}</div>` : ''}
           <div class="pv2-res-heat">勢い ${boostEnd >= .75 ? '最高' : boostEnd >= .45 ? '高い' : boostEnd >= .2 ? 'ふつうより上' : 'ふつう'}で判定${boostEnd < .45 ? '。最後まで速く触るほど、当たりやすい' : ''}</div>
-          <div class="pv2-res-meta"><span>ぱにゅ図鑑 ${dexN} / ${PANYU_RARITY.length}</span><span>SR 以上まで、あと ${pityLeft} 回で確定</span></div>
+          <div class="pv2-res-meta"><span>ぱにゅ図鑑 ${dexN} / ${PANYU_RARITY.length}</span><span>SR 以上まで、あと ${pityLeft} 回で確定</span></div></details>
           <div class="pv2-res-btns"><button type="button" class="pv2-res-again">もう一回</button><button type="button" class="pv2-res-btn">ロビーへ</button></div>`;
         overlay.appendChild(card);
         card.querySelector('.pv2-res-btn').addEventListener('click', (e) => { e.stopPropagation(); closeAll(); });
@@ -17320,8 +17353,8 @@ function attachDragStretch(blob) {
 function spawnPanyuParticle(parent) {
   const p = document.createElement('div');
   p.className = 'panyu-particle';
-  p.textContent = pick(['♥', '♡', '✦', '♥', '✧']);
-  p.classList.add(pick(['is-pink', 'is-pink', 'is-gold', 'is-white']));
+  p.textContent = pick(['✦', '✧', '✦', '♥', '✦']);
+  p.classList.add(pick(['is-gold', 'is-gold', 'is-crimson', 'is-white']));
   const angle = rand() * Math.PI * 2;
   const dist = 70 + rand() * 80;
   p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');

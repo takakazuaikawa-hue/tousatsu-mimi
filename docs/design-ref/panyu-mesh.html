@@ -594,7 +594,7 @@
   const tex = gl.createTexture();
   const img = new Image();
   img.onload = () => {
-    setTimeout(() => tell({ t: 'ready' }), 60);
+    setTimeout(() => tell({ t: 'ready', parts: BTNS.length }), 60);   // 留めの数も知らせる（本編の「留め 0/3」）
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -646,7 +646,12 @@
   const addHeat = () => { const h = heatNow(); heat = h + HEAT_ADD * (1 - h); heatT = performance.now(); };
   // 頬の赤み：熱を追って、じわっと赤くなり、ゆっくり引く
   let blush = 0;
-  const stepBlush = (dt, h) => { const k = h > blush ? 1.4 : 0.35; blush += (h - blush) * Math.min(1, k * dt); };
+  // 表情の段（本編から 0〜3 を受け取る）：触った回数で頬の赤みの下限を上げ、段々とろけていく（2026-11-07 段1）
+  let blushFloor = 0;
+  const stepBlush = (dt, h) => { const tg = Math.max(h, blushFloor), k = tg > blush ? 1.4 : 0.35; blush += (tg - blush) * Math.min(1, k * dt); };
+  // 留めの光：外せる留めの位置で金の輪が1.4秒脈打つ（本編が「光らせて」と言った時）。留めに気づかせるため
+  let hintT = -9;
+  const hintNow = () => { const t = (performance.now() - hintT) / 1000; return t < 0 || t > 1.4 ? 0 : Math.sin(Math.PI * t / 1.4); };
   const P = CUPS.map(() => ({ d: [0, 0], v: [0, 0], sy: 1, svy: 0, sx: 1, grab: null, lift: 0, lf: 0, lfA: 0, bt: 0 }));
   window.__panyuDbg = { view: () => view, focus: FOCUS, cups: CUPS.map(c => c.c), ropes: () => ropes, P, parts: BTNS, meshAt: (x, y) => meshAt(x, y), heatNow: () => heatNow(), blush: (v) => { if (v != null) { blush = v; draw(); } return blush; } };   // 検査用
   function resetPhys() { P.forEach((p, i) => { p.d = [0, 0]; p.v = [0, 0]; p.sy = sagOf(i); p.svy = 0; p.sx = Math.pow(sagOf(i), -0.5); p.grab = null; p.lift = 0; p.lf = 0; p.lfA = 0; p.bt = 0; }); }
@@ -889,6 +894,17 @@
         fc.clip();
         fc.drawImage(img, b.c[0] - b.w / 2, b.c[1] - b.h / 2, b.w, b.h, -b.w / 2 * sc, -b.h / 2 * sc, b.w * sc, b.h * sc); fc.restore(); }
     }
+    const hv = hintNow();
+    if (hv > 0) BTNS.forEach((b, k) => {
+      if (popped[k]) return;
+      const p = b.c ? meshAt(b.c[0], b.c[1]) : meshAt((b.a[0] * 2 + b.b[0]) / 3, (b.a[1] * 2 + b.b[1]) / 3);
+      const x = view.ox + p[0] * view.s, y = view.oy + p[1] * view.s;
+      const r0 = (b.c ? Math.max(b.w || 30, b.h || 30) / 2 + 8 : 18) * view.s, r = r0 * (1 + (1 - hv) * 0.5);
+      const g = fc.createRadialGradient(x, y, r * 0.2, x, y, r * 1.6);
+      g.addColorStop(0, 'rgba(255,240,190,' + (0.55 * hv).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,210,120,0)');
+      fc.globalAlpha = 1; fc.fillStyle = g; fc.beginPath(); fc.arc(x, y, r * 1.6, 0, Math.PI * 2); fc.fill();
+      fc.globalAlpha = hv; fc.strokeStyle = '#ffe2a0'; fc.lineWidth = Math.max(2, 2.6 * view.s); fc.beginPath(); fc.arc(x, y, r, 0, Math.PI * 2); fc.stroke();
+    });
     fc.globalAlpha = 1;
   }
   document.getElementById('btnReset').addEventListener('click', () => { popped.fill(false); ropes.length = 0; foldA.fill(0); foldV.fill(0); document.getElementById('lv').textContent = '0/3'; CUPS.forEach(c => { c.r = c.r0; }); resetPhys(); gap.len = GAP_END[0]; gap.w = 0; kick(); });
@@ -899,7 +915,7 @@
     for (let n = 0; n < 4; n++) step(dt / 4);
     stepGap(dt); stepParts(dt); draw(); drawParts();
     const h = heatNow(); stepBlush(dt, h);
-    if (energy() < 0.06 && !P.some(p => p.grab) && h < 0.04 && blush < 0.01 && !parts.length && !ropesMoving() && !foldMoving() && surpNow() < 0.005 && gapSettled()) { resetPhys(); gap.w = gapTarget(); blush = 0; draw(); drawParts(); raf = 0; last = 0; return; }
+    if (energy() < 0.06 && !P.some(p => p.grab) && h < 0.04 && Math.abs(blush - blushFloor) < 0.01 && !parts.length && !ropesMoving() && !foldMoving() && surpNow() < 0.005 && hintNow() <= 0 && gapSettled()) { resetPhys(); gap.w = gapTarget(); blush = blushFloor; draw(); drawParts(); raf = 0; last = 0; return; }
     raf = requestAnimationFrame(loop);
   }
   function kick() { if (!raf) { last = 0; raf = requestAnimationFrame(loop); } }
@@ -963,7 +979,11 @@
   stageEl.addEventListener('pointerup', tup, true); stageEl.addEventListener('pointercancel', tup, true);
 
   // 本編のメーターから寄り具合を受け取る（{panyuZoom: 倍率}）。今の倍率は ready の時に知らせる
-  addEventListener('message', (ev) => { const d = ev.data || {}; if (typeof d.panyuZoom === 'number') setZoom(Math.max(1, Math.min(1.7, d.panyuZoom))); });
+  addEventListener('message', (ev) => { const d = ev.data || {}; if (typeof d.panyuZoom === 'number') setZoom(Math.max(1, Math.min(1.7, d.panyuZoom)));
+    // 本編から：表情の段（0〜3）・驚き・留めの光
+    if (typeof d.panyuStage === 'number') { blushFloor = [0, 0.22, 0.45, 0.72][d.panyuStage] || 0; kick(); }
+    if (d.panyuSurprise) { surpT = performance.now(); kick(); }
+    if (d.panyuHint) { hintT = performance.now(); kick(); } });
   const noteEl = document.querySelector('.note');
   stageEl.addEventListener('pointerdown', (e) => {
     noteEl.classList.add('off');   // 一番下のボタンに重ならないよう、触ったら操作の説明は消す

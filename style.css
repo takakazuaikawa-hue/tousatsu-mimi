@@ -20912,3 +20912,39 @@ html.is-compact .trial-end-share-note { margin-top: 4px; line-height: 1.4; }
 .home-stage .h15-nameplate { height: auto !important; aspect-ratio: 1580 / 425; }
 /* スマホ：6字の札（コレクション・ぱにゅぱにゅ）が六角に詰まるので、字の間を詰めて両端に余白を残す */
 .home-stage.h15-sm .h15-places .h15-pl { --pl-ls: .03em; }
+
+/* ===== ぱにゅぱにゅ 段1（2026-11-07）=====
+   ・PC も計る札を左下の隅へ（谷間の上に乗っていた）
+   ・結果の札は右下に寄せ、絵の胸と顔を隠さない（2行＋「詳しく」）
+   ・留めの数の札・初めての一言
+   ・粒と擬音を金と深紅に（ピンクの汎用の飾りから、舞台の色へ） */
+.pv2.is-mesh .pv2-meter { left: max(20px, 2vw); bottom: max(16px, 2.4vh); transform: none; width: min(260px, 26vw); text-align: left; }
+.pv2.is-mesh .pv2-meter-row { justify-content: flex-start; }
+.pv2 .pv2-clasp { display: flex; align-items: baseline; gap: 6px; margin-top: 4px; font-family: "Shippori Mincho B1", serif; font-size: var(--r-label, 15px); color: #f2d79a; text-shadow: 0 1px 3px #000; }
+.pv2 .pv2-clasp[hidden] { display: none; }
+.pv2 .pv2-clasp b { font-family: "Barlow Condensed", sans-serif; font-size: 1.4em; color: #ffe9a8; }
+.pv2 .pv2-clasp i { font-style: normal; color: #e9cfa0; }
+.pv2 .pv2-clasp.is-all b { color: #fff3cf; text-shadow: 0 0 10px rgba(255,220,140,.9); }
+.pv2 .pv2-hintline { position: absolute; z-index: 6; left: 50%; top: max(70px, 12vh); transform: translateX(-50%); padding: 8px 18px; pointer-events: none;
+  font-family: "Shippori Mincho B1", serif; font-size: var(--r-speech, 17px); color: #fbf1dc; background: rgba(28,6,12,.82); border: 1px solid #c8a24a; white-space: nowrap;
+  animation: pv2HintIn .4s ease both; transition: opacity .5s; }
+.pv2 .pv2-hintline span { margin-right: 8px; color: #f2d79a; font-size: var(--r-label, 15px); }
+.pv2 .pv2-hintline.out { opacity: 0; }
+@keyframes pv2HintIn { from { opacity: 0; transform: translate(-50%, -6px); } }
+@media (min-width: 900px) {
+  .pv2 .pv2-result { left: auto; right: max(20px, 2.4vw); bottom: max(16px, 3vh); top: auto; transform: none; width: min(420px, 34vw); }
+}
+.pv2 .pv2-res-more { margin-top: 8px; color: rgba(255,236,243,.85); }
+.pv2 .pv2-res-more summary { cursor: pointer; font-size: var(--r-label, 15px); color: #e9cfa0; list-style: none; }
+.pv2 .pv2-res-more summary::-webkit-details-marker { display: none; }
+.pv2 .pv2-res-more summary::before { content: "＋ "; }
+.pv2 .pv2-res-more[open] summary::before { content: "－ "; }
+.pv2 .panyu-particle.is-crimson { color: #e8455e; }
+.pv2 .pv2-word { color: #fff3d6; -webkit-text-stroke-color: #8a1f2e; text-shadow: 0 0 12px rgba(255,200,110,.55), 0 4px 12px rgba(40,0,10,.6); }
+.pv2 .pv2-word.is-big { color: #fff8e6; -webkit-text-stroke-color: #b8873a; }
+@media (prefers-reduced-motion: reduce) { .pv2 .pv2-hintline { animation: none; } }
+/* ミミの一言は顔を隠さないよう、左上の見出しの下に（スマホでは目の上に乗っていた） */
+.pv2 .pv2-hintline { left: max(20px, 2vw); top: max(84px, 13vh); transform: none; white-space: normal; max-width: min(420px, 44vw); }
+@keyframes pv2HintIn { from { opacity: 0; transform: translateY(-6px); } }
+.pv2 .pv2-hintline { word-break: keep-all; overflow-wrap: anywhere; max-width: min(340px, 44vw); }
+.pv2 .pv2-hintline { width: fit-content; }
