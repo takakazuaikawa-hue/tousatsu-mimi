@@ -68,6 +68,11 @@ else {
     Menu.setApplicationMenu(null);
     protocol.handle('app', serve);
     createWindow();
+    // メモリの記録（MIMI_MEMLOG=1 で起動した時だけ）：10秒ごとにプロセス別の使用量を userData/memlog.txt へ。重くなる場面を探す用（2026-11-07）
+    if (process.env.MIMI_MEMLOG) {
+      const file = path.join(app.getPath('userData'), 'memlog.txt');
+      setInterval(() => { const rows = app.getAppMetrics().map(m => m.type + ':' + Math.round((m.memory.workingSetSize || 0) / 1024) + 'MB'); fs.appendFile(file, new Date().toISOString() + ' ' + rows.join(' ') + '\n', () => {}); }, 10000);
+    }
   });
   app.on('window-all-closed', () => app.quit());
 }

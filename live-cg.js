@@ -110,6 +110,7 @@
     canvas.className = img.className.replace(/\bmotion-covered\b/, '') + ' live-cg';
     canvas.width = W; canvas.height = H;
     const gl = canvas.getContext('webgl', { alpha: false, antialias: false, premultipliedAlpha: false });
+    if (gl) { gl.__texs = []; const mk = gl.createTexture.bind(gl); gl.createTexture = () => { const t = mk(); gl.__texs.push(t); return t; }; }
     if (!gl) return;
     const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); return o; };
     const prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog);
@@ -194,7 +195,7 @@
     if (img) pending.delete(img);
     const st = img && img.__liveState; if (!st) return;
     cancelAnimationFrame(st.raf); if (st.ro) st.ro.disconnect(); if (st.io) st.io.disconnect();
-    const lose = st.gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
+    try { (st.gl.__texs || []).forEach(t => st.gl.deleteTexture(t)); } catch (e) {} const lose = st.gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
     st.canvas.remove(); img.classList.remove('live-covered'); img.__liveState = null; img.__live = null; live.delete(st); sync();
   }
   window.LiveCG = { attach, detach, setPaused, isPaused: () => paused, has: (src) => !!keyOf(src) };

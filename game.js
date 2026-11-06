@@ -717,11 +717,13 @@ function settleMotionToStill(v, src) {
   const settle = () => {
     if (settled) return; settled = true;
     v.classList.add('done');
-    setTimeout(() => v.remove(), 1100);
+    setTimeout(() => freeVideo(v), 1100);
   };
   v.addEventListener('timeupdate', () => { if (v.duration && v.currentTime >= v.duration - 0.7) settle(); });
   v.addEventListener('ended', settle, { once: true });
 }
+// 動画を外して、再生の部品（デコーダ）も手放す（2026-11-07 メモリの調査）
+function freeVideo(v) { if (!v) return; try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} v.remove(); }
 // 読み込み係が手元に持っている動画の src（無ければ null）。読み込み係が無いページでは元の URL をそのまま使う
 function motionLocalSrc(src) { return window.MimiAssets ? window.MimiAssets.videoSrc(src) : src; }
 const MOTION_OK = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -9748,6 +9750,8 @@ function goLobby() {
   document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
   if (typeof dismissCutIn === 'function') dismissCutIn();
   if (state && state.psychRoot) { state.psychRoot.remove(); state.psychRoot = null; }
+  // 相手の待機の動画は卓を出たら手放す（次の卓で使い回すために持ち続けていた）
+  if (__idleVideo) { freeVideo(__idleVideo); __idleVideo = null; }
   document.querySelectorAll('.hand-result-overlay, .rebuy-overlay, .dominance-overlay, .dominance-choice-overlay, .tutorial-overlay, .chapter-banner, .hands-on-overlay, .personality-reveal-banner, .emote-cutin, .clutch-cutin, .bluff-break-charge, .lecture-stamp, .psych-modal, .rico-cutin, .allin-cutin, .panyu-clicker-overlay, .mk-layer').forEach(el => el.remove());
   const lhud = document.getElementById('lecture-hud'); if (lhud) lhud.remove();
   if (state) { state.lectureMode = false; state.introHandMode = false; state.tutorialMode = false; state.psychPending = false; }

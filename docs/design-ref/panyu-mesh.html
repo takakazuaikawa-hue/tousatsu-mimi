@@ -155,6 +155,9 @@
   const cv = document.getElementById('gl');
   const gl = cv.getContext('webgl', { antialias: true, alpha: false, premultipliedAlpha: false });
   if (!gl) { if (EMBED) tell({ t: 'nogl' }); else document.getElementById('err').style.display = 'grid'; return; }
+  if (gl) { gl.__texs = []; const mk = gl.createTexture.bind(gl); gl.createTexture = () => { const t = mk(); gl.__texs.push(t); return t; }; }
+  // 窓を閉じた時（iframe が外れた時）に GPU の絵と描画の部品を手放す（2026-11-07 メモリの調査）
+  addEventListener('pagehide', () => { try { (gl.__texs || []).forEach(t => gl.deleteTexture(t)); } catch (e) {} const lose = gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext(); });
 
   // ---- 設定（ボタンで切り替え） ----
   const opt = { mode: 'mesh', zoom: innerHeight < 500 ? 1 : 1.28, amp: 1.95 };   // 横向きスマホは寄ると顔が切れるので寄らない（2本指で寄れる）   // 動きは網目＋ばねだけ、揺れは1.95が標準（2026-10-12 決定）

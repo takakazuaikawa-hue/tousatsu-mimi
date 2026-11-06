@@ -103,7 +103,7 @@
     if (!cur) return;
     cancelAnimationFrame(cur.raf); cur.io && cur.io.disconnect(); if (cur.timer) clearInterval(cur.timer); cur.ro && cur.ro.disconnect(); cur.mo && cur.mo.disconnect();
     document.removeEventListener('visibilitychange', cur.onVis);
-    const lose = cur.gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
+    try { (cur.gl.__texs || []).forEach(t => cur.gl.deleteTexture(t)); } catch (e) {} const lose = cur.gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
     cur.canvas.remove(); cur.host.classList.remove('is-live'); cur = null;
   }
   function start(host, src) {
@@ -115,6 +115,7 @@
     const canvas = document.createElement('canvas');
     canvas.className = 'h15-live';
     const gl = canvas.getContext('webgl', { alpha: false, antialias: false, premultipliedAlpha: false });
+    if (gl) { gl.__texs = []; const mk = gl.createTexture.bind(gl); gl.createTexture = () => { const t = mk(); gl.__texs.push(t); return t; }; }
     if (!gl) return;
     const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
     let prog;
