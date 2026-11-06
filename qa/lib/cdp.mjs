@@ -14,7 +14,7 @@ const EDGE_CANDIDATES = [
 ].filter(Boolean);
 export const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-class Conn {
+export class Conn {
   constructor(ws) {
     this.ws = ws; this.id = 0; this.pending = new Map(); this.listeners = new Map();
     ws.onmessage = (e) => {

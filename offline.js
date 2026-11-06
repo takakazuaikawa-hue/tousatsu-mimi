@@ -7,7 +7,7 @@
   'use strict';
   const PROMPTED_KEY = 'mimi.packPrompted';
   const WANTED_KEY = 'mimi.packWanted'; // 押して始めた印。途中で切れたら次の起動で続きを取る
-  const supported = 'serviceWorker' in navigator && window.isSecureContext;
+  const supported = !window.MIMI_LOCAL && location.protocol !== 'file:' && 'serviceWorker' in navigator && window.isSecureContext;
 
   const ls = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },

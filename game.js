@@ -3218,6 +3218,8 @@ function shareGame() {
 }
 
 function applyTitleButtons() {
+  // DLsite 版（アプリ）は共有先を持たないので、タイトルの共有ボタンを出さない
+  if (window.MIMI_LOCAL && !SHARE_URL) document.querySelectorAll('[data-action="share-game"]').forEach(b => { b.hidden = true; });
   // 下端の版と権利の表記（値は game.js 先頭の GAME_VERSION / COPYRIGHT_TEXT。設定の窓の最下行と同じ）
   const verEl = document.querySelector('.t3-ver');
   if (verEl) verEl.textContent = `Ver ${GAME_VERSION}${IS_TRIAL ? ' 体験版' : ''}　${COPYRIGHT_TEXT}`;

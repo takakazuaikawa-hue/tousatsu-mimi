@@ -316,7 +316,8 @@
 
     const stampUrl = (k) => 'url("' + api.asset('assets/ui/stamp_' + k + '.webp') + '")';
     const stampOk = {};
-    ['correct', 'wrong'].forEach(k => { try { fetch(api.asset('assets/ui/stamp_' + k + '.webp')).then(r => { stampOk[k] = !!r.ok; }).catch(() => {}); } catch (e) {} });
+    // 判子の絵があるか（直接開いた時も使えるよう <img> で確かめる）
+    ['correct', 'wrong'].forEach(k => { const im = new Image(); im.onload = () => { stampOk[k] = true; }; im.onerror = () => { stampOk[k] = false; }; im.src = api.asset('assets/ui/stamp_' + k + '.webp'); });
     api.css('doubt', CSS + `
       .doubt-list.has-stamp .mark.ok::after { -webkit-mask-image: ${stampUrl('correct')}; mask-image: ${stampUrl('correct')}; }
       .doubt-list.has-stamp .mark.ng::after { -webkit-mask-image: ${stampUrl('wrong')}; mask-image: ${stampUrl('wrong')}; }

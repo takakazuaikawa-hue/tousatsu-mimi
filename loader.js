@@ -45,6 +45,16 @@
     });
   }
   function loadVideo(e) {
+    if (location.protocol === 'file:') {
+      return new Promise(res => {
+        const v = document.createElement('video'); let done = false;
+        const fin = (ok) => { if (done) return; done = true; if (ok) e.blobUrl = e.url; res(ok); };
+        v.muted = true; v.preload = 'auto';
+        v.addEventListener('canplaythrough', () => fin(true), { once: true });
+        v.addEventListener('error', () => fin(false), { once: true });
+        v.src = e.url; v.load();
+      });
+    }
     return fetch(e.url).then(r => r.ok ? r.blob() : Promise.reject()).then(b => { e.blobUrl = URL.createObjectURL(b); return true; }, () => false);
   }
   function entry(url, front) {

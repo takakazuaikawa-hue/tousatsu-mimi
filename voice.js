@@ -11,6 +11,9 @@
 (function () {
   'use strict';
   var BASE = 'assets/voice/';
+  // index.html を直接開いた時（file://）：fetch で読めないので、一覧は assets/voice/manifest.js、声は <audio> で鳴らす
+  // （DLsite 版は Electron の app:// で開くので fetch が使える。こちらは保険）
+  var LOCAL = location.protocol === 'file:';
   var DUCK_TO = 0.7;              // 声の間、BGM は3割下げる
   // 掛け声の待ち：プレイはサクサク進むので、前の声を待って遅れて鳴ると「遅く聞こえる」（2026-10-20 ユーザー指摘）。
   // 待たせるのは一番新しい1本だけ、0.9秒以内に始められなければ鳴らさない（以前は2本・3.5秒）
@@ -52,6 +55,7 @@
   // ── 台帳（manifest.json）。最初に必要になった時に1度だけ読む ──
   function loadManifest() {
     if (window.MIMI_TRIAL) { manifest = manifest || { clips: {}, texts: {} }; }
+    if (!manifest && window.VOICE_MANIFEST) manifest = window.VOICE_MANIFEST;
     if (manifest) return Promise.resolve(manifest);
     if (!manifestP) {
       manifestP = fetch(BASE + 'manifest.json').then(function (r) { return r.ok ? r.json() : null; })
@@ -83,6 +87,7 @@
     var p = loadManifest().then(function (m) {
       var c = m && m.clips[id];
       var ctx = (typeof mpAudioCtx === 'function') ? mpAudioCtx() : null;
+      if (c && LOCAL) return loadEl(BASE + c.f).then(function (el) { if (el) buffers.set(id, el); return el; });
       if (!c || !ctx) return null;
       return fetch(BASE + c.f).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
         .then(function (ab) { return decode(ctx, ab); })
@@ -149,9 +154,22 @@
   function applyDuck() { try { if (typeof applyBgmVolume === 'function') applyBgmVolume(); } catch (e) {} }
 
   // ── 再生 ──
+  // 直接開いた時の声の入れ物：読めたら（または5秒たったら）返す
+  function loadEl(url) {
+    return new Promise(function (res) {
+      var a = new Audio(), done = false;
+      var fin = function (ok) { if (done) return; done = true; res(ok ? { el: a } : null); };
+      a.preload = 'auto';
+      a.addEventListener('canplaythrough', function () { fin(true); }, { once: true });
+      a.addEventListener('error', function () { fin(false); }, { once: true });
+      setTimeout(function () { fin(a.readyState >= 2); }, 5000);
+      a.src = url; a.load();
+    });
+  }
   function stopCur(fast) {
     if (!cur) return;
     var c = cur; cur = null;
+    if (c.el) { c.el.onended = null; try { c.el.pause(); c.el.currentTime = 0; } catch (e) {} return; }
     c.src.onended = null;
     try {
       var ctx = c.gain.context, t = ctx.currentTime;
@@ -171,6 +189,20 @@
   }
   function startNow(id, buf, opts) {
     if (!enabled()) return false;
+    if (buf && buf.el) {
+      stopCur(true);
+      var a = buf.el, mine = { id: id, el: a, prio: opts.prio || 0, token: ++token };
+      cur = mine;
+      a.volume = volume();
+      try { a.currentTime = 0; } catch (e) {}
+      a.onended = function () { if (cur !== mine) return; cur = null; var nx = nextQueued(); if (nx) startNow(nx.id, buffers.get(nx.id), nx.opts); else setDuck(1); };
+      var pr = a.play(); if (pr && pr.catch) pr.catch(function () { if (cur === mine) { cur = null; setDuck(1); } });
+      LOG.push({ id: id, t: Math.round(now()), req: opts.__req ? Math.round(opts.__req) : null, late: opts.__req ? Math.round(now() - opts.__req) : null });
+      if (LOG.length > 400) LOG.shift();
+      recent.push(id); if (recent.length > 2) recent.shift();
+      setDuck(DUCK_TO);
+      return true;
+    }
     var ctx = mpAudioCtx();
     if (!ctx) return false;
     stopCur(true);
