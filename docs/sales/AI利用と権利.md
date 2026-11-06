@@ -111,6 +111,7 @@
 
 ```
 ミミのテキサスホールデムポーカー
+© 2026 POMERASHIBA Studio
 
 制作協力（生成 AI の利用）
 イラスト・シナリオ：ChatGPT（OpenAI）

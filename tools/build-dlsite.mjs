@@ -109,7 +109,7 @@ const STAGE = path.join(DL, 'stage');
 fs.copyFileSync(path.join(EL, 'main.js'), path.join(STAGE, 'main.js'));
 fs.copyFileSync(path.join(repo, 'assets/ui/icon-512.png'), path.join(STAGE, 'icon.png'));
 const pkg = JSON.parse(fs.readFileSync(path.join(EL, 'package.json'), 'utf8'));
-fs.writeFileSync(path.join(STAGE, 'package.json'), JSON.stringify({ name: pkg.name, productName: pkg.productName, version: pkg.version, description: pkg.description, author: 'MimiTexasHoldem', main: 'main.js', private: true }, null, 2));
+fs.writeFileSync(path.join(STAGE, 'package.json'), JSON.stringify({ name: pkg.name, productName: pkg.productName, version: pkg.version, description: pkg.description, author: 'POMERASHIBA Studio', main: 'main.js', private: true }, null, 2));
 // exe の絵（.ico）を作る
 const FF = process.env.FF || 'C:/Users/takakazu/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg.Essentials_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe';
 const ico = path.join(DL, 'icon.ico');
@@ -120,7 +120,7 @@ fs.rmSync(PACK, { recursive: true, force: true });
 const [built] = await packager({
   dir: STAGE, out: PACK, platform: 'win32', arch: 'x64', electronVersion: pkg.devDependencies.electron,
   executableName: 'MimiTexasHoldem', name: 'MimiTexasHoldem', icon: ico, asar: false, overwrite: true, prune: false,
-  appVersion: pkg.version, 
+  appVersion: pkg.version, appCopyright: '© 2026 POMERASHIBA Studio',
   win32metadata: { FileDescription: 'ミミのテキサスホールデムポーカー', ProductName: 'ミミのテキサスホールデムポーカー', InternalName: 'MimiTexasHoldem', OriginalFilename: 'MimiTexasHoldem.exe' },
 });
 fs.rmSync(FINAL, { recursive: true, force: true });

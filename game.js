@@ -27,8 +27,7 @@ function goldMark(ch) {
 }
 // 製品の表記（タイトル・設定・スタッフロールはここを読む。権利表記は筆名）
 const GAME_VERSION = '1.0';
-// 権利者の名前は出さない（2026-11-07 作者の指示で個人名の表記を全部消した）。空のままなら版だけ出す
-const COPYRIGHT_TEXT = '';
+const COPYRIGHT_TEXT = '© 2026 POMERASHIBA Studio';
 // 未解放の錠（assets/ui/home/lock.webp。CSS は .gold-lock）
 const GOLD_LOCK = '<img class="gold-lock" src="assets/ui/home/lock.webp" alt="未解放">';
 // 文字列の最初の漢字（なければ最初の1字）
@@ -3224,7 +3223,7 @@ function applyTitleButtons() {
   if (window.MIMI_LOCAL && !SHARE_URL) document.querySelectorAll('[data-action="share-game"]').forEach(b => { b.hidden = true; });
   // 下端の版と権利の表記（値は game.js 先頭の GAME_VERSION / COPYRIGHT_TEXT。設定の窓の最下行と同じ）
   const verEl = document.querySelector('.t3-ver');
-  if (verEl) verEl.textContent = [`Ver ${GAME_VERSION}${IS_TRIAL ? ' 体験版' : ''}`, COPYRIGHT_TEXT].filter(Boolean).join('　');
+  if (verEl) verEl.textContent = `Ver ${GAME_VERSION}${IS_TRIAL ? ' 体験版' : ''}　${COPYRIGHT_TEXT}`;
   // 体験版：ロゴのすぐ下に「体験版」の札（ロゴの中に置いて一緒に動かす。CSS は .t3-trial）
   if (IS_TRIAL && !document.querySelector('.t3-trial')) { const logo = document.querySelector('.t3-logo'); if (logo) logo.insertAdjacentHTML('beforeend', '<span class="t3-trial">体験版</span>'); }
   const el = document.querySelector('[data-bind="titleButtons"]');
@@ -5301,7 +5300,7 @@ function showSettingsModal() {
         </section>
       </div>
       <button class="btn btn-primary settings-modal-close">閉じる</button>
-      <div class="settings-modal-legal">${['ミミのテキサスホールデムポーカー', 'Ver ' + GAME_VERSION, COPYRIGHT_TEXT].filter(Boolean).join('　')}</div>
+      <div class="settings-modal-legal">ミミのテキサスホールデムポーカー　Ver ${GAME_VERSION}　${COPYRIGHT_TEXT}</div>
       <div class="settings-modal-legal settings-modal-diag">画面 ${innerWidth}×${innerHeight}・端末 ${screen.width}×${screen.height}・倍率 ${(+getComputedStyle(document.documentElement).getPropertyValue('--game-scale') || 0).toFixed(2)}・${document.documentElement.classList.contains('is-compact') ? 'スマホ' : 'PC'}の並び・${(window.matchMedia && matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches) ? 'ホーム画面' : 'ブラウザ'}・${devicePixelRatio}</div>
     </div>
   `;
@@ -9261,7 +9260,10 @@ const CREDITS = [
   { type: 'small', text: '〜転生したらバニーガールだった私の外れスキル《ぱにゅぱにゅ》だけがレベルアップな件〜' },
   { type: 'gap' },
 
-  ...(COPYRIGHT_TEXT ? [{ type: 'line', text: COPYRIGHT_TEXT, cls: 'is-legal' }] : []),
+  { type: 'section', text: '制作・著作' },
+  { type: 'line', text: 'ポメラシバスタジオ', cls: 'is-person' },
+  { type: 'gap' },
+  { type: 'line', text: COPYRIGHT_TEXT, cls: 'is-legal' },
   { type: 'line', text: 'Ver ' + GAME_VERSION, cls: 'is-legal' },
   // 声の合成に使った Irodori-TTS（と同梱の DACVAE・SilentCipher）は MIT ライセンス。著作権表示を残す義務がある
   { type: 'line', text: 'Irodori-TTS / Semantic-DACVAE © Aratako, SilentCipher © Sony Research — MIT License', cls: 'is-legal' },
