@@ -389,7 +389,7 @@ function ruleChecks(A) {
     const holes1 = JSON.stringify(t.hand.holes);
     A.applyAction(t, A.decideAction(t));
     const saved = A.serialize(t);
-    ok('途中の保存はハンド前の状態', saved.handNo === 0 && saved.players.every(p => p.stack === 1500), JSON.stringify(saved.players.map(p => p.stack)));
+    ok('途中の保存はハンド前の状態', saved.handNo === 0 && saved.players.every(p => p.stack === A.CONFIG.startStack), JSON.stringify(saved.players.map(p => p.stack)));
     const t2 = A.restore(saved);
     A.startHand(t2);
     ok('復元して始めると同じ札', JSON.stringify(t2.hand.holes) === holes1);

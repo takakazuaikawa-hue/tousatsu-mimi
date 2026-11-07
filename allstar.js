@@ -13,7 +13,7 @@
 // 端数（25 単位）はボタンの左から近い勝者へ／ブラインドを払えない人は持っている分でオールイン／
 // BB が短いオールインでも、ほかの人がコールする額は BB の満額／ブラインドは 5 ハンドごと（手の途中では変えない）／
 // 同時脱落は「ハンド開始時の持ち点が多い人が上位、同額は同順位で賞金を均等」。
-// 検算：いつでも「全員の残り＋未精算の投入額＝9,000」（Allstar.audit）。
+// 検算：いつでも「全員の残り＋未精算の投入額＝開始の合計（12,000）」（Allstar.audit）。
 //
 // 出来事（event）の列：startHand・applyAction・stepAI は、画面が順に演出できる出来事の配列を返す。
 //   {type:'level-up', level, prevLevel, sb, bb, clock, midnight}
@@ -39,7 +39,7 @@ const Allstar = (() => {
 
   // ---- 既定の設定（plan のブラインド表・賞金） ----
   const CONFIG = {
-    startStack: 1500,
+    startStack: 2000,   // 11/08 D16：1500 では早々に10BBを切り、プロの手でも押すか降りるかだけになっていた（15ハンド以内の脱落 21%→10%）
     handsPerLevel: 5,
     // Lv1〜Lv10。以後 5 ハンドごとに 1.5 倍（100 単位に丸める）
     levels: [[25, 50], [50, 100], [75, 150], [100, 200], [150, 300], [200, 400], [300, 600], [400, 800], [600, 1200], [800, 1600]],
@@ -1062,6 +1062,80 @@ const Allstar = (() => {
   // 5つの点：持ち点の深さ／位置／勝ち目と値段／相手／賞金。key は結論を決めた点。
   // =============================================================
   const PRO_ST = { loose: 1, respect: 0.25 };
+  let PUSH_ICM_POW = 3;   // 試し（qa/allstar-coach-sim.mjs、300大会）で 0・1.5・3 のうち一番よかった絞り方
+  // 賞金の見込み（ICM・Malmuth-Harville）：持ち点の配列から、各自が受け取る賞金の期待値。
+  // prizes は「今の残り人数の順位」ぶん（1位から）。持ち点0の人は残りの最下位の賞金を山分け。
+  function icmValues(stacks, prizes) {
+    const n = stacks.length, out = new Array(n).fill(0);
+    const live = [], zero = [];
+    stacks.forEach((s, i) => (s > 0 ? live : zero).push(i));
+    const k = live.length;
+    if (zero.length) { let sum = 0; for (let p = k; p < n; p++) sum += prizes[p] || 0; zero.forEach(i => { out[i] = sum / zero.length; }); }
+    const total = live.reduce((a, i) => a + stacks[i], 0);
+    const memo = new Map();
+    // rest：まだ順位の決まっていない人の印（ビット）。place：次に決める順位（0 始まり）。各自の賞金の見込みを返す
+    const go = (rest, place, restTotal) => {
+      const key = rest * 8 + place;
+      if (memo.has(key)) return memo.get(key);
+      const v = new Array(k).fill(0);
+      if (place >= k || !(prizes[place] > 0) && place >= prizes.length) { memo.set(key, v); return v; }
+      for (let j = 0; j < k; j++) {
+        if (!(rest & (1 << j))) continue;
+        const pr = stacks[live[j]] / restTotal;
+        if (pr <= 0) continue;
+        v[j] += pr * (prizes[place] || 0);
+        const sub = go(rest & ~(1 << j), place + 1, restTotal - stacks[live[j]]);
+        for (let q = 0; q < k; q++) v[q] += pr * sub[q];
+      }
+      memo.set(key, v);
+      return v;
+    };
+    if (k) { const v = go((1 << k) - 1, 0, total); live.forEach((i, j) => { out[i] = v[j]; }); }
+    return out;
+  }
+  // 払うと決めた時に要る勝率を、チップでなく賞金の見込みで出す（プロが大会で使う考え方）。
+  // 降りる／払って負ける／払って勝つ の3つの後の持ち点で、ミミの賞金の見込みを比べる。相手は賭けてきた人。
+  function icmNeed(t, seat, agg, L) {
+    const h = t.hand;
+    const alive = h.aliveAtStart || liveSeats(t).length;
+    const prizes = t.cfg.prizes.slice(0, alive);
+    const seats = [];
+    for (let s = 0; s < NS(t); s++) if (h.inHand[s] || isLive(t, s)) seats.push(s);
+    const base = seats.map(s => t.players[s].stack);
+    const iMe = seats.indexOf(seat), iAg = seats.indexOf(agg);
+    if (iMe < 0 || iAg < 0) return null;
+    const P = L.pot, risk = L.toCall;
+    const excess = Math.max(0, h.committed[agg] - h.committed[seat] - risk);
+    const fold = base.slice(); fold[iAg] += P;
+    const lose = base.slice(); lose[iMe] -= risk; lose[iAg] += P + risk;
+    const win = base.slice(); win[iMe] += P - excess; win[iAg] += excess;
+    const vF = icmValues(fold, prizes)[iMe], vL = icmValues(lose, prizes)[iMe], vW = icmValues(win, prizes)[iMe];
+    if (!(vW > vL)) return null;
+    return Math.max(0, Math.min(0.95, (vF - vL) / (vW - vL)));
+  }
+  // 全部を賭けて、一番多く持っている後ろの人に受けられた時の「賞金の重さ」（チップの必要勝率に対する倍率）
+  function pushIcmScale(t, seat, behindSeats, L) {
+    const h = t.hand;
+    if (!behindSeats.length) return 1;
+    let big = behindSeats[0];
+    for (const s of behindSeats) if (t.players[s].stack + h.committed[s] > t.players[big].stack + h.committed[big]) big = s;
+    const myAll = L.stack + L.committed;
+    const covered = Math.min(myAll, t.players[big].stack + h.committed[big]);
+    const dead = L.pot - L.committed - Math.min(h.committed[big], covered);
+    const alive = h.aliveAtStart || liveSeats(t).length;
+    const prizes = t.cfg.prizes.slice(0, alive);
+    const seats = [];
+    for (let s = 0; s < NS(t); s++) if (h.inHand[s] || isLive(t, s)) seats.push(s);
+    const iMe = seats.indexOf(seat), iB = seats.indexOf(big);
+    const base = seats.map(s => t.players[s].stack + h.committed[s]);
+    const now = base.slice();
+    const win = base.slice(); win[iMe] += covered + dead; win[iB] -= covered;
+    const lose = base.slice(); lose[iMe] -= covered; lose[iB] += covered + dead;
+    const vN = icmValues(now, prizes)[iMe], vW = icmValues(win, prizes)[iMe], vL = icmValues(lose, prizes)[iMe];
+    if (!(vW > vL)) return 1;
+    const needIcm = (vN - vL) / (vW - vL), needChip = covered / (2 * covered + dead);
+    return Math.max(1, needIcm / Math.max(0.05, needChip));
+  }
   function coach(t) {
     const h = t.hand;
     const L = legalActions(t);
@@ -1084,18 +1158,21 @@ const Allstar = (() => {
     const st = standings(t);
     const rank = (st.find(r => r.seat === seat) || {}).rank || 1;
     const chipLeader = rank === 1;
-    const risky = L.toCall >= 0.35 * L.stack || stackBB < 10;
-    const icm = jump >= 200 && !chipLeader && risky ? 0.03 : 0;
     // 相手：賭けてきた人。いなければ後ろで最初に動く人
     const agg = h.streetAggressor != null && h.streetAggressor !== seat ? h.streetAggressor : null;
+    // 賞金の見込み（ICM）で要る勝率。落ちると賞金の段が下がる分だけ、チップの計算より高くなる（D16：プロと同じ手で早々に飛ばない）
+    let needIcm = needPct;
+    if (L.toCall > 0 && agg != null) { const v = icmNeed(t, seat, agg, L); if (v != null) needIcm = Math.max(needPct, v); }
+    const icmExtra = needIcm - needPct;
+    const icm = 0;   // 以前の「賞金で一律 +3%」は ICM の計算に置き換えた
     const focus = agg != null ? agg : behind.length ? behind[0] : others[0];
     const focusBB = focus != null ? (t.players[focus].stack + h.committed[focus]) / bb : 0;
     const allInFacing = agg != null && h.allIn[agg];
     const pen = agg != null ? aggPenalty({ h, st: PRO_ST, t, bb }) : 0;
 
     const out = {
-      street: h.street, stackBB, behind: behind.length, behindSeats: behind, others, nOpp, needPct, toCall: L.toCall, pot: L.pot,
-      canCheck: L.canCheck, isBet: L.isBet, alive, ladder, jump, rank, chipLeader, icm: icm > 0,
+      street: h.street, stackBB, behind: behind.length, behindSeats: behind, others, nOpp, needPct: needIcm, needChip: needPct, icmExtra, toCall: L.toCall, pot: L.pot,
+      canCheck: L.canCheck, isBet: L.isBet, alive, ladder, jump, rank, chipLeader, icm: icmExtra >= 0.02,
       focus: focus != null ? t.players[focus].id : null, focusSeat: focus, focusBB, aggressor: agg != null, allInFacing,
       top: null, range: null, eq: null, outs: 0, made: null, lean: 'check', key: 'hand', semi: false,
     };
@@ -1111,17 +1188,23 @@ const Allstar = (() => {
           const nB = Math.max(1, Math.min(5, behind.length + h.limpers));
           let range = PUSH_BASE[nB] * (1 + 0.09 * (10 - stackBB));
           if (stackBB <= 2) range = Math.max(range, 0.7);
-          if (icm) range *= 0.95;
+          // 受けられて負けると賞金の段が下がる。その重さの分だけ全部賭ける手を絞る
+          const sc = pushIcmScale(t, seat, behind, L);
+          out.pushScale = sc;
+          if (stackBB > 2) range /= Math.pow(sc, PUSH_ICM_POW);
+          out.icm = out.icm || sc >= 1.15;
           out.range = Math.min(1, range);
-          return top <= out.range ? lean('allin', 'stack') : lean(L.canCheck ? 'check' : 'fold', 'stack');
+          if (top <= out.range) return lean('allin', 'stack');
+          // 賞金を考えなければ全部賭ける手：賞金の段が理由で待つ
+          return lean(L.canCheck ? 'check' : 'fold', top <= Math.min(1, range * Math.pow(sc, PUSH_ICM_POW)) && stackBB > 2 ? 'prize' : 'stack');
         }
-        return out.eq >= needPct + 0.02 * behind.length + icm ? lean('allin', 'price') : lean('fold', 'price');
+        if (out.eq >= needIcm + 0.02 * behind.length) return lean('allin', out.icm ? 'prize' : 'price');
+        return lean('fold', out.icm && out.eq >= needPct + 0.02 * behind.length ? 'prize' : 'price');
       }
       if (h.raises === 0) {
         if (L.canCheck) { out.range = 0.09; return top <= 0.09 ? lean('raise', 'hand') : lean('check', 'hand'); }
         const nB = Math.max(1, Math.min(5, behind.length));
         let range = TRAITS.rico_serious.open[nB];
-        if (icm && stackBB < 20) range *= 0.94;
         out.range = range;
         if (h.limpers > 0) {
           if (top <= range * 0.6) return lean('raise', 'position');
@@ -1133,9 +1216,9 @@ const Allstar = (() => {
       const tb = h.raises === 1 ? (h.openerBehind != null && h.openerBehind <= 2 ? 0.075 : 0.04) : 0.025;
       if (L.canRaise && top <= tb && !allInFacing) return lean('raise', 'hand');
       const cap = h.raises === 1 ? (allInFacing ? 0.6 : 0.5) : (allInFacing ? 0.2 : 0.1);
-      const tax = 0.03 + 0.02 * behind.length + icm;
-      if (out.eq >= needPct + tax && top <= cap) return lean(L.callIsAllIn ? 'allin' : 'call', icm ? 'prize' : 'price');
-      return lean('fold', icm && out.eq >= needPct + tax - icm ? 'prize' : 'price');
+      const tax = 0.03 + 0.02 * behind.length;
+      if (out.eq >= needIcm + tax && top <= cap) return lean(L.callIsAllIn ? 'allin' : 'call', out.icm ? 'prize' : 'price');
+      return lean('fold', out.icm && out.eq >= needPct + tax && top <= cap ? 'prize' : 'price');
     }
     // フロップ以降
     const all = hole.concat(h.board);
@@ -1151,11 +1234,11 @@ const Allstar = (() => {
       const eqAdj = Math.max(0.01, eqN - PRO_ST.respect * sizeRatio * 2 * fair);
       const relAdj = rel - PRO_ST.respect * sizeRatio;
       out.eq = eqAdj;
-      const tax = 0.02 * behind.length + icm;
+      const tax = 0.02 * behind.length;
       const drawBonus = out.outs >= 8 ? 0.04 : 0;
       if (L.canRaise && relAdj >= 0.82) return lean(L.stack <= 0.6 * (L.pot + L.toCall) ? 'allin' : 'raise', 'hand');
-      if (eqAdj + drawBonus >= needPct + tax) return lean(L.callIsAllIn ? 'allin' : 'call', icm ? 'prize' : 'price');
-      return lean('fold', icm && eqAdj + drawBonus >= needPct + tax - icm ? 'prize' : 'price');
+      if (eqAdj + drawBonus >= needIcm + tax) return lean(L.callIsAllIn ? 'allin' : 'call', out.icm ? 'prize' : 'price');
+      return lean('fold', out.icm && eqAdj + drawBonus >= needPct + tax ? 'prize' : 'price');
     }
     out.eq = eqN;
     if (L.canRaise && rel >= 0.64) return lean(L.stack <= 0.6 * L.pot ? 'allin' : 'raise', 'hand');
@@ -1197,7 +1280,7 @@ const Allstar = (() => {
     levelInfo, levelTable, blindsAt: (lv) => blindsAt(CONFIG, lv), humanSeat,
     computePots: (t) => (t.hand ? computePots(t.hand) : []),
     // 試験・調整用
-    _internal: { eqPF, topPct, equityMulti, relOf, mulberry32, hash2, nextPositions, TRAITS, EXTRA_STYLES },
+    _internal: { eqPF, topPct, equityMulti, relOf, mulberry32, hash2, nextPositions, TRAITS, EXTRA_STYLES, icmValues, setPushPow: (x) => { PUSH_ICM_POW = x; } },
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Allstar;

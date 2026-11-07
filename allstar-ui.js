@@ -167,7 +167,10 @@
   let host = null;       // .as-host
   let G = 0;             // 世代：teardown・新しい大会で進める。古い予約は動かない
   const STOP = { stop: true };
-  let speed = 1;         // 早送り（ミミが降りた後は 3）
+  let speed = 1;         // 今の速さ（基本の速さ pace。ミミが降りた後は早送り）
+  const PACES = [1, 2, 3];
+  const pace = () => { const A = ensureSave(); const p = A && +A.pace; return PACES.includes(p) ? p : 1; };
+  const ffSpeed = () => Math.max(3, pace() + 1);
   let skipping = false;  // 演出を押して飛ばした（その区間の待ちを全部 0 にする）
   let humanResolve = null;
   let pendingStart = null;
@@ -221,6 +224,7 @@
       </button>
       <div class="as-tools">
         <button type="button" class="as-tool as-think" data-as="think" aria-expanded="false" disabled>考え方</button>
+        <button type="button" class="as-tool as-speed" data-as="speed" aria-label="対戦の速さ"></button>
         <button type="button" class="as-tool" data-as="guide">役の一覧</button>
         <button type="button" class="as-tool as-sound" data-as="sound" aria-label="音の入り切り"></button>
         <button type="button" class="as-tool" data-as="menu">やめる</button>
@@ -247,7 +251,7 @@
         <div class="as-sizer-h"><b>いくら賭ける？</b><button type="button" class="as-back" data-as="back">もどる</button></div>
         <div class="as-sizer-g"></div>
       </div>
-      <button type="button" class="as-ff" data-as="ff" hidden><b>早送り中 ×3</b><span>押すと等速に戻す</span></button>
+      <button type="button" class="as-ff" data-as="ff" hidden><b>早送り中</b><span>押すと元の速さに戻す</span></button>
       <div class="as-fx" aria-hidden="true"></div>
       <div class="as-layer"></div>
       <i class="as-probe" aria-hidden="true"></i>`;
@@ -261,6 +265,7 @@
     host.addEventListener('pointerdown', onHostDown, true);
     paintRoom();
     paintSound();
+    paintSpeed();
   }
   // 部屋：先にぼかして暗くした絵を1回だけ描く（動く画面で CSS の blur を使わない＝発熱しない）
   function paintRoom() {
@@ -581,7 +586,7 @@
   }
 
   async function onHandStart(e) {
-    speed = 1; ui.ff.hidden = true;
+    speed = pace(); ui.ff.hidden = true;
     D = { hand: e.hand, sb: e.sb, bb: e.bb, stacks: e.stacks.slice(), bets: [0, 0, 0, 0, 0, 0], totalIn: [0, 0, 0, 0, 0, 0],
       inHand: e.stacks.map(x => x > 0), folded: [false, false, false, false, false, false],
       allIn: [false, false, false, false, false, false], board: [], pot: 0, hole0: null, shown: {}, showdown: false };
@@ -920,6 +925,7 @@
     try { pro = AS.coach(T); } catch (e) { console.warn(e); }
     setTurn(0);
     setFace(0, 'think');
+    showFrom(L);
     showActions(L);
     coachData = pro;
     const g = G;
@@ -943,7 +949,31 @@
     closeSizer();
     armThink(L);
   }
-  function hideActions() { if (!ui.actions) return; ui.actions.dataset.on = '0'; closeSizer(); disarmThink(); }
+  function hideActions() { if (!ui.actions) return; ui.actions.dataset.on = '0'; closeSizer(); disarmThink(); hideFrom(); }
+  // 誰から回ってきたか：払う額があれば、その額を決めた人（このストリートで最後に上げた人。いなければ BB）の席を光らせ、
+  // 操作の上に「顔・名前・何をしたか・ミミが払う額」を1行で出す（D16：誰から回ってきたのかわかりにくい）
+  function showFrom(L) {
+    hideFrom();
+    const h = T.hand;
+    if (!L || !h || L.toCall <= 0) return;
+    let s = h.streetAggressor, what = '';
+    if (s == null || s === 0) { s = h.street === 'preflop' ? h.bbSeat : null; what = 'BB'; }
+    if (s == null || s === 0) return;
+    const id = T.players[s].id;
+    const amt = h.committed[s];
+    what = what === 'BB' ? `BB ${fmt(amt)}` : h.allIn[s] ? `オールイン ${fmt(amt)}` : `${h.currentBet && (h.street === 'preflop' || h.raises > 1) ? '上げた' : '賭けた'} ${fmt(amt)}`;
+    ui.seats[s].dataset.from = '1';
+    host.dataset.from = s;
+    const el = document.createElement('div');
+    el.className = 'as-from';
+    el.innerHTML = `<span class="as-from-f"><img src="${idleFace(id)}" alt=""></span><span class="as-from-t"><b class="as-from-n">${esc(NAMES[id])}</b><span class="as-from-w">${what}</span></span><i class="as-from-ar" aria-hidden="true"></i><span class="as-from-y">ミミが払う<b>${fmt(L.toCall)}</b></span>`;
+    ui.actions.before(el);
+    ui.from = el;
+  }
+  function hideFrom() {
+    if (ui.from) { ui.from.remove(); ui.from = null; }
+    if (host) { host.removeAttribute('data-from'); host.querySelectorAll('[data-from]').forEach(x => x.removeAttribute('data-from')); }
+  }
   function openSizer() {
     const L = ui.actions._L;
     const P = AS.raisePresets(T);
@@ -1027,7 +1057,9 @@
         if (c.lean === 'call') return '前の人が|呼んだだけ。|安く入って|様子を見る';
         return go ? `上位${top}%で、|目安の${range}%の|内側` : `目安（上位${range}%）の|外。|後ろに|まだ人がいる`;
       case 'price': return priceReason(c, go);
-      case 'prize': return go ? '賞金の差より、|勝ち目の方が|大きい' : '値段は近いが、|ここで落ちると|賞金の損が|大きい';
+      case 'prize':
+        if (c.key === 'prize' && c.range != null) return go ? `賞金を考えても、|手が目安（上位${range}%）の|内側` : `ここで落ちると|賞金の段が下がる。|目安を上位${range}%に|絞って待つ`;
+        return go ? `落ちた時の損を|入れて${need}%いるが、|見込み約${pc(c.eq)}%が|上回る` : `チップなら${pc(c.needChip)}%で|足りるが、|落ちた時の損を|入れると${need}%いる。|見込み約${pc(c.eq)}%では|届かない`;
       default:
         if (c.street === 'preflop') return c.lean === 'check' ? 'タダで|次の札が見られる。|無理に上げない' : 'とても強い手。|上げて|大きく育てる';
         if (c.lean === 'check') return `見込み${eq}。|タダで|次の札を見る`;
@@ -1047,7 +1079,7 @@
     }
     if (e < n) return `見込み約${e}%では、|必要な${n}%に|届かない`;
     // 見込みは足りているのに降りる：式に足される上乗せ（後ろの人数 0.02 ずつ・降りた時の賞金 0.03・プリフロップの上げられた後 0.03）
-    const tax = (pre && c.stackBB >= 10 ? 0.03 : 0) + 0.02 * c.behind + (c.icm ? 0.03 : 0);
+    const tax = (pre && c.stackBB >= 10 ? 0.03 : 0) + 0.02 * c.behind;
     const why = [];
     if (pre && c.top != null && c.eq - c.needPct >= tax) why.push(`手が上位${pc(c.top)}%で|強くない`);
     else {
@@ -1086,7 +1118,7 @@
       odds = card('odds', CK_LABEL.odds,
         `<i class="as-bar" aria-hidden="true"><s style="width:${pc(c.eq)}%"></s>${c.toCall > 0 ? `<u style="left:${pc(c.needPct)}%"></u>` : ''}</i>`,
         `見込み約${pc(c.eq)}%`,
-        c.toCall > 0 ? `${made}払うなら|${pc(c.needPct)}%以上いる${outs ? '。|' + outs : ''}` : (made + outs || (pre ? 'タダで|次の札が見られる' : '賭けなくても|次の札が見られる')));
+        c.toCall > 0 ? `${made}払うなら|${pc(c.needPct)}%以上いる${c.icm ? `（賞金込み。|チップだけなら${pc(c.needChip)}%）` : ''}${outs ? '。|' + outs : ''}` : (made + outs || (pre ? 'タダで|次の札が見られる' : '賭けなくても|次の札が見られる')));
     }
     // 4 相手（賭けてきた人。いなければ次に動く人）
     const fk = c.focus;
@@ -1166,7 +1198,16 @@
     if (g !== G) throw STOP;
   }
 
-  function startFastForward() { if (T.finished) return; speed = 3; ui.ff.hidden = false; }
+  function startFastForward() { if (T.finished) return; speed = ffSpeed(); ui.ff.hidden = false; ui.ff.querySelector('b').textContent = `早送り中 ×${speed}`; }
+  function paintSpeed() { const b = host && host.querySelector('.as-speed'); if (b) b.innerHTML = `速さ<b>×${pace()}</b>`; }
+  function cycleSpeed() {
+    const A = ensureSave(); if (!A) return;
+    const i = PACES.indexOf(pace());
+    A.pace = PACES[(i + 1) % PACES.length];
+    try { saveProgress(); } catch (e) { }
+    if (ui.ff.hidden) speed = A.pace; else { speed = ffSpeed(); ui.ff.querySelector('b').textContent = `早送り中 ×${speed}`; }
+    paintSpeed();
+  }
 
   // =============================================================
   // 押した所（host に1つの委任）
@@ -1183,7 +1224,8 @@
     else if (a === 'raise' && humanResolve) { sfx('tap'); openSizer(); }
     else if (a === 'back') { closeSizer(); }
     else if (a === 'size' && humanResolve) { sfx('tap'); humanResolve({ kind: 'raise', to: +b.dataset.to }); }
-    else if (a === 'ff') { speed = 1; ui.ff.hidden = true; }
+    else if (a === 'ff') { speed = pace(); ui.ff.hidden = true; }
+    else if (a === 'speed') { sfx('tap'); cycleSpeed(); }
     else if (a === 'think') { sfx('tap'); coachEl ? closeCoach() : openCoach(); }
     else if (a === 'think-go') { sfx('tap'); revealCoach(); }
     else if (a === 'guide') { try { showHandGuide(); } catch (e) { } }
@@ -1496,10 +1538,10 @@
       <div class="as-band" style="--art:url('${band}')"><span class="as-band-en">THE MIDNIGHT TABLE</span><b>零時の卓</b><span class="as-band-sub">六席の決勝卓</span></div>
       <div class="as-efaces">${facesRow()}</div>
       <div class="as-ecols">
-        <ul class="as-rules"><li>全員 1,500 点から。持ち込み・買い足しはなし</li><li>5ハンドごとにブラインドが上がる</li><li>持ち点が尽きたら退席。最後の1人が優勝</li></ul>
+        <ul class="as-rules"><li>全員 ${fmt(AS.CONFIG.startStack)} 点から。持ち込み・買い足しはなし</li><li>5ハンドごとにブラインドが上がる</li><li>持ち点が尽きたら退席。最後の1人が優勝</li></ul>
         <div class="as-prizes"><b class="as-prizes-h">賞金（コイン）</b><ol>${PRIZES.map((p, i) => `<li${i === 3 ? ' class="is-bubble"' : ''}><span>${i + 1}位</span><b>${fmt(p)}</b></li>`).join('')}</ol></div>
       </div>
-      <p class="as-emeta">目安 12〜15分　／　${feeLine}${can ? '' : '　<span class="as-warn">コインが足りません</span>'}</p>
+      <p class="as-emeta">目安 13〜17分　／　${feeLine}${can ? '' : '　<span class="as-warn">コインが足りません</span>'}</p>
       <div class="as-ebtns">${btns}</div>
     </section>`;
     openHomeDialog(overlay);
@@ -1556,7 +1598,7 @@
     teardownTable();
     T = t;
     G++;
-    speed = 1; skipping = false; skipOn = false;
+    speed = pace(); skipping = false; skipOn = false;
     finalOpp = null; finishEv = null; summary = null; lastShown = {}; D = null; curStreet = 'preflop';
     // 決勝の途中で再開したら、決勝の見た目から
     const alive = T.players.filter(p => p.place == null);
