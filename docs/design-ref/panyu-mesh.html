@@ -181,7 +181,9 @@
   STR('white', '白サテン', [{ c: [637, 549], w: 24, h: 24, round: 1 }, { c: [867, 545], w: 24, h: 24, round: 1 }, { c: [753, 651], w: 32, h: 32, round: 1 }]);
   STR('dress', 'ドレス', [{ c: [620, 514], w: 28, h: 28, rect: 1 }, { c: [887, 507], w: 28, h: 28, rect: 1 }, { c: [752, 652], w: 44, h: 50, rect: 1 }]);
   // ジムウェア（11/07 新衣装）：留めはなし。胸を押すたびに、布越しに胸の先が少しずつとがる（tip＝満タンまでの回数、tipP＝左右の先の位置）。とがった絵は生成で断られるので、こちらで陰影を描き足す
-  OUTFITS.gym = { ...OUTFITS.bunny, name: 'ジムウェア', img: 'panyu_gym_reach.webp', jewel: 0, parts: [], covers: [], coverLeft: [0, 0, 0], label: '', what: '', tip: 40, tipP: [[558, 594], [836, 594]], tipR: 13 };
+  OUTFITS.gym = { ...OUTFITS.bunny, name: 'ジムウェア', img: 'panyu_gym_reach.webp', jewel: 0, parts: [], covers: [], coverLeft: [0, 0, 0], label: '', what: '', tip: 24, tipP: [[558, 594], [836, 594]], tipR: 13 };
+  OUTFITS.yshirt = { ...OUTFITS.gym, name: 'Yシャツ', img: 'panyu_yshirt_reach.webp', tipP: [[570, 598], [838, 598]] };
+  OUTFITS.tshirt = { ...OUTFITS.gym, name: 'Tシャツ', img: 'panyu_tshirt_reach.webp', tipP: [[585, 590], [815, 590]] };
   const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）
   if (EMBED) document.body.classList.add('embed');
   const tell = (m) => { if (EMBED && parent !== window) try { parent.postMessage(Object.assign({ panyu: 1 }, m), '*'); } catch (_) {} };
