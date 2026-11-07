@@ -188,6 +188,7 @@
   OUTFITS['gym@cheek'] = { ...OUTFITS.gym, name: 'ジムウェア（ジム）', img: 'panyu_gym_cheek_reach.webp', tipP: [[564, 622], [847, 622]], tipC: [[600, 650], [815, 650]], pose: CHEEK_POSE };
   OUTFITS.inner = { ...OUTFITS.gym, name: '肌着', img: 'panyu_inner_reach.webp', tipP: [[565, 600], [835, 600]], tipC: [[605, 622], [800, 622]] };   // 11/07：エアリズム風の薄手の肌着（元の絵に出っぱりは無いので、ジムウェアと同じ割合の所）
   OUTFITS.yshirt = { ...OUTFITS.gym, name: 'Yシャツ', img: 'panyu_yshirt_reach.webp', tipP: [[561, 593], [836, 591]], tipC: [[600, 612], [800, 612]] };
+  OUTFITS['yshirt@cheek'] = { ...OUTFITS.yshirt, name: 'Yシャツ（夜の部屋）', img: 'panyu_yshirt_cheek_reach.webp', tipP: [[566, 620], [845, 620]], tipC: [[600, 650], [815, 650]], pose: CHEEK_POSE };   // 11/08 頬をはさむ構図×Yシャツ（夜の部屋）。頬ジムに位置合わせ済み
   OUTFITS.tshirt = { ...OUTFITS.gym, tipSee: 0.3, name: 'Tシャツ', img: 'panyu_tshirt_reach.webp', tipP: [[574, 546], [826, 546]], tipC: [[615, 592], [790, 592]] };   /* 立体で見た胸の頂点は上（11/07 ユーザー） */
   const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）
   if (EMBED) document.body.classList.add('embed');
