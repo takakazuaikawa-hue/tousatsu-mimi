@@ -202,9 +202,14 @@
   OUTFITS['inner@peace'] = { ...OUTFITS.inner, name: '肌着（湯上がり）', img: 'panyu_inner_peace_reach.webp', tipP: [[563, 625], [860, 625]], tipC: [[603, 647], [820, 647]],
     pose: NP({ cups: [[605, 616, 128], [818, 616, 128]], keep: [[520, 460, 40, 70, -20], [900, 460, 40, 70, 20], [0, 0, 0, 0]], cheek: [[648, 312], [770, 308]], eyes: [[645, 268], [770, 263]], head: [708, 290, 400], focus: [710, 575] }) };   // 6番：ダブルピース（湯上がりの洗面所）
   OUTFITS['yshirt@back'] = { ...OUTFITS.gym, name: 'Yシャツ（後ろ手）', img: 'panyu_yshirt_back_reach.webp', tipP: [[542, 561], [868, 558]], tipC: [[581, 580], [829, 577]],
-    pose: NP({ cups: [[588, 560, 135], [822, 557, 135]], keep: [[478, 650, 30, 70, 10], [938, 650, 30, 70, -10], [0, 0, 0, 0]], cheek: [[652, 272], [768, 268]], eyes: [[652, 228], [768, 224]], head: [710, 250, 400], focus: [705, 520] }) };   // 12番：後ろ手で得意げ（夜の部屋）。ボタン外しはまだ無い（開いた絵が要る）
+    pose: NP({ cups: [[588, 560, 135], [822, 557, 135]], keep: [[478, 650, 30, 70, 10], [938, 650, 30, 70, -10], [0, 0, 0, 0]], cheek: [[652, 272], [768, 268]], eyes: [[652, 228], [768, 224]], head: [710, 250, 400], focus: [705, 520] }) };   // 12番：後ろ手で得意げ（夜の部屋）
   OUTFITS['tshirt@stretch'] = { ...OUTFITS.tshirt, name: 'Tシャツ（朝の伸び）', img: 'panyu_tshirt_stretch_reach.webp', tipP: [[575, 588], [902, 586]], tipC: [[616, 634], [866, 632]],
     pose: NP({ cups: [[615, 652, 142], [862, 650, 142]], keep: [[400, 515, 110, 45, -12], [955, 470, 40, 80, 15], [0, 0, 0, 0]], cheek: [[665, 345], [795, 325]], eyes: [[652, 292], [785, 268]], head: [725, 310, 400], focus: [738, 600] }) };   // 13番：伸び＋目をこする（朝の寝室）
+  // 11/08 D19 の続き：頬・後ろ手のYシャツにもボタン外し。閉じた絵と開いた絵は ChatGPT の同じ会話で対に描かせ（閉じた絵→それを開く）、閉じた絵も差し替えた（今までの絵に位置合わせ済み）
+  const YB = (k, open, gx, ys) => Object.assign(OUTFITS[k], { kind: 'front', label: 'ボタン', what: '胸の下の白いボタン', fly: OUTFITS.nurse.fly, open, openB: [gx, 2000, 0], covers: [], coverLeft: [0, 0, 0],
+    parts: ys.map(y => ({ c: [gx, y], w: 22, h: 22, round: 1 })), openStage: [90, (ys[0] + ys[1]) / 2, (ys[1] + ys[2]) / 2, 9], gap: { ...OUTFITS[k].gap, gx, gy: ys[0] - 26, wide: 0.0001, ends: [ys[0] - 36, (ys[0] + ys[1]) / 2, (ys[1] + ys[2]) / 2, 800] } });
+  YB('yshirt@cheek', 'panyu_yshirt_cheek_open.webp', 709, [686, 734, 780]);
+  YB('yshirt@back', 'panyu_yshirt_back_open.webp', 710, [651, 703, 756]);
   const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）
   if (EMBED) document.body.classList.add('embed');
   const tell = (m) => { if (EMBED && parent !== window) try { parent.postMessage(Object.assign({ panyu: 1 }, m), '*'); } catch (_) {} };
