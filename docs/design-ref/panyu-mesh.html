@@ -137,7 +137,7 @@
     gap: { ...OUTFITS.bunny.gap, gx: 736, gy: 528, ends: [528, 556, 572, 606], wide: 0.62, ramp: 15 },
     pose: { cups: [[655, 482, 74], [787, 482, 74]], mass: [0, 0.45], keep: [[566, 525, 28, 110], [896, 525, 28, 110], [0, 0, 0, 0]],   /* 11/07 測り直し：腕の範囲が胸の外側に食い込んでいた */   /* 動かさない所：胸の横の腕 */ cheek: [[660, 265], [786, 255]], eyes: [[655, 232], [775, 222]], faceR: [600, 140, 240, 200], faceC: [720, 240, 95, 80], blushC: [722, 262, 95, 42], head: [720, 240, 300], focus: [738, 470], scale: 0.64, surprise: '' } };
   // 楽屋の構図×前開きの衣装（11/07）：構図はバニーの楽屋と共通。開いた所の肌は、この絵の中のきれいな肌（skin）から写す（元の構図用の水着の絵は使わない）
-  const DRS = (id, name, parts, covers, g) => { OUTFITS[id + '@dressing'] = { ...OUTFITS[id], name: name + '（楽屋）', img: 'panyu_' + id + '_dressing_reach.webp', parts, covers, coverLeft: [0, 0, 0],
+  const DRS = (id, name, parts, covers, g) => { OUTFITS[id + '@dressing'] = { ...OUTFITS[id], name: name + '（楽屋）', img: 'panyu_' + id + '_dressing_reach.webp', parts, covers, coverLeft: [0, 0, 0], openStage: [70, (parts[0].c[1] + parts[1].c[1]) / 2, (parts[1].c[1] + parts[2].c[1]) / 2, 9],   /* 三段階（11/07）：1つ外す＝1つ目と2つ目の間まで、2つ＝2つ目と3つ目の間まで開いた絵を見せる */
     gap: { ...OUTFITS[id].gap, bkSkin: 0, skin: [705, 565, 742, 600], ...g }, pose: OUTFITS['bunny@dressing'].pose }; };
   // 開き方の基準は11/07 ユーザーが「これがいちばんまし」とした最初の形（古着：gy 618・fabY 630・ramp は元の衣装のまま）（11/07 ユーザー「真ん中がつながってない方がいい」）
   DRS('pajama', 'パジャマ', [{ c: [743, 646], w: 22, h: 22, round: 1 }, { c: [742, 676], w: 22, h: 22, round: 1 }, { c: [740, 708], w: 22, h: 22, round: 1 }],
@@ -160,7 +160,7 @@
   Object.assign(OUTFITS['santa@dressing'], { open: 'panyu_santa_dressing_open.webp', openB: [751, 2000, 0], covers: [] });   // ベルトの留め金が外れると、開いた絵（ベルトが垂れる）を見せる
   // プールの構図×前開きの衣装（11/07）：構図はバニーのプールと共通（引いた絵）。留めを1つ外すと、生成した開いた絵をまるごと見せる
   const PLS = (id, name, parts, g) => { OUTFITS[id + '@pool'] = { ...OUTFITS[id], name: name + '（プール）', img: 'panyu_' + id + '_pool_reach.webp', parts, covers: [], coverLeft: [0, 0, 0], outK: 0.6,
-    open: 'panyu_' + id + '_pool_open.webp', openB: [g.gx, 2000, 0], gap: { ...OUTFITS[id].gap, wide: 0.0001, ...g }, pose: OUTFITS['bunny@pool'].pose }; };
+    open: 'panyu_' + id + '_pool_open.webp', openB: [g.gx, 2000, 0], openStage: [44, (parts[0].c[1] + parts[1].c[1]) / 2, (parts[1].c[1] + parts[2].c[1]) / 2, 6], gap: { ...OUTFITS[id].gap, wide: 0.0001, ...g }, pose: OUTFITS['bunny@pool'].pose }; };
   const PB = (pts, w, h) => pts.map(([x, y]) => ({ c: [x, y], w, h, round: 1 }));
   PLS('pajama', 'パジャマ', PB([[733, 524], [729, 564], [724, 608]], 16, 16), { gx: 731, gy: 512, ends: [505, 545, 586, 640] });
   PLS('gothic', 'ゴスロリ', PB([[737, 529], [734, 560], [730, 590]], 20, 20), { gx: 735, gy: 515, ends: [508, 545, 575, 640] });
@@ -364,7 +364,7 @@
     // vs＝この行での元のV字の半分の幅（V字の先で0）。布の縁は元の絵の線からそのまま切り口へつながる
     uniform float uNoVLine;
     uniform sampler2D uOpen; uniform float uOpenOn; uniform vec3 uOpenB;
-    uniform vec4 uTipP; uniform vec2 uTipR; uniform vec4 uTipC; uniform float uTipQ; uniform float uTipS;   // とがる衣装：左右の胸の先の位置（絵の座標）・半径と強さ   // 開いた絵・使うか・見せる範囲（中心x・半分の幅・上の端y）
+    uniform vec4 uTipP; uniform vec2 uTipR; uniform vec4 uTipC; uniform float uTipQ; uniform float uTipS; uniform vec4 uOpenCut;   // 三段階（加工）：開いた絵を見せる縦の筋（中心x・半分の幅・上から見せる下端y・ぼかし）   // とがる衣装：左右の胸の先の位置（絵の座標）・半径と強さ   // 開いた絵・使うか・見せる範囲（中心x・半分の幅・上の端y）
     uniform vec2 uCt; uniform float uGs; uniform float uShift; uniform float uDbg;   // V字の左右の傾き（x・y）と、V字の下の端での半分の幅（z）
     uniform vec4 uSkin;   // 写し元のきれいな素肌（左・上・右・下）。裂け目の中の肌はここを写す（塗らない）
     vec3 skinAt(vec2 p, float H) {
@@ -639,7 +639,7 @@
       }
       if (uOpenOn > 0.001) {   // 開いた絵（同じ構図で留めが外れた絵）：外した数に合わせて、上から開いた所まで見せる
         // 生成された開いた絵をそのまま見せる（切り分けて混ぜると不自然になる 11/07 ユーザー）。とがる衣装（tip）は、胸のまわりの楕円の中だけを押した回数に合わせて少しずつ重ねる
-        float om = uOpenB.y > 1000.0 ? uOpenOn : uOpenOn * (1.0 - smoothstep(0.7, 1.0, length((q - uOpenB.xz) / vec2(uOpenB.y, uOpenB.y * 0.62))));
+        float om = uOpenCut.z > 0.0 ? uOpenOn * (1.0 - smoothstep(uOpenCut.y * 0.55, uOpenCut.y, abs(q.x - uOpenCut.x))) * smoothstep(uOpenCut.z + uOpenCut.w - abs(q.x - uOpenCut.x) * 1.3, uOpenCut.z - uOpenCut.w - abs(q.x - uOpenCut.x) * 1.3, q.y)   /* 下の端は次のボタンへすぼまる（横一直線に切らない） */ : uOpenB.y > 1000.0 ? uOpenOn : uOpenOn * (1.0 - smoothstep(0.7, 1.0, length((q - uOpenB.xz) / vec2(uOpenB.y, uOpenB.y * 0.62))));
         col = mix(col, texture2D(uOpen, q / uImgF).rgb, om);
       }
       if (uDbg > 0.5 && h > 0.0 && uVk.x > 0.0 && e < 0.0) col = mix(col, p.y >= uFabY ? vec3(0.0, 0.0, 1.0) : a < vs - uShift ? vec3(0.0, 1.0, 0.0) : a < vs - uShift + h ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 1.0), 0.45);
@@ -854,7 +854,7 @@
     if (OF.fold) { const f = OF.fold; gl.uniform4f(U('uFA0'), ...f.apex[0], foldA[1], 0); gl.uniform4f(U('uFA1'), ...f.apex[1], 0, 0); gl.uniform4f(U('uFN'), ...f.neck[0], ...f.neck[1]); gl.uniform4f(U('uFO'), ...f.out[0], ...f.out[1]); gl.uniform2f(U('uFold'), foldA[0], f.len); } else gl.uniform2f(U('uFold'), 0, 0);
     gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform1f(U('uUseBk'), bkReady ? 1 : 0); gl.uniform3f(U('uBkGain'), ...(OF.bkGain || (OF.gap && OF.gap.bkGain) || [1, 1, 1])); gl.uniform1f(U('uWide'), (OF.gap && OF.gap.wide) || 1); gl.uniform1f(U('uRamp'), (OF.gap && (OF.gap.bkSkin && bkReady ? OF.gap.rampB : OF.gap.ramp)) || 24); gl.uniform1f(U('uInVSkin'), (OF.gap && OF.gap.inVSkin) || 0); gl.uniform1f(U('uShift'), (OF.gap && OF.gap.shift) || 0); gl.uniform1f(U('uGs'), (OF.gap && OF.gap.shear) || 0); gl.uniform4f(U('uSkin'), ...((OF.gap && OF.gap.skin) || [0, 0, 0, 0])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
     gl.uniform2f(U('uFlap'), ...((OF.gap && OF.gap.flap) || [0.12, 1.8]));
-    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0])); gl.uniform1f(U('uNoBand'), +!!OF.ringNoBand); gl.uniform1f(U('uNoVLine'), +!!(OF.gap && OF.gap.noVLine)); gl.uniform1f(U('uOpenOn'), !openReady ? 0 : OF.tip ? tipShow : OF.openSteps ? +popped.some(Boolean) : +(gapLv() > 0)); gl.uniform3f(U('uOpenB'), ...(OF.openB || [0, 0, 0])); if (OF.tipP) { gl.uniform4f(U('uTipP'), ...OF.tipP[0], ...OF.tipP[1]); gl.uniform2f(U('uTipR'), OF.tipR || 16, tipShow); gl.uniform4f(U('uTipC'), ...OF.tipC[0], ...OF.tipC[1]); gl.uniform1f(U('uTipQ'), OF.tipQ || 0.66); gl.uniform1f(U('uTipS'), OF.tipSee == null ? 1 : OF.tipSee); } else gl.uniform2f(U('uTipR'), 1, 0);
+    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0])); gl.uniform1f(U('uNoBand'), +!!OF.ringNoBand); gl.uniform1f(U('uNoVLine'), +!!(OF.gap && OF.gap.noVLine)); gl.uniform1f(U('uOpenOn'), !openReady ? 0 : OF.tip ? tipShow : OF.openSteps ? +popped.some(Boolean) : +(gapLv() > 0)); gl.uniform3f(U('uOpenB'), ...(OF.openB || [0, 0, 0])); { const n = popped.filter(Boolean).length, st = OF.openStage; gl.uniform4f(U('uOpenCut'), st && n > 0 && n < 3 ? OF.openB[0] : 0, st ? st[0] : 0, st && n > 0 && n < 3 ? st[n] : 0, st ? st[3] : 0); } if (OF.tipP) { gl.uniform4f(U('uTipP'), ...OF.tipP[0], ...OF.tipP[1]); gl.uniform2f(U('uTipR'), OF.tipR || 16, tipShow); gl.uniform4f(U('uTipC'), ...OF.tipC[0], ...OF.tipC[1]); gl.uniform1f(U('uTipQ'), OF.tipQ || 0.66); gl.uniform1f(U('uTipS'), OF.tipSee == null ? 1 : OF.tipSee); } else gl.uniform2f(U('uTipR'), 1, 0);
     gl.uniform1f(U('uSF'), +(OUTFIT === 'dress' || !!OF.strapFill)); gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));   // 髪の上を通る紐は、両側の色（髪・肌）でつなぐ消し方
     if (STRAP) { gl.uniform4f(U('uSA'), ...BTNS[0].a, ...BTNS[0].b); gl.uniform4f(U('uSB'), ...BTNS[1].a, ...BTNS[1].b); }
     const r0 = restOf(0), r1 = restOf(1);
