@@ -242,17 +242,18 @@
     attribute vec2 aP;
     uniform vec2 uImg, uOff, uView; uniform float uScale, uDisc;
     uniform vec2 uC0, uC1, uD0, uD1, uS0, uS1; uniform float uR0, uR1, uSpread, uSurp;
-    uniform vec2 uE0, uE1; uniform vec3 uHead; uniform vec2 uMass; uniform vec4 uK0, uK1, uK2;
-    float keep1(vec2 p, vec4 k) { if (k.z <= 0.0) return 0.0; return 1.0 - smoothstep(0.55, 1.0, length((p - k.xy) / k.zw)); }
+    uniform vec2 uE0, uE1; uniform vec3 uHead; uniform vec2 uMass; uniform vec4 uK0, uK1, uK2; uniform vec2 uEA0, uEA1; uniform float uDome; uniform vec3 uKA;
+    float keep1(vec2 p, vec4 k, float an) { if (k.z <= 0.0) return 0.0; vec2 dd = p - k.xy; float ca = cos(an), sa = sin(an); vec2 kk = vec2(dd.x * ca + dd.y * sa, -dd.x * sa + dd.y * ca); return 1.0 - smoothstep(0.55, 1.0, length(kk / k.zw)); }   // 動かさない所も傾いた楕円（meshAt と同じ）
     varying vec2 vUV, vPix; varying float vLit;
-    vec3 cup(vec2 p, vec2 c, float r, vec2 d, vec2 s) {
+    vec3 cup(vec2 p, vec2 c, float r, vec2 d, vec2 s, vec2 ea) {
       vec2 q = p - c;
-      float rr = length(q / (vec2(r * 1.12, r) * uSpread));
+      float ca = cos(ea.y), sa = sin(ea.y); vec2 u = vec2(q.x * ca + q.y * sa, -q.x * sa + q.y * ca);   // 11/08 修正：網目の側も傾いた楕円で測る（前は縦の半径の丸のままで、範囲が半分に縮み先だけ動いていた）
+      float rr = length(u / (vec2(r * ea.x, r) * uSpread));
       float w, a;
       if (uDisc > 0.5) { w = 1.0 - smoothstep(0.78, 1.0, rr); a = 1.0; }      // 今に近い：丸い板が丸ごと動く
       else {
-        w = 1.0 - smoothstep(uMass.x, 1.0, rr);   // uMass.x＝胸の中で同じ大きさで動く範囲（0＝中心だけ）                                   // 中心ほど大きく、ふちへなだらかに体に溶ける（胸の外は動かさない）
-        float t = clamp((q.y + r * 0.95 * uSpread) / (r * 1.7 * uSpread), 0.0, 1.0);               // 上（付け根）は固定、下ほど自由
+        w = 1.0 - smoothstep(uMass.x, 1.0, rr); if (uDome > 0.0) w = w * (1.0 - uDome) + uDome * sqrt(max(0.0, 1.0 - rr * rr));   // dome＝丸い山（meshAt と同じ）   // uMass.x＝胸の中で同じ大きさで動く範囲（0＝中心だけ）                                   // 中心ほど大きく、ふちへなだらかに体に溶ける（胸の外は動かさない）
+        float t = clamp((u.y + r * 0.95 * uSpread) / (r * 1.7 * uSpread), 0.0, 1.0);               // 上（付け根）は固定、下ほど自由
         a = uMass.y + (1.0 - uMass.y) * t * t * (3.0 - 2.0 * t);   // uMass.y＝付け根の動きやすさ
         a = mix(a, 0.7 + 0.3 * a, clamp(-d.y / r * 2.5, 0.0, 1.0));            // 持ち上がる時は、胸全体が上がる
       }
@@ -262,8 +263,8 @@
       return vec3(o, lit);
     }
     void main() {
-      vec3 a = cup(aP, uC0, uR0, uD0, uS0), b = cup(aP, uC1, uR1, uD1, uS1);
-      float kp = max(keep1(aP, uK0), max(keep1(aP, uK1), keep1(aP, uK2)));   // 胸以外（手や腕）は動かさない
+      vec3 a = cup(aP, uC0, uR0, uD0, uS0, uEA0), b = cup(aP, uC1, uR1, uD1, uS1, uEA1);
+      float kp = max(keep1(aP, uK0, uKA.x), max(keep1(aP, uK1, uKA.y), keep1(aP, uK2, uKA.z)));   // 胸以外（手や腕）は動かさない
       vec2 p = aP + (a.xy + b.xy) * (1.0 - kp);
       // 驚き：頭がわずかにのけぞる（表情は描き起こした驚き顔に切り替える）
       if (uSurp > 0.001) {
@@ -616,7 +617,7 @@
           vec3 L = normalize(vec3(-0.45, -0.75, 0.6)); float base = L.z;
           float shc = clamp((dot(normalize(vec3(-gr * 0.9, 1.0)), L) - base) * u, -0.38, 0.38) * 0.7;
           col = shc >= 0.0 ? col * (1.0 + shc * 0.05) : mix(col, pinkT(col * 0.97, 0.14), -shc * 1.6);   /* 1段目の陰影は服の色のまま明るく・暗く（11/07 ユーザー「1段目がピンクすぎ」） */
-          col = mix(col, pinkT(col, 0.6), 0.08 * u * smoothstep(1.02, 0.48, r));   /* 1段目はほとんど透けない（11/07 ユーザー）。透けは突端だけ */   /* 透けは服の色になじませる（11/07 ユーザー「色が濃くなりすぎ」） */   // ② 布の下の色が透ける（ふちはぼかす）
+          col = mix(col, pinkT(col, 0.7), 0.13 * u * smoothstep(1.02, 0.48, r));   /* 1段目はほとんど透けない（11/07 ユーザー）。透けは突端だけ */   /* 透けは服の色になじませる（11/07 ユーザー「色が濃くなりすぎ」） */   // ② 布の下の色が透ける（ふちはぼかす）
           { float rim2 = smoothstep(1.40, 0.88, r) * smoothstep(0.32, 0.86, r), sd2 = dot(normalize(d + 1e-4), normalize(vec2(-0.45, -0.75)));   // 1段目の縁：やわらかく盛り上がる
             col = sd2 > 0.0 ? col * (1.0 + rim2 * sd2 * 0.03 * u) : mix(col, pinkT(col * 0.97, 0.14), rim2 * -sd2 * 0.5 * u); }
           col = mix(col, min(col * 1.03, vec3(1.0)), 0.35 * u * smoothstep(0.9, 0.0, length(d - vec2(-0.45, -0.6))) * (1.0 - smoothstep(0.2, 0.32, r) * 0.0));   // 1段目の左上にふんわりした明るさ（柔らかく見せる）
@@ -626,8 +627,8 @@
           float dw = length(d - cap * tt), R0 = 0.36;
           float n = smoothstep(R0 + 0.06, R0 - 0.05, dw);                          // 筒＋上の面の形
           float top = smoothstep(R0 + 0.04, R0 - 0.08, length(d - cap));           // 上の面
-          vec3 deep = pinkT(col * 0.95, 0.12 + 0.14 * uTipS);   /* 11/08：暗くするだけをやめ、少しだけ暗く＋薄ピンクを少し */   /* 影は服の色のまま暗く（11/08 ユーザー「ピンクが強すぎ、服の色を生かす」） */   /* 立体感（11/07「色が濃いだけに見える」）：側面・足もとの陰を深く */                                // 影の色＝服のピンクを深く（灰色・黒にしない）
-          col = mix(col, pinkT(col, 0.7), 0.25 * n * u * uTipS);   /* 突端の中は濃くしない（濃いと穴に見える） */               // 突端の地の色（透け）
+          vec3 deep = pinkT(col * 0.95, 0.24 + 0.20 * uTipS);   /* 11/08「もう少し濃く」 */   /* 11/08：暗くするだけをやめ、少しだけ暗く＋薄ピンクを少し */   /* 影は服の色のまま暗く（11/08 ユーザー「ピンクが強すぎ、服の色を生かす」） */   /* 立体感（11/07「色が濃いだけに見える」）：側面・足もとの陰を深く */                                // 影の色＝服のピンクを深く（灰色・黒にしない）
+          col = mix(col, min(pinkT(col, 0.6) * 1.02, vec3(1.0)), 0.25 * n * u * uTipS);   /* 11/08「へこんで見える」：突端の中は濃くしない（ピンクは裾と陰の側だけ） */   /* 突端の中は濃くしない（濃いと穴に見える） */               // 突端の地の色（透け）
           col = mix(col, deep, 1.0 * u * n * (1.0 - top) * smoothstep(0.0, 0.6, dot(normalize(d + 1e-4), vec2(0.45, 0.75))));   // 筒の側面の陰の側
           col = mix(col, deep, 0.85 * u * (1.0 - n) * smoothstep(0.55, 0.28, length(d - vec2(0.13, 0.24))));   // 足もとに落ちる影（ピンク）
           float rimT = smoothstep(R0 + 0.04, R0 - 0.02, length(d - cap)) * smoothstep(R0 - 0.20, R0 - 0.04, length(d - cap));
@@ -848,7 +849,7 @@
   function draw() {
     gl.uniform1f(U('uDisc'), opt.mode === 'disc' ? 1 : 0);
     gl.uniform1f(U('uSpread'), 1); gl.uniform1f(U('uBlush'), blush);
-    gl.uniform1f(U('uSurp'), surpNow()); gl.uniform1f(U('uSurpF'), faceReady ? surpNow() : 0); gl.uniform4f(U('uFaceR'), ...FACE_R); gl.uniform4f(U('uFaceC'), ...PZ.faceC); gl.uniform4f(U('uBlushC'), ...PZ.blushC); gl.uniform3f(U('uHead'), ...PZ.head); gl.uniform2f(U('uMass'), ...(PZ.mass || [0, 0.18])); [0, 1, 2].forEach(k => gl.uniform4f(U('uK' + k), ...((PZ.keep || [])[k] || [0, 0, 0, 0]))); gl.uniform2f(U('uE0'), ...EYES[0]); gl.uniform2f(U('uE1'), ...EYES[1]);
+    gl.uniform1f(U('uSurp'), surpNow()); gl.uniform1f(U('uSurpF'), faceReady ? surpNow() : 0); gl.uniform4f(U('uFaceR'), ...FACE_R); gl.uniform4f(U('uFaceC'), ...PZ.faceC); gl.uniform4f(U('uBlushC'), ...PZ.blushC); gl.uniform3f(U('uHead'), ...PZ.head); gl.uniform2f(U('uMass'), ...(PZ.mass || [0, 0.18])); [0, 1, 2].forEach(k => gl.uniform4f(U('uK' + k), ...((PZ.keep || [])[k] || [0, 0, 0, 0]).slice(0, 4))); gl.uniform3f(U('uKA'), ...[0, 1, 2].map(k => (((PZ.keep || [])[k] || [])[4] || 0) * Math.PI / 180)); gl.uniform2f(U('uEA0'), CUPS[0].ex, CUPS[0].an); gl.uniform2f(U('uEA1'), CUPS[1].ex, CUPS[1].an); gl.uniform1f(U('uDome'), PZ.dome || 0); gl.uniform2f(U('uE0'), ...EYES[0]); gl.uniform2f(U('uE1'), ...EYES[1]);
     gl.uniform1f(U('uR0'), CUPS[0].r); gl.uniform1f(U('uR1'), CUPS[1].r);
     gl.uniform2f(U('uImgF'), iw, ih); gl.uniform3f(U('uPop'), STRAP ? 0 : +popped[0], STRAP ? 0 : +popped[1], +popped[2] * +!!OF.covers[2]); gl.uniform4f(U('uBk'), +(STRAP && popped[0]), +(STRAP && popped[1]), +(BIKINI && popped[2]), +STRAP); gl.uniform3f(U('uGap'), gap.w, gap.len, 1 / (view.s * view.dpr));
     COVERS.forEach((b, k) => gl.uniform4f(U('uB' + k), ...b)); gl.uniform3f(U('uCovL'), ...(OF.coverLeft || [0, 0, 0]));
