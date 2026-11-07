@@ -153,9 +153,11 @@
     [[753, 637, 14, -14], [752, 668, 14, -14], [751, 703, 14, -14]], { gx: 753, gy: 618, wide: 0.0001, ends: [600, 652, 686, 800] });
   Object.assign(OUTFITS['vintage@dressing'], { open: 'panyu_vintage_dressing_open.webp', openB: [753, 2000, 0], covers: [] });   // 留めを外すと、開いた絵を上から見せる（11/07 作り直し）
   DRS('nurse', 'ナース', [{ c: [749, 640], w: 26, h: 26, round: 1 }, { c: [748, 664], w: 22, h: 22, round: 1 }, { c: [747, 686], w: 22, h: 22, round: 1 }],
-    [[749, 640, 16, 16], [748, 664, 14, 14], [747, 686, 14, 14]], { gx: 750, gy: 622, gyB: 622, fabY: 634, ends: [622, 652, 676, 745] });
+    [[749, 640, 16, 16], [748, 664, 14, 14], [747, 686, 14, 14]], { gx: 750, gy: 622, wide: 0.0001, ends: [604, 652, 676, 800] });
+  Object.assign(OUTFITS['nurse@dressing'], { open: 'panyu_nurse_dressing_open.webp', openB: [750, 2000, 0], covers: [] });
   DRS('santa', 'サンタ', [{ c: [751, 644], w: 32, h: 26, round: 1 }, { c: [751, 667], w: 32, h: 24, round: 1 }, { c: [751, 705], w: 62, h: 48, rect: 1 }],
-    [[751, 644, 19, 15], [751, 667, 19, 14], [751, 705, -37, 29]], { gx: 751, gy: 630, fabY: 630, ends: [630, 655, 680, 745] });
+    [[751, 644, 19, 15], [751, 667, 19, 14], [751, 705, -37, 29]], { gx: 751, gy: 630, wide: 0.0001, ends: [612, 655, 685, 800] });
+  Object.assign(OUTFITS['santa@dressing'], { open: 'panyu_santa_dressing_open.webp', openB: [751, 2000, 0], covers: [] });   // ベルトの留め金が外れると、開いた絵（ベルトが垂れる）を見せる
   // 楽屋×水着（11/07）：留め（左右の肩紐の留め具・胸のリング）を外すと、生成した外れた絵をそのまま見せる。肩紐の衣装の作った処理（紐を消す・リングを消す）は使わない
   OUTFITS['bikini@dressing'] = { ...OUTFITS.bikini, name: '水着（楽屋）', img: 'panyu_bikini_dressing_reach.webp', kind: 'front', ring: 0, label: '留め', open: 'panyu_bikini_dressing_open.webp', openB: [750, 2000, 0],
     parts: [{ c: [632, 560], w: 26, h: 26, round: 1 }, { c: [878, 558], w: 26, h: 26, round: 1 }, { c: [750, 665], w: 34, h: 34, ring: 1 }], covers: [],
