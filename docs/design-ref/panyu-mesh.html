@@ -1086,17 +1086,49 @@
     setZoom(zTarget * Math.exp(-e.deltaY * k));
   }, { passive: false });
   // コントローラー：L（LB/L1）で引く、R（RB/R1）で寄る。つながっている間だけ、軽く見に行く
-  let padTimer = 0;
+  // 11/08 ユーザー「左右のスティックで胸を動かせるように」：左スティック＝左の胸、右スティック＝右の胸。傾けた向きへ引っぱり、離すと揺れ戻る
+  //   つつく：左＝L3（左スティックの押し込み）か X／右＝R3 か B／A＝両方。十字の左右・ビュー（戻る）は本編へ知らせる（没入モードで衣装を替える・抜ける）
+  let padTimer = 0; const padPrev = {}, padGrab = [false, false], padPath = [0, 0], padLast = [[0, 0], [0, 0]];
+  const pressed = (g, n) => !!(g.buttons[n] && (g.buttons[n].pressed || g.buttons[n].value > 0.5));
   const pollPad = () => {
     const pads = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
-    if (!pads.length) { clearInterval(padTimer); padTimer = 0; return; }
+    if (!pads.length) { clearInterval(padTimer); padTimer = 0; padGrab.forEach((on, i) => { if (on) padRelease(i); }); return; }
+    const st = [[0, 0], [0, 0]];
     for (const g of pads) {
       const L = (g.buttons[4] && g.buttons[4].pressed) || (g.buttons[6] && g.buttons[6].value > 0.3);
       const R = (g.buttons[5] && g.buttons[5].pressed) || (g.buttons[7] && g.buttons[7].value > 0.3);
       if (L) setZoom(zTarget / 1.025); if (R) setZoom(zTarget * 1.025);
+      const ax = g.axes || [];
+      [[ax[0] || 0, ax[1] || 0], [ax[2] || 0, ax[3] || 0]].forEach((a, i) => { if (Math.hypot(...a) > Math.hypot(...st[i])) st[i] = a; });
+      const pv = padPrev[g.index] || {}, now = {};
+      for (const n of [0, 1, 2, 8, 9, 10, 11, 12, 13, 14, 15]) now[n] = pressed(g, n);
+      const edge = (n) => now[n] && !pv[n];
+      if (edge(10) || edge(2)) padPoke(0); if (edge(11) || edge(1)) padPoke(1); if (edge(0)) { padPoke(0); padPoke(1); }
+      if (edge(14)) tell({ t: 'pad', k: 'prev' }); if (edge(15)) tell({ t: 'pad', k: 'next' });
+      if (edge(12)) tell({ t: 'pad', k: 'up' }); if (edge(13)) tell({ t: 'pad', k: 'down' });
+      if (edge(8)) tell({ t: 'pad', k: 'back' });
+      padPrev[g.index] = now;
+    }
+    for (let i = 0; i < 2; i++) {
+      let [x, y] = st[i]; const m = Math.hypot(x, y), DZ = 0.18;
+      if (m < DZ) { if (padGrab[i]) padRelease(i); continue; }
+      const k = Math.min(1, (m - DZ) / (1 - DZ)) / m; x *= k; y *= k;   // 遊びを除いて0〜1に
+      if (ptrs.size && [...ptrs.values()].some(g => g.i === i)) continue;   // 指でつかんでいる方は指を優先
+      const r = CUPS[i].r; if (!P[i].grab) { P[i].grab = { dx: 0, dy: 0 }; noteEl.classList.add('off'); }
+      padGrab[i] = true; P[i].grab.dx = x * r * 0.95; P[i].grab.dy = y * r * 0.95;
+      padPath[i] += Math.hypot(x - padLast[i][0], y - padLast[i][1]); padLast[i] = [x, y];
+      if (padPath[i] >= 1.2) { padPath[i] = 0; addHeat(); const c = meshAt(...CUPS[i].c); tell({ t: 'tap', kind: 'stroke', side: i, x: view.ox + c[0] * view.s, y: view.oy + c[1] * view.s }); }
+      kick();
     }
   };
-  addEventListener('gamepadconnected', () => { if (!padTimer) padTimer = setInterval(pollPad, 33); });
+  function padRelease(i) { padGrab[i] = false; padPath[i] = 0; padLast[i] = [0, 0]; const p = P[i]; if (p.grab) { p.grab = null; p.svy += 1.2 * opt.amp * (1 + HEAT_PUSH * heatNow()); } kick(); }   // 離すと、指を離した時と同じように弾んで揺れ戻る
+  function padPoke(i) {   // つつく：胸の少し上を押したのと同じ（ばねで沈んで戻る）
+    const c = CUPS[i].c, ix = c[0] + (i ? 1 : -1) * CUPS[i].r * 0.12 * (Math.random() - 0.3), iy = c[1] - CUPS[i].r * (0.25 + Math.random() * 0.2);
+    noteEl.classList.add('off'); pokeAt(i, ix, iy, view.ox + ix * view.s, view.oy + iy * view.s);
+  }
+  const padStart = () => { if (!padTimer) padTimer = setInterval(pollPad, 33); };
+  addEventListener('gamepadconnected', padStart);
+  try { if (navigator.getGamepads && [...navigator.getGamepads()].some(Boolean)) padStart(); } catch (_) {}
   // スマホ：2本指でつまむと寄り具合。2本目が触れたら、つかみは離す
   const touches = new Map(); let pinch = null;
   const tdist = () => { const [a, b] = [...touches.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
@@ -1121,7 +1153,8 @@
     if (typeof d.panyuStage === 'number') { blushFloor = [0, 0.22, 0.45, 0.72][d.panyuStage] || 0; kick(); }
     if (d.panyuSurprise) { surpT = performance.now(); kick(); }
     if (d.panyuHint) { hintT = performance.now(); kick(); }
-    if (d.panyuJiggle) jiggle(d.panyuJiggle); });
+    if (d.panyuJiggle) jiggle(d.panyuJiggle);
+    if (d.panyuReset) document.getElementById('btnReset').click(); });
   // 揺れ方（本編から）：ぷるぷる＝小さく速く震える／ぽよん＝大きく跳ねる／ゆさゆさ＝ゆっくり左右に。どれも揺れの上限の中で、速さを足すだけ
   function jiggle(kind) {
     const a = opt.amp / 1.95;
@@ -1137,9 +1170,13 @@
     const bk = BTNS.findIndex((b, k) => !popped[k] && hitPart(b, ix, iy));
     if (bk >= 0) { popButton(bk); tell({ t: 'pop', k: bk, x: e.clientX, y: e.clientY }); return; }
     const i = hit(ix, iy); if (i < 0) return;
-    tell({ t: 'tap', kind: 'tap', side: i, x: e.clientX, y: e.clientY });
-    if (OF.tip) { tipN++; if (tipN % 3 === 0 && tipN <= OF.tip) OF.tipP.forEach(([tx0, ty0], si) => { const [tx, ty] = meshAt(tx0, ty0); parts.push({ ring: 1, x: tx, y: ty, vx: 0, vy: 0, t: 0, life: 0.55 }); for (let n = 0; n < 3; n++) { const a = -Math.PI / 2 + (n - 1) * 0.7 + (si ? 0.15 : -0.15); parts.push({ heart: 1, x: tx, y: ty - 6, vx: Math.cos(a) * 110, vy: Math.sin(a) * 110 - 40, t: 0, life: 0.9, sz: 13 + n * 2, rot: (n - 1) * 0.35 }); } for (let n = 0; n < 6; n++) { const a = Math.random() * Math.PI * 2, sp = 90 + Math.random() * 110; parts.push({ star: 1, col: '#fff0f6', x: tx, y: ty, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.4, sz: 5 + Math.random() * 4 }); } }); }   // キュンッ：胸の先から小さなハートが3つ跳ね、輪が広がる（11/08 ユーザー）   // 3回ごとに胸の先のまわりに小さなきらめき（11/07 ユーザー）
     try { stageEl.setPointerCapture(e.pointerId); } catch (_) {}
+    pokeAt(i, ix, iy, e.clientX, e.clientY);
+    pokeHold(e);
+  });
+  function pokeAt(i, ix, iy, cx, cy) {
+    tell({ t: 'tap', kind: 'tap', side: i, x: cx, y: cy });
+    if (OF.tip) { tipN++; if (tipN % 3 === 0 && tipN <= OF.tip) OF.tipP.forEach(([tx0, ty0], si) => { const [tx, ty] = meshAt(tx0, ty0); parts.push({ ring: 1, x: tx, y: ty, vx: 0, vy: 0, t: 0, life: 0.55 }); for (let n = 0; n < 3; n++) { const a = -Math.PI / 2 + (n - 1) * 0.7 + (si ? 0.15 : -0.15); parts.push({ heart: 1, x: tx, y: ty - 6, vx: Math.cos(a) * 110, vy: Math.sin(a) * 110 - 40, t: 0, life: 0.9, sz: 13 + n * 2, rot: (n - 1) * 0.35 }); } for (let n = 0; n < 6; n++) { const a = Math.random() * Math.PI * 2, sp = 90 + Math.random() * 110; parts.push({ star: 1, col: '#fff0f6', x: tx, y: ty, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.4, sz: 5 + Math.random() * 4 }); } }); }   // キュンッ：胸の先から小さなハートが3つ跳ね、輪が広がる（11/08 ユーザー）   // 3回ごとに胸の先のまわりに小さなきらめき（11/07 ユーザー）
     addHeat();
     const p = P[i], c = CUPS[i], amp = opt.amp * (1 + HEAT_PUSH * heatNow()) * lvNow().push * FEEL.push;
     // 押し込み：押した所から中心へ向かう向き＋下へ。中心に近いほど縦に縮む
@@ -1166,12 +1203,16 @@
       p.v[1] = pv1 + (p.v[1] - pv1) * ride; p.v[0] *= 0.6 + 0.4 * ride;
       p.lf = LIFT_T; p.lfA = LIFT_A * (amp / 1.95) * (0.55 + 0.45 * edge) * room * (1 - ride * 0.5); sqz(-0.8 * (-uy) * edge * amp); p.lift = 1;
     }
+    kick();
+  }
+  function pokeHold(e) {
+    const [ix, iy] = toImg(e.clientX, e.clientY), i = hit(ix, iy);
     // 長押し・引っぱりでも数を進める（2026-11-01 9回目の批評：「長押しでも」と案内しているのに、押した瞬間の1回しか数えなかった）
     const g0 = { i, x0: e.clientX, y0: e.clientY, t0: performance.now(), lx: e.clientX, ly: e.clientY, path: 0, x: e.clientX, y: e.clientY };
     g0.hold = setInterval(() => { if (g0.moved) { g0.moved = false; return; } addHeat(); tell({ t: 'tap', kind: 'hold', side: i, x: g0.x, y: g0.y }); kick(); }, 420);
     ptrs.set(e.pointerId, g0);
     kick();
-  });
+  }
   stageEl.addEventListener('pointermove', (e) => {
     const g = ptrs.get(e.pointerId); if (!g) return;
     const dx = (e.clientX - g.x0) / view.s, dy = (e.clientY - g.y0) / view.s;

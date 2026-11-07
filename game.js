@@ -11049,6 +11049,7 @@ function mpSfx(kind) {
   _mpSfxScale = sfxVolFloat();
   switch (kind) {
     case 'tap':       mpTone(720, 0.06, 'square', 0.03); break;
+    case 'puni':      mpSweep(520, 260, 0.09, 'sine', 0.06); mpTone(1040, 0.04, 'sine', 0.012, 0.003, 0.03, 10); break;   // 没入モードで触った時の、やわらかい音
     case 'deal':      for (let i = 0; i < 5; i++) mpTone(440 + i*30, 0.05, 'triangle', 0.04, 0.003, 0.03, i * 80); break;
     case 'flip':      mpTone(620, 0.08, 'sine', 0.05); mpTone(880, 0.06, 'triangle', 0.04, 0.005, 0.03, 80); break;
     case 'reach':     mpSweep(300, 700, 0.4, 'sine', 0.06); mpSweep(700, 1100, 0.35, 'triangle', 0.04, 100); break;
@@ -16739,7 +16740,7 @@ function applyPanyuBg(overlay) {
 // ぱにゅぱにゅ30タップミニゲーム
 // ぱにゅぱにゅの衣装（網目＋ばねの描画は docs/design-ref/panyu-mesh.html を埋め込んで使う）
 // 網目のページを直したら PANYU_MESH_V を上げる（ブラウザに残った古いページを使わせない）
-const PANYU_MESH_V = '20261108e';
+const PANYU_MESH_V = '20261108f';
 const PANYU_OUTFITS = [
   { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'gothic', name: 'ゴスロリ' }, { id: 'jirai', name: '地雷系' }, { id: 'vintage', name: '古着' }, { id: 'nurse', name: 'ナース' }, { id: 'santa', name: 'サンタ' },
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
@@ -16776,6 +16777,94 @@ function panyuPrefetch() {
   add('docs/design-ref/panyu-mesh.html?embed=1&v=' + PANYU_MESH_V, 'document');
   { const id = panyuOutfit(); add('assets/characters/' + panyuVariantImg(id, panyuPoseFor(id)) + '.webp', 'image'); }   // 次に出す構図を先に決めて、その絵を取りに行く
   add('assets/characters/panyu_surprise_face.webp', 'image');
+}
+
+// ---- 没入モード（D15・11/08）：ユーザー（スマホ実機）「短すぎるし文字が大量で没入できませんでした。エンドレス没入モードがあった方がいい」 ----
+//   回数の上限なし・文字なし。絵と効果音とハートだけ。衣装と構図は左右の端の薄い矢印（コントローラーは十字の左右）で替える。抜けるのは右上の小さな×だけ
+//   コントローラー：左スティック＝左の胸、右スティック＝右の胸（網目のページ側）。十字の左右＝衣装と構図、ビュー（戻る）＝抜ける
+function panyuImmVariants() {
+  const out = [];
+  panyuOwnedOutfits().forEach(o => (PANYU_POSES[o.id] || ['']).forEach(p => out.push({ id: o.id, pose: p })));
+  return out.length ? out : [{ id: 'bunny', pose: '' }];
+}
+function showPanyuImmersive() {
+  if (document.querySelector('.panyu-clicker-overlay')) return;
+  if (!panyuCanMesh()) { toast('この端末では没入モードを使えません'); return; }
+  const list = panyuImmVariants();
+  let cur = Math.max(0, list.findIndex(v => v.id === panyuOutfit() && v.pose === panyuPoseFor(panyuOutfit())));
+  if (list[cur].id !== panyuOutfit()) cur = Math.max(0, list.findIndex(v => v.id === panyuOutfit()));
+  const imgOf = (v) => 'assets/characters/' + panyuVariantImg(v.id, v.pose) + '.webp';
+  const ov = document.createElement('div');
+  ov.className = 'panyu-clicker-overlay pv2 pzi is-hint';
+  applyPanyuBg(ov);
+  ov.innerHTML = `<img class="panyu-bg-char" src="${imgOf(list[cur])}" alt="">
+    <button type="button" class="pzi-x" aria-label="没入モードを抜ける"><i></i></button>
+    ${list.length > 1 ? '<button type="button" class="pzi-edge is-prev" aria-label="前の衣装"><i></i></button><button type="button" class="pzi-edge is-next" aria-label="次の衣装"><i></i></button>' : ''}`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('is-in'));
+  let hintT = setTimeout(() => ov.classList.remove('is-hint'), 2600);   // 最初だけ少しはっきり見せて、あとは薄く
+  const wake = () => { ov.classList.add('is-hint'); clearTimeout(hintT); hintT = setTimeout(() => ov.classList.remove('is-hint'), 1800); };
+  let frame = null, touches = 0, stage = 0, lastSfx = 0;
+  const post = (m) => { try { if (frame && frame.contentWindow) frame.contentWindow.postMessage(m, '*'); } catch (_) {} };
+  const mount = () => {
+    const v = list[cur], key = panyuVariantKey(v.id, v.pose);
+    const f = document.createElement('iframe');
+    f.className = 'pzi-mesh'; f.title = 'ぱにゅぱにゅ'; f.allow = 'gamepad';
+    f.src = 'docs/design-ref/panyu-mesh.html?embed=1&v=' + PANYU_MESH_V + (key === 'bunny' ? '' : '&c=' + encodeURIComponent(key));
+    ov.querySelector('.pzi-x').before(f);
+    frame = f; touches = 0; stage = 0;
+    const nx = list[(cur + 1) % list.length]; const im = new Image(); im.src = imgOf(nx);   // 次の衣装の絵を先に取りに行く
+  };
+  const go = (d) => {
+    if (list.length < 2) return;
+    cur = (cur + d + list.length) % list.length;
+    const v = list[cur]; setPanyuOutfit(v.id); panyuPoseLast[v.id] = v.pose; panyuPoseNext = null;
+    const bg = ov.querySelector('.panyu-bg-char'); if (bg) bg.src = imgOf(v);
+    mpSfx('flip'); mount(); wake();
+  };
+  const heart = (x, y, big) => {
+    const h = document.createElement('i'); h.className = 'pzi-heart' + (big ? ' is-big' : '');
+    const o = ov.getBoundingClientRect();
+    h.style.left = (x - o.left) + 'px'; h.style.top = (y - o.top) + 'px';
+    h.style.setProperty('--dx', ((rand() - 0.5) * 60).toFixed(0) + 'px'); h.style.setProperty('--r', ((rand() - 0.5) * 40).toFixed(0) + 'deg');
+    ov.appendChild(h); setTimeout(() => h.remove(), 1000);
+  };
+  const onMsg = (e) => {
+    const m = e.data; if (!m || !m.panyu) return;
+    const fr = [...ov.querySelectorAll('iframe.pzi-mesh')].find(f => f.contentWindow === e.source); if (!fr) return;
+    if (m.t === 'ready') {
+      ov.classList.add('is-mesh'); fr.classList.add('on');
+      ov.querySelectorAll('iframe.pzi-mesh').forEach(f => { if (f !== fr) setTimeout(() => f.remove(), 320); });   // 前の衣装は、新しい絵が出てから消す（一瞬も空白にしない）
+      post({ panyuZoom: window.innerHeight < 500 ? 1 : 1.2 });
+      return;
+    }
+    if (fr !== frame) return;
+    if (m.t === 'nogl') { close(); return; }
+    if (m.t === 'pad') { if (m.k === 'next' || m.k === 'down') go(1); else if (m.k === 'prev' || m.k === 'up') go(-1); else if (m.k === 'back') close(); return; }
+    const r = fr.getBoundingClientRect(), x = r.left + (m.x || 0), y = r.top + (m.y || 0);
+    if (m.t === 'pop') { mpSfx('milestone'); for (let i = 0; i < 6; i++) spawnPanyuParticle(ov); heart(x, y, true); return; }
+    if (m.t !== 'tap') return;
+    touches++;
+    const now = performance.now();
+    if (now - lastSfx > 70) { lastSfx = now; mpSfx('puni'); }
+    if (m.kind !== 'stroke' || touches % 2 === 0) heart(x, y - 20, false);
+    if (navigator.vibrate && m.kind === 'tap') navigator.vibrate(15);
+    const st = touches >= 70 ? 3 : touches >= 35 ? 2 : touches >= 12 ? 1 : 0;   // 触るほど、ミミの顔がだんだん赤くなる（文字は出さない）
+    if (st > stage) { stage = st; post({ panyuStage: st }); post({ panyuJiggle: 'poyon' }); }
+  };
+  window.addEventListener('message', onMsg);
+  const onKey = (e) => { if (e.key === 'Escape') close(); else if (e.key === 'ArrowRight') go(1); else if (e.key === 'ArrowLeft') go(-1); };
+  window.addEventListener('keydown', onKey);
+  let closed = false;
+  function close() {
+    if (closed) return; closed = true;
+    window.removeEventListener('message', onMsg); window.removeEventListener('keydown', onKey); clearTimeout(hintT);
+    ov.classList.add('is-out'); setTimeout(() => ov.remove(), 300);
+    if (typeof panyuFreeRefreshLobby === 'function') try { panyuFreeRefreshLobby(); } catch (_) {}
+  }
+  ov.querySelector('.pzi-x').addEventListener('click', (e) => { e.stopPropagation(); close(); });
+  ov.querySelectorAll('.pzi-edge').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); go(b.classList.contains('is-next') ? 1 : -1); }));
+  mount();
 }
 
 function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
@@ -16828,6 +16917,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     </header>
     <div class="pv2-tools">
       <button type="button" class="pv2-outfit" aria-label="衣装を替える"><span>衣装</span><b>${(PANYU_OUTFITS.find(o => o.id === panyuOutfit()) || PANYU_OUTFITS[0]).name}</b></button>
+      ${cfg.lobby && meshOn ? '<button type="button" class="pv2-imm" aria-label="没入モード（回数なし・文字なし）"><i aria-hidden="true">∞</i><span>ずっと</span></button>' : ''}
       <button type="button" class="pv2-quit">やめる</button>
     </div>
     <label class="pv2-zoom" aria-label="寄り具合"><span>寄り</span><input type="range" min="1" max="1.7" step="0.01" value="${window.innerHeight < 500 ? 1 : 1.28}"></label>
@@ -17225,9 +17315,10 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
           <details class="pv2-res-more"><summary>詳しく</summary>${note ? `<div class="pv2-res-note">${note}</div>` : ''}
           <div class="pv2-res-heat">勢い ${boostEnd >= .75 ? '最高' : boostEnd >= .45 ? '高い' : boostEnd >= .2 ? 'ふつうより上' : 'ふつう'}で判定${boostEnd < .45 ? '。最後まで速く触るほど、当たりやすい' : ''}</div>
           <div class="pv2-res-meta"><span>ぱにゅ図鑑 ${dexN} / ${PANYU_RARITY.length}</span><span>SR 以上まで、あと ${pityLeft} 回で確定</span></div></details>
-          <div class="pv2-res-btns"><button type="button" class="pv2-res-again">もう一回</button><button type="button" class="pv2-res-btn">ロビーへ</button></div>`;
+          <div class="pv2-res-btns"><button type="button" class="pv2-res-again">もう一回</button>${meshOn ? '<button type="button" class="pv2-res-imm"><i aria-hidden="true">∞</i>ずっと触る</button>' : ''}<button type="button" class="pv2-res-btn">ロビーへ</button></div>`;
         overlay.appendChild(card);
         card.querySelector('.pv2-res-btn').addEventListener('click', (e) => { e.stopPropagation(); closeAll(); });
+        { const ib = card.querySelector('.pv2-res-imm'); if (ib) ib.addEventListener('click', (e) => { e.stopPropagation(); closeAll(); setTimeout(showPanyuImmersive, 280); }); }   // D15：結果から、そのまま回数なしで触り続ける
         card.querySelector('.pv2-res-again').addEventListener('click', (e) => {
           e.stopPropagation(); closeAll();
           setTimeout(() => { if (typeof cfg.again === 'function') cfg.again(); }, 280);
@@ -17284,6 +17375,8 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     overlay.classList.add('is-out');
     setTimeout(() => overlay.remove(), 260);
   });
+  // D15：没入モードへ（今回の回はやめて、回数なし・文字なしの画面へ）
+  { const ib = overlay.querySelector('.pv2-imm'); if (ib) ib.addEventListener('click', (e) => { e.stopPropagation(); if (completed) return; completed = true; physRunning = false; window.removeEventListener('resize', onPanyuResize); overlay.classList.add('is-out'); setTimeout(() => { overlay.remove(); showPanyuImmersive(); }, 260); }); }
   // 寄りのメーター（スマホは両手の親指で叩くので、寄りはピンチではなくメーターで）
   const zoomIn = overlay.querySelector('.pv2-zoom input');
   if (zoomIn) {

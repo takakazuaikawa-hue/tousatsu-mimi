@@ -136,7 +136,7 @@ html.is-compact :is(#stage > .as-host, .as-dialog) :is(.as-fold, .as-raise, .as-
    スマホで 0.488 倍に縮んでいた部品（#stage の中）は ÷ --game-scale、倍率1の小窓はそのまま。数字・題字（24px 以上）は主役の数字の段なので触らない。
    ===================================================================== */
 html body #stage :is(.h15-sw .h15-lbl, .credits-skip span, .result-unlock .ru-go, .sh3-back, .sh3-cat span, .v2-pause, .v2-pause span, .v2-help-btn, .verb-back, .result-sub-buttons .btn, .result-breakdown-toggle, .v2-detail-toggle, .home-ledger-row button) { font-size: calc(var(--r-btn2) / var(--game-scale, 1)) !important; }
-html body :is(.pv2-quit) { font-size: var(--r-btn2) !important; }
+html body :is(.pv2-quit, .pv2-imm, .pv2-res-imm) { font-size: var(--r-btn2) !important; }
 html body #stage :is(.h15-ticket .h15-lbl, .t3-btn b, .sh3-buy-l) { font-size: calc(var(--r-btn) / var(--game-scale, 1)) !important; }
 html body :is(.rico-mode-opt-name, .mp-btn-deal) { font-size: var(--r-btn) !important; }
 html body #stage :is(.credits-inner .cr-title) { font-size: calc(var(--r-mission) / var(--game-scale, 1)) !important; }
