@@ -156,6 +156,11 @@
     [[749, 640, 16, 16], [748, 664, 14, 14], [747, 686, 14, 14]], { gx: 750, gy: 622, gyB: 622, fabY: 634, ends: [622, 652, 676, 745] });
   DRS('santa', 'サンタ', [{ c: [751, 644], w: 32, h: 26, round: 1 }, { c: [751, 667], w: 32, h: 24, round: 1 }, { c: [751, 705], w: 62, h: 48, rect: 1 }],
     [[751, 644, 19, 15], [751, 667, 19, 14], [751, 705, -37, 29]], { gx: 751, gy: 630, fabY: 630, ends: [630, 655, 680, 745] });
+  // 楽屋×水着（11/07）：留め（左右の肩紐の留め具・胸のリング）を外すと、生成した外れた絵をそのまま見せる。肩紐の衣装の作った処理（紐を消す・リングを消す）は使わない
+  OUTFITS['bikini@dressing'] = { ...OUTFITS.bikini, name: '水着（楽屋）', img: 'panyu_bikini_dressing_reach.webp', kind: 'front', ring: 0, label: '留め', open: 'panyu_bikini_dressing_open.webp', openB: [750, 2000, 0],
+    parts: [{ c: [632, 560], w: 26, h: 26, round: 1 }, { c: [878, 558], w: 26, h: 26, round: 1 }, { c: [750, 665], w: 34, h: 34, ring: 1 }], covers: [],
+    gap: { gx: 750, gy: 640, wide: 0.0001, lin: [0, 0, 0], lin2: [0, 0, 0], line: [0, 0, 0], ends: [600, 660, 700, 800] },
+    pose: { ...OUTFITS['bunny@dressing'].pose, cups: [[655, 615, 108], [842, 615, 108]] } };
   const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）
   if (EMBED) document.body.classList.add('embed');
   const tell = (m) => { if (EMBED && parent !== window) try { parent.postMessage(Object.assign({ panyu: 1 }, m), '*'); } catch (_) {} };
@@ -180,7 +185,7 @@
   // 止まる位置。水着は左右別々：肩紐が外れた側は支えを失って下へ垂れ、リングが外れると左右へ大きく開く
   const restOf = (i) => {
     if (STRAP) { const s = popped[i] ? 1 : 0, g = popped[2] ? 1 : 0, ps = PZ.scale || 1; return [(i === 0 ? -1 : 1) * (s ? 8 + 52 * g : -6 + 46 * g) * ps, (s ? 22 + 12 * g : -36 + 8 * g) * ps]; }   // 肩紐があるうちは上・内へ引き上げられている
-    const l = lvNow(), ps = PZ.scale || 1; return [(i === 0 ? -1 : 1) * l.out * (OF.outK || 1) * ps, l.down * (OF.downK || 1) * ps];   // ps＝構図の大きさ（引いた絵ほど、ずれる量も小さく）   // 衣装ごとに、左右へ開く量と下へ垂れる量を変える
+    const l = lvNow(), ps = (PZ.scale || 1) * (OF.open ? 0.2 : 1);   /* 開いた絵を使う衣装は、生成した絵からずらさない */ return [(i === 0 ? -1 : 1) * l.out * (OF.outK || 1) * ps, l.down * (OF.downK || 1) * ps];   // ps＝構図の大きさ（引いた絵ほど、ずれる量も小さく）   // 衣装ごとに、左右へ開く量と下へ垂れる量を変える
   };   // 頬（赤らむ所）
   const sagOf = (i) => STRAP ? (popped[i] ? 1.12 : 0.9) + (popped[2] ? 0.03 : 0) : lvNow().sag;
   const FOCUS = PZ.focus;          // 寄せる時の注目点（胸の少し上）
