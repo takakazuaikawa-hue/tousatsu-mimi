@@ -1,6 +1,6 @@
 import fs from 'node:fs';
-import { launch } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/cdp.mjs';
-import { serve } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/server.mjs';
+import { launch } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/cdp.mjs';
+import { serve } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/server.mjs';
 const SP = process.argv[2];
 const server = await serve(SP, 0); const br = await launch({ width: 800, height: 600 }); const page = await br.newPage();
 await page.goto(`http://127.0.0.1:${server.port}/align.html`, 8000);

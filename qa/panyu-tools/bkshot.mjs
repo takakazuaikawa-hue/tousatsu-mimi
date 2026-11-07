@@ -1,9 +1,9 @@
 // 水着版：左の肩紐→右の肩紐→リングの順に外し、全体と胸元の拡大を撮る。引数：出力先の頭
 import fs from 'fs';
-import { launch, sleep } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/cdp.mjs';
-import { serve } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/server.mjs';
+import { launch, sleep } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/cdp.mjs';
+import { serve } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/server.mjs';
 const OUT = process.argv[2];
-const server = await serve('C:/Users/takakazu/projects/mp_panyu', 0); const br = await launch({ width: 1280, height: 800 }); const page = await br.newPage();
+const server = await serve('C:/Users/takakazu/projects/mimi_porker', 0); const br = await launch({ width: 1280, height: 800 }); const page = await br.newPage();
 await page.setViewport(1280, 800); await page.goto('about:blank', 1);
 const errs = []; 
 await page.goto(`http://127.0.0.1:${server.port}/docs/design-ref/panyu-mesh.html?c=bikini`, 8000); await sleep(3000);

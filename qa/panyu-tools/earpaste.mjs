@@ -2,10 +2,10 @@
 // 使い方：node earpaste.mjs <今の絵（qa/panyu-tools内）> <耳付きの位置合わせ済みpng（qa/panyu-tools内）> <出力webpパス> [x0 x1 y1 ぼかし]
 //   x0〜x1・上端〜y1 の四角を重ね、四角の縁はぼかし幅でなめらかに混ぜる（1400x788 の座標）
 import fs from 'node:fs';
-import { launch } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/cdp.mjs';
-import { serve } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/server.mjs';
+import { launch } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/cdp.mjs';
+import { serve } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/server.mjs';
 const [BASE, EARS, OUT, X0 = 440, X1 = 960, Y1 = 150, F = 36, EX = ''] = process.argv.slice(2);   // EX：重ねない四角 'x0,y0,x1,y1'（髪飾りなど）
-const server = await serve('C:/Users/takakazu/projects/mp_panyu/qa/panyu-tools', 0); const br = await launch({ width: 800, height: 600 }); const page = await br.newPage();
+const server = await serve('C:/Users/takakazu/projects/mimi_porker/qa/panyu-tools', 0); const br = await launch({ width: 800, height: 600 }); const page = await br.newPage();
 await page.goto(`http://127.0.0.1:${server.port}/align2.html`, 8000);
 const d = await page.eval(`(async()=>{
   const ld = async (s) => { const i = new Image(); i.src = s; await i.decode(); return i; };

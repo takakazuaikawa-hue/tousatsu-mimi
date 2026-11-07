@@ -16727,12 +16727,25 @@ function applyPanyuBg(overlay) {
 // ぱにゅぱにゅ30タップミニゲーム
 // ぱにゅぱにゅの衣装（網目＋ばねの描画は docs/design-ref/panyu-mesh.html を埋め込んで使う）
 // 網目のページを直したら PANYU_MESH_V を上げる（ブラウザに残った古いページを使わせない）
-const PANYU_MESH_V = '20261107b';
+const PANYU_MESH_V = '20261107c';
 const PANYU_OUTFITS = [
   { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'gothic', name: 'ゴスロリ' }, { id: 'jirai', name: '地雷系' }, { id: 'vintage', name: '古着' }, { id: 'nurse', name: 'ナース' }, { id: 'santa', name: 'サンタ' },
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
 ];
 const PANYU_OUTFIT_IMG = { bunny: 'panyu_reach', pajama: 'panyu_pajama_reach', pajama2: 'panyu_pajama2_reach', gothic: 'panyu_gothic_reach', jirai: 'panyu_jirai_reach', vintage: 'panyu_vintage_reach', nurse: 'panyu_nurse_reach', santa: 'panyu_santa_reach', bikini: 'panyu_bikini_reach', halter: 'panyu_halter_reach', white: 'panyu_white_reach', dress: 'panyu_dress_reach' };
+// 構図違い（2026-11-07）：同じ衣装の別のポーズ。開くたびにどれか1つ（前回と同じ構図は続けない）。'' は元の構図
+// 網目のページでは「衣装@構図」で開く。絵は assets/characters/panyu_<衣装>_<構図>_reach.webp
+const PANYU_POSES = { bunny: ['', 'dressing', 'pool'] };
+let panyuPoseNext = null, panyuPoseLast = {};
+function panyuPoseFor(id) {
+  if (panyuPoseNext && panyuPoseNext.id === id) return panyuPoseNext.pose;
+  const list = PANYU_POSES[id] || [''];
+  const cand = list.length > 1 ? list.filter(p => p !== panyuPoseLast[id]) : list;
+  panyuPoseNext = { id, pose: pick(cand) };
+  return panyuPoseNext.pose;
+}
+function panyuVariantKey(id, pose) { return pose ? id + '@' + pose : id; }
+function panyuVariantImg(id, pose) { return pose ? 'panyu_' + id + '_' + pose + '_reach' : PANYU_OUTFIT_IMG[id]; }
 // バニー以外はショップの「ぱにゅ衣装」を買うと着られる
 function panyuOutfitOwned(id) { return id === 'bunny' || isItemOwned('pwear_' + id); }
 function panyuOwnedOutfits() { return PANYU_OUTFITS.filter(o => panyuOutfitOwned(o.id)); }
@@ -16748,7 +16761,7 @@ function panyuPrefetch() {
   if (panyuPrefetch.done) return; panyuPrefetch.done = true;
   const add = (href, as) => { const l = document.createElement('link'); l.rel = 'prefetch'; l.href = href; if (as) l.as = as; document.head.appendChild(l); };
   add('docs/design-ref/panyu-mesh.html?embed=1&v=' + PANYU_MESH_V, 'document');
-  add('assets/characters/' + PANYU_OUTFIT_IMG[panyuOutfit()] + '.webp', 'image');
+  { const id = panyuOutfit(); add('assets/characters/' + panyuVariantImg(id, panyuPoseFor(id)) + '.webp', 'image'); }   // 次に出す構図を先に決めて、その絵を取りに行く
   add('assets/characters/panyu_surprise_face.webp', 'image');
 }
 
@@ -16759,6 +16772,14 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
   let count = totalTaps;
   let tapped = 0;
   let lastTapTime = 0;
+  // 今回の構図（網目が使える時だけ。使えない端末は今までの玉と元の絵）
+  const meshOn = panyuCanMesh() && !cfg.legacy;
+  let pzId = panyuOutfit(), pzPose = meshOn ? panyuPoseFor(pzId) : '';
+  const usePose = () => {   // 使った構図を覚え、次に出す構図を決めて絵を先に取りに行く
+    panyuPoseLast[pzId] = pzPose; panyuPoseNext = null;
+    const nx = panyuPoseFor(pzId); const im = new Image(); im.src = 'assets/characters/' + panyuVariantImg(pzId, nx) + '.webp';
+  };
+  usePose();
   const overlay = document.createElement('div');
   overlay.className = 'panyu-clicker-overlay pv2';
   applyPanyuBg(overlay);
@@ -16784,7 +16805,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
   ).join('');
   // 絵は画面いっぱい。胸の上には何も重ねない（以前は白い輪と大きな数字が絵を隠していた）
   overlay.innerHTML = `
-    <img class="panyu-bg-char" src="assets/characters/panyu_reach.webp" alt=""
+    <img class="panyu-bg-char" src="assets/characters/${meshOn ? panyuVariantImg(pzId, pzPose) : 'panyu_reach'}.webp" alt=""
          onerror="this.onerror=function(){this.style.display='none'};this.src='assets/characters/panyu.webp';">
     <div class="pv2-grade" aria-hidden="true"></div>
     <div class="pv2-vignette" aria-hidden="true"></div>
@@ -16812,9 +16833,9 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     <div class="panyu-combo pv2-combo" data-bind="panyuCombo"></div>
   `;
   document.body.appendChild(overlay);
+  if (meshOn && pzPose) overlay.querySelector('.panyu-clicker-pair').style.visibility = 'hidden';   // 構図違いの絵の上に、元の構図用の玉を一瞬も出さない
   // 網目＋ばねの胸（埋め込み）。絵が出るまでは今の一枚絵を見せ、出たら差し替える。WebGL が無い端末は今の玉のまま
   let meshFrame = null;
-  const meshOn = panyuCanMesh() && !cfg.legacy;
   const mountMesh = () => {
     if (!meshOn) return;
     if (meshFrame) meshFrame.remove();
@@ -16822,7 +16843,8 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     meshFrame = document.createElement('iframe');
     meshFrame.className = 'pv2-mesh';
     meshFrame.title = 'ぱにゅぱにゅ';
-    meshFrame.src = 'docs/design-ref/panyu-mesh.html?embed=1&v=' + PANYU_MESH_V + (panyuOutfit() === 'bunny' ? '' : '&c=' + panyuOutfit());
+    const key = panyuVariantKey(pzId, pzPose);
+    meshFrame.src = 'docs/design-ref/panyu-mesh.html?embed=1&v=' + PANYU_MESH_V + (key === 'bunny' ? '' : '&c=' + encodeURIComponent(key));
     overlay.querySelector('.panyu-bg-char').after(meshFrame);
   };
   const onMeshMsg = (e) => {
@@ -16914,6 +16936,8 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
       const nx = list[(i + 1) % list.length];
       setPanyuOutfit(nx.id);
       outfitBtn.querySelector('b').textContent = nx.name;
+      pzId = nx.id; pzPose = panyuPoseFor(pzId); usePose();
+      const bg = overlay.querySelector('.panyu-bg-char'); if (bg) bg.src = 'assets/characters/' + panyuVariantImg(pzId, pzPose) + '.webp';   // 網目が出るまでの絵も同じ構図に
       mountMesh();
     });
   }
@@ -16937,6 +16961,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
   };
   const pairEl = overlay.querySelector('.panyu-clicker-pair');
   const alignPanyuBalls = () => {
+    pairEl.style.visibility = meshOn && pzPose ? 'hidden' : ''; if (meshOn && pzPose) return;   // 構図違いの絵では、元の構図に合わせた玉を出さない
     const img = overlay.querySelector('.panyu-bg-char');
     if (!img || !img.naturalWidth) return;
     const cups = PANYU_CUPS[img.dataset.face || 'reach'];
@@ -16990,6 +17015,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
   const panyuFaceOk = {};
   Object.entries(PANYU_FACES).forEach(([k, src]) => { const im = new Image(); im.onload = () => { panyuFaceOk[k] = true; }; im.src = src; });
   const setPanyuFace = (k) => {
+    if (meshOn && pzPose) return;   // 表情の絵は元の構図の分しか無い
     const el = overlay.querySelector('.panyu-bg-char');
     if (!el || !panyuFaceOk[k] || el.dataset.face === k) return;
     el.dataset.face = k;

@@ -1,6 +1,6 @@
 // 試作の揺れの計算を抜き出して、押した時の動きを計算する
 const fs = require('fs');
-const html = fs.readFileSync(process.env.HTML || 'C:/Users/takakazu/projects/mp_panyu/docs/design-ref/panyu-mesh.html', 'utf8').replace(/\r\n/g, '\n');
+const html = fs.readFileSync(process.env.HTML || 'C:/Users/takakazu/projects/mimi_porker/docs/design-ref/panyu-mesh.html', 'utf8').replace(/\r\n/g, '\n');
 const a = html.indexOf('  // ---- 連打の熱'), b = html.indexOf('  function energy()');
 let phys = html.slice(a, b).replace(/window\.__panyuDbg[^\n]*\n/, '');
 const pd0 = html.indexOf('    addHeat();'), pd1 = html.indexOf('    ptrs.set(e.pointerId');

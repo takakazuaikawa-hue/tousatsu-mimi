@@ -1,6 +1,6 @@
-import { launch, sleep } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/cdp.mjs';
-import { serve } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/server.mjs';
-const REPO = 'C:/Users/takakazu/projects/mp_panyu';
+import { launch, sleep } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/cdp.mjs';
+import { serve } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/server.mjs';
+const REPO = 'C:/Users/takakazu/projects/mimi_porker';
 const OUT = process.argv[2];
 const server = await serve(REPO, 0); const br = await launch({ width: 1280, height: 800 }); const page = await br.newPage();
 await page.setViewport(1280, 800);

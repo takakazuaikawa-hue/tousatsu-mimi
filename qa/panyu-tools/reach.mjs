@@ -1,8 +1,8 @@
 // 胸の真ん中を3回連打した後、1.2秒のあいだに網目がどれだけ動いたか（胸の中の各点の最大のずれ）を測る。引数：衣装名
-import { launch, sleep } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/cdp.mjs';
-import { serve } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/server.mjs';
+import { launch, sleep } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/cdp.mjs';
+import { serve } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/server.mjs';
 const [OF] = process.argv.slice(2);
-const server = await serve('C:/Users/takakazu/projects/mp_panyu', 0); const br = await launch({ width: 1280, height: 800 }); const page = await br.newPage();
+const server = await serve('C:/Users/takakazu/projects/mimi_porker', 0); const br = await launch({ width: 1280, height: 800 }); const page = await br.newPage();
 await page.setViewport(1280, 800); await page.goto('about:blank', 1);
 await page.goto(`http://127.0.0.1:${server.port}/docs/design-ref/panyu-mesh.html?c=${OF}`, 8000); await sleep(5000);
 const out = await page.eval(`(async()=>{const D=__panyuDbg;const iw=1400,ih=788,z=1.28,w=innerWidth,h=innerHeight;const s=Math.max(w/iw,h/ih)*z;const F=D.focus;let ox=w/2-F[0]*s,oy=h*0.56-F[1]*s;ox=Math.min(0,Math.max(w-iw*s,ox));oy=Math.min(0,Math.max(h-ih*s,oy));

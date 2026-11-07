@@ -1,8 +1,8 @@
 // 使い方：node align2.mjs <生成絵.png> <出力の頭>
 import fs from 'node:fs'; import path from 'node:path';
-import { launch } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/cdp.mjs';
-import { serve } from 'file:///C:/Users/takakazu/projects/mp_panyu/qa/lib/server.mjs';
-const DIR = 'C:/Users/takakazu/projects/mp_panyu/qa/panyu-tools', [SRC, OUT] = process.argv.slice(2);
+import { launch } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/cdp.mjs';
+import { serve } from 'file:///C:/Users/takakazu/projects/mimi_porker/qa/lib/server.mjs';
+const DIR = 'C:/Users/takakazu/projects/mimi_porker/qa/panyu-tools', [SRC, OUT] = process.argv.slice(2);
 const server = await serve(DIR, 0); const br = await launch({ width: 800, height: 600 }); const page = await br.newPage();
 await page.goto(`http://127.0.0.1:${server.port}/align2.html`, 8000);
 const r = await page.eval(`window.run(${JSON.stringify(path.basename(SRC))})`, 120000);

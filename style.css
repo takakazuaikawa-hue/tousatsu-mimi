@@ -20958,3 +20958,6 @@ html.is-compact .trial-end-share-note { margin-top: 4px; line-height: 1.4; }
 .pv2 .pv2-word.is-beat { -webkit-text-stroke-color: #b8873a; color: #fff8e6; }
 .pv2 .pv2-mode em { word-break: keep-all; overflow-wrap: anywhere; }
 .pv2.is-mesh .pv2-meter { width: min(300px, 28vw); }
+/* ぱにゅぱにゅの構図違い（2026-11-07）：背景まで描いた明るい絵（プールの灯りなど）でも、左下の数字と遊び方が読めるように、文字の下だけをやわらかく暗くする（縁は見せない） */
+.pv2.is-mesh .pv2-meter::before { content: ""; position: absolute; z-index: -1; pointer-events: none; inset: -40px -70px -24px -40px;
+  background: radial-gradient(ellipse 70% 62% at 34% 56%, rgba(14,4,8,.66) 0%, rgba(14,4,8,.5) 45%, rgba(14,4,8,0) 100%); }

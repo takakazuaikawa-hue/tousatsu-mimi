@@ -124,6 +124,18 @@
   OUTFITS.dress.fly = { vx: [180, 300], vy: [820, 1000], g: 2500, spin: [8, 13], life: 1.8, bounce: 0.3, spark: '#ff7a8a', n: 22, shake: 3 };   // 宝石は赤くきらめく
   OUTFITS.dress.strapShake = 2; OUTFITS.dress.ropeLen = 0.8; OUTFITS.dress.ropeDrape = 1; OUTFITS.dress.ropeG = 5200; OUTFITS.dress.ropeDamp = 0.955; OUTFITS.dress.ropeKick = 0.35;   // サテンの太い紐は重い：すとんと落ちて、揺れはすぐ収まる   // 外れた紐は胸の丸みに沿って外へ垂れる（腕の上までは届かない長さ）
   OUTFITS.dress.fold = { apex: [[574, 521], [828, 521]], neck: [[0.796, 0.606], [-0.796, 0.606]], out: [[-0.716, 0.698], [0.716, 0.698]], len: 30 };   // 肩紐が外れると、角が内側へ折れ返って垂れる
+  // ---- 構図違い（2026-11-07）：同じ衣装の別のポーズ。キーは「衣装@構図」。揺れ方・飛び方は元の衣装を引き継ぎ、絵・留め・開き方・構図だけ持つ ----
+  // 驚き顔（surprise）が無い構図は、表情を差し替えずに頭ののけぞりだけ
+  OUTFITS['bunny@dressing'] = { ...OUTFITS.bunny, name: 'バニー（楽屋）', img: 'panyu_bunny_dressing_reach.webp', jewel: 0,   // 楽屋で前かがみ：椅子に座り、両手を膝に
+    parts: [{ c: [751, 658], w: 50, h: 44 }, { c: [747, 685], w: 28, h: 26 }, { c: [746, 707], w: 22, h: 24 }],   // 赤い石つきの大きなひし形・中・小（下ほど少し左へ傾く）
+    covers: [[751, 664, 27, 27], [747, 686, 15, 15], [745, 711, 14, -10]],   // 3つ目は両脇に指先があるので、上下の布で埋める
+    gap: { ...OUTFITS.bunny.gap, gx: 750, gy: 640, ends: [640, 678, 700, 748] },
+    pose: { cups: [[665, 598, 122], [840, 598, 122]], keep: [[655, 728, 92, 46], [848, 724, 92, 46], [0, 0, 0, 0]],   /* 動かさない所：左右の手 */ cheek: [[650, 360], [820, 344]], eyes: [[643, 318], [808, 290]], faceR: [560, 180, 320, 260], faceC: [727, 322, 125, 100], blushC: [732, 350, 130, 52], head: [728, 310, 420], focus: [750, 590], scale: 0.92, surprise: '' } };
+  OUTFITS['bunny@pool'] = { ...OUTFITS.bunny, name: 'バニー（プール）', img: 'panyu_bunny_pool_reach.webp', jewel: 0, outK: 0.6,   /* 腕が胸に沿っているので、外へは開きすぎない */   // プールサイドで膝立ち：引いた絵なので胸も留めも小さい
+    parts: [{ c: [733, 547], w: 26, h: 22 }, { c: [727, 565], w: 20, h: 20 }, { c: [717, 578], w: 18, h: 18 }],
+    covers: [[733, 549, 15, 14], [727, 565, 11, 11], [717, 578, 10, 10]],
+    gap: { ...OUTFITS.bunny.gap, gx: 736, gy: 528, ends: [528, 556, 572, 606], wide: 0.62, ramp: 15 },
+    pose: { cups: [[680, 482, 84], [795, 482, 84]], keep: [[590, 525, 44, 120], [884, 525, 44, 120], [0, 0, 0, 0]],   /* 動かさない所：胸の横の腕 */ cheek: [[660, 265], [786, 255]], eyes: [[655, 232], [775, 222]], faceR: [600, 140, 240, 200], faceC: [720, 240, 95, 80], blushC: [722, 262, 95, 42], head: [720, 240, 300], focus: [738, 470], scale: 0.64, surprise: '' } };
   const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）
   if (EMBED) document.body.classList.add('embed');
   const tell = (m) => { if (EMBED && parent !== window) try { parent.postMessage(Object.assign({ panyu: 1 }, m), '*'); } catch (_) {} };
@@ -148,7 +160,7 @@
   // 止まる位置。水着は左右別々：肩紐が外れた側は支えを失って下へ垂れ、リングが外れると左右へ大きく開く
   const restOf = (i) => {
     if (STRAP) { const s = popped[i] ? 1 : 0, g = popped[2] ? 1 : 0; return [(i === 0 ? -1 : 1) * (s ? 8 + 52 * g : -6 + 46 * g), s ? 22 + 12 * g : -36 + 8 * g]; }   // 肩紐があるうちは上・内へ引き上げられている
-    const l = lvNow(); return [(i === 0 ? -1 : 1) * l.out * (OF.outK || 1), l.down * (OF.downK || 1)];   // 衣装ごとに、左右へ開く量と下へ垂れる量を変える
+    const l = lvNow(), ps = PZ.scale || 1; return [(i === 0 ? -1 : 1) * l.out * (OF.outK || 1) * ps, l.down * (OF.downK || 1) * ps];   // ps＝構図の大きさ（引いた絵ほど、ずれる量も小さく）   // 衣装ごとに、左右へ開く量と下へ垂れる量を変える
   };   // 頬（赤らむ所）
   const sagOf = (i) => STRAP ? (popped[i] ? 1.12 : 0.9) + (popped[2] ? 0.03 : 0) : lvNow().sag;
   const FOCUS = PZ.focus;          // 寄せる時の注目点（胸の少し上）
@@ -610,7 +622,7 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.activeTexture(gl.TEXTURE0); gl.uniform1i(U('uFace'), 1); gl.uniform1i(U('uTex'), 0); faceReady = true; };
   let faceReady = false;
-  fimg.src = '../../assets/characters/' + PZ.surprise;
+  if (PZ.surprise) fimg.src = '../../assets/characters/' + PZ.surprise;   // 驚き顔の無い構図は読まない
   // 本物の肌（水着の絵）。パジャマの開いた所に使う
   let bkReady = false;
   if (OF.bkSkin || (OF.gap && OF.gap.bkSkin)) { const btex = gl.createTexture(), bimg = new Image();
