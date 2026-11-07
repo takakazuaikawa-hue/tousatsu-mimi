@@ -607,19 +607,19 @@
             col = sd2 > 0.0 ? col * (1.0 + rim2 * sd2 * 0.10 * u) : mix(col, col * vec3(0.99, 0.88, 0.92), rim2 * -sd2 * 0.5 * u); }
           col = mix(col, min(col * 1.04, vec3(1.0)), 0.6 * u * smoothstep(0.58, 0.0, length(d - vec2(-0.36, -0.47))) * (1.0 - smoothstep(0.2, 0.32, r) * 0.0));   // 1段目の左上にふんわりした明るさ（柔らかく見せる）
           // ③ 突端（11/07 ユーザー「黒味はNG」「もう5段階高く」）：足もと→上の面へ斜め上にのびる筒として描く。影は黒くせず、服のピンクを深くするだけ
-          vec2 cap = vec2(-0.10, -0.17);                                           // 上の面の中心（光の側へずらすほど高く見える）
+          vec2 cap = vec2(-0.06, -0.10);   /* 2段階下げる（11/07 ユーザー「へこんで見える」） */                                           // 上の面の中心（光の側へずらすほど高く見える）
           float tt = clamp(dot(d, cap) / dot(cap, cap), 0.0, 1.0);
           float dw = length(d - cap * tt), R0 = 0.36;
           float n = smoothstep(R0 + 0.06, R0 - 0.05, dw);                          // 筒＋上の面の形
           float top = smoothstep(R0 + 0.04, R0 - 0.08, length(d - cap));           // 上の面
           vec3 deep = col * vec3(0.98, 0.72, 0.81);                                // 影の色＝服のピンクを深く（灰色・黒にしない）
-          col = mix(col, col * vec3(0.98, 0.80, 0.86), 0.45 * n * u);               // 突端の地の色（透け）
-          col = mix(col, deep, 0.95 * u * n * (1.0 - top * 0.7) * smoothstep(-0.3, 0.5, dot(normalize(d + 1e-4), vec2(0.45, 0.75))));   // 筒の側面の陰の側
+          col = mix(col, col * vec3(0.99, 0.88, 0.92), 0.22 * n * u);   /* 突端の中は濃くしない（濃いと穴に見える） */               // 突端の地の色（透け）
+          col = mix(col, deep, 0.8 * u * n * (1.0 - top) * smoothstep(0.1, 0.7, dot(normalize(d + 1e-4), vec2(0.45, 0.75))));   // 筒の側面の陰の側
           col = mix(col, deep, 0.7 * u * (1.0 - n) * smoothstep(0.50, 0.28, length(d - vec2(0.12, 0.22))));   // 足もとに落ちる影（ピンク）
           float rimT = smoothstep(R0 + 0.04, R0 - 0.02, length(d - cap)) * smoothstep(R0 - 0.20, R0 - 0.04, length(d - cap));
           float sdT = max(0.0, dot(normalize(d - cap + 1e-4), normalize(vec2(-0.45, -0.75))));
           col = mix(col, vec3(1.0, 0.85, 0.90), rimT * sdT * 0.6 * u);   // 上の面の縁は左上だけ明るく（輪にしない）
-          col = mix(col, col * vec3(1.0, 0.93, 0.96) * 1.04, top * 0.35 * u * smoothstep(0.3, -0.2, dot(d - cap, vec2(0.45, 0.75)) / R0));   // 上の面の中はふんわり明るく              // 上の面の縁が明るく立つ
+          col = mix(col, min(col * vec3(1.0, 0.95, 0.97) * 1.10, vec3(1.0)), top * 0.6 * u * smoothstep(0.3, -0.2, dot(d - cap, vec2(0.45, 0.75)) / R0));   // 上の面の中はふんわり明るく              // 上の面の縁が明るく立つ
           col = mix(col, vec3(1.0, 0.90, 0.94), 0.5 * u * smoothstep(0.11, 0.03, length(d - cap - vec2(-0.08, -0.08))));   // 上の面の小さなつや
           float ang = atan(d.y, d.x), wr = pow(abs(sin(ang * 2.0 + 0.9) * sin(ang * 3.0 + 0.3)), 6.0) * smoothstep(0.40, 0.55, r) * smoothstep(1.05, 0.55, r);   // ④ 張った布のしわ
           col = mix(col, col * vec3(0.99, 0.89, 0.92), 0.3 * wr * u);
