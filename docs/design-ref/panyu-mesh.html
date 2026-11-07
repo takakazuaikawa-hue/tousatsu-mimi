@@ -598,11 +598,13 @@
         for (int k = 0; k < 2; k++) { vec2 tp = k == 0 ? uTipP.xy : uTipP.zw; vec2 d = (q - tp) / uTipR.x; float r2 = dot(d, d);
           // 11/07 ユーザー「透けてて固そうな感じ」：①大きな丸い盛り上がりの陰影 ②布越しにうっすら透ける濃いピンク ③縁のくっきりした固い突端 ④突端から放射状に張る布のしわ
           float r = sqrt(r2), u = uTipR.y;
-          float h1 = exp(-r2 * 2.2); vec2 gr = -4.4 * d * h1;
+          float h1 = exp(-r2 * 2.2), hm = exp(-r2 * 5.5); vec2 gr = -4.4 * d * h1 - 11.0 * d * hm * 0.75;   /* 突端の下の1段目（透けた所）も少し膨らむ（11/07 ユーザー） */
           vec3 L = normalize(vec3(-0.45, -0.75, 0.6)); float base = L.z;
-          float shc = clamp((dot(normalize(vec3(-gr * 0.9, 1.0)), L) - base) * u, -0.3, 0.3) * 0.6;
+          float shc = clamp((dot(normalize(vec3(-gr * 0.9, 1.0)), L) - base) * u, -0.38, 0.38) * 0.7;
           col = shc >= 0.0 ? mix(col, vec3(1.0, 0.82, 0.88), shc * 0.8) : mix(col, col * vec3(1.0, 0.80, 0.86), -shc * 2.2);
           col = mix(col, col * vec3(0.93, 0.66, 0.72), 0.55 * u * smoothstep(0.72, 0.38, r));   // ② 布の下の色が透ける（ふちはぼかす）
+          { float rim2 = smoothstep(0.78, 0.55, r) * smoothstep(0.28, 0.52, r), sd2 = dot(normalize(d + 1e-4), normalize(vec2(-0.45, -0.75)));   // 1段目の縁：やわらかく盛り上がる
+            col = sd2 > 0.0 ? mix(col, vec3(1.0, 0.84, 0.90), rim2 * sd2 * 0.32 * u) : mix(col, col * vec3(0.84, 0.62, 0.70), rim2 * -sd2 * 0.45 * u); }
           float n = smoothstep(0.31, 0.21, r);                                                   // ③ 突端：上が平らで、縁が急に立つ（固い）
           float rim = smoothstep(0.34, 0.26, r) * smoothstep(0.10, 0.24, r);
           float side = dot(normalize(d + 1e-4), normalize(vec2(-0.45, -0.75)));                 // 左上の縁は明るく、右下の縁は暗い
