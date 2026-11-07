@@ -596,14 +596,17 @@
       vec3 col = texture2D(uTex, q / uImgF).rgb;
       if (uTipR.y > 0.001) {
         for (int k = 0; k < 2; k++) { vec2 tp = k == 0 ? uTipP.xy : uTipP.zw; vec2 d = (q - tp) / uTipR.x; float r2 = dot(d, d);
-          float hgt = exp(-r2 * 2.2);                     // 小さな丸い盛り上がり
-          vec2 gr = -4.4 * d * hgt;                       // 盛り上がりの傾き
+          float h1 = exp(-r2 * 2.2), h2 = exp(-r2 * 16.0), h3 = exp(-r2 * 60.0);   // 丸い盛り上がり＋その先の小さな山＋いちばん先のとがり（11/07 ユーザー「先端のさらに先端が一番とがったように」）
+          float hgt = h1 + 0.8 * h2 + 0.5 * h3;
+          vec2 gr = -4.4 * d * h1 - 0.8 * 32.0 * d * h2 * 0.45 - 0.5 * 120.0 * d * h3 * 0.22;   // 先へ行くほど急になる傾き
           float lit = dot(normalize(vec3(-gr * 0.9, 1.0)), normalize(vec3(-0.45, -0.75, 0.6)));   // 左上からの光
           float base = dot(vec3(0.0, 0.0, 1.0), normalize(vec3(-0.45, -0.75, 0.6)));
           float sh = (lit - base) * uTipR.y;
-          col *= 1.0 + clamp(sh, -0.35, 0.35) * 0.7;                              // 光の当たる側は明るく、反対側に影
-          col += vec3(1.0, 0.97, 0.95) * pow(max(0.0, 1.0 - length(d - vec2(-0.16, -0.2)) * 3.2), 3.0) * 0.32 * uTipR.y;   // てっぺんの小さなつや
-          col *= 1.0 - 0.10 * uTipR.y * smoothstep(0.9, 0.0, length(d - vec2(0.12, 0.38))) * (1.0 - hgt);   // 下にできる布のたるみの影
+          float shc = clamp(sh, -0.35, 0.35) * 0.7;
+          col = shc >= 0.0 ? col * (1.0 + shc) : mix(col, col * vec3(1.0, 0.80, 0.86), -shc * 2.4);   // 光の当たる側は明るく、反対側は灰色でなく薄いピンクの影
+          col = mix(col, vec3(1.0, 0.70, 0.79), (h1 * 0.22 + h2 * 0.25) * uTipR.y);   // とがった所は薄いピンク（11/07 ユーザー）
+          col += vec3(1.0, 0.97, 0.95) * pow(max(0.0, 1.0 - length(d - vec2(-0.07, -0.09)) * 7.0), 2.0) * 0.38 * uTipR.y;   // てっぺんの小さなつや
+          col = mix(col, col * vec3(1.0, 0.86, 0.90), 0.5 * uTipR.y * smoothstep(0.9, 0.0, length(d - vec2(0.12, 0.38))) * (1.0 - hgt));   // 下にできる布のたるみの影
         }
       }
       if (uOpenOn > 0.001) {   // 開いた絵（同じ構図で留めが外れた絵）：外した数に合わせて、上から開いた所まで見せる
