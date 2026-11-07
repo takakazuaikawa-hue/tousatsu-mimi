@@ -136,6 +136,9 @@
     covers: [[733, 549, 15, 14], [727, 565, 11, 11], [717, 578, 10, 10]],
     gap: { ...OUTFITS.bunny.gap, gx: 736, gy: 528, ends: [528, 556, 572, 606], wide: 0.62, ramp: 15 },
     pose: { cups: [[680, 482, 84], [795, 482, 84]], keep: [[590, 525, 44, 120], [884, 525, 44, 120], [0, 0, 0, 0]],   /* 動かさない所：胸の横の腕 */ cheek: [[660, 265], [786, 255]], eyes: [[655, 232], [775, 222]], faceR: [600, 140, 240, 200], faceC: [720, 240, 95, 80], blushC: [722, 262, 95, 42], head: [720, 240, 300], focus: [738, 470], scale: 0.64, surprise: '' } };
+  OUTFITS['bikini@bed'] = { ...OUTFITS.bikini, name: '水着（ベッド）', img: 'panyu_bikini_bed_reach.webp', ringG: [698, 708, 0.86], ringNoBand: 1, strapFill: 1, sw: [5.0, 7.4, 9.6],   // ベッドでうつ伏せ・頬杖：胸の下は布団。肩紐はカップの金具から腕輪の下まで見えている
+    parts: [{ a: [602, 614], b: [620, 546] }, { a: [769, 616], b: [758, 564] }, { c: [698, 708], w: 26, h: 26, ring: 1 }],
+    pose: { cups: [[628, 655, 105], [758, 655, 105]], keep: [[556, 610, 46, 150], [818, 610, 46, 150], [698, 712, 34, 22]],   /* 動かさない所：胸の横の左右の腕・胸の下のリング（左右に引き伸ばさない） */ cheek: [[575, 345], [735, 325]], eyes: [[560, 300], [715, 270]], faceR: [470, 160, 320, 260], faceC: [640, 300, 125, 105], blushC: [645, 335, 130, 50], head: [640, 290, 420], focus: [692, 600], scale: 0.8, surprise: '' } };
   const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）
   if (EMBED) document.body.classList.add('embed');
   const tell = (m) => { if (EMBED && parent !== window) try { parent.postMessage(Object.assign({ panyu: 1 }, m), '*'); } catch (_) {} };
@@ -159,7 +162,7 @@
   const lvNow = () => LV[popped.filter(Boolean).length];
   // 止まる位置。水着は左右別々：肩紐が外れた側は支えを失って下へ垂れ、リングが外れると左右へ大きく開く
   const restOf = (i) => {
-    if (STRAP) { const s = popped[i] ? 1 : 0, g = popped[2] ? 1 : 0; return [(i === 0 ? -1 : 1) * (s ? 8 + 52 * g : -6 + 46 * g), s ? 22 + 12 * g : -36 + 8 * g]; }   // 肩紐があるうちは上・内へ引き上げられている
+    if (STRAP) { const s = popped[i] ? 1 : 0, g = popped[2] ? 1 : 0, ps = PZ.scale || 1; return [(i === 0 ? -1 : 1) * (s ? 8 + 52 * g : -6 + 46 * g) * ps, (s ? 22 + 12 * g : -36 + 8 * g) * ps]; }   // 肩紐があるうちは上・内へ引き上げられている
     const l = lvNow(), ps = PZ.scale || 1; return [(i === 0 ? -1 : 1) * l.out * (OF.outK || 1) * ps, l.down * (OF.downK || 1) * ps];   // ps＝構図の大きさ（引いた絵ほど、ずれる量も小さく）   // 衣装ごとに、左右へ開く量と下へ垂れる量を変える
   };   // 頬（赤らむ所）
   const sagOf = (i) => STRAP ? (popped[i] ? 1.12 : 0.9) + (popped[2] ? 0.03 : 0) : lvNow().sag;
@@ -428,6 +431,7 @@
     uniform vec3 uRG;   // リングの中心と大きさ
     uniform float uInp;
     uniform vec2 uRAn;   // 留まっている間に消す輪の帯（内側・外側の半径）
+    uniform float uNoBand;   // 1＝外れても左右の帯は消さない（帯が斜めに通る構図）
     float ringMask(vec2 q, float on) {   // 外れたリングと帯の範囲（1＝中）
       if (on < 0.5 && uRAn.x < 0.0) return 0.0;   // 小さな金具は、留まっている間は絵のまま（消さない）
       if (on < 0.5 && uRAn.y > 0.0) { float rq = length(q - uRG.xy), dx = abs(q.x - uRG.x);
@@ -436,7 +440,7 @@
         return max(band, bar); }
       float K = uRG.z; vec2 C = uRG.xy; float r = length(q - C) / K, ax = abs(q.x - C.x) / K;
       float ringM = on > 0.5 ? 1.0 - smoothstep(19.0, 21.5, r) : 1.0 - smoothstep(15.6, 17.0, r);   // 輪の影まで含めて消す
-      float bandM = on > 0.5 ? (1.0 - smoothstep(5.5, 7.5, abs(q.y - C.y - 1.4 * K) / K)) * (1.0 - smoothstep(20.0, 25.0, ax)) : 0.0;
+      float bandM = on > 0.5 ? (1.0 - smoothstep(5.5, 7.5, abs(q.y - C.y - 1.4 * K) / K)) * (1.0 - smoothstep(20.0, 25.0, ax)) : 0.0; bandM *= 1.0 - uNoBand;
       return max(ringM, bandM);
     }
     // 穴のまわりの肌を、16の向きから拾って距離で重みづけして混ぜる（すじも継ぎ目も出ない、なめらかな埋め方）
@@ -463,7 +467,7 @@
       #endif
       float K = uRG.z; vec2 C = uRG.xy; float r = length(p - C) / K, ax = abs(p.x - C.x) / K;
       float ringM = on > 0.5 ? 1.0 - smoothstep(16.0, 18.4, r) : 1.0 - smoothstep(15.6, 17.0, r);   // 留まっている間は輪とその影だけ（帯は残す。帯の付け根は別に描く輪の絵がつなぐ）
-      float bandM = on > 0.5 ? (1.0 - smoothstep(4.8, 6.6, abs(p.y - C.y - 1.4 * K) / K)) * (1.0 - smoothstep(20.0, 25.0, ax)) : 0.0;   // カップの角の短い端は残る
+      float bandM = on > 0.5 ? (1.0 - smoothstep(4.8, 6.6, abs(p.y - C.y - 1.4 * K) / K)) * (1.0 - smoothstep(20.0, 25.0, ax)) : 0.0; bandM *= 1.0 - uNoBand;   // カップの角の短い端は残る
       float m = max(ringM, bandM);
       if (m < 0.001) return col;
       float rr = on > 0.5 ? 19.0 : 18.2, hr = sqrt(max(0.0, rr * rr - ax * ax)) * K;                   // この列で、輪のにじみの外になる上下の位置
@@ -739,7 +743,7 @@
     if (OF.fold) { const f = OF.fold; gl.uniform4f(U('uFA0'), ...f.apex[0], foldA[1], 0); gl.uniform4f(U('uFA1'), ...f.apex[1], 0, 0); gl.uniform4f(U('uFN'), ...f.neck[0], ...f.neck[1]); gl.uniform4f(U('uFO'), ...f.out[0], ...f.out[1]); gl.uniform2f(U('uFold'), foldA[0], f.len); } else gl.uniform2f(U('uFold'), 0, 0);
     gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform1f(U('uUseBk'), bkReady ? 1 : 0); gl.uniform3f(U('uBkGain'), ...(OF.bkGain || (OF.gap && OF.gap.bkGain) || [1, 1, 1])); gl.uniform1f(U('uWide'), (OF.gap && OF.gap.wide) || 1); gl.uniform1f(U('uRamp'), (OF.gap && (OF.gap.bkSkin && bkReady ? OF.gap.rampB : OF.gap.ramp)) || 24); gl.uniform1f(U('uInVSkin'), (OF.gap && OF.gap.inVSkin) || 0); gl.uniform1f(U('uShift'), (OF.gap && OF.gap.shift) || 0); gl.uniform1f(U('uGs'), (OF.gap && OF.gap.shear) || 0); gl.uniform4f(U('uSkin'), ...((OF.gap && OF.gap.skin) || [0, 0, 0, 0])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
     gl.uniform2f(U('uFlap'), ...((OF.gap && OF.gap.flap) || [0.12, 1.8]));
-    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0]));
+    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0])); gl.uniform1f(U('uNoBand'), +!!OF.ringNoBand);
     gl.uniform1f(U('uSF'), +(OUTFIT === 'dress' || !!OF.strapFill)); gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));   // 髪の上を通る紐は、両側の色（髪・肌）でつなぐ消し方
     if (STRAP) { gl.uniform4f(U('uSA'), ...BTNS[0].a, ...BTNS[0].b); gl.uniform4f(U('uSB'), ...BTNS[1].a, ...BTNS[1].b); }
     const r0 = restOf(0), r1 = restOf(1);
