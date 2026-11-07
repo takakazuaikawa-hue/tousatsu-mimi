@@ -141,13 +141,15 @@
     gap: { ...OUTFITS[id].gap, bkSkin: 0, skin: [705, 565, 742, 600], ...g }, pose: OUTFITS['bunny@dressing'].pose }; };
   // 開き方の基準は11/07 ユーザーが「これがいちばんまし」とした最初の形（古着：gy 618・fabY 630・ramp は元の衣装のまま）（11/07 ユーザー「真ん中がつながってない方がいい」）
   DRS('pajama', 'パジャマ', [{ c: [743, 646], w: 22, h: 22, round: 1 }, { c: [742, 676], w: 22, h: 22, round: 1 }, { c: [740, 708], w: 22, h: 22, round: 1 }],
-    [[743, 646, 13.5, 13.5], [742, 676, 13.5, 13.5], [740, 710, 12, -10]], { gx: 752, gy: 630, gyB: 630, fabY: 642, vk: [0, 0, 0], shift: 0, wide: 1.6, ends: [630, 662, 694, 742] });   // 襟のV字の形が元の構図と違うので、合わせ目から開く
+    [[743, 646, 13.5, 13.5], [742, 676, 13.5, 13.5], [740, 710, 12, -10]], { gx: 752, gy: 630, wide: 0.0001, ends: [612, 662, 694, 760] });
+  Object.assign(OUTFITS['pajama@dressing'], { open: 'panyu_pajama_dressing_open.webp', openB: [748, 62, 612], covers: [] });
   DRS('gothic', 'ゴスロリ', [{ c: [758, 658], w: 24, h: 24, round: 1 }, { c: [758, 691], w: 24, h: 24, round: 1 }, { c: [757, 722], w: 20, h: 20, round: 1 }],
     [[758, 658, 15.5, -15.5], [758, 691, 15.5, -15.5], [757, 722, 12, -12]], { gx: 757, gy: 636, gyB: 636, fabY: 648, ends: [636, 676, 706, 746] });
   DRS('jirai', '地雷系', [{ c: [755, 648], w: 26, h: 22, round: 1 }, { c: [755, 674], w: 26, h: 22, round: 1 }, { c: [755, 699], w: 26, h: 22, round: 1 }],
     [[755, 648, 16, -14], [755, 674, 16, -14], [755, 699, 16, -14]], { gx: 754, gy: 630, gyB: 630, fabY: 642, ends: [630, 662, 688, 742] });
   DRS('vintage', '古着', [{ c: [753, 637], w: 22, h: 22, round: 1 }, { c: [752, 668], w: 22, h: 22, round: 1 }, { c: [751, 703], w: 22, h: 22, round: 1 }],
-    [[753, 637, 14, -14], [752, 668, 14, -14], [751, 703, 14, -14]], { gx: 754, gy: 618, gyB: 618, fabY: 630, ends: [618, 652, 686, 745] });
+    [[753, 637, 14, -14], [752, 668, 14, -14], [751, 703, 14, -14]], { gx: 753, gy: 618, wide: 0.0001, ends: [600, 652, 690, 760] });
+  Object.assign(OUTFITS['vintage@dressing'], { open: 'panyu_vintage_dressing_open.webp', openB: [753, 60, 600], covers: [] });   // 留めを外すと、開いた絵を上から見せる（11/07 作り直し）
   DRS('nurse', 'ナース', [{ c: [749, 640], w: 26, h: 26, round: 1 }, { c: [748, 664], w: 22, h: 22, round: 1 }, { c: [747, 686], w: 22, h: 22, round: 1 }],
     [[749, 640, 16, 16], [748, 664, 14, 14], [747, 686, 14, 14]], { gx: 750, gy: 622, gyB: 622, fabY: 634, ends: [622, 652, 676, 745] });
   DRS('santa', 'サンタ', [{ c: [751, 644], w: 32, h: 26, round: 1 }, { c: [751, 667], w: 32, h: 24, round: 1 }, { c: [751, 705], w: 62, h: 48, rect: 1 }],
@@ -325,6 +327,8 @@
     }
     // V字から開く衣装（パジャマ・ドレス）：V字の中は元の絵の肌を横に広げたもの（col に入っている）。V字の先より下だけ塗りの肌
     // vs＝この行での元のV字の半分の幅（V字の先で0）。布の縁は元の絵の線からそのまま切り口へつながる
+    uniform float uNoVLine;
+    uniform sampler2D uOpen; uniform float uOpenOn; uniform vec3 uOpenB;   // 開いた絵・使うか・見せる範囲（中心x・半分の幅・上の端y）
     uniform vec2 uCt; uniform float uGs; uniform float uShift; uniform float uDbg;   // V字の左右の傾き（x・y）と、V字の下の端での半分の幅（z）
     uniform vec4 uSkin;   // 写し元のきれいな素肌（左・上・右・下）。裂け目の中の肌はここを写す（塗らない）
     vec3 skinAt(vec2 p, float H) {
@@ -382,7 +386,7 @@
       if (uDbg > 0.5) inner = mix(inner, vec3(1.0, 1.0, 0.0), wp * 0.5);
       col = mix(col, inner, 1.0 - smoothstep(-0.9 - aa * 0.5, -0.9 + aa * 0.5, e));
       float ln = 1.0 - smoothstep(0.5, 0.5 + aa, abs(e + 0.25));               // 切り口の線（絵の線画と同じ色・太さ）
-      return mix(col, uLine, ln * 0.85 * smoothstep(0.0, 1.2, h) * max(fab, smoothstep(1.0, 4.0, h)));   // 開いた布の縁には、V字の先より上でも線（布の縁）
+      return mix(col, uLine, ln * 0.85 * smoothstep(0.0, 1.2, h) * max(fab, smoothstep(1.0, 4.0, h) * (1.0 - uNoVLine)));   // uNoVLine：襟が曲線の構図は、V字の先より上に線を描かない（線が胸の上に乗る）   // 開いた布の縁には、V字の先より上でも線（布の縁）
     }
     // ---- 水着：外れた肩紐とリングを消し、下の肌を見せる（肌はすぐ隣の本物の肌から写す） ----
     uniform vec4 uBk;   // x＝左の肩紐、y＝右の肩紐、z＝胸のリングが外れたか、w＝水着か
@@ -558,6 +562,10 @@
       } else if (h > 0.0) { e = a - h; q.x = GX + sign(p.x - GX) * max(0.0, a - h * (0.35 + 0.65 * smoothstep(GY, GY + 34.0, p.y)) * exp(-max(0.0, e) / 44.0)); }
       q.x += uGs * (q.y - uFabY);   // 傾きを戻した座標から、絵の座標へ
       vec3 col = texture2D(uTex, q / uImgF).rgb;
+      if (uOpenOn > 0.5) {   // 開いた絵（同じ構図で留めが外れた絵）：外した数に合わせて、上から開いた所まで見せる
+        float om = (1.0 - smoothstep(uGap.y - 18.0, uGap.y + 18.0, p0.y)) * (1.0 - smoothstep(uOpenB.y, uOpenB.y + 36.0, abs(p0.x - uOpenB.x))) * smoothstep(uOpenB.z - 20.0, uOpenB.z + 10.0, p0.y);
+        col = mix(col, texture2D(uOpen, q / uImgF).rgb, om);
+      }
       if (uDbg > 0.5 && h > 0.0 && uVk.x > 0.0 && e < 0.0) col = mix(col, p.y >= uFabY ? vec3(0.0, 0.0, 1.0) : a < vs - uShift ? vec3(0.0, 1.0, 0.0) : a < vs - uShift + h ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 1.0), 0.45);
       #ifdef USE_STRAP   // 肩紐・リングは strap の衣装の時だけ組み立てる（組み立て時間を減らす）
       if (uBk.w > 0.5 && uSF > 0.5) { col = strapOff2(col, q, uSA.xy, uSA.zw, uBk.x); col = strapOff2(col, q, uSB.xy, uSB.zw, uBk.y); if (uRing > 0.5) col = ringOff(col, q, uBk.z); }
@@ -649,6 +657,15 @@
       gl.activeTexture(gl.TEXTURE0); gl.uniform1i(U('uBkTex'), 2); bkReady = true; kick(); };
     bimg.src = '../../assets/characters/panyu_bikini_reach.webp'; }
 
+  // 開いた絵（留めが外れた同じ構図の絵。ChatGPT で描いて位置を合わせた）
+  let openReady = false;
+  if (OF.open) { const otex = gl.createTexture(), oimg = new Image();
+    oimg.onload = () => { gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, otex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, oimg);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.activeTexture(gl.TEXTURE0); gl.uniform1i(U('uOpen'), 3); openReady = true; kick(); };
+    oimg.src = '../../assets/characters/' + OF.open; }
+
   // ---- 画面への置き方（cover。寄せる時は注目点を画面の 56% の高さに） ----
   let view = { w: 1, h: 1, dpr: 1, s: 1, ox: 0, oy: 0 };
   function layout() {
@@ -731,7 +748,7 @@
   const gapLv = () => STRAP ? (popped[2] ? 3 : 0) : popped.filter(Boolean).length;   // 肩紐型は真ん中の留めが外れた時だけ開く
   const gap = { len: GAP_END[0], w: 0 };
   const gapTarget = () => {
-    const n = gapLv(); if (!n || !OF.gap) return 0;
+    const n = gapLv(); if (!n || !OF.gap || OF.open) return 0;   // 開いた絵を使う衣装は、裂け目を作らない（見せる範囲 gap.len だけ動かす）
     const sep = (P[1].d[0] + restOf(1)[0]) - (P[0].d[0] + restOf(0)[0]);   // 左右の胸の離れ具合（外れるほど休む位置も外）
     const wk = OF.gap.wk || 1; return Math.min(24 * wk, Math.max(1.6, sep * 0.14 * wk));
   };
@@ -756,7 +773,7 @@
     if (OF.fold) { const f = OF.fold; gl.uniform4f(U('uFA0'), ...f.apex[0], foldA[1], 0); gl.uniform4f(U('uFA1'), ...f.apex[1], 0, 0); gl.uniform4f(U('uFN'), ...f.neck[0], ...f.neck[1]); gl.uniform4f(U('uFO'), ...f.out[0], ...f.out[1]); gl.uniform2f(U('uFold'), foldA[0], f.len); } else gl.uniform2f(U('uFold'), 0, 0);
     gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform1f(U('uUseBk'), bkReady ? 1 : 0); gl.uniform3f(U('uBkGain'), ...(OF.bkGain || (OF.gap && OF.gap.bkGain) || [1, 1, 1])); gl.uniform1f(U('uWide'), (OF.gap && OF.gap.wide) || 1); gl.uniform1f(U('uRamp'), (OF.gap && (OF.gap.bkSkin && bkReady ? OF.gap.rampB : OF.gap.ramp)) || 24); gl.uniform1f(U('uInVSkin'), (OF.gap && OF.gap.inVSkin) || 0); gl.uniform1f(U('uShift'), (OF.gap && OF.gap.shift) || 0); gl.uniform1f(U('uGs'), (OF.gap && OF.gap.shear) || 0); gl.uniform4f(U('uSkin'), ...((OF.gap && OF.gap.skin) || [0, 0, 0, 0])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
     gl.uniform2f(U('uFlap'), ...((OF.gap && OF.gap.flap) || [0.12, 1.8]));
-    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0])); gl.uniform1f(U('uNoBand'), +!!OF.ringNoBand);
+    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0])); gl.uniform1f(U('uNoBand'), +!!OF.ringNoBand); gl.uniform1f(U('uNoVLine'), +!!(OF.gap && OF.gap.noVLine)); gl.uniform1f(U('uOpenOn'), +(openReady && gapLv() > 0)); gl.uniform3f(U('uOpenB'), ...(OF.openB || [0, 0, 0]));
     gl.uniform1f(U('uSF'), +(OUTFIT === 'dress' || !!OF.strapFill)); gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));   // 髪の上を通る紐は、両側の色（髪・肌）でつなぐ消し方
     if (STRAP) { gl.uniform4f(U('uSA'), ...BTNS[0].a, ...BTNS[0].b); gl.uniform4f(U('uSB'), ...BTNS[1].a, ...BTNS[1].b); }
     const r0 = restOf(0), r1 = restOf(1);
