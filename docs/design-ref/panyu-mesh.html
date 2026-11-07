@@ -601,11 +601,11 @@
           float h1 = exp(-r2 * 2.2), hm = exp(-r2 * 1.7); vec2 gr = -4.4 * d * h1 - 3.4 * d * hm * 1.0;   /* 1段目は大きく、なだらかに（11/07 ユーザー「大きく柔らかそうに」） */   /* 突端の下の1段目（透けた所）も少し膨らむ（11/07 ユーザー） */
           vec3 L = normalize(vec3(-0.45, -0.75, 0.6)); float base = L.z;
           float shc = clamp((dot(normalize(vec3(-gr * 0.9, 1.0)), L) - base) * u, -0.38, 0.38) * 0.7;
-          col = shc >= 0.0 ? mix(col, vec3(1.0, 0.82, 0.88), shc * 0.8) : mix(col, col * vec3(1.0, 0.80, 0.86), -shc * 2.2);
+          col = shc >= 0.0 ? col * (1.0 + shc * 0.18) : mix(col, col * vec3(0.92, 0.84, 0.86), -shc * 1.6);   /* 1段目の陰影は服の色のまま明るく・暗く（11/07 ユーザー「1段目がピンクすぎ」） */
           col = mix(col, col * vec3(0.96, 0.80, 0.84), 0.08 * u * smoothstep(1.02, 0.48, r));   /* 1段目はほとんど透けない（11/07 ユーザー）。透けは突端だけ */   /* 透けは服の色になじませる（11/07 ユーザー「色が濃くなりすぎ」） */   // ② 布の下の色が透ける（ふちはぼかす）
           { float rim2 = smoothstep(1.40, 0.88, r) * smoothstep(0.32, 0.86, r), sd2 = dot(normalize(d + 1e-4), normalize(vec2(-0.45, -0.75)));   // 1段目の縁：やわらかく盛り上がる
-            col = sd2 > 0.0 ? mix(col, vec3(1.0, 0.84, 0.90), rim2 * sd2 * 0.30 * u) : mix(col, col * vec3(0.84, 0.62, 0.70), rim2 * -sd2 * 0.40 * u); }
-          col = mix(col, vec3(1.0, 0.86, 0.91), 0.18 * u * smoothstep(0.58, 0.0, length(d - vec2(-0.36, -0.47))) * (1.0 - smoothstep(0.2, 0.32, r) * 0.0));   // 1段目の左上にふんわりした明るさ（柔らかく見せる）
+            col = sd2 > 0.0 ? col * (1.0 + rim2 * sd2 * 0.10 * u) : col * (1.0 - rim2 * -sd2 * 0.14 * u); }
+          col = mix(col, min(col * 1.04, vec3(1.0)), 0.6 * u * smoothstep(0.58, 0.0, length(d - vec2(-0.36, -0.47))) * (1.0 - smoothstep(0.2, 0.32, r) * 0.0));   // 1段目の左上にふんわりした明るさ（柔らかく見せる）
           float n = smoothstep(0.41, 0.29, r);   /* 突端を二段階高く太く（11/07） */                                                   // ③ 突端：上が平らで、縁が急に立つ（固い）
           float rim = smoothstep(0.45, 0.35, r) * smoothstep(0.12, 0.32, r);
           float side = dot(normalize(d + 1e-4), normalize(vec2(-0.45, -0.75)));                 // 左上の縁は明るく、右下の縁は暗い
