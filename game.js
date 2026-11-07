@@ -16735,7 +16735,7 @@ const PANYU_OUTFITS = [
 const PANYU_OUTFIT_IMG = { bunny: 'panyu_reach', pajama: 'panyu_pajama_reach', pajama2: 'panyu_pajama2_reach', gothic: 'panyu_gothic_reach', jirai: 'panyu_jirai_reach', vintage: 'panyu_vintage_reach', nurse: 'panyu_nurse_reach', santa: 'panyu_santa_reach', bikini: 'panyu_bikini_reach', halter: 'panyu_halter_reach', white: 'panyu_white_reach', dress: 'panyu_dress_reach' };
 // 構図違い（2026-11-07）：同じ衣装の別のポーズ。開くたびにどれか1つ（前回と同じ構図は続けない）。'' は元の構図
 // 網目のページでは「衣装@構図」で開く。絵は assets/characters/panyu_<衣装>_<構図>_reach.webp
-const PANYU_POSES = { bunny: ['', 'dressing', 'pool'], vintage: ['', 'dressing'], pajama: ['', 'dressing'], gothic: ['', 'dressing'] };   // 楽屋×前開き6着は、開き方が不自然（襟のV字の先で左右がつながったまま）なので直すまで外す（11/07）   // 構図は胸が前へ張り出した形だけ（ベッド・卓は胸が押しつけられて揺れと合わないのでやめた 11/07）
+const PANYU_POSES = { bunny: ['', 'dressing', 'pool'], vintage: ['', 'dressing'], pajama: ['', 'dressing'] };   // ゴスロリの開いた絵はデザインが変わっていたので描き直し中（11/07）   // 楽屋×前開き6着は、開き方が不自然（襟のV字の先で左右がつながったまま）なので直すまで外す（11/07）   // 構図は胸が前へ張り出した形だけ（ベッド・卓は胸が押しつけられて揺れと合わないのでやめた 11/07）
 let panyuPoseNext = null, panyuPoseLast = {};
 function panyuPoseFor(id) {
   if (panyuPoseNext && panyuPoseNext.id === id) return panyuPoseNext.pose;
