@@ -740,7 +740,11 @@
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.activeTexture(gl.TEXTURE0); gl.uniform1i(U('uOpen'), 3); openReady = true; kick(); };
-    oimg.src = '../../assets/characters/' + OF.open; }
+    oimg.src = '../../assets/characters/' + (OF.openSteps ? OF.openSteps[0] : OF.open);
+    // 三段階（11/07 ユーザー「プールも楽屋も三段階じゃないと少しおかしい」）：外した数ごとに生成した絵を替える
+    if (OF.openSteps) { const pre = OF.openSteps.map(f => { const im = new Image(); im.src = '../../assets/characters/' + f; return im; }); let shownLv = 1;
+      setOpenLv = (lv) => { if (!lv || lv === shownLv) return; const im = pre[lv - 1]; const up = () => { gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, otex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, im); gl.activeTexture(gl.TEXTURE0); shownLv = lv; kick(); }; if (im.complete && im.naturalWidth) up(); else im.onload = up; }; } }
+  var setOpenLv = setOpenLv || (() => {});
 
   // ---- 画面への置き方（cover。寄せる時は注目点を画面の 56% の高さに） ----
   let view = { w: 1, h: 1, dpr: 1, s: 1, ox: 0, oy: 0 };
@@ -850,7 +854,7 @@
     if (OF.fold) { const f = OF.fold; gl.uniform4f(U('uFA0'), ...f.apex[0], foldA[1], 0); gl.uniform4f(U('uFA1'), ...f.apex[1], 0, 0); gl.uniform4f(U('uFN'), ...f.neck[0], ...f.neck[1]); gl.uniform4f(U('uFO'), ...f.out[0], ...f.out[1]); gl.uniform2f(U('uFold'), foldA[0], f.len); } else gl.uniform2f(U('uFold'), 0, 0);
     gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform1f(U('uUseBk'), bkReady ? 1 : 0); gl.uniform3f(U('uBkGain'), ...(OF.bkGain || (OF.gap && OF.gap.bkGain) || [1, 1, 1])); gl.uniform1f(U('uWide'), (OF.gap && OF.gap.wide) || 1); gl.uniform1f(U('uRamp'), (OF.gap && (OF.gap.bkSkin && bkReady ? OF.gap.rampB : OF.gap.ramp)) || 24); gl.uniform1f(U('uInVSkin'), (OF.gap && OF.gap.inVSkin) || 0); gl.uniform1f(U('uShift'), (OF.gap && OF.gap.shift) || 0); gl.uniform1f(U('uGs'), (OF.gap && OF.gap.shear) || 0); gl.uniform4f(U('uSkin'), ...((OF.gap && OF.gap.skin) || [0, 0, 0, 0])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
     gl.uniform2f(U('uFlap'), ...((OF.gap && OF.gap.flap) || [0.12, 1.8]));
-    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0])); gl.uniform1f(U('uNoBand'), +!!OF.ringNoBand); gl.uniform1f(U('uNoVLine'), +!!(OF.gap && OF.gap.noVLine)); gl.uniform1f(U('uOpenOn'), !openReady ? 0 : OF.tip ? tipShow : +(gapLv() > 0)); gl.uniform3f(U('uOpenB'), ...(OF.openB || [0, 0, 0])); if (OF.tipP) { gl.uniform4f(U('uTipP'), ...OF.tipP[0], ...OF.tipP[1]); gl.uniform2f(U('uTipR'), OF.tipR || 16, tipShow); gl.uniform4f(U('uTipC'), ...OF.tipC[0], ...OF.tipC[1]); gl.uniform1f(U('uTipQ'), OF.tipQ || 0.66); gl.uniform1f(U('uTipS'), OF.tipSee == null ? 1 : OF.tipSee); } else gl.uniform2f(U('uTipR'), 1, 0);
+    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0])); gl.uniform1f(U('uNoBand'), +!!OF.ringNoBand); gl.uniform1f(U('uNoVLine'), +!!(OF.gap && OF.gap.noVLine)); gl.uniform1f(U('uOpenOn'), !openReady ? 0 : OF.tip ? tipShow : OF.openSteps ? +popped.some(Boolean) : +(gapLv() > 0)); gl.uniform3f(U('uOpenB'), ...(OF.openB || [0, 0, 0])); if (OF.tipP) { gl.uniform4f(U('uTipP'), ...OF.tipP[0], ...OF.tipP[1]); gl.uniform2f(U('uTipR'), OF.tipR || 16, tipShow); gl.uniform4f(U('uTipC'), ...OF.tipC[0], ...OF.tipC[1]); gl.uniform1f(U('uTipQ'), OF.tipQ || 0.66); gl.uniform1f(U('uTipS'), OF.tipSee == null ? 1 : OF.tipSee); } else gl.uniform2f(U('uTipR'), 1, 0);
     gl.uniform1f(U('uSF'), +(OUTFIT === 'dress' || !!OF.strapFill)); gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));   // 髪の上を通る紐は、両側の色（髪・肌）でつなぐ消し方
     if (STRAP) { gl.uniform4f(U('uSA'), ...BTNS[0].a, ...BTNS[0].b); gl.uniform4f(U('uSB'), ...BTNS[1].a, ...BTNS[1].b); }
     const r0 = restOf(0), r1 = restOf(1);
@@ -886,6 +890,7 @@
     blush = Math.min(1, blush + 0.35);                                   // ぽっと赤くなる
     surpT = performance.now();                                           // 少し驚く
     document.getElementById('lv').textContent = popped.filter(Boolean).length + '/3';
+    setOpenLv(popped.filter(Boolean).length);
     CUPS.forEach(c => { c.r = c.r0 * lvNow().rs; }); kick();
   }
   // ---- 外れた肩紐：首の側が外れても、カップの角にはつながったまま。節が10個の細い紐として、胸と一緒に揺れ・重さでしなって垂れる ----
@@ -1127,7 +1132,7 @@
     if (bk >= 0) { popButton(bk); tell({ t: 'pop', k: bk, x: e.clientX, y: e.clientY }); return; }
     const i = hit(ix, iy); if (i < 0) return;
     tell({ t: 'tap', kind: 'tap', side: i, x: e.clientX, y: e.clientY });
-    if (OF.tip) tipN++;
+    if (OF.tip) { tipN++; if (tipN % 3 === 0 && tipN <= OF.tip) OF.tipP.forEach(([tx, ty]) => { for (let n = 0; n < 7; n++) { const a = Math.random() * Math.PI * 2, sp = 50 + Math.random() * 90; parts.push({ star: 1, col: '#ffd3e4', x: tx, y: ty - 4, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 30, t: 0, life: 0.35 + Math.random() * 0.3, sz: 2 + Math.random() * 3 }); } }); }   // 3回ごとに胸の先のまわりに小さなきらめき（11/07 ユーザー）
     try { stageEl.setPointerCapture(e.pointerId); } catch (_) {}
     addHeat();
     const p = P[i], c = CUPS[i], amp = opt.amp * (1 + HEAT_PUSH * heatNow()) * lvNow().push * FEEL.push;
