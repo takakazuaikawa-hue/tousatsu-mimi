@@ -185,6 +185,7 @@
   // 構図：両手で頬をはさむ（11/07 ユーザー案。背景は衣装ごとの場所＝ジムウェアは夕方のジム）
   const CHEEK_POSE = { cups: [[585, 640, 115], [815, 640, 115]], keep: [[455, 560, 60, 110], [935, 560, 60, 110], [0, 0, 0, 0]], cheek: [[617, 330], [760, 330]], eyes: [[615, 297], [758, 297]], faceR: [560, 170, 290, 250], faceC: [688, 320, 120, 90], blushC: [688, 335, 130, 50], head: [688, 300, 380], focus: [700, 620], scale: 0.9, surprise: '' };
   OUTFITS['gym@cheek'] = { ...OUTFITS.gym, name: 'ジムウェア（ジム）', img: 'panyu_gym_cheek_reach.webp', tipP: [[564, 622], [847, 622]], tipC: [[600, 650], [815, 650]], pose: CHEEK_POSE };
+  OUTFITS.inner = { ...OUTFITS.gym, name: '肌着', img: 'panyu_inner_reach.webp', tipP: [[565, 600], [835, 600]], tipC: [[605, 622], [800, 622]] };   // 11/07：エアリズム風の薄手の肌着（元の絵に出っぱりは無いので、ジムウェアと同じ割合の所）
   OUTFITS.yshirt = { ...OUTFITS.gym, name: 'Yシャツ', img: 'panyu_yshirt_reach.webp', tipP: [[561, 593], [836, 591]], tipC: [[600, 612], [800, 612]] };
   OUTFITS.tshirt = { ...OUTFITS.gym, name: 'Tシャツ', img: 'panyu_tshirt_reach.webp', tipP: [[574, 546], [826, 546]], tipC: [[615, 592], [790, 592]] };   /* 立体で見た胸の頂点は上（11/07 ユーザー） */
   const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）

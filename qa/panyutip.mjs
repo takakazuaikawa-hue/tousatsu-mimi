@@ -3,9 +3,10 @@ import fs from 'node:fs'; import path from 'node:path';
 import { openSession, sleep } from './lib/session.mjs';
 const id = process.argv[2] || 'gym', size = process.argv[3] || '1280x800'; const [W, H] = size.split('x').map(Number);
 const OUT = path.resolve('qa/out/panyutip'); fs.mkdirSync(OUT, { recursive: true });
-const s = await openSession({ width: W, height: H, save: { clearedStages: ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'], introPlayed: true, houseRulesSeen: true, readIntroSeen: true, homeStageSeen: 3, coins: 3000, ownedItems: ['pwear_gym', 'pwear_yshirt', 'pwear_tshirt'], loginBonus: { lastDate: '2099-01-01', streak: 1 } } });
+const s = await openSession({ width: W, height: H, save: { clearedStages: ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'], introPlayed: true, houseRulesSeen: true, readIntroSeen: true, homeStageSeen: 3, coins: 3000, ownedItems: ['pwear_gym', 'pwear_yshirt', 'pwear_tshirt', 'pwear_inner'], loginBonus: { lastDate: '2099-01-01', streak: 1 } } });
 const { page } = s;
 await page.eval(`(()=>{try{localStorage.setItem('mimi.panyuOutfit', ${JSON.stringify(id)});}catch(_){}document.querySelectorAll('.panyu-clicker-overlay').forEach(o=>o.remove()); showPanyuClicker(30, ()=>{}, { lobby: true }); return 1;})()`);
+if (process.argv[4] === 'again') { await sleep(1500); await page.eval(`(()=>{document.querySelectorAll('.panyu-clicker-overlay').forEach(o=>o.remove()); showPanyuClicker(30, ()=>{}, { lobby: true }); return 1;})()`); }
 await sleep(7000);
 console.log(await page.eval(`JSON.stringify({mesh:!!document.querySelector('.panyu-clicker-overlay.is-mesh'), src:(document.querySelector('.pv2-mesh')||{}).src, outfit:(document.querySelector('.pv2-outfit b')||{}).textContent})`));
 await page.screenshot(path.join(OUT, `${id}_${size}_0.png`));
