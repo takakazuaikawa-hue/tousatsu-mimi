@@ -180,6 +180,8 @@
   STR('halter', 'ホルター', [{ c: [632, 562], w: 24, h: 24, round: 1 }, { c: [875, 557], w: 24, h: 24, round: 1 }, { c: [759, 650], w: 36, h: 36, ring: 1 }]);
   STR('white', '白サテン', [{ c: [637, 549], w: 24, h: 24, round: 1 }, { c: [867, 545], w: 24, h: 24, round: 1 }, { c: [753, 651], w: 32, h: 32, round: 1 }]);
   STR('dress', 'ドレス', [{ c: [620, 514], w: 28, h: 28, rect: 1 }, { c: [887, 507], w: 28, h: 28, rect: 1 }, { c: [752, 652], w: 44, h: 50, rect: 1 }]);
+  // ジムウェア（11/07 新衣装）：留めはなし。胸を押すたびに、布越しに胸の先が少しずつとがる（tip＝満タンまでの回数、tipP＝左右の先の位置）。とがった絵は生成で断られるので、こちらで陰影を描き足す
+  OUTFITS.gym = { ...OUTFITS.bunny, name: 'ジムウェア', img: 'panyu_gym_reach.webp', jewel: 0, parts: [], covers: [], coverLeft: [0, 0, 0], label: '', what: '', tip: 40, tipP: [[558, 594], [836, 594]], tipR: 13 };
   const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）
   if (EMBED) document.body.classList.add('embed');
   const tell = (m) => { if (EMBED && parent !== window) try { parent.postMessage(Object.assign({ panyu: 1 }, m), '*'); } catch (_) {} };
@@ -354,7 +356,8 @@
     // V字から開く衣装（パジャマ・ドレス）：V字の中は元の絵の肌を横に広げたもの（col に入っている）。V字の先より下だけ塗りの肌
     // vs＝この行での元のV字の半分の幅（V字の先で0）。布の縁は元の絵の線からそのまま切り口へつながる
     uniform float uNoVLine;
-    uniform sampler2D uOpen; uniform float uOpenOn; uniform vec3 uOpenB;   // 開いた絵・使うか・見せる範囲（中心x・半分の幅・上の端y）
+    uniform sampler2D uOpen; uniform float uOpenOn; uniform vec3 uOpenB;
+    uniform vec4 uTipP; uniform vec2 uTipR;   // とがる衣装：左右の胸の先の位置（絵の座標）・半径と強さ   // 開いた絵・使うか・見せる範囲（中心x・半分の幅・上の端y）
     uniform vec2 uCt; uniform float uGs; uniform float uShift; uniform float uDbg;   // V字の左右の傾き（x・y）と、V字の下の端での半分の幅（z）
     uniform vec4 uSkin;   // 写し元のきれいな素肌（左・上・右・下）。裂け目の中の肌はここを写す（塗らない）
     vec3 skinAt(vec2 p, float H) {
@@ -587,9 +590,25 @@
         }
       } else if (h > 0.0) { e = a - h; q.x = GX + sign(p.x - GX) * max(0.0, a - h * (0.35 + 0.65 * smoothstep(GY, GY + 34.0, p.y)) * exp(-max(0.0, e) / 44.0)); }
       q.x += uGs * (q.y - uFabY);   // 傾きを戻した座標から、絵の座標へ
+      if (uTipR.y > 0.001) {   // 胸の先が布越しに少しずつとがる：布を中心へ少し引き寄せて（張る）、あとで陰影をのせる
+        for (int k = 0; k < 2; k++) { vec2 tp = k == 0 ? uTipP.xy : uTipP.zw; vec2 d = q - tp; float r2 = dot(d, d) / (uTipR.x * uTipR.x); q -= d * 0.04 * uTipR.y * exp(-r2 * 1.6);   /* 引き寄せは弱く（強いと元の絵の影が広がって黒い穴に見える） */ }
+      }
       vec3 col = texture2D(uTex, q / uImgF).rgb;
-      if (uOpenOn > 0.5) {   // 開いた絵（同じ構図で留めが外れた絵）：外した数に合わせて、上から開いた所まで見せる
-        float om = 1.0;   // 生成された開いた絵をそのまま見せる（切り分けて混ぜると不自然になる 11/07 ユーザー）
+      if (uTipR.y > 0.001) {
+        for (int k = 0; k < 2; k++) { vec2 tp = k == 0 ? uTipP.xy : uTipP.zw; vec2 d = (q - tp) / uTipR.x; float r2 = dot(d, d);
+          float hgt = exp(-r2 * 2.2);                     // 小さな丸い盛り上がり
+          vec2 gr = -4.4 * d * hgt;                       // 盛り上がりの傾き
+          float lit = dot(normalize(vec3(-gr * 0.9, 1.0)), normalize(vec3(-0.45, -0.75, 0.6)));   // 左上からの光
+          float base = dot(vec3(0.0, 0.0, 1.0), normalize(vec3(-0.45, -0.75, 0.6)));
+          float sh = (lit - base) * uTipR.y;
+          col *= 1.0 + clamp(sh, -0.35, 0.35) * 0.7;                              // 光の当たる側は明るく、反対側に影
+          col += vec3(1.0, 0.97, 0.95) * pow(max(0.0, 1.0 - length(d - vec2(-0.16, -0.2)) * 3.2), 3.0) * 0.32 * uTipR.y;   // てっぺんの小さなつや
+          col *= 1.0 - 0.10 * uTipR.y * smoothstep(0.9, 0.0, length(d - vec2(0.12, 0.38))) * (1.0 - hgt);   // 下にできる布のたるみの影
+        }
+      }
+      if (uOpenOn > 0.001) {   // 開いた絵（同じ構図で留めが外れた絵）：外した数に合わせて、上から開いた所まで見せる
+        // 生成された開いた絵をそのまま見せる（切り分けて混ぜると不自然になる 11/07 ユーザー）。とがる衣装（tip）は、胸のまわりの楕円の中だけを押した回数に合わせて少しずつ重ねる
+        float om = uOpenB.y > 1000.0 ? uOpenOn : uOpenOn * (1.0 - smoothstep(0.7, 1.0, length((q - uOpenB.xz) / vec2(uOpenB.y, uOpenB.y * 0.62))));
         col = mix(col, texture2D(uOpen, q / uImgF).rgb, om);
       }
       if (uDbg > 0.5 && h > 0.0 && uVk.x > 0.0 && e < 0.0) col = mix(col, p.y >= uFabY ? vec3(0.0, 0.0, 1.0) : a < vs - uShift ? vec3(0.0, 1.0, 0.0) : a < vs - uShift + h ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 1.0), 0.45);
@@ -799,7 +818,7 @@
     if (OF.fold) { const f = OF.fold; gl.uniform4f(U('uFA0'), ...f.apex[0], foldA[1], 0); gl.uniform4f(U('uFA1'), ...f.apex[1], 0, 0); gl.uniform4f(U('uFN'), ...f.neck[0], ...f.neck[1]); gl.uniform4f(U('uFO'), ...f.out[0], ...f.out[1]); gl.uniform2f(U('uFold'), foldA[0], f.len); } else gl.uniform2f(U('uFold'), 0, 0);
     gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform1f(U('uUseBk'), bkReady ? 1 : 0); gl.uniform3f(U('uBkGain'), ...(OF.bkGain || (OF.gap && OF.gap.bkGain) || [1, 1, 1])); gl.uniform1f(U('uWide'), (OF.gap && OF.gap.wide) || 1); gl.uniform1f(U('uRamp'), (OF.gap && (OF.gap.bkSkin && bkReady ? OF.gap.rampB : OF.gap.ramp)) || 24); gl.uniform1f(U('uInVSkin'), (OF.gap && OF.gap.inVSkin) || 0); gl.uniform1f(U('uShift'), (OF.gap && OF.gap.shift) || 0); gl.uniform1f(U('uGs'), (OF.gap && OF.gap.shear) || 0); gl.uniform4f(U('uSkin'), ...((OF.gap && OF.gap.skin) || [0, 0, 0, 0])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
     gl.uniform2f(U('uFlap'), ...((OF.gap && OF.gap.flap) || [0.12, 1.8]));
-    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0])); gl.uniform1f(U('uNoBand'), +!!OF.ringNoBand); gl.uniform1f(U('uNoVLine'), +!!(OF.gap && OF.gap.noVLine)); gl.uniform1f(U('uOpenOn'), +(openReady && gapLv() > 0)); gl.uniform3f(U('uOpenB'), ...(OF.openB || [0, 0, 0]));
+    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0])); gl.uniform1f(U('uNoBand'), +!!OF.ringNoBand); gl.uniform1f(U('uNoVLine'), +!!(OF.gap && OF.gap.noVLine)); gl.uniform1f(U('uOpenOn'), !openReady ? 0 : OF.tip ? tipShow : +(gapLv() > 0)); gl.uniform3f(U('uOpenB'), ...(OF.openB || [0, 0, 0])); if (OF.tipP) { gl.uniform4f(U('uTipP'), ...OF.tipP[0], ...OF.tipP[1]); gl.uniform2f(U('uTipR'), OF.tipR || 16, tipShow); } else gl.uniform2f(U('uTipR'), 1, 0);
     gl.uniform1f(U('uSF'), +(OUTFIT === 'dress' || !!OF.strapFill)); gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));   // 髪の上を通る紐は、両側の色（髪・肌）でつなぐ消し方
     if (STRAP) { gl.uniform4f(U('uSA'), ...BTNS[0].a, ...BTNS[0].b); gl.uniform4f(U('uSB'), ...BTNS[1].a, ...BTNS[1].b); }
     const r0 = restOf(0), r1 = restOf(1);
@@ -979,15 +998,18 @@
     });
     fc.globalAlpha = 1;
   }
-  document.getElementById('btnReset').addEventListener('click', () => { popped.fill(false); ropes.length = 0; foldA.fill(0); foldV.fill(0); document.getElementById('lv').textContent = '0/3'; CUPS.forEach(c => { c.r = c.r0; }); resetPhys(); gap.len = GAP_END[0]; gap.w = 0; kick(); });
+  document.getElementById('btnReset').addEventListener('click', () => { popped.fill(false); tipN = 0; tipShow = 0; ropes.length = 0; foldA.fill(0); foldV.fill(0); document.getElementById('lv').textContent = '0/3'; CUPS.forEach(c => { c.r = c.r0; }); resetPhys(); gap.len = GAP_END[0]; gap.w = 0; kick(); });
   // 動いている間だけ回す。止まったら描き直しも止める（スマホが熱くならないように）
+  // とがる衣装（tip）：胸を押すたびに少しずつ先がとがる（押した回数 tipN／OF.tip で満タン）。表示はじわっと追いつく
+  let tipN = +(QS.get('tip') || 0) * (OF.tip || 0), tipShow = +(QS.get('tip') || 0); const tipGoal = () => OF.tip ? Math.min(1, tipN / OF.tip) : 0;
   let raf = 0, last = 0;
   function loop(t) {
     const dt = Math.min(0.033, (t - (last || t)) / 1000) || 0.016; last = t;
     for (let n = 0; n < 4; n++) step(dt / 4);
+    if (OF.tip) tipShow += (tipGoal() - tipShow) * Math.min(1, dt * 2.2);
     stepGap(dt); stepParts(dt); draw(); drawParts();
     const h = heatNow(); stepBlush(dt, h);
-    if (energy() < 0.06 && !P.some(p => p.grab) && h < 0.04 && Math.abs(blush - blushFloor) < 0.01 && !parts.length && !ropesMoving() && !foldMoving() && surpNow() < 0.005 && hintNow() <= 0 && gapSettled()) { resetPhys(); gap.w = gapTarget(); blush = blushFloor; draw(); drawParts(); raf = 0; last = 0; return; }
+    if (energy() < 0.06 && !P.some(p => p.grab) && h < 0.04 && Math.abs(blush - blushFloor) < 0.01 && !parts.length && !ropesMoving() && !foldMoving() && surpNow() < 0.005 && hintNow() <= 0 && gapSettled() && Math.abs(tipGoal() - tipShow) < 0.004) { resetPhys(); gap.w = gapTarget(); blush = blushFloor; draw(); drawParts(); raf = 0; last = 0; return; }
     raf = requestAnimationFrame(loop);
   }
   function kick() { if (!raf) { last = 0; raf = requestAnimationFrame(loop); } }
@@ -1073,6 +1095,7 @@
     if (bk >= 0) { popButton(bk); tell({ t: 'pop', k: bk, x: e.clientX, y: e.clientY }); return; }
     const i = hit(ix, iy); if (i < 0) return;
     tell({ t: 'tap', kind: 'tap', side: i, x: e.clientX, y: e.clientY });
+    if (OF.tip) tipN++;
     try { stageEl.setPointerCapture(e.pointerId); } catch (_) {}
     addHeat();
     const p = P[i], c = CUPS[i], amp = opt.amp * (1 + HEAT_PUSH * heatNow()) * lvNow().push * FEEL.push;
