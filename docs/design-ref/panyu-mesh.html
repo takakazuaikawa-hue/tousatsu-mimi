@@ -130,12 +130,12 @@
     parts: [{ c: [751, 658], w: 50, h: 44 }, { c: [747, 685], w: 28, h: 26 }, { c: [746, 707], w: 22, h: 24 }],   // 赤い石つきの大きなひし形・中・小（下ほど少し左へ傾く）
     covers: [[751, 664, 27, 27], [747, 686, 15, 15], [745, 711, 14, -10]],   // 3つ目は両脇に指先があるので、上下の布で埋める
     gap: { ...OUTFITS.bunny.gap, gx: 750, gy: 640, ends: [640, 678, 700, 748] },
-    pose: { cups: [[655, 582, 102], [842, 582, 102]], mass: [0, 0.45], keep: [[655, 728, 92, 46], [848, 724, 92, 46], [522, 540, 46, 62], [985, 540, 46, 62]],   /* 11/07 測り直し：胸の上も揺れる・腕輪の所は動かさない */   /* 動かさない所：左右の手 */ cheek: [[650, 360], [820, 344]], eyes: [[643, 318], [808, 290]], faceR: [560, 180, 320, 260], faceC: [727, 322, 125, 100], blushC: [732, 350, 130, 52], head: [728, 310, 420], focus: [750, 590], scale: 0.92, surprise: '' } };
+    pose: { cups: [[650, 590, 100, 72, -12], [850, 590, 100, 72, 12]], mass: [0, 0.45], dome: 0.6, keep: [[655, 728, 92, 46], [848, 724, 92, 46], [522, 540, 46, 62], [985, 540, 46, 62]],   /* 11/07 測り直し：胸の上も揺れる・腕輪の所は動かさない */   /* 動かさない所：左右の手 */ cheek: [[650, 360], [820, 344]], eyes: [[643, 318], [808, 290]], faceR: [560, 180, 320, 260], faceC: [727, 322, 125, 100], blushC: [732, 350, 130, 52], head: [728, 310, 420], focus: [750, 590], scale: 0.92, surprise: '' } };
   OUTFITS['bunny@pool'] = { ...OUTFITS.bunny, name: 'バニー（プール）', img: 'panyu_bunny_pool_reach.webp', jewel: 0, outK: 0.6,   /* 腕が胸に沿っているので、外へは開きすぎない */   // プールサイドで膝立ち：引いた絵なので胸も留めも小さい
     parts: [{ c: [733, 547], w: 26, h: 22 }, { c: [727, 565], w: 20, h: 20 }, { c: [717, 578], w: 18, h: 18 }],
     covers: [[733, 549, 15, 14], [727, 565, 11, 11], [717, 578, 10, 10]],
     gap: { ...OUTFITS.bunny.gap, gx: 736, gy: 528, ends: [528, 556, 572, 606], wide: 0.62, ramp: 15 },
-    pose: { cups: [[655, 482, 74], [787, 482, 74]], mass: [0, 0.45], keep: [[566, 525, 28, 110], [896, 525, 28, 110], [0, 0, 0, 0]],   /* 11/07 測り直し：腕の範囲が胸の外側に食い込んでいた */   /* 動かさない所：胸の横の腕 */ cheek: [[660, 265], [786, 255]], eyes: [[655, 232], [775, 222]], faceR: [600, 140, 240, 200], faceC: [720, 240, 95, 80], blushC: [722, 262, 95, 42], head: [720, 240, 300], focus: [738, 470], scale: 0.64, surprise: '' } };
+    pose: { cups: [[680, 485, 62, 74, -15], [795, 485, 62, 74, 15]], mass: [0, 0.6], dome: 0.6, keep: [[614, 548, 26, 88, -20], [858, 548, 26, 88, 20], [0, 0, 0, 0]],   /* 11/08：胸は下へ向かって内側にすぼむ楕円、腕は斜め */   /* 11/07 測り直し：腕の範囲が胸の外側に食い込んでいた */   /* 動かさない所：胸の横の腕 */ cheek: [[660, 265], [786, 255]], eyes: [[655, 232], [775, 222]], faceR: [600, 140, 240, 200], faceC: [720, 240, 95, 80], blushC: [722, 262, 95, 42], head: [720, 240, 300], focus: [738, 470], scale: 0.64, surprise: '' } };
   // 楽屋の構図×前開きの衣装（11/07）：構図はバニーの楽屋と共通。開いた所の肌は、この絵の中のきれいな肌（skin）から写す（元の構図用の水着の絵は使わない）
   const DRS = (id, name, parts, covers, g) => { OUTFITS[id + '@dressing'] = { ...OUTFITS[id], name: name + '（楽屋）', img: 'panyu_' + id + '_dressing_reach.webp', parts, covers, coverLeft: [0, 0, 0], openStage: [70, (parts[0].c[1] + parts[1].c[1]) / 2, (parts[1].c[1] + parts[2].c[1]) / 2, 9],   /* 三段階（11/07）：1つ外す＝1つ目と2つ目の間まで、2つ＝2つ目と3つ目の間まで開いた絵を見せる */
     gap: { ...OUTFITS[id].gap, bkSkin: 0, skin: [705, 565, 742, 600], ...g }, pose: OUTFITS['bunny@dressing'].pose }; };
@@ -181,10 +181,10 @@
   STR('white', '白サテン', [{ c: [637, 549], w: 24, h: 24, round: 1 }, { c: [867, 545], w: 24, h: 24, round: 1 }, { c: [753, 651], w: 32, h: 32, round: 1 }]);
   STR('dress', 'ドレス', [{ c: [620, 514], w: 28, h: 28, rect: 1 }, { c: [887, 507], w: 28, h: 28, rect: 1 }, { c: [752, 652], w: 44, h: 50, rect: 1 }]);
   // ジムウェア（11/07 新衣装）：留めはなし。胸を押すたびに、布越しに胸の先が少しずつとがる（tip＝満タンまでの回数、tipP＝左右の先の位置）。とがった絵は生成で断られるので、こちらで陰影を描き足す
-  const TIP_POSE = { cups: [[607, 582, 110], [795, 582, 110]], mass: [0, 0.45], keep: [[452, 522, 55, 45], [950, 522, 55, 45], [0, 0, 0, 0]], cheek: [[636, 324], [764, 324]], eyes: [[640, 281], [762, 281]], faceR: [560, 170, 290, 250], faceC: [701, 315, 118, 92], blushC: [699, 322, 120, 56], head: [701, 330, 400], focus: [701, 548], surprise: 'panyu_surprise_face.webp' };   // 11/07 とがる衣装の元の構図：胸の上も揺れ、腕は動かさない
+  const TIP_POSE = { cups: [[598, 600, 105, 92, 8], [805, 600, 105, 92, -8]], mass: [0, 0.45], dome: 0.6, keep: [[452, 522, 55, 45], [950, 522, 55, 45], [0, 0, 0, 0]], cheek: [[636, 324], [764, 324]], eyes: [[640, 281], [762, 281]], faceR: [560, 170, 290, 250], faceC: [701, 315, 118, 92], blushC: [699, 322, 120, 56], head: [701, 330, 400], focus: [701, 548], surprise: 'panyu_surprise_face.webp' };   // 11/07 とがる衣装の元の構図：胸の上も揺れ、腕は動かさない
   OUTFITS.gym = { ...OUTFITS.bunny, pose: TIP_POSE, name: 'ジムウェア', img: 'panyu_gym_reach.webp', jewel: 0, parts: [], covers: [], coverLeft: [0, 0, 0], label: '', what: '', tip: 24, tipP: [[561, 595], [835, 596]], tipC: [[605, 622], [790, 622]], tipR: 13 };   /* tipP＝いちばん高い所（布のつやの頂点）、tipC＝胸の中心（丸みの向き） */
   // 構図：両手で頬をはさむ（11/07 ユーザー案。背景は衣装ごとの場所＝ジムウェアは夕方のジム）
-  const CHEEK_POSE = { cups: [[607, 602, 108], [812, 602, 108]], mass: [0, 0.45], keep: [[418, 560, 58, 95], [990, 560, 58, 95], [0, 0, 0, 0]], cheek: [[617, 330], [760, 330]], eyes: [[615, 297], [758, 297]], faceR: [560, 170, 290, 250], faceC: [688, 320, 120, 90], blushC: [688, 335, 130, 50], head: [688, 300, 380], focus: [700, 620], scale: 0.9, surprise: '' };
+  const CHEEK_POSE = { cups: [[595, 605, 110, 100, 10], [810, 605, 110, 100, -10]], mass: [0, 0.45], dome: 0.6, keep: [[418, 560, 58, 95], [990, 560, 58, 95], [0, 0, 0, 0]], cheek: [[617, 330], [760, 330]], eyes: [[615, 297], [758, 297]], faceR: [560, 170, 290, 250], faceC: [688, 320, 120, 90], blushC: [688, 335, 130, 50], head: [688, 300, 380], focus: [700, 620], scale: 0.9, surprise: '' };
   OUTFITS['gym@cheek'] = { ...OUTFITS.gym, name: 'ジムウェア（ジム）', img: 'panyu_gym_cheek_reach.webp', tipP: [[564, 622], [847, 622]], tipC: [[600, 650], [815, 650]], pose: CHEEK_POSE };
   OUTFITS.inner = { ...OUTFITS.gym, name: '肌着', img: 'panyu_inner_reach.webp', tipP: [[565, 600], [835, 600]], tipC: [[605, 622], [800, 622]] };   // 11/07：エアリズム風の薄手の肌着（元の絵に出っぱりは無いので、ジムウェアと同じ割合の所）
   OUTFITS.yshirt = { ...OUTFITS.gym, name: 'Yシャツ', img: 'panyu_yshirt_reach.webp', tipP: [[561, 593], [836, 591]], tipC: [[600, 612], [800, 612]] };
@@ -196,7 +196,7 @@
   const STRAP = OF.kind === 'strap', BIKINI = !!OF.ring; const RING = OF.ringG || [702, 655, 1];   // 胸の真ん中のリング：中心と大きさ（水着を基準1）
   const IMG = '../../assets/characters/' + OF.img;
   const PZ = OF.pose || { cups: [[607, 600, 132], [795, 600, 132]], cheek: [[636, 324], [764, 324]], eyes: [[640, 281], [762, 281]], faceR: [560, 170, 290, 250], faceC: [701, 315, 118, 92], blushC: [699, 322, 120, 56], head: [701, 330, 400], focus: [701, 548], surprise: 'panyu_surprise_face.webp' };   // 構図（今までの5着は共通）
-  const CUPS = PZ.cups.map(([x, y, r]) => ({ c: [x, y], r, r0: r }));
+  const CUPS = PZ.cups.map(([x, y, r, ry, ang]) => ({ c: [x, y], r: ry || r, r0: ry || r, ex: ry ? r / ry : 1.12, an: (ang || 0) * Math.PI / 180 }));   // 揺れる範囲は楕円（11/08 ユーザー「正円でやると破綻」）：[中心x, 中心y, 横の半径, 縦の半径, 傾き（度・時計回り）]。3つだけなら横＝縦×1.12
   const CHEEK = PZ.cheek;
   const EYES = PZ.eyes;   // 目の中心（驚いた時に少し開く）
   // お腹のボタン（金のひし形・上から大中小）。外れるごとに揺れのレベルが上がる
@@ -364,7 +364,7 @@
     // vs＝この行での元のV字の半分の幅（V字の先で0）。布の縁は元の絵の線からそのまま切り口へつながる
     uniform float uNoVLine;
     uniform sampler2D uOpen; uniform float uOpenOn; uniform vec3 uOpenB;
-    uniform vec4 uTipP; uniform vec2 uTipR; uniform vec4 uTipC; uniform float uTipQ; uniform float uTipS; uniform vec4 uOpenCut;   // 三段階（加工）：開いた絵を見せる縦の筋（中心x・半分の幅・上から見せる下端y・ぼかし）   // とがる衣装：左右の胸の先の位置（絵の座標）・半径と強さ   // 開いた絵・使うか・見せる範囲（中心x・半分の幅・上の端y）
+    uniform vec4 uTipP; uniform vec2 uTipR; uniform vec4 uTipC; uniform float uTipQ; uniform float uTipS; uniform vec4 uOpenCut; uniform float uGridOn;   // 三段階（加工）：開いた絵を見せる縦の筋（中心x・半分の幅・上から見せる下端y・ぼかし）   // とがる衣装：左右の胸の先の位置（絵の座標）・半径と強さ   // 開いた絵・使うか・見せる範囲（中心x・半分の幅・上の端y）
     uniform vec2 uCt; uniform float uGs; uniform float uShift; uniform float uDbg;   // V字の左右の傾き（x・y）と、V字の下の端での半分の幅（z）
     uniform vec4 uSkin;   // 写し元のきれいな素肌（左・上・右・下）。裂け目の中の肌はここを写す（塗らない）
     vec3 skinAt(vec2 p, float H) {
@@ -613,10 +613,10 @@
           float h1 = exp(-r2 * 2.2), hm = exp(-r2 * 1.7); vec2 gr = -4.4 * d * h1 - 3.4 * d * hm * 1.0;   /* 1段目は大きく、なだらかに（11/07 ユーザー「大きく柔らかそうに」） */   /* 突端の下の1段目（透けた所）も少し膨らむ（11/07 ユーザー） */
           vec3 L = normalize(vec3(-0.45, -0.75, 0.6)); float base = L.z;
           float shc = clamp((dot(normalize(vec3(-gr * 0.9, 1.0)), L) - base) * u, -0.38, 0.38) * 0.7;
-          col = shc >= 0.0 ? col * (1.0 + shc * 0.05) : mix(col, col * vec3(0.99, 0.88, 0.92), -shc * 1.6);   /* 1段目の陰影は服の色のまま明るく・暗く（11/07 ユーザー「1段目がピンクすぎ」） */
+          col = shc >= 0.0 ? col * (1.0 + shc * 0.05) : mix(col, col * vec3(0.93, 0.91, 0.92), -shc * 1.6);   /* 1段目の陰影は服の色のまま明るく・暗く（11/07 ユーザー「1段目がピンクすぎ」） */
           col = mix(col, col * vec3(0.96, 0.80, 0.84), 0.08 * u * smoothstep(1.02, 0.48, r));   /* 1段目はほとんど透けない（11/07 ユーザー）。透けは突端だけ */   /* 透けは服の色になじませる（11/07 ユーザー「色が濃くなりすぎ」） */   // ② 布の下の色が透ける（ふちはぼかす）
           { float rim2 = smoothstep(1.40, 0.88, r) * smoothstep(0.32, 0.86, r), sd2 = dot(normalize(d + 1e-4), normalize(vec2(-0.45, -0.75)));   // 1段目の縁：やわらかく盛り上がる
-            col = sd2 > 0.0 ? col * (1.0 + rim2 * sd2 * 0.03 * u) : mix(col, col * vec3(0.99, 0.88, 0.92), rim2 * -sd2 * 0.5 * u); }
+            col = sd2 > 0.0 ? col * (1.0 + rim2 * sd2 * 0.03 * u) : mix(col, col * vec3(0.93, 0.91, 0.92), rim2 * -sd2 * 0.5 * u); }
           col = mix(col, min(col * 1.03, vec3(1.0)), 0.35 * u * smoothstep(0.9, 0.0, length(d - vec2(-0.45, -0.6))) * (1.0 - smoothstep(0.2, 0.32, r) * 0.0));   // 1段目の左上にふんわりした明るさ（柔らかく見せる）
           // ③ 突端（11/07 ユーザー「黒味はNG」「もう5段階高く」）：足もと→上の面へ斜め上にのびる筒として描く。影は黒くせず、服のピンクを深くするだけ
           vec2 cap = vec2(-0.045, -0.075);   /* 2段階下げる（11/07 ユーザー「へこんで見える」） */                                           // 上の面の中心（光の側へずらすほど高く見える）
@@ -624,17 +624,17 @@
           float dw = length(d - cap * tt), R0 = 0.36;
           float n = smoothstep(R0 + 0.06, R0 - 0.05, dw);                          // 筒＋上の面の形
           float top = smoothstep(R0 + 0.04, R0 - 0.08, length(d - cap));           // 上の面
-          vec3 deep = col * mix(vec3(0.90, 0.85, 0.88), vec3(0.96, 0.66, 0.76), uTipS);   /* 立体感（11/07「色が濃いだけに見える」）：側面・足もとの陰を深く */                                // 影の色＝服のピンクを深く（灰色・黒にしない）
-          col = mix(col, col * vec3(0.99, 0.88, 0.92), 0.22 * n * u * uTipS);   /* 突端の中は濃くしない（濃いと穴に見える） */               // 突端の地の色（透け）
+          vec3 deep = col * mix(vec3(0.86, 0.84, 0.85), vec3(0.88, 0.80, 0.83), uTipS);   /* 影は服の色のまま暗く（11/08 ユーザー「ピンクが強すぎ、服の色を生かす」） */   /* 立体感（11/07「色が濃いだけに見える」）：側面・足もとの陰を深く */                                // 影の色＝服のピンクを深く（灰色・黒にしない）
+          col = mix(col, col * vec3(0.99, 0.93, 0.95), 0.25 * n * u * uTipS);   /* 突端の中は濃くしない（濃いと穴に見える） */               // 突端の地の色（透け）
           col = mix(col, deep, 1.0 * u * n * (1.0 - top) * smoothstep(0.0, 0.6, dot(normalize(d + 1e-4), vec2(0.45, 0.75))));   // 筒の側面の陰の側
           col = mix(col, deep, 0.85 * u * (1.0 - n) * smoothstep(0.55, 0.28, length(d - vec2(0.13, 0.24))));   // 足もとに落ちる影（ピンク）
           float rimT = smoothstep(R0 + 0.04, R0 - 0.02, length(d - cap)) * smoothstep(R0 - 0.20, R0 - 0.04, length(d - cap));
           float sdT = max(0.0, dot(normalize(d - cap + 1e-4), normalize(vec2(-0.45, -0.75))));
-          col = mix(col, vec3(1.0, 0.85, 0.90), rimT * sdT * 0.85 * u);   // 上の面の縁は左上だけ明るく（輪にしない）
+          col = mix(col, min(col * 1.13, vec3(1.0)), rimT * sdT * 0.85 * u);   // 上の面の縁は左上だけ明るく（輪にしない）
           col = mix(col, min(col * vec3(1.0, 0.95, 0.97) * 1.10, vec3(1.0)), top * 0.6 * u * smoothstep(0.3, -0.2, dot(d - cap, vec2(0.45, 0.75)) / R0));   // 上の面の中はふんわり明るく              // 上の面の縁が明るく立つ
-          col = mix(col, vec3(1.0, 0.90, 0.94), 0.5 * u * smoothstep(0.11, 0.03, length(d - cap - vec2(-0.08, -0.08))));   // 上の面の小さなつや
+          col = mix(col, min(col * 1.18 + 0.03, vec3(1.0)), 0.5 * u * smoothstep(0.11, 0.03, length(d - cap - vec2(-0.08, -0.08))));   // 上の面の小さなつや
           float ang = atan(d.y, d.x), wr = pow(abs(sin(ang * 2.0 + 0.9) * sin(ang * 3.0 + 0.3)), 6.0) * smoothstep(0.40, 0.55, r) * smoothstep(1.05, 0.55, r);   // ④ 張った布のしわ
-          col = mix(col, col * vec3(0.99, 0.89, 0.92), 0.3 * wr * u);
+          col = mix(col, col * vec3(0.93, 0.92, 0.93), 0.3 * wr * u);
         }
       }
       if (uOpenOn > 0.001) {   // 開いた絵（同じ構図で留めが外れた絵）：外した数に合わせて、上から開いた所まで見せる
@@ -682,6 +682,7 @@
       vec2 fq = (p0 - uBlushC.xy) / uBlushC.zw; float face = bl * exp(-dot(fq, fq) * 1.4);
       col = mix(col, col * vec3(1.0, 0.72, 0.74) + vec3(0.06, 0.0, 0.01), clamp(face, 0.0, 1.0) * 0.38);   // 顔全体がほんのり
       col = mix(col, col * vec3(1.0, 0.45, 0.5) + vec3(0.2, 0.01, 0.05), clamp(b, 0.0, 1.0) * 0.74);     // 頬はしっかり
+      if (uGridOn > 0.5) { vec2 gq = mod(q, 20.0); if (gq.x < 1.2 || gq.y < 1.2) col = mix(col, vec3(0.0, 1.0, 0.4), 0.7); }   // 検査用の方眼（?dbggrid=1）
       gl_FragColor = vec4(col, 1.0);
     }`;
   const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o; };
@@ -780,7 +781,7 @@
   const hintNow = () => { const t = (performance.now() - hintT) / 1000; return t < 0 || t > 1.4 ? 0 : Math.sin(Math.PI * t / 1.4); };
   const P = CUPS.map(() => ({ d: [0, 0], v: [0, 0], sy: 1, svy: 0, sx: 1, grab: null, lift: 0, lf: 0, lfA: 0, bt: 0 }));
   window.__panyuZone = { img: OF.img, cups: PZ.cups, keep: PZ.keep, mass: PZ.mass, tipP: OF.tipP };   // 検査用：揺れる範囲を絵に重ねる（qa/panyu-tools/zoneshot.mjs）
-  window.__panyuDbg = { view: () => view, focus: FOCUS, cups: CUPS.map(c => c.c), ropes: () => ropes, P, parts: BTNS, meshAt: (x, y) => meshAt(x, y), heatNow: () => heatNow(), blush: (v) => { if (v != null) { blush = v; draw(); } return blush; } };   // 検査用
+  window.__panyuDbg = { fx: () => parts.length + ':' + tipN + ':' + (pinch ? 'P' : ''), view: () => view, focus: FOCUS, cups: CUPS.map(c => c.c), ropes: () => ropes, P, parts: BTNS, meshAt: (x, y) => meshAt(x, y), heatNow: () => heatNow(), blush: (v) => { if (v != null) { blush = v; draw(); } return blush; } };   // 検査用
   function resetPhys() { P.forEach((p, i) => { p.d = [0, 0]; p.v = [0, 0]; p.sy = sagOf(i); p.svy = 0; p.sx = Math.pow(sagOf(i), -0.5); p.grab = null; p.lift = 0; p.lf = 0; p.lfA = 0; p.bt = 0; }); }
   // 向きごとの揺れの上限：これ以上ずらすと網目が折れる（下へ約90・上へ約100・外へ約130・内へ約70。縦に伸びている時は下を控える）
   function dirLim(i, dx, dy, sy, sx) {
@@ -854,7 +855,7 @@
     if (OF.fold) { const f = OF.fold; gl.uniform4f(U('uFA0'), ...f.apex[0], foldA[1], 0); gl.uniform4f(U('uFA1'), ...f.apex[1], 0, 0); gl.uniform4f(U('uFN'), ...f.neck[0], ...f.neck[1]); gl.uniform4f(U('uFO'), ...f.out[0], ...f.out[1]); gl.uniform2f(U('uFold'), foldA[0], f.len); } else gl.uniform2f(U('uFold'), 0, 0);
     gl.uniform1f(U('uFabY'), OF.gap ? (OF.gap.fabY || OF.gap.gy) : 0); gl.uniform1f(U('uDbg'), +(new URLSearchParams(location.search).get('dbg') === '1')); gl.uniform2f(U('uCt'), ...((OF.gap && OF.gap.ct) || [0, 0.5])); gl.uniform1f(U('uUseBk'), bkReady ? 1 : 0); gl.uniform3f(U('uBkGain'), ...(OF.bkGain || (OF.gap && OF.gap.bkGain) || [1, 1, 1])); gl.uniform1f(U('uWide'), (OF.gap && OF.gap.wide) || 1); gl.uniform1f(U('uRamp'), (OF.gap && (OF.gap.bkSkin && bkReady ? OF.gap.rampB : OF.gap.ramp)) || 24); gl.uniform1f(U('uInVSkin'), (OF.gap && OF.gap.inVSkin) || 0); gl.uniform1f(U('uShift'), (OF.gap && OF.gap.shift) || 0); gl.uniform1f(U('uGs'), (OF.gap && OF.gap.shear) || 0); gl.uniform4f(U('uSkin'), ...((OF.gap && OF.gap.skin) || [0, 0, 0, 0])); gl.uniform3f(U('uVk'), ...((OF.gap && OF.gap.vk) || [0, 0, 0]));
     gl.uniform2f(U('uFlap'), ...((OF.gap && OF.gap.flap) || [0.12, 1.8]));
-    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0])); gl.uniform1f(U('uNoBand'), +!!OF.ringNoBand); gl.uniform1f(U('uNoVLine'), +!!(OF.gap && OF.gap.noVLine)); gl.uniform1f(U('uOpenOn'), !openReady ? 0 : OF.tip ? tipShow : OF.openSteps ? +popped.some(Boolean) : +(gapLv() > 0)); gl.uniform3f(U('uOpenB'), ...(OF.openB || [0, 0, 0])); { const n = popped.filter(Boolean).length, st = OF.openStage; gl.uniform4f(U('uOpenCut'), st && n > 0 && n < 3 ? OF.openB[0] : 0, st ? st[0] : 0, st && n > 0 && n < 3 ? st[n] : 0, st ? st[3] : 0); } if (OF.tipP) { gl.uniform4f(U('uTipP'), ...OF.tipP[0], ...OF.tipP[1]); gl.uniform2f(U('uTipR'), OF.tipR || 16, tipShow); gl.uniform4f(U('uTipC'), ...OF.tipC[0], ...OF.tipC[1]); gl.uniform1f(U('uTipQ'), OF.tipQ || 0.66); gl.uniform1f(U('uTipS'), OF.tipSee == null ? 1 : OF.tipSee); } else gl.uniform2f(U('uTipR'), 1, 0);
+    gl.uniform1f(U('uJewel'), +!!OF.jewel); gl.uniform1f(U('uRing'), +!!OF.ring); gl.uniform3f(U('uRG'), ...RING); gl.uniform1f(U('uInp'), +!!OF.inpaint); gl.uniform2f(U('uRAn'), ...(OF.ringAn || [0, 0])); gl.uniform1f(U('uNoBand'), +!!OF.ringNoBand); gl.uniform1f(U('uNoVLine'), +!!(OF.gap && OF.gap.noVLine)); gl.uniform1f(U('uOpenOn'), !openReady ? 0 : OF.tip ? tipShow : OF.openSteps ? +popped.some(Boolean) : +(gapLv() > 0)); gl.uniform3f(U('uOpenB'), ...(OF.openB || [0, 0, 0])); gl.uniform1f(U('uGridOn'), QS.get('dbggrid') ? 1 : 0); { const n = popped.filter(Boolean).length, st = OF.openStage; gl.uniform4f(U('uOpenCut'), st && n > 0 && n < 3 ? OF.openB[0] : 0, st ? st[0] : 0, st && n > 0 && n < 3 ? st[n] : 0, st ? st[3] : 0); } if (OF.tipP) { gl.uniform4f(U('uTipP'), ...OF.tipP[0], ...OF.tipP[1]); gl.uniform2f(U('uTipR'), OF.tipR || 16, tipShow); gl.uniform4f(U('uTipC'), ...OF.tipC[0], ...OF.tipC[1]); gl.uniform1f(U('uTipQ'), OF.tipQ || 0.66); gl.uniform1f(U('uTipS'), OF.tipSee == null ? 1 : OF.tipSee); } else gl.uniform2f(U('uTipR'), 1, 0);
     gl.uniform1f(U('uSF'), +(OUTFIT === 'dress' || !!OF.strapFill)); gl.uniform3f(U('uSW'), ...(OF.sw || [4.6, 6.6, 8.0]));   // 髪の上を通る紐は、両側の色（髪・肌）でつなぐ消し方
     if (STRAP) { gl.uniform4f(U('uSA'), ...BTNS[0].a, ...BTNS[0].b); gl.uniform4f(U('uSB'), ...BTNS[1].a, ...BTNS[1].b); }
     const r0 = restOf(0), r1 = restOf(1);
@@ -901,12 +902,13 @@
     let ox = 0, oy = 0;
     for (let i = 0; i < 2; i++) {
       const c = CUPS[i].c, r = CUPS[i].r, rs = restOf(i), d = [P[i].d[0] + rs[0], P[i].d[1] + rs[1]], s = [P[i].sx, P[i].sy];
-      const MS = PZ.mass || [0, 0.18], qx = x - c[0], qy = y - c[1], w = 1 - sm(MS[0], 1, Math.hypot(qx / (r * 1.12), qy / r));
-      const t = Math.min(1, Math.max(0, (qy + r * 0.95) / (r * 1.7))); let a = MS[1] + (1 - MS[1]) * t * t * (3 - 2 * t);
+      const ca = Math.cos(CUPS[i].an), sa = Math.sin(CUPS[i].an);
+      const MS = PZ.mass || [0, 0.18], qx = x - c[0], qy = y - c[1], ux = qx * ca + qy * sa, uy = -qx * sa + qy * ca, rho = Math.hypot(ux / (r * CUPS[i].ex), uy / r), w0 = 1 - sm(MS[0], 1, rho), w = PZ.dome ? w0 * (1 - PZ.dome) + PZ.dome * Math.sqrt(Math.max(0, 1 - rho * rho)) * (rho < 1 ? 1 : 0) : w0;   // 楕円の向きに回して測る。dome＝胸を丸い山（3D）として、手前に出ている所ほどよく動く（11/08 ユーザー「網を3Dでとらえる」）
+      const t = Math.min(1, Math.max(0, (uy + r * 0.95) / (r * 1.7))); let a = MS[1] + (1 - MS[1]) * t * t * (3 - 2 * t);   // 付け根→先の重みも胸の向きに沿う
       const m = Math.min(1, Math.max(0, -d[1] / r * 2.5)); a = a * (1 - m) + (0.7 + 0.3 * a) * m;
       const k = w * (0.35 + 0.65 * a); ox += d[0] * w * a + qx * (s[0] - 1) * k; oy += d[1] * w * a + qy * (s[1] - 1) * k;
     }
-    const kp = Math.max(0, ...(PZ.keep || []).map(k => 1 - sm(0.55, 1, Math.hypot((x - k[0]) / k[2], (y - k[1]) / k[3]))));   // 胸以外（手や腕）は動かさない（網目と同じ）
+    const kp = Math.max(0, ...(PZ.keep || []).map(k => { if (!k[2]) return 0; const a = (k[4] || 0) * Math.PI / 180, dx = x - k[0], dy = y - k[1], kx = dx * Math.cos(a) + dy * Math.sin(a), ky = -dx * Math.sin(a) + dy * Math.cos(a); return 1 - sm(0.55, 1, Math.hypot(kx / k[2], ky / k[3])); }));   // 動かさない所も傾いた楕円にできる（5つ目＝傾き）   // 胸以外（手や腕）は動かさない（網目と同じ）
     return [x + ox * (1 - kp), y + oy * (1 - kp)];
   }
   const anchorOf = (k) => meshAt(...BTNS[k].a);
@@ -1003,7 +1005,7 @@
     stepShake(dt);
     stepRopes(dt);
     for (let n = parts.length - 1; n >= 0; n--) { const q = parts[n]; q.t += dt; if (q.t > q.life) { parts.splice(n, 1); continue; }
-      q.x += q.vx * dt; q.y += q.vy * dt; if (q.star) { q.vx *= 0.9; q.vy = q.vy * 0.9 + 300 * dt; } else { q.vy += (q.g || 2400) * dt; q.rot += q.vr * dt;
+      q.x += q.vx * dt; q.y += q.vy * dt; if (q.ring) {} else if (q.heart) { q.vx *= 0.94; q.vy = q.vy * 0.94 - 20 * dt; } else if (q.star) { q.vx *= 0.9; q.vy = q.vy * 0.9 + 300 * dt; } else { q.vy += (q.g || 2400) * dt; q.rot += q.vr * dt;
         if (q.bounce && q.vy > 0 && q.y > 772 && q.nb < 2) { q.y = 772; q.vy *= -q.bounce; q.vx *= 0.7; q.vr *= 0.6; q.nb++; } } }   // 画面の下（床）で弾む
   }
   function drawParts() {
@@ -1011,7 +1013,9 @@
     for (const q of parts) {
       const x = view.ox + q.x * view.s, y = view.oy + q.y * view.s, a = 1 - Math.max(0, (q.t - q.life * 0.7) / (q.life * 0.3));
       fc.globalAlpha = a;
-      if (q.star) { const r = q.sz * view.s * (1 - q.t / q.life * 0.5); fc.fillStyle = q.col || '#ffe9a8'; fc.beginPath();
+      if (q.ring) { const k = q.t / q.life, r = (8 + 34 * k) * view.s; fc.strokeStyle = '#ff7eb3'; fc.lineWidth = Math.max(1.5, 3.2 * (1 - k) * view.s); fc.beginPath(); fc.arc(x, y, r, 0, Math.PI * 2); fc.stroke(); }
+      else if (q.heart) { const k = q.t / q.life, r = q.sz * view.s * (k < 0.15 ? k / 0.15 * 1.25 : k < 0.3 ? 1.25 - (k - 0.15) / 0.15 * 0.25 : 1); fc.save(); fc.translate(x, y); fc.rotate(q.rot); fc.fillStyle = '#ff5c9d'; fc.strokeStyle = '#ffffff'; fc.lineWidth = Math.max(1.5, 2 * view.s); fc.beginPath(); fc.moveTo(0, r * 0.35); fc.bezierCurveTo(-r * 1.1, -r * 0.35, -r * 0.45, -r * 1.05, 0, -r * 0.45); fc.bezierCurveTo(r * 0.45, -r * 1.05, r * 1.1, -r * 0.35, 0, r * 0.35); fc.closePath(); fc.fill(); fc.stroke(); fc.restore(); }
+      else if (q.star) { const r = q.sz * view.s * (1 - q.t / q.life * 0.5); fc.fillStyle = q.col || '#ffe9a8'; fc.beginPath();
         fc.moveTo(x, y - r); fc.lineTo(x + r * 0.28, y); fc.lineTo(x, y + r); fc.lineTo(x - r * 0.28, y); fc.closePath(); fc.fill();
         fc.beginPath(); fc.moveTo(x - r, y); fc.lineTo(x, y + r * 0.28); fc.lineTo(x + r, y); fc.lineTo(x, y - r * 0.28); fc.closePath(); fc.fill(); }
       else { const b = BTNS[q.k], sc = view.s * (1 + q.t * 0.35); fc.save(); fc.translate(x, y); fc.rotate(q.rot);
@@ -1132,7 +1136,7 @@
     if (bk >= 0) { popButton(bk); tell({ t: 'pop', k: bk, x: e.clientX, y: e.clientY }); return; }
     const i = hit(ix, iy); if (i < 0) return;
     tell({ t: 'tap', kind: 'tap', side: i, x: e.clientX, y: e.clientY });
-    if (OF.tip) { tipN++; if (tipN % 3 === 0 && tipN <= OF.tip) OF.tipP.forEach(([tx, ty]) => { for (let n = 0; n < 7; n++) { const a = Math.random() * Math.PI * 2, sp = 50 + Math.random() * 90; parts.push({ star: 1, col: '#ffd3e4', x: tx, y: ty - 4, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 30, t: 0, life: 0.35 + Math.random() * 0.3, sz: 2 + Math.random() * 3 }); } }); }   // 3回ごとに胸の先のまわりに小さなきらめき（11/07 ユーザー）
+    if (OF.tip) { tipN++; if (tipN % 3 === 0 && tipN <= OF.tip) OF.tipP.forEach(([tx0, ty0], si) => { const [tx, ty] = meshAt(tx0, ty0); parts.push({ ring: 1, x: tx, y: ty, vx: 0, vy: 0, t: 0, life: 0.55 }); for (let n = 0; n < 3; n++) { const a = -Math.PI / 2 + (n - 1) * 0.7 + (si ? 0.15 : -0.15); parts.push({ heart: 1, x: tx, y: ty - 6, vx: Math.cos(a) * 110, vy: Math.sin(a) * 110 - 40, t: 0, life: 0.9, sz: 13 + n * 2, rot: (n - 1) * 0.35 }); } for (let n = 0; n < 6; n++) { const a = Math.random() * Math.PI * 2, sp = 90 + Math.random() * 110; parts.push({ star: 1, col: '#fff0f6', x: tx, y: ty, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.4, sz: 5 + Math.random() * 4 }); } }); }   // キュンッ：胸の先から小さなハートが3つ跳ね、輪が広がる（11/08 ユーザー）   // 3回ごとに胸の先のまわりに小さなきらめき（11/07 ユーザー）
     try { stageEl.setPointerCapture(e.pointerId); } catch (_) {}
     addHeat();
     const p = P[i], c = CUPS[i], amp = opt.amp * (1 + HEAT_PUSH * heatNow()) * lvNow().push * FEEL.push;
