@@ -181,8 +181,8 @@
   STR('white', '白サテン', [{ c: [637, 549], w: 24, h: 24, round: 1 }, { c: [867, 545], w: 24, h: 24, round: 1 }, { c: [753, 651], w: 32, h: 32, round: 1 }]);
   STR('dress', 'ドレス', [{ c: [620, 514], w: 28, h: 28, rect: 1 }, { c: [887, 507], w: 28, h: 28, rect: 1 }, { c: [752, 652], w: 44, h: 50, rect: 1 }]);
   // ジムウェア（11/07 新衣装）：留めはなし。胸を押すたびに、布越しに胸の先が少しずつとがる（tip＝満タンまでの回数、tipP＝左右の先の位置）。とがった絵は生成で断られるので、こちらで陰影を描き足す
-  OUTFITS.gym = { ...OUTFITS.bunny, name: 'ジムウェア', img: 'panyu_gym_reach.webp', jewel: 0, parts: [], covers: [], coverLeft: [0, 0, 0], label: '', what: '', tip: 24, tipP: [[556, 582], [832, 582]], tipC: [[605, 622], [790, 622]], tipR: 13 };   /* tipP＝いちばん高い所（布のつやの頂点）、tipC＝胸の中心（丸みの向き） */
-  OUTFITS.yshirt = { ...OUTFITS.gym, name: 'Yシャツ', img: 'panyu_yshirt_reach.webp', tipP: [[552, 578], [842, 574]], tipC: [[600, 612], [800, 612]] };
+  OUTFITS.gym = { ...OUTFITS.bunny, name: 'ジムウェア', img: 'panyu_gym_reach.webp', jewel: 0, parts: [], covers: [], coverLeft: [0, 0, 0], label: '', what: '', tip: 24, tipP: [[561, 596], [835, 597]], tipC: [[605, 622], [790, 622]], tipR: 13 };   /* tipP＝いちばん高い所（布のつやの頂点）、tipC＝胸の中心（丸みの向き） */
+  OUTFITS.yshirt = { ...OUTFITS.gym, name: 'Yシャツ', img: 'panyu_yshirt_reach.webp', tipP: [[561, 593], [836, 591]], tipC: [[600, 612], [800, 612]] };
   OUTFITS.tshirt = { ...OUTFITS.gym, name: 'Tシャツ', img: 'panyu_tshirt_reach.webp', tipP: [[574, 546], [826, 546]], tipC: [[615, 592], [790, 592]] };   /* 立体で見た胸の頂点は上（11/07 ユーザー） */
   const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）
   if (EMBED) document.body.classList.add('embed');
