@@ -1,0 +1,61 @@
+/* ===== 当たり札（outs） =====
+   一番中身が多い状態は2つ。
+   (a) 当たり札をさがす最中：52枚の一覧（13列×4段）が出ている所（札は13列。うすい札・当たりの札・ヒントの枠が混ざる）。
+   (b) スロット：当たり札を集め終えて「コール／降りる」を選び、賭けの札のあと、下に札の帯（リール）が出た所。
+   並べ方：
+     (a) 左＝52枚の一覧（枠つき）、右の300px＝手札（場札4＋裏＋手札2）・問い・集めた数・「わからない」。手順は全幅。
+     (b) 左＝手札・当たり札の数・当たり札の一覧（畳んだ札）、右＝値段くらべ（問い・金の棒・式2つ・コール／降りる）。
+         リールの帯はその下に全幅で出す（札の幅 56px・札の間 8px は js の止まる位置の計算に使われているので変えない）。
+   高さの見積もり（遊び本体の予算 約605px）：
+     (a) 手順 28 ＋ 行間 10 ＋ 一覧（上の余白 14 ＋ 札89×4 ＋ 札の間 6×3 ＋ 下の余白 14 ＋ 枠 2 ＝ 約404）＝ 約442px。
+         右の段は 手札2段 182 ＋ 問い 84 ＋ 数 34 ＋ わからない 44 ＋ 行間 30 ＝ 約374（一覧より低い）。
+     (b) 手順 28 ＋ 行間 10 ＋ 左の段（手札 87 ＋ 数 34 ＋ 畳んだ札 2段 152 ＋ 行間 20 ＝ 293）＋ 行間 10 ＋ リール（説明 20 ＋ 6 ＋ 108）＝ 約475px（これが最大）。
+         右の段（値段くらべ）は 問い 28 ＋ 棒 66 ＋ 式 40 ＋ ボタン 60 ＋ 行間 40 ＝ 約234（左より低い）。
+         降りた時や、もう一度「コール／降りる」を押したあと（ボタンが消える）はさらに低い。
+   文字：問い 20px・式 13px・集めた数 30px（数字）・ラベル 13px・札の数字 20px/マーク 15px（一覧）・18px/13px（畳んだ札）。
+   押す所：一覧の札は幅 約64px（窓を狭くしても 約48px 以上）×高さ 約89px、ボタン 約52〜60px、わからない 44px。 */
+
+/* ---------- (a) 当たり札をさがす：左＝一覧、右＝手札・問い・数・わからない ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) { display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: repeat(5, auto); gap: 10px 28px; align-content: start; padding-top: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .steps { grid-column: 1 / -1; grid-row: 1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .outs-deck { grid-column: 1; grid-row: 2 / 6; align-self: start; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .row { grid-column: 2; grid-row: 2; justify-content: flex-start; gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .prompt { grid-column: 2; grid-row: 3; align-self: center; text-align: left; font-size: 20px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .outs-count { grid-column: 2; grid-row: 4; align-self: center; text-align: left; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-deck) > .actions { grid-column: 2; grid-row: 5; align-self: end; justify-content: flex-start; }
+
+/* 52枚の一覧：札置き場の枠。札は枠の幅いっぱいに13列（幅 約64px×高さ 約89px） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck { box-sizing: border-box; width: 100%; max-width: none; margin: 0; padding: 14px; gap: 6px; background: rgba(19, 4, 6, .5); border: 1px solid var(--line-dim); border-radius: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck .card b { font-size: 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck .card i { font-size: 15px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-count small { font-size: 13px; }
+
+/* ---------- (b) 値段くらべ：左＝手札・数・畳んだ札、右＝値段くらべ、下＝リール ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 32px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .row { grid-column: 1; grid-row: 2; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .prompt { display: none; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .outs-count { grid-column: 1; grid-row: 3; align-self: start; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .outs-deck { grid-column: 1; grid-row: 4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > .outs-meter { grid-column: 2; grid-row: 2 / 5; align-self: start; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .outs-meter) > div:not(.outs-meter):not(.outs-deck):not(.row):not(.outs-count):not(.steps) { grid-column: 1 / -1; grid-row: 5; }
+
+/* 畳んだ札（当たり札だけ）：枠なしで左から詰める。幅 52px×高さ 約73px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck.is-collapsed { padding: 0; background: none; border: 0; justify-content: flex-start; align-content: flex-start; gap: 6px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card.found,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card.shown { width: 52px; flex: 0 0 52px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card b { font-size: 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-deck.is-collapsed .card i { font-size: 13px; }
+
+/* 値段くらべ（右の段） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-meter { max-width: none; margin: 0; gap: 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-meter .prompt { text-align: left; font-size: 20px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-meter .formula { text-align: left; font-size: 13px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-bar { margin-top: 30px; height: 36px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-line span { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-val { font-size: 24px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-meter .actions { justify-content: flex-start; flex-wrap: nowrap; gap: 10px; margin-top: 6px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .outs-meter .actions .btn { flex: 1 1 0; min-width: 0; }
+
+/* リール（全幅）：札の幅 56px・札の間 8px は js のまま。窓の高さ 108px は札（約78px）を中ほどに置ける高さ */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .reel-wrap { max-width: none; height: 108px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .reel-legend { margin-bottom: 6px; font-size: 13px; line-height: 1.5; }

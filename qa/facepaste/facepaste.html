@@ -1,0 +1,52 @@
+<!doctype html><meta charset="utf-8"><body><script>
+// 元の絵（透明あり）に、表情だけ変えた絵の顔のまわりを、位置と大きさを合わせてやわらかく重ねる
+const load = s => new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = s; });
+function gray(img, w, h) { const c = new OffscreenCanvas(w, h), x = c.getContext('2d'); x.drawImage(img, 0, 0, w, h); const d = x.getImageData(0, 0, w, h).data, g = new Float32Array(w * h); for (let i = 0; i < w * h; i++) g[i] = d[i*4]*.3 + d[i*4+1]*.59 + d[i*4+2]*.11; return g; }
+window.run = async (baseSrc, varSrc, box, ell) => {
+  const base = await load(baseSrc), vr = await load(varSrc), W = base.naturalWidth, H = base.naturalHeight;
+  const vs = W / vr.naturalWidth; // 変えた絵を元の幅に合わせる
+  // 合わせ込み：顔のまわりの四角（box）で、大きさ s と位置 dx,dy を探す（半分の解像度で）
+  const k = 2, bw = Math.round(W / k), bh = Math.round(H / k);
+  const gb = gray(base, bw, bh);
+  let best = { e: 1e18 };
+  const scales = []; for (let s = 0.96; s <= 1.0401; s += 0.005) scales.push(s);
+  for (const s of scales) {
+    const vw = Math.round(vr.naturalWidth * vs * s / k), vh = Math.round(vr.naturalHeight * vs * s / k);
+    const gv = gray(vr, vw, vh);
+    // 拡大縮小は顔の中心を基準に
+    const cx = (box[0] + box[2]) / 2 / k, cy = (box[1] + box[3]) / 2 / k;
+    for (let dy = -10; dy <= 10; dy++) for (let dx = -10; dx <= 10; dx++) {
+      const ox = cx - cx * s + dx, oy = cy - cy * s + dy; // 変えた絵を置く左上
+      let e = 0, n = 0;
+      for (let y = box[1] / k; y < box[3] / k; y += 2) for (let x = box[0] / k; x < box[2] / k; x += 2) {
+        const vx = Math.round(x - ox), vy = Math.round(y - oy);
+        if (vx < 0 || vy < 0 || vx >= vw || vy >= vh) { e += 4000; n++; continue; }
+        const d = gb[y * bw + x] - gv[vy * vw + vx]; e += d * d; n++;
+      }
+      e /= n; if (e < best.e) best = { e, s, dx: dx * k, dy: dy * k, ox: ox * k, oy: oy * k };
+    }
+  }
+  // 重ねる
+  const out = new OffscreenCanvas(W, H), o = out.getContext('2d');
+  o.drawImage(base, 0, 0);
+  const lay = new OffscreenCanvas(W, H), l = lay.getContext('2d');
+  l.drawImage(vr, best.ox, best.oy, vr.naturalWidth * vs * best.s, vr.naturalHeight * vs * best.s);
+  // やわらかい楕円の型
+  const m = new OffscreenCanvas(W, H), mc = m.getContext('2d');
+  mc.filter = `blur(${ell[4]}px)`; mc.fillStyle = '#fff'; mc.beginPath(); mc.ellipse(ell[0], ell[1], ell[2], ell[3], 0, 0, Math.PI * 2); mc.fill();
+  l.globalCompositeOperation = 'destination-in'; l.drawImage(m, 0, 0);
+  // 元の絵の透明はそのまま（重ねる層も元の形で切る）
+  l.drawImage(base, 0, 0);
+  o.drawImage(lay, 0, 0);
+  const blob = await out.convertToBlob({ type: 'image/png' });
+  const full = await new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(blob); });
+  // 比べ絵：元・新の顔まわりを並べる
+  const cw = box[2] - box[0] + 120, ch = box[3] - box[1] + 120, cmpc = new OffscreenCanvas(cw * 2 * 2, ch * 2), cc = cmpc.getContext('2d');
+  cc.fillStyle = '#222'; cc.fillRect(0, 0, cmpc.width, cmpc.height);
+  cc.drawImage(base, box[0] - 60, box[1] - 60, cw, ch, 0, 0, cw * 2, ch * 2);
+  cc.drawImage(out, box[0] - 60, box[1] - 60, cw, ch, cw * 2, 0, cw * 2, ch * 2);
+  const cb = await cmpc.convertToBlob({ type: 'image/jpeg', quality: .9 });
+  const cmp = await new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(cb); });
+  return { full, cmp, best: { e: Math.round(best.e), s: +best.s.toFixed(3), dx: best.dx, dy: best.dy } };
+};
+</script>
