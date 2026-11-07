@@ -136,9 +136,6 @@
     covers: [[733, 549, 15, 14], [727, 565, 11, 11], [717, 578, 10, 10]],
     gap: { ...OUTFITS.bunny.gap, gx: 736, gy: 528, ends: [528, 556, 572, 606], wide: 0.62, ramp: 15 },
     pose: { cups: [[680, 482, 84], [795, 482, 84]], keep: [[590, 525, 44, 120], [884, 525, 44, 120], [0, 0, 0, 0]],   /* 動かさない所：胸の横の腕 */ cheek: [[660, 265], [786, 255]], eyes: [[655, 232], [775, 222]], faceR: [600, 140, 240, 200], faceC: [720, 240, 95, 80], blushC: [722, 262, 95, 42], head: [720, 240, 300], focus: [738, 470], scale: 0.64, surprise: '' } };
-  OUTFITS['bikini@bed'] = { ...OUTFITS.bikini, name: '水着（ベッド）', img: 'panyu_bikini_bed_reach.webp', ringG: [698, 708, 0.86], ringNoBand: 1, strapFill: 1, sw: [5.0, 7.4, 9.6],   // ベッドでうつ伏せ・頬杖：胸の下は布団。肩紐はカップの金具から腕輪の下まで見えている
-    parts: [{ a: [602, 614], b: [620, 546] }, { a: [769, 616], b: [758, 564] }, { c: [698, 708], w: 26, h: 26, ring: 1 }],
-    pose: { cups: [[628, 655, 105], [758, 655, 105]], keep: [[556, 610, 46, 150], [818, 610, 46, 150], [698, 712, 34, 22]],   /* 動かさない所：胸の横の左右の腕・胸の下のリング（左右に引き伸ばさない） */ cheek: [[575, 345], [735, 325]], eyes: [[560, 300], [715, 270]], faceR: [470, 160, 320, 260], faceC: [640, 300, 125, 105], blushC: [645, 335, 130, 50], head: [640, 290, 420], focus: [692, 600], scale: 0.8, surprise: '' } };
   const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）
   if (EMBED) document.body.classList.add('embed');
   const tell = (m) => { if (EMBED && parent !== window) try { parent.postMessage(Object.assign({ panyu: 1 }, m), '*'); } catch (_) {} };
