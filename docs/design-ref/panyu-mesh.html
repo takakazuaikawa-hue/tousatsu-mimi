@@ -596,20 +596,22 @@
       vec3 col = texture2D(uTex, q / uImgF).rgb;
       if (uTipR.y > 0.001) {
         for (int k = 0; k < 2; k++) { vec2 tp = k == 0 ? uTipP.xy : uTipP.zw; vec2 d = (q - tp) / uTipR.x; float r2 = dot(d, d);
-          float h1 = exp(-r2 * 2.2), h2 = exp(-r2 * 16.0), h3 = exp(-r2 * 13.0);   /* 突端は太く（11/07 ユーザー「もう少し突端を太く高く」） */   // 丸い盛り上がり＋その先の小さな山＋いちばん先のとがり（11/07 ユーザー「先端のさらに先端が一番とがったように」）
-          float hgt = h1 + 0.8 * h2 + 1.4 * h3;   /* いちばん先の細いとがりは高く（11/07 ユーザー「もう少し高く」） */
-          vec2 gr = -4.4 * d * h1 - 0.8 * 32.0 * d * h2 * 0.45;
-          vec2 g3 = -26.0 * d * h3 * 1.25;   // いちばん先の細いとがり：別に陰をつける（大きな山の上限に埋もれないように）   // 先へ行くほど急になる傾き
-          float lit = dot(normalize(vec3(-gr * 0.9, 1.0)), normalize(vec3(-0.45, -0.75, 0.6)));   // 左上からの光
-          float base = dot(vec3(0.0, 0.0, 1.0), normalize(vec3(-0.45, -0.75, 0.6)));
-          float sh = (lit - base) * uTipR.y;
-          float shc = clamp(sh, -0.35, 0.35) * 0.7;
-          float l3 = dot(normalize(vec3(-g3, 1.0)), normalize(vec3(-0.45, -0.75, 0.6))) - base;
-          shc += clamp(l3, -0.6, 0.6) * 0.9 * uTipR.y;
-          col = shc >= 0.0 ? mix(col, vec3(1.0, 0.80, 0.87), min(0.6, shc * 1.1)) : mix(col, col * vec3(1.0, 0.80, 0.86), -shc * 2.4);   // 光の当たる側は明るく、反対側は灰色でなく薄いピンクの影
-          col = mix(col, vec3(1.0, 0.70, 0.79), (h1 * 0.22 + h2 * 0.25 + h3 * 0.35) * uTipR.y);   // とがった所は薄いピンク（11/07 ユーザー）
-          col = mix(col, vec3(1.0, 0.86, 0.91), pow(max(0.0, 1.0 - length(d - vec2(-0.1, -0.13)) * 8.0), 2.0) * 0.45 * uTipR.y);   // てっぺんのつやは白でなくピンク寄り（11/07 ユーザー「白が目立つ」）   // てっぺんの小さなつや
-          col = mix(col, col * vec3(1.0, 0.86, 0.90), 0.5 * uTipR.y * smoothstep(0.9, 0.0, length(d - vec2(0.12, 0.38))) * (1.0 - hgt));   // 下にできる布のたるみの影
+          // 11/07 ユーザー「透けてて固そうな感じ」：①大きな丸い盛り上がりの陰影 ②布越しにうっすら透ける濃いピンク ③縁のくっきりした固い突端 ④突端から放射状に張る布のしわ
+          float r = sqrt(r2), u = uTipR.y;
+          float h1 = exp(-r2 * 2.2); vec2 gr = -4.4 * d * h1;
+          vec3 L = normalize(vec3(-0.45, -0.75, 0.6)); float base = L.z;
+          float shc = clamp((dot(normalize(vec3(-gr * 0.9, 1.0)), L) - base) * u, -0.3, 0.3) * 0.6;
+          col = shc >= 0.0 ? mix(col, vec3(1.0, 0.82, 0.88), shc * 0.8) : mix(col, col * vec3(1.0, 0.80, 0.86), -shc * 2.2);
+          col = mix(col, col * vec3(0.93, 0.66, 0.72), 0.55 * u * smoothstep(0.72, 0.38, r));   // ② 布の下の色が透ける（ふちはぼかす）
+          float n = smoothstep(0.31, 0.21, r);                                                   // ③ 突端：上が平らで、縁が急に立つ（固い）
+          float rim = smoothstep(0.34, 0.26, r) * smoothstep(0.10, 0.24, r);
+          float side = dot(normalize(d + 1e-4), normalize(vec2(-0.45, -0.75)));                 // 左上の縁は明るく、右下の縁は暗い
+          col = mix(col, col * vec3(0.95, 0.62, 0.70), 0.45 * n * u);
+          col = side > 0.0 ? mix(col, vec3(1.0, 0.84, 0.90), rim * side * 0.55 * u) : mix(col, col * vec3(0.78, 0.52, 0.60), rim * -side * 0.75 * u);
+          col = mix(col, col * vec3(0.86, 0.66, 0.72), 0.5 * u * smoothstep(0.30, 0.16, length(d - vec2(0.09, 0.15))) * (1.0 - n));   // 突端の右下に落ちる影
+          col = mix(col, vec3(1.0, 0.90, 0.94), 0.55 * u * smoothstep(0.075, 0.02, length(d - vec2(-0.07, -0.09))));   // 小さく鋭いつや（ピンク寄り）
+          float ang = atan(d.y, d.x), wr = pow(abs(sin(ang * 2.0 + 0.9) * sin(ang * 3.0 + 0.3)), 6.0) * smoothstep(0.30, 0.45, r) * smoothstep(0.95, 0.45, r);   // ④ 張った布のしわ
+          col = mix(col, col * vec3(0.92, 0.82, 0.86), 0.25 * wr * u);
         }
       }
       if (uOpenOn > 0.001) {   // 開いた絵（同じ構図で留めが外れた絵）：外した数に合わせて、上から開いた所まで見せる
