@@ -55,7 +55,7 @@ function renderHomeLobby() {
   ticket.dataset.opponent = sid;
   ticket.querySelector('.h15-lbl').textContent = '今夜の卓へ';
   const firstReward = !(save.firstClearRewardClaimed || []).includes(sid);
-  ticket.querySelector('.h15-prize').innerHTML = `<span><i class="h15-if">勝てば </i>${firstReward ? opponent.rewardFirst : rematchPreview(sid)} コイン</span>${firstReward ? '<span>＋ご褒美CG</span>' : ''}`;
+  ticket.querySelector('.h15-prize').innerHTML = `<span><i class="h15-if">勝てば </i>${firstReward ? opponent.rewardFirst : rematchPreview(sid)} コイン</span>${firstReward ? '<span>＋一枚絵</span>' : ''}`;
   ticket.setAttribute('aria-label', `${opponent.name}の卓へ。${ticket.querySelector('.h15-prize').textContent}`);
   // クリア後（ヴェルベットに勝った後）は札と額が「零時の卓」の入口になる（allstar-ui.js）
   if (window.AllstarUI) AllstarUI.decorateHome(root);

@@ -4255,7 +4255,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
       <img class="ims-cg-img" alt="">
       <div class="ims-cg-fallback">
         <div class="ims-cg-fallback-name">${oppName}</div>
-        <div class="ims-cg-fallback-label">ご褒美CG 開放！</div>
+        <div class="ims-cg-fallback-label">一枚絵 開放！</div>
       </div>
       <div class="ims-cg-stamp" aria-hidden="true"><span>一枚絵 開放</span></div>
       <div class="ims-cg-cap"><b></b><span></span></div>
@@ -4691,7 +4691,7 @@ const LOBBY_PRESENT = {
     tells: [['圧＝演出', '#c8253a'], ['飲まれたら負け', '#b8862e']],
   },
 };
-const LB3_MIMI_THOUGHTS = ['（よし……今夜もやるぞ）', '（深呼吸、深呼吸……）', '（ぱにゅぱにゅ、今日も頼むね）', '（勝ったらご褒美CG……！）', '（負けたら罰ゲームとかないよね……？）'];
+const LB3_MIMI_THOUGHTS = ['（よし……今夜もやるぞ）', '（深呼吸、深呼吸……）', '（ぱにゅぱにゅ、今日も頼むね）', '（勝ったら、また一枚……！）', '（負けたら罰ゲームとかないよね……？）'];
 
 function lobbyNextStageId() {
   // 研修を終えたら講義（リコの教室）は任意。次の卓はポルカから
@@ -4872,7 +4872,7 @@ function renderLobbyStatus() {
       <div class="lb6-st-k v2-disp">COINS</div>
       <div class="lb6-st-num v2-disp" data-bind="saveCoins">${save.coins}</div>
       <div class="lb6-st-row${claimed ? '' : ' is-hot'}"><i class="lb6-st-dot"></i><span>${claimed ? `ログボ ${lb.streak}日目 受取済` : 'ログボ受取可'}</span></div>
-      <button class="lb6-st-row lb6-st-cg" type="button" data-action="open-collection" title="ご褒美CGコレクション"><span>ご褒美CG</span><span class="lb6-st-meter"><i style="width:${Math.round(cg / 5 * 100)}%"></i></span><b class="v2-disp">${cg}/5</b></button>
+      <button class="lb6-st-row lb6-st-cg" type="button" data-action="open-collection" title="一枚絵コレクション"><span>一枚絵</span><span class="lb6-st-meter"><i style="width:${Math.round(cg / 5 * 100)}%"></i></span><b class="v2-disp">${cg}/5</b></button>
     </div>`;
   // ログボ受取直後など render() を経ずに呼ばれても押せるように（同一関数の二重登録はブラウザが無視する）
   slot.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
@@ -5302,9 +5302,9 @@ function showSettingsModal() {
           <div class="settings-modal-note">会話の文字の出方と、配る・相手が考える間の長さ。慣れたら「速い」がおすすめ</div>
           <div class="settings-modal-row">
             <span class="settings-modal-label is-wrap">絵を動かす</span>
-            ${sw('liveart', !stillArtOn(), 'ホームとご褒美の絵を動かす')}
+            ${sw('liveart', !stillArtOn(), 'ホームと一枚絵を動かす')}
           </div>
-          <div class="settings-modal-note">ホームとご褒美の絵。OFF にすると止まった1枚になり、スマホが熱くなりにくく電池も長持ちします</div>
+          <div class="settings-modal-note">ホームと一枚絵。OFF にすると止まった1枚になり、スマホが熱くなりにくく電池も長持ちします</div>
           ${save.backdoorUnlocked ? `
           <div class="settings-modal-row settings-modal-practice">
             <span class="settings-modal-label is-wrap">練習用：<wbr>相手の手札を見る</span>
@@ -13426,7 +13426,7 @@ function showCollectionModal() {
     const opp = OPPONENTS[id];
     if (!opp) return '';
     if (rewardCgSeen.includes(id)) {
-      return `<button class="coll-cg-card on" data-action="view-reward-cg" data-cg-id="${id}" title="${opp.name}のご褒美CGを見る">
+      return `<button class="coll-cg-card on" data-action="view-reward-cg" data-cg-id="${id}" title="${opp.name}の一枚絵を見る">
         <img src="assets/backgrounds/reward_cg_${id}.jpg" alt="${opp.name}"
              onerror="this.onerror=function(){this.onerror=null;this.style.display='none';this.parentElement.classList.add('noimg');};this.src='assets/episodes/${id}.webp';">
         <div class="coll-cg-label">${opp.name}${REWARD_CG_MORE[id] ? `<small class="coll-cg-more">${1 + REWARD_CG_MORE[id].length}枚</small>` : ''}</div>
@@ -13506,7 +13506,7 @@ function showCollectionModal() {
       <div class="collection-body">
         <!-- 2026-11-01 一枚絵を集める作品なので、ご褒美CGを一番上に（外部の批評：文字の一覧が先頭を占めていた） -->
         <section class="coll-section">
-          <h3 class="coll-section-title">ご褒美CG <span class="coll-section-count">${rewardCgCount}/${stageOrder.length + 1}</span></h3>
+          <h3 class="coll-section-title">一枚絵 <span class="coll-section-count">${rewardCgCount}/${stageOrder.length + 1}</span></h3>
           <div class="coll-cgs">${rewardCgHtml}${rewardCgHtmlSecret}</div>
         </section>
         ${cgSetHtml ? `<section class="coll-section">
