@@ -17,7 +17,7 @@
     opening: 'assets/ui/allstar_opening.webp',  // 六人着席の一枚絵（ChatGPT、2026-10-17）
     band: null,     // 入場案内の帯。null なら opening → room の順に代わりを使う
   };
-  const FEE = 300;
+  // 参加費はなし（11/08 D16 ③ ユーザー決定「無料・賞金そのまま」：参加料をとる方式では自由に参加できなかった）
   const PRIZES = AS.CONFIG.prizes;           // [1800, 900, 500, 300, 100, 0]
   const RIVALS = ['rico', 'polka', 'selina', 'grano', 'velvet'];
   const NAMES = { mimi: 'ミミ', rico: 'リコ先輩', polka: 'ポルカ', selina: 'セリナ', grano: 'グラーノ', velvet: 'ヴェルベット' };
@@ -1524,10 +1524,9 @@
     if (!isUnlocked()) { try { toast('零時の卓は、ヴェルベットに勝つと開きます'); } catch (e) { } return; }
     warmLater();
     const ri = runInfo();
-    const free = !A.invitationUsed;
-    const can = free || (save.coins || 0) >= FEE;
+    const can = true;
     const band = ART.band || ART.opening || ART.room;
-    const feeLine = free ? '<b class="as-inv">招待状</b>　初回は参加費が無料です' : `参加費 ${fmt(FEE)} コイン（所持 ${fmt(save.coins)}）`;
+    const feeLine = '<b class="as-inv">参加費なし</b>　何度でも座れます';
     const btns = ri
       ? `<button type="button" class="as-gold" data-action="allstar-resume">続きから（残り${ri.alive}人・Lv${ri.level}）</button><button type="button" data-action="allstar-new"${can ? '' : ' disabled'}>新しく始める</button>`
       : `<button type="button" class="as-gold" data-action="allstar-seat"${can ? '' : ' disabled'}>着席する</button>`;
@@ -1538,7 +1537,7 @@
       <div class="as-band" style="--art:url('${band}')"><span class="as-band-en">THE MIDNIGHT TABLE</span><b>零時の卓</b><span class="as-band-sub">六席の決勝卓</span></div>
       <div class="as-efaces">${facesRow()}</div>
       <div class="as-ecols">
-        <ul class="as-rules"><li>全員 ${fmt(AS.CONFIG.startStack)} 点から。持ち込み・買い足しはなし</li><li>5ハンドごとにブラインドが上がる</li><li>持ち点が尽きたら退席。最後の1人が優勝</li></ul>
+        <ul class="as-rules"><li>全員 ${fmt(AS.CONFIG.startStack)} 点から。買い足しはなし</li><li>5ハンドごとにブラインドが上がる</li><li>持ち点が尽きたら退席。最後の1人が優勝</li></ul>
         <div class="as-prizes"><b class="as-prizes-h">賞金（コイン）</b><ol>${PRIZES.map((p, i) => `<li${i === 3 ? ' class="is-bubble"' : ''}><span>${i + 1}位</span><b>${fmt(p)}</b></li>`).join('')}</ol></div>
       </div>
       <p class="as-emeta">目安 13〜17分　／　${feeLine}${can ? '' : '　<span class="as-warn">コインが足りません</span>'}</p>
@@ -1568,14 +1567,10 @@
     fitDialog(overlay);
   }
 
-  // 着席：参加費 → 大会を作って保存 → 先読みを待つ → 卓へ
+  // 着席：大会を作って保存 → 先読みを待つ → 卓へ
   async function seat(resume) {
     const A = ensureSave();
     if (!A) return;
-    if (!resume) {
-      const free = !A.invitationUsed;
-      if (!free && (save.coins || 0) < FEE) { try { toast(`コインが足りません（${FEE}コイン必要）`); } catch (e) { } return; }
-    }
     const MA = window.MimiAssets;
     let close = () => { };
     try { close = showLoadingVeil(); } catch (e) { }
@@ -1585,11 +1580,10 @@
     if (resume && A.run && A.run.t) {
       try { t = AS.restore(A.run.t); } catch (e) { console.warn(e); try { toast('保存した大会が読めなかったので、記録なしで終わりにしました', 'big'); } catch (x) { } A.run = null; saveProgress(); return; }
     } else {
-      const free = !A.invitationUsed;
-      if (free) A.invitationUsed = true; else save.coins -= FEE;
+      A.invitationUsed = true;
       A.entries++;
       t = AS.createTournament({ seed: Math.floor(Math.random() * 2 ** 31) });
-      A.run = { v: 1, t: AS.serialize(t), startedAt: Date.now(), fee: free ? 0 : FEE, paid: false, finalVs: null };
+      A.run = { v: 1, t: AS.serialize(t), startedAt: Date.now(), fee: 0, paid: false, finalVs: null };
       saveProgress();
     }
     begin(t, !!resume);
@@ -1657,7 +1651,7 @@
         seat(true); break;
       }
       case 'allstar-new': {
-        showConfirm({ title: '前の大会を捨てて始める？', body: '途中の大会は記録なしで終わります。参加費は戻りません。', ok: '新しく始める', cancel: 'やめる', danger: true }).then(yes => {
+        showConfirm({ title: '前の大会を捨てて始める？', body: '途中の大会は記録なしで終わります。', ok: '新しく始める', cancel: 'やめる', danger: true }).then(yes => {
           if (!yes) return;
           const A = ensureSave(); A.run = null; saveProgress();
           seat(false);
