@@ -126,7 +126,7 @@
   function idsWhere(fn) {
     return loadManifest().then(function (m) { return m ? Object.keys(m.clips).filter(fn) : []; });
   }
-  var BATTLE_RE = /^(bark_|ready_|react_)/;
+  var BATTLE_RE = /^(bark_|ready_|react_|drink_)/;
   // 対戦の前：その相手とミミの掛け声・初手の出会い台詞・オールインへの反応
   function preloadBattle(voices, o) {
     var set = {}; (voices || []).forEach(function (v) { set[v] = 1; });

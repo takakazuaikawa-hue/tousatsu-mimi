@@ -47,7 +47,7 @@
     const opponentPreflopStrength = fn('opponentPreflopStrength'), evaluateBoardDanger = fn('evaluateBoardDanger');
     const decideOpponentAction = fn('decideOpponentAction'), betSizeToChips = fn('betSizeToChips');
     const anteFor = fn('anteForHand'); // フェーズ2で追加予定（参加費の段階上げ）
-    const opp = OPP[oppId]; const base = opp.chips || 1000; const prof = opp.profile; const isBoss = !!opp.isBoss;
+    const opp = OPP[oppId]; const base = OPT.drunk && oppId === 'rico_tutorial' ? 1000 : (opp.chips || 1000); const prof = OPT.drunk ? { ...opp.profile, style: (oppId === 'rico_tutorial' ? 'rico' : oppId) + '_drunk' } : opp.profile; const isBoss = !!opp.isBoss;
     const oppMult = OPT.mult || opp.oppChipMult || 2;
     const S = { P: base, O: base * oppMult, rebuy: OPT.rebuy == null ? 1 : OPT.rebuy, wins: 0, handNo: 0, zaz: 0, revealed: false, oppStyle: (fn('aiStyleOf') ? fn('aiStyleOf')(prof).sizing : '') };
     const st = { hands: 0, psych: 0, logic: 0, showdowns: 0, oppFolds: 0, plFolds: 0, dom: false, rebuy: false, cap: false, allinCalledLost: 0 };
@@ -89,7 +89,7 @@
           const all = [...S.oh, ...S.comm];
           const hs = S.comm.length >= 3 ? handStrength01(all) : opponentPreflopStrength(S.oh);
           const ctx = { handStrength: hs, toCall: need, boardDanger: evaluateBoardDanger(S.comm), canCheck: need === 0, pot: S.pot, oppChips: S.O, playerChips: S.P, street: S.phase, playerAllIn: S.P <= 0,
-            hole: S.oh, board: S.comm, potBeforeBet: S.pot - need, playerShoves: S.shoves || 0, playerCalls: S.pCalls || 0, playerFolds: S.pFolds || 0 };
+            hole: S.oh, board: S.comm, potBeforeBet: S.pot - need, playerShoves: S.shoves || 0, playerCalls: S.pCalls || 0, playerFolds: S.pFolds || 0, handNo: S.handNo };
           const post = S.phase !== 'preflop';
           const force = (S.handNo === 1 && S.phase === 'flop' && !S.psychResolved && S.cbP === 0);
           let act = decideOpponentAction(prof, ctx, { forceLargeBet: force });

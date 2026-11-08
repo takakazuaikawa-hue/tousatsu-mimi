@@ -32,10 +32,12 @@ function homeAssetsGate() {
 function renderHomeLobby() {
   const root = document.querySelector('.home-stage');
   if (!root) return;
-  const next = lobbyNextStageId();
+  // ほろ酔いの夜（二周目）：同じ5人を同じ順に。進み具合は save.horoyoiCleared（一周目の記録とは別）
+  const night = homeIsNight();
+  const next = night ? horoyoiNext() : lobbyNextStageId();
   // 研修（リコ先輩）を飛ばしてポルカに勝った人は「免除」として灯りと制覇の数に入れる。数え方は game.js の clearedStageCount に一本化（ホーム・台帳・コレクション・タイトルで同じ）
   const clearedCount = clearedStageCount();
-  const allCleared = clearedCount === STAGE_ORDER.length;
+  const allCleared = night ? !next : clearedCount === STAGE_ORDER.length;
   const sid = next || STAGE_ORDER[STAGE_ORDER.length - 1];
   const opponent = OPPONENTS[sid];
   const face = framePortrait;  // 額も小さな顔の窓も、額のために描いた肖像（無い人は小さな顔の絵）
@@ -53,12 +55,23 @@ function renderHomeLobby() {
   root.querySelector('.h15-frame .h15-sub').textContent = next ? '今夜の相手' : allCleared ? '全卓制覇' : '再戦の相手';
   const ticket = root.querySelector('.h15-ticket');
   ticket.dataset.opponent = sid;
-  ticket.querySelector('.h15-lbl').textContent = '今夜の卓へ';
-  const firstReward = !(save.firstClearRewardClaimed || []).includes(sid);
-  ticket.querySelector('.h15-prize').innerHTML = `<span><i class="h15-if">勝てば </i>${firstReward ? opponent.rewardFirst : rematchPreview(sid)} コイン</span>${firstReward ? '<span>＋一枚絵</span>' : ''}`;
+  const firstReward = !(save.firstClearRewardClaimed || []).includes(night ? hKey(sid) : sid);
+  const prize = night ? horoyoiPrizeFor(sid) : firstReward ? opponent.rewardFirst : rematchPreview(sid);
+  ticket.querySelector('.h15-lbl').textContent = night ? 'ほろ酔いの卓へ' : '今夜の卓へ';
+  ticket.querySelector('.h15-prize').innerHTML = `<span><i class="h15-if">勝てば </i>${prize} コイン</span>${firstReward ? '<span>＋一枚絵</span>' : ''}`;
   ticket.setAttribute('aria-label', `${opponent.name}の卓へ。${ticket.querySelector('.h15-prize').textContent}`);
   // クリア後（ヴェルベットに勝った後）は札と額が「零時の卓」の入口になる（allstar-ui.js）
-  if (window.AllstarUI) AllstarUI.decorateHome(root);
+  // ほろ酔いの夜の間は、札と額をほろ酔いの卓の入口のままにする（零時の卓は昼に戻すと入れる）
+  if (window.AllstarUI && !night) AllstarUI.decorateHome(root);
+  root.querySelector('.h15-frame .h15-sub').textContent = night ? (next ? 'ほろ酔いの相手' : 'ほろ酔い制覇') : root.querySelector('.h15-frame .h15-sub').textContent;
+  // 昼⇔夜の切り替え（エンディングを見た後だけ出す）
+  const sw = root.querySelector('[data-action="home-night-toggle"]');
+  if (sw) {
+    sw.hidden = !isEndingUnlocked();
+    sw.classList.toggle('is-night', night);
+    const lbl = night ? '一周目（昼）に戻す' : 'ほろ酔いの夜に切り替える';
+    sw.title = lbl; sw.setAttribute('aria-label', lbl);
+  }
   const places = root.querySelectorAll('.h15-pl');
   places[3].dataset.action = save.clearedStages.includes('rico_tutorial') ? 'rico-mode-chooser' : 'battle-start';
   places[3].dataset.opponent = 'rico_tutorial';
@@ -72,10 +85,10 @@ function renderHomeLobby() {
   badge.hidden = !fresh;
   const positions = [10.2, 26.3, 42.5, 58.9, 75.1];
   const romans = ['I', 'II', 'III', 'IV', 'V'];
-  root.querySelector('[data-home="ledger"]').innerHTML = `<span class="h15-lbl h15-gold-txt">${next ? `第${STAGE_ORDER.indexOf(next) + 1}戦` : allCleared ? '全卓制覇' : `${clearedCount}戦クリア`} <small>／全5戦</small></span>` + STAGE_ORDER.map((id,i) => {
-    const exempt = isStageExempt(id);
-    const done = isStageCleared(id);
-    const locked = !isStageUnlocked(id);
+  root.querySelector('[data-home="ledger"]').innerHTML = `<span class="h15-lbl h15-gold-txt">${night ? (next ? `第${STAGE_ORDER.indexOf(next) + 1}夜` : 'ほろ酔い制覇') : next ? `第${STAGE_ORDER.indexOf(next) + 1}戦` : allCleared ? '全卓制覇' : `${clearedCount}戦クリア`} <small>／全5${night ? '夜' : '戦'}</small></span>` + STAGE_ORDER.map((id,i) => {
+    const exempt = !night && isStageExempt(id);
+    const done = night ? horoyoiCleared(id) : isStageCleared(id);
+    const locked = night ? !horoyoiUnlocked(id) : !isStageUnlocked(id);
     const status = done ? 'win' : id === next ? 'now' : locked ? 'lock' : 'open';
     const mark = done ? 'seal' : id === next ? 'mark' : locked ? 'lock' : null;
     const label = exempt ? '免除' : done ? '勝利済み' : id === next ? '今夜の相手' : locked ? (IS_TRIAL ? '製品版で' : '未解放') : '受講できます';
@@ -84,6 +97,8 @@ function renderHomeLobby() {
   refreshHomeStatus();
   panyuFreeRefreshLobby();
   applyHomeCostume();
+  // 切り替えた瞬間に暗い画面を待たせないよう、もう一方（昼／夜）の絵を先に読んでおく（エンディングの後だけ）
+  if (isEndingUnlocked()) ['assets/ui/home/scene_night.webp', 'assets/ui/home/stage-empty_night.webp', 'assets/ui/home/scene.webp', 'assets/ui/home/stage-empty.webp'].forEach(src => { const im = new Image(); im.src = src; });
   buildHomeArt(root);
   // 勝ち数＝劇場の段階。前回ホームで見た段階より進んでいたら、一度だけ「開幕の儀」で変化を見せる
   const seen = Math.min(save.homeStageSeen ?? clearedCount, clearedCount);

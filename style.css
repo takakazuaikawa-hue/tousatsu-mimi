@@ -21038,3 +21038,11 @@ html.is-compact .home-stage.h15-sm .h15-goal { right: calc(450px + var(--sx, 0px
 /* ---- ほろ酔いの夜のホーム（2026-11-08）：夜の版の絵 ---- */
 .home-stage.is-night .h15-bg { background-image: url('assets/ui/home/scene_night.webp'); }
 .home-stage.is-night.has-costume .h15-bg, .home-stage.is-night .h15-foreground { background-image: url('assets/ui/home/stage-empty_night.webp'); }
+
+/* ほろ酔いの夜（二周目）の切り替え：昼は三日月（夜へ）、夜は太陽（昼へ）。11/08 ユーザー選択 月2・太陽2 */
+.home-stage .h15-night .h15-sun-p { display: none; }
+.home-stage .h15-night.is-night .h15-sun-p { display: block; }
+.home-stage .h15-night.is-night .h15-moon-p { display: none; }
+/* 勝率の封のほろ酔い版：読めない */
+.v2-seal-closed.is-drunk { cursor: default; }
+.v2-seal-closed.is-drunk .v2-seal-q { filter: blur(1.2px); }
