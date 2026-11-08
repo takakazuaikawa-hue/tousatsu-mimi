@@ -21034,3 +21034,7 @@ html.is-compact .sh3-face.is-scene .sh3-count { display: none; }
 html.is-compact .home-stage.h15-sm .h15-goal { right: calc(450px + var(--sx, 0px)); top: 16px; height: 94px; padding: 0 22px; font-size: 30px; gap: 2px; }
 .home-stage button.h15-goal { background: linear-gradient(180deg, rgba(58,10,16,.92), rgba(20,4,8,.92)); border: 1px solid rgba(214,176,104,.75); box-shadow: 0 2px 10px rgba(0,0,0,.55); text-shadow: 0 1px 2px #000; }
 .home-stage button.h15-goal.is-ready { border-color: #efcd82; box-shadow: 0 0 16px rgba(239,205,130,.5), 0 2px 10px rgba(0,0,0,.55); }
+
+/* ---- ほろ酔いの夜のホーム（2026-11-08）：夜の版の絵 ---- */
+.home-stage.is-night .h15-bg { background-image: url('assets/ui/home/scene_night.webp'); }
+.home-stage.is-night.has-costume .h15-bg, .home-stage.is-night .h15-foreground { background-image: url('assets/ui/home/stage-empty_night.webp'); }

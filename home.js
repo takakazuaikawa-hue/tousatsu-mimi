@@ -214,6 +214,8 @@ function refreshHomeStatus() {
 
 // 制服は承認された頬杖の絵。ほかの衣装は人物なしの同じ劇場で、卓の奥に立つ。
 // decode 完了後に全層を一緒に切り替え、着替え中の二重表示・背景だけの瞬間を避ける。
+// ほろ酔いの夜に切り替えているか（ホームの切り替えボタン。エンディングを見るまでは常に一周目）
+function homeIsNight() { return !!(save && save.horoyoiMode) && (typeof isEndingUnlocked !== 'function' || isEndingUnlocked()); }
 async function applyHomeCostume() {
   const root = document.querySelector('.home-stage');
   if (!root) return;
@@ -222,16 +224,21 @@ async function applyHomeCostume() {
   const request = {};
   root._costumeRequest = request;
   const image = root.querySelector('.h15-costume');
-  const urls = uniform ? ['assets/ui/home/scene.webp'] : ['assets/ui/home/stage-empty.webp', `assets/characters/${outfit.file}`];
+  // ほろ酔いの夜（二周目）に切り替えている時は、夜の版の絵（2026-11-08 ユーザー「切り替え後のホーム画面背景も作って」）
+  const night = homeIsNight();
+  root.classList.toggle('is-night', night);
+  const SCENE = night ? 'assets/ui/home/scene_night.webp' : 'assets/ui/home/scene.webp';
+  const EMPTY = night ? 'assets/ui/home/stage-empty_night.webp' : 'assets/ui/home/stage-empty.webp';
+  const urls = uniform ? [SCENE] : [EMPTY, `assets/characters/${outfit.file}`];
   try {
     if (!urls.every(src => window.MimiAssets?.isReady(src))) {
       await Promise.all(urls.map(src => { const im = new Image(); im.src = src; return im.decode(); }));
     }
     if (!root.isConnected || root._costumeRequest !== request) return;
-    image.src = uniform ? 'assets/ui/home/scene.webp' : urls[1];
+    image.src = uniform ? SCENE : urls[1];
     root.classList.toggle('has-costume', !uniform);
     // 制服の時は、リコ先輩を Live2D 風に動かす層を重ねる（home-live.js）。ほかの衣装の時は止める
-    if (window.HomeLive) { if (uniform) window.HomeLive.start(root.querySelector('.h15-bg'), 'assets/ui/home/scene.webp'); else window.HomeLive.stop(); }
+    if (window.HomeLive) { if (uniform) window.HomeLive.start(root.querySelector('.h15-bg'), SCENE); else window.HomeLive.stop(); }
     setWrapLine(root.querySelector('.h15-dialogue'), uniform ? lobbyRicoLine() : outfit.lines[Math.floor(rand() * outfit.lines.length)]);
   } catch {
     if (!root.isConnected || root._costumeRequest !== request) return;

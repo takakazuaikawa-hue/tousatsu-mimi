@@ -20,7 +20,11 @@
     ear: [690, 220], earBox: [470, 0, 860, 260],   // うさ耳の付け根と範囲
     hairL: [300, 360, 560, 730], hairR: [940, 380, 1120, 730],   // 左右に垂れる髪
   };
-  const VS = `
+  // 夜のホーム（ほろ酔いの夜、2026-11-08）はリコ先輩の位置と手が違う（右手にグラス）。絵ごとに座標を持つ
+  const RS = {
+    'assets/ui/home/scene_night.webp': { rail: 760, body: [640, 585, 300, 230], neck: [600, 440], head: [585, 300, 230, 220], ear: [560, 120], earBox: [380, 0, 800, 230], hairL: [250, 390, 470, 740], hairR: [830, 460, 910, 740] },
+  };
+  const VSof = (R) => `
     attribute vec2 aUV; attribute float aW; uniform vec2 uView; uniform vec4 uPlace; uniform float uT;
     varying vec2 vUV;
     const vec2 IMG = vec2(${IW}.0, ${IH}.0);
@@ -119,7 +123,7 @@
     if (!gl) return;
     const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
     let prog;
-    try { prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw 0; } catch (e) { return; }
+    try { prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VSof(RS[src] || R))); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw 0; } catch (e) { return; }
     gl.useProgram(prog);
     // 網目：リコ先輩のまわりは細かく、ほかは粗く（頂点数を抑える）
     const xs = [], ys = [];
