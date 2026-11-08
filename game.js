@@ -760,6 +760,8 @@ const CG_SETS = {
   cgset_yshirt:   { name: '夜のYシャツ',      n: 7, key: 'yshirt', short: 'Yシャツ' },
   cgset_midnight: { name: '零時の寝台と卓',   n: 5, key: 'midnight', short: '寝台と卓' },
   cgset_rival:    { name: 'ライバルと卓で',   n: 3, key: 'rival', short: 'ライバル' },
+  // ほろ酔いの夜の一枚絵で、採用した絵と構図が似ていた別カット（11/09 ユーザー「採用版以外はCG集に。出来はいい」）
+  cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 6, key: 'horoyoi', short: 'ほろ酔い' },
 };
 const cgSetSrc = (id, k) => `assets/backgrounds/cgset/${CG_SETS[id].key}_${k}.jpg`;
 const cgSetThumb = (id, k) => `assets/backgrounds/cgset/thumb/${CG_SETS[id].key}_${k}.webp`;
@@ -960,11 +962,15 @@ const OPPONENT_EXPRESSIONS = {
 
 // mood: 'default' | 'pressure'（大ベット/強気）| 'rattled'（ブラフ露呈/劣勢）
 //       | 'pleased'（勝ち/余裕）| 'defeat'（敗北）
+// ほろ酔いの夜の立ち絵（<key>_drunk_stand.webp）。絵が届いた人だけここに足す（無い人は昼の立ち絵のまま。404 を出さない）
+const HOROYOI_STAND = new Set([]);
+function oppStandSrc(key) { return (state && state.horoyoi && HOROYOI_STAND.has(key)) ? `assets/characters/${key}_drunk_stand.webp` : `assets/characters/${key}_default.webp`; }
 function setOpponentExpression(mood) {
   if (state) state.opponentExpr = mood || 'default';
   const key = state && state.opponentImgKey;
   if (!key) return;
-  const map = OPPONENT_EXPRESSIONS[key] || {};
+  // ほろ酔いの夜で酔った立ち絵がある人は、昼の表情差分に替えない（昼の絵が混ざるため）
+  const map = (state.horoyoi && HOROYOI_STAND.has(key)) ? {} : (OPPONENT_EXPRESSIONS[key] || {});
   const expr = (mood && mood !== 'default') ? map[mood] : null;
   // 相手が写る全要素：バトル左パネル・心理モーダルのポートレート/セリフ顔
   const targets = document.querySelectorAll('[data-bind="opponentImg"], [data-opp-face]');
@@ -973,7 +979,7 @@ function setOpponentExpression(mood) {
   targets.forEach(img => {
     const goDefault = () => {
       img.onerror = () => { img.onerror = null; window.assetFallback(img, key); };
-      img.src = `assets/characters/${key}_default.webp`;
+      img.src = oppStandSrc(key);
     };
     if (!expr) { goDefault(); return; }
     img.onerror = goDefault; // 差分ファイルが無ければ default へ
@@ -3683,7 +3689,7 @@ function applyBindings() {
         break;
       case 'opponentImg':
         el.onerror = function() { window.assetFallback(this, state.opponentImgKey); };
-        el.src = `assets/characters/${state.opponentImgKey}_default.webp`;
+        el.src = oppStandSrc(state.opponentImgKey);
         // 現在の表情ムードがあれば再適用（render後も表情を維持）
         if (state.opponentExpr && state.opponentExpr !== 'default') {
           setTimeout(() => setOpponentExpression(state.opponentExpr), 0);
@@ -4504,12 +4510,13 @@ function showIntermission(opponentId, onDone, voiceReady) {
     // 顔窓は小さい丸なので、全身絵ではなく顔クロップ（assets/ui/face_*）を使う
     // portrait：会話の場面（エンディングと同じ見せ方）で中央に大きく出す立ち絵
     if (speaker === 'mimi') return { name: 'ミミ', img: 'assets/ui/face_mimi.webp', portrait: 'assets/characters/mimi_intermission.webp', side: 'mimi' };
-    if (speaker === 'rico') return { name: 'リコ先輩', img: 'assets/ui/face_rico.webp', portrait: 'assets/characters/rico_default.webp', side: 'rico' };
+    if (speaker === 'rico') return { name: 'リコ先輩', img: 'assets/ui/face_rico.webp', portrait: (String(opponentId).startsWith('h_') && HOROYOI_STAND.has('rico')) ? 'assets/characters/rico_drunk_stand.webp' : 'assets/characters/rico_default.webp', side: 'rico' };
     const o = OPPONENTS[speaker];
     const key = (o && o.imgKey) || speaker;
     // PC は大きく映すので、大きい版（縦2000px）があればそれを使う（2026-11-01 8回目の批評：667×1000 を約1.5倍に引き伸ばして顔がぼけた）
-    const lo = `assets/characters/${key}_default.webp`;
-    const hd = IMS_HD_KEYS.has(key) && !document.documentElement.classList.contains('is-compact');
+    const night = String(opponentId).startsWith('h_') && HOROYOI_STAND.has(key);   // ほろ酔いの夜の幕間は酔った立ち絵
+    const lo = night ? `assets/characters/${key}_drunk_stand.webp` : `assets/characters/${key}_default.webp`;
+    const hd = !night && IMS_HD_KEYS.has(key) && !document.documentElement.classList.contains('is-compact');
     return { name: o ? o.name : oppName, img: `assets/ui/face_${key}.webp`, portrait: hd ? `assets/characters/hd/${key}_default.webp` : lo, lo, side: 'opp' };
   }
   // 立ち絵は会話の前に読んでおく（出てから描かれると興ざめ）
@@ -5368,7 +5375,8 @@ function applyOpponentIdle() {
   if (!slot) return;
   const mood = state.opponentExpr;
   frame.classList.toggle('is-expr', !!(mood && mood !== 'default' && (OPPONENT_EXPRESSIONS[state.opponentImgKey] || {})[mood]));
-  const src = IDLE_MOTION.includes(state.opponentId) ? `assets/motion/idle_${state.opponentId}.mp4` : null;
+  // ほろ酔いの夜で酔った立ち絵がある人は、昼の立ち絵の待機動画を流さない（古い絵の動画が重なる）
+  const src = (IDLE_MOTION.includes(state.opponentId) && !(state.horoyoi && HOROYOI_STAND.has(state.opponentImgKey))) ? `assets/motion/idle_${state.opponentId}.mp4` : null;
   if (!src || !idleMotionOk() || __idleFailed.has(src)) { slot.remove(); return; }
   const local = motionLocalSrc(src);
   if (!local) return; // まだ届いていない：空の枠（見えない）のまま。届いたら battleAssetsGate の読み込み係が呼び直す
@@ -5889,6 +5897,7 @@ const SHOP_ITEMS = [
   { id: 'cgset_yshirt',   cat: 'cgset', name: 'CG集「夜のYシャツ」',     price: 100, desc: '月の見える寝室で、|Yシャツ一枚のミミ。|7枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_midnight', cat: 'cgset', name: 'CG集「零時の寝台と卓」', price: 100, desc: 'バニーと水着で、|寝台と卓に|身を預けるミミ。|5枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_rival',    cat: 'cgset', name: 'CG集「ライバルと卓で」', price: 100, desc: 'ポルカ・ヴェルベットと|ミミの、|幻の一枚たち。|3枚入り。|コレクションで|いつでも見られる' },
+  { id: 'cgset_horoyoi',  cat: 'cgset', name: 'CG集「ほろ酔いの別カット」', price: 100, desc: 'ほろ酔いの夜の、|もうひとつの|一枚たち。|6枚入り。|コレクションで|いつでも見られる' },
   { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 300,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
   { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 350, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。撃破の報酬', requires: 'ending' },
   // 音声は無い。旧「ボイス集」（900）を実態どおりの「セリフ集」に改め値下げ。買った人の所持はそのまま
@@ -5987,6 +5996,7 @@ const SHOP_COMMENTS = {
   cgset_bath:            '湯上がりの一冊。|湯気で曇る前に、|お早めにどうぞ',
   cgset_yshirt:          'Yシャツ一枚の夜……|どなたのシャツかは、|聞かぬが花です',
   cgset_midnight:        '零時を過ぎた|卓と寝台。|これは閉店後の|品でしてな',
+  cgset_horoyoi:         'ほろ酔いの夜の|別カットですぞ。|酔った皆さんは、|実に無防備で',
   cgset_rival:           '表に出せなかった|幻の一枚。|ポルカさんには|内緒ですよ',
   omake_drama_1:         'リコさんがこの店に来た最初の日……短いお話、お楽しみあれ',
   omake_drama_2:         '決戦直前の小話。これはクリアされた方にだけ、お聞かせできる品です',
@@ -6165,6 +6175,7 @@ const SHOP_UNLOCK = {
   cgset_yshirt:          'selina',
   cgset_midnight:        'grano',
   cgset_rival:           'velvet',
+  cgset_horoyoi:         'h:polka',   // ほろ酔いの夜でポルカに勝つと入荷
   memory_minipoker:      'selina',  // セリナ撃破で「ふんわり息抜き」枠を入荷
 
   // ── グラーノ撃破で入荷 ──
@@ -6204,6 +6215,7 @@ const SHOP_UNLOCK = {
 function isShopItemUnlocked(itemId) {
   const stage = SHOP_UNLOCK[itemId] || 'always';
   if (stage === 'always') return true;
+  if (stage.startsWith('h:')) return typeof horoyoiCleared === 'function' && horoyoiCleared(stage.slice(2));   // ほろ酔いの夜の勝ちで入荷
   return save.clearedStages && save.clearedStages.includes(stage);
 }
 
@@ -6419,6 +6431,7 @@ function shop3Kicker(item) {
 function shop3UnlockWho(item) {
   const st = SHOP_UNLOCK[item.id];
   if (!st || st === 'always') return '';
+  if (st.startsWith('h:')) return 'ほろ酔いの' + ((OPPONENTS[st.slice(2)] || {}).name || '');
   return st === 'rico_tutorial' ? 'リコ先輩' : ((OPPONENTS[st] && OPPONENTS[st].name) || '');
 }
 function shop3Face(item, art) {
