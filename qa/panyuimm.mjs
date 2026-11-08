@@ -34,6 +34,13 @@ await sleep(300);
 await page.eval(`(()=>{const w=[...document.querySelectorAll('iframe.pzi-mesh')][0].contentWindow;w.__pad.buttons[15]={pressed:false,value:0};return 1})()`);
 await sleep(5000); await shot('6_next');
 console.log('next', await page.eval(`JSON.stringify([...document.querySelectorAll('iframe.pzi-mesh')].map(f=>f.getAttribute('src').replace(/.*\?/,'')))`));
+// 5b) 寄り・引き（＋−）
+const zv = () => page.eval(`(()=>{const f=[...document.querySelectorAll('iframe.pzi-mesh')].pop();const v=f.contentWindow.__panyuDbg.view();return JSON.stringify({s:+v.s.toFixed(3),ox:Math.round(v.ox),oy:Math.round(v.oy),inDis:document.querySelector('.pzi-zbtn.is-in').disabled,outDis:document.querySelector('.pzi-zbtn.is-out').disabled})})()`);
+console.log('zoom0', await zv());
+for (let k = 0; k < 4; k++) { await page.eval(`document.querySelector('.pzi-zbtn.is-out').click()`); await sleep(120); }
+await sleep(900); await shot('5b_zoomout'); console.log('zoomOut', await zv());
+for (let k = 0; k < 9; k++) { await page.eval(`document.querySelector('.pzi-zbtn.is-in').click()`); await sleep(120); }
+await sleep(900); await shot('5c_zoomin'); console.log('zoomIn', await zv());
 // 6) ×で抜ける
 await page.eval(`document.querySelector('.pzi-x').click()`); await sleep(600);
 console.log('closed', await page.eval(`!document.querySelector('.pzi')`));

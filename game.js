@@ -738,6 +738,18 @@ const SECRET_CG = {
   cg_selina_salon:    { src: 'assets/backgrounds/secret_cg_selina_salon.jpg', motion: 'assets/motion/cg_selina.mp4' },
   cg_selina_fireside: { src: 'assets/backgrounds/secret_cg_selina_fireside.jpg' },
 };
+// CG集（2026-11-08 D17 ユーザー「一枚絵はセットにして交換所で変えるようにしましょう。コイン交換で、コレクションに載って、いつでも見られるように」）。
+// ぱにゅぱにゅ用に描いて構図に使わなかった絵・没になったご褒美の案を、場所ごとのセットに。1セット100コイン（ユーザー決定）。
+// 絵は assets/backgrounds/cgset/<名>.jpg（1600x900）、見本は thumb/<名>.webp（480x270）。作り方 qa/cgconvert.mjs
+const CG_SETS = {
+  cgset_bath:     { name: '湯上がり',         n: 8, key: 'bath' },
+  cgset_morning:  { name: '朝と夕暮れ',       n: 4, key: 'morning', short: '朝と夕' },
+  cgset_yshirt:   { name: '夜のYシャツ',      n: 7, key: 'yshirt', short: 'Yシャツ' },
+  cgset_midnight: { name: '零時の寝台と卓',   n: 5, key: 'midnight', short: '寝台と卓' },
+  cgset_rival:    { name: 'ライバルと卓で',   n: 3, key: 'rival', short: 'ライバル' },
+};
+const cgSetSrc = (id, k) => `assets/backgrounds/cgset/${CG_SETS[id].key}_${k}.jpg`;
+const cgSetThumb = (id, k) => `assets/backgrounds/cgset/thumb/${CG_SETS[id].key}_${k}.webp`;
 function attachLiveCg(img) {
   if (!MOTION_OK || !window.LiveCG || !img) return;
   if (img.complete && img.naturalWidth) window.LiveCG.attach(img); else img.addEventListener('load', () => window.LiveCG.attach(img), { once: true });
@@ -745,6 +757,7 @@ function attachLiveCg(img) {
 function rewardCgList(id) {
   if (id === 'graduation') return [{ src: GRADUATION_CG }];
   if (SECRET_CG[id]) return [SECRET_CG[id]];
+  if (CG_SETS[id]) return Array.from({ length: CG_SETS[id].n }, (_, k) => ({ src: cgSetSrc(id, k + 1) }));
   const first = { src: (INTERMISSIONS[id] && INTERMISSIONS[id].cg) || `assets/backgrounds/reward_cg_${id}.jpg`, motion: MOTION_CG.includes(id) ? `assets/motion/cg_${id}.mp4` : '' };
   return [first, ...(REWARD_CG_MORE[id] || []).map(src => ({ src }))];
 }
@@ -4462,7 +4475,7 @@ function showGraduationScene(onDone) {
 
 // コレクションの「ご褒美CG」サムネイルから開く全画面ビューア。タップで閉じる。
 function showRewardCgViewer(id) {
-  const opp = id === 'graduation' ? { name: '卒業' } : (OPPONENTS[id] || {});
+  const opp = id === 'graduation' ? { name: '卒業' } : CG_SETS[id] ? { name: CG_SETS[id].name } : (OPPONENTS[id] || {});
   const list = rewardCgList(id);
   let at = 0;
   const overlay = document.createElement('div');
@@ -4472,6 +4485,7 @@ function showRewardCgViewer(id) {
       <img class="reward-cg-viewer-img" alt="${opp.name || ''}">
       <div class="reward-cg-viewer-hint"></div>
     </div>
+    ${list.length > 2 ? '<button type="button" class="reward-cg-viewer-x" aria-label="閉じる">×</button>' : ''}
   `;
   const body = overlay.querySelector('.reward-cg-viewer-body'), img = overlay.querySelector('img'), hint = overlay.querySelector('.reward-cg-viewer-hint');
   const show = () => {
@@ -4483,12 +4497,23 @@ function showRewardCgViewer(id) {
     img.src = c.src;
     attachLiveCg(img);
     if (c.motion) { img.dataset.motion = c.motion; img.dataset.motionReplay = '1'; attachMotion(img); }
-    hint.textContent = list.length > 1 ? (at < list.length - 1 ? `${at + 1} / ${list.length}　タップで次の一枚` : `${at + 1} / ${list.length}　タップして閉じる`) : 'タップして閉じる';
+    // 枚数の多い綴り（CG集）は、左の3割で前へ・それ以外で次へ。次の一枚は先に読んでおく（遅れて描かれないように）
+    hint.textContent = list.length > 2 ? `${at + 1} / ${list.length}　${at > 0 ? '左で前・' : ''}${at < list.length - 1 ? '右で次' : 'タップして閉じる'}`
+      : list.length > 1 ? (at < list.length - 1 ? `${at + 1} / ${list.length}　タップで次の一枚` : `${at + 1} / ${list.length}　タップして閉じる`) : 'タップして閉じる';
+    if (list[at + 1]) { const pre = new Image(); pre.src = list[at + 1].src; }
   };
   show();
   const stage = document.getElementById('stage');
   (stage || document.body).appendChild(overlay);
-  overlay.addEventListener('click', () => { if (at < list.length - 1) { at++; show(); } else overlay.remove(); });
+  const close = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
+  const step = (d) => { const n = at + d; if (n < 0) return; if (n >= list.length) { close(); return; } at = n; show(); };
+  const onKey = (e) => { if (e.key === 'Escape') close(); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') step(1); else return; e.preventDefault(); };
+  document.addEventListener('keydown', onKey);
+  overlay.addEventListener('click', (e) => {
+    if (e.target.closest('.reward-cg-viewer-x')) { close(); return; }
+    const r = overlay.getBoundingClientRect();
+    if (list.length > 2 && at > 0 && e.clientX < r.left + r.width * 0.3) step(-1); else step(1);
+  });
 }
 
 //=============================================================
@@ -5606,6 +5631,11 @@ const SHOP_ITEMS = [
   { id: 'gallery_mimi',          cat: 'memory', name: 'ミミ百態',            price: 500,  desc: 'ミミの表情メモと、ぱにゅぱにゅの裏話を読める' },
   { id: 'cg_selina_salon',       cat: 'memory', name: 'VIPサロンの二人',     price: 800,  desc: 'セリナとミミ、VIPサロンでの一枚。|手に入れると|コレクションで|いつでも見られる' },
   { id: 'cg_selina_fireside',    cat: 'memory', name: '暖炉のセリナ',        price: 1000, desc: '眼鏡を外したセリナの、|暖炉の部屋での一枚。|手に入れると|コレクションで|いつでも見られる' },
+  { id: 'cgset_morning',  cat: 'cgset', name: 'CG集「朝と夕暮れ」',     price: 100, desc: '朝の寝室のTシャツと、|夕暮れのジム。|4枚入り。|コレクションで|いつでも見られる' },
+  { id: 'cgset_bath',     cat: 'cgset', name: 'CG集「湯上がり」',       price: 100, desc: '湯気の残る浴室で、|肌着のミミ。|8枚入り。|コレクションで|いつでも見られる' },
+  { id: 'cgset_yshirt',   cat: 'cgset', name: 'CG集「夜のYシャツ」',     price: 100, desc: '月の見える寝室で、|Yシャツ一枚のミミ。|7枚入り。|コレクションで|いつでも見られる' },
+  { id: 'cgset_midnight', cat: 'cgset', name: 'CG集「零時の寝台と卓」', price: 100, desc: 'バニーと水着で、|寝台と卓に|身を預けるミミ。|5枚入り。|コレクションで|いつでも見られる' },
+  { id: 'cgset_rival',    cat: 'cgset', name: 'CG集「ライバルと卓で」', price: 100, desc: 'ポルカ・ヴェルベットと|ミミの、|幻の一枚たち。|3枚入り。|コレクションで|いつでも見られる' },
   { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 600,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
   { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 700, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。撃破の報酬', requires: 'ending' },
   // 音声は無い。旧「ボイス集」（900）を実態どおりの「セリフ集」に改め値下げ。買った人の所持はそのまま
@@ -5700,6 +5730,11 @@ const SHOP_COMMENTS = {
   gallery_mimi:          'ミミちゃんの表情メモ。読んでいるだけで顔がゆるみますよ',
   cg_selina_salon:       'セリナ様と|ミミちゃんの一枚。|眼鏡の奥の目が、|ずいぶん柔らかいでしょう',
   cg_selina_fireside:    '暖炉の前で|眼鏡を外した|セリナ様……|門外不出の一枚ですよ',
+  cgset_morning:         '寝ぼけまなこの|ミミちゃん。|朝の光は|正直ですな',
+  cgset_bath:            '湯上がりの一冊。|湯気で曇る前に、|お早めにどうぞ',
+  cgset_yshirt:          'Yシャツ一枚の夜……|どなたのシャツかは、|聞かぬが花です',
+  cgset_midnight:        '零時を過ぎた|卓と寝台。|これは閉店後の|品でしてな',
+  cgset_rival:           '表に出せなかった|幻の一枚。|ポルカさんには|内緒ですよ',
   omake_drama_1:         'リコさんがこの店に来た最初の日……短いお話、お楽しみあれ',
   omake_drama_2:         '決戦直前の小話。これはクリアされた方にだけ、お聞かせできる品です',
   omake_voice_pack:      'リコさんの口癖を書き留めた一冊。押せば、あの声がそのまま聞こえますぞ',
@@ -5871,6 +5906,12 @@ const SHOP_UNLOCK = {
   omake_drama_1:         'selina',
   cg_selina_salon:       'selina',
   cg_selina_fireside:    'selina',
+  // CG集：撃破のたびに1セットずつ入荷（朝と夕暮れは最初から）
+  cgset_morning:         'always',
+  cgset_bath:            'polka',
+  cgset_yshirt:          'selina',
+  cgset_midnight:        'grano',
+  cgset_rival:           'velvet',
   memory_minipoker:      'selina',  // セリナ撃破で「ふんわり息抜き」枠を入荷
 
   // ── グラーノ撃破で入荷 ──
@@ -5956,6 +5997,7 @@ function memoryItemAction(itemId) {
   if (itemId === 'memory_minipoker')    return { action: 'play-minipoker',    label: '遊ぶ' };
   if (itemId === 'omake_credit')        return { action: 'play-credits',      label: '再生' };
   if (SECRET_CG[itemId])                return { action: 'view-secret-cg',    label: '観る' };
+  if (CG_SETS[itemId])                  return { action: 'view-secret-cg',    label: '観る' };
   if (MEMORY_CONTENT[itemId])           return { action: 'view-memory',       label: '読む' };
   return null;
 }
@@ -6044,6 +6086,7 @@ const SHOP3_GROUPS = [
   { id: 'note',   label: 'ノート',   match: i => i.cat === 'note' },
   { id: 'stack',  label: 'チップ',   match: i => i.cat === 'stack' },
   { id: 'memory', label: 'メモリ',   match: i => i.cat === 'memory' },
+  { id: 'cgset',  label: 'CG集',     match: i => i.cat === 'cgset' },
 ];
 // 卓の装いの見本の色（カード裏・卓・チップの見た目の CSS と同じ色）
 const SHOP3_SWATCH = {
@@ -6076,6 +6119,7 @@ const SHOP3_SHELF_LINE = {
   note: '知識は一番安くて、一番高くつく品です',
   stack: 'チップは多いほど、長く遊べますからな',
   memory: '思い出は、見届けた方のものですよ',
+  cgset: '一枚絵の綴りでございます。どれも、ここでしか手に入りませんよ',
 };
 function shop3GroupOf(item) { return (SHOP3_GROUPS.find(g => g.match(item)) || SHOP3_GROUPS[0]).id; }
 function shop3Items(gid) { const g = SHOP3_GROUPS.find(x => x.id === gid) || SHOP3_GROUPS[0]; return SHOP_ITEMS.filter(g.match); }
@@ -6086,6 +6130,7 @@ function shop3Art(item) {
   m = id.match(/^mimi_skin_(.+)$/);        if (m) return { type: 'figure', src: `assets/characters/mimi_${m[1]}.webp` };
   m = id.match(/^pwear_(.+)$/);            if (m && PANYU_OUTFIT_IMG[m[1]]) return { type: 'scene', src: `assets/characters/${PANYU_OUTFIT_IMG[m[1]]}.webp` };
   if (SECRET_CG[id]) return { type: 'scene', src: SECRET_CG[id].src };
+  if (CG_SETS[id]) return { type: 'scene', src: cgSetThumb(id, 1), big: CG_SETS[id].n + '枚' };
   let big = '';
   const obj = SHOP3_OBJ[id] || SHOP3_OBJ[id.replace(/_(lv\d|plus_\d+)$/, '')];
   if ((m = id.match(/^chips_plus_(\d+)$/))) return { type: 'stack', big: '+' + Number(m[1]).toLocaleString(), piles: ({ 500: 1, 1500: 2, 3000: 3, 5000: 4, 10000: 5 })[m[1]] || 1 };
@@ -6096,6 +6141,7 @@ function shop3Art(item) {
   return { type: 'emblem', big, swatch: SHOP3_SWATCH[id] || '', cat: item.cat };
 }
 function shop3CardName(item) {
+  if (CG_SETS[item.id]) return CG_SETS[item.id].short || CG_SETS[item.id].name;
   if (/^chips_plus_/.test(item.id)) return '持ち込み';
   const q = item.name.match(/「(.+?)」/); if (q) return q[1];
   if (/^memory_ending_theme$/.test(item.id)) return '主題歌';
@@ -6113,6 +6159,7 @@ function shop3Kicker(item) {
   if (/^mimi_skin_/.test(item.id))   return 'ミミの衣装';
   if (/^pwear_/.test(item.id))       return 'ぱにゅぱにゅの衣装';
   if (SECRET_CG[item.id])            return '秘蔵の一枚';
+  if (CG_SETS[item.id])              return `CG集・${CG_SETS[item.id].n}枚入り`;
   return (SHOP3_GROUPS.find(g => g.id === shop3GroupOf(item)) || {}).label || '';
 }
 // まだ入荷していない品：誰に勝つと入るか
@@ -6123,7 +6170,7 @@ function shop3UnlockWho(item) {
 }
 function shop3Face(item, art) {
   if (art.type === 'figure') return `<span class="sh3-face is-figure" style="background-image:url('${art.src}')"></span>`;
-  if (art.type === 'scene')  return `<span class="sh3-face is-scene" style="background-image:url('${art.src}')"></span>`;
+  if (art.type === 'scene')  return `<span class="sh3-face is-scene" style="background-image:url('${art.src}')">${art.big ? `<em class="sh3-count">${art.big}</em>` : ''}</span>`;
   if (art.type === 'stack') {
     const chips = ['chip_red', 'chip_gold', 'chip_white', 'chip_blue', 'chip_gold'];
     const piles = Array.from({ length: art.piles }, (_, p) => `<i class="sh3-pile" style="--p:${p};--h:${4 + ((p * 3) % 4)}">${Array.from({ length: 4 + ((p * 3) % 4) }, (_, k) => `<b style="--k:${k};background-image:url('assets/ui/${chips[p]}.webp')"></b>`).join('')}</i>`).join('');
@@ -6213,6 +6260,7 @@ function shop3RenderStage(item) {
   if (!item) { model.innerHTML = ''; info.innerHTML = '<p class="sh3-desc">この棚は、まだ空でしてな。対戦に勝つと品が入ります。</p>'; buy.innerHTML = ''; return; }
   const art = shop3Art(item);
   const inner = art.type === 'figure' ? `<img class="sh3-fig" src="${art.src}" alt="">`
+    : CG_SETS[item.id] ? `<span class="sh3-frame"><img src="${cgSetSrc(item.id, 1)}" alt=""></span><span class="sh3-strip" aria-hidden="true">${Array.from({ length: CG_SETS[item.id].n }, (_, k) => `<i style="background-image:url('${cgSetThumb(item.id, k + 1)}')"></i>`).join('')}</span>`
     : art.type === 'scene' ? `<span class="sh3-frame"><img src="${art.src}" alt=""></span>`
     : `<span class="sh3-bigcard">${shop3Face(item, art)}</span>`;
   model.className = 'sh3-model is-' + art.type + (/_card$/.test(item.id) ? ' is-cardback' : '');
@@ -8716,7 +8764,7 @@ function onAction(e) {
     case 'show-credits': showCreditsPanel(); break;
     case 'view-secret-cg': {
       const sid = e.currentTarget?.dataset?.memoryId;
-      if (sid && SECRET_CG[sid]) showRewardCgViewer(sid);
+      if (sid && (SECRET_CG[sid] || CG_SETS[sid]) && isItemOwned(sid)) showRewardCgViewer(sid);
       break;
     }
     case 'view-reward-cg': {
@@ -13319,7 +13367,7 @@ function showCollectionModal() {
     itemsByCat[i.cat].push({ ...i, owned: ownedItems.includes(i.id), stocked: isShopItemUnlocked(i.id) });
   });
   // 「戦術ノート」の欄は下にもう一つあるので、交換所の品のほうは「（交換所）」を付けて区別する
-  const catLabels = { panyu: 'ぱにゅ強化', note: '戦術ノート（交換所）', skin: '見た目', memory: 'メモリ', stack: 'チップ拡張' };
+  const catLabels = { panyu: 'ぱにゅ強化', note: '戦術ノート（交換所）', skin: '見た目', memory: 'メモリ', stack: 'チップ拡張', cgset: 'CG集' };
 
   // 分子も TACTIC_NOTES にあるノートだけを数える（未知のIDで 6/5 のように総数を超えないように）
   const notesCount = Object.keys(TACTIC_NOTES).filter(id => (save.unlockedNotes || []).includes(id)).length;
@@ -13394,6 +13442,14 @@ function showCollectionModal() {
     return `<button class="coll-cg-card on is-secret" data-action="view-secret-cg" data-memory-id="${id}" title="${meta.name}を見る">
         <img src="${SECRET_CG[id].src}" alt="${meta.name}"><span class="coll-cg-tag">秘蔵</span><div class="coll-cg-label">${meta.name}</div></button>`;
   }).join('');
+  // CG集：持っているセットは表紙と枚数、入荷済みで持っていないセットは「交換所で」の鍵の札（未入荷は出さない）
+  const cgSetHtml = Object.keys(CG_SETS).filter(id => isItemOwned(id) || isShopItemUnlocked(id)).map(id => {
+    const c = CG_SETS[id];
+    if (isItemOwned(id)) return `<button class="coll-cg-card on is-set" data-action="view-secret-cg" data-memory-id="${id}" title="CG集「${c.name}」を見る">
+        <img src="${cgSetThumb(id, 1)}" alt="${c.name}" loading="lazy"><span class="coll-cg-tag">CG集</span><div class="coll-cg-label">${c.name}<small class="coll-cg-more">${c.n}枚</small></div></button>`;
+    return `<div class="coll-cg-card off is-set" title="未入手"><div class="coll-cg-locked">${GOLD_LOCK}</div>
+        <div class="coll-cg-label"><small>「${c.name}」<wbr>交換所で入手</small></div></div>`;
+  }).join('');
   const rewardCgCount = stageOrder.filter(id => rewardCgSeen.includes(id)).length + (save.gradCgSeen ? 1 : 0);
 
   const achHtml = achievements.map(a => `
@@ -13449,6 +13505,10 @@ function showCollectionModal() {
           <h3 class="coll-section-title">ご褒美CG <span class="coll-section-count">${rewardCgCount}/${stageOrder.length + 1}</span></h3>
           <div class="coll-cgs">${rewardCgHtml}${rewardCgHtmlSecret}</div>
         </section>
+        ${cgSetHtml ? `<section class="coll-section">
+          <h3 class="coll-section-title">CG集 <span class="coll-section-count">${Object.keys(CG_SETS).filter(id => isItemOwned(id)).length}/${Object.keys(CG_SETS).length}</span></h3>
+          <div class="coll-cgs">${cgSetHtml}</div>
+        </section>` : ""}
         ${(() => {
           // 勝った後の会話も一枚絵の隣で読み返せるように（2026-11-02 14回目の批評：ホームの物語の台帳にしか入口が無かった）
           const ids = stageOrder.filter(id => INTERMISSIONS[id] && Array.isArray(save.rewardCgSeen) && save.rewardCgSeen.includes(id));
@@ -16740,7 +16800,7 @@ function applyPanyuBg(overlay) {
 // ぱにゅぱにゅ30タップミニゲーム
 // ぱにゅぱにゅの衣装（網目＋ばねの描画は docs/design-ref/panyu-mesh.html を埋め込んで使う）
 // 網目のページを直したら PANYU_MESH_V を上げる（ブラウザに残った古いページを使わせない）
-const PANYU_MESH_V = '20261108q';
+const PANYU_MESH_V = '20261108t';
 const PANYU_OUTFITS = [
   { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'gothic', name: 'ゴスロリ' }, { id: 'jirai', name: '地雷系' }, { id: 'vintage', name: '古着' }, { id: 'nurse', name: 'ナース' }, { id: 'santa', name: 'サンタ' },
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
@@ -16799,12 +16859,20 @@ function showPanyuImmersive() {
   applyPanyuBg(ov);
   ov.innerHTML = `<img class="panyu-bg-char" src="${imgOf(list[cur])}" alt="">
     <button type="button" class="pzi-x" aria-label="没入モードを抜ける"><i></i></button>
+    <div class="pzi-zoom"><button type="button" class="pzi-zbtn is-in" aria-label="寄る"><i>＋</i></button><button type="button" class="pzi-zbtn is-out" aria-label="引く"><i>−</i></button></div>
     ${list.length > 1 ? '<button type="button" class="pzi-edge is-prev" aria-label="前の衣装"><i></i></button><button type="button" class="pzi-edge is-next" aria-label="次の衣装"><i></i></button>' : ''}`;
   document.body.appendChild(ov);
   requestAnimationFrame(() => ov.classList.add('is-in'));
   let hintT = setTimeout(() => ov.classList.remove('is-hint'), 2600);   // 最初だけ少しはっきり見せて、あとは薄く
   const wake = () => { ov.classList.add('is-hint'); clearTimeout(hintT); hintT = setTimeout(() => ov.classList.remove('is-hint'), 1800); };
   let frame = null, touches = 0, stage = 0, lastSfx = 0;
+  // 寄りと引き（＋−・キーボードの + − ・ホイールは網目のページ側）。衣装を替えても同じ寄りのまま。
+  // 引きの下限は「絵の上下が切れない所」：画面が絵（16:9）より横長なら 1 より下まで引ける
+  const ZSTEP = 0.15, zLo = () => Math.max(0.6, Math.min(1, (innerWidth / innerHeight) > 16 / 9 ? (16 / 9) / (innerWidth / innerHeight) : 1)), zHi = 1.9;
+  let zoom = window.innerHeight < 500 ? 1 : 1.2;
+  const sendZoom = () => post({ panyuZoom: zoom, panyuZoomFree: 1 });
+  const zoomBy = (d) => { zoom = Math.max(zLo(), Math.min(zHi, +(zoom + d).toFixed(3))); sendZoom(); paintZoom(); wake(); };
+  const paintZoom = () => { const zi = ov.querySelector('.pzi-zbtn.is-in'), zo = ov.querySelector('.pzi-zbtn.is-out'); if (zi) zi.disabled = zoom >= zHi - 0.001; if (zo) zo.disabled = zoom <= zLo() + 0.001; };
   const post = (m) => { try { if (frame && frame.contentWindow) frame.contentWindow.postMessage(m, '*'); } catch (_) {} };
   const mount = () => {
     const v = list[cur], key = panyuVariantKey(v.id, v.pose);
@@ -16835,7 +16903,7 @@ function showPanyuImmersive() {
     if (m.t === 'ready') {
       ov.classList.add('is-mesh'); fr.classList.add('on');
       ov.querySelectorAll('iframe.pzi-mesh').forEach(f => { if (f !== fr) setTimeout(() => f.remove(), 320); });   // 前の衣装は、新しい絵が出てから消す（一瞬も空白にしない）
-      post({ panyuZoom: window.innerHeight < 500 ? 1 : 1.2 });
+      sendZoom(); paintZoom();
       return;
     }
     if (fr !== frame) return;
@@ -16853,7 +16921,7 @@ function showPanyuImmersive() {
     if (st > stage) { stage = st; post({ panyuStage: st }); post({ panyuJiggle: 'poyon' }); }
   };
   window.addEventListener('message', onMsg);
-  const onKey = (e) => { if (e.key === 'Escape') close(); else if (e.key === 'ArrowRight') go(1); else if (e.key === 'ArrowLeft') go(-1); };
+  const onKey = (e) => { if (e.key === 'Escape') close(); else if (e.key === 'ArrowRight') go(1); else if (e.key === 'ArrowLeft') go(-1); else if (e.key === '+' || e.key === '=' || e.key === ';') zoomBy(ZSTEP); else if (e.key === '-' || e.key === '_') zoomBy(-ZSTEP); };
   window.addEventListener('keydown', onKey);
   let closed = false;
   function close() {
@@ -16864,6 +16932,7 @@ function showPanyuImmersive() {
   }
   ov.querySelector('.pzi-x').addEventListener('click', (e) => { e.stopPropagation(); close(); });
   ov.querySelectorAll('.pzi-edge').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); go(b.classList.contains('is-next') ? 1 : -1); }));
+  ov.querySelectorAll('.pzi-zbtn').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); mpSfx('tap'); zoomBy(b.classList.contains('is-in') ? ZSTEP : -ZSTEP); }));
   mount();
 }
 

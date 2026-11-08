@@ -20994,3 +20994,26 @@ html.is-compact .trial-end-share-note { margin-top: 4px; line-height: 1.4; }
 .pv2 .pv2-imm { display: inline-flex; align-items: center; gap: 6px; min-height: max(36px, 6vmin); padding: 0 max(12px, 1.8vmin); border-radius: 2px; border: 1px solid rgba(240,213,149,.55); background: rgba(20,6,12,.55); color: #f6e3b4; font-family: "Noto Sans JP", sans-serif; font-weight: 700; letter-spacing: .1em; cursor: pointer; }
 .pv2 .pv2-imm i, .pv2 .pv2-res-imm i { font-style: normal; font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: 1.35em; line-height: 1; color: #f0d595; }
 .pv2 .pv2-res-imm { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: max(44px, 7vmin); border: 1px solid rgba(240,213,149,.6); border-radius: 2px; cursor: pointer; background: rgba(30,10,18,.7); color: #f6e3b4; font-family: "Noto Sans JP", sans-serif; font-weight: 700; letter-spacing: .02em; white-space: nowrap; padding: 0 6px; }
+
+/* ---- D17（2026-11-08）：CG集 ---- */
+/* 交換所の札：表紙の右下に枚数 */
+.sh3-face.is-scene { position: relative; }
+.sh3-face.is-scene .sh3-count { position: absolute; right: 4px; top: 4px; padding: 0 6px; font-style: normal; font-size: var(--ty-note, 14px); line-height: 1.5; color: #f2d79a; background: rgba(30,4,8,.86); border: 1px solid rgba(214,176,104,.7); border-radius: 2px; }
+/* コレクションの CG集の札（秘蔵と同じ金の縁） */
+.coll-cg-card.is-set { position: relative; box-shadow: inset 0 0 0 1px rgba(214,176,104,.55); }
+/* 見る画面の閉じる（枚数の多い綴りだけ） */
+.reward-cg-viewer-x { position: absolute; right: 12px; top: 12px; width: 48px; height: 48px; z-index: 3; font-size: 26px; line-height: 1; color: #f3ece0; background: rgba(12,6,8,.72); border: 1px solid rgba(214,176,104,.7); border-radius: 2px; cursor: pointer; }
+/* 交換所の大きな見本：表紙の下に中身の小さな列（何が入っているかを絵で見せる） */
+.shop-screen.v3 .sh3-model.is-scene .sh3-strip { position: absolute; left: 4px; top: 346px; width: 430px; display: flex; gap: 4px; }
+.shop-screen.v3 .sh3-model.is-scene .sh3-strip i { flex: 1 1 0; max-width: 84px; aspect-ratio: 16 / 9; background: #120a0b center / cover no-repeat; border: 1px solid rgba(214,176,104,.6); }
+html.is-compact .shop-screen.v3 .sh3-model.is-scene .sh3-strip { top: 316px; }
+
+/* ぱにゅぱにゅ没入モードの寄り・引き（11/08 ユーザー「＋と−で」）：右上の×の下に縦に2つ。ほかの部品と同じく、触らない間は薄く */
+.pzi .pzi-zoom { position: absolute; z-index: 5; right: max(10px, env(safe-area-inset-right)); top: calc(max(10px, env(safe-area-inset-top)) + 52px); display: flex; flex-direction: column; gap: 6px; opacity: .55; transition: opacity .4s ease; }
+.pzi.is-hint .pzi-zoom, .pzi .pzi-zoom:hover { opacity: 1; }
+.pzi .pzi-zbtn { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.pzi .pzi-zbtn i { position: absolute; inset: 5px; display: grid; place-items: center; border-radius: 3px; background: rgba(16,4,10,.62); border: 1px solid rgba(255,236,242,.35); color: #fff3f7; font: 700 22px/1 system-ui, sans-serif; font-style: normal; }
+.pzi .pzi-zbtn:disabled { cursor: default; }
+.pzi .pzi-zbtn:disabled i { opacity: .35; }
+/* スマホでは札が小さく枚数の字が読めないので出さない（大きな見本の見出しに「◯枚入り」がある） */
+html.is-compact .sh3-face.is-scene .sh3-count { display: none; }

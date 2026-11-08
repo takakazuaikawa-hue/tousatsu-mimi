@@ -784,6 +784,7 @@
     const s = Math.max(w / iw, h / ih) * opt.zoom;
     let ox = w / 2 - FOCUS[0] * s, oy = h * 0.56 - FOCUS[1] * s;
     ox = Math.min(0, Math.max(w - iw * s, ox)); oy = Math.min(0, Math.max(h - ih * s, oy));   // 絵の外を見せない
+    if (iw * s < w) ox = (w - iw * s) / 2; if (ih * s < h) oy = (h - ih * s) / 2;   // 引いて絵が画面より小さい時は真ん中に（没入モードの「−」）
     view = { w, h, dpr, s, ox, oy };
     gl.viewport(0, 0, cv.width, cv.height);
     gl.uniform2f(U('uImg'), iw, ih); gl.uniform2f(U('uView'), w, h); gl.uniform2f(U('uOff'), ox, oy); gl.uniform1f(U('uScale'), s);
@@ -1095,10 +1096,12 @@
 
   // ---- 寄り具合：ホイール／タッチパッドのピンチ／コントローラーの L・R／スマホの2本指。なめらかに追いつく ----
   const ZMIN = 1, ZMAX = 1.9;
+  // 本編から寄りを受けた時の下限：没入モードの「−」で絵の全体（上下の切れない所）まで引けるように（11/08 ユーザー「寄りと引きのボタン」）
+  let zMinMsg = 1;
   let zTarget = opt.zoom, zRaf = 0;
   const zoomBtns = [...document.querySelectorAll('[data-zoom]')];
-  function setZoom(z, instant) {
-    zTarget = Math.min(ZMAX, Math.max(ZMIN, z));
+  function setZoom(z, instant, lo) {
+    zTarget = Math.min(ZMAX, Math.max(lo != null ? lo : ZMIN, z));
     zoomBtns.forEach(b => b.classList.toggle('on', Math.abs(+b.dataset.zoom - zTarget) < 0.06));
     if (instant) { opt.zoom = zTarget; layout(); return; }
     if (!zRaf) zRaf = requestAnimationFrame(zoomLoop);
@@ -1177,7 +1180,7 @@
   stageEl.addEventListener('pointerup', tup, true); stageEl.addEventListener('pointercancel', tup, true);
 
   // 本編のメーターから寄り具合を受け取る（{panyuZoom: 倍率}）。今の倍率は ready の時に知らせる
-  addEventListener('message', (ev) => { const d = ev.data || {}; if (typeof d.panyuZoom === 'number') setZoom(Math.max(1, Math.min(1.7, d.panyuZoom)));
+  addEventListener('message', (ev) => { const d = ev.data || {}; if (typeof d.panyuZoom === 'number') setZoom(Math.max(d.panyuZoomFree ? 0.6 : 1, Math.min(d.panyuZoomFree ? ZMAX : 1.7, d.panyuZoom)), false, d.panyuZoomFree ? 0.6 : null);
     // 本編から：表情の段（0〜3）・驚き・留めの光
     if (typeof d.panyuStage === 'number') { blushFloor = [0, 0.22, 0.45, 0.72][d.panyuStage] || 0; kick(); }
     if (d.panyuSurprise) { surpT = performance.now(); kick(); }

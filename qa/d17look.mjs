@@ -1,0 +1,24 @@
+// D17 の調べ：クリア後のセーブで交換所（メモリの棚・秘蔵の一枚）とコレクション（ご褒美CG）を撮る。node qa/d17look.mjs [pc|phone]
+import { openSession, sleep } from './lib/session.mjs';
+const mode = process.argv[2] || 'pc';
+const size = { pc: [1280, 800], phone: [844, 390] }[mode];
+const session = await openSession({ width: size[0], height: size[1], mobile: mode !== 'pc', speed: 2 });
+const { page } = session;
+for (let i = 0; i < 60 && !(await page.eval('typeof render === "function" && typeof save === "object"').catch(() => false)); i++) await sleep(500);
+const ALL = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
+await page.eval(`(() => { save.coins = 9000; save.introPlayed = true; save.clearedStages = ${JSON.stringify(ALL)}; save.rewardCgSeen = ${JSON.stringify(ALL)}; save.episodesSeen = ${JSON.stringify(ALL)}; save.endingUnlocked = true; save.shopSeenItems = []; save.ownedItems = (save.ownedItems||[]).concat(['cg_selina_salon']); state.screen = 'shop'; render(); return 1; })()`);
+await sleep(6000);
+await page.screenshot(`qa/out/d17/${mode}_shop.png`);
+const cats = await page.eval(`[...document.querySelectorAll('[data-sh3-cat],[data-cat],.sh3-tab')].map(e => (e.dataset.sh3Cat||e.dataset.cat||'') + ':' + e.textContent.trim().slice(0,12)).join(' | ')`).catch(e => e.message);
+console.log(cats);
+await page.eval(`(() => { const c = document.querySelector('.sh3-card[data-sh3="cg_selina_fireside"]'); if (c) { c.scrollIntoView(); c.click(); } return 1; })()`);
+await sleep(1500);
+await page.screenshot(`qa/out/d17/${mode}_shop_cg.png`);
+await page.eval(`(() => { state.screen = 'lobby'; render(); showCollectionModal(); return 1; })()`);
+await sleep(2500);
+await page.screenshot(`qa/out/d17/${mode}_coll.png`);
+await page.eval(`(() => { const e = document.querySelector('.coll-cg-card'); if (e) e.scrollIntoView({block:'start'}); return 1; })()`);
+await sleep(800);
+await page.screenshot(`qa/out/d17/${mode}_coll_cg.png`);
+console.log('ok', JSON.stringify(session.exceptions).slice(0, 300));
+await session.close();
