@@ -21017,3 +21017,20 @@ html.is-compact .shop-screen.v3 .sh3-model.is-scene .sh3-strip { top: 316px; }
 .pzi .pzi-zbtn:disabled i { opacity: .35; }
 /* スマホでは札が小さく枚数の字が読めないので出さない（大きな見本の見出しに「◯枚入り」がある） */
 html.is-compact .sh3-face.is-scene .sh3-count { display: none; }
+
+/* ---- D20（2026-11-08）：交換所の次の目標 ---- */
+/* ホーム：右上の八角の並びの左に、金縁の札で2行（押すと交換所） */
+.h15-goal { position: absolute; right: 290px; top: 16px; height: 58px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; gap: 1px; padding: 0 14px;
+  border: 1px solid rgba(214,176,104,.6); border-radius: 2px; background: linear-gradient(180deg, rgba(40,8,12,.82), rgba(16,4,6,.82)); color: #f3ece0; font-size: 15px; line-height: 1.25; white-space: nowrap; cursor: pointer; }
+.h15-goal b { color: #efcd82; font-weight: 700; }
+.h15-goal.is-ready { border-color: #efcd82; box-shadow: 0 0 14px rgba(239,205,130,.45); }
+.home-stage.h15-sm .h15-goal { right: 440px; height: 94px; padding: 0 20px; font-size: 26px; }
+/* 勝った後：次の目標の下に1行 */
+.result-coin-goal { display: flex; align-items: center; gap: 10px; width: 100%; margin: 6px 0 0; padding: 6px 12px; border: 1px solid rgba(214,176,104,.45); border-radius: 2px; background: rgba(245,215,122,.06); color: rgba(247,238,207,.92); font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; }
+.result-coin-goal img { width: 56px; height: 32px; object-fit: cover; object-position: 50% 25%; border: 1px solid rgba(214,176,104,.5); flex: none; }
+.result-coin-goal b { color: var(--c-gold-bright, #f5d77a); }
+.result-coin-goal .cg-goal-go { margin-left: auto; color: var(--c-gold-bright, #f5d77a); }
+.result-coin-goal.is-ready { border-color: rgba(245,215,122,.8); }
+html.is-compact .home-stage.h15-sm .h15-goal { right: calc(450px + var(--sx, 0px)); top: 16px; height: 94px; padding: 0 22px; font-size: 30px; gap: 2px; }
+.home-stage button.h15-goal { background: linear-gradient(180deg, rgba(58,10,16,.92), rgba(20,4,8,.92)); border: 1px solid rgba(214,176,104,.75); box-shadow: 0 2px 10px rgba(0,0,0,.55); text-shadow: 0 1px 2px #000; }
+.home-stage button.h15-goal.is-ready { border-color: #efcd82; box-shadow: 0 0 16px rgba(239,205,130,.5), 0 2px 10px rgba(0,0,0,.55); }

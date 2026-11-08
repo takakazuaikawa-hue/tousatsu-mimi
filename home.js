@@ -203,6 +203,13 @@ function refreshHomeStatus() {
   const coins = root.querySelector('[data-bind="saveCoins"]');
   coins.textContent = save.coins.toLocaleString('ja-JP');
   coins.closest('button').ariaLabel = `所持コイン ${save.coins}。交換所を開く`;
+  // 交換所の次の目標（D20）：コインの八角の下に1行。押すと交換所へ
+  let goal = root.querySelector('.h15-goal');
+  const g = typeof shopCoinGoal === 'function' ? shopCoinGoal() : null;
+  if (!g) { if (goal) goal.remove(); return; }
+  if (!goal) { goal = document.createElement('button'); goal.type = 'button'; goal.className = 'h15-goal'; goal.dataset.action = 'open-shop'; root.querySelector('.h15-top').after(goal); }
+  goal.classList.toggle('is-ready', !!g.ready);
+  goal.innerHTML = g.ready ? `<span>交換所で <b>${g.ready}</b>点 交換できます</span>` : `<span>次の目標 <b>${shop3ShortName(g.item)}</b></span><span>あと <b>${g.need.toLocaleString()}</b> コイン</span>`;
 }
 
 // 制服は承認された頬杖の絵。ほかの衣装は人物なしの同じ劇場で、卓の奥に立つ。

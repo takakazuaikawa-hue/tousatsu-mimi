@@ -618,7 +618,7 @@ const OPPONENTS = {
     imgKey: 'polka',
     theme: 'ブラフ入門',
     desc: '弱い時ほど声が大きい、調子乗りの初心者客',
-    rewardFirst: 500, rewardRematch: 400, rewardSBonus: 200,
+    rewardFirst: 500, rewardRematch: 250, rewardSBonus: 100,
     unlockNoteOnClear: null,
     fullHand: true,
   },
@@ -633,7 +633,7 @@ const OPPONENTS = {
     imgKey: 'selina',
     theme: 'ボード危険度・ベットサイズ',
     desc: '丁寧で落ち着いた常連プレイヤー。理屈っぽく試してくる',
-    rewardFirst: 700, rewardRematch: 600, rewardSBonus: 300,
+    rewardFirst: 700, rewardRematch: 350, rewardSBonus: 150,
     unlockNoteOnClear: 'board_danger',
     fullHand: true,
   },
@@ -648,7 +648,7 @@ const OPPONENTS = {
     imgKey: 'grano',
     theme: 'ポットオッズ・割に合う判断',
     desc: '商人系プレイヤー。ポーカーを商談のように考える',
-    rewardFirst: 900, rewardRematch: 800, rewardSBonus: 400,
+    rewardFirst: 900, rewardRematch: 450, rewardSBonus: 200,
     unlockNoteOnClear: 'pot_odds',
     fullHand: true,
   },
@@ -663,7 +663,7 @@ const OPPONENTS = {
     imgKey: 'velvet',
     theme: 'レンジ・証拠突きつけ・ブラフブレイク・総合判断',
     desc: 'VIPルームを仕切る妖艶なボスディーラー。言葉と圧で相手を降ろしてくる',
-    rewardFirst: 1500, rewardRematch: 1400, rewardSBonus: 700,
+    rewardFirst: 1500, rewardRematch: 600, rewardSBonus: 300,
     unlockNoteOnClear: 'range_basic',
     isBoss: true,
     fullHand: true,
@@ -5544,104 +5544,108 @@ function showNoteArticle(id) {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
+// 値段の段（2026-11-08 D20 ユーザー「値段の優劣をつけて、のめりこむまではちょっとずつ報酬がもらえるライン」）：
+//   小物 100〜250／ほしい物 300〜600／目玉 700〜1,300／やり込み 1,800〜。合計 約43,700。
+//   一周目（約5,000）で小物とほしい物の一部、二周目のほろ酔いの夜で目玉まで、残りは遊び込み（再戦・零時の卓は1時間 約4,000 前後）。
+//   再戦の報酬は初回の4〜5割、S評価のボーナスも半分にした（ヴェルベット再戦が1時間 約6,000〜10,000 と飛び抜けていた）
 const SHOP_ITEMS = [
-  { id: 'panyu_sense_lv2',     cat: 'panyu', name: 'ぱにゅぱにゅLv2',         price: 300, desc: '読み合いで読みを外した時に失うコインが半分になる' },
-  { id: 'note_pot_odds',       cat: 'note',  name: 'ポットオッズ入門',         price: 350, desc: 'コールの札に「要る勝ち目◯%」＝勝つのに最低限いる勝率が出る' },
-  { id: 'skin_red_gold_card',  cat: 'skin',  name: '赤金カジノカード',         price: 300, desc: 'カード裏：深紅の地に金の菱格子とダイヤ紋のカジノ柄' },
-  { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 500, desc: 'テーブル：卓を暗く沈め、画面を金の額縁で囲み、天井から光を落としてVIPルーム風に' },
+  { id: 'panyu_sense_lv2',     cat: 'panyu', name: 'ぱにゅぱにゅLv2',         price: 150, desc: '読み合いで読みを外した時に失うコインが半分になる' },
+  { id: 'note_pot_odds',       cat: 'note',  name: 'ポットオッズ入門',         price: 250, desc: 'コールの札に「要る勝ち目◯%」＝勝つのに最低限いる勝率が出る' },
+  { id: 'skin_red_gold_card',  cat: 'skin',  name: '赤金カジノカード',         price: 200, desc: 'カード裏：深紅の地に金の菱格子とダイヤ紋のカジノ柄' },
+  { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 350, desc: 'テーブル：卓を暗く沈め、画面を金の額縁で囲み、天井から光を落としてVIPルーム風に' },
   // エンディング・主題歌・スタッフロールの見返しは有料で売らない。ヴェルベット撃破で無料になる「クリア特典」（clearBonus）。
   // 以前に買った人の所持記録はそのまま残す（返金はしない。表示はどちらも「クリア特典」で矛盾しない）
   { id: 'memory_ending',       cat: 'memory', name: 'エンディング映像',        price: 0, clearBonus: true, desc: 'エンディングをいつでも見返せる', requires: 'ending' },
   { id: 'memory_ending_theme', cat: 'memory', name: '主題歌：ポーカーフェイスの終わり〜変な件〜', price: 0, clearBonus: true, desc: 'エンディング主題歌をいつでも聴ける', requires: 'ending' },
   // チップ拡張。足し算ではなく、持っている中で一番大きい1つが卓の開始時にミミへ乗る（装備変更で選べる）。
   // 相手のチップは卓の基本値のまま（ミミの基本値の2倍）で、チップ拡張では増えない
-  { id: 'chips_plus_500',  cat: 'stack', name: 'チップ拡張 +500',  price: 400,  desc: '卓につくとミミのチップが+500で始まる。相手の額はそのまま（装備変更で「なし」も選べる）' },
-  { id: 'chips_plus_1500', cat: 'stack', name: 'チップ拡張 +1500', price: 1000, desc: 'ミミのチップが+1500で始まる。チップ拡張は足し算されず、持っている中で一番大きい額が乗る' },
-  { id: 'chips_plus_3000', cat: 'stack', name: 'チップ拡張 +3000', price: 2200, desc: 'ミミのチップが+3000で始まる。腰を据えた長い読み合いに' },
-  { id: 'chips_plus_5000', cat: 'stack', name: 'チップ拡張 +5000', price: 4500, desc: 'ミミのチップが+5000で始まる。相手の額はそのまま' },
+  { id: 'chips_plus_500',  cat: 'stack', name: 'チップ拡張 +500',  price: 250,  desc: '卓につくとミミのチップが+500で始まる。相手の額はそのまま（装備変更で「なし」も選べる）' },
+  { id: 'chips_plus_1500', cat: 'stack', name: 'チップ拡張 +1500', price: 800, desc: 'ミミのチップが+1500で始まる。チップ拡張は足し算されず、持っている中で一番大きい額が乗る' },
+  { id: 'chips_plus_3000', cat: 'stack', name: 'チップ拡張 +3000', price: 1800, desc: 'ミミのチップが+3000で始まる。腰を据えた長い読み合いに' },
+  { id: 'chips_plus_5000', cat: 'stack', name: 'チップ拡張 +5000', price: 3000, desc: 'ミミのチップが+5000で始まる。相手の額はそのまま' },
 
   /* ===== 追加：ぱにゅ強化（中盤以降の差別化） ===== */
-  { id: 'panyu_combo_x2',      cat: 'panyu', name: 'ぱにゅコンボ倍率',        price: 700,  desc: 'ロビーのぱにゅぱにゅ（30タップ）完走でもらえるコインが2倍に' },
-  { id: 'panyu_sense_lv3',     cat: 'panyu', name: 'ぱにゅぱにゅLv3',         price: 1200, desc: '読み合いで読みを外した時に失うコインが4分の1になる（Lv2の上位）' },
+  { id: 'panyu_combo_x2',      cat: 'panyu', name: 'ぱにゅコンボ倍率',        price: 500,  desc: 'ロビーのぱにゅぱにゅ（30タップ）完走でもらえるコインが2倍に' },
+  { id: 'panyu_sense_lv3',     cat: 'panyu', name: 'ぱにゅぱにゅLv3',         price: 1000, desc: '読み合いで読みを外した時に失うコインが4分の1になる（Lv2の上位）' },
 
   /* ===== ぱにゅ衣装：ロビーのぱにゅぱにゅで着られる服。最初はバニーだけで、買うと衣装替えの候補に増える（2026-10-17） ===== */
-  { id: 'pwear_pajama', cat: 'panyu', name: 'ぱにゅ衣装：パジャマ', price: 400, thumb: 'assets/ui/shop/pwear_pajama.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ふわふわのパジャマ。寝る前のゆるい揺れ' },
-  { id: 'pwear_vintage', cat: 'panyu', name: 'ぱにゅ衣装：古着', price: 500, thumb: 'assets/ui/shop/pwear_vintage.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ゆったりした古着コーデ' },
-  { id: 'pwear_pajama2', cat: 'panyu', name: 'ぱにゅ衣装：パジャマ2', price: 600, thumb: 'assets/ui/shop/pwear_pajama2.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ボタンの多いパジャマ。外れるたびに揺れが増す' },
-  { id: 'pwear_santa', cat: 'panyu', name: 'ぱにゅ衣装：サンタ', price: 700, thumb: 'assets/ui/shop/pwear_santa.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。聖夜のサンタ衣装' },
-  { id: 'pwear_gothic', cat: 'panyu', name: 'ぱにゅ衣装：ゴスロリ', price: 800, thumb: 'assets/ui/shop/pwear_gothic.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。フリルたっぷりのゴスロリ' },
-  { id: 'pwear_nurse', cat: 'panyu', name: 'ぱにゅ衣装：ナース', price: 900, thumb: 'assets/ui/shop/pwear_nurse.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。白衣のナース服' },
-  { id: 'pwear_jirai', cat: 'panyu', name: 'ぱにゅ衣装：地雷系', price: 900, thumb: 'assets/ui/shop/pwear_jirai.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。甘めの地雷系コーデ' },
-  { id: 'pwear_halter', cat: 'panyu', name: 'ぱにゅ衣装：ホルター', price: 1200, thumb: 'assets/ui/shop/pwear_halter.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。首で結ぶホルターネック' },
-  { id: 'pwear_white', cat: 'panyu', name: 'ぱにゅ衣装：白サテン', price: 1200, thumb: 'assets/ui/shop/pwear_white.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。つややかな白サテン' },
-  { id: 'pwear_gym', cat: 'panyu', name: 'ぱにゅ衣装：ジムウェア', price: 1300, thumb: 'assets/ui/shop/pwear_gym.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ぴったり薄手のジムウェア' },
-  { id: 'pwear_yshirt', cat: 'panyu', name: 'ぱにゅ衣装：Yシャツ', price: 1400, thumb: 'assets/ui/shop/pwear_yshirt.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。白いワイシャツ' },
-  { id: 'pwear_tshirt', cat: 'panyu', name: 'ぱにゅ衣装：Tシャツ', price: 1400, thumb: 'assets/ui/shop/pwear_tshirt.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。薄手の白いTシャツ' },
-  { id: 'pwear_inner', cat: 'panyu', name: 'ぱにゅ衣装：肌着', price: 1500, thumb: 'assets/ui/shop/pwear_inner.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ひんやり薄手の肌着' },
-  { id: 'pwear_dress', cat: 'panyu', name: 'ぱにゅ衣装：ドレス', price: 1500, thumb: 'assets/ui/shop/pwear_dress.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。夜会のドレス' },
-  { id: 'pwear_bikini', cat: 'panyu', name: 'ぱにゅ衣装：水着', price: 1800, thumb: 'assets/ui/shop/pwear_bikini.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。いちばん大胆な水着' },
+  { id: 'pwear_pajama', cat: 'panyu', name: 'ぱにゅ衣装：パジャマ', price: 300, thumb: 'assets/ui/shop/pwear_pajama.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ふわふわのパジャマ。寝る前のゆるい揺れ' },
+  { id: 'pwear_vintage', cat: 'panyu', name: 'ぱにゅ衣装：古着', price: 300, thumb: 'assets/ui/shop/pwear_vintage.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ゆったりした古着コーデ' },
+  { id: 'pwear_pajama2', cat: 'panyu', name: 'ぱにゅ衣装：パジャマ2', price: 350, thumb: 'assets/ui/shop/pwear_pajama2.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ボタンの多いパジャマ。外れるたびに揺れが増す' },
+  { id: 'pwear_santa', cat: 'panyu', name: 'ぱにゅ衣装：サンタ', price: 450, thumb: 'assets/ui/shop/pwear_santa.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。聖夜のサンタ衣装' },
+  { id: 'pwear_gothic', cat: 'panyu', name: 'ぱにゅ衣装：ゴスロリ', price: 500, thumb: 'assets/ui/shop/pwear_gothic.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。フリルたっぷりのゴスロリ' },
+  { id: 'pwear_nurse', cat: 'panyu', name: 'ぱにゅ衣装：ナース', price: 550, thumb: 'assets/ui/shop/pwear_nurse.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。白衣のナース服' },
+  { id: 'pwear_jirai', cat: 'panyu', name: 'ぱにゅ衣装：地雷系', price: 550, thumb: 'assets/ui/shop/pwear_jirai.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。甘めの地雷系コーデ' },
+  { id: 'pwear_halter', cat: 'panyu', name: 'ぱにゅ衣装：ホルター', price: 800, thumb: 'assets/ui/shop/pwear_halter.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。首で結ぶホルターネック' },
+  { id: 'pwear_white', cat: 'panyu', name: 'ぱにゅ衣装：白サテン', price: 850, thumb: 'assets/ui/shop/pwear_white.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。つややかな白サテン' },
+  { id: 'pwear_gym', cat: 'panyu', name: 'ぱにゅ衣装：ジムウェア', price: 900, thumb: 'assets/ui/shop/pwear_gym.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ぴったり薄手のジムウェア' },
+  { id: 'pwear_yshirt', cat: 'panyu', name: 'ぱにゅ衣装：Yシャツ', price: 1000, thumb: 'assets/ui/shop/pwear_yshirt.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。白いワイシャツ' },
+  { id: 'pwear_tshirt', cat: 'panyu', name: 'ぱにゅ衣装：Tシャツ', price: 1000, thumb: 'assets/ui/shop/pwear_tshirt.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。薄手の白いTシャツ' },
+  { id: 'pwear_inner', cat: 'panyu', name: 'ぱにゅ衣装：肌着', price: 1050, thumb: 'assets/ui/shop/pwear_inner.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ひんやり薄手の肌着' },
+  { id: 'pwear_dress', cat: 'panyu', name: 'ぱにゅ衣装：ドレス', price: 1100, thumb: 'assets/ui/shop/pwear_dress.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。夜会のドレス' },
+  { id: 'pwear_bikini', cat: 'panyu', name: 'ぱにゅ衣装：水着', price: 1300, thumb: 'assets/ui/shop/pwear_bikini.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。いちばん大胆な水着' },
 
   /* ===== 追加：戦術ノート ===== */
-  { id: 'note_tell',           cat: 'note',  name: '相手の癖メモ',             price: 500,  desc: '対戦開始時に、相手の傾向（攻撃的／受け身／ブラフ多め など）がタグで出る' },
+  { id: 'note_tell',           cat: 'note',  name: '相手の癖メモ',             price: 350,  desc: '対戦開始時に、相手の傾向（攻撃的／受け身／ブラフ多め など）がタグで出る' },
   { id: 'note_bankroll',       cat: 'note',  name: 'バンクロール管理',         price: 450,  desc: '対戦を終えるたびにもらうコインが+10%（勝ちの報酬にも参加賞にも付く）' },
 
   /* ===== 追加：見た目（着替え・カード/テーブル/チップ・差分） ===== */
   /* リコ先輩の衣装（既存 RICO_OUTFITS のファイル名と一致するIDで管理） */
-  { id: 'outfit_rico_pajama',   cat: 'skin',  name: 'リコ・パジャマ',     price: 600,  desc: 'リコ先輩の衣装：寝起き感のあるパジャマ姿。装備変更から着替え可能' },
-  { id: 'outfit_rico_dress',    cat: 'skin',  name: 'リコ・ドレス',       price: 800,  desc: 'リコ先輩の衣装：VIPルーム仕様のドレス姿' },
-  { id: 'outfit_rico_kimono',   cat: 'skin',  name: 'リコ・和装',         price: 1000, desc: 'リコ先輩の衣装：粋な和装。しっとりとした風情' },
-  { id: 'outfit_rico_casual',   cat: 'skin',  name: 'リコ・私服',         price: 700,  desc: 'リコ先輩の衣装：オフの日の私服姿' },
-  { id: 'outfit_rico_school',   cat: 'skin',  name: 'リコ・学生風',       price: 900,  desc: 'リコ先輩の衣装：先輩感のある学生風制服' },
-  { id: 'outfit_rico_bunny',    cat: 'skin',  name: 'リコ・バニー',       price: 1500, desc: 'リコ先輩の衣装：カジノクイーン仕様のバニーガール' },
-  { id: 'outfit_rico_gym',      cat: 'skin',  name: 'リコ・ジム服',       price: 700,  desc: 'リコ先輩の衣装：鍛えてる最近のジム服' },
-  { id: 'outfit_rico_swimsuit', cat: 'skin',  name: 'リコ・水着',         price: 1500, desc: 'リコ先輩の衣装：夏限定の水着姿。撃破の報酬', requires: 'ending' },
-  { id: 'outfit_rico_witch',    cat: 'skin',  name: 'リコ・魔女',         price: 1200, desc: 'リコ先輩の衣装：ハロウィン気分の魔女姿' },
-  { id: 'outfit_rico_santa',    cat: 'skin',  name: 'リコ・サンタ',       price: 1200, desc: 'リコ先輩の衣装：メリクリ仕様のサンタ姿' },
+  { id: 'outfit_rico_pajama',   cat: 'skin',  name: 'リコ・パジャマ',     price: 300,  desc: 'リコ先輩の衣装：寝起き感のあるパジャマ姿。装備変更から着替え可能' },
+  { id: 'outfit_rico_dress',    cat: 'skin',  name: 'リコ・ドレス',       price: 500,  desc: 'リコ先輩の衣装：VIPルーム仕様のドレス姿' },
+  { id: 'outfit_rico_kimono',   cat: 'skin',  name: 'リコ・和装',         price: 800, desc: 'リコ先輩の衣装：粋な和装。しっとりとした風情' },
+  { id: 'outfit_rico_casual',   cat: 'skin',  name: 'リコ・私服',         price: 350,  desc: 'リコ先輩の衣装：オフの日の私服姿' },
+  { id: 'outfit_rico_school',   cat: 'skin',  name: 'リコ・学生風',       price: 550,  desc: 'リコ先輩の衣装：先輩感のある学生風制服' },
+  { id: 'outfit_rico_bunny',    cat: 'skin',  name: 'リコ・バニー',       price: 1150, desc: 'リコ先輩の衣装：カジノクイーン仕様のバニーガール' },
+  { id: 'outfit_rico_gym',      cat: 'skin',  name: 'リコ・ジム服',       price: 500,  desc: 'リコ先輩の衣装：鍛えてる最近のジム服' },
+  { id: 'outfit_rico_swimsuit', cat: 'skin',  name: 'リコ・水着',         price: 1300, desc: 'リコ先輩の衣装：夏限定の水着姿。撃破の報酬', requires: 'ending' },
+  { id: 'outfit_rico_witch',    cat: 'skin',  name: 'リコ・魔女',         price: 850, desc: 'リコ先輩の衣装：ハロウィン気分の魔女姿' },
+  { id: 'outfit_rico_santa',    cat: 'skin',  name: 'リコ・サンタ',       price: 850, desc: 'リコ先輩の衣装：メリクリ仕様のサンタ姿' },
   /* カード裏 */
-  { id: 'skin_blue_silver_card', cat: 'skin',  name: '蒼銀カード',            price: 400, desc: 'カード裏：氷のように冷たい蒼と銀。霜の結晶紋入り' },
-  { id: 'skin_obsidian_card',    cat: 'skin',  name: '漆黒カード',            price: 500, desc: 'カード裏：漆黒の地に、金の紋様がうっすら浮かぶ' },
-  { id: 'skin_floral_card',      cat: 'skin',  name: '花鳥カード',            price: 450, desc: 'カード裏：深紅の地に金の桜と燕を描いた和の意匠' },
-  { id: 'skin_galaxy_card',      cat: 'skin',  name: '銀河カード',            price: 700,  desc: 'カード裏：星がまたたき、深紅の星雲がゆっくり渦巻く宇宙柄。撃破の報酬', requires: 'ending' },
+  { id: 'skin_blue_silver_card', cat: 'skin',  name: '蒼銀カード',            price: 150, desc: 'カード裏：氷のように冷たい蒼と銀。霜の結晶紋入り' },
+  { id: 'skin_obsidian_card',    cat: 'skin',  name: '漆黒カード',            price: 250, desc: 'カード裏：漆黒の地に、金の紋様がうっすら浮かぶ' },
+  { id: 'skin_floral_card',      cat: 'skin',  name: '花鳥カード',            price: 250, desc: 'カード裏：深紅の地に金の桜と燕を描いた和の意匠' },
+  { id: 'skin_galaxy_card',      cat: 'skin',  name: '銀河カード',            price: 250,  desc: 'カード裏：星がまたたき、深紅の星雲がゆっくり渦巻く宇宙柄。撃破の報酬', requires: 'ending' },
   /* テーブル */
-  { id: 'table_emerald',         cat: 'skin',  name: 'エメラルド卓',        price: 600,  desc: 'テーブル：卓の羅紗が深いエメラルドグリーンに。正統派の緑卓' },
-  { id: 'table_neon',            cat: 'skin',  name: 'ネオン卓',            price: 800,  desc: 'テーブル：卓を夜の暗さに沈め、上下の縁で深紅と金のネオン管が明滅する' },
-  { id: 'table_speakeasy',       cat: 'skin',  name: 'スピークイージー卓',  price: 900,  desc: 'テーブル：セピアの灯りに沈む隠れバー風。縁に木目の影と真鍮の縁取り' },
+  { id: 'table_emerald',         cat: 'skin',  name: 'エメラルド卓',        price: 300,  desc: 'テーブル：卓の羅紗が深いエメラルドグリーンに。正統派の緑卓' },
+  { id: 'table_neon',            cat: 'skin',  name: 'ネオン卓',            price: 450,  desc: 'テーブル：卓を夜の暗さに沈め、上下の縁で深紅と金のネオン管が明滅する' },
+  { id: 'table_speakeasy',       cat: 'skin',  name: 'スピークイージー卓',  price: 500,  desc: 'テーブル：セピアの灯りに沈む隠れバー風。縁に木目の影と真鍮の縁取り' },
   /* チップ */
-  { id: 'chip_skin_ivory',       cat: 'skin',  name: 'アイボリーチップ',    price: 500,  desc: 'チップの縁が象牙色に光る。落ち着いた高級感' },
-  { id: 'chip_skin_jade',        cat: 'skin',  name: '翡翠チップ',          price: 700,  desc: 'チップの縁が翡翠色に光る。卓上で艶やかに映える' },
-  { id: 'chip_skin_dragon',      cat: 'skin',  name: '龍紋チップ',          price: 1100, desc: 'チップの縁が龍の炎のような朱色に燃える' },
+  { id: 'chip_skin_ivory',       cat: 'skin',  name: 'アイボリーチップ',    price: 300,  desc: 'チップの縁が象牙色に光る。落ち着いた高級感' },
+  { id: 'chip_skin_jade',        cat: 'skin',  name: '翡翠チップ',          price: 350,  desc: 'チップの縁が翡翠色に光る。卓上で艶やかに映える' },
+  { id: 'chip_skin_dragon',      cat: 'skin',  name: '龍紋チップ',          price: 800, desc: 'チップの縁が龍の炎のような朱色に燃える' },
   /* ミミの見た目（卓とプロフィールは専用の立ち絵、ミニゲームのミミは色替え） */
-  { id: 'mimi_skin_pink',        cat: 'skin',  name: 'ミミ・桃色',          price: 400,  desc: '卓とプロフィールのミミが桃色のバニー衣装に（ミニゲームのミミも桃色に）' },
-  { id: 'mimi_skin_panda',       cat: 'skin',  name: 'ミミ・パンダ柄',      price: 600,  desc: '卓とプロフィールのミミが白黒のパンダ柄のバニー衣装に（うさ耳も白黒。ミニゲームのミミは白黒に）' },
-  { id: 'mimi_skin_gold',        cat: 'skin',  name: 'ミミ・黄金',          price: 1500, desc: '卓とプロフィールのミミが黄金色のバニー衣装に。撃破の報酬', requires: 'ending' },
+  { id: 'mimi_skin_pink',        cat: 'skin',  name: 'ミミ・桃色',          price: 300,  desc: '卓とプロフィールのミミが桃色のバニー衣装に（ミニゲームのミミも桃色に）' },
+  { id: 'mimi_skin_panda',       cat: 'skin',  name: 'ミミ・パンダ柄',      price: 450,  desc: '卓とプロフィールのミミが白黒のパンダ柄のバニー衣装に（うさ耳も白黒。ミニゲームのミミは白黒に）' },
+  { id: 'mimi_skin_gold',        cat: 'skin',  name: 'ミミ・黄金',          price: 2500, desc: '卓とプロフィールのミミが黄金色のバニー衣装に。撃破の報酬', requires: 'ending' },
   /* カットイン演出 */
-  { id: 'cutin_classic',         cat: 'skin',  name: 'カットイン・古典派',  price: 700,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）が集中線＆モノクロ調に' },
-  { id: 'cutin_neon',            cat: 'skin',  name: 'カットイン・ネオン',  price: 700,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）に深紅と金のネオン光線が走る' },
+  { id: 'cutin_classic',         cat: 'skin',  name: 'カットイン・古典派',  price: 350,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）が集中線＆モノクロ調に' },
+  { id: 'cutin_neon',            cat: 'skin',  name: 'カットイン・ネオン',  price: 350,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）に深紅と金のネオン光線が走る' },
 
   /* ===== 追加：チップ拡張 ===== */
-  { id: 'chips_plus_10000',      cat: 'stack', name: 'チップ拡張 +10000',  price: 8000, desc: 'ミミのチップが+10000で始まる。VIPルーム仕様（相手の額はそのまま）' },
+  { id: 'chips_plus_10000',      cat: 'stack', name: 'チップ拡張 +10000',  price: 4500, desc: 'ミミのチップが+10000で始まる。VIPルーム仕様（相手の額はそのまま）' },
 
   /* ===== 追加：メモリ（お楽しみ） ===== */
-  { id: 'bgm_lobby_jazz',        cat: 'memory', name: 'BGM「夜のジャズ」',   price: 350,  desc: 'ロビーBGMをしっとりジャズに切替可能' },
-  { id: 'bgm_battle_tense',      cat: 'memory', name: 'BGM「緊迫の弦楽」',  price: 350,  desc: 'バトルBGMを緊張感ある弦楽四重奏に' },
-  { id: 'bgm_battle_techno',     cat: 'memory', name: 'BGM「電脳テクノ」',  price: 500,  desc: 'バトルBGMをサイバーテクノに' },
-  { id: 'se_pack_casino',        cat: 'memory', name: 'SEパック「カジノ」', price: 400,  desc: 'チップ音・カード音をリアル寄りに変更' },
-  { id: 'gallery_rico',          cat: 'memory', name: 'リコ先輩設定資料',    price: 600,  desc: 'リコ先輩の人物設定・口調メモ・ボツ衣装の話を読める' },
-  { id: 'gallery_opponents',     cat: 'memory', name: '対戦相手図鑑',        price: 800,  desc: '対戦相手の打ち筋と口癖を読める（撃破した相手のみ）' },
-  { id: 'gallery_mimi',          cat: 'memory', name: 'ミミ百態',            price: 500,  desc: 'ミミの表情メモと、ぱにゅぱにゅの裏話を読める' },
-  { id: 'cg_selina_salon',       cat: 'memory', name: 'VIPサロンの二人',     price: 800,  desc: 'セリナとミミ、VIPサロンでの一枚。|手に入れると|コレクションで|いつでも見られる' },
-  { id: 'cg_selina_fireside',    cat: 'memory', name: '暖炉のセリナ',        price: 1000, desc: '眼鏡を外したセリナの、|暖炉の部屋での一枚。|手に入れると|コレクションで|いつでも見られる' },
+  { id: 'bgm_lobby_jazz',        cat: 'memory', name: 'BGM「夜のジャズ」',   price: 150,  desc: 'ロビーBGMをしっとりジャズに切替可能' },
+  { id: 'bgm_battle_tense',      cat: 'memory', name: 'BGM「緊迫の弦楽」',  price: 150,  desc: 'バトルBGMを緊張感ある弦楽四重奏に' },
+  { id: 'bgm_battle_techno',     cat: 'memory', name: 'BGM「電脳テクノ」',  price: 200,  desc: 'バトルBGMをサイバーテクノに' },
+  { id: 'se_pack_casino',        cat: 'memory', name: 'SEパック「カジノ」', price: 150,  desc: 'チップ音・カード音をリアル寄りに変更' },
+  { id: 'gallery_rico',          cat: 'memory', name: 'リコ先輩設定資料',    price: 350,  desc: 'リコ先輩の人物設定・口調メモ・ボツ衣装の話を読める' },
+  { id: 'gallery_opponents',     cat: 'memory', name: '対戦相手図鑑',        price: 450,  desc: '対戦相手の打ち筋と口癖を読める（撃破した相手のみ）' },
+  { id: 'gallery_mimi',          cat: 'memory', name: 'ミミ百態',            price: 300,  desc: 'ミミの表情メモと、ぱにゅぱにゅの裏話を読める' },
+  { id: 'cg_selina_salon',       cat: 'memory', name: 'VIPサロンの二人',     price: 500,  desc: 'セリナとミミ、VIPサロンでの一枚。|手に入れると|コレクションで|いつでも見られる' },
+  { id: 'cg_selina_fireside',    cat: 'memory', name: '暖炉のセリナ',        price: 550, desc: '眼鏡を外したセリナの、|暖炉の部屋での一枚。|手に入れると|コレクションで|いつでも見られる' },
   { id: 'cgset_morning',  cat: 'cgset', name: 'CG集「朝と夕暮れ」',     price: 100, desc: '朝の寝室のTシャツと、|夕暮れのジム。|4枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_bath',     cat: 'cgset', name: 'CG集「湯上がり」',       price: 100, desc: '湯気の残る浴室で、|肌着のミミ。|8枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_yshirt',   cat: 'cgset', name: 'CG集「夜のYシャツ」',     price: 100, desc: '月の見える寝室で、|Yシャツ一枚のミミ。|7枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_midnight', cat: 'cgset', name: 'CG集「零時の寝台と卓」', price: 100, desc: 'バニーと水着で、|寝台と卓に|身を預けるミミ。|5枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_rival',    cat: 'cgset', name: 'CG集「ライバルと卓で」', price: 100, desc: 'ポルカ・ヴェルベットと|ミミの、|幻の一枚たち。|3枚入り。|コレクションで|いつでも見られる' },
-  { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 600,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
-  { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 700, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。撃破の報酬', requires: 'ending' },
+  { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 300,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
+  { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 350, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。撃破の報酬', requires: 'ending' },
   // 音声は無い。旧「ボイス集」（900）を実態どおりの「セリフ集」に改め値下げ。買った人の所持はそのまま
-  { id: 'omake_voice_pack',      cat: 'memory', name: 'リコ先輩セリフ集',    price: 300,  desc: 'リコ先輩の勝った時・負けた時・励ましなどのセリフ集。押すとリコ先輩の声で聞ける' },
+  { id: 'omake_voice_pack',      cat: 'memory', name: 'リコ先輩セリフ集',    price: 150,  desc: 'リコ先輩の勝った時・負けた時・励ましなどのセリフ集。押すとリコ先輩の声で聞ける' },
   { id: 'omake_credit',          cat: 'memory', name: 'スタッフロール再生',  price: 0, clearBonus: true, desc: '本編のスタッフロールをいつでも再生できる', requires: 'ending' },
-  { id: 'memory_minipoker',      cat: 'memory', name: 'ミニキャラ・ファイブポーカー', price: 700, desc: 'ミミがミニキャラ仲間と5枚交換ポーカーで対戦！勝てばコインも稼げる、ふんわり楽しいミニゲーム' },
+  { id: 'memory_minipoker',      cat: 'memory', name: 'ミニキャラ・ファイブポーカー', price: 300, desc: 'ミミがミニキャラ仲間と5枚交換ポーカーで対戦！勝てばコインも稼げる、ふんわり楽しいミニゲーム' },
 ];
 
 const SHOP_COMMENTS = {
@@ -18700,7 +18704,7 @@ function showDominanceComplete(choice) {
 //=============================================================
 // 本気のリコ先輩（クリア後の最強戦）の報酬。講義（rico_tutorial 300）とは別の記録キー 'rico_serious' で払う。
 // 初回2000はヴェルベット（1500）より上、再戦・Sボーナスはヴェルベットと同じ（周回で稼げすぎないように）
-const SERIOUS_RICO_REWARD = { rewardFirst: 2000, rewardRematch: 1400, rewardSBonus: 700 };
+const SERIOUS_RICO_REWARD = { rewardFirst: 2000, rewardRematch: 700, rewardSBonus: 300 };
 const SCORE_TABLE = { win:50, psychSuccess:10, bluffCatch:15, goodFold:10, goodCall:10, allInWin:20, bluffBreak:25, comebackWin:30 };
 const RANK_THRESHOLDS = [
   { rank: 'SS', min: 120 },
@@ -18972,6 +18976,14 @@ function endBattle() {
     goalLine.className = 'result-next-goal';
     goalLine.textContent = nextGoalText();
     statsBox.insertAdjacentElement('afterend', goalLine);
+    const cg = shopCoinGoal();
+    if (cg) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'result-coin-goal' + (cg.ready ? ' is-ready' : ''); b.dataset.action = 'open-shop';
+      b.innerHTML = shopCoinGoalHTML(cg);
+      b.addEventListener('click', onAction);
+      goalLine.insertAdjacentElement('afterend', b);
+    }
     // 勝った時：交換所に新しく入荷した品を札で見せる（小さな絵3つまで・押すと交換所へ）。台帳36（10/21 承認）
     const news = won ? SHOP_ITEMS.filter(i => isShopItemNew(i.id)) : [];
     if (news.length) {
@@ -19114,6 +19126,25 @@ function resultUnlockLater(on) {
   const ru = document.querySelector('.result-unlock'); if (!ru) return;
   ru.disabled = !!on; ru.classList.toggle('is-later', !!on);
   const go = ru.querySelector('.ru-go'); if (go) go.textContent = on ? '幕間のあとで' : '交換所へ ›';
+}
+// 交換所の「次の目標」（2026-11-08 D20 ユーザー「絶妙にあきらめきれないライン」）。
+// 入荷していて、まだ持っていない・買える条件を満たす品のうち、手持ちで届かない一番安い品と、足りない額。
+// 手持ちで交換できる品があれば、その数も返す（目標より先に「今すぐ交換できる」を知らせる）
+function shopCoinGoal() {
+  if (IS_TRIAL) return null;
+  const cand = SHOP_ITEMS.filter(i => !i.clearBonus && isShopItemUnlocked(i.id) && !isItemOwned(i.id) && !shopItemBlock(i));
+  if (!cand.length) return null;
+  const coins = save.coins || 0;
+  const ready = cand.filter(i => i.price <= coins).length;
+  const next = cand.filter(i => i.price > coins).sort((a, b) => a.price - b.price)[0] || null;
+  return { ready, item: next, need: next ? next.price - coins : 0 };
+}
+function shopCoinGoalHTML(g) {
+  if (!g) return '';
+  const art = g.item ? shop3Art(g.item) : null;
+  const th = art && art.src ? `<img class="is-${art.type}" src="${art.src}" alt="">` : '';
+  if (g.ready) return `<span class="cg-goal-t">交換所で <b>${g.ready}</b>点 交換できます</span><span class="cg-goal-go">交換所へ ›</span>`;
+  return `${th}<span class="cg-goal-t">次の目標 <b>${shop3ShortName(g.item)}</b>　あと <b>${g.need.toLocaleString()}</b> コイン</span>`;
 }
 function nextGoalText() {
   // 今の相手より「先」の未クリアを優先（ポルカに勝った直後に「リコ先輩に挑戦」と出ないように）
