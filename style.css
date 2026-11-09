@@ -21080,3 +21080,6 @@ html.is-compact .home-stage.h15-sm .h15-goal { right: calc(450px + var(--sx, 0px
 .coll-conv-empty { margin: 0; color: #b19a74; line-height: 1.6; }
 .collection-modal .memory-grid .memory-card.is-night { background: linear-gradient(180deg, #2c1233, #180a22); border-color: #9a74b8; }
 .collection-modal .coll-conv .memory-card { min-height: 48px; }
+.result-next-goal.is-say { color: #f6e7c8; line-height: 1.45; word-break: keep-all; overflow-wrap: anywhere; }
+.result-next-goal.is-say b { color: #f3c96b; margin-right: .3em; }
+.result-next-goal.is-say::before { content: none; display: none; }

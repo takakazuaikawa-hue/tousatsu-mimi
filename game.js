@@ -19485,13 +19485,6 @@ function endBattle() {
     mimiImg.src = state.horoyoi ? `assets/characters/mimi_bust_${won ? 'win' : 'sad'}_drunk.webp` : `assets/characters/${won ? 'mimi_win' : 'mimi_sad'}.webp`;
     mimiImg.onerror = () => { mimiImg.onerror = null; mimiImg.src = 'assets/characters/mimi_default.webp'; };
   }
-  // ほろ酔いの夜で勝った時：遊び方に反応する相手の一言（11/09 Codex 17回目③・ユーザー承認の台詞）
-  if (won && state.horoyoi) {
-    const L = HOROYOI_CLOSE[state.opponentId];
-    const kind = state.hWater ? 2 : (state.hAggr || 0) >= (state.hFolds || 0) ? 0 : 1;
-    const host = document.querySelector('.result-char-opp');
-    if (L && host && !host.querySelector('.result-opp-say')) { const b = document.createElement('div'); b.className = 'result-opp-say'; b.innerHTML = `<b>${(state.opponentName || '').replace(/（.*）/, '')}</b>「${L[kind]}」`; host.appendChild(b); }
-  }
   const oppImg = document.querySelector('[data-result-opp]');
   if (oppImg && state.opponentImgKey) {
     const key = state.opponentImgKey;
@@ -19555,6 +19548,12 @@ function endBattle() {
     const goalLine = document.createElement('div');
     goalLine.className = 'result-next-goal';
     goalLine.textContent = nextGoalText();
+    // ほろ酔いの夜で勝った時は、次の目標の代わりに、遊び方に反応する相手の一言（11/10 スマホでは相手の絵が小さく、絵の上の吹き出しが見えなかった）
+    if (state.resultWon && state.horoyoi && HOROYOI_CLOSE[state.opponentId]) {
+      const kind = state.hWater ? 2 : (state.hAggr || 0) >= (state.hFolds || 0) ? 0 : 1;
+      goalLine.classList.add('is-say');
+      goalLine.innerHTML = `<b>${(state.opponentName || '').replace(/（.*）/, '')}</b>「${HOROYOI_CLOSE[state.opponentId][kind]}」`;
+    }
     statsBox.insertAdjacentElement('afterend', goalLine);
     const cg = shopCoinGoal();
     if (cg) {
