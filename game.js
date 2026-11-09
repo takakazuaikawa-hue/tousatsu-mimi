@@ -964,7 +964,7 @@ const OPPONENT_EXPRESSIONS = {
 // mood: 'default' | 'pressure'（大ベット/強気）| 'rattled'（ブラフ露呈/劣勢）
 //       | 'pleased'（勝ち/余裕）| 'defeat'（敗北）
 // ほろ酔いの夜の立ち絵（<key>_drunk_stand.webp）。絵が届いた人だけここに足す（無い人は昼の立ち絵のまま。404 を出さない）
-const HOROYOI_STAND = new Set([]);
+const HOROYOI_STAND = new Set(['rico', 'polka', 'selina', 'grano', 'velvet']);   // 11/09 ユーザー選：リコ・ヴェルベットは2、他は1
 function oppStandSrc(key) { return (state && state.horoyoi && HOROYOI_STAND.has(key)) ? `assets/characters/${key}_drunk_stand.webp` : `assets/characters/${key}_default.webp`; }
 function setOpponentExpression(mood) {
   if (state) state.opponentExpr = mood || 'default';
