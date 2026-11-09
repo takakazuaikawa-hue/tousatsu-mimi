@@ -741,9 +741,10 @@ const MOTION_CG = [];
 // 2枚目のご褒美がある相手：勝った時に1枚目の次に続けて見せ、コレクションでも続けて見られる（2026-10-30 ユーザー：セリナは3と4を採用）
 const REWARD_CG_MORE = { selina: ['assets/backgrounds/reward_cg_selina_2.jpg'] };
 // ほろ酔いの夜の一枚絵：1人 HOROYOI_CG_N 枚（11/08 ユーザー「すべて採用」「倍ほしい」）。1枚目は幕間の後、続けて残りを見せる
-const HOROYOI_CG_N = 3;
+// 人ごとの枚数（11/09 B・G・H・I は破綻で不採用、ポルカ6枚目とヴェルベット4〜6枚目は描き直し待ち）
+const HOROYOI_CG_N = { rico_tutorial: 6, polka: 5, selina: 6, grano: 6, velvet: 3 };
 [['rico_tutorial', 'rico'], ['polka', 'polka'], ['selina', 'selina'], ['grano', 'grano'], ['velvet', 'velvet']].forEach(([id, k]) => {
-  REWARD_CG_MORE['h_' + id] = Array.from({ length: HOROYOI_CG_N - 1 }, (_, i) => `assets/backgrounds/horoyoi/${k}_${i + 2}.jpg`);
+  REWARD_CG_MORE['h_' + id] = Array.from({ length: HOROYOI_CG_N[id] - 1 }, (_, i) => `assets/backgrounds/horoyoi/${k}_${i + 2}.jpg`);
 });
 // 交換所の「秘蔵の一枚」（2026-10-30 ユーザー：出来のよい1と2もどこかに）。手に入れるとコレクションのご褒美CGの欄に並ぶ。
 // VIPサロンの二人は前のセリナのご褒美CGで、その時の動画がそのまま使える
@@ -13765,7 +13766,7 @@ function showCollectionModal() {
       const opp = OPPONENTS[id], hk = hKey(id), ims = INTERMISSIONS[hk];
       if (!opp || !ims) return '';
       if (rewardCgSeen.includes(hk)) return `<button class="coll-cg-card on is-night" data-action="view-reward-cg" data-cg-id="${hk}" title="ほろ酔いの${opp.name}の一枚絵を見る">
-        <img src="${ims.cg}" alt="ほろ酔いの${opp.name}" loading="lazy"><span class="coll-cg-tag">夜</span><div class="coll-cg-label">ほろ酔い・${opp.name}<small class="coll-cg-more">${HOROYOI_CG_N}枚</small></div></button>`;
+        <img src="${ims.cg}" alt="ほろ酔いの${opp.name}" loading="lazy"><span class="coll-cg-tag">夜</span><div class="coll-cg-label">ほろ酔い・${opp.name}<small class="coll-cg-more">${HOROYOI_CG_N[id]}枚</small></div></button>`;
       return `<div class="coll-cg-card off is-night" title="未開放"><div class="coll-cg-locked">${GOLD_LOCK}</div>
         <div class="coll-cg-label"><small>ほろ酔いの${opp.name}に<wbr>勝つと開放</small></div></div>`;
     }).join('') : '');
