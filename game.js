@@ -3980,9 +3980,40 @@ const STORY_WHO = {
   velvet: { name: 'ヴェルベット', face: 'assets/ui/face_velvet.webp' },
 };
 // 場面ごとの背景（無ければ assets/episodes/<場面>.webp）。行に art があれば、その行で絵を切り替える
-const STORY_ART = { struggle_velvet: 'assets/episodes/struggle_velvet_a.webp', hmid_velvet: 'assets/backgrounds/horoyoi/velvet_7.jpg' };
+const STORY_ART = { struggle_velvet: 'assets/episodes/struggle_velvet_a.webp', hmid_velvet: 'assets/backgrounds/horoyoi/velvet_7.jpg',
+  // 11/09 Codex 17回目「全員に途中の事件を」：夜の一枚絵6枚から1枚を途中に回す（幕間の後には出さない・コレクションには残る）
+  hmid_rico_tutorial: 'assets/backgrounds/horoyoi/rico_5.jpg', hmid_polka: 'assets/backgrounds/horoyoi/polka_5.jpg', hmid_selina: 'assets/backgrounds/horoyoi/selina_4.jpg', hmid_grano: 'assets/backgrounds/horoyoi/grano_5.jpg' };
 // ほろ酔いの夜の勝負の途中に挟む一枚絵と会話（11/09 ユーザー承認の台詞。写真集の S6-1 を昇格）。泥酔の夜の「勝負の途中の一枚絵と会話劇」もこの形で足す
 const HOROYOI_MID_SCENES = {
+  // 11/09 ユーザー承認の台詞（リコ・ポルカ・セリナ・グラーノ）
+  rico_tutorial: [
+    { k: 'say', who: 'rico', t: 'ミミ〜、勝ってばっかりでずるい〜。先輩命令、ちょっと休憩〜' },
+    { k: 'say', who: 'mimi', t: 'せ、先輩!?　脚、脚つかまないでください〜っ！' },
+    { k: 'say', who: 'rico', t: 'えへへ、ミミの脚、すべすべ〜。これ、先輩が育てたんだからね〜' },
+    { k: 'say', who: 'mimi', t: '育ててないです！　勝負中です、勝負中っ！' },
+    { k: 'say', who: 'rico', t: '……ん。じゃあ、次はアタシの番ね。……本気、出しちゃうかも' },
+  ],
+  polka: [
+    { k: 'say', who: 'polka', t: 'うわぁぁん、負けたぁ……あっ、そうだ！　タワー作ろ、タワー！' },
+    { k: 'say', who: 'mimi', t: 'えっ、今ですか!?　勝負の途中ですよ！' },
+    { k: 'say', who: 'polka', t: 'いいのいいの〜！　ほら、ミミちゃんも一緒に注いで！　せーのっ！' },
+    { k: 'think', who: 'mimi', t: '……こぼれてる。めちゃくちゃこぼれてる……！' },
+    { k: 'say', who: 'polka', t: 'あはははっ！　きれい〜！　……よし、元気出た！　次はボクが勝つもんね、ひっく' },
+  ],
+  selina: [
+    { k: 'say', who: 'selina', t: '……計算、合わないですね。今夜のミミさん、強すぎます' },
+    { k: 'say', who: 'selina', t: 'いいです、眼鏡は外します。見えない方が、気持ちよく賭けられるので' },
+    { k: 'say', who: 'mimi', t: 'セ、セリナさん、それ作戦としてどうなんですか……？' },
+    { k: 'say', who: 'selina', t: 'ふふ……乾杯しましょう。負けている時ほど、お酒はおいしいんです' },
+    { k: 'think', who: 'mimi', t: 'いつもの冷たいセリナさんが、笑ってる……。この人、強い時だけ黙るんだっけ' },
+  ],
+  grano: [
+    { k: 'say', who: 'grano', t: 'はっはっは！　見事、見事！　お嬢さんの勝ちっぷりに、店ごと振る舞いましょう！' },
+    { k: 'say', who: 'mimi', t: 'きゃっ!?　つ、冷たいです〜！　泡が、泡が〜っ！' },
+    { k: 'say', who: 'grano', t: '良い品は惜しまず開けるのが商人の流儀！　勘定は明日の私に任せますぞ！' },
+    { k: 'think', who: 'mimi', t: 'びしょびしょ……。でもグラーノさん、賭けてくる時は本物なんだよね' },
+    { k: 'say', who: 'grano', t: 'さて……酔いは回っても、値踏みの目は曇りませんぞ。続きといきましょう' },
+  ],
   velvet: [
     { k: 'say', who: 'velvet', t: '……もう、まどろっこしいのはおしまい。ほら、見せてあげる♡' },
     { k: 'say', who: 'mimi', t: 'ちょっ、ヴェルベットさん!?　台の上に乗っちゃだめですってば〜！' },
@@ -3991,6 +4022,14 @@ const HOROYOI_MID_SCENES = {
     { k: 'think', who: 'mimi', t: '見えてるの、札じゃないです……っ！' },
     { k: 'say', who: 'velvet', t: 'ざぁんねん、まだ勝負の途中よ♡　座りなさい、ミミ' },
   ],
+};
+// ほろ酔いの夜で勝った時の相手の一言：[強気に勝った, 慎重に勝った, お水に頼った]
+const HOROYOI_CLOSE = {
+  rico_tutorial: ['ぐいぐい来るミミ、かっこよかったよ〜。先輩、惚れ直しちゃう', 'ちゃんと降りられるの、えらい〜。酔ってても先輩の教え、守ってたね', 'お水飲んで確かめるの、ずるくない〜？ ……ううん、それも実力だね'],
+  polka: ['そんなに攻めてくるなんて聞いてないよぉ……ぐすっ、でも楽しかった！', 'ぜんぜん乗ってこないんだもん……ボクのブラフ、ばれてた？', 'お水!? 酔ってないフリしてたの、ミミちゃんの方じゃん〜！'],
+  selina: ['……強気でしたね。眼鏡があっても、あれは止められませんでした', '待つべき所で待てる人は、酔っても崩れない。……覚えておきます', '確かめてから決める。……酔った夜に、一番正しいやり方です'],
+  grano: ['豪快な買いっぷり！ お嬢さん、良い商人になれますぞ', '安売りしない、高く買わない。……実に手堅い。参りました', '水で頭を冷やしてから値を付ける。商売の基本ですな、はっはっは'],
+  velvet: ['……あたしに真正面から来るなんて。生意気で、好きよ♡', 'ふふ、焦らすのが上手ね。……そういうの、嫌いじゃないわ', 'お水なんて飲んで、酔いを醒ましちゃうの？ ……ずるい子♡'],
 };
 // 出る時：ほろ酔いの夜の対戦で1戦1回。3ハンド目以降に相手が大きく負けた手の直後（ミミがその手で開始時の1割2分以上勝った）、そろわなければ5ハンド目の後
 function horoyoiMidDue() {
@@ -4040,7 +4079,7 @@ function struggleSceneDue() {
   return id;
 }
 const PROLOGUES = {
-  hmid_velvet: HOROYOI_MID_SCENES.velvet,
+  hmid_velvet: HOROYOI_MID_SCENES.velvet, hmid_rico_tutorial: HOROYOI_MID_SCENES.rico_tutorial, hmid_polka: HOROYOI_MID_SCENES.polka, hmid_selina: HOROYOI_MID_SCENES.selina, hmid_grano: HOROYOI_MID_SCENES.grano,
   struggle_polka: STRUGGLE_SCENES.polka, struggle_selina: STRUGGLE_SCENES.selina, struggle_grano: STRUGGLE_SCENES.grano, struggle_velvet: STRUGGLE_SCENES.velvet,
   rico_tutorial: [
     // 2026-10-27 始まりのつかみ（台帳28・ユーザーが案Cを選んだ）：うさ耳で目覚める驚きから始め、徹夜明けは一瞬暗くして思い出す1行に縮める
@@ -4521,7 +4560,8 @@ function showIntermission(opponentId, onDone, voiceReady) {
   addSoundToggle(overlay);
 
   { const pre = new Image(); pre.src = data.cg || `assets/backgrounds/reward_cg_${opponentId}.jpg`; (REWARD_CG_MORE[opponentId] || []).forEach(src => { new Image().src = src; }); }
-  const cgMore = [...(REWARD_CG_MORE[opponentId] || [])];
+  // 勝負の途中に見せた夜の一枚絵は、幕間の後には出さない（同じ絵を2回見せない）
+  const cgMore = [...(REWARD_CG_MORE[opponentId] || [])].filter(src => !String(opponentId).startsWith('h_') || src !== STORY_ART['hmid_' + String(opponentId).slice(2)]);
   const cgTotal = 1 + cgMore.length;
   const mimiChar = overlay.querySelector('.ims-char-mimi');
   const oppChar = overlay.querySelector('.ims-char-opp');
@@ -15804,6 +15844,7 @@ function noteMimiHabit(folded) {
 }
 function playerFold() {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
+  state.hFolds = (state.hFolds || 0) + 1;   // ほろ酔いの夜の締めの一言（遊び方）に使う
   noteMimiHabit(true);
   state.isPlayerTurn = false;
   mpSfx('fold');
@@ -15832,6 +15873,7 @@ function playerFold() {
 }
 function playerCall() {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
+  state.hAggr = (state.hAggr || 0) + 1;
   noteMimiHabit(false);
   mpSfx('call');
   voiceBark('mimi', 'call');
@@ -15863,6 +15905,7 @@ function playerCheckCall() {
 }
 function playerRaise(bb) {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
+  state.hAggr = (state.hAggr || 0) + 1;
   noteMimiHabit(false);
   mpSfx('battle-bet');
   voiceBark('mimi', 'raise');
@@ -15911,6 +15954,7 @@ function playerBet(size) {
 }
 function playerAllIn() {
   if (!state.isPlayerTurn || state.handPhase === 'idle' || state.handPhase === 'showdown') return; // 二度押し・手番外の押下を受け付けない
+  state.hAggr = (state.hAggr || 0) + 1;
   noteMimiHabit(false);
   state.playerShoves = (state.playerShoves || 0) + 1;
   mpSfx('battle-allin');
@@ -16700,6 +16744,7 @@ function holdReadBattle(group, gameId, r) {
   if (group === 'psych') state.psychResolved = true;
   state.psychTried = (state.psychTried || 0) + 1;
   state.pendingRead = { ...r.pending, gameId, group, oppKey: state.opponentImgKey, handNo: state.handNo };
+  if (r.pending.water) state.hWater = true;   // ぼやけた手札でお水を飲んだ（ほろ酔いの夜の締めの一言）
   const logic = r.pending.kind === 'logic';
   const pickName = logic ? ((r.pending.names || {})[r.pending.pick] || (r.pending.pick === 'call' ? '付いていく' : '降りる')) : (r.pending.pick === 'bluff' ? 'ブラフ' : '本物');
   const name = (state.opponentName || '相手').replace(/（.*）/, '');
@@ -19371,6 +19416,13 @@ function endBattle() {
   if (mimiImg) {
     mimiImg.src = state.horoyoi ? `assets/characters/mimi_bust_${won ? 'win' : 'sad'}_drunk.webp` : `assets/characters/${won ? 'mimi_win' : 'mimi_sad'}.webp`;
     mimiImg.onerror = () => { mimiImg.onerror = null; mimiImg.src = 'assets/characters/mimi_default.webp'; };
+  }
+  // ほろ酔いの夜で勝った時：遊び方に反応する相手の一言（11/09 Codex 17回目③・ユーザー承認の台詞）
+  if (won && state.horoyoi) {
+    const L = HOROYOI_CLOSE[state.opponentId];
+    const kind = state.hWater ? 2 : (state.hAggr || 0) >= (state.hFolds || 0) ? 0 : 1;
+    const host = document.querySelector('.result-char-opp');
+    if (L && host && !host.querySelector('.result-opp-say')) { const b = document.createElement('div'); b.className = 'result-opp-say'; b.innerHTML = `<b>${(state.opponentName || '').replace(/（.*）/, '')}</b>「${L[kind]}」`; host.appendChild(b); }
   }
   const oppImg = document.querySelector('[data-result-opp]');
   if (oppImg && state.opponentImgKey) {

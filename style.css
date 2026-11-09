@@ -21046,3 +21046,14 @@ html.is-compact .home-stage.h15-sm .h15-goal { right: calc(450px + var(--sx, 0px
 /* 勝率の封のほろ酔い版：読めない */
 .v2-seal-closed.is-drunk { cursor: default; }
 .v2-seal-closed.is-drunk .v2-seal-q { filter: blur(1.2px); }
+
+/* ほろ酔いの夜で勝った時の相手の一言（遊び方に反応する締め・11/09） */
+.result-char-opp .result-opp-say {
+  position: absolute; left: 4%; right: 4%; bottom: 6%; z-index: 3;
+  padding: .55em .8em; border: 1px solid rgba(232, 196, 112, .7); border-radius: 10px;
+  background: rgba(30, 6, 12, .86); color: #f6e7c8; font-family: var(--mincho, serif);
+  font-size: var(--t-body, 16px); line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .45); animation: resultSayIn .5s ease-out 1.2s both;
+}
+.result-char-opp .result-opp-say b { display: block; color: #f3c96b; font-size: .85em; margin-bottom: .1em; }
+@keyframes resultSayIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
