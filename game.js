@@ -4769,7 +4769,7 @@ function showGraduationScene(onDone) {
 }
 
 // 二周目のクリア報酬：ヴェルベット写真集を受け取る幕（卒業の幕と同じ作り）。タップで写真集を開く
-function showPhotobookGift() {
+function showPhotobookGift(onDone) {
   const overlay = document.createElement('div');
   overlay.className = 'grad-scene-overlay photobook-gift';
   overlay.innerHTML = `
@@ -4783,6 +4783,7 @@ function showPhotobookGift() {
   overlay.addEventListener('click', () => {
     if (Date.now() - shownAt < 900 || overlay.classList.contains('out')) return;
     overlay.classList.add('out');
+    if (onDone) onDone();
     showRewardCgViewer('cgset_velvet_book');
     setTimeout(() => overlay.remove(), 400);
   });
@@ -9174,9 +9175,9 @@ function onAction(e) {
         if (oid === 'velvet') {
           state.screen = 'ending'; render();   // 第6話の題字は締めの前（showEndingFinalButtons）で出す
         } else {
-          renderWonResultButtons();
-          if (isBgmOn()) playSceneBgm('victory');
-          if (save.photobookPending) { save.photobookPending = false; saveProgress(); setTimeout(showPhotobookGift, 500); }
+          // 写真集の受け取りは、幕間の直後・勝利ボタンを出す前に（11/10 Codex 18回目：ボタンの後に予約で出していたので、再戦の上に重なった）
+          const afterGift = () => { renderWonResultButtons(); if (isBgmOn()) playSceneBgm('victory'); };
+          if (save.photobookPending) { save.photobookPending = false; saveProgress(); showPhotobookGift(afterGift); } else afterGift();
         }
       });
       break;
@@ -10879,7 +10880,7 @@ function showRicoViewer(keepIndex) {
   overlay.className = 'rico-viewer-overlay';
   overlay.innerHTML = `
     <div class="rico-viewer-stage">
-      <img class="rico-viewer-img" src="assets/characters/${cur.file}" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
+      <img class="rico-viewer-img" src="${typeof costumeSrc === 'function' ? costumeSrc(cur.file) : `assets/characters/${cur.file}`}" alt="リコ先輩" onerror="window.assetFallback(this,'rico')">
       <div class="rico-viewer-outfit-label">${cur.label}<small class="rico-viewer-count">${state.ricoViewerIndex + 1} / ${list.length}</small></div>
       ${list.length > 1 ? `<button class="rico-viewer-nav rico-viewer-nav-prev" data-action="rico-viewer-prev" title="前の衣装">‹</button>
       <button class="rico-viewer-nav rico-viewer-nav-next" data-action="rico-viewer-next" title="次の衣装">›</button>` : ''}
@@ -19087,6 +19088,14 @@ function continueAfterHand() {
   if (state.pendingRead) { const g0 = battleGen; return showReadVerdict().then(() => { if (g0 === battleGen && state.screen === 'battle') continueAfterHand(); }); }
   setMimiExpression('default'); // P1-3: 次のハンドへ進む際は表情をリセット
   if (canRebuy()) return showRebuy();
+  // ほろ酔いの夜：まだ見ていない勝負の途中の会話は、この手で決着しても先に見せる（11/10 Codex 18回目：うまく勝つと見られなかった）
+  if (state.playerChips > 0 && (state.opponentChips <= 0 || state.handNo >= state.maxHands) && state.horoyoi && !state.__hmidShown && HOROYOI_MID_SCENES[state.opponentId] && !(save.horoyoiMidSeen || []).includes(state.opponentId)) {
+    state.__hmidShown = true;
+    if (!save.horoyoiMidSeen) save.horoyoiMidSeen = [];
+    save.horoyoiMidSeen.push(state.opponentId); saveProgress();
+    const g0 = battleGen;
+    return showStoryScene('hmid_' + state.opponentId, () => { if (g0 === battleGen && state.screen === 'battle') continueAfterHand(); });
+  }
   if (state.playerChips <= 0 || state.opponentChips <= 0 || state.handNo >= state.maxHands) {
     return endBattle();
   }

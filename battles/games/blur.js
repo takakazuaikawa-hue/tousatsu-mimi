@@ -238,7 +238,12 @@
     const base0 = 60 - Math.min(miss, 4) * 10;  // 役にならない札をタップするたびに10減る（20まで）
     const base = drunk ? Math.round(base0 / 2) : base0;
     const eqShown = drunk ? eqTrue : eqBlur;  // 答え合わせで出す見込み（お水を飲んだら本当の札で）
-    const truth = eqShown >= need ? 'call' : 'fold';
+    // 画面に出した材料（役になる札の割合／お水で見えた札が役になるか）で決めた判断は、正確な見込みと違っても正解にする
+    // （11/10 Codex 18回目：割合で考えて降りたら、見込み45%で減点された。案内と採点の物差しをそろえる）
+    const eqRule = eqShown >= need ? 'call' : 'fold';
+    const shownRule = drunk ? (hits.has(api.key(blurred)) ? 'call' : 'fold') : (Math.round(nHit / cands.length * 100) >= need ? 'call' : 'fold');
+    const truth = (decide === eqRule || decide === shownRule) ? decide : eqRule;
+    const split = eqRule !== shownRule;
     await api.wager({ mission: 'その判断の自信を選ぶ', question: `「${NAMES[decide]}」と決めた`, note: drunk ? '迷わなかったら上げる（お水で半分）' : '迷わなかったら上げる', base, stakes: STAKES, into: act });
     if (!api.alive()) return;
     const m = api.mult || 1;
@@ -248,7 +253,7 @@
     const pending = { kind: 'logic', names: NAMES, title: 'ぼやけた手札', charId: api.charId, pick: decide, truth, mimiEq: eqShown, need, endLines: END[who], board, mine, her, base, mult: m, stakes: STAKES,
       herWeak, water: !!drunk, perfect: miss === 0 && m === 3 && !drunk, notes: [],
       why: `実は、${how}で数えると、勝つ見込みは約${eqShown}%だった（${free ? '半分' : `払う額の線 ${need}%`}）。`,
-      truthText: `ぼやけた札は ${api.label(blurred)}。ミミは ${meName}<small>実は、${how}で数えた見込みは約${eqShown}%（${free ? '半分' : `払う額の線 ${need}%`}）。${NAMES[truth]}のが正解。決着の勝ち負けは運の側</small>`,
+      truthText: `ぼやけた札は ${api.label(blurred)}。ミミは ${meName}<small>実は、${how}で数えた見込みは約${eqShown}%（${free ? '半分' : `払う額の線 ${need}%`}）。${split ? `${drunk ? '見えた札' : '役になる札の割合'}で考えると${NAMES[shownRule]}、見込みで考えると${NAMES[eqRule]}。どちらも筋が通るので正解。` : `${NAMES[truth]}のが正解。`}決着の勝ち負けは運の側</small>`,
       extra: `ぼやけた札：${api.label(blurred)}${drunk ? '（お水で確かめた）' : ''}` };
     if (T) {
       api.entrust({

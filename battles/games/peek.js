@@ -232,7 +232,7 @@
     const betted = ['bet', 'raise', 'allin'].includes(lastAct.t) || (!acts.length && !free);
     const need = free ? 50 : Math.round(toCall / Math.max(1, (pot || 0) + toCall) * 100);
     const eqC = eqOver(api, mine, consAll, board);  // 見えた札と矛盾しない手だけで数えた、ミミが勝つ見込み
-    const truth = eqC >= need ? 'call' : 'fold';
+    let truth = eqC >= need ? 'call' : 'fold';
     const mimiEq = api.eqPct(api.headsUp(mine, her, board));
     const core = new Set(coreCards(api, mine.concat(board)).map(api.key));
     const mineCore = mine.filter(c => core.has(api.key(c)));
@@ -337,10 +337,15 @@
     const m = api.mult || 1;
     const herRole = roleName(api, her.concat(board));
     const seenTxt = seeText(api, items);
+    // 画面に出した材料（残った役の「危ない／負けない」の数）で決めた判断も正解にする（11/10 Codex 18回目：案内と採点の物差しをそろえる）
+    const rest = tiles.filter(t => !t.imp);
+    const shownRule = rest.length && Math.round(rest.filter(t => !t.danger).length / rest.length * 100) >= need ? 'call' : 'fold';
+    const split = shownRule !== truth;
+    if (decide === shownRule) truth = decide;
     const pending = { kind: 'logic', names: NAMES, title: '見えちゃった札', charId: api.charId, pick: decide, truth, mimiEq: eqC, need, endLines: END[who], board, mine, her, base, mult: m, stakes: STAKES,
       herWeak: !herTile.danger, perfect: miss === 0 && m === 3, notes: [],
       why: `実は、見えた札（${seenTxt}）と合う相手の手で数えると、勝つ見込みは約${eqC}%だった（${free ? '半分' : `払う額の線 ${need}%`}）。`,
-      truthText: `${jp}は ${herRole}${herTile.danger ? '（ミミより強い）' : '（ミミは負けない）'}<small>実は、見えた札で数えた見込みは約${eqC}%（${free ? '半分' : `払う額の線 ${need}%`}）。${NAMES[truth]}のが正解。決着の勝ち負けは運の側</small>`,
+      truthText: `${jp}は ${herRole}${herTile.danger ? '（ミミより強い）' : '（ミミは負けない）'}<small>実は、見えた札で数えた見込みは約${eqC}%（${free ? '半分' : `払う額の線 ${need}%`}）。${split ? `残った役の数で考えると${NAMES[shownRule]}、見込みで考えると${NAMES[eqC >= need ? 'call' : 'fold']}。どちらも筋が通るので正解。` : `${NAMES[truth]}のが正解。`}決着の勝ち負けは運の側</small>`,
       extra: `見えた札：${seenTxt}` };
     if (T) {
       api.entrust({
