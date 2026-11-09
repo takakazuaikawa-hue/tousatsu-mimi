@@ -231,8 +231,8 @@ function refreshHomeStatus() {
 // 制服は承認された頬杖の絵。ほかの衣装は人物なしの同じ劇場で、卓の奥に立つ。
 // decode 完了後に全層を一緒に切り替え、着替え中の二重表示・背景だけの瞬間を避ける。
 // ほろ酔いの夜に切り替えているか（ホームの切り替えボタン。エンディングを見るまでは常に一周目）
-// ほろ酔いの夜は、着せ替えのリコも酔った版（11/09 ユーザー選・ポーズと衣装に合うお酒）。ドレスは未決なので素面のまま
-const DRUNK_COSTUMES = new Set(['pajama', 'bunny', 'casual', 'kimono', 'swimsuit', 'gym', 'school', 'witch', 'santa']);
+// ほろ酔いの夜は、着せ替えのリコも酔った版（11/09 ユーザー選・ポーズと衣装に合うお酒）
+const DRUNK_COSTUMES = new Set(['pajama', 'bunny', 'casual', 'dress', 'kimono', 'swimsuit', 'gym', 'school', 'witch', 'santa']);
 function costumeSrc(file) { const m = /^rico_([a-z]+)[.]webp$/.exec(file); return (m && DRUNK_COSTUMES.has(m[1]) && homeIsNight()) ? `assets/characters/rico_${m[1]}_drunk.webp` : `assets/characters/${file}`; }
 function homeIsNight() { return !!(save && save.horoyoiMode) && (typeof isEndingUnlocked !== 'function' || isEndingUnlocked()); }
 async function applyHomeCostume() {
