@@ -742,7 +742,7 @@ const MOTION_CG = [];
 const REWARD_CG_MORE = { selina: ['assets/backgrounds/reward_cg_selina_2.jpg'] };
 // ほろ酔いの夜の一枚絵：1人 HOROYOI_CG_N 枚（11/08 ユーザー「すべて採用」「倍ほしい」）。1枚目は幕間の後、続けて残りを見せる
 // 人ごとの枚数（11/09 破綻の絵は不採用にして描き直し、全員6枚）
-const HOROYOI_CG_N = { rico_tutorial: 6, polka: 6, selina: 6, grano: 6, velvet: 6 };
+const HOROYOI_CG_N = { rico_tutorial: 6, polka: 6, selina: 6, grano: 6, velvet: 7 };   // 11/09 ヴェルベットの7枚目＝写真集の S6-1（出来が良いので一枚絵に昇格）
 [['rico_tutorial', 'rico'], ['polka', 'polka'], ['selina', 'selina'], ['grano', 'grano'], ['velvet', 'velvet']].forEach(([id, k]) => {
   REWARD_CG_MORE['h_' + id] = Array.from({ length: HOROYOI_CG_N[id] - 1 }, (_, i) => `assets/backgrounds/horoyoi/${k}_${i + 2}.jpg`);
 });
