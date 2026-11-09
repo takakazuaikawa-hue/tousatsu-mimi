@@ -59,7 +59,7 @@ await sleep(500); await shot('3_q1done');
 await sleep(2200);
 await shot('4_q2');
 console.log('q2 text:', await text());
-if (game === 'blur' && water) { await click('お水を飲む'); await sleep(900); await shot('4b_water'); console.log('water text:', await text()); }
+if (game === 'blur' && water) { await click('お水を飲'); await sleep(900); await shot('4b_water'); console.log('water text:', await text()); }
 await click('付いていく') || await click('賭ける'); await sleep(1200);
 await shot('5_wager');
 await click('確信'); await sleep(1500);

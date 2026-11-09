@@ -79,6 +79,8 @@
     .bl-c.is-no { opacity: .4; }
     .bl-c.is-true .card { outline: 3px solid var(--gold-hi); outline-offset: 2px; }
     .bl-cands.is-q2 .bl-c { cursor: default; }
+    .bl-found { font-family: var(--mincho); font-weight: 800; line-height: 1.3; color: var(--gold-hi); }
+    .bl-found.is-ok { color: var(--gold-pale); }
     @keyframes bl-shake { 0%,100% { transform: none; } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
     .nq-k { word-break: keep-all; }
     .nq-sit { display: flex; flex-direction: column; gap: 4px; }
@@ -100,8 +102,9 @@
     .pk-bar > i { display: block; background: rgba(255,255,255,.1); border: 1px solid var(--line-dim, rgba(255,255,255,.2)); }
     .pk-bar > i.on { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: var(--gold-hi); }
     .pk-bar > u { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 3px solid #ff8f9c; text-decoration: none; }
+    .pk-bar.is-pay > i.on { background: linear-gradient(180deg, #ff8f9c, #d24a5a); border-color: #ff8f9c; }
     .pk-g-n { display: flex; justify-content: space-between; gap: 8px; line-height: 1.25; color: #ffb3bc; }
-    .pk-g-n span { white-space: nowrap; }
+    .pk-g-n span { white-space: normal; word-break: keep-all; }
     .pk-g-n .go { color: var(--gold-pale); text-align: right; word-break: keep-all; white-space: normal; }
     .pk-act { display: flex; justify-content: center; align-items: center; gap: 12px; height: 100%; }
     .pk-act .btn { margin: 0; flex: 1 1 0; max-width: 240px; }
@@ -142,7 +145,7 @@
     api.say(line0, face0); api.bet(free ? '—' : toCall);
     const root = api.root;
     const STEPS = ['役になる札', '見込み', '賭ける'];
-    root.classList.add('rb-frame');
+    root.classList.add('rb-frame', 'bl-frame');
     const blurHTML = `<span class="card small bl-blur ${isRed(blurred) ? 'red' : ''}" aria-label="ぼやけて見えない札（${cls}）"><b>？</b><i>？</i></span>`;
     const mineHTML = (clear) => [0, 1].map(i => i === idx ? (clear ? api.cardHTML(blurred, 'small glow') : blurHTML) : api.cardHTML(other, 'small')).join('');
     root.innerHTML = `
@@ -163,14 +166,15 @@
     await api.rules({
       key: 'blur1', title: 'ぼやけた手札',
       goal: `酔ったミミの手札の1枚が、ぼやけて見えない。その中で<em>${NAMES.call}</em>か<em>${NAMES.fold}</em>かを決める`,
-      how: `①ぼやけた札かもしれない札のうち、<em>ミミの手が役になる札を全部タップ</em>　②見込みと払う額の線をくらべて決める。お水を飲むと見えるが、ご褒美が半分`,
-      risk: '役にならない札をタップすると×（ご褒美が減る）。お水は1回だけ。答え合わせはこの手の決着の後',
-      look: [['役になる札', `ぼやけた札の色と種類（${cls}）`], ['見込み', '10個の印と払う額の線'], ['自信', '迷わなかったら上げる']],
+      how: `①ぼやけた札かもしれない札のうち、<em>ミミの手が役になる札を全部タップ</em>　②役になる札の数と払う額の目安を見て決める。お水を飲むとぼやけた札が見え、役になるかがはっきりするが、ご褒美が半分`,
+      risk: '役にならない札をタップすると×（ご褒美が減る）。お水は決める前に1回だけ。勝つ見込みは決めた後の答え合わせで出る。答え合わせはこの手の決着の後',
+      look: [['役になる札', `ぼやけた札の色と種類（${cls}）`], ['見込み', '役になる札の数と、払う額の目安'], ['自信', '迷わなかったら上げる']],
     });
     if (!api.alive()) return;
 
     // 1問目：どの札なら、ミミの手が役になる？
     const nHit = hits.size;
+    const seenRanks = [...new Set([other, ...board].map(c => c.r))].sort((a, b) => b - a).map(r => api.rn(r)).join('・');
     let found = 0, miss = 0;
     const left = () => api.mission(`役になる札を全部タップ（あと${nHit - found}枚）`);
     left();
@@ -186,7 +190,7 @@
         } else {
           miss++; api.sfx.nope();
           b.classList.add('is-miss', 'is-no'); b.insertAdjacentHTML('beforeend', '<u class="bl-mk">×</u>');
-          tip(`${api.label(c)}では、役にならないよ`, 'think');
+          tip(`${api.label(c)}は役にならない。場と手札にある ${seenRanks} と同じ数字だけがペアになるよ`, 'think');
         }
         if (found >= nHit) res(); else left();
       }));
@@ -199,36 +203,41 @@
     // 2問目：見込みと払う額の線をくらべる（お水は1回だけ）
     $('#mb-bl-steps').innerHTML = api.steps(STEPS, 1);
     $('#mb-bl-cands').classList.add('is-q2');
-    let drunk = false, eqShown = eqBlur;
+    // 決める前は、勝つ見込みの数字と棒は出さない。自分で数える材料（役になる札の数）と、払う額の基準（10個の印）だけ。見込みは答え合わせで「実は約◯%」と出す
+    let drunk = false;
+    const payK = Math.max(1, Math.min(9, Math.round(need / 10)));
     const g = $('#mb-bl-gauge'); g.hidden = false;
+    const trueHit = hits.has(api.key(blurred));
     const drawGauge = () => {
-      const on = Math.round(eqShown / 10);
-      g.innerHTML = `<div class="pk-g-h"><span>${drunk ? '本当の札の見込み' : 'ミミが勝つ見込み'}</span><b>約${eqShown}%</b></div>
-        <div class="pk-bar" role="img" aria-label="見込み 約${eqShown}%、${free ? '半分' : '払う額の線'} ${need}%">${Array.from({ length: 10 }, (_, i) => `<i class="${i < on ? 'on' : ''}"></i>`).join('')}<u style="left:${need}%"></u></div>
-        <div class="pk-g-n"><span>赤い線＝${free ? '半分' : `払う額の線 ${need}%`}</span></div>`;
+      const found1 = drunk
+        ? `<div class="pk-g-h"><span>見えた札 ${api.label(blurred)}</span><b>${trueHit ? '役になる' : '役にならない'}</b></div>`
+        : `<div class="pk-g-h"><span>役になる札</span><b>${cands.length}枚中${nHit}枚</b></div>`;
+      g.innerHTML = found1 + `<div class="pk-bar is-pay" role="img" aria-label="10回のうち約${payK}回 勝てば元が取れる">${Array.from({ length: 10 }, (_, i) => `<i class="${i < payK ? 'on' : ''}"></i>`).join('')}</div>
+        <div class="pk-g-n"><span>${free ? '賭けて得な勝ち' : '元が取れる勝ち'}<wbr>：10回に約${payK}回</span></div>`;
     };
     drawGauge();
-    api.mission('見込みと線をくらべて決める');
-    tip(kw(`役になる札は${cands.length}枚中${nHit}枚。|棒が赤い線より右なら|${NAMES.call}、左なら${NAMES.fold}`), 'think');
-    act.innerHTML = `<div class="pk-act"><button class="btn" data-d="call">${NAMES.call}</button><button class="btn" data-d="fold">${NAMES.fold}</button><button class="btn is-water" id="mb-bl-water" type="button">お水を飲む（ご褒美が半分）</button></div>`;
+    api.mission('役になる札の数を見て決める');
+    tip(kw(`役になる札は|${cands.length}枚中${nHit}枚。|これだけあれば|足りるか考えて`), 'think');
+    act.innerHTML = `<div class="pk-act"><button class="btn" data-d="call">${NAMES.call}</button><button class="btn" data-d="fold">${NAMES.fold}</button><button class="btn is-water" id="mb-bl-water" type="button">お水を飲んで確かめる（ご褒美が半分）</button></div>`;
     const decide = await new Promise(res => {
       act.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => { api.sfx.tap(); act.innerHTML = ''; res(b.dataset.d); }));
       act.querySelector('#mb-bl-water').addEventListener('click', (e) => {
         if (drunk) return;
-        drunk = true; eqShown = eqTrue; api.sfx.tap(); e.currentTarget.disabled = true;
+        drunk = true; api.sfx.tap(); e.currentTarget.disabled = true;
         // ぼやけた札がはっきりする。相手に「確かめた」と気づかれる
         $('#mb-bl-mine').innerHTML = mineHTML(true) + `<span class="bl-cls">お水で見えた<br>${api.label(blurred)}</span>`;
         root.querySelectorAll('.bl-c').forEach(x => x.classList.toggle('is-true', x.dataset.k === api.key(blurred)));
         const [wl, wf] = WATER[who]; api.say(wl, wf);
         drawGauge();
-        api.mission('お水で見えた！線とくらべて決める');
-        tip(kw(`お水で見えた！|本当の札で数え直した。|ご褒美は半分になった`), 'think');
+        api.mission('お水で見えた！決める');
+        tip(kw(trueHit ? `お水で見えた！|この札なら、|役になる。|ご褒美は半分` : `お水で見えた！|この札だと、|役にならない。|ご褒美は半分`), 'think');
       });
     });
     if (!api.alive()) return;
     $('#mb-bl-steps').innerHTML = api.steps(STEPS, 2);
     const base0 = 60 - Math.min(miss, 4) * 10;  // 役にならない札をタップするたびに10減る（20まで）
     const base = drunk ? Math.round(base0 / 2) : base0;
+    const eqShown = drunk ? eqTrue : eqBlur;  // 答え合わせで出す見込み（お水を飲んだら本当の札で）
     const truth = eqShown >= need ? 'call' : 'fold';
     await api.wager({ mission: 'その判断の自信を選ぶ', question: `「${NAMES[decide]}」と決めた`, note: drunk ? '迷わなかったら上げる（お水で半分）' : '迷わなかったら上げる', base, stakes: STAKES, into: act });
     if (!api.alive()) return;
@@ -237,9 +246,9 @@
     const meName = roleName(api, mine.concat(board));
     const how = drunk ? '本当の札' : 'ぼやけた札かもしれない札の平均';
     const pending = { kind: 'logic', names: NAMES, title: 'ぼやけた手札', charId: api.charId, pick: decide, truth, mimiEq: eqShown, need, endLines: END[who], board, mine, her, base, mult: m, stakes: STAKES,
-      herWeak, perfect: miss === 0 && m === 3 && !drunk, notes: [],
-      why: `${how}で数えて、勝つ見込みは約${eqShown}%。`,
-      truthText: `ぼやけた札は ${api.label(blurred)}。ミミは ${meName}<small>${how}で数えた見込み 約${eqShown}%・${free ? '半分' : `線 ${need}%`}。${NAMES[truth]}のが正解。決着の勝ち負けは運の側</small>`,
+      herWeak, water: !!drunk, perfect: miss === 0 && m === 3 && !drunk, notes: [],
+      why: `実は、${how}で数えると、勝つ見込みは約${eqShown}%だった（${free ? '半分' : `払う額の線 ${need}%`}）。`,
+      truthText: `ぼやけた札は ${api.label(blurred)}。ミミは ${meName}<small>実は、${how}で数えた見込みは約${eqShown}%（${free ? '半分' : `払う額の線 ${need}%`}）。${NAMES[truth]}のが正解。決着の勝ち負けは運の側</small>`,
       extra: `ぼやけた札：${api.label(blurred)}${drunk ? '（お水で確かめた）' : ''}` };
     if (T) {
       api.entrust({

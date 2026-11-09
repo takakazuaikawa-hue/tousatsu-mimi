@@ -175,8 +175,9 @@
     .pk-bar > i { display: block; background: rgba(255,255,255,.1); border: 1px solid var(--line-dim, rgba(255,255,255,.2)); }
     .pk-bar > i.on { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: var(--gold-hi); }
     .pk-bar > u { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 3px solid #ff8f9c; text-decoration: none; }
+    .pk-bar.is-pay > i.on { background: linear-gradient(180deg, #ff8f9c, #d24a5a); border-color: #ff8f9c; }
     .pk-g-n { display: flex; justify-content: space-between; gap: 8px; line-height: 1.25; color: #ffb3bc; }
-    .pk-g-n span { white-space: nowrap; }
+    .pk-g-n span { white-space: normal; word-break: keep-all; }
     .pk-g-n .go { color: var(--gold-pale); text-align: right; word-break: keep-all; }
     .pk-act { display: flex; justify-content: center; align-items: center; gap: 14px; height: 100%; }
     .pk-act .btn { margin: 0; flex: 1 1 0; max-width: 260px; }
@@ -272,9 +273,9 @@
     await api.rules({
       key: 'peek1', title: '見えちゃった札',
       goal: `酔った${jp}の伏せ札が、少し見えた。見えた札をヒントに、<em>${NAMES.call}</em>か<em>${NAMES.fold}</em>かを決める`,
-      how: `①見えた札と合わなくて<em>もう作れない役を全部タップ</em>　②残った役で、ミミが勝つ見込みと払う額の線をくらべて決める`,
-      risk: 'まだ作れる役をタップすると×（ご褒美が減る）。見込みと線の見くらべをまちがえると外れ。答え合わせはこの手の決着の後',
-      look: [['消える役', `見えた札（${jp}の札）`], ['見込み', '10個の印と払う額の線'], ['自信', '迷わなかったら上げる']],
+      how: `①見えた札と合わなくて<em>もう作れない役を全部タップ</em>　②残った役（危ない・負けない）を見て、ミミが勝てそうか、払う額に合うかを考えて決める`,
+      risk: 'まだ作れる役をタップすると×（ご褒美が減る）。判断が外れると減点。勝つ見込みは決めた後の答え合わせで出る。答え合わせはこの手の決着の後',
+      look: [['消える役', `見えた札（${jp}の札）`], ['見込み', '残った役と、払う額の目安'], ['自信', '迷わなかったら上げる']],
     });
     if (!api.alive()) return;
 
@@ -318,13 +319,13 @@
       b.classList.remove('is-miss'); b.classList.add(t.danger ? 'is-danger' : 'is-safe');
       b.insertAdjacentHTML('beforeend', `<span class="st">${t.danger ? '危ない' : '負けない'}</span>`);
     });
-    const on = Math.round(eqC / 10);
+    // 決める前は、勝つ見込みの数字と棒は出さない。払う額の基準だけ（10個の印のうち、元が取れる回数）。見込みは答え合わせで「実は約◯%」と出す
+    const payK = Math.max(1, Math.min(9, Math.round(need / 10)));
     const g = $('#mb-pk-gauge'); g.hidden = false;
-    g.innerHTML = `<div class="pk-g-h"><span>ミミが勝つ見込み</span><b>約${eqC}%</b></div>
-      <div class="pk-bar" role="img" aria-label="見込み 約${eqC}%、${free ? '半分' : '払う額の線'} ${need}%">${Array.from({ length: 10 }, (_, i) => `<i class="${i < on ? 'on' : ''}"></i>`).join('')}<u style="left:${need}%"></u></div>
-      <div class="pk-g-n"><span>赤い線＝${free ? '半分' : `払う額の線 ${need}%`}</span></div>`;
-    api.mission(`見込みと線をくらべて決める`);
-    tip(kw(`棒が赤い線より|右なら${NAMES.call}、|左なら${NAMES.fold}のが得`), 'think');
+    g.innerHTML = `<div class="pk-bar is-pay" role="img" aria-label="10回のうち約${payK}回 勝てば元が取れる">${Array.from({ length: 10 }, (_, i) => `<i class="${i < payK ? 'on' : ''}"></i>`).join('')}</div>
+      <div class="pk-g-n"><span>${free ? '賭けて得な勝ち' : '元が取れる勝ち'}<wbr>：10回に約${payK}回</span></div>`;
+    api.mission(`残った役を見て決める`);
+    tip(kw(`残った役のうち、|ミミが勝てる方が|多いか考えて`), 'think');
     act.innerHTML = `<div class="pk-act"><button class="btn" data-d="call">${NAMES.call}</button><button class="btn" data-d="fold">${NAMES.fold}</button></div>`;
     const decide = await new Promise(res => act.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => { api.sfx.tap(); act.innerHTML = ''; res(b.dataset.d); })));
     if (!api.alive()) return;
@@ -338,8 +339,8 @@
     const seenTxt = seeText(api, items);
     const pending = { kind: 'logic', names: NAMES, title: '見えちゃった札', charId: api.charId, pick: decide, truth, mimiEq: eqC, need, endLines: END[who], board, mine, her, base, mult: m, stakes: STAKES,
       herWeak: !herTile.danger, perfect: miss === 0 && m === 3, notes: [],
-      why: `見えた札（${seenTxt}）と合う相手の手で数えて、勝つ見込みは約${eqC}%。`,
-      truthText: `${jp}は ${herRole}${herTile.danger ? '（ミミより強い）' : '（ミミは負けない）'}<small>見えた札で数えた見込み 約${eqC}%・${free ? '半分' : `線 ${need}%`}。${NAMES[truth]}のが正解。決着の勝ち負けは運の側</small>`,
+      why: `実は、見えた札（${seenTxt}）と合う相手の手で数えると、勝つ見込みは約${eqC}%だった（${free ? '半分' : `払う額の線 ${need}%`}）。`,
+      truthText: `${jp}は ${herRole}${herTile.danger ? '（ミミより強い）' : '（ミミは負けない）'}<small>実は、見えた札で数えた見込みは約${eqC}%（${free ? '半分' : `払う額の線 ${need}%`}）。${NAMES[truth]}のが正解。決着の勝ち負けは運の側</small>`,
       extra: `見えた札：${seenTxt}` };
     if (T) {
       api.entrust({

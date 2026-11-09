@@ -1245,8 +1245,19 @@ html.is-compact.is-narrow-stage .minipoker-overlay .mp-bet-max { padding: 0 8px;
 /* 2026-11-09 見えちゃった札・ぼやけた手札（スマホ）：役の札は容疑者しぼりと同じ寸法。ぼやけた手札の札の並びと見込みの欄は小さく詰める */
 html.is-compact #stage > .read-battle-host.mb-host .pk-see .card { --w: 32px; }
 html.is-compact #stage > .read-battle-host.mb-host .pk-gauge { padding: 2px 8px; gap: 1px; }
-html.is-compact #stage > .read-battle-host.mb-host .bl-cands { gap: 6px 4px; }
-html.is-compact #stage > .read-battle-host.mb-host .bl-cands .card { --w: 30px; }
+
+/* 1問目は押す所を 44x44 以上に（札を正方形の札チップに）。2問目は押さないので小さく戻す */
+html.is-compact #stage > .read-battle-host.mb-host .mb-game-root.rb-frame.bl-frame { --rb-info-w: 250px; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-cands { gap: 2px 4px; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-c { min-width: 44px; min-height: 44px; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-cands .card { --w: 44px; height: 44px; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-cands .card b { font-size: 18px; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-cands .card i { font-size: 15px; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-cands.is-q2 { gap: 4px 3px; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-cands.is-q2 .bl-c { min-width: 0; min-height: 0; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-cands.is-q2 .card { --w: 28px; height: 36px; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-cands.is-q2 .card b { font-size: 15px; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-cands.is-q2 .card i { font-size: 14px; }
 html.is-compact #stage > .read-battle-host.mb-host .pk-act { gap: 8px; }
 html.is-compact #stage > .read-battle-host.mb-host .pk-act .btn { padding: 8px 12px; min-width: 0; }
 html.is-compact #stage > .read-battle-host.mb-host .bl-mine { flex-wrap: wrap; row-gap: 2px; }
