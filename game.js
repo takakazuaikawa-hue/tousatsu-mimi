@@ -741,8 +741,8 @@ const MOTION_CG = [];
 // 2枚目のご褒美がある相手：勝った時に1枚目の次に続けて見せ、コレクションでも続けて見られる（2026-10-30 ユーザー：セリナは3と4を採用）
 const REWARD_CG_MORE = { selina: ['assets/backgrounds/reward_cg_selina_2.jpg'] };
 // ほろ酔いの夜の一枚絵：1人 HOROYOI_CG_N 枚（11/08 ユーザー「すべて採用」「倍ほしい」）。1枚目は幕間の後、続けて残りを見せる
-// 人ごとの枚数（11/09 破綻の絵は不採用。ヴェルベット6枚目は描き直し待ち）
-const HOROYOI_CG_N = { rico_tutorial: 6, polka: 6, selina: 6, grano: 6, velvet: 5 };
+// 人ごとの枚数（11/09 破綻の絵は不採用にして描き直し、全員6枚）
+const HOROYOI_CG_N = { rico_tutorial: 6, polka: 6, selina: 6, grano: 6, velvet: 6 };
 [['rico_tutorial', 'rico'], ['polka', 'polka'], ['selina', 'selina'], ['grano', 'grano'], ['velvet', 'velvet']].forEach(([id, k]) => {
   REWARD_CG_MORE['h_' + id] = Array.from({ length: HOROYOI_CG_N[id] - 1 }, (_, i) => `assets/backgrounds/horoyoi/${k}_${i + 2}.jpg`);
 });
@@ -762,7 +762,7 @@ const CG_SETS = {
   cgset_midnight: { name: '零時の寝台と卓',   n: 5, key: 'midnight', short: '寝台と卓' },
   cgset_rival:    { name: 'ライバルと卓で',   n: 3, key: 'rival', short: 'ライバル' },
   // ほろ酔いの夜の一枚絵で、採用した絵と構図が似ていた別カット（11/09 ユーザー「採用版以外はCG集に。出来はいい」）
-  cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 11, key: 'horoyoi', short: 'ほろ酔い' },
+  cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 12, key: 'horoyoi', short: 'ほろ酔い' },
 };
 const cgSetSrc = (id, k) => `assets/backgrounds/cgset/${CG_SETS[id].key}_${k}.jpg`;
 const cgSetThumb = (id, k) => `assets/backgrounds/cgset/thumb/${CG_SETS[id].key}_${k}.webp`;
@@ -5899,7 +5899,7 @@ const SHOP_ITEMS = [
   { id: 'cgset_yshirt',   cat: 'cgset', name: 'CG集「夜のYシャツ」',     price: 100, desc: '月の見える寝室で、|Yシャツ一枚のミミ。|7枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_midnight', cat: 'cgset', name: 'CG集「零時の寝台と卓」', price: 100, desc: 'バニーと水着で、|寝台と卓に|身を預けるミミ。|5枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_rival',    cat: 'cgset', name: 'CG集「ライバルと卓で」', price: 100, desc: 'ポルカ・ヴェルベットと|ミミの、|幻の一枚たち。|3枚入り。|コレクションで|いつでも見られる' },
-  { id: 'cgset_horoyoi',  cat: 'cgset', name: 'CG集「ほろ酔いの別カット」', price: 100, desc: 'ほろ酔いの夜の、|もうひとつの|一枚たち。|11枚入り。|コレクションで|いつでも見られる' },
+  { id: 'cgset_horoyoi',  cat: 'cgset', name: 'CG集「ほろ酔いの別カット」', price: 100, desc: 'ほろ酔いの夜の、|もうひとつの|一枚たち。|12枚入り。|コレクションで|いつでも見られる' },
   { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 300,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
   { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 350, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。撃破の報酬', requires: 'ending' },
   // 音声は無い。旧「ボイス集」（900）を実態どおりの「セリフ集」に改め値下げ。買った人の所持はそのまま
