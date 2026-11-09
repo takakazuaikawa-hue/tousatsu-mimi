@@ -765,7 +765,7 @@ const CG_SETS = {
   cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 12, key: 'horoyoi', short: 'ほろ酔い' },
   // 二周目のクリア報酬（11/09 ユーザー「2周目のクリア報酬のヴェルベット写真集として」「勝った時に渡す」）。交換所には出さない。
   // ほろ酔いの夜で初めてヴェルベットに勝った時に渡す（endBattle の save.photobookPending → showPhotobookGift）。採用分は qa/out/velvet_photobook/adopted.json
-  cgset_velvet_book: { name: 'ヴェルベット写真集', n: 71, key: 'velvetbook', short: '写真集', gift: 'ほろ酔いの夜のクリア報酬' },
+  cgset_velvet_book: { name: 'ヴェルベット写真集', n: 123, key: 'velvetbook', short: '写真集', gift: 'ほろ酔いの夜のクリア報酬' },
 };
 const cgSetSrc = (id, k) => `assets/backgrounds/cgset/${CG_SETS[id].key}_${k}.jpg`;
 const cgSetThumb = (id, k) => `assets/backgrounds/cgset/thumb/${CG_SETS[id].key}_${k}.webp`;
