@@ -46,6 +46,13 @@ if (mode === 'cg') {
       g.putImageData(im,0,0);return c.toDataURL('image/webp',0.9);})()`, 120000);
     save(`assets/characters/${key}_cutin_drunk${n === '1' ? '' : n}.webp`, d);
   }
+} else if (mode === 'greenfile') {
+  // 任意の純緑地の絵を抜く：greenfile <src> <out.webp> <幅>
+  const [src, out, Wd] = rest;
+  const d = await page.eval(`(async()=>{${LOAD}const i=await ld(${JSON.stringify(src)});const W=${+Wd || 1000},H=Math.round(W*i.height/i.width);const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(i,0,0,W,H);
+    const im=g.getImageData(0,0,W,H),p=im.data;for(let q=0;q<p.length;q+=4){const r=p[q],gg=p[q+1],b=p[q+2];const k2=gg-Math.max(r,b);let a=k2>=110?0:k2<=25?1:1-(k2-25)/85;if(a<1){if(a<=0.02){p[q+3]=0;continue;}p[q]=Math.min(255,r/a);p[q+1]=Math.max(0,Math.min(255,(gg-255*(1-a))/a));p[q+2]=Math.min(255,b/a);}const m=Math.max(p[q],p[q+2]);if(p[q+1]>m)p[q+1]=m;p[q+3]=Math.round(a*255);}
+    g.putImageData(im,0,0);return c.toDataURL('image/webp',0.9);})()`, 120000);
+  save(out, d);
 } else if (mode === 'icon') {
   const [src, out] = rest;
   const d = await page.eval(`(async()=>{${LOAD}const i=await ld(${JSON.stringify(src)});const S=192;const c=document.createElement('canvas');c.width=S;c.height=S;const g=c.getContext('2d');g.imageSmoothingQuality='high';
