@@ -119,7 +119,7 @@
   const CHIBI_ALIAS = { busted: 'panic', plead: 'lose', calm: 'think' };
   // ほろ酔いの夜（mount の opts.drunk）：大きな顔は酔ったカットインから切った顔（assets/battle/face/drunk/）、
   // ミミは酔った胸像、会話の顔は face_<id>_drunk。ミニキャラは酔った版がある子だけ（DRUNK_CHIBI に名前を足す）
-  const DRUNK_CHIBI = new Set();
+  const DRUNK_CHIBI = new Set(['mimi', 'rico', 'polka', 'selina', 'grano', 'velvet']);   // assets/battle/chibi/drunk/（qa/chibisplit.mjs で切り出し）
   const DRUNK_FACE = (id, expr) => id === 'mimi'
     ? `art/face/drunk/mimi_${({ think: 'think', smug: 'smug', panic: 'shock', busted: 'shock', lose: 'sad', win: 'win', plead: 'sad', calm: 'calm' })[expr] || 'calm'}.webp`
     : `art/face/drunk/${id}_${['panic', 'busted', 'lose', 'plead'].includes(expr) ? 'b' : 'a'}.webp`;
