@@ -173,3 +173,11 @@ html #stage .mimi-confirm-overlay :is(.mimi-confirm-actions .btn, .tr-btns .btn)
 html #stage > .read-battle-host.mb-host :is(.pk-g-h, .pk-g-h b, .bl-cls, .pk-see .nq-cap, .bl-c .bl-mk) { font-size: var(--r-label) !important; }
 html #stage > .read-battle-host.mb-host :is(.pk-g-n, .pk-g-n span) { font-size: var(--r-note) !important; }
 html #stage > .read-battle-host.mb-host :is(.pk-act .btn) { font-size: var(--r-btn2) !important; }
+
+/* ---------- 写真集・CG集の「一覧」／コレクションの会話の昼夜（2026-11-10）：画面上の px ÷ --game-scale ---------- */
+html #stage :is(.reward-cg-viewer-listbtn, .reward-cg-list-back) { font-size: calc(var(--r-btn2) / var(--game-scale, 1)) !important; }
+/* コレクションの窓の中は逆zoomで画面上の px そのまま（÷ しない） */
+html .collection-modal .coll-conv-tab { font-size: var(--r-btn2) !important; }
+html #stage :is(.reward-cg-list-head b, .reward-cg-viewer-x) { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
+html #stage :is(.reward-cg-list-head span, .reward-cg-list-cell i) { font-size: calc(var(--r-label) / var(--game-scale, 1)) !important; }
+html .collection-modal .coll-conv-empty { font-size: var(--r-label) !important; }

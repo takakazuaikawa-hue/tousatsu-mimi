@@ -21057,3 +21057,26 @@ html.is-compact .home-stage.h15-sm .h15-goal { right: calc(450px + var(--sx, 0px
 }
 .result-char-opp .result-opp-say b { display: block; color: #f3c96b; font-size: .85em; margin-bottom: .1em; }
 @keyframes resultSayIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ===== 2026-11-10 写真集・CG集の「一覧」と、コレクションの会話の昼／夜 =====
+   押す所は画面上で最小44px（舞台は縮めて描くので ÷ --game-scale）。文字の大きさは type-roles.css */
+.reward-cg-viewer-x { width: calc(48px / var(--game-scale, 1)); height: calc(48px / var(--game-scale, 1)); right: calc(12px / var(--game-scale, 1)); top: calc(12px / var(--game-scale, 1)); }
+.reward-cg-viewer-listbtn { position: absolute; right: calc(14px / var(--game-scale, 1)); bottom: calc(12px / var(--game-scale, 1)); z-index: 3; min-width: calc(76px / var(--game-scale, 1)); min-height: calc(48px / var(--game-scale, 1)); padding: 0 calc(14px / var(--game-scale, 1)); color: #f3ece0; background: rgba(12,6,8,.78); border: 1px solid rgba(214,176,104,.8); border-radius: 2px; cursor: pointer; font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 700; }
+.reward-cg-list { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; background: #060308; cursor: default; }
+.reward-cg-list-head { flex: none; display: flex; align-items: center; gap: calc(14px / var(--game-scale, 1)); padding: calc(6px / var(--game-scale, 1)) calc(12px / var(--game-scale, 1)); color: #efcd82; font-family: "Shippori Mincho B1", "Yu Mincho", serif; border-bottom: 1px solid rgba(214,176,104,.4); }
+.reward-cg-list-head span { flex: 1 1 auto; color: #c4b89a; }
+.reward-cg-list-back { flex: none; min-width: calc(88px / var(--game-scale, 1)); min-height: calc(48px / var(--game-scale, 1)); padding: 0 calc(14px / var(--game-scale, 1)); color: #f3ece0; background: rgba(12,6,8,.78); border: 1px solid rgba(214,176,104,.8); border-radius: 2px; cursor: pointer; font-family: inherit; font-weight: 700; }
+.reward-cg-list-grid { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(118px / var(--game-scale, 1)), 1fr)); gap: calc(6px / var(--game-scale, 1)); padding: calc(8px / var(--game-scale, 1)) calc(12px / var(--game-scale, 1)) calc(14px / var(--game-scale, 1)); align-content: start; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.reward-cg-list-cell { position: relative; display: block; height: 0; padding: 0 0 56.25% 0; box-sizing: content-box;  background: #120a0b; border: calc(2px / var(--game-scale, 1)) solid rgba(214,176,104,.4); border-radius: 2px; cursor: pointer; overflow: hidden; }
+.reward-cg-list-cell img { position: absolute; left: 0; top: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+.reward-cg-list-cell i { position: absolute; left: 0; bottom: 0; min-width: 2.2em; padding: 0 .35em; font-style: normal; font-weight: 700; line-height: 1.5; text-align: center; color: #f3ece0; background: rgba(8,3,6,.85); }
+.reward-cg-list-cell.is-now { border-color: #f3d27a; box-shadow: 0 0 0 calc(2px / var(--game-scale, 1)) rgba(243,210,122,.6); }
+.reward-cg-list-cell.is-now i { color: #1a0a0c; background: #f3d27a; }
+/* コレクションの窓は逆zoomで画面上の px そのままなので、ここは ÷ 倍率 しない */
+.coll-conv-tabs { display: flex; gap: 8px; margin: 0 0 10px; }
+.collection-modal .coll-conv-tab { flex: 1 1 0; min-height: 52px; padding: 0 10px; color: #cdb99a; background: rgba(12,3,6,.7); border: 1px solid rgba(239,205,130,.35); border-radius: 2px; cursor: pointer; font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 700; }
+.collection-modal .coll-conv-tab.on { color: #1a0a0c; background: #efcd82; border-color: #efcd82; }
+.coll-conv-pane[hidden] { display: none !important; }
+.coll-conv-empty { margin: 0; color: #b19a74; line-height: 1.6; }
+.collection-modal .memory-grid .memory-card.is-night { background: linear-gradient(180deg, #2c1233, #180a22); border-color: #9a74b8; }
+.collection-modal .coll-conv .memory-card { min-height: 48px; }
