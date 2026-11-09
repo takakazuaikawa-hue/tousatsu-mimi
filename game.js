@@ -4486,7 +4486,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
     </div>
     <div class="ims-stage">
       <div class="ims-char ims-char-mimi character-frame" data-ims-side="mimi">
-        <img alt="ミミ" src="assets/characters/mimi_intermission.webp"
+        <img alt="ミミ" src="assets/characters/${String(opponentId).startsWith('h_') ? 'mimi_intermission_drunk' : 'mimi_intermission'}.webp"
              onerror="this.onerror=null;this.src='assets/characters/mimi_default.webp';">
       </div>
       <div class="ims-char ims-char-opp character-frame" data-ims-side="opp">
@@ -4540,7 +4540,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
     // 顔窓は小さい丸なので、全身絵ではなく顔クロップ（assets/ui/face_*）を使う
     // portrait：会話の場面（エンディングと同じ見せ方）で中央に大きく出す立ち絵
     const nightIms = String(opponentId).startsWith('h_');
-    if (speaker === 'mimi') return { name: 'ミミ', img: faceIconSrc('mimi', nightIms), portrait: 'assets/characters/mimi_intermission.webp', side: 'mimi' };
+    if (speaker === 'mimi') return { name: 'ミミ', img: faceIconSrc('mimi', nightIms), portrait: nightIms ? 'assets/characters/mimi_intermission_drunk.webp' : 'assets/characters/mimi_intermission.webp', side: 'mimi' };
     if (speaker === 'rico') return { name: 'リコ先輩', img: faceIconSrc('rico', nightIms), portrait: (String(opponentId).startsWith('h_') && HOROYOI_STAND.has('rico')) ? 'assets/characters/rico_drunk_stand.webp' : 'assets/characters/rico_default.webp', side: 'rico' };
     const o = OPPONENTS[speaker];
     const key = (o && o.imgKey) || speaker;
@@ -14399,7 +14399,7 @@ function horoyoiBattleNow(key) {
   const book = key === 'velvet' && !isItemOwned('cgset_velvet_book') ? [cgSetSrc('cgset_velvet_book', 1), cgSetSrc('cgset_velvet_book', 2)] : [];
   // 勝負の途中に挟む一枚絵（HOROYOI_MID_SCENES）も卓に入る前に読む
   if (STORY_ART['hmid_' + key]) book.push(STORY_ART['hmid_' + key]);
-  return [...(HOROYOI_STAND.has(key) ? [`assets/characters/${key}_drunk_stand.webp`] : []), 'assets/characters/mimi_bust_calm_drunk.webp', 'assets/characters/mimi_bust_think_drunk.webp', ...book];
+  return [...(HOROYOI_STAND.has(key) ? [`assets/characters/${key}_drunk_stand.webp`] : []), 'assets/characters/mimi_allin_drunk.webp', 'assets/characters/mimi_bust_calm_drunk.webp', 'assets/characters/mimi_bust_think_drunk.webp', ...book];
 }
 function battleAssetsGate(opponentId, resume) {
   const MA = window.MimiAssets; if (!MA) return true;
@@ -15945,7 +15945,7 @@ function showAllInCutIn(side, amount) {
     <div class="allin-streak allin-streak-2"></div>
     <div class="allin-burst"></div>
     <div class="allin-portrait">
-      <img src="${isPlayer ? 'assets/characters/mimi_allin.webp' : (state.horoyoi ? oppStandSrc(imgKey) : `assets/characters/${imgKey}_default.webp`)}" alt="${name}"
+      <img src="${isPlayer ? (state.horoyoi ? 'assets/characters/mimi_allin_drunk.webp' : 'assets/characters/mimi_allin.webp') : (state.horoyoi ? oppStandSrc(imgKey) : `assets/characters/${imgKey}_default.webp`)}" alt="${name}"
            onerror="this.onerror=function(){window.assetFallback(this,'${imgKey}')};this.src='assets/characters/${imgKey}_default.webp';">
     </div>
     <div class="allin-text-wrap">
