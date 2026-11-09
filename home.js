@@ -151,7 +151,8 @@ function setHomeStage(root, stage, num = stage) {
 // どこかを押せば即座に終わりの姿へ。演出用の特別な見た目は作らず、段階の値を時間差で切り替えるだけ。
 // 額に飾る専用の肖像（ChatGPT で額のために描いた絵）。まだ無い相手は顔の切り抜きのまま
 const FRAME_PORTRAITS = new Set(['rico', 'polka', 'selina', 'grano', 'velvet', 'mimi']);
-function framePortrait(id) { const pid = id === 'rico_tutorial' ? 'rico' : id; return FRAME_PORTRAITS.has(pid) ? `assets/ui/portrait_${pid}.webp` : `assets/ui/face_${id === 'rico_tutorial' ? 'rico_default' : id}.webp`; }
+// ほろ酔いの夜は酔った肖像（11/09 ユーザー選 b・b・a・b・b・b）
+function framePortrait(id) { const pid = id === 'rico_tutorial' ? 'rico' : id; return FRAME_PORTRAITS.has(pid) ? `assets/ui/portrait_${pid}${typeof homeIsNight === 'function' && homeIsNight() ? '_drunk' : ''}.webp` : `assets/ui/face_${id === 'rico_tutorial' ? 'rico_default' : id}.webp`; }
 function homeCeremonyPlan(root, cleared, next) {
   const prevId = STAGE_ORDER[cleared - 1];
   const prev = OPPONENTS[prevId];
