@@ -117,7 +117,15 @@
     mimi: { think: 'think', smug: 'smug', panic: 'shock', busted: 'shock', lose: 'sad', win: 'win', plead: 'sad' },
   };
   const CHIBI_ALIAS = { busted: 'panic', plead: 'lose', calm: 'think' };
+  // ほろ酔いの夜（mount の opts.drunk）：大きな顔は酔ったカットインから切った顔（assets/battle/face/drunk/）、
+  // ミミは酔った胸像、会話の顔は face_<id>_drunk。ミニキャラは酔った版がある子だけ（DRUNK_CHIBI に名前を足す）
+  const DRUNK_CHIBI = new Set();
+  const DRUNK_FACE = (id, expr) => id === 'mimi'
+    ? `art/face/drunk/mimi_${({ think: 'think', smug: 'smug', panic: 'shock', busted: 'shock', lose: 'sad', win: 'win', plead: 'sad', calm: 'calm' })[expr] || 'calm'}.webp`
+    : `art/face/drunk/${id}_${['panic', 'busted', 'lose', 'plead'].includes(expr) ? 'b' : 'a'}.webp`;
   function portraitSrc(id, expr, mode) {
+    if (DRUNK && mode === 'chibi' && DRUNK_CHIBI.has(id)) return `art/chibi/drunk/${id}_${CHIBI_ALIAS[expr] || expr}.webp`;
+    if (DRUNK && mode !== 'chibi') return DRUNK_FACE(id, expr);
     if (mode === 'chibi') return `art/chibi/${id}_${CHIBI_ALIAS[expr] || expr}.webp`;
     const m = FACE_MAP[id] || FACE_MAP.polka;
     return `art/face/${id}_${m[expr] || m.think}.webp`;
@@ -135,6 +143,7 @@
 
   // 小さな効果音（最初の操作の後だけ鳴る）。VOL は mount の volume（0 なら無音）
   let VOL = 1;
+  let DRUNK = false;
   let ac = null;
   function tone(freq, dur = .08, type = 'triangle', vol = .05, delay = 0) {
     if (!VOL) return;
@@ -259,6 +268,7 @@
     const base = opts.base != null ? String(opts.base) : CFG.base;
     const A = (p) => assetPath(p, base);
     const dev = !!opts.dev;
+    DRUNK = !!opts.drunk;
     if (opts.volume != null) VOL = Math.max(0, Math.min(1, +opts.volume || 0)); else VOL = 1;
 
     let dead = false, runId = 0, exited = false;
@@ -410,8 +420,8 @@
 
     function makeApi(rid) {
       const live = () => !dead && rid === runId;
-      const CHARS = {}; for (const k in CHARS_RAW) { const c = CHARS_RAW[k]; CHARS[k] = { ...c, face: A(c.face), panic: A(c.panic), smug: A(c.smug) }; }
-      const MIMI = {}; for (const k in MIMI_RAW) MIMI[k] = A(MIMI_RAW[k]);
+      const CHARS = {}; for (const k in CHARS_RAW) { const c = CHARS_RAW[k]; CHARS[k] = { ...c, face: A(DRUNK ? c.face.replace('.webp', '_drunk.webp') : c.face), panic: A(DRUNK ? `art/${k}_cutin_drunk2.webp` : c.panic), smug: A(DRUNK ? `art/${k}_cutin_drunk.webp` : c.smug) }; }
+      const MIMI = {}; for (const k in MIMI_RAW) MIMI[k] = A(DRUNK ? MIMI_RAW[k].replace('.webp', '_drunk.webp') : MIMI_RAW[k]);
       const api = {
         alive: live, $, wait, rand, pick, shuffle, deck, key, label, rn, SYM, SUITS, SUIT_NAME, score, category, CAT_NAME, equity, headsUp, eqPct, cardHTML, backHTML, sfx, CHARS, MIMI, reduce, sparkles, reveal,
         root: gameRoot, host, stage, layer, asset: A,

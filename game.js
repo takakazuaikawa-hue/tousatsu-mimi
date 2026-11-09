@@ -969,6 +969,9 @@ const OPPONENT_EXPRESSIONS = {
 //       | 'pleased'（勝ち/余裕）| 'defeat'（敗北）
 // ほろ酔いの夜の立ち絵（<key>_drunk_stand.webp）。絵が届いた人だけここに足す（無い人は昼の立ち絵のまま。404 を出さない）
 const HOROYOI_STAND = new Set(['rico', 'polka', 'selina', 'grano', 'velvet']);   // 11/09 ユーザー選：リコ・ヴェルベットは2、他は1
+// ほろ酔いの夜は顔のアイコンも酔った顔（assets/ui/face_<key>_drunk.webp、qa/drunkfaces.mjs で酔ったカットインから切り出し）
+const DRUNK_FACE_KEYS = new Set(['rico', 'mimi', 'polka', 'selina', 'grano', 'velvet']);
+function faceIconSrc(key, night) { const k = key === 'rico_tutorial' ? 'rico' : key; return (night && DRUNK_FACE_KEYS.has(k)) ? `assets/ui/face_${k}_drunk.webp` : `assets/ui/face_${k}.webp`; }
 function oppStandSrc(key) { return (state && state.horoyoi && HOROYOI_STAND.has(key)) ? `assets/characters/${key}_drunk_stand.webp` : `assets/characters/${key}_default.webp`; }
 function setOpponentExpression(mood) {
   if (state) state.opponentExpr = mood || 'default';
@@ -4186,7 +4189,8 @@ function showStoryScene(key, onDone, voiceReady) {
     boxEl.classList.toggle('is-mimi', s.who === 'mimi');
     boxEl.classList.toggle('is-think', s.k === 'think');
     nameEl.textContent = who.name || '';
-    if (who.face && faceImg.getAttribute('src') !== who.face) faceImg.setAttribute('src', who.face);
+    const whoFace = who.face ? (state && state.horoyoi && DRUNK_FACE_KEYS.has(s.who) ? faceIconSrc(s.who, true) : who.face) : '';
+    if (whoFace && faceImg.getAttribute('src') !== whoFace) faceImg.setAttribute('src', whoFace);
     type(s.k === 'think' ? `（${s.t}）` : s.t);
   };
 
@@ -4535,15 +4539,16 @@ function showIntermission(opponentId, onDone, voiceReady) {
   function speakerMeta(speaker) {
     // 顔窓は小さい丸なので、全身絵ではなく顔クロップ（assets/ui/face_*）を使う
     // portrait：会話の場面（エンディングと同じ見せ方）で中央に大きく出す立ち絵
-    if (speaker === 'mimi') return { name: 'ミミ', img: 'assets/ui/face_mimi.webp', portrait: 'assets/characters/mimi_intermission.webp', side: 'mimi' };
-    if (speaker === 'rico') return { name: 'リコ先輩', img: 'assets/ui/face_rico.webp', portrait: (String(opponentId).startsWith('h_') && HOROYOI_STAND.has('rico')) ? 'assets/characters/rico_drunk_stand.webp' : 'assets/characters/rico_default.webp', side: 'rico' };
+    const nightIms = String(opponentId).startsWith('h_');
+    if (speaker === 'mimi') return { name: 'ミミ', img: faceIconSrc('mimi', nightIms), portrait: 'assets/characters/mimi_intermission.webp', side: 'mimi' };
+    if (speaker === 'rico') return { name: 'リコ先輩', img: faceIconSrc('rico', nightIms), portrait: (String(opponentId).startsWith('h_') && HOROYOI_STAND.has('rico')) ? 'assets/characters/rico_drunk_stand.webp' : 'assets/characters/rico_default.webp', side: 'rico' };
     const o = OPPONENTS[speaker];
     const key = (o && o.imgKey) || speaker;
     // PC は大きく映すので、大きい版（縦2000px）があればそれを使う（2026-11-01 8回目の批評：667×1000 を約1.5倍に引き伸ばして顔がぼけた）
     const night = String(opponentId).startsWith('h_') && HOROYOI_STAND.has(key);   // ほろ酔いの夜の幕間は酔った立ち絵
     const lo = night ? `assets/characters/${key}_drunk_stand.webp` : `assets/characters/${key}_default.webp`;
     const hd = !night && IMS_HD_KEYS.has(key) && !document.documentElement.classList.contains('is-compact');
-    return { name: o ? o.name : oppName, img: `assets/ui/face_${key}.webp`, portrait: hd ? `assets/characters/hd/${key}_default.webp` : lo, lo, side: 'opp' };
+    return { name: o ? o.name : oppName, img: faceIconSrc(key, night), portrait: hd ? `assets/characters/hd/${key}_default.webp` : lo, lo, side: 'opp' };
   }
   // 立ち絵は会話の前に読んでおく（出てから描かれると興ざめ）
   ['mimi', 'rico', opponentId].forEach(sp => { new Image().src = speakerMeta(sp).portrait; });
@@ -15940,7 +15945,7 @@ function showAllInCutIn(side, amount) {
     <div class="allin-streak allin-streak-2"></div>
     <div class="allin-burst"></div>
     <div class="allin-portrait">
-      <img src="assets/characters/${isPlayer ? 'mimi_allin.webp' : imgKey + '_default.webp'}" alt="${name}"
+      <img src="${isPlayer ? 'assets/characters/mimi_allin.webp' : (state.horoyoi ? oppStandSrc(imgKey) : `assets/characters/${imgKey}_default.webp`)}" alt="${name}"
            onerror="this.onerror=function(){window.assetFallback(this,'${imgKey}')};this.src='assets/characters/${imgKey}_default.webp';">
     </div>
     <div class="allin-text-wrap">
@@ -16640,7 +16645,7 @@ function startReadBattle(group) {
   let inst = null;
   try {
     inst = window.MB.mount(host, {
-      gameId, charId: state.opponentImgKey, purse: state.readBattlePurse, exitLabel: '卓にもどる', lossCut: senseLossCut(),
+      gameId, charId: state.opponentImgKey, drunk: !!state.horoyoi, purse: state.readBattlePurse, exitLabel: '卓にもどる', lossCut: senseLossCut(),
       table: readBattleTable(gameId),
       volume: isSfxOn() ? sfxVolFloat() : 0,
       onExit: (r) => {
@@ -16729,7 +16734,7 @@ function showReadVerdict() {
     const gen = battleGen;
     try {
       inst = window.MB.mount(host, {
-        gameId: '__verdict', charId: p.oppKey, purse: state.readBattlePurse, exitLabel: '次へ', noIntro: true, pending: p, lossCut: senseLossCut(),
+        gameId: '__verdict', charId: p.oppKey, drunk: !!state.horoyoi, purse: state.readBattlePurse, exitLabel: '次へ', noIntro: true, pending: p, lossCut: senseLossCut(),
         volume: isSfxOn() ? sfxVolFloat() : 0,
         onExit: (r) => {
           try { inst && inst.destroy(); } catch (e) {}
@@ -16865,7 +16870,7 @@ function triggerPsychBattle(qid) {
     const imgKey = state.opponentImgKey || 'polka';
     const oppName = state.opponentName || '相手';
     oppCharEl.innerHTML = `
-      <img data-opp-face src="assets/characters/${imgKey}_default.webp" alt="${oppName}" onerror="window.assetFallback(this,'${imgKey}')">
+      <img data-opp-face src="${oppStandSrc(imgKey)}" alt="${oppName}" onerror="window.assetFallback(this,'${imgKey}')">
       <div class="portrait-name">${oppName}</div>
     `;
   }
@@ -16933,7 +16938,7 @@ function triggerPsychBattle(qid) {
   if (!isLogic && state.opponentImgKey && qid !== 'velvet_opening') {
     speechEl.innerHTML = `
       <div class="psych-opponent-face">
-        <img data-opp-face src="assets/characters/${state.opponentImgKey}_default.webp" alt="${state.opponentName}" onerror="window.assetFallback(this,'${state.opponentImgKey}')">
+        <img data-opp-face src="${oppStandSrc(state.opponentImgKey)}" alt="${state.opponentName}" onerror="window.assetFallback(this,'${state.opponentImgKey}')">
       </div>
       <div class="psych-opponent-line">
         <div class="psych-opponent-name">${state.opponentName}</div>
@@ -19357,7 +19362,7 @@ function endBattle() {
   }
   const mimiImg = document.querySelector('[data-result-mimi]');
   if (mimiImg) {
-    mimiImg.src = `assets/characters/${won ? 'mimi_win' : 'mimi_sad'}.webp`;
+    mimiImg.src = state.horoyoi ? `assets/characters/mimi_bust_${won ? 'win' : 'sad'}_drunk.webp` : `assets/characters/${won ? 'mimi_win' : 'mimi_sad'}.webp`;
     mimiImg.onerror = () => { mimiImg.onerror = null; mimiImg.src = 'assets/characters/mimi_default.webp'; };
   }
   const oppImg = document.querySelector('[data-result-opp]');
@@ -19365,7 +19370,7 @@ function endBattle() {
     const key = state.opponentImgKey;
     const mood = (OPPONENT_EXPRESSIONS[key] || {})[won ? 'defeat' : 'pleased'];
     oppImg.onerror = () => { oppImg.onerror = null; oppImg.src = `assets/characters/${key}_default.webp`; };
-    oppImg.src = `assets/characters/${key}_${mood || 'default'}.webp`;
+    oppImg.src = (state.horoyoi && HOROYOI_STAND.has(key)) ? oppStandSrc(key) : `assets/characters/${key}_${mood || 'default'}.webp`;
   }
   const setText = (k, v) => { const el = document.querySelector(`[data-bind="${k}"]`); if (el) el.textContent = v; };
   setText('rankValue', rank);
