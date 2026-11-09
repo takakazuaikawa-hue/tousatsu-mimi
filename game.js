@@ -741,8 +741,8 @@ const MOTION_CG = [];
 // 2枚目のご褒美がある相手：勝った時に1枚目の次に続けて見せ、コレクションでも続けて見られる（2026-10-30 ユーザー：セリナは3と4を採用）
 const REWARD_CG_MORE = { selina: ['assets/backgrounds/reward_cg_selina_2.jpg'] };
 // ほろ酔いの夜の一枚絵：1人 HOROYOI_CG_N 枚（11/08 ユーザー「すべて採用」「倍ほしい」）。1枚目は幕間の後、続けて残りを見せる
-// 人ごとの枚数（11/09 B・G・H・I は破綻で不採用、ポルカ6枚目とヴェルベット4〜6枚目は描き直し待ち）
-const HOROYOI_CG_N = { rico_tutorial: 6, polka: 5, selina: 6, grano: 6, velvet: 3 };
+// 人ごとの枚数（11/09 破綻の絵は不採用。ヴェルベット6枚目は描き直し待ち）
+const HOROYOI_CG_N = { rico_tutorial: 6, polka: 6, selina: 6, grano: 6, velvet: 5 };
 [['rico_tutorial', 'rico'], ['polka', 'polka'], ['selina', 'selina'], ['grano', 'grano'], ['velvet', 'velvet']].forEach(([id, k]) => {
   REWARD_CG_MORE['h_' + id] = Array.from({ length: HOROYOI_CG_N[id] - 1 }, (_, i) => `assets/backgrounds/horoyoi/${k}_${i + 2}.jpg`);
 });
@@ -762,7 +762,7 @@ const CG_SETS = {
   cgset_midnight: { name: '零時の寝台と卓',   n: 5, key: 'midnight', short: '寝台と卓' },
   cgset_rival:    { name: 'ライバルと卓で',   n: 3, key: 'rival', short: 'ライバル' },
   // ほろ酔いの夜の一枚絵で、採用した絵と構図が似ていた別カット（11/09 ユーザー「採用版以外はCG集に。出来はいい」）
-  cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 6, key: 'horoyoi', short: 'ほろ酔い' },
+  cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 11, key: 'horoyoi', short: 'ほろ酔い' },
 };
 const cgSetSrc = (id, k) => `assets/backgrounds/cgset/${CG_SETS[id].key}_${k}.jpg`;
 const cgSetThumb = (id, k) => `assets/backgrounds/cgset/thumb/${CG_SETS[id].key}_${k}.webp`;
@@ -912,7 +912,8 @@ function setMimiExpression(expr) {
         img.onerror = () => { img.onerror = goDefault; img.src = `assets/characters/mimi_${expr && expr !== 'default' ? expr : 'default'}.webp`; };
         img.src = 'assets/characters/mimi_bust_think.webp';
       };
-      img.src = `assets/characters/mimi_bust_${bust}.webp`;
+      // ほろ酔いの夜は酔ったミミ（11/09 ユーザー採用。頬が赤く目がとろん）
+      img.src = `assets/characters/mimi_bust_${bust}${state && state.horoyoi ? '_drunk' : ''}.webp`;
       return;
     }
     if (!expr || expr === 'default') { goDefault(); return; }
@@ -5898,7 +5899,7 @@ const SHOP_ITEMS = [
   { id: 'cgset_yshirt',   cat: 'cgset', name: 'CG集「夜のYシャツ」',     price: 100, desc: '月の見える寝室で、|Yシャツ一枚のミミ。|7枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_midnight', cat: 'cgset', name: 'CG集「零時の寝台と卓」', price: 100, desc: 'バニーと水着で、|寝台と卓に|身を預けるミミ。|5枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_rival',    cat: 'cgset', name: 'CG集「ライバルと卓で」', price: 100, desc: 'ポルカ・ヴェルベットと|ミミの、|幻の一枚たち。|3枚入り。|コレクションで|いつでも見られる' },
-  { id: 'cgset_horoyoi',  cat: 'cgset', name: 'CG集「ほろ酔いの別カット」', price: 100, desc: 'ほろ酔いの夜の、|もうひとつの|一枚たち。|6枚入り。|コレクションで|いつでも見られる' },
+  { id: 'cgset_horoyoi',  cat: 'cgset', name: 'CG集「ほろ酔いの別カット」', price: 100, desc: 'ほろ酔いの夜の、|もうひとつの|一枚たち。|11枚入り。|コレクションで|いつでも見られる' },
   { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 300,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
   { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 350, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。撃破の報酬', requires: 'ending' },
   // 音声は無い。旧「ボイス集」（900）を実態どおりの「セリフ集」に改め値下げ。買った人の所持はそのまま
@@ -14340,12 +14341,17 @@ function chipBonusTotal() {
 // 対戦に入る前に、入った瞬間に要る絵と動画がそろうのを待つ（そろっていなければ「準備中」を出す）。
 // 対戦中に出るもの（表情の顔アップ・読み合いの絵と動画）は裏で読む。前の相手の分は手放す
 let __battleAssetsOpp = null, __battleGateBusy = false;
+// ほろ酔いの夜は、入った瞬間に要る絵が酔った立ち絵と酔ったミミに替わる（遅れて出ると興ざめなので待つ側に入れる）
+function horoyoiBattleNow(key) {
+  if (!isHoroyoi()) return [];
+  return [...(HOROYOI_STAND.has(key) ? [`assets/characters/${key}_drunk_stand.webp`] : []), 'assets/characters/mimi_bust_calm_drunk.webp', 'assets/characters/mimi_bust_think_drunk.webp'];
+}
 function battleAssetsGate(opponentId, resume) {
   const MA = window.MimiAssets; if (!MA) return true;
   const key = (OPPONENTS[opponentId] || {}).imgKey || opponentId;
   if (__battleAssetsOpp && __battleAssetsOpp !== opponentId) MA.release('battle:' + __battleAssetsOpp);
   __battleAssetsOpp = opponentId;
-  const set = 'battle:' + opponentId, now = MA.sets.battleNow(opponentId, key);
+  const set = 'battle:' + opponentId, now = MA.sets.battleNow(opponentId, key).concat(horoyoiBattleNow(key));
   const later = () => {
     if (idleMotionOk()) MA.warm(MA.sets.battleIdle(opponentId), { set, front: true }).then(() => { if (state.screen === 'battle' && state.opponentId === opponentId) applyOpponentIdle(); });
     MA.warm(MA.sets.battleLater(opponentId, key), { set, light: true }); MA.warm(MA.sets.reward(opponentId), { set, light: true });
