@@ -132,6 +132,7 @@
   const plain = (t) => t.split('|').join('');
   const kw = (t) => `<span class="nq-k">${wb(t)}</span>`;
   const CSS = `
+    .pk-sep { display: inline-block; width: 2px; align-self: stretch; margin: 0 4px; background: var(--gold); opacity: .6; }
     .nq-play { display: flex; flex-direction: column; min-height: 0; gap: 6px; }
     .nq-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 8px; flex: 1 1 auto; min-height: 0; }
     .nq-tile { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; padding: 6px 10px; min-height: 0; cursor: pointer; border: 1px solid var(--line); background: linear-gradient(180deg, var(--ebony-hi), var(--ebony-lo)); color: var(--text); text-align: center; transition: border-color .2s, background .2s, opacity .2s; }
@@ -258,8 +259,8 @@
         <div class="pk-gauge" id="mb-pk-gauge" hidden></div>
       </div>
       <div class="rb-info">
-        <div class="nq-sit"><div class="nq-cap">場札</div><div class="nq-row">${board.map(c => api.cardHTML(c, 'small' + (core.has(api.key(c)) ? ' glow' : ''))).join('')}</div>
-          <div class="nq-me">ミミの役：${meName}${mineCore.length ? `<small>${mineCore.length < core.size ? `手札の${mineCore.map(api.label).join('・')}も使う` : `手札の${mineCore.map(api.label).join('・')}で`}</small>` : ''}</div></div>
+        <div class="nq-sit"><div class="nq-cap">場札 ／ ミミの手札</div><div class="nq-row">${board.map(c => api.cardHTML(c, 'small' + (core.has(api.key(c)) ? ' glow' : ''))).join('')}<span class="pk-sep" aria-hidden="true"></span>${mine.map(c => api.cardHTML(c, 'small' + (core.has(api.key(c)) ? ' glow' : ''))).join('')}</div>
+          <div class="nq-me">ミミの役：${meName}</div></div>
         <div class="nq-tip" id="mb-pk-tip"></div>
         <div class="nq-her pk-her"><div class="pk-see"><span class="nq-cap">${jp}の札</span>${shown.map(it => it ? seenCardHTML(api, it) : api.backHTML('small')).join('')}</div>
           <div class="pk-bets"><span class="nq-cap">賭け方</span><div>${actsHTML}</div></div></div>

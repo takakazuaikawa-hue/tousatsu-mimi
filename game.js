@@ -765,7 +765,7 @@ const CG_SETS = {
   cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 12, key: 'horoyoi', short: 'ほろ酔い' },
   // 二周目のクリア報酬（11/09 ユーザー「2周目のクリア報酬のヴェルベット写真集として」「勝った時に渡す」）。交換所には出さない。
   // ほろ酔いの夜で初めてヴェルベットに勝った時に渡す（endBattle の save.photobookPending → showPhotobookGift）。採用分は qa/out/velvet_photobook/adopted.json
-  cgset_velvet_book: { name: 'ヴェルベット写真集', n: 61, key: 'velvetbook', short: '写真集', gift: 'ほろ酔いの夜のクリア報酬' },
+  cgset_velvet_book: { name: 'ヴェルベット写真集', n: 62, key: 'velvetbook', short: '写真集', gift: 'ほろ酔いの夜のクリア報酬' },
 };
 const cgSetSrc = (id, k) => `assets/backgrounds/cgset/${CG_SETS[id].key}_${k}.jpg`;
 const cgSetThumb = (id, k) => `assets/backgrounds/cgset/thumb/${CG_SETS[id].key}_${k}.webp`;
@@ -3532,7 +3532,8 @@ function applyBindings() {
         if (row) {
           row.classList.toggle('is-mimi-voice', inner);
           const fi = row.querySelector('.v2-rico-face img');
-          if (fi && inner && fi.getAttribute('src') !== 'assets/ui/face_mimi.webp') { fi.onerror = null; fi.setAttribute('src', 'assets/ui/face_mimi.webp'); fi.alt = 'ミミ'; }
+          const mimiFace = faceIconSrc('mimi', !!state.horoyoi);
+          if (fi && inner && fi.getAttribute('src') !== mimiFace) { fi.onerror = null; fi.setAttribute('src', mimiFace); fi.alt = 'ミミ'; }
           else if (fi && !inner && fi.alt === 'ミミ') { fi.alt = 'リコ先輩'; applyBattleRicoOutfit(); }
         }
         // 心の声は長いと欄で切れるので、最初の一言と、最後の「→ どうするか」だけにする
@@ -5459,7 +5460,8 @@ function applyBattleRicoOutfit() {
   // ★小さな丸枠に全身立ち絵を入れると顔が潰れて誰か分からない。
   //   衣装ごとに用意した顔クロップ（assets/ui/face_rico_*.webp）を使い、
   //   衣装の見分け（帽子・髪飾り等）と視認性を両立する。
-  const faceFile = 'face_' + file.slice(0, -5) + '.webp';
+  // ほろ酔いの夜は酔った顔（11/09 Codex 17回目：助言は「ふにゃ…」なのに顔だけ素面だった）
+  const faceFile = state && state.horoyoi ? 'face_rico_drunk.webp' : 'face_' + file.slice(0, -5) + '.webp';
   if (!img.src.endsWith(faceFile)) {
     img.onerror = function () { this.onerror = null; this.src = 'assets/characters/' + file; };
     img.src = 'assets/ui/' + faceFile;
@@ -9086,6 +9088,7 @@ function onAction(e) {
         } else {
           renderWonResultButtons();
           if (isBgmOn()) playSceneBgm('victory');
+          if (save.photobookPending) { save.photobookPending = false; saveProgress(); setTimeout(showPhotobookGift, 500); }
         }
       });
       break;
@@ -10132,6 +10135,8 @@ function showEndingFinalButtonsInner(stage, opts = {}) {
 
 
 function goLobby() {
+  // 幕間を見ずにホームへ戻った時も、写真集の受け取りは必ず出す
+  if (save && save.photobookPending) setTimeout(() => { if (!save.photobookPending || state.screen !== 'lobby') return; save.photobookPending = false; saveProgress(); showPhotobookGift(); }, 1200);
   if (window.MimiVoice) stopVoice();   // 場面を出たら声は止める
   delete state.homePreviewOutfit;
   battleGen++;
@@ -14453,6 +14458,7 @@ function preloadBattleVoice(opponentId, serious) {
 function startBattle(opponentId) {
   if (!battleAssetsGate(opponentId, () => startBattle(opponentId))) return;
   if (isHoroyoi()) {
+    if (!horoyoiUnlocked(opponentId)) { const p = STAGE_ORDER[STAGE_ORDER.indexOf(opponentId) - 1]; toast(`ほろ酔いの夜は順番に。先に${OPPONENTS[p].name}に勝とう`); return; }
     window.__ricoSeriousMode = false; window.__ricoSkipLecture = false;
     // 扉（夜の題字）は、その卓に勝つまで入るたびに出す（一周目と同じ。リベンジの直後は出さない）
     let first = !horoyoiCleared(opponentId) && !!HOROYOI_EPISODES[opponentId];
@@ -19169,15 +19175,16 @@ function saveBattleResume() {
   const snap = {};
   Object.keys(state).forEach(k => { const v = state[k]; if (v === null || ['number', 'boolean', 'string'].includes(typeof v)) snap[k] = v; });
   ['readBattlePurse', 'readBattlePlayed', 'handResults'].forEach(k => { if (state[k] != null) { try { snap[k] = JSON.parse(JSON.stringify(state[k])); } catch (e) {} } });
-  save.battleResume = { opp: state.opponentId, serious: !!state.seriousRicoMode, handsDone: state.handNo - 1, playerChips: state.playerChips, opponentChips: state.opponentChips, snap, at: Date.now() };
+  save.battleResume = { opp: state.opponentId, serious: !!state.seriousRicoMode, horoyoi: !!state.horoyoi, handsDone: state.handNo - 1, playerChips: state.playerChips, opponentChips: state.opponentChips, snap, at: Date.now() };
   saveProgress();
 }
 // 戻す時に外す値：ハンドの途中の値（次のハンドを配る時に決め直す）
-const RESUME_SKIP = new Set(['screen', 'handNo', 'handPhase', 'isPlayerTurn', 'psychPending', 'psychResolving', 'psychResolved', 'pot', 'currentBetPlayer', 'currentBetOpponent', 'pendingRead', 'readHandNo', 'logicHandNo', 'logicResolvedStreet']);
+const RESUME_SKIP = new Set(['horoyoi', 'screen', 'handNo', 'handPhase', 'isPlayerTurn', 'psychPending', 'psychResolving', 'psychResolved', 'pot', 'currentBetPlayer', 'currentBetOpponent', 'pendingRead', 'readHandNo', 'logicHandNo', 'logicResolvedStreet']);
 function clearBattleResume() { if (save && save.battleResume) { delete save.battleResume; saveProgress(); } }
 function offerBattleResume(after) {
   const r = save.battleResume;
-  if (!r || r.opp !== state.opponentId || !!r.serious !== !!state.seriousRicoMode || state.tutorialMode) return after();
+  // 昼（一周目）と夜（ほろ酔いの夜）の途中保存は別物。違う方の続きは出さない（11/09 Codex 17回目：昼の卓で夜の続きを開くと絵と打ち方が混ざった）
+  if (!r || r.opp !== state.opponentId || !!r.serious !== !!state.seriousRicoMode || !!r.horoyoi !== !!state.horoyoi || state.tutorialMode) return after();
   const name = state.opponentName || '相手';
   showConfirm({ title: '続きから遊びますか？', body: `前回は Hand ${r.handsDone + 1} の前で中断しました。
 ミミ ${r.playerChips} ／ ${name} ${r.opponentChips}`, ok: '続きから', cancel: '最初から' }).then(yes => {
@@ -19291,7 +19298,7 @@ function endBattle() {
     if (state.horoyoi) {
       if (!practice && !horoyoiCleared(state.opponentId)) save.horoyoiCleared.push(state.opponentId);
       // 二周目のクリア報酬：ほろ酔いの夜で初めてヴェルベットに勝ったら写真集（結果を見せた後に受け取りの幕を出す）
-      if (!practice && state.opponentId === 'velvet' && !save.ownedItems.includes('cgset_velvet_book')) {
+      if (!practice && state.opponentId === 'velvet' && STAGE_ORDER.every(horoyoiCleared) && !save.ownedItems.includes('cgset_velvet_book')) {
         save.ownedItems.push('cgset_velvet_book');
         save.photobookPending = true;
         rewards.push('ほろ酔いの夜を制覇：ヴェルベット写真集（コレクションでいつでも見られる）');
@@ -19530,10 +19537,7 @@ function endBattle() {
     setTimeout(() => { if (g0 !== battleGen || state.screen !== 'result') return; save.gradCgPending = false; save.gradCgSeen = true; saveProgress(); showGraduationScene(); }, 2600);
   }
   // 二周目のクリア報酬の写真集も、勝ち負けを見せた後に受け取りの幕で渡す
-  if (save.photobookPending) {
-    const g1 = battleGen;
-    setTimeout(() => { if (g1 !== battleGen || state.screen !== 'result') return; save.photobookPending = false; saveProgress(); showPhotobookGift(); }, 2600);
-  }
+  // 写真集の受け取りは、幕間の会話と一枚絵を見終えてから（go-intermission の後）。ここでは出さない（11/09 Codex 17回目：幕間の最初の台詞に重なった）
 }
 
 // 勝利リザルトの主ボタン群（次ステージ／再戦／ロビー）のHTMLを組み立てる。

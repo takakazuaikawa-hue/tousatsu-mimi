@@ -265,14 +265,18 @@ async function applyHomeCostume() {
 function showHomeLedger() {
   const overlay = document.createElement('div');
   overlay.className = 'home-overlay';
-  overlay.innerHTML = `<section class="home-dialog" role="dialog" aria-modal="true" aria-labelledby="home-ledger-title"><header><h2 id="home-ledger-title">物語の台帳</h2><button type="button" data-home-close aria-label="閉じる">閉じる</button></header><div class="home-ledger-rows">${STAGE_ORDER.map((id,i) => {
+  overlay.innerHTML = `<section class="home-dialog" role="dialog" aria-modal="true" aria-labelledby="home-ledger-title"><header><h2 id="home-ledger-title">${typeof isHoroyoi === 'function' && isHoroyoi() ? 'ほろ酔いの夜の台帳' : '物語の台帳'}</h2><button type="button" data-home-close aria-label="閉じる">閉じる</button></header><div class="home-ledger-rows">${STAGE_ORDER.map((id,i) => {
     // done＝この卓を勝ち取った（clearedStages に入っている）。exempt＝研修を飛ばしてポルカに勝った人のリコ先輩（封蝋は押すが、勝ったとは言わない）
-    const o = OPPONENTS[id], done = save.clearedStages.includes(id), exempt = isStageExempt(id), unlocked = isStageUnlocked(id);
-    const action = id === 'rico_tutorial' && done ? 'rico-mode-chooser' : 'battle-start';
-    const stateText = exempt ? '免除（研修は飛ばしました。受講はいつでもできます）' : done ? '勝利済み' : id === lobbyNextStageId() ? '今夜の相手' : unlocked ? '挑戦できます' : IS_TRIAL ? '製品版で遊べます' : `${OPPONENTS[STAGE_ORDER[i-1]].name}に勝つと解放`;
+    // ほろ酔いの夜（二周目）は夜の勝ち記録・解放・報酬で（11/09 Codex 17回目：夜の台帳が昼の記録のままで、順番を飛ばせた）
+    const night = typeof isHoroyoi === 'function' && isHoroyoi();
+    const o = OPPONENTS[id], done = night ? horoyoiCleared(id) : save.clearedStages.includes(id), exempt = !night && isStageExempt(id), unlocked = night ? horoyoiUnlocked(id) : isStageUnlocked(id);
+    const action = id === 'rico_tutorial' && done && !night ? 'rico-mode-chooser' : 'battle-start';
+    const nextId = night ? horoyoiNext() : lobbyNextStageId();
+    const prize = night ? horoyoiPrizeFor(id) : (done ? rematchPreview(id) : o.rewardFirst);
+    const stateText = exempt ? '免除（研修は飛ばしました。受講はいつでもできます）' : done ? '勝利済み' : id === nextId ? '今夜の相手' : unlocked ? '挑戦できます' : IS_TRIAL ? '製品版で遊べます' : `${OPPONENTS[STAGE_ORDER[i-1]].name}に勝つと解放`;
     // コインで飛ばせるのは研修とヴェルベット以外の、まだ勝っていない卓だけ（canSkipStage）。ヴェルベットを飛ばすとエンディングを見ないままクリア特典が開いてしまうため
-    const skipBtn = canSkipStage(id) ? `<button data-action="skip-stage" data-opponent="${id}">スキップ（${skipStageCost(o)} コインで勝ち扱い）</button>` : '';
-    return `<section class="home-ledger-row"><h3>${i+1}. ${o.name}</h3><span>${stateText}</span>${unlocked ? `<div><button data-action="${action}" data-opponent="${id}">${done ? (id === 'rico_tutorial' ? '受講・再戦' : '再戦') : id === 'rico_tutorial' ? '受講する' : '卓へ'}（勝てば ${done ? rematchPreview(id) : o.rewardFirst} コイン）</button><button data-action="char-profile" data-char="${id}">プロフィール</button>${skipBtn}${done && EPISODES[id] ? `<button data-action="recall-episode" data-episode="${id}">物語の回想</button>` : ''}${id === 'rico_tutorial' && !done && !exempt ? '<button data-action="rico-skip-tutorial">実戦から始める</button>' : ''}</div>` : ''}</section>`;
+    const skipBtn = !night && canSkipStage(id) ? `<button data-action="skip-stage" data-opponent="${id}">スキップ（${skipStageCost(o)} コインで勝ち扱い）</button>` : '';
+    return `<section class="home-ledger-row"><h3>${i+1}. ${o.name}</h3><span>${stateText}</span>${unlocked ? `<div><button data-action="${action}" data-opponent="${id}">${night ? (done ? '再戦' : '卓へ') : done ? (id === 'rico_tutorial' ? '受講・再戦' : '再戦') : id === 'rico_tutorial' ? '受講する' : '卓へ'}（勝てば ${prize} コイン）</button><button data-action="char-profile" data-char="${id}">プロフィール</button>${skipBtn}${!night && done && EPISODES[id] ? `<button data-action="recall-episode" data-episode="${id}">物語の回想</button>` : ''}${!night && id === 'rico_tutorial' && !done && !exempt ? '<button data-action="rico-skip-tutorial">実戦から始める</button>' : ''}</div>` : ''}</section>`;
   }).join('')}</div></section>`;
   openHomeDialog(overlay);
 }
