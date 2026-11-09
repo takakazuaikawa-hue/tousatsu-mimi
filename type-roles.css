@@ -168,3 +168,8 @@ html #stage .mimi-confirm-overlay :is(.mimi-confirm-body, .cr-line, .tr-note) { 
 html #stage .mimi-confirm-overlay :is(.tr-head, .cr-head) { font-size: var(--r-label) !important; }
 html #stage .mimi-confirm-overlay :is(.cr-legal, .tr-code) { font-size: var(--r-note) !important; }
 html #stage .mimi-confirm-overlay :is(.mimi-confirm-actions .btn, .tr-btns .btn) { font-size: var(--r-btn2) !important; }
+
+/* 2026-11-09 ほろ酔いの夜の読み合い（見えちゃった札 peek・ぼやけた手札 blur）：本文・見出し・補足の段に乗せる */
+html #stage > .read-battle-host.mb-host :is(.pk-g-h, .pk-g-h b, .bl-cls, .pk-see .nq-cap, .bl-c .bl-mk) { font-size: var(--r-label) !important; }
+html #stage > .read-battle-host.mb-host :is(.pk-g-n, .pk-g-n span) { font-size: var(--r-note) !important; }
+html #stage > .read-battle-host.mb-host :is(.pk-act .btn) { font-size: var(--r-btn2) !important; }

@@ -1241,3 +1241,13 @@ html.is-compact .minipoker-overlay .mp-pt-mult { display: none; }
 html.is-compact.is-narrow-stage .minipoker-overlay .mp-paytable { width: 180px; }
 html.is-compact.is-narrow-stage .minipoker-overlay .mp-bet-row { gap: 4px; }
 html.is-compact.is-narrow-stage .minipoker-overlay .mp-bet-max { padding: 0 8px; }
+
+/* 2026-11-09 見えちゃった札・ぼやけた手札（スマホ）：役の札は容疑者しぼりと同じ寸法。ぼやけた手札の札の並びと見込みの欄は小さく詰める */
+html.is-compact #stage > .read-battle-host.mb-host .pk-see .card { --w: 32px; }
+html.is-compact #stage > .read-battle-host.mb-host .pk-gauge { padding: 2px 8px; gap: 1px; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-cands { gap: 6px 4px; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-cands .card { --w: 30px; }
+html.is-compact #stage > .read-battle-host.mb-host .pk-act { gap: 8px; }
+html.is-compact #stage > .read-battle-host.mb-host .pk-act .btn { padding: 8px 12px; min-width: 0; }
+html.is-compact #stage > .read-battle-host.mb-host .bl-mine { flex-wrap: wrap; row-gap: 2px; }
+html.is-compact #stage > .read-battle-host.mb-host .nq-tiles.pk-q2 .ex { display: none; }
