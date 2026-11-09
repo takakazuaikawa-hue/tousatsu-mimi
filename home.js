@@ -16,7 +16,7 @@ function homeAssetsGate() {
   if (!assets) return true;
   const outfit = homeLobbyOutfit();
   const urls = assets.sets.lobby();
-  if (outfit.file !== 'rico_default.webp') urls.push(`assets/characters/${outfit.file}`);
+  if (outfit.file !== 'rico_default.webp') urls.push(costumeSrc(outfit.file));
   if (assets.allReady(urls)) return true;
   if (homeWarmPending) return false;
   homeWarmPending = true;
@@ -231,6 +231,9 @@ function refreshHomeStatus() {
 // 制服は承認された頬杖の絵。ほかの衣装は人物なしの同じ劇場で、卓の奥に立つ。
 // decode 完了後に全層を一緒に切り替え、着替え中の二重表示・背景だけの瞬間を避ける。
 // ほろ酔いの夜に切り替えているか（ホームの切り替えボタン。エンディングを見るまでは常に一周目）
+// ほろ酔いの夜は、着せ替えのリコも酔った版（11/09 ユーザー選・ポーズと衣装に合うお酒）。ドレスは未決なので素面のまま
+const DRUNK_COSTUMES = new Set(['pajama', 'bunny', 'casual', 'kimono', 'swimsuit', 'gym', 'school', 'witch', 'santa']);
+function costumeSrc(file) { const m = /^rico_([a-z]+)[.]webp$/.exec(file); return (m && DRUNK_COSTUMES.has(m[1]) && homeIsNight()) ? `assets/characters/rico_${m[1]}_drunk.webp` : `assets/characters/${file}`; }
 function homeIsNight() { return !!(save && save.horoyoiMode) && (typeof isEndingUnlocked !== 'function' || isEndingUnlocked()); }
 async function applyHomeCostume() {
   const root = document.querySelector('.home-stage');
@@ -245,7 +248,7 @@ async function applyHomeCostume() {
   root.classList.toggle('is-night', night);
   const SCENE = night ? 'assets/ui/home/scene_night.webp' : 'assets/ui/home/scene.webp';
   const EMPTY = night ? 'assets/ui/home/stage-empty_night.webp' : 'assets/ui/home/stage-empty.webp';
-  const urls = uniform ? [SCENE] : [EMPTY, `assets/characters/${outfit.file}`];
+  const urls = uniform ? [SCENE] : [EMPTY, costumeSrc(outfit.file)];
   try {
     if (!urls.every(src => window.MimiAssets?.isReady(src))) {
       await Promise.all(urls.map(src => { const im = new Image(); im.src = src; return im.decode(); }));
