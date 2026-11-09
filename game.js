@@ -763,6 +763,9 @@ const CG_SETS = {
   cgset_rival:    { name: 'ライバルと卓で',   n: 3, key: 'rival', short: 'ライバル' },
   // ほろ酔いの夜の一枚絵で、採用した絵と構図が似ていた別カット（11/09 ユーザー「採用版以外はCG集に。出来はいい」）
   cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 12, key: 'horoyoi', short: 'ほろ酔い' },
+  // 二周目のクリア報酬（11/09 ユーザー「2周目のクリア報酬のヴェルベット写真集として」「勝った時に渡す」）。交換所には出さない。
+  // ほろ酔いの夜で初めてヴェルベットに勝った時に渡す（endBattle の save.photobookPending → showPhotobookGift）。採用分は qa/out/velvet_photobook/adopted.json
+  cgset_velvet_book: { name: 'ヴェルベット写真集', n: 55, key: 'velvetbook', short: '写真集', gift: 'ほろ酔いの夜のクリア報酬' },
 };
 const cgSetSrc = (id, k) => `assets/backgrounds/cgset/${CG_SETS[id].key}_${k}.jpg`;
 const cgSetThumb = (id, k) => `assets/backgrounds/cgset/thumb/${CG_SETS[id].key}_${k}.webp`;
@@ -4694,6 +4697,26 @@ function showGraduationScene(onDone) {
     if (Date.now() - shownAt < 900 || overlay.classList.contains('out')) return;
     overlay.classList.add('out');
     if (onDone) onDone();   // 次を先に描く（幕が消える間に下の画面が透けないように）
+    setTimeout(() => overlay.remove(), 400);
+  });
+}
+
+// 二周目のクリア報酬：ヴェルベット写真集を受け取る幕（卒業の幕と同じ作り）。タップで写真集を開く
+function showPhotobookGift() {
+  const overlay = document.createElement('div');
+  overlay.className = 'grad-scene-overlay photobook-gift';
+  overlay.innerHTML = `
+    <img class="grad-scene-img" src="${cgSetSrc('cgset_velvet_book', 1)}" alt="ヴェルベット写真集の表紙">
+    <div class="grad-scene-title"><small>ほろ酔いの夜 制覇</small>ヴェルベット写真集</div>
+    <div class="grad-scene-line"><b>ヴェルベット</b>「今夜のあたし、<wbr>ぜーんぶ<wbr>撮らせてあげたんだから……<wbr><span style="white-space:nowrap">大事にしてね♡</span>」</div>
+    <div class="grad-scene-hint">タップして写真集を開く（コレクションでいつでも見られる）</div>`;
+  (document.getElementById('stage') || document.body).appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('show'));
+  const shownAt = Date.now();
+  overlay.addEventListener('click', () => {
+    if (Date.now() - shownAt < 900 || overlay.classList.contains('out')) return;
+    overlay.classList.add('out');
+    showRewardCgViewer('cgset_velvet_book');
     setTimeout(() => overlay.remove(), 400);
   });
 }
@@ -13777,12 +13800,14 @@ function showCollectionModal() {
         <img src="${SECRET_CG[id].src}" alt="${meta.name}"><span class="coll-cg-tag">秘蔵</span><div class="coll-cg-label">${meta.name}</div></button>`;
   }).join('');
   // CG集：持っているセットは表紙と枚数、入荷済みで持っていないセットは「交換所で」の鍵の札（未入荷は出さない）
-  const cgSetHtml = Object.keys(CG_SETS).filter(id => isItemOwned(id) || isShopItemUnlocked(id)).map(id => {
+  // 写真集（gift）は交換所に出ないので、エンディング後だけ鍵の札で「どうすると手に入るか」を出す
+  const cgSetHtml = Object.keys(CG_SETS).filter(id => isItemOwned(id) || (CG_SETS[id].gift ? isEndingUnlocked() : isShopItemUnlocked(id))).map(id => {
     const c = CG_SETS[id];
-    if (isItemOwned(id)) return `<button class="coll-cg-card on is-set" data-action="view-secret-cg" data-memory-id="${id}" title="CG集「${c.name}」を見る">
-        <img src="${cgSetThumb(id, 1)}" alt="${c.name}" loading="lazy"><span class="coll-cg-tag">CG集</span><div class="coll-cg-label">${c.name}<small class="coll-cg-more">${c.n}枚</small></div></button>`;
+    const tag = c.gift ? '写真集' : 'CG集';
+    if (isItemOwned(id)) return `<button class="coll-cg-card on is-set" data-action="view-secret-cg" data-memory-id="${id}" title="${c.gift ? '' : 'CG集'}「${c.name}」を見る">
+        <img src="${cgSetThumb(id, 1)}" alt="${c.name}" loading="lazy"><span class="coll-cg-tag">${tag}</span><div class="coll-cg-label">${c.name}<small class="coll-cg-more">${c.n}枚</small></div></button>`;
     return `<div class="coll-cg-card off is-set" title="未入手"><div class="coll-cg-locked">${GOLD_LOCK}</div>
-        <div class="coll-cg-label"><small>「${c.name}」<wbr>交換所で入手</small></div></div>`;
+        <div class="coll-cg-label"><small>「${c.name}」<wbr>${c.gift ? c.gift.replace('の夜の', 'の夜の<wbr>') : '交換所で入手'}</small></div></div>`;
   }).join('');
   const rewardCgCount = stageOrder.filter(id => rewardCgSeen.includes(id)).length + (save.gradCgSeen ? 1 : 0) + (isEndingUnlocked() ? stageOrder.filter(id => rewardCgSeen.includes(hKey(id))).length : 0);   // ほろ酔いの夜の5枠も数える
 
@@ -14344,7 +14369,9 @@ let __battleAssetsOpp = null, __battleGateBusy = false;
 // ほろ酔いの夜は、入った瞬間に要る絵が酔った立ち絵と酔ったミミに替わる（遅れて出ると興ざめなので待つ側に入れる）
 function horoyoiBattleNow(key) {
   if (!isHoroyoi()) return [];
-  return [...(HOROYOI_STAND.has(key) ? [`assets/characters/${key}_drunk_stand.webp`] : []), 'assets/characters/mimi_bust_calm_drunk.webp', 'assets/characters/mimi_bust_think_drunk.webp'];
+  // ヴェルベット戦は、勝った後に出す写真集の表紙と1枚目も先に読む（受け取りの幕が遅れて描かれないように）
+  const book = key === 'velvet' && !isItemOwned('cgset_velvet_book') ? [cgSetSrc('cgset_velvet_book', 1), cgSetSrc('cgset_velvet_book', 2)] : [];
+  return [...(HOROYOI_STAND.has(key) ? [`assets/characters/${key}_drunk_stand.webp`] : []), 'assets/characters/mimi_bust_calm_drunk.webp', 'assets/characters/mimi_bust_think_drunk.webp', ...book];
 }
 function battleAssetsGate(opponentId, resume) {
   const MA = window.MimiAssets; if (!MA) return true;
@@ -16430,11 +16457,25 @@ const READ_BATTLE_POOLS = {
   // 本気のリコ先輩：専用の読み合い「卒業試験」だけ。論理バトル（古い3択を含む）は出さない
   rico_serious: { psych: ['graduation'], logic: [] },
 };
+// ほろ酔いの夜（二周目）は、一周目と同じ読み合いを出さず、酔いが札・勝つ見込みを変える論理の2つだけ（2026-11-09 docs/design-ref/horoyoi-read-spec.md）。
+// 心理の枠は空（案C・Dを作ったら入れる）
+const READ_BATTLE_POOLS_HOROYOI = {
+  rico:   { psych: [], logic: ['peek', 'blur'] },
+  polka:  { psych: [], logic: ['peek'] },
+  selina: { psych: [], logic: ['peek', 'blur'] },
+  grano:  { psych: [], logic: ['blur'] },
+  velvet: { psych: [], logic: ['peek'] },
+};
 // 読み合いの割り当ての欄：本気のリコ先輩は絵が通常のリコ先輩と同じなので、別の欄で引く
 const readPoolKey = () => (state.seriousRicoMode ? 'rico_serious' : state.opponentImgKey);
+// 今の卓で引く表（ほろ酔いの夜は別の表）
+const readPools = () => {
+  if (isHoroyoi() && !state.seriousRicoMode) return READ_BATTLE_POOLS_HOROYOI[readPoolKey()] || { psych: [], logic: [] };
+  return READ_BATTLE_POOLS[readPoolKey()] || {};
+};
 const READ_BATTLE_TELL = {
   detective: '手がかりを読んだ', stare: '見つめ合いに勝った', doubt: 'ウソを見抜いた', gacha: '心の声を聞いた', objection: '矛盾を突いた',
-  handbuild: '最強の役を作った', highlow: '強さを比べ切った', danger: '危険札を見抜いた', sniper: '賭け額を当てた', outs: 'アウツを数えた', suspects: '容疑者を絞った',
+  handbuild: '最強の役を作った', highlow: '強さを比べ切った', danger: '危険札を見抜いた', sniper: '賭け額を当てた', outs: 'アウツを数えた', suspects: '容疑者を絞った', peek: '見えた札を読んだ', blur: 'ぼやけた札を見切った',
 };
 // 古い三択の心理・論理バトルを出してよいのは研修・講義・最初の手の練習だけ
 function threeChoiceOk() { return !!(state && (state.tutorialMode || state.introHandMode || state.lectureMode)); }
@@ -16463,7 +16504,7 @@ function readBattleReady(group) {
   if (state.pendingRead || state.readHandNo === state.handNo) return false;
   // どちらも必ず同じ役になる手（必ず引き分け）は「本物かブラフか」が決まらないので出さない（2026-11-01 9回目の批評：折半の後に「ミミの方が強かった」と採点した）
   if (lockedSplit()) return false;
-  const pool = (READ_BATTLE_POOLS[readPoolKey()] || {})[group];
+  const pool = readPools()[group];
   if (!pool || !pool.length) return false;
   // どの種類もこの場面でしか意味がなく、今どれも合わない時は出さない（いつもの三択の論理バトルになる）
   if (pool.every(id => READ_GAME_OK[id]) && !pool.some(id => READ_GAME_OK[id]())) return false;
@@ -16481,6 +16522,22 @@ const READ_GAME_OK = {
       const T = readBattleTable('narrow'); if (!T) return true;
       return M.narrowMatters(T, state.opponentImgKey);
     } catch (e) { return true; }
+  },
+  // 見えちゃった札（ほろ酔いの夜）：見えた札で作れなくなる役が1つ以上あり、残った役に危ない役と負けない役の両方がある手だけ
+  peek: () => {
+    try {
+      const M = window.MB; if (!M || typeof M.peekMatters !== 'function') return false;
+      const T = readBattleTable('peek'); if (!T) return false;
+      return M.peekMatters(T, state.opponentImgKey);
+    } catch (e) { return false; }
+  },
+  // ぼやけた手札（ほろ酔いの夜）：ぼやけた札かもしれない札に、役になる札とならない札が両方ある手だけ
+  blur: () => {
+    try {
+      const M = window.MB; if (!M || typeof M.blurMatters !== 'function') return false;
+      const T = readBattleTable('blur'); if (!T) return false;
+      return M.blurMatters(T);
+    } catch (e) { return false; }
   },
   // 賭け額スナイパー：相手がチェックしてミミが先に賭けられ、ミミの手が強い（今の札で、相手のありうる手の8割以上に勝つ）
   sniper: () => {
@@ -16512,7 +16569,7 @@ const READ_GAME_OK = {
   },
 };
 function pickReadBattle(group) {
-  const pool = READ_BATTLE_POOLS[readPoolKey()][group];
+  const pool = readPools()[group] || [];
   const played = state.readBattlePlayed || (state.readBattlePlayed = {});
   if (!save.readBattleSeen) save.readBattleSeen = {};
   // まだ遊んだことの無い種類を先に、次にこの対戦で出た回数が少ない種類を出す
@@ -16584,7 +16641,7 @@ function startReadBattle(group) {
 // ===== 本当の手の読み合い（2026-10-21）=====
 // 読み合いの中では読みを預けるだけ。答え合わせは手の決着の後（continueAfterHand の頭で showReadVerdict）。
 // 本当の手で遊べる種類だけ table を渡す。渡さない種類は今までどおり架空の場面で、その場で答え合わせ
-const REAL_READ_GAMES = new Set(['stare', 'objection', 'graduation', 'gacha', 'doubt', 'handvs', 'ask', 'narrow', 'outs', 'sniper']);
+const REAL_READ_GAMES = new Set(['stare', 'objection', 'graduation', 'gacha', 'doubt', 'handvs', 'ask', 'narrow', 'outs', 'sniper', 'peek', 'blur']);
 const RB_SUIT = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
 const rbCard = (c) => ({ r: c.rank, s: RB_SUIT[c.suit] || 's' });
 function readBattleTable(gameId) {
@@ -19196,6 +19253,12 @@ function endBattle() {
     // クリア記録（velvet なら endingUnlocked も同時に立つ）。練習の勝ちはクリアに数えない
     if (state.horoyoi) {
       if (!practice && !horoyoiCleared(state.opponentId)) save.horoyoiCleared.push(state.opponentId);
+      // 二周目のクリア報酬：ほろ酔いの夜で初めてヴェルベットに勝ったら写真集（結果を見せた後に受け取りの幕を出す）
+      if (!practice && state.opponentId === 'velvet' && !save.ownedItems.includes('cgset_velvet_book')) {
+        save.ownedItems.push('cgset_velvet_book');
+        save.photobookPending = true;
+        rewards.push('ほろ酔いの夜を制覇：ヴェルベット写真集（コレクションでいつでも見られる）');
+      }
     } else if (!practice && !save.clearedStages.includes(state.opponentId)) {
       markStageCleared(state.opponentId);
       unlockAchievement('first_clear');
@@ -19428,6 +19491,11 @@ function endBattle() {
   if (save.gradCgPending && !save.gradCgSeen) {
     const g0 = battleGen;
     setTimeout(() => { if (g0 !== battleGen || state.screen !== 'result') return; save.gradCgPending = false; save.gradCgSeen = true; saveProgress(); showGraduationScene(); }, 2600);
+  }
+  // 二周目のクリア報酬の写真集も、勝ち負けを見せた後に受け取りの幕で渡す
+  if (save.photobookPending) {
+    const g1 = battleGen;
+    setTimeout(() => { if (g1 !== battleGen || state.screen !== 'result') return; save.photobookPending = false; saveProgress(); showPhotobookGift(); }, 2600);
   }
 }
 
