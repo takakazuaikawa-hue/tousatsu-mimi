@@ -742,7 +742,7 @@ const MOTION_CG = [];
 const REWARD_CG_MORE = { selina: ['assets/backgrounds/reward_cg_selina_2.jpg'] };
 // ほろ酔いの夜の一枚絵：1人 HOROYOI_CG_N 枚（11/08 ユーザー「すべて採用」「倍ほしい」）。1枚目は幕間の後、続けて残りを見せる
 // 人ごとの枚数（11/09 破綻の絵は不採用にして描き直し、全員6枚）
-const HOROYOI_CG_N = { rico_tutorial: 6, polka: 6, selina: 6, grano: 6, velvet: 7 };   // 11/09 ヴェルベットの7枚目＝写真集の S6-1（出来が良いので一枚絵に昇格）
+const HOROYOI_CG_N = { rico_tutorial: 6, polka: 6, selina: 6, grano: 6, velvet: 6 };   // S6-1 は幕間の後ではなく、勝負の途中の会話（HOROYOI_MID_SCENES）に出す（11/09 ユーザー）
 [['rico_tutorial', 'rico'], ['polka', 'polka'], ['selina', 'selina'], ['grano', 'grano'], ['velvet', 'velvet']].forEach(([id, k]) => {
   REWARD_CG_MORE['h_' + id] = Array.from({ length: HOROYOI_CG_N[id] - 1 }, (_, i) => `assets/backgrounds/horoyoi/${k}_${i + 2}.jpg`);
 });
@@ -3976,7 +3976,27 @@ const STORY_WHO = {
   velvet: { name: 'ヴェルベット', face: 'assets/ui/face_velvet.webp' },
 };
 // 場面ごとの背景（無ければ assets/episodes/<場面>.webp）。行に art があれば、その行で絵を切り替える
-const STORY_ART = { struggle_velvet: 'assets/episodes/struggle_velvet_a.webp' };
+const STORY_ART = { struggle_velvet: 'assets/episodes/struggle_velvet_a.webp', hmid_velvet: 'assets/backgrounds/horoyoi/velvet_7.jpg' };
+// ほろ酔いの夜の勝負の途中に挟む一枚絵と会話（11/09 ユーザー承認の台詞。写真集の S6-1 を昇格）。泥酔の夜の「勝負の途中の一枚絵と会話劇」もこの形で足す
+const HOROYOI_MID_SCENES = {
+  velvet: [
+    { k: 'say', who: 'velvet', t: '……もう、まどろっこしいのはおしまい。ほら、見せてあげる♡' },
+    { k: 'say', who: 'mimi', t: 'ちょっ、ヴェルベットさん!?　台の上に乗っちゃだめですってば〜！' },
+    { k: 'say', who: 'velvet', t: 'ふふ……あたしの札、見たいんでしょ？　もっと近くで見ていいのよ？' },
+    { k: 'say', who: 'mimi', t: 'ふ、ふわぁ……' },
+    { k: 'think', who: 'mimi', t: '見えてるの、札じゃないです……っ！' },
+    { k: 'say', who: 'velvet', t: 'ざぁんねん、まだ勝負の途中よ♡　座りなさい、ミミ' },
+  ],
+};
+// 出る時：ほろ酔いの夜の対戦で1戦1回。3ハンド目以降に相手が大きく負けた手の直後（ミミがその手で開始時の1割2分以上勝った）、そろわなければ5ハンド目の後
+function horoyoiMidDue() {
+  if (!state.horoyoi || state.tutorialMode || state.__hmidShown) return null;
+  const id = state.opponentId;
+  if (!HOROYOI_MID_SCENES[id] || state.handNo < 3) return null;
+  const gain = state.playerChips - (state.handStartChips || state.playerChips);
+  const init = state.__initialChips || 1000;
+  return (gain >= init * 0.12 || state.handNo >= 5) ? id : null;
+}
 // 台帳37 初対戦の苦戦の場面：攻め方は読み合いと同じ相手の癖
 const STRUGGLE_SCENES = {
   polka: [
@@ -4016,6 +4036,7 @@ function struggleSceneDue() {
   return id;
 }
 const PROLOGUES = {
+  hmid_velvet: HOROYOI_MID_SCENES.velvet,
   struggle_polka: STRUGGLE_SCENES.polka, struggle_selina: STRUGGLE_SCENES.selina, struggle_grano: STRUGGLE_SCENES.grano, struggle_velvet: STRUGGLE_SCENES.velvet,
   rico_tutorial: [
     // 2026-10-27 始まりのつかみ（台帳28・ユーザーが案Cを選んだ）：うさ耳で目覚める驚きから始め、徹夜明けは一瞬暗くして思い出す1行に縮める
@@ -14371,6 +14392,8 @@ function horoyoiBattleNow(key) {
   if (!isHoroyoi()) return [];
   // ヴェルベット戦は、勝った後に出す写真集の表紙と1枚目も先に読む（受け取りの幕が遅れて描かれないように）
   const book = key === 'velvet' && !isItemOwned('cgset_velvet_book') ? [cgSetSrc('cgset_velvet_book', 1), cgSetSrc('cgset_velvet_book', 2)] : [];
+  // 勝負の途中に挟む一枚絵（HOROYOI_MID_SCENES）も卓に入る前に読む
+  if (STORY_ART['hmid_' + key]) book.push(STORY_ART['hmid_' + key]);
   return [...(HOROYOI_STAND.has(key) ? [`assets/characters/${key}_drunk_stand.webp`] : []), 'assets/characters/mimi_bust_calm_drunk.webp', 'assets/characters/mimi_bust_think_drunk.webp', ...book];
 }
 function battleAssetsGate(opponentId, resume) {
@@ -18959,6 +18982,15 @@ function continueAfterHand() {
     save.struggleSeen.push(struggle); saveProgress();
     const g0 = battleGen;
     return showStoryScene('struggle_' + struggle, () => { if (g0 === battleGen && state.screen === 'battle') startHand(); });
+  }
+  // ほろ酔いの夜：勝負の途中の一枚絵と会話（1戦1回）
+  const hmid = horoyoiMidDue();
+  if (hmid) {
+    state.__hmidShown = true;
+    if (!save.horoyoiMidSeen) save.horoyoiMidSeen = [];
+    if (!save.horoyoiMidSeen.includes(hmid)) { save.horoyoiMidSeen.push(hmid); saveProgress(); }
+    const g0 = battleGen;
+    return showStoryScene('hmid_' + hmid, () => { if (g0 === battleGen && state.screen === 'battle') startHand(); });
   }
   // 結果バナーの「次のハンド (Hand N) へ」で、そのまま配る（卓に戻ってもう一度押させていた）
   startHand();
