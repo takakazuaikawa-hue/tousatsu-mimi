@@ -765,7 +765,7 @@ const CG_SETS = {
   cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 12, key: 'horoyoi', short: 'ほろ酔い' },
   // 二周目のクリア報酬（11/09 ユーザー「2周目のクリア報酬のヴェルベット写真集として」「勝った時に渡す」）。交換所には出さない。
   // ほろ酔いの夜で初めてヴェルベットに勝った時に渡す（endBattle の save.photobookPending → showPhotobookGift）。採用分は qa/out/velvet_photobook/adopted.json
-  cgset_velvet_book: { name: 'ヴェルベット写真集', n: 69, key: 'velvetbook', short: '写真集', gift: 'ほろ酔いの夜のクリア報酬' },
+  cgset_velvet_book: { name: 'ヴェルベット写真集', n: 71, key: 'velvetbook', short: '写真集', gift: 'ほろ酔いの夜のクリア報酬' },
 };
 const cgSetSrc = (id, k) => `assets/backgrounds/cgset/${CG_SETS[id].key}_${k}.jpg`;
 const cgSetThumb = (id, k) => `assets/backgrounds/cgset/thumb/${CG_SETS[id].key}_${k}.webp`;
@@ -4792,7 +4792,10 @@ function showPhotobookGift() {
 function showRewardCgViewer(id) {
   const opp = id === 'graduation' ? { name: '卒業' } : CG_SETS[id] ? { name: CG_SETS[id].name } : (OPPONENTS[id] || OPPONENTS[String(id).replace(/^h_/, '')] || {});
   const list = rewardCgList(id);
-  let at = 0;
+  // 枚数の多い綴り（CG集・写真集）は、前に見た所を覚えておき、次はその続きから開く（最後の1枚まで見たら次は1枚目から）
+  const isSet = !!CG_SETS[id];
+  let at = 0, resumed = false;
+  if (isSet && save.cgSetPos && Number.isInteger(save.cgSetPos[id]) && save.cgSetPos[id] > 0 && save.cgSetPos[id] < list.length) { at = save.cgSetPos[id]; resumed = true; }
   const overlay = document.createElement('div');
   overlay.className = 'reward-cg-viewer-overlay';
   overlay.innerHTML = `
@@ -4801,6 +4804,7 @@ function showRewardCgViewer(id) {
       <div class="reward-cg-viewer-hint"></div>
     </div>
     ${list.length > 2 ? '<button type="button" class="reward-cg-viewer-x" aria-label="閉じる">×</button>' : ''}
+    ${isSet ? '<button type="button" class="reward-cg-viewer-listbtn" aria-label="一覧を開く">一覧</button>' : ''}
   `;
   const body = overlay.querySelector('.reward-cg-viewer-body'), img = overlay.querySelector('img'), hint = overlay.querySelector('.reward-cg-viewer-hint');
   const show = () => {
@@ -4813,19 +4817,51 @@ function showRewardCgViewer(id) {
     attachLiveCg(img);
     if (c.motion) { img.dataset.motion = c.motion; img.dataset.motionReplay = '1'; attachMotion(img); }
     // 枚数の多い綴り（CG集）は、左の3割で前へ・それ以外で次へ。次の一枚は先に読んでおく（遅れて描かれないように）
-    hint.textContent = list.length > 2 ? `${at + 1} / ${list.length}　${at > 0 ? '左で前・' : ''}${at < list.length - 1 ? '右で次' : 'タップして閉じる'}`
+    hint.textContent = list.length > 2 ? `${at + 1} / ${list.length}　${at > 0 ? '左で前・' : ''}${at < list.length - 1 ? '右で次' : 'タップして閉じる'}${resumed ? '　（前の続きです）' : ''}`
       : list.length > 1 ? (at < list.length - 1 ? `${at + 1} / ${list.length}　タップで次の一枚` : `${at + 1} / ${list.length}　タップして閉じる`) : 'タップして閉じる';
     if (list[at + 1]) { const pre = new Image(); pre.src = list[at + 1].src; }
+    remember();
+  };
+  // 見た所の記録：タップのたびに少し待ってから保存（69枚をめくっても書き込みを重ねない）。閉じる時は必ず保存
+  let saveTimer = 0;
+  const remember = () => {
+    if (!isSet) return;
+    if (!save.cgSetPos) save.cgSetPos = {};
+    save.cgSetPos[id] = at;
+    clearTimeout(saveTimer); saveTimer = setTimeout(saveProgress, 500);
   };
   show();
   const stage = document.getElementById('stage');
   (stage || document.body).appendChild(overlay);
-  const close = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
-  const step = (d) => { const n = at + d; if (n < 0) return; if (n >= list.length) { close(); return; } at = n; show(); };
-  const onKey = (e) => { if (e.key === 'Escape') close(); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') step(1); else return; e.preventDefault(); };
+  const close = () => {
+    overlay.remove(); document.removeEventListener('keydown', onKey);
+    if (isSet) { clearTimeout(saveTimer); if (!save.cgSetPos) save.cgSetPos = {}; save.cgSetPos[id] = at >= list.length - 1 ? 0 : at; saveProgress(); }
+  };
+  const step = (d) => { const n = at + d; if (n < 0) return; if (n >= list.length) { close(); return; } at = n; resumed = false; show(); };
+  // 一覧：小さな絵を並べ、押した1枚へ飛ぶ（開いた時は今の1枚が見える所まで送る）
+  const openList = () => {
+    if (overlay.querySelector('.reward-cg-list')) return;
+    const pane = document.createElement('div');
+    pane.className = 'reward-cg-list';
+    pane.innerHTML = `
+      <div class="reward-cg-list-head"><b>${opp.name || ''}　全${list.length}枚</b><span>見たい絵を押してください</span>
+        <button type="button" class="reward-cg-list-back">もどる</button></div>
+      <div class="reward-cg-list-grid">${list.map((_, k) => `<button type="button" class="reward-cg-list-cell${k === at ? ' is-now' : ''}" data-k="${k}" aria-label="${k + 1}枚目"><img src="${cgSetThumb(id, k + 1)}" alt="" loading="lazy" decoding="async"><i>${k + 1}</i></button>`).join('')}</div>`;
+    overlay.appendChild(pane);
+    const now = pane.querySelector('.is-now'); if (now) now.scrollIntoView({ block: 'center' });
+  };
+  const onKey = (e) => { if (overlay.querySelector('.reward-cg-list')) { if (e.key === 'Escape') { overlay.querySelector('.reward-cg-list').remove(); e.preventDefault(); } return; } if (e.key === 'Escape') close(); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') step(1); else return; e.preventDefault(); };
   document.addEventListener('keydown', onKey);
   overlay.addEventListener('click', (e) => {
     if (e.target.closest('.reward-cg-viewer-x')) { close(); return; }
+    if (e.target.closest('.reward-cg-viewer-listbtn')) { openList(); return; }
+    const pane = overlay.querySelector('.reward-cg-list');
+    if (pane) {
+      const cell = e.target.closest('.reward-cg-list-cell');
+      if (cell) { at = +cell.dataset.k; resumed = false; pane.remove(); show(); }
+      else if (e.target.closest('.reward-cg-list-back') || e.target === pane) pane.remove();
+      return;
+    }
     const r = overlay.getBoundingClientRect();
     if (list.length > 2 && at > 0 && e.clientX < r.left + r.width * 0.3) step(-1); else step(1);
   });
@@ -9106,6 +9142,18 @@ function onAction(e) {
       const ek = data.episode;
       const canRead = INTERMISSIONS[ek] && Array.isArray(save.rewardCgSeen) && save.rewardCgSeen.includes(ek);
       showEpisodeTitle(ek, canRead ? () => showIntermission(ek, () => startBgmForScreen()) : null, canRead ? () => {} : undefined, canRead ? '▶ 勝った後の会話を読む' : undefined);
+      break;
+    }
+    case 'recall-night-ims': {
+      // コレクションから：ほろ酔いの夜に勝った後の会話（幕間 h_<相手>）を再戦せずに読み返す
+      const hk = data.ims;
+      if (INTERMISSIONS[hk] && Array.isArray(save.rewardCgSeen) && save.rewardCgSeen.includes(hk)) showIntermission(hk, () => startBgmForScreen());
+      break;
+    }
+    case 'recall-night-mid': {
+      // コレクションから：ほろ酔いの夜の勝負の途中の会話（見た分だけ）
+      const oid = data.opp;
+      if (HOROYOI_MID_SCENES[oid] && (save.horoyoiMidSeen || []).includes(oid)) showStoryScene('hmid_' + oid, () => startBgmForScreen());
       break;
     }
     case 'home-night-toggle': {
@@ -13941,10 +13989,24 @@ function showCollectionModal() {
         </section>` : ""}
         ${(() => {
           // 勝った後の会話も一枚絵の隣で読み返せるように（2026-11-02 14回目の批評：ホームの物語の台帳にしか入口が無かった）
+          // エンディングの後は「昼／夜」の切り替えを足し、ほろ酔いの夜の幕間（h_<相手>）と勝負の途中の会話（hmid_<相手>）も見返せる（2026-11-10 外部の試遊）
           const ids = stageOrder.filter(id => INTERMISSIONS[id] && Array.isArray(save.rewardCgSeen) && save.rewardCgSeen.includes(id));
-          if (!ids.length) return '';
-          return `<section class="coll-section"><h3 class="coll-section-title">会話 <span class="coll-section-count">${ids.length}/${stageOrder.length}</span></h3>
-            <div class="memory-grid">${ids.map(id => `<button class="memory-card" data-action="recall-episode" data-episode="${id}"><div class="memory-card-title">${OPPONENTS[id].name}に勝った後の会話</div><div class="memory-card-play">読む</div></button>`).join('')}</div></section>`;
+          const night = isEndingUnlocked();
+          if (!ids.length && !night) return '';
+          const dayCards = ids.map(id => `<button class="memory-card" data-action="recall-episode" data-episode="${id}"><div class="memory-card-title">${OPPONENTS[id].name}に勝った後の会話</div><div class="memory-card-play">読む</div></button>`).join('');
+          if (!night) return `<section class="coll-section"><h3 class="coll-section-title">会話 <span class="coll-section-count">${ids.length}/${stageOrder.length}</span></h3>
+            <div class="memory-grid">${dayCards}</div></section>`;
+          const nIms = stageOrder.filter(id => OPPONENTS[id] && INTERMISSIONS[hKey(id)] && rewardCgSeen.includes(hKey(id)));
+          const nMid = stageOrder.filter(id => OPPONENTS[id] && HOROYOI_MID_SCENES[id] && (save.horoyoiMidSeen || []).includes(id));
+          const nightCards = nIms.map(id => `<button class="memory-card is-night" data-action="recall-night-ims" data-ims="${hKey(id)}"><div class="memory-card-title">ほろ酔い・${OPPONENTS[id].name}に勝った後の会話</div><div class="memory-card-play">読む</div></button>`).join('')
+            + nMid.map(id => `<button class="memory-card is-night" data-action="recall-night-mid" data-opp="${id}"><div class="memory-card-title">ほろ酔い・${OPPONENTS[id].name}との勝負の途中の会話</div><div class="memory-card-play">読む</div></button>`).join('');
+          return `<section class="coll-section coll-conv" data-tab="day"><h3 class="coll-section-title">会話</h3>
+            <div class="coll-conv-tabs" role="tablist">
+              <button type="button" role="tab" class="coll-conv-tab on" data-tab="day" aria-selected="true">昼　${ids.length}/${stageOrder.length}</button>
+              <button type="button" role="tab" class="coll-conv-tab" data-tab="night" aria-selected="false">ほろ酔いの夜　${nIms.length + nMid.length}/${stageOrder.length * 2}</button>
+            </div>
+            <div class="memory-grid coll-conv-pane" data-pane="day">${dayCards || '<p class="coll-conv-empty">勝った相手の分が、ここに並びます。</p>'}</div>
+            <div class="memory-grid coll-conv-pane" data-pane="night" hidden>${nightCards || '<p class="coll-conv-empty">ほろ酔いの夜で相手に勝つと、その後の会話がここに並びます。</p>'}</div></section>`;
         })()}
         <section class="coll-section">
           <h3 class="coll-section-title">対戦相手 <span class="coll-section-count">${stageCleared}/${stages.length}</span></h3>
@@ -14038,6 +14100,12 @@ function showCollectionModal() {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
+  // 会話の「昼／夜」の切り替え
+  overlay.querySelectorAll('.coll-conv-tab').forEach(t => t.addEventListener('click', () => {
+    const sec = t.closest('.coll-conv'); if (!sec) return;
+    sec.querySelectorAll('.coll-conv-tab').forEach(x => { const on = x === t; x.classList.toggle('on', on); x.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    sec.querySelectorAll('.coll-conv-pane').forEach(p => { p.hidden = p.dataset.pane !== t.dataset.tab; });
+  }));
   // 区切りへ飛ぶ見出しの列（2026-11-01 12回目の批評：一覧が18画面分あり、買った読み物へ戻るのが面倒だった）
   const SHORT = { 'リコ衣装ギャラリー': '衣装', '交換所アイテム': '交換品', '苦戦の思い出': '思い出', 'ご褒美CG': '一枚絵', '音楽と映像': '音と映像' };
   const body = overlay.querySelector('.collection-body'), secs = [...overlay.querySelectorAll('.coll-section')];
