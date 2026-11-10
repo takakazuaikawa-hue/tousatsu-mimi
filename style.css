@@ -21083,3 +21083,18 @@ html.is-compact .home-stage.h15-sm .h15-goal { right: calc(450px + var(--sx, 0px
 .result-next-goal.is-say { color: #f6e7c8; line-height: 1.45; word-break: keep-all; overflow-wrap: anywhere; }
 .result-next-goal.is-say b { color: #f3c96b; margin-right: .3em; }
 .result-next-goal.is-say::before { content: none; display: none; }
+
+/* 酔いの段（ほろ酔いの夜）：相手の名前の横のグラス3つ。満ちたグラス＝今の段 */
+.tug-drunk { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: -6px; }
+.tug-drunk i { width: 17px; height: 25px; display: inline-block;
+  clip-path: polygon(0 0, 100% 0, 85% 55%, 58% 62%, 58% 88%, 90% 100%, 10% 100%, 42% 88%, 42% 62%, 15% 55%);
+  background: rgba(255,255,255,.22); }
+.tug-drunk i.on { background: linear-gradient(180deg, #ffd6e0 0 18%, #e2475f 18% 58%, #f3d9a8 58% 100%); filter: drop-shadow(0 0 4px rgba(255,90,120,.7)); }
+/* 酔いの段の知らせ：助言欄や相手の絵より前に、卓の真ん中に1行で出す */
+.toast.toast-drunk {
+  z-index: 9000; top: 34%; white-space: nowrap; max-width: 94vw;
+  font-size: 17px; font-weight: 900; letter-spacing: .04em; padding: 14px 26px; line-height: 1.4;
+  background: linear-gradient(180deg, rgba(64,12,28,.97), rgba(26,4,12,.98));
+  box-shadow: inset 0 0 0 2px rgba(255,140,170,.85), 0 0 34px rgba(255,90,130,.4), 0 16px 34px rgba(0,0,0,.65);
+  color: #ffe1ea; animation: toastShowLong 4.2s ease-out forwards;
+}

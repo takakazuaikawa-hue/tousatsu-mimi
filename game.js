@@ -1271,8 +1271,38 @@ const AI_STYLES = {
 };
 // 酔いの進み（0〜1）：ハンドが進むほど酔う。ヴェルベットの雑さ（オールインの頻度・付いていく甘さ）に使う
 function drunkLevel(handNo) { return Math.max(0, Math.min(1, ((handNo || 1) - 1) / 12)); }
+// 酔いの段（2026-11-11 ユーザー承認「正統派なんだから打ち方が変わる方がいい」）
+//  1段＝対戦の始まり（<性格>_drunk のまま）／2段＝途中会話の後／3段＝途中会話から4ハンド後
+//  段ごとに、その人の酔い癖が強く出る。読めば付け込めるように、変わり方は一言で知らせる
+const DRUNK_TIER_MOD = {
+  rico_drunk:   [{ loose: -0.08, bluffFreq: 0.1, valueEq: -0.04 }, { loose: -0.16, bluffFreq: 0.18, valueEq: -0.08, shoveCall: -0.06 }],
+  polka_drunk:  [{ bluffFreq: 0.12, loose: -0.06 }, { bluffFreq: 0.24, loose: -0.12, shoveCall: -0.05 }],
+  selina_drunk: [{ valueEq: -0.05, bluffFreq: 0.08 }, { valueEq: -0.1, bluffFreq: 0.16, shoveCall: -0.05 }],
+  grano_drunk:  [{ loose: -0.1, shoveCall: -0.05, bluffFreq: -0.04 }, { loose: -0.2, shoveCall: -0.1, bluffFreq: -0.04, valueEq: -0.04 }],
+  velvet_drunk: [{ allinFreq: 0.1, shoveCall: -0.04 }, { allinFreq: 0.2, shoveCall: -0.08, bluffFreq: 0.06 }],
+};
+const DRUNK_TIER_SAY = {
+  rico_tutorial: ['リコ先輩の酔いが回った――よく付いてきて、はったりも増える', 'リコ先輩、できあがり――弱い手でも付いてくる。強い手で稼ぐ時'],
+  polka:  ['ポルカの酔いが回った――ブラフが増える！', 'ポルカ、もうへろへろ――大きな賭けもブラフが多い。付いていく時'],
+  selina: ['セリナの酔いが回った――大きな賭けが本物とは限らない', 'セリナ、計算が崩れてきた――大きな賭けにも付いていける'],
+  grano:  ['グラーノの酔いが回った――何でも払う。ブラフは効かない', 'グラーノ、払いっぱなし――強い手で大きく賭けて稼ぐ時'],
+  velvet: ['ヴェルベットの酔いが回った――オールインが増える', 'ヴェルベット、もう雑――オールインに付いていく手を広げて'],
+};
+function drunkTier() {
+  if (typeof state === 'undefined' || !state || !state.horoyoi || state.tutorialMode) return 0;
+  if (!state.__hmidShown) return 1;
+  return (state.handNo || 0) >= (state.__hmidHand || 0) + 4 ? 3 : 2;
+}
 function aiStyleOf(profile) {
-  if (profile && profile.style && AI_STYLES[profile.style]) return AI_STYLES[profile.style];
+  if (profile && profile.style && AI_STYLES[profile.style]) {
+    const base = AI_STYLES[profile.style];
+    const mods = DRUNK_TIER_MOD[profile.style];
+    const tier = mods ? drunkTier() : 0;
+    if (tier < 2) return base;
+    const out = { ...base };
+    for (const [k, v] of Object.entries(mods[tier - 2])) out[k] = Math.max(0, (out[k] || 0) + v);
+    return out;
+  }
   // 旧形式の数値だけのプロフィール（互換）：近い性格に寄せる
   const p = profile || {};
   if ((p.bluffTendency || 0) >= 0.7) return AI_STYLES.polka;
@@ -7754,7 +7784,7 @@ function renderTugOfWar(host) {
   return `<div class="tug-head">
       <span class="tug-name is-mimi"><i class="tug-who">ミミ </i><b>${P}</b></span>
       <span class="tug-state ${cls}">${mood}</span>
-      <span class="tug-name is-opp"><b>${O}</b><i class="tug-who"> ${oppName}</i></span>
+      <span class="tug-name is-opp"><b>${O}</b><i class="tug-who"> ${oppName}</i>${drunkTier() ? `<span class="tug-drunk" role="img" aria-label="酔い${drunkTier()}段">${[1,2,3].map(n => `<i class="${n <= drunkTier() ? 'on' : ''}"></i>`).join('')}</span>` : ''}</span>
     </div>
     <div class="tug-bar" role="img" aria-label="ミミ ${P}、${oppName} ${O}">
       <i class="tug-mimi" style="width:${pct}%"></i><i class="tug-opp" style="width:${100 - pct}%"></i><i class="tug-mid"></i>
@@ -19090,7 +19120,7 @@ function continueAfterHand() {
   if (canRebuy()) return showRebuy();
   // ほろ酔いの夜：まだ見ていない勝負の途中の会話は、この手で決着しても先に見せる（11/10 Codex 18回目：うまく勝つと見られなかった）
   if (state.playerChips > 0 && (state.opponentChips <= 0 || state.handNo >= state.maxHands) && state.horoyoi && !state.__hmidShown && HOROYOI_MID_SCENES[state.opponentId] && !(save.horoyoiMidSeen || []).includes(state.opponentId)) {
-    state.__hmidShown = true;
+    state.__hmidShown = true; state.__hmidHand = state.handNo || 0;
     if (!save.horoyoiMidSeen) save.horoyoiMidSeen = [];
     save.horoyoiMidSeen.push(state.opponentId); saveProgress();
     const g0 = battleGen;
@@ -19120,15 +19150,26 @@ function continueAfterHand() {
   const hmid = horoyoiMidDue();
   if (hmid) {
     state.__hmidShown = true;
+    state.__hmidHand = state.handNo || 0;
     if (!save.horoyoiMidSeen) save.horoyoiMidSeen = [];
     if (!save.horoyoiMidSeen.includes(hmid)) { save.horoyoiMidSeen.push(hmid); saveProgress(); }
     const g0 = battleGen;
-    return showStoryScene('hmid_' + hmid, () => { if (g0 === battleGen && state.screen === 'battle') startHand(); });
+    return showStoryScene('hmid_' + hmid, () => { if (g0 === battleGen && state.screen === 'battle') { startHand(); announceDrunkTier(); } });
   }
   // 結果バナーの「次のハンド (Hand N) へ」で、そのまま配る（卓に戻ってもう一度押させていた）
   startHand();
+  announceDrunkTier();
 }
 
+// 酔いの段が上がった時の知らせ（1戦で各段1回）
+function announceDrunkTier() {
+  const t = drunkTier();
+  if (t < 2 || (state.__tierTold || 1) >= t) return;
+  state.__tierTold = t;
+  const say = (DRUNK_TIER_SAY[state.opponentId] || [])[t - 2];
+  const g0 = battleGen;
+  if (say) setTimeout(() => { if (g0 === battleGen && state.screen === 'battle') { toast(say, 'drunk'); try { mpSfx('clink'); } catch (e) {} } }, 500);
+}
 // 圧倒モード判定：プレイヤー優勢 + 連勝5以上で発動（1戦1回まで）
 // ポーカーは累積差で勝つゲームのため、いわゆる「大逆転」は採用しない
 function isDominanceMode() {
@@ -21123,7 +21164,7 @@ function toast(msg, variant) {
   t.className = 'toast' + (variant ? ' toast-' + variant : '');
   t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), variant === 'big' ? 4200 : 2000);
+  setTimeout(() => t.remove(), (variant === 'big' || variant === 'drunk') ? 4200 : 2000);
 }
 
 //=============================================================
