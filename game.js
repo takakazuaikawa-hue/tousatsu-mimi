@@ -318,6 +318,8 @@ function normalizeSave(s) {
   if (!Array.isArray(s.rewardCgSeen)) s.rewardCgSeen = [];
   if (!Array.isArray(s.horoyoiCleared)) s.horoyoiCleared = [];   // ほろ酔いの夜（二周目）の勝ち記録。一周目の clearedStages とは別
   s.horoyoiMode = !!s.horoyoiMode;
+  if (!Array.isArray(s.deisuiCleared)) s.deisuiCleared = [];   // 泥酔の夜（三周目）の勝ち記録
+  s.deisuiMode = !!s.deisuiMode;
   if (!s.bestRanks || typeof s.bestRanks !== 'object') s.bestRanks = {};
   if (!s.bestScores || typeof s.bestScores !== 'object') s.bestScores = {};
   if (!s.chipChoice || typeof s.chipChoice !== 'object') s.chipChoice = {};
@@ -972,7 +974,7 @@ const HOROYOI_STAND = new Set(['rico', 'polka', 'selina', 'grano', 'velvet']);  
 // ほろ酔いの夜は顔のアイコンも酔った顔（assets/ui/face_<key>_drunk.webp、qa/drunkfaces.mjs で酔ったカットインから切り出し）
 const DRUNK_FACE_KEYS = new Set(['rico', 'mimi', 'polka', 'selina', 'grano', 'velvet']);
 function faceIconSrc(key, night) { const k = key === 'rico_tutorial' ? 'rico' : key; return (night && DRUNK_FACE_KEYS.has(k)) ? `assets/ui/face_${k}_drunk.webp` : `assets/ui/face_${k}.webp`; }
-function oppStandSrc(key) { return (state && state.horoyoi && HOROYOI_STAND.has(key)) ? `assets/characters/${key}_drunk_stand.webp` : `assets/characters/${key}_default.webp`; }
+function oppStandSrc(key) { if (state && state.deisui && HOROYOI_STAND.has(key)) return `assets/characters/${key}_deisui_stand.webp`; return (state && state.horoyoi && HOROYOI_STAND.has(key)) ? `assets/characters/${key}_drunk_stand.webp` : `assets/characters/${key}_default.webp`; }
 function setOpponentExpression(mood) {
   if (state) state.opponentExpr = mood || 'default';
   const key = state && state.opponentImgKey;
@@ -1290,6 +1292,7 @@ const DRUNK_TIER_SAY = {
 };
 function drunkTier() {
   if (typeof state === 'undefined' || !state || !state.horoyoi || state.tutorialMode) return 0;
+  if (state.deisui) return 3;
   if (!state.__hmidShown) return 1;
   return (state.handNo || 0) >= (state.__hmidHand || 0) + 4 ? 3 : 2;
 }
@@ -1336,6 +1339,10 @@ function aiPickSize(st, kind, eq) {
 }
 
 function decideOpponentAction(profile, ctx, opts = {}) {
+  if (typeof state !== 'undefined' && state && state.deisui && !opts.forceLargeBet && !ctx.playerAllIn && (ctx.handNo || 0) >= 2 && !state.__crazyThisHand && rand() < 0.14) {
+    state.__crazyThisHand = true;
+    return { type: 'bet', size: 'allin', intent: 'crazy', eq: 0.5 };
+  }
   const st = aiStyleOf(profile);
   const r = rand();
   const hole = ctx.hole;
@@ -3288,7 +3295,11 @@ function render() {
     case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); renderLobbyV3(); tryStartLobbyBgm(); break;
     case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyOpponentIdle(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI(); if (state.lectureMode) applyLectureUI(); { const pl = document.querySelector('[data-pause-label]'); if (pl) pl.textContent = state.lectureMode ? '中断' : 'やめる'; }
       // v2 拍④「決断」：ミミの手番は卓と相手を落として札と選択肢に視線を集める
-      { const scr = document.querySelector('.battle-screen.v2'); if (scr) scr.classList.toggle('is-deciding', !!(state.isPlayerTurn && state.handPhase !== 'idle' && state.handPhase !== 'showdown' && !state.psychPending)); }
+      { const scr = document.querySelector('.battle-screen.v2'); if (scr) { scr.classList.toggle('is-deciding', !!(state.isPlayerTurn && state.handPhase !== 'idle' && state.handPhase !== 'showdown' && !state.psychPending));
+        const blur = !!(state.deisui && state.isPlayerTurn && state.__blurStreet && state.handPhase === state.__blurStreet);
+        scr.classList.toggle('is-deisui-blur', blur); scr.classList.toggle('is-deisui', !!state.deisui);
+        if (blur && !scr.querySelector('.deisui-blur-cap')) scr.insertAdjacentHTML('beforeend', '<div class="deisui-blur-cap">（ミミは泥酔している……！）</div>');
+        if (blur) state.__blurSeen = true; } }
       break;
     case 'result':      renderTemplate('tpl-result'); applyBindings(); if (isBgmOn() && state.resultWon) playSceneBgm('victory'); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
@@ -3546,7 +3557,7 @@ function applyBindings() {
         }
         break;
       }
-      case 'mimiThought': el.textContent = state.horoyoi ? drunkBlur(state.mimiThought) : state.mimiThought; break;
+      case 'mimiThought': el.textContent = (state.deisui && state.__crazyHint) ? state.__crazyHint : state.deisui ? DEISUI_GIBBER[(state.handNo + (state.community || []).length) % DEISUI_GIBBER.length] : state.horoyoi ? drunkBlur(state.mimiThought) : state.mimiThought; break;
       case 'oppStackSide': el.innerHTML = renderStackOnTable('opponent'); break;
       case 'playerStackSide': el.innerHTML = renderStackOnTable('player'); break;
       case 'situationAnalysis': {
@@ -3567,7 +3578,8 @@ function applyBindings() {
           else if (fi && !inner && fi.alt === 'ミミ') { fi.alt = 'リコ先輩'; applyBattleRicoOutfit(); }
         }
         // 心の声は長いと欄で切れるので、最初の一言と、最後の「→ どうするか」だけにする
-        if (state.horoyoi) el.textContent = drunkBlur(inner ? state.mimiThought : state.ricoAdvice);
+        if (state.deisui) el.textContent = state.__crazyHint || DEISUI_GIBBER[(state.handNo * 7 + (state.community || []).length) % DEISUI_GIBBER.length];
+        else if (state.horoyoi) el.textContent = drunkBlur(inner ? state.mimiThought : state.ricoAdvice);
         else if (inner) { const ls = String(state.mimiThought || '').replace(/(本気の)?リコ先輩/g, '先輩').split('\n').filter(Boolean); const wide = document.documentElement.classList.contains('is-compact');   // PC の欄は狭く3行しか入らない：「→ どうするか」を優先
           el.textContent = ls.length > 1 && !wide ? ls[ls.length - 1] : ls.length > 2 ? ls[0] + '\n' + ls[ls.length - 1] : ls.join('\n'); }
         else el.innerHTML = state.ricoAdvice;
@@ -4010,10 +4022,410 @@ const STORY_WHO = {
   velvet: { name: 'ヴェルベット', face: 'assets/ui/face_velvet.webp' },
 };
 // 場面ごとの背景（無ければ assets/episodes/<場面>.webp）。行に art があれば、その行で絵を切り替える
-const STORY_ART = { struggle_velvet: 'assets/episodes/struggle_velvet_a.webp', hmid_velvet: 'assets/backgrounds/horoyoi/velvet_7.jpg',
+const STORY_ART = {
+  // 泥酔の夜の途中の場面：一枚絵がそろうまでは、ほろ酔いの途中の絵を仮に使う
+  dmid1_rico_tutorial: 'assets/backgrounds/horoyoi/rico_5.jpg', dmid2_rico_tutorial: 'assets/backgrounds/horoyoi/rico_4.jpg', dmid1_polka: 'assets/backgrounds/horoyoi/polka_5.jpg', dmid2_polka: 'assets/backgrounds/horoyoi/polka_4.jpg', dmid1_selina: 'assets/backgrounds/horoyoi/selina_4.jpg', dmid2_selina: 'assets/backgrounds/horoyoi/selina_5.jpg', dmid1_grano: 'assets/backgrounds/horoyoi/grano_5.jpg', dmid2_grano: 'assets/backgrounds/horoyoi/grano_4.jpg', dmid1_velvet: 'assets/backgrounds/horoyoi/velvet_7.jpg', dmid2_velvet: 'assets/backgrounds/horoyoi/velvet_5.jpg', struggle_velvet: 'assets/episodes/struggle_velvet_a.webp', hmid_velvet: 'assets/backgrounds/horoyoi/velvet_7.jpg',
   // 11/09 Codex 17回目「全員に途中の事件を」：夜の一枚絵6枚から1枚を途中に回す（幕間の後には出さない・コレクションには残る）
   hmid_rico_tutorial: 'assets/backgrounds/horoyoi/rico_5.jpg', hmid_polka: 'assets/backgrounds/horoyoi/polka_5.jpg', hmid_selina: 'assets/backgrounds/horoyoi/selina_4.jpg', hmid_grano: 'assets/backgrounds/horoyoi/grano_5.jpg' };
 // ほろ酔いの夜の勝負の途中に挟む一枚絵と会話（11/09 ユーザー承認の台詞。写真集の S6-1 を昇格）。泥酔の夜の「勝負の途中の一枚絵と会話劇」もこの形で足す
+// ===== 泥酔の夜（三周目、D21）=====
+// ほろ酔いの夜の仕組みに重ねる（state.horoyoi も true のまま）。違いは state.deisui で出す。
+// 絵がそろうまでは開発中：DEISUI_READY が false の間は、URL に ?deisui=1 か localStorage mp_deisui_dev=1 の時だけ切り替えに出す
+const DEISUI_READY = false;
+function deisuiDev() { try { return DEISUI_READY || /[?&]deisui=1/.test(location.search) || localStorage.getItem('mp_deisui_dev') === '1'; } catch (e) { return DEISUI_READY; } }
+function horoyoiAllCleared() { return !!save && STAGE_ORDER.every(id => (save.horoyoiCleared || []).includes(id)); }
+function deisuiOpen() { return deisuiDev() && horoyoiAllCleared(); }
+function isDeisui() { return typeof isHoroyoi === 'function' && isHoroyoi() && !!save.deisuiMode && deisuiOpen(); }
+// 文案（docs/design-ref/deisui-script.md、11/12 ユーザー承認）から qa/deisui-script-to-js.mjs で作った
+const DEISUI_MID_SCENES = {
+ "rico_tutorial": [
+  [
+   {
+    "k": "say",
+    "who": "rico",
+    "t": "みみ〜……まんま〜……ちがう、みみ〜……ちがわない、まんま〜……うぇへへ"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "しぇんぱい、それ、あかちゃんのことば……ひっく……わたしも、いま、なんて言った？"
+   },
+   {
+    "k": "say",
+    "who": "rico",
+    "t": "ほっぺ、しゃわって、しゃわってぇ〜。……はやくぅ。……おしょい〜。……ぐぅ"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "（しぇんぱいのほっぺ、もちもち、もちもち、おもち、おしょなえ……）あっ、じぇんぶ口に出てる!?"
+   },
+   {
+    "k": "say",
+    "who": "rico",
+    "t": "でてた〜。もっといって〜。おもちって、いって〜。……すぴー"
+   }
+  ],
+  [
+   {
+    "k": "say",
+    "who": "rico",
+    "t": "（机をばんばん）みなしゃ〜ん！　このこ〜、アタシの〜、おしえごぉ〜！　しぇかいいち〜！　うちゅういち〜！"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "だりぇもいましぇん！　しぇんぱい、だりぇも、いましぇんっ……ふにゃにゃ"
+   },
+   {
+    "k": "say",
+    "who": "rico",
+    "t": "いるもん〜。ここにいるもん〜。みみのほっぺ、むにむに、むにむに、むにむにむにむにぃ〜"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "むにむにしながりゃ、かけないでくだしゃ〜い……あ、チップ、たおれた。きりぇい……"
+   },
+   {
+    "k": "say",
+    "who": "rico",
+    "t": "……すぅ。（チップを全部押し出したまま寝ている）"
+   }
+  ]
+ ],
+ "polka": [
+  [
+   {
+    "k": "say",
+    "who": "polka",
+    "t": "あはははは！　みみちゃんのみみ、ぴくぴくぅ〜！　ぴくぴく！　ぴく……うわぁぁぁん、ボクのみみ、ぴくぴくしないぃぃ"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "なんで泣くんでしゅか!?　しゃっきまで、わりゃってたのにぃ……ひっく"
+   },
+   {
+    "k": "say",
+    "who": "polka",
+    "t": "ぐすっ……あ、このカード、あましょう。はむっ。……もぐもぐ"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "たべちゃだめでしゅ！　しょれ、しゅぺーどの、えーしゅ……えーしゅって、なんでしたっけ"
+   },
+   {
+    "k": "say",
+    "who": "polka",
+    "t": "……しょっぱい。……あはははははは！　しょっぱいって、なにぃ〜！"
+   }
+  ],
+  [
+   {
+    "k": "say",
+    "who": "polka",
+    "t": "み、みみちゃ……ボク、いま、しゅごく、しゅごく、がまんしてりゅ……ぷるぷる……"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "といれ、いってくだしゃい！　まってましゅかりゃ！　……といれ、どっちでしたっけ"
+   },
+   {
+    "k": "say",
+    "who": "polka",
+    "t": "やだぁぁ……しぇき、たったら、まけなきがしゅるぅぅ……うぅ、ぐしゅっ、ぐしゅっ"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "（ないてじぇんぶ賭けてくる……手がちゅよいんじゃなくて、はやくおわりたいだけ……）あっ、きこえて、ましゅ？"
+   },
+   {
+    "k": "say",
+    "who": "polka",
+    "t": "きこえてないもん！　ボクの手、しゅっごく、ちゅよいもん！　……たぶん！　……もれりゅぅ！"
+   }
+  ]
+ ],
+ "selina": [
+  [
+   {
+    "k": "say",
+    "who": "selina",
+    "t": "みみしゃん。かくりちゅてきに、いって、こんやのわたしは、あまえりゅべき、でしゅ。……しょうめいは、しょうりゃく、しましゅ"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "しょうりゃく、しないでくだしゃい！　あと、めがね、しゃかしゃま！　しゃかしゃまでしゅ！"
+   },
+   {
+    "k": "say",
+    "who": "selina",
+    "t": "しゃかしゃまのほうが、あなたのむなもとが、よく、みえりゅ。こうがくてきに、ただしい。……ぜんぶ、ただしい。わたしは、ただしい"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "（しぇりなしゃん、こんや、じぇんじぇん、りくちゅじゃない……）あっ、でてりゅ!?"
+   },
+   {
+    "k": "say",
+    "who": "selina",
+    "t": "でてましゅ。……でも、しょういう、しょっちょくな、ひと、とうけいてきに……しゅき。しゅきしゅき。……いまの、なし"
+   }
+  ],
+  [
+   {
+    "k": "say",
+    "who": "selina",
+    "t": "（トランプを肌にぺたぺた）はーとの、くいーんは、ここ。しゅぺーどの、えーしゅは……ここ。ふふ、かくすべきとこりょを、かくりちゅで、かくしてましゅ"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "かくれてないでしゅ！　じぇんじぇん、かくれてないでしゅぅ……ふにゃ"
+   },
+   {
+    "k": "say",
+    "who": "selina",
+    "t": "のこり、にまい。どこに、はりゅか、みみしゃんが、きめて。……きたいちは、たかい、でしゅよ？　ふふ、ふふふ、ふへへ"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "しょんなもんだい、けんしゅうで、ならってましぇん……あれ、けんしゅうって、なんでしたっけ"
+   },
+   {
+    "k": "say",
+    "who": "selina",
+    "t": "しゅくだい、でしゅ。……つぎ、じぇんぶ、かけましゅ。こんきょは……きぶん。……きぶんって、しゅうしきに、なりましゅか？"
+   }
+  ]
+ ],
+ "grano": [
+  [
+   {
+    "k": "say",
+    "who": "grano",
+    "t": "しゃあしゃあ、おたちあい〜！　ほんじちゅの、めだまは、こちりゃ、しょうにん、ぐらーのの、うれごりょの、からだ〜！　おねだん、なんと……たぁだぁ〜！"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "うりゃないでくだしゃい！　あと、ねふだ、へんなとこりょに、はらないでぇ……ひっく"
+   },
+   {
+    "k": "say",
+    "who": "grano",
+    "t": "（瓶を脚に挟んで）ほうりぇ、りょうてが、あきましたじょ！　これで、おじょうしゃんの、ちっぷを、りょうてで……むふ、むふふ、むふふふ"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "（ぐらーのしゃん、よだれ、たれてりゅ……たりぇてりゅ……たれ……たれって、なんだっけ）あっ、また口に！"
+   },
+   {
+    "k": "say",
+    "who": "grano",
+    "t": "（舌をべろーん）たりぇて、おりましゅとも！　よいしなを、みりゅと、しょうにんは、しじぇんと、こうなりゅ……じゅるり。はっはっは、はっはっ、はっ……げふっ"
+   }
+  ],
+  [
+   {
+    "k": "say",
+    "who": "grano",
+    "t": "（金貨をばらまいて）みなしゃれ、きんかの、うみ〜！　わたくし、およぎましゅじょ〜！　しゅい〜、しゅい〜、ばたあし〜！"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "ゆかでしゅ！　しょれ、ゆかでしゅぅ、ぐらーのしゃん……ゆかって、ちゅめたい……"
+   },
+   {
+    "k": "say",
+    "who": "grano",
+    "t": "おじょうしゃんも、ごいっしょに。……いえ、へんな、いみ、ではなく。……しゅこしは、へんな、いみで。……かなり、へんな、いみで。はっはっは！"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "ふにゃ……ぐらーのしゃん、こんや、いちゅもの、しゃんばい、げひん、でしゅ……"
+   },
+   {
+    "k": "say",
+    "who": "grano",
+    "t": "しゃんばい！　よい、りまわり、ですにゃ！　……にゃ？　では、ちゅぎの、て、じぇんぶ、かいましょう！　ぜんぶ、ぜんぶ、ぜぇんぶ！"
+   }
+  ]
+ ],
+ "velvet": [
+  [
+   {
+    "k": "say",
+    "who": "velvet",
+    "t": "じゃーこ、じゃーこ♡　みみちゃんの、じゃーこ♡　……ちがった？　……もういいの、じゃーこで。じゃーこ、じゃこじゃこ♡"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "べるべっとしゃん、ことばが、あかちゃん……わたしも、あかちゃん……ばぶ……あっ"
+   },
+   {
+    "k": "say",
+    "who": "velvet",
+    "t": "ねえねえ、めくりっこ、しよ♡　えいっ♡　ひらり〜♡"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "ひゃああっ！　しゅかーと、めくらないで、くだしゃ〜いっ！　……うしゃぎみみ、ばたばたしてりゅ……"
+   },
+   {
+    "k": "say",
+    "who": "velvet",
+    "t": "じゃあ、あたしの、ばん♡　……めくるとこ、もう、ないけど♡　うふ、うふふ、うふふふふ♡"
+   }
+  ],
+  [
+   {
+    "k": "say",
+    "who": "velvet",
+    "t": "あちゅいの……あちゅい、あちゅい、あちゅい……もう、いちまい、ぬぐのぉ……"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "だめでしゅ！　もう、ぬぐとこりょ、ほとんど、のこってましぇん！　……あ、いちまい、とんでった"
+   },
+   {
+    "k": "say",
+    "who": "velvet",
+    "t": "やだやだやだやだぁぁ〜！　（床をごろごろ）ぬぐのぉ〜！　みみちゃんも、ぬぐのぉ〜！　いっしょに、ぬぐのぉぉ〜！"
+   },
+   {
+    "k": "say",
+    "who": "mimi",
+    "t": "（いちばん、ちゅよいひとが、ゆかで、だだ、こねてりゅ……かわいい……）あっ、かわいいって、いっちゃった"
+   },
+   {
+    "k": "say",
+    "who": "velvet",
+    "t": "……きこえた。……ざぁこ。……ちがう、じゃーこ♡　……じぇんぶ、かけちゃうもん。ぷいっ♡"
+   }
+  ]
+ ]
+};
+const DEISUI_EPISODES = {
+ "rico_tutorial": {
+  "id": "deisui_001",
+  "no": "泥酔の夜　第1夜",
+  "img": "assets/ui/home/stage-empty_night.webp",
+  "bg": "bg_vip_room",
+  "title": "ほろ酔いの夜を全部勝ったおいわいに「今夜は先輩のおごり〜」って乾杯したはじゅの新人バニーの私が、\n気がついたら先輩が私の膝で「まんま〜」って丸くなってて、\n起こそうとしたら「やぁだ、しゃわって、しゃわってぇ〜」って腕をつかまれて、\nしょのまま閉店後の卓にすわりゃされたけど、先輩は賭けてる途中でねちゃうし、\n私の心の声はじぇんぶ口から出ちゃって、もう、なにがなんだか、ひっく、な件"
+ },
+ "polka": {
+  "id": "deisui_002",
+  "no": "泥酔の夜　第2夜",
+  "img": "assets/ui/home/stage-empty_night.webp",
+  "bg": "bg_vip_room",
+  "title": "次の卓のポルカは、私が座る前に「みみちゃあああん！」ってとびついてきて、\nわらってたと思ったら十びょうで「ボクなんかぁぁ」って泣いて、また十びょうでわらってて、\nカードを口にくわえて「これ、たべりぇる？」ってきいてくるし、\nとちゅうからずっと脚をもじもじしながら「まだいかない！ かつまでいかないぃ！」って泣いてて、\nかったらかったで、なんかを、あたまのうえで、ぐるぐる、ぐるぐる……ひっく、な件"
+ },
+ "selina": {
+  "id": "deisui_003",
+  "no": "泥酔の夜　第3夜",
+  "img": "assets/ui/home/stage-empty_night.webp",
+  "bg": "bg_vip_room",
+  "title": "いつもは眼鏡のおくから確率でひとをさしてくるセリナしゃんが、\n今夜は眼鏡をしゃかしゃまにかけたまま、まがおで「みみしゃん、あなたとわたしが今夜むしゅばれる確率をけいしゃんしました」って口説いてきて、\nしきは途中で「おっぱいのきょくしぇんは、しぇいきぶんぷに、ちかい」っていうなぞの定理にとんでいって、\nトランプを一まいずつ素肌にはって「これでわたしは、ごじゅうにまいの、かくりちゅの、おんな」ってむねをはって、\n最後は黒板になぞのしきをかいて、まんじょくげに、ねちゃう……ひっく、な件"
+ },
+ "grano": {
+  "id": "deisui_004",
+  "no": "泥酔の夜　第4夜",
+  "img": "assets/ui/home/stage-empty_night.webp",
+  "bg": "bg_vip_room",
+  "title": "交換所ではいつも値札とあいそで隙を見しぇないグラーノしゃんが、\n今夜は自分の体に値札をはって「ほんじちゅの目玉しょうひん、わたくし、でありましゅ！」って口上を歌いだして、\n口をひらけば下ネタ、舌をだせばよだれ、グラスも瓶も脚にはしゃんで「りょうてが、あいて、しょうばいじょうず！」ってわらって、\nしまいには金貨をゆかにばらまいて、およぐまねをはじめたので、\nわたしは勝負をしにきたのか、よっぱらいの見しぇものを見にきたのか、もう、ひっく、な件"
+ },
+ "velvet": {
+  "id": "deisui_005",
+  "no": "泥酔の夜　第5夜",
+  "img": "assets/ui/home/stage-empty_night.webp",
+  "bg": "bg_vip_room",
+  "title": "最後の卓のヴェルベットしゃんは、いつもの「ざぁこ♡」が「じゃーこ、じゃーこ♡」って赤ちゃんことばになってて、\n私のスカートをめくっては「めくりっこぉ〜♡」ってわらって、\n一まいぬいでは「あちゅいの〜」、もう一まいぬいでは「まだ、あちゅいの〜」って言って、\nとめようとしたら、ゆかでころがって、だだをこねて、\n最後はなにかをあたまにかぶったまま私にだきちゅいて、しゅやしゅや、ねいきを……ひっく、な件"
+ }
+};
+// 勝った時の一言：[強気に攻めた, 慎重に待った, ぼやけた画面で勝った]
+const DEISUI_CLOSE = {
+ "rico_tutorial": [
+  "みみ〜、つよ〜い。アタシがしょだてたの〜。……しょだてたっけ？　うぇへへ",
+  "まてるこは、えりゃいの〜。アタシは、まてないこ〜。ねむ〜い。ぐぅ",
+  "みみも、め、ぐりゅぐりゅしてたのに〜。かんだけで、かつの、アタシにしょっくり〜"
+ ],
+ "polka": [
+  "みみちゃんのかけかた、ボクより、おおごえ〜！　あはは……ぐしゅっ……あははは！",
+  "じゅっと、またれて、ボク、がまんの、げんかいだったんだかりゃぁぁ！",
+  "みみちゃん、め、つぶってかってた！　ボクもやる！　……まけたぁぁぁ！"
+ ],
+ "selina": [
+  "だいたんな、ひとは、かくりちゅてきに、もてましゅ。……わたしの、とうけいでは。……とうけい、どこ？",
+  "まてるひとは、うちゅくしい。……しゅうしきでかくと、ながくなるので、しょうりゃく。……ぐぅ",
+  "みえてないのに、かつ。……しょれは、かくりちゅでは、なく……あい、でしゅ。……きゃっ"
+ ],
+ "grano": [
+  "ごうかいな、うりかた！　おじょうしゃん、うちのみしぇで、はたらきましぇんか！　……よるのぶで！　じゅるり",
+  "かいたたかれ、ました……よっていても、よい、しょうにんは、ねを、みりゅ……みりゅ……ぐぅ",
+  "めを、ちゅぶって、あてりゅ！　しょれは、もはや、しょうばいでは、なく……うりゃない……うらない、ですじょ！"
+ ],
+ "velvet": [
+  "まっこうから、くるの、じゃーこの、くしぇに……しゅき♡　……しゅきしゅき♡",
+  "じらしゅの、じょうず……あたし、じらしゃれるの、きらいじゃ、ないの……すぅ",
+  "みえてないのに、かちゅなんて、じゅるい……ごほうび、ぬいで、あげる♡　……もう、ぬいでた♡"
+ ]
+};
+// とんでもない賭けの時の心の声（手の強さとは関係なく全部賭けてくる合図）
+const DEISUI_HINT = {
+ "rico_tutorial": "（リコ先輩は寝ている……！）",
+ "polka": "（ポルカはおしっこをガマンしている……！）",
+ "selina": "（セリナは計算式に夢中になっている……！）",
+ "grano": "（グラーノは値札を見ていない……！）",
+ "velvet": "（ヴェルベットは脱ぐのに夢中になっている……！）"
+};
+// 報酬は一周目の2倍（11/12 ユーザー）
+const DEISUI_REWARD = {
+  rico_tutorial: { rewardFirst: 600,  rewardRematch: 300,  rewardSBonus: 200 },
+  polka:         { rewardFirst: 1000, rewardRematch: 500,  rewardSBonus: 200 },
+  selina:        { rewardFirst: 1400, rewardRematch: 700,  rewardSBonus: 300 },
+  grano:         { rewardFirst: 1800, rewardRematch: 900,  rewardSBonus: 400 },
+  velvet:        { rewardFirst: 3000, rewardRematch: 1200, rewardSBonus: 600 },
+};
+// 泥酔のミミの助言・心の声：全部「ふにゃ…」か奇声（数字は出さない）
+const DEISUI_GIBBER = ['「ふにゃにゃ……ひっく」', '「うぇへへ……なんだっけ……」', '「ぴょん……ぴょん……」', '「しぇんぱい……おみじゅ……」', '「むにゃ……かーど、ふたつ……みっつ？」', '「ふにゃあああ……」'];
+// 勝負の途中の場面は1戦2回（序盤と終盤）。絵は泥酔の一枚絵がそろうまで、ほろ酔いの途中の絵を仮に使う
+function deisuiMidDue() {
+  if (!state.deisui || state.tutorialMode) return null;
+  const id = state.opponentId;
+  if (!DEISUI_MID_SCENES[id]) return null;
+  if (!state.__dmid1) return state.handNo >= 2 ? 1 : null;
+  if (!state.__dmid2) {
+    const gain = state.playerChips - (state.handStartChips || state.playerChips);
+    const init = state.__initialChips || 1000;
+    if (state.handNo >= (state.__dmid1Hand || 0) + 3 && (gain >= init * 0.12 || state.handNo >= (state.__dmid1Hand || 0) + 5)) return 2;
+  }
+  return null;
+}
+function showDeisuiMid(which, after) {
+  const id = state.opponentId;
+  state['__dmid' + which] = true;
+  if (which === 1) state.__dmid1Hand = state.handNo || 0;
+  if (!save.deisuiMidSeen) save.deisuiMidSeen = [];
+  const key = id + ':' + which;
+  if (!save.deisuiMidSeen.includes(key)) { save.deisuiMidSeen.push(key); saveProgress(); }
+  if (which === 2) state.__hmidShown = true;   // 酔いの段を3段に（泥酔はもともと3段）
+  const g0 = battleGen;
+  return showStoryScene('dmid' + which + '_' + id, () => { if (g0 === battleGen && state.screen === 'battle') after(); });
+}
 const HOROYOI_MID_SCENES = {
   // 11/09 ユーザー承認の台詞（リコ・ポルカ・セリナ・グラーノ）
   rico_tutorial: [
@@ -4063,7 +4475,7 @@ const HOROYOI_CLOSE = {
 };
 // 出る時：ほろ酔いの夜の対戦で1戦1回。3ハンド目以降に相手が大きく負けた手の直後（ミミがその手で開始時の1割2分以上勝った）、そろわなければ5ハンド目の後
 function horoyoiMidDue() {
-  if (!state.horoyoi || state.tutorialMode || state.__hmidShown) return null;
+  if (!state.horoyoi || state.deisui || state.tutorialMode || state.__hmidShown) return null;
   const id = state.opponentId;
   if (!HOROYOI_MID_SCENES[id] || state.handNo < 3) return null;
   const gain = state.playerChips - (state.handStartChips || state.playerChips);
@@ -4109,6 +4521,7 @@ function struggleSceneDue() {
   return id;
 }
 const PROLOGUES = {
+  ...Object.fromEntries(Object.entries(DEISUI_MID_SCENES).flatMap(([id, sc]) => [['dmid1_' + id, sc[0]], ['dmid2_' + id, sc[1]]])),
   hmid_velvet: HOROYOI_MID_SCENES.velvet, hmid_rico_tutorial: HOROYOI_MID_SCENES.rico_tutorial, hmid_polka: HOROYOI_MID_SCENES.polka, hmid_selina: HOROYOI_MID_SCENES.selina, hmid_grano: HOROYOI_MID_SCENES.grano,
   struggle_polka: STRUGGLE_SCENES.polka, struggle_selina: STRUGGLE_SCENES.selina, struggle_grano: STRUGGLE_SCENES.grano, struggle_velvet: STRUGGLE_SCENES.velvet,
   rico_tutorial: [
@@ -4418,6 +4831,133 @@ const INTERMISSIONS = {
 // 最後の1〜2行は一周目と同じく次の相手の予告（酔い方＝読み方の手がかり）。文案 2026-11-08（ユーザー確認待ち）
 // 声：voice は '<声>/ims_h_<相手>_<n>'（Irodori-TTS で作る。無い間は声なしで進む）
 Object.assign(INTERMISSIONS, {
+ "d_rico_tutorial": {
+  "lines": [
+   {
+    "speaker": "rico",
+    "text": "ん〜……アタシ、まけた？　いつ？　なんで？　……ここ、どこ？　……みみ、だれ？　うしょ、しってる〜"
+   },
+   {
+    "speaker": "mimi",
+    "text": "ねてましたよぉ。しゃんかい。あと、じゅっと「まんま〜」って……ひっく"
+   },
+   {
+    "speaker": "rico",
+    "text": "……あした、わしゅれてね。しぇんぱいめいれい。……ね。……おねがい。……おねがいだからぁ〜（泣く）"
+   },
+   {
+    "speaker": "rico",
+    "text": "つぎ、ぽるか〜。あのこ、もう、げんかい〜。……といれのばしょ、おしえて、あげて〜。……といれって、どこ？"
+   },
+   {
+    "speaker": "mimi",
+    "text": "（しぇんぱいの「おねがい」、はじめて、きいた……うしゃぎみみ、ぴくぴく、とまんない……）ふにゃ……"
+   }
+  ],
+  "cg": "assets/backgrounds/deisui/rico_3.jpg"
+ },
+ "d_polka": {
+  "lines": [
+   {
+    "speaker": "polka",
+    "text": "（戻ってきて）ふぃ〜、しゅっきりぃ！　……あれ、ボク、まけてる？　あははははは！　まけてるぅ〜！"
+   },
+   {
+    "speaker": "polka",
+    "text": "みてみて〜！　しょうりの、はた〜！　ぐるぐる〜！　ぐるぐるぐるぐる〜！　ひゅんひゅん〜！"
+   },
+   {
+    "speaker": "mimi",
+    "text": "しょ、しょれ、はたじゃないでしゅ！　ぽるかしゃんの、しょの、した、はいてた……ふにゃああ"
+   },
+   {
+    "speaker": "rico",
+    "text": "つぎ、しぇりな〜。こんやは、りくちゅ、めちゃくちゃ〜。ぜんぶ、ききながしていいよ〜……アタシも、ききながしゅ〜"
+   },
+   {
+    "speaker": "mimi",
+    "text": "（あした、ぽるかしゃん、じぇったい、おぼえてない……わたしも、おぼえてない、きがしゅる……）"
+   }
+  ],
+  "cg": "assets/backgrounds/deisui/polka_3.jpg"
+ },
+ "d_selina": {
+  "lines": [
+   {
+    "speaker": "selina",
+    "text": "まけ、ました。げんいんは、わたしが、けいしゃんの、とちゅうで、ねていたこと。……こくばんの、しき、とけましたか？"
+   },
+   {
+    "speaker": "mimi",
+    "text": "「みみ＝かわいい×むげん」ってかいてありました……あれ、しゅうしき、なんでしゅか？"
+   },
+   {
+    "speaker": "selina",
+    "text": "……けして。いましゅぐ。きろくに、のこると、わたしの、じんしぇいの、ぶんしゃんが、おおきく……なりゅ……すぅ"
+   },
+   {
+    "speaker": "rico",
+    "text": "つぎ、ぐらーの〜。こんや、げひん、だよ〜。みみ、ふしゃいどきな〜。……みみって、どっちのみみ〜？　うぇへへ"
+   },
+   {
+    "speaker": "mimi",
+    "text": "（みみ、ふしゃげない……うしゃぎのほうも、ひとのほうも、ぴくぴく、とまんない……）"
+   }
+  ],
+  "cg": "assets/backgrounds/deisui/selina_3.jpg"
+ },
+ "d_grano": {
+  "lines": [
+   {
+    "speaker": "grano",
+    "text": "……はて。わたくし、なじぇ、からだに「ばいやく、じゅみ」と、はって、ありましゅの？　……だれに、うれたの？"
+   },
+   {
+    "speaker": "mimi",
+    "text": "ごじぶんで、はってましたよぉ……あと、じゅっと、およいでました。ばたあしで……"
+   },
+   {
+    "speaker": "grano",
+    "text": "……おじょうしゃん。こんやのことは、ちょうぼに、のしぇないで、くだしゃれ。くちどめりょうは……こうかんじょで……しょうしょう……おまけ……ぐぅ"
+   },
+   {
+    "speaker": "rico",
+    "text": "さいご、べるべっと〜。こんやのあのこは、ぬぐよ〜。とめても、ぬぐよ〜。……アタシも、ぬごっかな〜？"
+   },
+   {
+    "speaker": "mimi",
+    "text": "（とめても、ぬぐ……！？　しぇんぱいまで……！？　ど、どうしよ……うしゃぎみみ、ぴーんって、なった……）"
+   }
+  ],
+  "cg": "assets/backgrounds/deisui/grano_3.jpg"
+ },
+ "d_velvet": {
+  "lines": [
+   {
+    "speaker": "velvet",
+    "text": "（何かを頭にかぶったまま、ミミに抱きついて）……すぅ……すぅ……むにゃ……じゃーこ……すぅ……"
+   },
+   {
+    "speaker": "mimi",
+    "text": "べるべっとしゃん、しょれ、あたまにかぶってりゅの……あの、たぶん、ごじぶんの……ふにゃああ"
+   },
+   {
+    "speaker": "velvet",
+    "text": "……ん。……みみちゃん、あったかい。……あしたも、いっしょに、のむの。……あさっても。……じゅっと。……すぅ"
+   },
+   {
+    "speaker": "rico",
+    "text": "みみ〜、じぇんいんに、かっちゃったねえ……アタシも、もう、だめ〜……（倒れる）……ぐぅ"
+   },
+   {
+    "speaker": "mimi",
+    "text": "（みんな、ねちゃった……あした、だりぇも、おぼえてない……わたしも、たぶん……）おやしゅみなしゃい……ぴょん、ぴょん……（うさぎ跳びで帰っていく）"
+   }
+  ],
+  "cg": "assets/backgrounds/deisui/velvet_3.jpg"
+ }
+});
+Object.assign(INTERMISSIONS, {
   h_rico_tutorial: {
     lines: [
       { speaker: 'rico', text: 'えへへ……ミミに負けちゃった〜。せんせいは、もうおしまい。今夜はただのリコだよ〜', voice: 'rico/ims_h_rico_1' },
@@ -4529,7 +5069,7 @@ let _imsVoiceWait = false;
 function showIntermission(opponentId, onDone, voiceReady) {
   const data = INTERMISSIONS[opponentId];
   // ほろ酔いの夜の幕間は、注ぐ音と氷の音で始める（トクトク→カランカラン。11/08 ユーザー「飲み物っぽくていい」）
-  if (data && voiceReady !== 'sfx' && String(opponentId).startsWith('h_') && !document.querySelector('.intermission-overlay')) { mpSfx('pour'); setTimeout(() => mpSfx('clink'), 1150); }
+  if (data && voiceReady !== 'sfx' && /^[hd]_/.test(String(opponentId)) && !document.querySelector('.intermission-overlay')) { mpSfx('pour'); setTimeout(() => mpSfx('clink'), 1150); }
   if (!data || !data.lines || !data.lines.length) { if (onDone) onDone(); return; }
   // 二重表示を防ぐ：幕間が出ている間に「幕間へ」がもう一度押されても、2枚目は作らない
   // （消えかけの .out も数える：終わる時の400msの間に「幕間へ」がもう一度押されると、2枚目が開いて声も二重に鳴っていた）
@@ -4551,12 +5091,12 @@ function showIntermission(opponentId, onDone, voiceReady) {
   overlay.innerHTML = `
     <div class="ims-bg">
       <img class="ims-bg-img" alt=""
-           src="${String(opponentId).startsWith('h_') ? 'assets/ui/home/stage-empty_night.webp' : 'assets/backgrounds/bg_intermission.jpg'}"
+           src="${/^[hd]_/.test(String(opponentId)) ? 'assets/ui/home/stage-empty_night.webp' : 'assets/backgrounds/bg_intermission.jpg'}"
            onerror="this.onerror=null;this.src='assets/backgrounds/lobby.webp';">
     </div>
     <div class="ims-stage">
       <div class="ims-char ims-char-mimi character-frame" data-ims-side="mimi">
-        <img alt="ミミ" src="assets/characters/${String(opponentId).startsWith('h_') ? 'mimi_intermission_drunk' : 'mimi_intermission'}.webp"
+        <img alt="ミミ" src="assets/characters/${String(opponentId).startsWith('d_') ? 'mimi_deisui_stand' : /^[hd]_/.test(String(opponentId)) ? 'mimi_intermission_drunk' : 'mimi_intermission'}.webp"
              onerror="this.onerror=null;this.src='assets/characters/mimi_default.webp';">
       </div>
       <div class="ims-char ims-char-opp character-frame" data-ims-side="opp">
@@ -4591,7 +5131,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
 
   { const pre = new Image(); pre.src = data.cg || `assets/backgrounds/reward_cg_${opponentId}.jpg`; (REWARD_CG_MORE[opponentId] || []).forEach(src => { new Image().src = src; }); }
   // 勝負の途中に見せた夜の一枚絵は、幕間の後には出さない（同じ絵を2回見せない）
-  const cgMore = [...(REWARD_CG_MORE[opponentId] || [])].filter(src => !String(opponentId).startsWith('h_') || src !== STORY_ART['hmid_' + String(opponentId).slice(2)]);
+  const cgMore = [...(REWARD_CG_MORE[opponentId] || [])].filter(src => !/^[hd]_/.test(String(opponentId)) || src !== STORY_ART['hmid_' + String(opponentId).slice(2)]);
   const cgTotal = 1 + cgMore.length;
   const mimiChar = overlay.querySelector('.ims-char-mimi');
   const oppChar = overlay.querySelector('.ims-char-opp');
@@ -4610,14 +5150,17 @@ function showIntermission(opponentId, onDone, voiceReady) {
   function speakerMeta(speaker) {
     // 顔窓は小さい丸なので、全身絵ではなく顔クロップ（assets/ui/face_*）を使う
     // portrait：会話の場面（エンディングと同じ見せ方）で中央に大きく出す立ち絵
-    const nightIms = String(opponentId).startsWith('h_');
+    const nightIms = /^[hd]_/.test(String(opponentId));
+    const deisuiIms = String(opponentId).startsWith('d_');
+    if (deisuiIms && speaker === 'mimi') return { name: 'ミミ', img: faceIconSrc('mimi', true), portrait: 'assets/characters/mimi_deisui_stand.webp', side: 'mimi' };
+    if (deisuiIms && speaker === 'rico') return { name: 'リコ先輩', img: faceIconSrc('rico', true), portrait: 'assets/characters/rico_deisui_stand.webp', side: 'rico' };
     if (speaker === 'mimi') return { name: 'ミミ', img: faceIconSrc('mimi', nightIms), portrait: nightIms ? 'assets/characters/mimi_intermission_drunk.webp' : 'assets/characters/mimi_intermission.webp', side: 'mimi' };
-    if (speaker === 'rico') return { name: 'リコ先輩', img: faceIconSrc('rico', nightIms), portrait: (String(opponentId).startsWith('h_') && HOROYOI_STAND.has('rico')) ? 'assets/characters/rico_drunk_stand.webp' : 'assets/characters/rico_default.webp', side: 'rico' };
+    if (speaker === 'rico') return { name: 'リコ先輩', img: faceIconSrc('rico', nightIms), portrait: (/^[hd]_/.test(String(opponentId)) && HOROYOI_STAND.has('rico')) ? 'assets/characters/rico_drunk_stand.webp' : 'assets/characters/rico_default.webp', side: 'rico' };
     const o = OPPONENTS[speaker];
     const key = (o && o.imgKey) || speaker;
     // PC は大きく映すので、大きい版（縦2000px）があればそれを使う（2026-11-01 8回目の批評：667×1000 を約1.5倍に引き伸ばして顔がぼけた）
-    const night = String(opponentId).startsWith('h_') && HOROYOI_STAND.has(key);   // ほろ酔いの夜の幕間は酔った立ち絵
-    const lo = night ? `assets/characters/${key}_drunk_stand.webp` : `assets/characters/${key}_default.webp`;
+    const night = /^[hd]_/.test(String(opponentId)) && HOROYOI_STAND.has(key);   // ほろ酔いの夜の幕間は酔った立ち絵
+    const lo = (night && deisuiIms) ? `assets/characters/${key}_deisui_stand.webp` : night ? `assets/characters/${key}_drunk_stand.webp` : `assets/characters/${key}_default.webp`;
     const hd = !night && IMS_HD_KEYS.has(key) && !document.documentElement.classList.contains('is-compact');
     return { name: o ? o.name : oppName, img: faceIconSrc(key, night), portrait: hd ? `assets/characters/hd/${key}_default.webp` : lo, lo, side: 'opp' };
   }
@@ -4908,7 +5451,7 @@ const STAGE_ORDER = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
 // 勝ち記録は save.horoyoiCleared、報酬・ランク・再戦の数・一枚絵は 'h_<相手>' の鍵で一周目と分ける。報酬は一周目の1.5倍
 //-------------------------------------------------------------
 function isHoroyoi() { return !!(save && save.horoyoiMode) && isEndingUnlocked(); }
-const hKey = (id) => 'h_' + id;
+const hKey = (id) => (isDeisui() ? 'd_' : 'h_') + id;
 // 一周目の初回・再戦・S評価の1.5倍（リコ先輩は講義の代わりに本当の対戦なので、再戦とSはポルカの段に合わせた）
 const HOROYOI_REWARD = {
   rico_tutorial: { rewardFirst: 450,  rewardRematch: 225, rewardSBonus: 150 },
@@ -4918,14 +5461,16 @@ const HOROYOI_REWARD = {
   velvet:        { rewardFirst: 2250, rewardRematch: 900, rewardSBonus: 450 },
 };
 const HOROYOI_BASE_CHIPS = { rico_tutorial: 1000 };
-function horoyoiCleared(id) { return !!(save && (save.horoyoiCleared || []).includes(id)); }
+function horoyoiCleared(id) { return !!(save && ((isDeisui() ? save.deisuiCleared : save.horoyoiCleared) || []).includes(id)); }
+function nightReward(id) { return (isDeisui() ? DEISUI_REWARD : HOROYOI_REWARD)[id]; }
+function nightName() { return isDeisui() ? '泥酔の夜' : 'ほろ酔いの夜'; }
 function horoyoiUnlocked(id) { const i = STAGE_ORDER.indexOf(id); return i === 0 || (i > 0 && horoyoiCleared(STAGE_ORDER[i - 1])); }
 function horoyoiNext() { return STAGE_ORDER.find(id => horoyoiUnlocked(id) && !horoyoiCleared(id)) || null; }
 function horoyoiRematchPreview(id) {
   const wins = (save.rematchWins && save.rematchWins[hKey(id)]) || 0;
-  return Math.max(10, Math.round(HOROYOI_REWARD[id].rewardRematch * rematchMult(wins)));
+  return Math.max(10, Math.round(nightReward(id).rewardRematch * rematchMult(wins)));
 }
-function horoyoiPrizeFor(id) { return (save.firstClearRewardClaimed || []).includes(hKey(id)) ? horoyoiRematchPreview(id) : HOROYOI_REWARD[id].rewardFirst; }
+function horoyoiPrizeFor(id) { return (save.firstClearRewardClaimed || []).includes(hKey(id)) ? horoyoiRematchPreview(id) : nightReward(id).rewardFirst; }
 
 function isStageUnlocked(stageId) {
   if (stageId === 'rico_tutorial') return true;
@@ -6375,7 +6920,7 @@ const SHOP_UNLOCK = {
 function isShopItemUnlocked(itemId) {
   const stage = SHOP_UNLOCK[itemId] || 'always';
   if (stage === 'always') return true;
-  if (stage.startsWith('h:')) return typeof horoyoiCleared === 'function' && horoyoiCleared(stage.slice(2));   // ほろ酔いの夜の勝ちで入荷
+  if (stage.startsWith('h:')) return !!(save && (save.horoyoiCleared || []).includes(stage.slice(2)));   // ほろ酔いの夜の勝ちで入荷
   return save.clearedStages && save.clearedStages.includes(stage);
 }
 
@@ -9190,10 +9735,12 @@ function onAction(e) {
     case 'home-night-toggle': {
       // ほろ酔いの夜（二周目）⇔一周目。エンディングの後だけ（2026-11-08 ユーザー「ホームでボタンから切り替える」）
       if (!isEndingUnlocked()) break;
-      save.horoyoiMode = !save.horoyoiMode;
+      if (!save.horoyoiMode) { save.horoyoiMode = true; save.deisuiMode = false; }
+      else if (!save.deisuiMode && deisuiOpen()) save.deisuiMode = true;
+      else { save.horoyoiMode = false; save.deisuiMode = false; }
       saveProgress();
       if (save.horoyoiMode) { mpSfx('pour'); setTimeout(() => mpSfx('clink'), 1150); }
-      toast(save.horoyoiMode ? 'ほろ酔いの夜へ' : '一周目（昼）に戻りました');
+      toast(save.deisuiMode ? '泥酔の夜へ' : save.horoyoiMode ? 'ほろ酔いの夜へ' : '一周目（昼）に戻りました');
       render();
       break;
     }
@@ -14597,12 +15144,13 @@ function preloadBattleVoice(opponentId, serious) {
 function startBattle(opponentId) {
   if (!battleAssetsGate(opponentId, () => startBattle(opponentId))) return;
   if (isHoroyoi()) {
-    if (!horoyoiUnlocked(opponentId)) { const p = STAGE_ORDER[STAGE_ORDER.indexOf(opponentId) - 1]; toast(`ほろ酔いの夜は順番に。先に${OPPONENTS[p].name}に勝とう`); return; }
+    if (!horoyoiUnlocked(opponentId)) { const p = STAGE_ORDER[STAGE_ORDER.indexOf(opponentId) - 1]; toast(`${nightName()}は順番に。先に${OPPONENTS[p].name}に勝とう`); return; }
     window.__ricoSeriousMode = false; window.__ricoSkipLecture = false;
     // 扉（夜の題字）は、その卓に勝つまで入るたびに出す（一周目と同じ。リベンジの直後は出さない）
-    let first = !horoyoiCleared(opponentId) && !!HOROYOI_EPISODES[opponentId];
+    const nightEps = isDeisui() ? DEISUI_EPISODES : HOROYOI_EPISODES;
+    let first = !horoyoiCleared(opponentId) && !!nightEps[opponentId];
     if (window.__skipEpisodeOnce) { first = false; window.__skipEpisodeOnce = false; }
-    if (first) { showEpisodeTitle(opponentId, () => startBattleInternal(opponentId), () => { if (state.screen !== 'lobby') goLobby(); }, HOROYOI_EPISODES[opponentId]); return; }
+    if (first) { showEpisodeTitle(opponentId, () => startBattleInternal(opponentId), () => { if (state.screen !== 'lobby') goLobby(); }, nightEps[opponentId]); return; }
     return startBattleInternal(opponentId);
   }
   // 開始チップは startBattleInternal が「卓の基本値＋持ち込みチップ」で決める。
@@ -14651,6 +15199,7 @@ function startBattleInternal(opponentId) {
   state.maxHands = (seriousRico || horoyoi) ? 999 : opp.maxHands;
   // ほろ酔いの夜：同じ相手の酔った打ち方（AI_STYLES の <性格>_drunk）
   state.horoyoi = horoyoi;
+  state.deisui = horoyoi && isDeisui();
   if (horoyoi) { const g0 = battleGen; setTimeout(() => { if (g0 === battleGen && state.screen === 'battle') mpSfx('clink'); }, 700); }
   if (horoyoi) state.opponentProfile = { ...opp.profile, style: (opp.id === 'rico_tutorial' ? 'rico' : opp.id) + '_drunk' };
   // 開始チップ：卓の基本値（本気リコは2000）＋持ち込みチップ（交換所のチップ拡張。所持の1つだけ）
@@ -15784,6 +16333,7 @@ function startHand() {
   if (state.horoyoi && state.handNo > 1 && rand() < 0.3) setTimeout(() => mpSfx('clink'), 450);
 
   state.handStartChips = state.playerChips; // このハンドの収支を実額で出すため
+  if (state.deisui) { state.__crazyHint = ''; state.__crazyThisHand = false; state.__blurStreet = (state.handNo >= 2 && rand() < 0.3) ? ['flop', 'turn', 'river'][Math.floor(rand() * 3)] : ''; }
   // 参加費（アンテ）：4ハンドごとに上がる（対戦が延々と続かないように）
   const anteNow = anteForHand(state.handNo);
   const antePrev = state.handNo > 1 ? anteForHand(state.handNo - 1) : anteNow;
@@ -16220,6 +16770,7 @@ function opponentTurnDecide() {
   // オールインに対しては「降りる」か「コール」しかない（上乗せしても受ける側がいない）
   if (state.playerChips <= 0 && action.type !== 'fold') action = { ...action, type: 'check_call' };
   state.lastOpponentIntent = action.intent || action.type;
+  if (action.intent === 'crazy' && DEISUI_HINT[state.opponentId]) state.__crazyHint = DEISUI_HINT[state.opponentId];
 
   // フォールド処理
   if (action.type === 'fold' && need > 0) {
@@ -19119,7 +19670,10 @@ function continueAfterHand() {
   setMimiExpression('default'); // P1-3: 次のハンドへ進む際は表情をリセット
   if (canRebuy()) return showRebuy();
   // ほろ酔いの夜：まだ見ていない勝負の途中の会話は、この手で決着しても先に見せる（11/10 Codex 18回目：うまく勝つと見られなかった）
-  if (state.playerChips > 0 && (state.opponentChips <= 0 || state.handNo >= state.maxHands) && state.horoyoi && !state.__hmidShown && HOROYOI_MID_SCENES[state.opponentId] && !(save.horoyoiMidSeen || []).includes(state.opponentId)) {
+  if (state.playerChips > 0 && (state.opponentChips <= 0 || state.handNo >= state.maxHands) && state.deisui && DEISUI_MID_SCENES[state.opponentId] && (!state.__dmid1 || !state.__dmid2)) {
+    return showDeisuiMid(state.__dmid1 ? 2 : 1, continueAfterHand);
+  }
+  if (state.playerChips > 0 && (state.opponentChips <= 0 || state.handNo >= state.maxHands) && state.horoyoi && !state.deisui && !state.__hmidShown && HOROYOI_MID_SCENES[state.opponentId] && !(save.horoyoiMidSeen || []).includes(state.opponentId)) {
     state.__hmidShown = true; state.__hmidHand = state.handNo || 0;
     if (!save.horoyoiMidSeen) save.horoyoiMidSeen = [];
     save.horoyoiMidSeen.push(state.opponentId); saveProgress();
@@ -19146,6 +19700,9 @@ function continueAfterHand() {
     const g0 = battleGen;
     return showStoryScene('struggle_' + struggle, () => { if (g0 === battleGen && state.screen === 'battle') startHand(); });
   }
+  // 泥酔の夜：勝負の途中の一枚絵と会話（1戦2回）
+  const dmid = deisuiMidDue();
+  if (dmid) return showDeisuiMid(dmid, () => { startHand(); announceDrunkTier(); });
   // ほろ酔いの夜：勝負の途中の一枚絵と会話（1戦1回）
   const hmid = horoyoiMidDue();
   if (hmid) {
@@ -19338,16 +19895,16 @@ function saveBattleResume() {
   const snap = {};
   Object.keys(state).forEach(k => { const v = state[k]; if (v === null || ['number', 'boolean', 'string'].includes(typeof v)) snap[k] = v; });
   ['readBattlePurse', 'readBattlePlayed', 'handResults'].forEach(k => { if (state[k] != null) { try { snap[k] = JSON.parse(JSON.stringify(state[k])); } catch (e) {} } });
-  save.battleResume = { opp: state.opponentId, serious: !!state.seriousRicoMode, horoyoi: !!state.horoyoi, handsDone: state.handNo - 1, playerChips: state.playerChips, opponentChips: state.opponentChips, snap, at: Date.now() };
+  save.battleResume = { opp: state.opponentId, serious: !!state.seriousRicoMode, horoyoi: !!state.horoyoi, deisui: !!state.deisui, handsDone: state.handNo - 1, playerChips: state.playerChips, opponentChips: state.opponentChips, snap, at: Date.now() };
   saveProgress();
 }
 // 戻す時に外す値：ハンドの途中の値（次のハンドを配る時に決め直す）
-const RESUME_SKIP = new Set(['horoyoi', 'screen', 'handNo', 'handPhase', 'isPlayerTurn', 'psychPending', 'psychResolving', 'psychResolved', 'pot', 'currentBetPlayer', 'currentBetOpponent', 'pendingRead', 'readHandNo', 'logicHandNo', 'logicResolvedStreet']);
+const RESUME_SKIP = new Set(['horoyoi', 'deisui', '__crazyHint', '__blurStreet', 'screen', 'handNo', 'handPhase', 'isPlayerTurn', 'psychPending', 'psychResolving', 'psychResolved', 'pot', 'currentBetPlayer', 'currentBetOpponent', 'pendingRead', 'readHandNo', 'logicHandNo', 'logicResolvedStreet']);
 function clearBattleResume() { if (save && save.battleResume) { delete save.battleResume; saveProgress(); } }
 function offerBattleResume(after) {
   const r = save.battleResume;
   // 昼（一周目）と夜（ほろ酔いの夜）の途中保存は別物。違う方の続きは出さない（11/09 Codex 17回目：昼の卓で夜の続きを開くと絵と打ち方が混ざった）
-  if (!r || r.opp !== state.opponentId || !!r.serious !== !!state.seriousRicoMode || !!r.horoyoi !== !!state.horoyoi || state.tutorialMode) return after();
+  if (!r || r.opp !== state.opponentId || !!r.serious !== !!state.seriousRicoMode || !!r.horoyoi !== !!state.horoyoi || !!r.deisui !== !!state.deisui || state.tutorialMode) return after();
   const name = state.opponentName || '相手';
   showConfirm({ title: '続きから遊びますか？', body: `前回は Hand ${r.handsDone + 1} の前で中断しました。
 ミミ ${r.playerChips} ／ ${name} ${r.opponentChips}`, ok: '続きから', cancel: '最初から' }).then(yes => {
@@ -19418,7 +19975,7 @@ function endBattle() {
   const practice = !!state.peekUsed;
   // 本気のリコ先輩は講義の初回報酬・再戦カウントと混ぜない
   const rewardKey = state.horoyoi ? hKey(state.opponentId) : state.seriousRicoMode ? 'rico_serious' : state.opponentId;
-  const rewardOpp = state.horoyoi ? HOROYOI_REWARD[state.opponentId] : state.seriousRicoMode ? SERIOUS_RICO_REWARD : opp;
+  const rewardOpp = state.horoyoi ? (state.deisui ? DEISUI_REWARD : HOROYOI_REWARD)[state.opponentId] : state.seriousRicoMode ? SERIOUS_RICO_REWARD : opp;
   if (won) {
     const firstClear = !save.firstClearRewardClaimed.includes(rewardKey);
     firstClearForIntermission = firstClear && !practice;
@@ -19459,9 +20016,11 @@ function endBattle() {
     }
     // クリア記録（velvet なら endingUnlocked も同時に立つ）。練習の勝ちはクリアに数えない
     if (state.horoyoi) {
-      if (!practice && !horoyoiCleared(state.opponentId)) save.horoyoiCleared.push(state.opponentId);
+      if (!practice && !horoyoiCleared(state.opponentId)) (state.deisui ? save.deisuiCleared : save.horoyoiCleared).push(state.opponentId);
+      // 三周目のクリア報酬（5人の写真集・ぱにゃぱにゃ）は絵がそろってから入れる
+      if (!practice && state.deisui && state.opponentId === 'velvet' && STAGE_ORDER.every(horoyoiCleared) && !save.deisuiAllCleared) { save.deisuiAllCleared = true; rewards.push('泥酔の夜を制覇！'); }
       // 二周目のクリア報酬：ほろ酔いの夜で初めてヴェルベットに勝ったら写真集（結果を見せた後に受け取りの幕を出す）
-      if (!practice && state.opponentId === 'velvet' && STAGE_ORDER.every(horoyoiCleared) && !save.ownedItems.includes('cgset_velvet_book')) {
+      if (!practice && !state.deisui && state.opponentId === 'velvet' && STAGE_ORDER.every(horoyoiCleared) && !save.ownedItems.includes('cgset_velvet_book')) {
         save.ownedItems.push('cgset_velvet_book');
         save.photobookPending = true;
         rewards.push('ほろ酔いの夜を制覇：ヴェルベット写真集（コレクションでいつでも見られる）');
@@ -19599,10 +20158,10 @@ function endBattle() {
     goalLine.className = 'result-next-goal';
     goalLine.textContent = nextGoalText();
     // ほろ酔いの夜で勝った時は、次の目標の代わりに、遊び方に反応する相手の一言（11/10 スマホでは相手の絵が小さく、絵の上の吹き出しが見えなかった）
-    if (state.resultWon && state.horoyoi && HOROYOI_CLOSE[state.opponentId]) {
-      const kind = state.hWater ? 2 : (state.hAggr || 0) >= (state.hFolds || 0) ? 0 : 1;
+    if (state.resultWon && state.horoyoi && (state.deisui ? DEISUI_CLOSE : HOROYOI_CLOSE)[state.opponentId]) {
+      const kind = (state.deisui ? state.__blurSeen : state.hWater) ? 2 : (state.hAggr || 0) >= (state.hFolds || 0) ? 0 : 1;
       goalLine.classList.add('is-say');
-      goalLine.innerHTML = `<b>${(state.opponentName || '').replace(/（.*）/, '')}</b>「${HOROYOI_CLOSE[state.opponentId][kind]}」`;
+      goalLine.innerHTML = `<b>${(state.opponentName || '').replace(/（.*）/, '')}</b>「${(state.deisui ? DEISUI_CLOSE : HOROYOI_CLOSE)[state.opponentId][kind]}」`;
     }
     statsBox.insertAdjacentElement('afterend', goalLine);
     const cg = shopCoinGoal();
@@ -19788,7 +20347,7 @@ function nextGoalText() {
   if (state.resultWon === false && (state.opponentId !== 'rico_tutorial' || state.seriousRicoMode || state.horoyoi)) {
     return `次の目標：${(state.opponentName || '相手').replace(/（.*）/, '')}にリベンジ`;
   }
-  if (state.horoyoi) { const hn = horoyoiNext(); return hn ? `次の目標：ほろ酔いの${OPPONENTS[hn].name}に挑戦` : '次の目標：ほろ酔いの夜、全員制覇。再戦でSを狙おう'; }
+  if (state.horoyoi) { const hn = horoyoiNext(); const nm = state.deisui ? '泥酔' : 'ほろ酔い'; return hn ? `次の目標：${nm}の${OPPONENTS[hn].name}に挑戦` : `次の目標：${nm}の夜、全員制覇。再戦でSを狙おう`; }
   if (nextId) {
     const opp = OPPONENTS[nextId];
     return `次の目標：${opp.name}に挑戦`;

@@ -21098,3 +21098,13 @@ html.is-compact .home-stage.h15-sm .h15-goal { right: calc(450px + var(--sx, 0px
   box-shadow: inset 0 0 0 2px rgba(255,140,170,.85), 0 0 34px rgba(255,90,130,.4), 0 16px 34px rgba(0,0,0,.65);
   color: #ffe1ea; animation: toastShowLong 4.2s ease-out forwards;
 }
+
+/* 泥酔の夜：ミミの画面がぼやける（札も相手も見えず、選択肢だけが見える） */
+.battle-screen.v2.is-deisui-blur > *:not(.deisui-blur-cap):not(.v2-actions) { filter: blur(9px) saturate(1.3); transition: filter .5s; }
+/* 泥酔のミミは助言を読めない：リコのおすすめの印も出さない */
+.battle-screen.v2.is-deisui .is-suggest::before { display: none; }
+.battle-screen.v2.t8.is-deisui .is-suggest { outline: none; }
+.battle-screen.v2:not(.is-deisui-blur) .deisui-blur-cap { display: none; }
+.deisui-blur-cap { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); z-index: 60; white-space: nowrap;
+  font-size: 26px; font-weight: 900; letter-spacing: .06em; color: #ffe1ea; padding: 12px 28px; border-radius: 6px;
+  background: rgba(40,6,18,.82); box-shadow: inset 0 0 0 2px rgba(255,140,170,.8), 0 0 30px rgba(255,90,130,.45); pointer-events: none; }

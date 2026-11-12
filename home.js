@@ -57,19 +57,20 @@ function renderHomeLobby() {
   ticket.dataset.opponent = sid;
   const firstReward = !(save.firstClearRewardClaimed || []).includes(night ? hKey(sid) : sid);
   const prize = night ? horoyoiPrizeFor(sid) : firstReward ? opponent.rewardFirst : rematchPreview(sid);
-  ticket.querySelector('.h15-lbl').textContent = night ? 'ほろ酔いの卓へ' : '今夜の卓へ';
+  const dnm = homeIsDeisui() ? '泥酔' : 'ほろ酔い';
+  ticket.querySelector('.h15-lbl').textContent = night ? dnm + 'の卓へ' : '今夜の卓へ';
   ticket.querySelector('.h15-prize').innerHTML = `<span><i class="h15-if">勝てば </i>${prize} コイン</span>${firstReward ? '<span>＋一枚絵</span>' : ''}`;
   ticket.setAttribute('aria-label', `${opponent.name}の卓へ。${ticket.querySelector('.h15-prize').textContent}`);
   // クリア後（ヴェルベットに勝った後）は札と額が「零時の卓」の入口になる（allstar-ui.js）
   // ほろ酔いの夜の間は、札と額をほろ酔いの卓の入口のままにする（零時の卓は昼に戻すと入れる）
   if (window.AllstarUI && !night) AllstarUI.decorateHome(root);
-  root.querySelector('.h15-frame .h15-sub').textContent = night ? (next ? 'ほろ酔いの相手' : 'ほろ酔い制覇') : root.querySelector('.h15-frame .h15-sub').textContent;
+  root.querySelector('.h15-frame .h15-sub').textContent = night ? (next ? dnm + 'の相手' : dnm + '制覇') : root.querySelector('.h15-frame .h15-sub').textContent;
   // 昼⇔夜の切り替え（エンディングを見た後だけ出す）
   const sw = root.querySelector('[data-action="home-night-toggle"]');
   if (sw) {
     sw.hidden = !isEndingUnlocked();
     sw.classList.toggle('is-night', night);
-    const lbl = night ? '一周目（昼）に戻す' : 'ほろ酔いの夜に切り替える';
+    const lbl = !night ? 'ほろ酔いの夜に切り替える' : (!homeIsDeisui() && typeof deisuiOpen === 'function' && deisuiOpen()) ? '泥酔の夜に切り替える' : '一周目（昼）に戻す';
     sw.title = lbl; sw.setAttribute('aria-label', lbl);
   }
   const places = root.querySelectorAll('.h15-pl');
@@ -85,7 +86,7 @@ function renderHomeLobby() {
   badge.hidden = !fresh;
   const positions = [10.2, 26.3, 42.5, 58.9, 75.1];
   const romans = ['I', 'II', 'III', 'IV', 'V'];
-  root.querySelector('[data-home="ledger"]').innerHTML = `<span class="h15-lbl h15-gold-txt">${night ? (next ? `第${STAGE_ORDER.indexOf(next) + 1}夜` : 'ほろ酔い制覇') : next ? `第${STAGE_ORDER.indexOf(next) + 1}戦` : allCleared ? '全卓制覇' : `${clearedCount}戦クリア`} <small>／全5${night ? '夜' : '戦'}</small></span>` + STAGE_ORDER.map((id,i) => {
+  root.querySelector('[data-home="ledger"]').innerHTML = `<span class="h15-lbl h15-gold-txt">${night ? (next ? `第${STAGE_ORDER.indexOf(next) + 1}夜` : dnm + '制覇') : next ? `第${STAGE_ORDER.indexOf(next) + 1}戦` : allCleared ? '全卓制覇' : `${clearedCount}戦クリア`} <small>／全5${night ? '夜' : '戦'}</small></span>` + STAGE_ORDER.map((id,i) => {
     const exempt = !night && isStageExempt(id);
     const done = night ? horoyoiCleared(id) : isStageCleared(id);
     const locked = night ? !horoyoiUnlocked(id) : !isStageUnlocked(id);
@@ -234,6 +235,7 @@ function refreshHomeStatus() {
 // ほろ酔いの夜は、着せ替えのリコも酔った版（11/09 ユーザー選・ポーズと衣装に合うお酒）
 const DRUNK_COSTUMES = new Set(['pajama', 'bunny', 'casual', 'dress', 'kimono', 'swimsuit', 'gym', 'school', 'witch', 'santa']);
 function costumeSrc(file) { const m = /^rico_([a-z]+)[.]webp$/.exec(file); return (m && DRUNK_COSTUMES.has(m[1]) && homeIsNight()) ? `assets/characters/rico_${m[1]}_drunk.webp` : `assets/characters/${file}`; }
+function homeIsDeisui() { return homeIsNight() && typeof isDeisui === 'function' && isDeisui(); }
 function homeIsNight() { return !!(save && save.horoyoiMode) && (typeof isEndingUnlocked !== 'function' || isEndingUnlocked()); }
 async function applyHomeCostume() {
   const root = document.querySelector('.home-stage');
@@ -269,7 +271,7 @@ async function applyHomeCostume() {
 function showHomeLedger() {
   const overlay = document.createElement('div');
   overlay.className = 'home-overlay';
-  overlay.innerHTML = `<section class="home-dialog" role="dialog" aria-modal="true" aria-labelledby="home-ledger-title"><header><h2 id="home-ledger-title">${typeof isHoroyoi === 'function' && isHoroyoi() ? 'ほろ酔いの夜の台帳' : '物語の台帳'}</h2><button type="button" data-home-close aria-label="閉じる">閉じる</button></header><div class="home-ledger-rows">${STAGE_ORDER.map((id,i) => {
+  overlay.innerHTML = `<section class="home-dialog" role="dialog" aria-modal="true" aria-labelledby="home-ledger-title"><header><h2 id="home-ledger-title">${typeof isHoroyoi === 'function' && isHoroyoi() ? (homeIsDeisui() ? '泥酔の夜の台帳' : 'ほろ酔いの夜の台帳') : '物語の台帳'}</h2><button type="button" data-home-close aria-label="閉じる">閉じる</button></header><div class="home-ledger-rows">${STAGE_ORDER.map((id,i) => {
     // done＝この卓を勝ち取った（clearedStages に入っている）。exempt＝研修を飛ばしてポルカに勝った人のリコ先輩（封蝋は押すが、勝ったとは言わない）
     // ほろ酔いの夜（二周目）は夜の勝ち記録・解放・報酬で（11/09 Codex 17回目：夜の台帳が昼の記録のままで、順番を飛ばせた）
     const night = typeof isHoroyoi === 'function' && isHoroyoi();
