@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // 声の台帳（Irodori-TTS の voices/phase1.json）から assets/voice/manifest.json を作る。
-// 使い方: node tools/make-voice-manifest.mjs [台帳.json ...]   （既定は C:\Users\takakazu\tools\Irodori-TTS\voices\phase1.json）
+// 使い方: node tools/make-voice-manifest.mjs [--add] [台帳.json ...]   （既定は C:\Users\takakazu\tools\Irodori-TTS\voices\phase1.json）
 // 台帳の各要素は { id:"<voice>/<key>", voice, key, text, display? }。複数渡すと全部を混ぜる（第2弾以降）。
 // 出力:
 //   clips : { "<voice>/<key>": { f:"<voice>/<key>.m4a", d:<秒> } }   … 台詞キー→ファイルと長さ（長さは m4a の mvhd から読む）
@@ -12,7 +12,9 @@ import { fileURLToPath } from 'node:url';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VOICE_DIR = path.join(REPO, 'assets', 'voice');
-const ledgers = process.argv.slice(2);
+const args = process.argv.slice(2);
+const ADD = args.includes('--add');   // 今の manifest を残して、渡した台帳の分だけ足す（11/13）
+const ledgers = args.filter(a => a !== '--add');
 if (!ledgers.length) ledgers.push('C:/Users/takakazu/tools/Irodori-TTS/voices/phase1.json');
 
 export function norm(t) {
@@ -45,7 +47,8 @@ function m4aDuration(file) {
   return ts ? du / ts : 0;
 }
 
-const clips = {}, texts = {};
+const prev = ADD && fs.existsSync(path.join(VOICE_DIR, 'manifest.json')) ? JSON.parse(fs.readFileSync(path.join(VOICE_DIR, 'manifest.json'), 'utf8')) : null;
+const clips = prev ? prev.clips : {}, texts = prev ? prev.texts : {};
 let missing = 0;
 for (const lf of ledgers) {
   for (const e of JSON.parse(fs.readFileSync(lf, 'utf8'))) {

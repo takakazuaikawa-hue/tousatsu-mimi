@@ -4957,6 +4957,17 @@ Object.assign(INTERMISSIONS, {
   "cg": "assets/backgrounds/deisui/velvet_3.jpg"
  }
 });
+// 泥酔の夜の声（Irodori-TTS phase5d、11/13）：台詞の順番から台詞キーを付ける。
+// 途中の場面＝<話し手>/dmid<1|2>_<相手>_<n>、幕間＝<話し手>/ims_d_<相手>_<n>、締め＝<相手の声>/close_d_<相手>_<n>
+(() => {
+  for (const [id, scenes] of Object.entries(DEISUI_MID_SCENES)) (scenes || []).forEach((lines, w) => (lines || []).forEach((l, i) => { if (l && l.who && !l.voice) l.voice = l.who + '/dmid' + (w + 1) + '_' + id + '_' + (i + 1); }));
+  for (const [k, im] of Object.entries(INTERMISSIONS)) {
+    if (!k.startsWith('d_') || !im || !im.lines) continue;
+    const id = k.slice(2);
+    im.lines.forEach((l, i) => { if (l && l.speaker && !l.voice) l.voice = l.speaker + '/ims_d_' + id + '_' + (i + 1); });
+  }
+})();
+function deisuiCloseVoice(id, kind) { return (id === 'rico_tutorial' ? 'rico' : id) + '/close_d_' + id + '_' + (kind + 1); }
 Object.assign(INTERMISSIONS, {
   h_rico_tutorial: {
     lines: [
@@ -15199,7 +15210,7 @@ function startBattleInternal(opponentId) {
   state.maxHands = (seriousRico || horoyoi) ? 999 : opp.maxHands;
   // ほろ酔いの夜：同じ相手の酔った打ち方（AI_STYLES の <性格>_drunk）
   state.horoyoi = horoyoi;
-  state.deisui = horoyoi && isDeisui();
+  state.deisui = horoyoi && isDeisui(); state.__closeVoiced = false;
   if (horoyoi) { const g0 = battleGen; setTimeout(() => { if (g0 === battleGen && state.screen === 'battle') mpSfx('clink'); }, 700); }
   if (horoyoi) state.opponentProfile = { ...opp.profile, style: (opp.id === 'rico_tutorial' ? 'rico' : opp.id) + '_drunk' };
   // 開始チップ：卓の基本値（本気リコは2000）＋持ち込みチップ（交換所のチップ拡張。所持の1つだけ）
@@ -20162,6 +20173,7 @@ function endBattle() {
       const kind = (state.deisui ? state.__blurSeen : state.hWater) ? 2 : (state.hAggr || 0) >= (state.hFolds || 0) ? 0 : 1;
       goalLine.classList.add('is-say');
       goalLine.innerHTML = `<b>${(state.opponentName || '').replace(/（.*）/, '')}</b>「${(state.deisui ? DEISUI_CLOSE : HOROYOI_CLOSE)[state.opponentId][kind]}」`;
+      if (state.deisui && !state.__closeVoiced && window.MimiVoice) { state.__closeVoiced = true; MimiVoice.playId(deisuiCloseVoice(state.opponentId, kind), { prio: 1, noRepeat: false, delay: 900, maxLateMs: 2500 }); }
     }
     statsBox.insertAdjacentElement('afterend', goalLine);
     const cg = shopCoinGoal();
