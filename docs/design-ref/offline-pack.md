@@ -14,6 +14,16 @@
 
 新しい最上位ファイルを増やしたら、deploy.yml のコピー一覧に足すこと（名前で列挙している）。
 
+## GitHub Pages の公開設定
+
+リポジトリの **Settings → Pages → Build and deployment → Source** は **GitHub Actions** にする（API の `build_type: workflow`）。既存の `.github/workflows/deploy.yml` を使うので、新しい workflow の作成は不要。
+
+`Deploy from a branch` の自動 Jekyll 配信では `tools/make-offline-files.mjs` が実行されず、`offline-files.json` が含まれない。同じ main 更新で独自 workflow と自動配信が動くと、一覧を含まない配信物で上書きされる可能性がある。deploy.yml は公開元設定を確認し、GitHub Actions 以外ならエラーで止まる。この確認だけでは公開設定は変わらないため、管理者が上の設定を変更する必要がある。
+
+公開を行う際は、先に Source を確認し、承認済みの main に対して既存の **Deploy site to GitHub Pages** を実行する。完了後、公開 URL の `offline-files.json` が HTTP 200 の JSON で返り、空でない `files` 配列を持つことを確認する。新しいブラウザプロファイルでダウンロード完了後、通信を切って再読み込みし、起動できることも確認する（実際のセーブデータは使わない）。
+
+設定手順：[GitHub Docs — Publishing with a custom GitHub Actions workflow](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site#publishing-with-a-custom-github-actions-workflow)
+
 ## 保存と配り方
 - 保存先は Cache `mimi-pack-v1`。**保存したファイルだけ**を SW が返す。保存していないものは SW が何もせず通信へ素通し（従来どおり）。保存が空の間はfetchに介入しない。
 - 本体（html/js/css/webmanifest、ページ移動）：通信を先に試し、失敗したら保存分（オフラインでも起動する）。通信できたら保存分も新しくする。
