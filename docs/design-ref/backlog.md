@@ -114,3 +114,4 @@
 - 朝に run_n.log と out/phase4h・phase5d の progress.log を必ず見る。始まっていなければユーザーに Chrome を閉じてもらう。
 
 - 11/13 声：ほろ酔い32本・泥酔90行すべて組み込み済み（20261113b）。聞くページ https://claude.ai/artifact/XyyUHgHWVmByk8cw1oGDGW
+- 11/14 泥酔の一枚絵を途中の場面・幕間に入れた（906168a、qa/deisuiconvert.mjs）。選んだ絵：rico 1_1/2_1/3_1、polka 1_1/2_1/3_1、selina 1r_user/5_1(②の代用)/3_2、grano 1_2/2_1/3_1、velvet 1_1/2_1/3_2。selina②・grano①の描き直しが届いたら差し替える。残り：5人の写真集（④⑤⑥＋採用の全部）とぱにゃぱにゃの報酬、泥酔のホームの絵、DEISUI_READY=true と通しの検査
