@@ -1,0 +1,31 @@
+/* ===== 容疑者しぼり（suspects） =====
+   PC だけ（html:not(.is-compact)）。色・形・書体は battles/games/suspects.js の CSS が持つ。ここは並べ方と大きさ。
+   並べ方：.mb-game-root を 2列の格子にし、左＝場札・手札の行（答え合わせでヴェルベットの札の行が下に増える）、右＝動きの記録（420px）。
+     問い・容疑者（4列×最大2段）・割に合う線・ボタンは全幅。js の構造は変えていない（格子の置き場所だけで並べる）。zoom は使わない。
+   一番中身が多い状態＝最大8枚の容疑者（シナリオ1）で、3つの動きを見終え、ひとつも外さずに「決める」場面（容疑者8枚が全部残る）：
+     手順 28 ＋ 場札と手札の行 84 ＋ 問い 2行 48（1行目は種類の数、2行目は手の組み合わせの数） ＋ 容疑者 2段 204（96×2＋行間 12） ＋ 割に合う線 56（上の余白 24＋32） ＋ コール／降りる 60 ＋ 行間 10×5 ＝ 約530px。
+     答え合わせ（ヴェルベットの札の行が増え、ボタンが消える）は 手順 28＋札 84＋札 84＋問い 48＋容疑者 204＋線 56 ＋ 行間 10×5 ＝ 約554px。どちらも予算 約605px の内側。
+     動きの記録は右の列に 3行（60px）で、左の札の行（84〜168px）の高さの中に収まる。 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) { display: grid; grid-template-columns: minmax(0, 1fr) 420px; column-gap: 24px; row-gap: 10px; align-content: start; align-items: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .steps { grid-column: 1 / -1; grid-row: 1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .row { grid-column: 1; grid-row: 2; justify-content: flex-start; gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .row + .row { grid-row: 3; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .sp-log { grid-column: 2; grid-row: 2 / span 2; max-width: none; margin: 0; gap: 4px; font-size: 13px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .prompt { grid-column: 1 / -1; grid-row: 4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .sp-tiles { grid-column: 1 / -1; grid-row: 5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .sp-bar { grid-column: 1 / -1; grid-row: 6; max-width: 720px; height: 32px; margin-top: 24px !important; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) > .actions { grid-column: 1 / -1; grid-row: 7; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .row .card.big { --w: 60px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-sp-tiles) .row .formula { font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-log .now { font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-p2 { display: block; margin-top: 2px; font-size: 15px; font-weight: 700; color: var(--dim); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile { min-height: 96px; padding: 14px 16px 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile b { font-size: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile span { font-size: 13px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile.out::after { inset: 0 0 0 auto; width: 56px; font-size: 44px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tag { display: block; position: absolute; right: 10px; top: 10px; padding: 0 8px; font-family: var(--mincho); font-weight: 700; font-size: 12px; line-height: 1.6; letter-spacing: .08em; border-radius: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile.win .sp-tag { background: var(--gold); color: #1d080e; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile.lose .sp-tag { background: #b9b0a2; color: #1d080e; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-tile.her .sp-tag { background: linear-gradient(180deg, var(--crimson), var(--crimson-lo)); color: #f0d08a; box-shadow: 0 0 0 1px var(--gold); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sp-line span { top: -22px; font-size: 13px; }

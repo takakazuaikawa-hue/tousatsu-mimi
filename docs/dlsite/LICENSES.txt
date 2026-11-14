@@ -1,0 +1,53 @@
+ミミのテキサスホールデムポーカー　権利とライセンス
+
+© 2026 POMERASHIBA Studio　本作の絵・動画・音楽・声・文章・プログラムの無断転載・再配布を禁じます。
+
+
+■ 制作に使った生成AI・道具
+・イラスト・シナリオ：ChatGPT（OpenAI）
+・ムービー（動く一枚絵）：Higgsfield
+・音楽：Suno
+・キャラクターボイス：Irodori-TTS（Aratako）で合成
+・プログラム：Claude Code（Anthropic）
+
+
+■ キャラクターボイスの合成に使ったソフトウェア
+Irodori-TTS、Semantic-DACVAE-Japanese-32dim（Aratako）、SilentCipher（Sony Research）は
+MIT License で公開されています。
+
+--- Irodori-TTS ---
+MIT License
+
+Copyright (c) 2026 Aratako
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+■ アプリの土台
+このアプリは Electron（MIT License）と Chromium で作られています。
+それぞれの権利表記とライセンスは、同じフォルダの LICENSE と LICENSES.chromium.html にあります。
+
+
+■ 書体
+次の書体を同梱しています。どれも SIL Open Font License 1.1 です。
+各書体の著作権表示とライセンスの全文は、resources\app\game\fonts フォルダの OFL-*.txt にあります。
+・Noto Sans JP（Copyright 2014-2021 Adobe）
+・Shippori Mincho B1（Copyright 2021 The Shippori Mincho Project Authors）
+・Barlow Condensed（Copyright 2017 The Barlow Project Authors）
+・Bebas Neue（Copyright © 2010 by Dharma Type）

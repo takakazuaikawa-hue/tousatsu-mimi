@@ -1,0 +1,20 @@
+// 心の声ガチャ（卓の本当の手）の部品の位置を測り、撮る。node qa/gachaprobe.mjs [844x390]
+import fs from 'node:fs';
+import path from 'node:path';
+import { openSession, sleep } from './lib/session.mjs';
+const [W, H] = (process.argv[2] || '844x390').split('x').map(Number);
+const OUT = path.resolve('qa/out/gachaprobe'); fs.mkdirSync(OUT, { recursive: true });
+const s = await openSession({ width: W, height: H, mobile: true, speed: 2, save: { clearedStages: ['rico_tutorial', 'polka', 'selina'], introPlayed: true, houseRulesSeen: true, coins: 5000, readIntroSeen: true } });
+const { page } = s;
+for (let i = 0; i < 60 && !(await page.eval('typeof startBattle === "function"').catch(() => false)); i++) await sleep(500);
+await sleep(1000);
+await page.eval(`(() => { startBattle('polka'); return true; })()`); await sleep(2500);
+await page.eval(`(() => { document.querySelectorAll('[class*="-overlay"]').forEach(e => e.remove()); state.playerHand = [{ rank: 14, suit: '♥' }, { rank: 13, suit: '♦' }]; state.community = [{ rank: 4, suit: '♣' }, { rank: 12, suit: '♥' }, { rank: 7, suit: '♠' }, { rank: 14, suit: '♣' }, { rank: 8, suit: '♣' }]; state.opponentHand = [{ rank: 9, suit: '♦' }, { rank: 9, suit: '♣' }]; state.handPhase = 'river'; state.pot = 400; state.currentBetOpponent = 100; state.currentBetPlayer = 0; READ_BATTLE_POOLS.polka.psych = ['gacha']; state.psychPending = true; startReadBattle('psych'); return true; })()`);
+await sleep(3500);
+await page.eval(`(() => { const b = [...document.querySelectorAll('button')].find(b => b.textContent.includes('わかった')); b && b.click(); return true; })()`); await sleep(1500);
+await page.screenshot(path.join(OUT, `${W}x${H}_1.png`));
+console.log(await page.eval(`getComputedStyle(document.querySelector('.mb-speech')).marginTop + ' ' + getComputedStyle(document.querySelector('.mb-opp-name')).height`));
+const r = await page.eval(`JSON.stringify((() => { const q = (s) => [...document.querySelectorAll(s)].map(e => { const r = e.getBoundingClientRect(); return [s, Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height), (e.className||'').toString().slice(0,30)]; });
+  return [...q('.mb-opp-name'), ...q('.mb-opp-row'), ...q('.mb-opp-row > *'), ...q('.mb-speech'), ...q('.rb-play'), ...q('.gx-play'), ...q('.gx-play > *'), ...q('.gx-side > *'), ...q('.gx-ceil'), ...q('.gx-ceil *'), ...q('.rb-info')]; })())`);
+console.log(JSON.parse(r).map(x => x.join(' ')).join('\n'));
+await s.close(); process.exit(0);

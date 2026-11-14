@@ -1,0 +1,12 @@
+{
+  "name": "mimi-texas-holdem",
+  "productName": "MimiTexasHoldem",
+  "version": "1.0.0",
+  "description": "ミミのテキサスホールデムポーカー",
+  "main": "main.js",
+  "private": true,
+  "devDependencies": {
+    "electron": "44.9.0",
+    "@electron/packager": "20.3.0"
+  }
+}

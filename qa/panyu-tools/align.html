@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8"><body><script>
+const load = (src) => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = src; });
+window.run = async () => {
+  const [o, n] = await Promise.all([load('orig.webp'), load('panyu_surprise.png')]);
+  const W = 1400, H = 788;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d', { willReadFrequently: true });
+  g.drawImage(o, 0, 0); const od = g.getImageData(0, 0, W, H).data;
+  // 比べる所：顔のまわりの髪と肩（顔そのものは表情が違うので外す）
+  const pts = []; for (let y = 120; y < 470; y += 4) for (let x = 470; x < 930; x += 4) { const fx = (x - 701) / 105, fy = (y - 300) / 95; if (fx * fx + fy * fy < 1) continue; pts.push([x, y]); }
+  const RX = 470, RY = 120, RW = 460, RH = 350;
+  const odR = g.getImageData(RX, RY, RW, RH).data;
+  const score = (s, dx, dy, step) => { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(RX, RY, RW, RH); g.setTransform(s, 0, 0, s, dx, dy); g.drawImage(n, 0, 0, W, H); g.setTransform(1, 0, 0, 1, 0, 0); const nd = g.getImageData(RX, RY, RW, RH).data; let e = 0, c = 0; for (let pi = 0; pi < pts.length; pi += (step || 1)) { const [x, y] = pts[pi]; const k = ((y - RY) * RW + (x - RX)) * 4; e += Math.abs(nd[k] - odR[k]) + Math.abs(nd[k + 1] - odR[k + 1]) + Math.abs(nd[k + 2] - odR[k + 2]); c++; } return e / c; };
+  let best = { e: 1e9 };
+  for (let s = 0.95; s <= 1.05; s += 0.02) for (let dx = -32; dx <= 32; dx += 8) for (let dy = -32; dy <= 32; dy += 8) { const e = score(s, dx - (s - 1) * 701, dy - (s - 1) * 300, 2); if (e < best.e) best = { e, s, dx, dy }; }
+  for (let pass = 0; pass < 3; pass++) { const ss = [0.01, 0.004, 0.0015][pass], dd = [4, 2, 1][pass]; const b0 = { ...best }; for (let s = b0.s - ss * 2; s <= b0.s + ss * 2 + 1e-9; s += ss) for (let dx = b0.dx - dd * 2; dx <= b0.dx + dd * 2; dx += dd) for (let dy = b0.dy - dd * 2; dy <= b0.dy + dd * 2; dy += dd) { const e = score(s, dx - (s - 1) * 701, dy - (s - 1) * 300); if (e < best.e) best = { e, s, dx, dy }; } }
+  const ident = score(1, 0, 0);
+  // 合わせた絵から顔の部分を切り出す
+  const R = { x: 560, y: 170, w: 290, h: 250 };
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.setTransform(best.s, 0, 0, best.s, best.dx - (best.s - 1) * 701, best.dy - (best.s - 1) * 300); g.drawImage(n, 0, 0, W, H);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  const out = document.createElement('canvas'); out.width = R.w; out.height = R.h; out.getContext('2d').drawImage(cv, R.x, R.y, R.w, R.h, 0, 0, R.w, R.h);
+  const cmp = document.createElement('canvas'); cmp.width = R.w * 2; cmp.height = R.h; const cg = cmp.getContext('2d'); cg.drawImage(o, R.x, R.y, R.w, R.h, 0, 0, R.w, R.h); cg.drawImage(out, R.w, 0);
+  return { best, ident, nw: n.naturalWidth, nh: n.naturalHeight, face: out.toDataURL('image/webp', 0.9), cmp: cmp.toDataURL('image/png') };
+};
+</script>

@@ -1,0 +1,16 @@
+import { openSession, sleep } from './lib/session.mjs';
+const session = await openSession({ width: 844, height: 390, mobile: true, speed: 1 });
+const { page } = session;
+for (let i = 0; i < 60 && !(await page.eval('typeof render === "function" && typeof save === "object"').catch(() => false)); i++) await sleep(500);
+await page.eval(`(() => { state.screen = 'lobby'; render(); return true; })()`);
+await sleep(6000);
+await page.send('Profiler.enable'); await page.send('Profiler.setSamplingInterval', { interval: 1000 }); await page.send('Profiler.start');
+await page.eval(`(() => { window.__rd = 0; window.addEventListener('message', ev => { if (ev.data && ev.data.panyu && ev.data.t === 'ready') window.__rd = 1; }); document.querySelector('[data-action="panyu-free"]').click(); return true; })()`);
+for (let i = 0; i < 40 && !(await page.eval('window.__rd').catch(() => 0)); i++) await sleep(500);
+const { profile } = await page.send('Profiler.stop');
+const byId = new Map(profile.nodes.map(n => [n.id, n]));
+const self = new Map(); const dt = profile.timeDeltas; 
+profile.samples.forEach((id, i) => { const n = byId.get(id); const k = `${n.callFrame.functionName || '(anon)'} ${n.callFrame.url.split('/').pop()}:${n.callFrame.lineNumber + 1}`; self.set(k, (self.get(k) || 0) + (dt[i] || 0)); });
+const lines=new Map(); profile.nodes.forEach(n=>{ if(!n.callFrame.url.includes('panyu-mesh')) return; (n.positionTicks||[]).forEach(p=>lines.set(p.line,(lines.get(p.line)||0)+p.ticks)); }); console.log('LINES', [...lines.entries()].sort((a,b)=>b[1]-a[1]).slice(0,15).map(([l,t])=>l+':'+t).join(' '));
+console.log([...self.entries()].sort((a, b) => b[1] - a[1]).slice(0, 25).map(([k, v]) => Math.round(v / 1000) + 'ms ' + k).join('\n'));
+await session.close();
