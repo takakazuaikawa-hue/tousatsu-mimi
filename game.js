@@ -768,6 +768,8 @@ const CG_SETS = {
   // 二周目のクリア報酬（11/09 ユーザー「2周目のクリア報酬のヴェルベット写真集として」「勝った時に渡す」）。交換所には出さない。
   // ほろ酔いの夜で初めてヴェルベットに勝った時に渡す（endBattle の save.photobookPending → showPhotobookGift）。採用分は qa/out/velvet_photobook/adopted.json
   cgset_velvet_book: { name: 'ヴェルベット写真集', n: 123, key: 'velvetbook', short: '写真集', gift: 'ほろ酔いの夜のクリア報酬' },
+  // 三周目のクリア報酬（11/10 ユーザー決定「5人全員の写真集」）。泥酔の夜で5人に勝ったら渡す。並びは qa/out/deisui_photobook/order.json（人ごと・場面順）
+  cgset_deisui_book: { name: '泥酔の夜 写真集', n: 106, key: 'deisuibook', short: '泥酔写真集', gift: '泥酔の夜のクリア報酬', deisui: true },
 };
 const cgSetSrc = (id, k) => `assets/backgrounds/cgset/${CG_SETS[id].key}_${k}.jpg`;
 const cgSetThumb = (id, k) => `assets/backgrounds/cgset/thumb/${CG_SETS[id].key}_${k}.webp`;
@@ -4182,17 +4184,17 @@ const DEISUI_MID_SCENES = {
    {
     "k": "say",
     "who": "selina",
-    "t": "（トランプを肌にぺたぺた）はーとの、くいーんは、ここ。しゅぺーどの、えーしゅは……ここ。ふふ、かくすべきとこりょを、かくりちゅで、かくしてましゅ"
+    "t": "（トランプを積みながら、ミミにもたれて）はーとの、くいーんは、ここ。しゅぺーどの、えーしゅは……ここ。ふふ、このたわーは、こうがくてきに、ただしい、でしゅ"
    },
    {
     "k": "say",
     "who": "mimi",
-    "t": "かくれてないでしゅ！　じぇんじぇん、かくれてないでしゅぅ……ふにゃ"
+    "t": "ゆれてましゅ！　じぇんじぇん、ただしくないでしゅぅ……ふにゃ"
    },
    {
     "k": "say",
     "who": "selina",
-    "t": "のこり、にまい。どこに、はりゅか、みみしゃんが、きめて。……きたいちは、たかい、でしゅよ？　ふふ、ふふふ、ふへへ"
+    "t": "のこり、にまい。どこに、のしぇるか、みみしゃんが、きめて。……きたいちは、たかい、でしゅよ？　ふふ、ふふふ、ふへへ"
    },
    {
     "k": "say",
@@ -5353,7 +5355,33 @@ function showGraduationScene(onDone) {
 }
 
 // 二周目のクリア報酬：ヴェルベット写真集を受け取る幕（卒業の幕と同じ作り）。タップで写真集を開く
-function showPhotobookGift(onDone) {
+const PHOTOBOOK_GIFT = {
+  cgset_velvet_book: { night: 'ほろ酔いの夜', alt: 'ヴェルベット写真集の表紙', line: '<b>ヴェルベット</b>「今夜のあたし、<wbr>ぜーんぶ<wbr>撮らせてあげたんだから……<wbr><span style="white-space:nowrap">大事にしてね♡</span>」' },
+  cgset_deisui_book: { night: '泥酔の夜', alt: '泥酔の夜 写真集の表紙', line: '<b>リコ</b>「みんにゃで、<wbr>ぜーんぶ<wbr>うつってましゅ……<wbr><span style="white-space:nowrap">あしたには、わしゅれてね♡</span>」' },
+};
+function showPhotobookGift(onDone, id) {
+  id = id || 'cgset_velvet_book';
+  const g = PHOTOBOOK_GIFT[id];
+  if (id !== 'cgset_velvet_book') {
+    const overlay = document.createElement('div');
+    overlay.className = 'grad-scene-overlay photobook-gift';
+    overlay.innerHTML = `
+    <img class="grad-scene-img" src="${cgSetSrc(id, 1)}" alt="${g.alt}">
+    <div class="grad-scene-title"><small>${g.night} 制覇</small>${CG_SETS[id].name}</div>
+    <div class="grad-scene-line">${g.line}</div>
+    <div class="grad-scene-hint">タップして写真集を開く（コレクションでいつでも見られる）</div>`;
+    (document.getElementById('stage') || document.body).appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('show'));
+    const shownAt = Date.now();
+    overlay.addEventListener('click', () => {
+      if (Date.now() - shownAt < 900 || overlay.classList.contains('out')) return;
+      overlay.classList.add('out');
+      if (onDone) onDone();
+      showRewardCgViewer(id);
+      setTimeout(() => overlay.remove(), 400);
+    });
+    return;
+  }
   const overlay = document.createElement('div');
   overlay.className = 'grad-scene-overlay photobook-gift';
   overlay.innerHTML = `
@@ -9765,7 +9793,7 @@ function onAction(e) {
         } else {
           // 写真集の受け取りは、幕間の直後・勝利ボタンを出す前に（11/10 Codex 18回目：ボタンの後に予約で出していたので、再戦の上に重なった）
           const afterGift = () => { renderWonResultButtons(); if (isBgmOn()) playSceneBgm('victory'); };
-          if (save.photobookPending) { save.photobookPending = false; saveProgress(); showPhotobookGift(afterGift); } else afterGift();
+          if (save.photobookPending) { const pid = typeof save.photobookPending === 'string' ? save.photobookPending : ''; save.photobookPending = false; saveProgress(); showPhotobookGift(afterGift, pid); } else afterGift();
         }
       });
       break;
@@ -10813,7 +10841,7 @@ function showEndingFinalButtonsInner(stage, opts = {}) {
 
 function goLobby() {
   // 幕間を見ずにホームへ戻った時も、写真集の受け取りは必ず出す
-  if (save && save.photobookPending) setTimeout(() => { if (!save.photobookPending || state.screen !== 'lobby') return; save.photobookPending = false; saveProgress(); showPhotobookGift(); }, 1200);
+  if (save && save.photobookPending) setTimeout(() => { if (!save.photobookPending || state.screen !== 'lobby') return; const pid = typeof save.photobookPending === 'string' ? save.photobookPending : ''; save.photobookPending = false; saveProgress(); showPhotobookGift(null, pid); }, 1200);
   if (window.MimiVoice) stopVoice();   // 場面を出たら声は止める
   delete state.homePreviewOutfit;
   battleGen++;
@@ -14509,7 +14537,7 @@ function showCollectionModal() {
   }).join('');
   // CG集：持っているセットは表紙と枚数、入荷済みで持っていないセットは「交換所で」の鍵の札（未入荷は出さない）
   // 写真集（gift）は交換所に出ないので、エンディング後だけ鍵の札で「どうすると手に入るか」を出す
-  const cgSetHtml = Object.keys(CG_SETS).filter(id => isItemOwned(id) || (CG_SETS[id].gift ? isEndingUnlocked() : isShopItemUnlocked(id))).map(id => {
+  const cgSetHtml = Object.keys(CG_SETS).filter(id => isItemOwned(id) || (CG_SETS[id].gift ? (CG_SETS[id].deisui ? deisuiOpen() : isEndingUnlocked()) : isShopItemUnlocked(id))).map(id => {
     const c = CG_SETS[id];
     const tag = c.gift ? '写真集' : 'CG集';
     if (isItemOwned(id)) return `<button class="coll-cg-card on is-set" data-action="view-secret-cg" data-memory-id="${id}" title="${c.gift ? '' : 'CG集'}「${c.name}」を見る">
@@ -15098,7 +15126,8 @@ let __battleAssetsOpp = null, __battleGateBusy = false;
 function horoyoiBattleNow(key) {
   if (!isHoroyoi()) return [];
   // ヴェルベット戦は、勝った後に出す写真集の表紙と1枚目も先に読む（受け取りの幕が遅れて描かれないように）
-  const book = key === 'velvet' && !isItemOwned('cgset_velvet_book') ? [cgSetSrc('cgset_velvet_book', 1), cgSetSrc('cgset_velvet_book', 2)] : [];
+  const bookId = isDeisui() ? 'cgset_deisui_book' : 'cgset_velvet_book';
+  const book = key === 'velvet' && !isItemOwned(bookId) ? [cgSetSrc(bookId, 1), cgSetSrc(bookId, 2)] : [];
   // 勝負の途中に挟む一枚絵（HOROYOI_MID_SCENES）も卓に入る前に読む
   if (STORY_ART['hmid_' + key]) book.push(STORY_ART['hmid_' + key]);
   return [...(HOROYOI_STAND.has(key) ? [`assets/characters/${key}_drunk_stand.webp`] : []), 'assets/characters/mimi_allin_drunk.webp', 'assets/characters/mimi_bust_calm_drunk.webp', 'assets/characters/mimi_bust_think_drunk.webp', ...book];
@@ -20028,8 +20057,12 @@ function endBattle() {
     // クリア記録（velvet なら endingUnlocked も同時に立つ）。練習の勝ちはクリアに数えない
     if (state.horoyoi) {
       if (!practice && !horoyoiCleared(state.opponentId)) (state.deisui ? save.deisuiCleared : save.horoyoiCleared).push(state.opponentId);
-      // 三周目のクリア報酬（5人の写真集・ぱにゃぱにゃ）は絵がそろってから入れる
-      if (!practice && state.deisui && state.opponentId === 'velvet' && STAGE_ORDER.every(horoyoiCleared) && !save.deisuiAllCleared) { save.deisuiAllCleared = true; rewards.push('泥酔の夜を制覇！'); }
+      // 三周目のクリア報酬：泥酔の夜で5人に勝ったら「泥酔の夜 写真集」（ぱにゃぱにゃは別に足す）
+      if (!practice && state.deisui && state.opponentId === 'velvet' && STAGE_ORDER.every(horoyoiCleared) && !save.deisuiAllCleared) {
+        save.deisuiAllCleared = true;
+        if (!save.ownedItems.includes('cgset_deisui_book')) { save.ownedItems.push('cgset_deisui_book'); save.photobookPending = 'cgset_deisui_book'; }
+        rewards.push('泥酔の夜を制覇：泥酔の夜 写真集（コレクションでいつでも見られる）');
+      }
       // 二周目のクリア報酬：ほろ酔いの夜で初めてヴェルベットに勝ったら写真集（結果を見せた後に受け取りの幕を出す）
       if (!practice && !state.deisui && state.opponentId === 'velvet' && STAGE_ORDER.every(horoyoiCleared) && !save.ownedItems.includes('cgset_velvet_book')) {
         save.ownedItems.push('cgset_velvet_book');
