@@ -20377,6 +20377,12 @@ function renderWonResultButtons() {
 // 次に挑戦すべきステージ名を1行で返す（解放ルール／クリア記録は既存関数をそのまま読むだけ）
 // 「解放」の札：初勝利で幕間が控えている間は押せない表示（交換所へ行くと幕間を飛ばしてしまうため）。幕間の後の勝利ボタンで戻す
 function resultUnlockLater(on) {
+  // 「交換所で N点 交換できます／次の目標」の札も同じ扱い（11/16 ユーザー指摘：この札から交換所→ロビーへ抜けると幕間が見られなかった）
+  const cg = document.querySelector('.result-coin-goal');
+  if (cg) {
+    cg.disabled = !!on; cg.classList.toggle('is-later', !!on);
+    const cgo = cg.querySelector('.cg-goal-go'); if (cgo) cgo.textContent = on ? '幕間のあとで' : '交換所へ ›';
+  }
   const ru = document.querySelector('.result-unlock'); if (!ru) return;
   ru.disabled = !!on; ru.classList.toggle('is-later', !!on);
   const go = ru.querySelector('.ru-go'); if (go) go.textContent = on ? '幕間のあとで' : '交換所へ ›';
