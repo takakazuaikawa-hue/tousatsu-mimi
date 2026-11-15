@@ -14,6 +14,7 @@
   // index.html を直接開いた時（file://）：fetch で読めないので、一覧は assets/voice/manifest.js、声は <audio> で鳴らす
   // （DLsite 版は Electron の app:// で開くので fetch が使える。こちらは保険）
   var LOCAL = location.protocol === 'file:';
+  var VOICE_MIX = 0.55;           // 声の全体の係数（音量つまみに掛ける）
   var DUCK_TO = 0.7;              // 声の間、BGM は3割下げる
   // 掛け声の待ち：プレイはサクサク進むので、前の声を待って遅れて鳴ると「遅く聞こえる」（2026-10-20 ユーザー指摘）。
   // 待たせるのは一番新しい1本だけ、0.9秒以内に始められなければ鳴らさない（以前は2本・3.5秒）
@@ -40,7 +41,9 @@
   // ── 設定の読み取り（game.js の save / isSfxOn に従う） ──
   function volume() {
     var v = (typeof save !== 'undefined' && save && typeof save.voiceVolume === 'number') ? save.voiceVolume : 80;
-    return Math.max(0, Math.min(1, v / 100));
+    // 声の素材は全員 -15 LUFS 前後にそろっていて、曲（既定で約 -27 LUFS）より約10dB大きかった（2026-11-16 ユーザー：声が大きすぎる）。
+    // 0.55 を掛けて約5dB下げ、曲（声の間は3割下げる）より約5dB上に置く。docs/design-ref/audio-mix.md
+    return Math.max(0, Math.min(1, v / 100)) * VOICE_MIX;
   }
   function enabled() {
     if (window.MIMI_TRIAL) return false;   // 体験版は声なし（声のファイルを配らない）

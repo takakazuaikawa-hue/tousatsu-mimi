@@ -281,8 +281,9 @@ function defaultSave() {
     psychEnabled: true,
     logicEnabled: true,
     bgmVolume: 35,       // BGM 音量（0-100）
-    // DLsite 版（アプリ）は自動再生の決まりが無いので最初から鳴らす（2026-11-06 試遊：初回に曲が鳴らず、音のボタンを2回押していた）
-    bgmOn: !!window.MIMI_LOCAL,  // BGM 全体 ON/OFF（lobby/ending/minipoker BGM すべて従う）
+    // 曲は最初から鳴らす（2026-11-16 ユーザー：起動時に曲が鳴らない）。DLsite 版（アプリ）は自動再生の決まりが無いのですぐ鳴る。
+    // ブラウザ版は最初に画面を押した時に鳴り始める（initGlobalAudioBar の kickBgmOnFirstGesture）
+    bgmOn: true,  // BGM 全体 ON/OFF（lobby/ending/minipoker BGM すべて従う）
     sfxVolume: 50,       // SFX 音量（0-100）。初めての人は控えめに（2026-10-20：いきなり大きな音で困った、の指摘）
     sfxOn: true,         // SFX 全体 ON/OFF（minipoker SFX 等すべて従う）
     forceSound: false,   // 端末が消音でも音を出す（iOS消音スイッチより優先）。既定OFF＝端末を尊重
@@ -340,6 +341,9 @@ function normalizeSave(s) {
   if (typeof s.sfxOn !== 'boolean') s.sfxOn = true;
   // 音まるごと消音（声も止める）。効果音だけ OFF とは別に持つ（2026-11-01 外部の批評：効果音 OFF で声まで止まっていた）
   if (typeof s.allMute !== 'boolean') s.allMute = s.bgmOn === false && s.sfxOn === false;
+  // 曲の既定を ON にした時（2026-11-16）の一度だけの移し替え：以前のブラウザ版は既定 OFF のまま保存されていたので、
+  // 音まるごと消している人を除いて曲を ON にする
+  if (!s.bgmDefaultOn) { if (!s.allMute) s.bgmOn = true; s.bgmDefaultOn = 1; }
   if (typeof s.forceSound !== 'boolean') s.forceSound = false;
   if (typeof s.voiceVolume !== 'number' || isNaN(s.voiceVolume)) s.voiceVolume = 80;
   s.voiceVolume = Math.max(0, Math.min(100, s.voiceVolume));
@@ -10990,14 +10994,15 @@ function bgmFadeInPlay(a, to, ms = BGM_FADE_IN_MS) {
 // 常にロビー/ED/シンセを止めてから鳴らす＝二重再生ゼロ（うるさくしない核）。
 // gain は「うるさくならない」ための曲別控えめ倍率（bgmVolFloat にさらに掛ける）。
 const SCENE_BGM = {
-  title:    { file: 'assets/bgm/bunny-trump.mp3', gain: 0.72 },   // 主題曲「バニーガールの切り札」
-  battle:   { file: 'assets/bgm/battle.mp3',   gain: 0.60 },
-  boss:     { file: 'assets/bgm/boss.mp3',     gain: 0.72 },
-  minigame: { file: 'assets/bgm/minigame.mp3', gain: 0.55 },
-  velvet:   { file: 'assets/bgm/velvet-deal.mp3', gain: 0.80 },   // ヴェルベット戦「Velvet Deal」
-  intermission: { file: 'assets/bgm/hokorobu-hoho.mp3', gain: 0.75 }, // 幕間とご褒美の絵「ほころぶ頬」
-  victory:  { file: 'assets/bgm/royal-flush.mp3', gain: 0.78 },   // 勝った結果「ロイヤルフラッシュ」
-  allstar:  { file: 'assets/bgm/velvet-dice-run.mp3', gain: 0.70 }, // 零時の卓「Velvet Dice Run」
+  // gain は曲ごとの大きさ（LUFS）をそろえる値（2026-11-16 測定：既定の音量35で、どの曲も約 -27 LUFS に。docs/design-ref/audio-mix.md）
+  title:    { file: 'assets/bgm/bunny-trump.mp3', gain: 0.72 },   // 主題曲「バニーガールの切り札」 -15.1 LUFS
+  battle:   { file: 'assets/bgm/battle.mp3',   gain: 0.60 },      // -13.3
+  boss:     { file: 'assets/bgm/boss.mp3',     gain: 0.60 },      // -12.6（0.72 では一番大きかった）
+  minigame: { file: 'assets/bgm/minigame.mp3', gain: 0.68 },      // -14.7（0.55 では小さかった）
+  velvet:   { file: 'assets/bgm/velvet-deal.mp3', gain: 0.80 },   // ヴェルベット戦「Velvet Deal」 -15.9
+  intermission: { file: 'assets/bgm/hokorobu-hoho.mp3', gain: 0.85 }, // 幕間とご褒美の絵「ほころぶ頬」 -16.6
+  victory:  { file: 'assets/bgm/royal-flush.mp3', gain: 0.83 },   // 勝った結果「ロイヤルフラッシュ」 -16.3
+  allstar:  { file: 'assets/bgm/velvet-dice-run.mp3', gain: 0.72 }, // 零時の卓「Velvet Dice Run」 -15.0
 };
 let _sceneBgmKey = null;
 let _sceneElB = false;   // いま鳴らしているのが2本目（scene-bgm-audio-b）か
@@ -11243,6 +11248,18 @@ function initGlobalAudioBar() {
     document.addEventListener('visibilitychange', syncHidden);
     ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
       window.addEventListener(ev, applyAudioSession, { passive: true }));
+    // ブラウザは最初の操作の前に曲を鳴らせない。最初に押した時に、いまの画面の曲を鳴らし始める（一度だけ）
+    let kicked = false;
+    const kickBgmOnFirstGesture = () => {
+      if (kicked) return;
+      if (navigator.userActivation && !navigator.userActivation.isActive) return;   // 押した扱いになる操作が来るまで待つ
+      kicked = true;
+      ['pointerdown', 'pointerup', 'touchend', 'keydown', 'click'].forEach(ev => window.removeEventListener(ev, kickBgmOnFirstGesture, true));
+      const playing = ['scene-bgm-audio', 'scene-bgm-audio-b', 'lobby-bgm-audio', 'ending-bgm-audio'].some(id => { const a = document.getElementById(id); return a && !a.paused; });
+      if (isBgmOn() && !playing) startBgmForScreen();
+    };
+    ['pointerdown', 'pointerup', 'touchend', 'keydown', 'click'].forEach(ev =>
+      window.addEventListener(ev, kickBgmOnFirstGesture, { capture: true, passive: true }));
   } catch (e) {}
 }
 function tryStartLobbyBgm() {
@@ -12098,7 +12115,7 @@ function setForceSound(on) {
 let _mpSfxScale = 1; // mpSfx 呼び出し直前にセットされる SFX 音量係数
 // 2026-10-30 効果音を +12dB（×4）。初期の音量（効果音50・曲35・声60）で、チェック・コールの音が曲より約20dB小さく埋もれていた。
 // 聞き比べ（qa/mixdemo.mjs、今／+12／+18）からユーザーが +12 を選んだ。合成音の大きさはここだけで決める
-const SFX_BOOST = 4;
+const SFX_BOOST = 8;   // 2026-11-16 音の釣り合い：4 では卓の効果音（チェック・コール・ベット）が曲に埋もれていた（+6dB）
 function mpTone(freq, dur, type = 'sine', gain = 0.06, attack = 0.005, release = 0.04, delayMs = 0) {
   const ctx = mpAudioCtx(); if (!ctx) return;
   const t0 = ctx.currentTime + delayMs / 1000;
