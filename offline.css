@@ -15,7 +15,11 @@
   padding: 16px 20px;
   background: linear-gradient(180deg, rgba(80, 20, 34, 0.97) 0%, rgba(29, 8, 14, 0.98) 100%);
   border: 14px solid rgba(245, 215, 122, 0.5);
-  border-image: url('assets/ui/frame_gold.webp') 96 / 14px stretch;
+  /* 金枠の絵は線が絵の端から 上23・右20・下24・左19（/96）内側にある。その分だけ絵を外へ押し出し、
+     金線の外側を窓の縁に合わせる。地は枠の下まで1枚で塗る（内側の箱の大きさで繰り返すと上に暗い帯・下に赤い帯がはみ出した） */
+  border-image: url('assets/ui/frame_gold.webp') 96 / 14px / 3.4px 2.9px 3.5px 2.8px stretch;
+  background-origin: border-box;
+  background-repeat: no-repeat;
   box-shadow: 0 0 30px rgba(245, 215, 122, 0.5), 0 12px 36px rgba(0, 0, 0, 0.8);
   color: var(--c-text, #f7eecf);
 }
@@ -51,7 +55,7 @@
 /* スマホ（横画面 844x390 など）：縦が足りないので詰める */
 @media (max-height: 520px) {
   .pack-overlay { padding: 6px; }
-  .pack-modal { padding: 8px 14px; gap: 6px; border-width: 10px; border-image-width: 10px; max-height: 100%; }
+  .pack-modal { padding: 8px 14px; gap: 6px; border-width: 10px; border-image-width: 10px; border-image-outset: 2.4px 2.1px 2.5px 2px; max-height: 100%; }
   .pack-title { font-size: 16px; }
   .pack-body { gap: 4px; }
   .pack-lead { font-size: 14px; line-height: 1.5; }

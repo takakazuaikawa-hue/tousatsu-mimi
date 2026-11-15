@@ -687,3 +687,20 @@ html.is-compact .minipoker-modal td:is(.mp-pt-payout, .mp-pt-mult, .mp-pt-name),
 html:not(.is-compact) .settings-modal-sound { flex-wrap: wrap; row-gap: 0; }
 html:not(.is-compact) .settings-modal-sound .settings-modal-label { flex: 1 1 auto; }
 html:not(.is-compact) .settings-modal-sound .settings-modal-volume { order: 3; flex: 1 1 100%; min-width: 120px; height: 32px; }
+
+/* 2026-11-16 枠の絵の線と窓の地のずれ：枠の絵（9スライス・切り取り96）は線が絵の端から内側にあり、
+ * border-image をそのまま貼ると線の外に地が数pxはみ出す。しかも地のグラデーションは内側の箱の大きさで
+ * 繰り返すため、上の縁に暗い帯・下の縁に明るい帯が出て、窓の本体と飾りの枠がずれて見えた。
+ * 線までの余白（/96）だけ絵を外へ押し出し（outset）、地は枠の下まで1枚で塗る。枠の幅・余白は変えない。
+ * 金枠 frame_gold：上23・右20・下24・左19／教室枠 frame_lecture：上12・右11・下14・左11。
+ * まとめてダウンロード（offline.css）も同じ直し。共通の小窓は border-image を使わないので対象外。 */
+.tutorial-bubble:not(.lecture-bubble) {
+  border-image-outset: 4.3px 3.8px 4.5px 3.6px;  /* 18px 幅 */
+  background-origin: border-box;
+  background-repeat: no-repeat;
+}
+.battle-modal-overlay:not(.v2psych) .psych-modal.lecture-mode {
+  border-image-outset: 1.8px 1.6px 2px 1.6px;     /* 14px 幅 */
+  background-origin: border-box;
+  background-repeat: no-repeat;
+}
