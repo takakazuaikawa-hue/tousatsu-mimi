@@ -116,4 +116,4 @@
 - 11/13 声：ほろ酔い32本・泥酔90行すべて組み込み済み（20261113b）。聞くページ https://claude.ai/artifact/XyyUHgHWVmByk8cw1oGDGW
 - 11/14 泥酔の一枚絵を途中の場面・幕間に入れた（906168a、qa/deisuiconvert.mjs）。選んだ絵：rico 1_1/2_1/3_1、polka 1_1/2_1/3_1、selina 1r_user/5_1(②の代用)/3_2、grano 1_2/2_1/3_1、velvet 1_1/2_1/3_2。selina②・grano①の描き直しが届いたら差し替える。残り：5人の写真集（④⑤⑥＋採用の全部）とぱにゃぱにゃの報酬、泥酔のホームの絵、DEISUI_READY=true と通しの検査
 
-- 11/15 泥酔の写真集（cgset_deisui_book、106枚・人ごと場面順、並び qa/out/deisui_photobook/order.json、検査 qa/deisuibook.mjs）とセリナ場面2の台詞・声の書き換えを配信（20261115a）。返事待ちの描き直し（sheet_r3〜r6）は指摘なし＝採用として入れた。受け取りの幕のリコの一言は仮（ユーザー確認待ち）。残り：ぱにゃぱにゃの報酬、泥酔のホームの絵、DEISUI_READY=true と通しの検査。心理・論理・ほろ酔いの途中のバトルの作り直しは別の作業（local_b925688c）
+- 11/15 泥酔の写真集（cgset_deisui_book、106枚・人ごと場面順、並び qa/out/deisui_photobook/order.json、検査 qa/deisuibook.mjs）とセリナ場面2の台詞・声の書き換えを配信（20261115a）。返事待ちの描き直し（sheet_r3〜r6）は指摘なし＝採用として入れた。受け取りの幕のリコの一言「みんにゃで、ぜーんぶうつってましゅ……あしたには、わしゅれてね♡」はユーザー承認済み（11/15）。残り：ぱにゃぱにゃの報酬、泥酔のホームの絵、DEISUI_READY=true と通しの検査。心理・論理・ほろ酔いの途中のバトルの作り直しは別の作業（local_b925688c）
