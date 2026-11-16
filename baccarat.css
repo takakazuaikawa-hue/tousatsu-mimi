@@ -433,6 +433,10 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 .bc-cd.is-win small { color: #2a1608; }
 .bc-cd.is-next .bc-cd-f { filter: brightness(.82); }
 
+/* 口止めの残り（大きな神託の直後）：ご機嫌の横に「内緒 あと n手」 */
+.bc-favor[data-cool]:not([data-cool=""])::after { content: attr(data-cool); margin-left: 4px; padding: 0 6px; font-weight: 700; color: #2a1608; background: #ff9ac0; }
+.bc-favor[data-cool]:not([data-cool=""]) i { opacity: .45; }
+
 /* 罫線の大きな窓の下：この山の検算（一致なら金、不一致なら赤） */
 .bc-verify { margin: calc(var(--u) * 6) 0 0; font-size: var(--r-note, 14px); line-height: 1.5; color: var(--bc-ivory); }
 .bc-verify b { margin-right: .7em; padding: 0 .5em; color: #2a1608; background: var(--bc-gold-hi); }
@@ -442,6 +446,7 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 .bc-cutin { position: absolute; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; --k: #f5d77a; --k2: rgba(118,72,12,.96); animation: bc-ci-in .2s ease-out 1; }
 .bc-cutin.is-betray { --k: #ff6b78; --k2: rgba(122,12,26,.96); }
 .bc-cutin.is-climax { --k: #ff9ac0; --k2: rgba(112,20,62,.96); }
+.bc-cutin.is-hit { --k: #ffe08a; --k2: rgba(130,86,14,.96); }
 .bc-cutin::before { content: ""; position: absolute; inset: 0; background: radial-gradient(75% 85% at 55% 50%, rgba(0,0,0,.2), rgba(0,0,0,.72)); }
 .bc-cutin.is-out { animation: bc-ci-out .38s ease-in 1 forwards; }
 .bc-ci-band { position: absolute; left: -12%; right: -12%; top: 36%; height: 32%; transform: skewY(-5deg); background: linear-gradient(90deg, rgba(14,4,6,.97) 0%, var(--k2) 46%, rgba(14,4,6,.97) 100%); border-block: 3px solid var(--k); box-shadow: 0 0 calc(var(--u) * 30) color-mix(in srgb, var(--k) 50%, transparent); animation: bc-ci-band .34s cubic-bezier(.2, 1.2, .4, 1) 1; }
@@ -451,6 +456,13 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 .bc-ci-h { font: 800 var(--r-label, 15px)/1.35 var(--bc-min); letter-spacing: .24em; color: #2a1608; background: var(--k); padding: 0 .8em; }
 .bc-ci-m { font: 800 calc(var(--u) * 38)/1.15 var(--bc-min); letter-spacing: .04em; color: #fff8e6; text-shadow: 0 0 calc(var(--u) * 14) var(--k), 0 3px 0 rgba(0,0,0,.6); word-break: keep-all; overflow-wrap: anywhere; animation: bc-slam .42s cubic-bezier(.2, 1.6, .4, 1) 1; }
 .bc-ci-s { font: 700 var(--r-speech, 16px)/1.4 var(--bc-min); color: #fff3dc; text-shadow: 0 2px 4px rgba(0,0,0,.8); }
+/* 専用の絵（横長の上半身）がある時：絵を右に大きく置き、顔と腕が帯からはみ出す。文字は左に（胸元は帯で隠さない） */
+/*   絵は画面の幅の6割の枠に収め（縦に余裕のある画面で横に広がりすぎて文字に重なっていた）、はみ出す左右は切る。左端はぼかして境目を見せない */
+.bc-cutin.has-ci .bc-ci-pic { left: auto; right: -2%; top: -2%; height: 104%; width: 62%; object-fit: cover; object-position: 50% 0; animation-name: bc-ci-pic-r;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 16%); mask-image: linear-gradient(to right, transparent 0, #000 16%); }
+.bc-cutin.has-ci .bc-ci-t { left: 3%; right: 58%; }
+.bc-cutin.has-ci .bc-ci-m { font-size: calc(var(--u) * 32); }
+@keyframes bc-ci-pic-r { from { transform: translateX(45%); opacity: 0; } }
 @keyframes bc-ci-in { from { opacity: 0; } }
 @keyframes bc-ci-out { to { opacity: 0; } }
 @keyframes bc-ci-band { from { transform: skewY(-5deg) translateX(60%); } }

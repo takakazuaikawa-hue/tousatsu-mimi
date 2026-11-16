@@ -297,13 +297,34 @@
   //   kind＝oracle（金：大きな神託）／betray（赤：約束の裏切り）／climax（桃：めくりの溜め）／jackpot（金：大当たり）
   //   face＝表情の差分の名前（UMME にあれば使い、無ければ今の絵）
   const UMME = { base: ART.goddess };
+  // カットイン専用の絵（場面ごとの束。出るたびに1枚を選ぶ。2026-11-17 ユーザー「カットインの顔は特別なものの方がいい。種類も欲しい」）。空の場面は表情の差分→今の絵の順で代わりに出す
+  const CI_ART = {
+    oracle: ['assets/characters/umme_ci_oracle_1.webp'],     // こっそり教える（指を突きつけてささやく。ユーザー選択「神託2」）
+    // 各場面の _1 が基本の絵（束に2回入れて、半分ほどはこれが出る）。_2・_3 は混ぜる種類（ユーザー「3を基本に1，2も使えそうなら使っていいよ」）
+    jackpot: ['assets/characters/umme_ci_jackpot_1.webp', 'assets/characters/umme_ci_jackpot_1.webp', 'assets/characters/umme_ci_jackpot_2.webp', 'assets/characters/umme_ci_jackpot_3.webp'],   // 驚いて喜ぶ（元 jackpot_3・1・2）
+    hit: ['assets/characters/umme_ci_jackpot_2.webp', 'assets/characters/umme_ci_jackpot_3.webp'],   // 神託どおりに当たった（大当たりの元 1・2 の絵）
+    betray: ['assets/characters/umme_ci_betray_1.webp', 'assets/characters/umme_ci_betray_1.webp', 'assets/characters/umme_ci_betray_2.webp', 'assets/characters/umme_ci_betray_3.webp'],   // ぷんぷん怒って指さす（元 betray_3・1・2）
+    climax: ['assets/characters/umme_ci_climax_1.webp', 'assets/characters/umme_ci_climax_1.webp', 'assets/characters/umme_ci_climax_2.webp', 'assets/characters/umme_ci_climax_3.webp'],   // 祈って見守る（元 climax_3・1・2）
+  };
+  let ciLast = {};
+  // 束から1枚：同じ絵は続けて出さない（束に2回入っている基本の絵も、前と同じなら引き直す）
+  const ciPick = (kind) => {
+    const a = CI_ART[kind] || []; if (!a.length) return null;
+    const kinds = new Set(a).size;
+    let src = a[Math.floor(Math.random() * a.length)];
+    for (let t = 0; t < 8 && kinds > 1 && src === ciLast[kind]; t++) src = a[Math.floor(Math.random() * a.length)];
+    ciLast[kind] = src; return src;
+  };
+  // 先読み：卓に入った時に全部読んでおく（決め所で遅れて出ると興ざめ）
+  const ciPreload = () => { [...new Set(Object.values(CI_ART).flat().concat(Object.values(UMME)))].forEach(src => { if (src) { const im = new Image(); im.decoding = 'async'; im.src = src; } }); };
   let cutinT = 0;
   function cutin(kind, head, main, sub, face, ms) {
     if (!host || !live() || !ART.goddess) return;
     host.querySelectorAll('.bc-cutin').forEach(e => e.remove()); clearTimeout(cutinT);
     const el = document.createElement('div');
-    el.className = 'bc-cutin is-' + kind; el.setAttribute('aria-live', 'polite');
-    el.innerHTML = `<i class="bc-ci-band"></i><img class="bc-ci-pic" src="${UMME[face] || UMME.base}" alt=""><div class="bc-ci-t"><b class="bc-ci-h">${esc(head)}</b><strong class="bc-ci-m">${esc(main).replace(/\|/g, '<wbr>')}</strong>${sub ? `<span class="bc-ci-s">${esc(sub).replace(/\|/g, '<wbr>')}</span>` : ''}</div>`;
+    const special = ciPick(kind);
+    el.className = 'bc-cutin is-' + kind + (special ? ' has-ci' : ''); el.setAttribute('aria-live', 'polite');
+    el.innerHTML = `<i class="bc-ci-band"></i><img class="bc-ci-pic" src="${special || UMME[face] || UMME.base}" alt=""><div class="bc-ci-t"><b class="bc-ci-h">${esc(head)}</b><strong class="bc-ci-m">${esc(main).replace(/\|/g, '<wbr>')}</strong>${sub ? `<span class="bc-ci-s">${esc(sub).replace(/\|/g, '<wbr>')}</span>` : ''}</div>`;
     host.appendChild(el);
     cutinT = setTimeout(() => { el.classList.add('is-out'); cutinT = setTimeout(() => el.remove(), 380); }, ms || 1500);
   }
@@ -392,8 +413,21 @@
   // 稼ぎの釣り合いのつまみ（試算 qa/baccaratecon.mjs で決める）
   //   lookQuiet＝見（ケン）がこの手数つづく間、女神は問いかけない（運命は賭けた人にしか微笑まない）
   //   cool＝大きな神託のあと、この手数は口がかたい（問いかけず、ご機嫌が満ちても神託は待つ）
-  const TUNE = { lookQuiet: Infinity, cool: 0 };
+  // 2026-11-17 試算で決定（ユーザー「基本的にはプレイヤーに稼がせてあげたい」）：上手に返事を続けた人で1時間に約4,600〜4,900（絞り＝自動）、普通に賭ける人でも数百の浮き。
+  //   口止めの間も問いかけは続け（約3手に1回）、大きな神託だけ待たせる。口止め20手＝約6,300〜7,000／30手＝約4,600〜4,900／40手＝約2,800〜3,500。つまみなしでは約18,000
+  //   見（ケン）が続いても黙らない（ユーザー「基本は見のゲームになると思っているので、黙られると困ります」）→ lookQuiet は使わない
+  //   askInCool＝口止めの間も問いかけは続ける（大きな神託だけ待たせる）
+  const TUNE = { lookQuiet: Infinity, cool: 30, askInCool: true };
+  // 口止めの残り：ご機嫌の横に「内緒 あと n手」（神託をもらった直後、なぜ神託が来ないかが分かるように）
+  function paintCool() {
+    if (!host || !S) return;
+    const left = Math.max(0, (S.A.coolTo || 0) - S.A.hands);
+    ui.favor.dataset.cool = left ? `内緒 あと${left}手` : '';
+  }
   let favorT = 0;
+  const cooling = () => (S.A.coolTo || 0) > S.A.hands;
+  // ご機嫌が満ちたら大きな神託。ただし口止めの間は満ちたまま待ち、明けた手の頭で出す（返事・おしゃべりでも同じ）
+  function tryBig() { if (S.A.favor >= 3 && !cooling()) { setFavor(0); giveOracle(true); return true; } return false; }
   // why＝上がり下がりの理由（ご機嫌の横に「約束を守った ＋1」のように出す）
   function setFavor(n, why) {
     const A = S.A, was = A.favor;
@@ -404,7 +438,7 @@
     if (d < 0) { ui.favor.classList.remove('is-down'); void ui.favor.offsetWidth; ui.favor.classList.add('is-down'); }
     if (why && d) {
       const left = 3 - A.favor;
-      ui.fnote.innerHTML = `${esc(why)} <b>${d > 0 ? '＋' : '−'}${Math.abs(d)}</b>${d > 0 && left > 0 ? `<small>あと${left}で神託</small>` : ''}`;
+      ui.fnote.innerHTML = `${esc(why)} <b>${d > 0 ? '＋' : '−'}${Math.abs(d)}</b>${d > 0 && left > 0 ? `<small>あと${left}で神託</small>` : d > 0 && cooling() ? '<small>内緒が明けたら神託</small>' : ''}`;
       ui.fnote.dataset.s = d > 0 ? 'up' : 'dn'; ui.fnote.hidden = false;
       clearTimeout(favorT); favorT = setTimeout(() => { if (live()) ui.fnote.hidden = true; }, 3200);
     }
@@ -430,6 +464,7 @@
     if (big && TUNE.cool) S.A.coolTo = S.A.hands + 1 + TUNE.cool;   // この手（神託の手）の後、cool 手は口がかたい
     if (big) cutin('oracle', '神託', text, say1.replace(/\|/g, ''), 'doya', 1700);
     say('goddess', say1, 3600);
+    if (big && TUNE.cool) { say('goddess', pick(TUNE.askInCool ? ['……しゃべりすぎちゃった！|しばらく神託はおあずけでーす！', 'あ、言いすぎた！|次の神託はしばらく先でーす！'] : ['……しゃべりすぎちゃった！|しばらく内緒でーす！', 'あ、言いすぎた！|しばらくお口チャックでーす！']), 2600); paintCool(); }
     paintPins(); sfx('garapon');
     if (!S.A.orSeen) { S.A.orSeen = true; say('rico', 'ウンメさまの神託は|ウソをつかない。|ただし、ぜんぶは|教えてくれないよ', 3600); }
     const mh = mimiHint(); if (mh && mh[1] >= 1) say('mimi', `（${mh[0]}）`, 4400);
@@ -556,7 +591,7 @@
       const o = q.talk.o[i];
       say('goddess', o[2], 2800);
       // おしゃべりで上がるのは6手に1回まで（約束なしで神託を量産させない）
-      if (o[1] && A.hands - (A.talkAt == null ? -99 : A.talkAt) >= 6) { A.talkAt = A.hands; setFavor(A.favor + 1, '気に入られた'); if (A.favor >= 3) { setFavor(0); giveOracle(true); } }
+      if (o[1] && A.hands - (A.talkAt == null ? -99 : A.talkAt) >= 6) { A.talkAt = A.hands; setFavor(A.favor + 1, '気に入られた'); tryBig(); }
       keep(); return;
     }
     const o = q.opts[i], M = MOODS[q.mood];
@@ -567,8 +602,7 @@
     if (liked) {
       say('goddess', o.kind === 'wish' ? pick(['やったぁ！　話がわかるぅ！', 'えへへ、ありがとー！|約束だよぉ？']) : pick(['それそれ！|そういうの大好きでーす！', 'わかってるぅ！|ウンメちゃん感激！', 'いい返事！|運命の糸がピンって鳴った！', 'そう来なくっちゃ！']));
       setFavor(A.favor + 1, o.kind === 'wish' ? 'お願いを聞いた' : '気分に合う返事');
-      if (A.favor >= 3) { setFavor(0); giveOracle(true); }
-      else if (Math.random() < .3) giveOracle(false);
+      if (!tryBig() && Math.random() < .3) giveOracle(false);
     } else say('goddess', q.wish ? pick(['えー、けちー！|まあ、好きにすればー？', 'ふーんだ。じゃあ、それで']) : pick(['へぇ〜、そうするんだ。|覚えときまーす！', 'ふうん。約束だよぉ？', 'はーい、女神が聞いたからね！', 'なるほどぉ。……守ってよね？']));
     keep();
   }
@@ -897,10 +931,11 @@
     ui.banner.dataset.on = '0'; ui.table.dataset.win = '';
     setPhase('bet'); paintRoads(); paintTotals();
     pledgeTick();
-    const cooling = (A.coolTo || 0) > A.hands;
-    if (S.A.favor >= 3 && !S.oracle && !cooling) { setFavor(0); giveOracle(true); }
+    const cool = cooling();
+    paintCool();
+    if (!S.oracle && tryBig()) { /* 満ちていたご機嫌の神託（口止めが明けた手など） */ }
     else {
-      if (S.pledges.length < 3 && !S.q && !cooling && S.looks < TUNE.lookQuiet && A.hands - (A.askedAt == null ? -99 : A.askedAt) >= 2 && S.res.length >= 2 && Math.random() < .62) askQuestion();
+      if (S.pledges.length < 3 && !S.q && (!cool || TUNE.askInCool) && S.looks < TUNE.lookQuiet && A.hands - (A.askedAt == null ? -99 : A.askedAt) >= 2 && S.res.length >= 2 && Math.random() < .62) askQuestion();
       else if (Math.random() < .62) chatter();
       // ミミの心の声（助言）：問いの札が出ていない時だけ
       if (!S.q && ui.ask.hidden) { const mh = mimiHint(); if (mh && Math.random() < mh[1]) say('mimi', `（${mh[0]}）`, 4400); }
@@ -933,6 +968,7 @@
     save.coins = coins() + pay.ret; S.pending = 0; A.pendingRet = 0;
     const r = BC.resultOf(h);
     S.res.push(r); A.res = S.res; A.hands++; A.net += pay.net; A.best = Math.max(A.best, pay.net);
+    const orc = S.oracle;   // この手に出ていた神託（「神託どおり！」のカットインに使う）
     S.fresh = true; S.oracle = null; paintPins(); paintRoads();
     ui.table.dataset.win = h.w;
     for (const w of ['P', 'B']) ui.sides[w].dataset.res = h.w === 'T' ? 'tie' : h.w === w ? 'win' : 'lose';
@@ -962,6 +998,12 @@
     } else if (stake && pay.net >= stake * 8) { cutin('jackpot', '大当たり', `＋${fmt(pay.net)}`, '運命もびっくりでーす！', 'odoroki', 1600); say('goddess', 'わ、大当たり！|運命もびっくりでーす！'); }
     else if (stake && Math.random() < .5) { const DT = DL.T || {}, rl = DT.res ? DT.res(h, pay.net) : pick((pay.net > 0 ? DT.win : pay.net < 0 ? DT.lose : DT.tie) || []); if (rl) dline(rl, 2800); }
     else if (stake && Math.random() < .3) say('goddess', pick(['決まりーっ！　|これが今日の|運命でーす！', 'はい確定。|……いやほんと、|ウンメちゃんは|前から知ってたんだけどね？', '文句は|受け付けませーん！']));
+    // 大きな神託に従って勝った：「神託どおり！」（ほかのカットインが出ている時は重ねない）
+    if (orc && orc.big && stake && pay.net > 0 && !host.querySelector('.bc-cutin')) {
+      const hl = pick(['ほらね？|ウンメちゃんの言ったとおりでーす！', 'ね、ほんとだったでしょ？|女神はウソつきませーん！', '大当たりぃ！|……知ってたけどね！']);
+      cutin('hit', '神託どおり', `＋${fmt(pay.net)}`, hl.replace(/\|/g, ''), 'doya', 1600);
+      say('goddess', hl, 3000);
+    }
     keep();
     await waitTap(stake ? 2600 : 1700);
     S.fresh = false;
@@ -1220,7 +1262,7 @@
     G++;
     S = { A, bets: {}, cards: { P: [], B: [] }, vals: { P: [], B: [] }, phase: 'bet', chip: A.chip || 10, res: A.res || [], looks: 0, winRun: 0, lossRun: 0, lastStake: 0, pledges: [], judged: [], oracle: null, q: null, pending: 0 };
     DL = DEALERS.find(d => d.id === A.dealer) || DEALERS[0];
-    build(); paintDealer();
+    build(); paintDealer(); ciPreload();
     try { S.shoe = A.shoe ? BC.restoreShoe(A.shoe) : null; } catch (e) { S.shoe = null; }
     if (!S.shoe || BC.needNewShoe(S.shoe)) newShoe(true);
     ui.favor.dataset.n = A.favor;

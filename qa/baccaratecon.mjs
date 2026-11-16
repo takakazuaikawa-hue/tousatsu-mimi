@@ -121,6 +121,11 @@ const B = JSON.parse(await val('JSON.stringify(__bot)'));
 const A = JSON.parse(await val('JSON.stringify(BaccaratUI._qa.S().A)'));
 const per = B.net / B.hands;
 const out = { strat, seed, tune: process.env.TUNE || '-', hands: B.hands, staked: B.staked, net: B.net, perHand: +per.toFixed(2), oracle: B.oracle, oracleNet: B.oracleNet, asked: B.asked, liked: B.liked, kept: A.kept, broken: A.broken };
+// 1時間あたり：等倍で測った秒数（見 5.9 秒・賭けた手 27 秒〈絞り＝自動〉）に、人が考える時間（見 2.5 秒・賭け 4 秒・問いへの返事 4 秒）を足す。絞り「なし」は賭けた手を 11 秒とみる
+{
+  const look = B.hands - B.staked, secAuto = look * 8.4 + B.staked * 31 + B.asked * 4, secOff = look * 8.4 + B.staked * 11 + B.asked * 4;
+  out.perHour = { auto: Math.round(B.net / secAuto * 3600), off: Math.round(B.net / secOff * 3600) };
+}
 if (timing) {
   const ts = B.times.slice(1), avg = (f) => { const a = ts.filter(f); return a.length ? +(a.reduce((s, x) => s + x[0], 0) / a.length / 1000).toFixed(1) : null; };
   out.sec = { all: avg(() => true), look: avg(x => !x[1]), staked: avg(x => x[1]), n: ts.length };
