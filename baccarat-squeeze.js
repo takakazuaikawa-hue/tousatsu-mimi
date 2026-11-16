@@ -301,14 +301,14 @@
       // 札から遠すぎる所は相手にしない
       const pad = Math.min(cw, ch) * .5;
       if (p[0] < x0 - pad || p[0] > x0 + cw + pad || p[1] < y0 - pad || p[1] > y0 + ch + pad) return;
+      if (autoRun) return;   // 自動の間は触っても反応しない。引き取るのは takeover()（画面の「自分でめくる」）だけ
       cancelAnimationFrame(spring); spring = 0;
-      if (autoRun) { autoRun = false; cancelled = true; }   // 自動のめくりの途中で触ったら、そこから自分でめくる
       grab = edgePoint(p); cur = p;
       try { canvas.setPointerCapture(ev.pointerId); } catch (e) { }
       if (opt.onGrab) opt.onGrab();
       setFold(p); ev.preventDefault();
     }
-    function move(ev) { if (!grab || opened) return; cur = pos(ev); setFold(cur); ev.preventDefault(); }
+    function move(ev) { if (!grab || opened || autoRun) return; cur = pos(ev); setFold(cur); ev.preventDefault(); }
     function up() {
       if (!grab || opened) { grab = null; return; }
       // 離すと、ゆっくり元に戻る
@@ -359,6 +359,8 @@
     if (!backImg && opt.back) setTimeout(() => { if (!dead) draw(); }, 400);
     return {
       open, demo,
+      // 自動のめくりを止めて、札を伏せた所から自分でめくれるようにする
+      takeover() { if (!autoRun) return; autoRun = false; cancelled = true; grab = null; fold = null; ask(); },
       info: () => ({ cands: cands.slice(), seen: Object.keys(seen), frame: seenFrame, opened, cancelled }),
       destroy() { dead = true; cancelAnimationFrame(raf); cancelAnimationFrame(spring); if (ro) ro.disconnect(); canvas.removeEventListener('pointerdown', down); canvas.removeEventListener('pointermove', move); canvas.removeEventListener('pointerup', up); canvas.removeEventListener('pointercancel', up); },
     };

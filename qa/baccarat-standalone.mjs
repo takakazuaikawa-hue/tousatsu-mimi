@@ -55,6 +55,7 @@ function saveProgress() { try { localStorage.setItem(KEY, JSON.stringify(save));
 function isEndingUnlocked() { return true; }
 function isBgmOn() { return false; }
 function playSceneBgm() {}
+var SCENE_BGM = {};
 var battleGen = 0, state = { screen: 'start' };
 function defaultState() { return { screen: 'start' }; }
 function render() { if (state.screen === 'baccarat') { document.getElementById('pg-start').hidden = true; BaccaratUI.mount(); } }
@@ -92,4 +93,6 @@ document.getElementById('pg-reset').addEventListener('click', function () { save
 const out = path.join(REPO, 'qa', 'out', 'baccarat', 'baccarat-play.html');
 fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, html);
+// 手元の検査ブラウザで開く用（公開の時に付く外枠と同じ物で包む）
+fs.writeFileSync(path.join(path.dirname(out), '_wrap.html'), '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>' + html + '</body></html>');
 console.log(out, (html.length / 1024 / 1024).toFixed(2) + ' MB');

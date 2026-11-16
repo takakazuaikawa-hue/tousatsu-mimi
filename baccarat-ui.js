@@ -48,7 +48,7 @@
       win: ['お見事でございます。カチ', '配当をお受け取りください。|……当機も少し、うれしいようです', '的中。記録に残します。カチ'],
       lose: ['残念でございます。次の勝負をどうぞ', '回収いたします。カチ', '確率どおりの結果でございます。|お気を落とさず'],
       tie: ['引き分けでございます。賭け金は戻ります'],
-      banter: [['女神さま、卓に身を乗り出すのは|規則違反でございます', 'かたいこと言わなーい！|カチカチうるさーい！'], ['女神さまの声量は、基準値の3倍でございます', 'ほめてます？　ほめてますよねぇ！'], ['女神さま、結果の漏洩は|お控えください', 'もらしてませーん！　まだ！']],
+      banter: [['女神さま、卓に身を乗り出すのは|規則違反でございます', 'かたいこと言わなーい！|カチカチうるさーい！'], ['女神さまの声量は、基準値の3倍でございます', 'ほめてる？　ほめてるよねぇ！'], ['女神さま、結果の漏洩は|お控えください', 'もらしてませーん！　まだ！']],
     },
     ocho: {
       idle: ['さ、張った張った。|どっちだい？', '兎さん、いい目をしてるね。|博打打ちの目だ', '煙の流れる方に張る客もいたよ。|当たったかは、聞かないでおくれ', '迷った時はね、張らないのも手だよ'],
@@ -60,7 +60,7 @@
     twins: {
       idle: [['プント', 'ねえねえ、プレイヤーに賭けてよ！|プントが配るんだから！'], ['バンコ', 'バンカーの方が少し勝ちやすいの。|……計算できるでしょ？'], ['プント', 'バンコはすぐ理屈を言うんだよー'], ['バンコ', 'プント、札を振り回さないで']],
       res: (h, net) => (h.w === 'T' ? ['バンコ', '引き分け。……プント、真似しないで'] : net > 0 ? (h.w === 'P' ? ['プント', 'やったー！　いっしょに勝ったね！'] : ['バンコ', '見る目あるじゃない。|……ほめてあげる']) : net < 0 ? (h.w === 'P' ? ['プント', 'へへー、こっちの勝ち！|次はプントに賭けてね'] : ['バンコ', '言ったでしょ、バンカーは強いの']) : ['プント', '増えも減りもしなかったね！']),
-      banter: [[['プント', '女神さま、どっちが勝つか教えてー！'], 'だーめ！　でもプントちゃんはかわいいから……|やっぱだーめ！'], [['バンコ', '女神さま、うるさい'], 'バンコちゃんこわーい！'], [['プント', '女神さまのツインテール、おそろいにしたい！'], 'いいですよぉ！　ピンクに染めます？']],
+      banter: [[['プント', '女神さま、どっちが勝つか教えてー！'], 'だーめ！　でもプントちゃんはかわいいから……|やっぱだーめ！'], [['バンコ', '女神さま、うるさい'], 'バンコちゃんこわーい！'], [['プント', '女神さまのツインテール、おそろいにしたい！'], 'いいよぉ！　ピンクに染めちゃう？']],
     },
     pico: {
       idle: ['え、えっと、賭け金をどうぞですっ', '女神さまが横にいると、|き、緊張しますぅ……', 'さっき札を1枚落としそうになりました……|ないしょですよ？', 'ミミさんのうさ耳、ふわふわですね……|あ、仕事中でしたっ'],
@@ -155,8 +155,10 @@
       <section class="bc-rack">
         <div class="bc-wallet"><span>手持ち</span><b class="bc-coins">0</b><i class="bc-delta"></i></div>
         <div class="bc-chipsel">${C.chips.map(v => `<button type="button" class="bc-chip" data-bc="chip" data-v="${v}"><b>${v}</b></button>`).join('')}</div>
-        <button type="button" class="bc-btn2" data-bc="clear">消す</button>
-        <button type="button" class="bc-btn2" data-bc="rebet">前と同じ</button>
+        <button type="button" class="bc-btn2 bc-on-staked" data-bc="undo">戻す</button>
+        <button type="button" class="bc-btn2 bc-on-staked" data-bc="double">倍</button>
+        <button type="button" class="bc-btn2 bc-on-staked" data-bc="clear">消す</button>
+        <button type="button" class="bc-btn2 bc-on-empty" data-bc="rebet">前と同じ</button>
         <button type="button" class="bc-btn2 bc-look" data-bc="look"><b>見（ケン）</b><span>賭けずに見る</span></button>
         <button type="button" class="bc-go" data-bc="deal"><b>配る</b><span class="bc-go-s"></span></button>
       </section>
@@ -170,8 +172,7 @@
           <div class="bc-cands"></div>
           <div class="bc-odds"></div>
           <div class="bc-sq-legend"><span><i class="k-win"></i>勝ち</span><span><i class="k-lose"></i>負け</span><span><i class="k-tie"></i>引き分け</span><span><i class="k-next"></i>次の札へ</span></div>
-          <span class="bc-sq-tip">指で札の端を引くと、自分でめくれる</span>
-          <button type="button" class="bc-go bc-sq-open" data-bc="sqopen"><b>開く</b></button>
+          <div class="bc-sq-btns"><button type="button" class="bc-btn2 bc-sq-take" data-bc="sqtake">自分でめくる</button><button type="button" class="bc-go bc-sq-open" data-bc="sqopen"><b>開く</b></button></div>
         </div>
       </div>
       <div class="bc-layer"></div>
@@ -181,6 +182,14 @@
     ui.go = host.querySelector('.bc-rack .bc-go'); ui.goS = host.querySelector('.bc-go-s');
     ui.sides = { P: host.querySelector('.bc-p'), B: host.querySelector('.bc-b') };
     host.addEventListener('click', onClick);
+    let holdT = 0, holdI = 0;
+    const holdEnd = () => { clearTimeout(holdT); clearInterval(holdI); holdT = holdI = 0; };
+    host.addEventListener('pointerdown', (e) => {
+      const b = e.target.closest('.bc-spot'); holdEnd();
+      if (!b || !S || S.phase !== 'bet' || host.dataset.demo) return;
+      holdT = setTimeout(() => { holdI = setInterval(() => { if (S && S.phase === 'bet') { S.holdFired = Date.now(); addBet(b.dataset.k); } else holdEnd(); }, 130); }, 380);
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => host.addEventListener(t, holdEnd));
     paintRoom();
     if (typeof ResizeObserver !== 'undefined') { ui.ro = new ResizeObserver(() => { if (live()) paintRoads(); }); ui.ro.observe(ui.roads); }
   }
@@ -304,6 +313,8 @@
     ui.coins.textContent = fmt(coins() - (S.phase === 'bet' ? st : 0));
     host.querySelectorAll('.bc-chip').forEach(b => { b.dataset.on = (+b.dataset.v === S.chip) ? '1' : '0'; b.disabled = coins() - st < +b.dataset.v; });
     ui.go.disabled = S.phase !== 'bet' || st < C.minBet;
+    host.dataset.staked = st ? '1' : '0';
+    if (S.pledges) paintPins();
     ui.goS.textContent = st ? `賭け ${fmt(st)}` : '賭ける所を押す';
     ui.sqmode.textContent = '絞り：' + ({ auto: '自動', manual: '自分で', off: 'なし' }[S.A.sqMode] || '自動');
   }
@@ -316,34 +327,39 @@
     const add = Math.min(S.chip, room);
     if (add < C.minBet && !(add > 0 && cur)) { say('rico', cur >= cap ? `ここは${fmt(cap)}までだよ` : 'コインが足りないじゃん', 2000); return; }
     S.bets[k] = cur + add; sfx('bet');
+    (S.hist = S.hist || []).push([k, add]);
+    // 押した手応え：置いた額が賭け所から浮かぶ
+    const el = host.querySelector('.bc-spot-' + k), f = document.createElement('i');
+    f.className = 'bc-plus'; f.textContent = '＋' + fmt(add); el.appendChild(f); setTimeout(() => f.remove(), 700);
+    el.classList.remove('is-hit'); void el.offsetWidth; el.classList.add('is-hit');
     paintBets();
   }
 
   // =============================================================
   // 運命の女神ウンメ：気分・問いかけ・約束・おしゃべり・神託
   // 人物は「ドラゴンレース紀行」の解説席のウンメちゃんと同じ（2026-11-16 ユーザー）。口調の元：mimi_dragon_race_game/js/data_commentators.js
-  //   はじけた女神。言い切らない・すぐ煽る・全部その場のノリ。「知らんけど！」「〜ですよぉ」「〜まーす！」、自分を「ウンメちゃん」と呼ぶ。口癖「リアルタイムアタック！」
+  //   はじけた女神。言い切らない・すぐ煽る・全部その場のノリ。敬語はほぼ使わない。「〇〇でーす」「〜まーす！」「〜ませーん！」のような人をくった言い方と「知らんけど！」「〜だよぉ」、自分を「ウンメちゃん」と呼ぶ。口癖「リアルタイムアタック！」
   // ご機嫌（0〜3）の上がり方は、上がった時に理由つきで見せる（2026-11-16 ユーザー「約束を守ると機嫌がよくなるんですかね？」）：
   //   気分に合う返事 ＋1／約束を守る ＋1／お願いを聞く ＋1／おしゃべりで気に入られる ＋1（6手に1回まで）／裏切る −2。3つ満ちると神託
   // 約束は3つまで同時に持てる（前の約束が果たされる前に次の問いが来ても消えない）
   // =============================================================
   const MOODS = {
-    bored: { tag: '退屈', like: 'bold', hint: '大胆な返事が好きそう', open: ['ふわぁ〜、ウンメちゃん退屈ぅ。', 'なんか刺激が足りなーい！', 'もっとこう、どーんと来てくださいよぉ'] },
-    happy: { tag: 'ごきげん', like: 'ride', hint: '流れに乗る返事が好きそう', open: ['るんるん、いい流れですよぉ。', 'ウンメちゃん、今日はごきげんでーす！', 'この調子この調子ぃ！'] },
-    uneasy: { tag: '胸さわぎ', like: 'careful', hint: '慎重な返事が好きそう', open: ['……運命の糸が、ピンって鳴ったの。', 'うーん、風向きがあやしいですよぉ。', 'なんか、ざわざわしますねぇ'] },
+    bored: { tag: '退屈', like: 'bold', hint: '大胆な返事が好きそう', open: ['ふわぁ〜、ウンメちゃん退屈ぅ。', 'なんか刺激が足りなーい！', 'もっとこう、どーんと来てよぉ'] },
+    happy: { tag: 'ごきげん', like: 'ride', hint: '流れに乗る返事が好きそう', open: ['るんるん、いい流れでーす。', 'ウンメちゃん、今日はごきげんでーす！', 'この調子この調子ぃ！'] },
+    uneasy: { tag: '胸さわぎ', like: 'careful', hint: '慎重な返事が好きそう', open: ['……運命の糸が、ピンって鳴ったの。', 'うーん、風向きがあやしいかも。', 'なんか、ざわざわするぅ'] },
   };
   // ふつうのおしゃべり（約束にはならない）。[返事, 気に入るか, ウンメの一言]
   const SMALLTALK = [
-    { q: 'ねえねえ、ウンメちゃんのこの髪型、|どう思います？', o: [['すごく似合ってます', 1, 'でしょでしょー！|見る目ありますねぇ！'], ['輪っかが気になります', 0, '輪っかは女神のしるしですよぉ！'], ['それより次の勝負です', 0, 'つれなーい！']] },
-    { q: '竜のレース、見たことあります？|はやい子はえらいんですよぉ！', o: [['速いのは気持ちいいですよね', 1, 'わかってるぅ！|リアルタイムアタック！'], ['見たことないです', 0, 'えー、もったいなーい！'], ['賭けの方が好きです', 0, 'ふーん、そういう子ですかぁ']] },
-    { q: 'ウンメちゃんって、うるさいですか？|……正直に！', o: [['にぎやかで楽しいです', 1, 'えへへ、もっと喋っちゃいますよぉ！'], ['ちょっとだけ……', 0, 'がーん！|……3秒だけ黙りまーす'], ['静かにしてください', 0, 'やでーす！']] },
-    { q: '運命って、変えられると|思います？', o: [['変えてみせます', 1, 'いい返事！|そういう子、女神は好きでーす！'], ['女神さま次第では？', 0, 'えー、ウンメちゃんのせいにするぅ？'], ['考えたことないです', 0, 'じゃあ今考えてくださーい！']] },
-    { q: 'そのうさ耳、本物なんですよね？|さわってもいい？', o: [['す、少しだけなら……', 1, 'やったぁ！|ふわっふわですねぇ！'], ['だめです！', 0, 'けちー！'], ['勝ったらいいですよ', 1, 'おっ、言いましたね？|覚えときまーす！']] },
-    { q: 'ここのディーラーさんたち、|誰が好きです？', o: [['みんな素敵です', 0, '八方美人ですねぇ〜'], ['ウンメさまが一番です', 1, 'きゃー！　わかってるぅ！'], ['……ないしょです', 0, 'あやしーい！']] },
-    { q: 'ウンメちゃんが次の結果を知ってるって、|信じてます？', o: [['信じてます', 1, 'えっへん！|ほんとに知ってまーす！'], ['半分くらい……', 0, '半分ってなんですかぁ！'], ['教えてくれたら信じます', 0, 'ずるーい！|タダじゃ教えませーん！']] },
-    { q: '運命の糸がピンピン鳴ってるんですよぉ。|聞こえます？', o: [['聞こえる気がします', 1, 'でしょー！|ミミちゃん素質ありますよぉ！'], ['聞こえません', 0, 'ですよねぇ。|女神にしか聞こえませーん'], ['それ耳鳴りでは', 0, 'しっつれーい！']] },
-    { q: 'バカラって、のんびりしてますよねぇ。|もっと速くなりません？', o: [['速く配ってもらいましょう', 1, 'それそれ！|リアルタイムアタック！'], ['このくらいが好きです', 0, 'えー、のんびり屋さーん'], ['絞りはゆっくりがいいです', 0, 'むぅ……それは一理ありますねぇ']] },
-    { q: 'ミミちゃんって、ここに来る前は|何してたんです？', o: [['三日徹夜で働いてました', 1, 'ひえー！|ここの方がずっといいですよぉ！'], ['覚えてないです', 0, 'あらら。まあ、今が楽しければ！'], ['ないしょです', 0, 'ウンメちゃんは知ってますけどねー！']] },
+    { q: 'ねえねえ、ウンメちゃんのこの髪型、|どう思う？', o: [['すごく似合ってます', 1, 'でしょでしょー！|見る目あるじゃーん！'], ['輪っかが気になります', 0, '輪っかは女神のしるしでーす！'], ['それより次の勝負です', 0, 'つれなーい！']] },
+    { q: '竜のレース、見たことある？|はやい子はえらいんだよー！', o: [['速いのは気持ちいいですよね', 1, 'わかってるぅ！|リアルタイムアタック！'], ['見たことないです', 0, 'えー、もったいなーい！'], ['賭けの方が好きです', 0, 'ふーん、そういう子かぁ']] },
+    { q: 'ウンメちゃんって、うるさい？|……正直に！', o: [['にぎやかで楽しいです', 1, 'えへへ、もっと喋っちゃいまーす！'], ['ちょっとだけ……', 0, 'がーん！|……3秒だけ黙りまーす'], ['静かにしてください', 0, 'やでーす！']] },
+    { q: '運命って、変えられると|思う？', o: [['変えてみせます', 1, 'いい返事！|そういう子、女神は好きでーす！'], ['女神さま次第では？', 0, 'えー、ウンメちゃんのせいにするぅ？'], ['考えたことないです', 0, 'じゃあ今考えてー！']] },
+    { q: 'そのうさ耳、本物なんでしょ？|さわってもいい？', o: [['す、少しだけなら……', 1, 'やったぁ！|ふわっふわだぁ！'], ['だめです！', 0, 'けちー！'], ['勝ったらいいですよ', 1, 'おっ、言ったね？|覚えときまーす！']] },
+    { q: 'ここのディーラーの子たち、|誰が好き？', o: [['みんな素敵です', 0, '八方美人だねぇ〜'], ['ウンメさまが一番です', 1, 'きゃー！　わかってるぅ！'], ['……ないしょです', 0, 'あやしーい！']] },
+    { q: 'ウンメちゃんが次の結果を知ってるって、|信じてる？', o: [['信じてます', 1, 'えっへん！|ほんとに知ってまーす！'], ['半分くらい……', 0, '半分ってなにさー！'], ['教えてくれたら信じます', 0, 'ずるーい！|タダじゃ教えませーん！']] },
+    { q: '運命の糸がピンピン鳴ってるの。|聞こえる？', o: [['聞こえる気がします', 1, 'でしょー！|ミミちゃん素質あるよぉ！'], ['聞こえません', 0, 'だよねぇ。|女神にしか聞こえませーん'], ['それ耳鳴りでは', 0, 'しっつれーい！']] },
+    { q: 'バカラって、のんびりしてるよねぇ。|もっと速くならないの？', o: [['速く配ってもらいましょう', 1, 'それそれ！|リアルタイムアタック！'], ['このくらいが好きです', 0, 'えー、のんびり屋さーん'], ['絞りはゆっくりがいいです', 0, 'むぅ……それは一理あるかも']] },
+    { q: 'ミミちゃんって、ここに来る前は|何してたの？', o: [['三日徹夜で働いてました', 1, 'ひえー！|ここの方がずっといいじゃーん！'], ['覚えてないです', 0, 'あらら。まあ、今が楽しければ！'], ['ないしょです', 0, 'ウンメちゃんは知ってるけどねー！']] },
   ];
   const LIKE_JA = { bold: '大胆な返事', ride: '流れに乗る返事', careful: '慎重な返事' };
   let favorT = 0;
@@ -367,15 +383,15 @@
     const h = BC.peekHand(S.shoe);
     let text, say1, kind, w = h.w;
     if (big) {
-      if (h.w === 'T') { kind = 'tie'; text = '次は引き分け'; say1 = pick(['ないしょですよぉ？　次、|引き分け！　……言っちゃった！', '耳かしてください。次はね、|引き分けでーす！']); }
-      else if (Math.random() < .5) { kind = 'win'; text = `次は${SIDE_JA[h.w]}が勝つ`; say1 = pick([`ないしょですよぉ？　次は|${SIDE_JA[h.w]}！　……言っちゃった！`, `女神の予言！　次は${SIDE_JA[h.w]}！|これはほんとのやつでーす！`]); }
-      else { kind = 'notwin'; w = other(h.w); text = `次は${SIDE_JA[w]}は勝たない`; say1 = pick([`ひとつだけ！　次、${SIDE_JA[w]}は|勝ちませーん！`, `${SIDE_JA[w]}はね、次は勝たないんですよぉ。|それ以上は言わなーい！`]); }
+      if (h.w === 'T') { kind = 'tie'; text = '次は引き分け'; say1 = pick(['ないしょだよぉ？　次、|引き分け！　……言っちゃった！', '耳かして。次はね、|引き分けでーす！']); }
+      else if (Math.random() < .5) { kind = 'win'; text = `次は${SIDE_JA[h.w]}が勝つ`; say1 = pick([`ないしょだよぉ？　次は|${SIDE_JA[h.w]}！　……言っちゃった！`, `女神の予言！　次は${SIDE_JA[h.w]}！|これはほんとのやつでーす！`]); }
+      else { kind = 'notwin'; w = other(h.w); text = `次は${SIDE_JA[w]}は勝たない`; say1 = pick([`ひとつだけ！　次、${SIDE_JA[w]}は|勝ちませーん！`, `${SIDE_JA[w]}はね、次は勝たないんだよぉ。|それ以上は言わなーい！`]); }
     } else {
       const opts = [];
-      opts.push(h.natural ? ['nat', '次はナチュラル（8か9）が出る', 'あ、次ね、ナチュラル出ますよぉ。|どっちにかは言わなーい！'] : ['third', '次は3枚目まで配られる', '次はね、3枚目まで行きますよぉ。|もつれるもつれる！']);
-      if (h.w !== 'T') opts.push(['notie', '次は引き分けではない', '次は引き分けじゃないですよぉ。|それだけ！']);
+      opts.push(h.natural ? ['nat', '次はナチュラル（8か9）が出る', 'あ、次ね、ナチュラル出るよぉ。|どっちにかは言わなーい！'] : ['third', '次は3枚目まで配られる', '次はね、3枚目まで行くよぉ。|もつれるもつれる！']);
+      if (h.w !== 'T') opts.push(['notie', '次は引き分けではない', '次は引き分けじゃないよぉ。|それだけ！']);
       const r = h.p[0].rank;
-      opts.push(['p1', `プレイヤーの1枚目は${r >= 10 ? '0の札（10か絵札）' : r >= 6 ? '6より上' : '5より下'}`, `プレイヤーの1枚目、|${r >= 10 ? '0の札' : r >= 6 ? '大きい数' : '小さい数'}ですよぉ`]);
+      opts.push(['p1', `プレイヤーの1枚目は${r >= 10 ? '0の札（10か絵札）' : r >= 6 ? '6より上' : '5より下'}`, `プレイヤーの1枚目、|${r >= 10 ? '0の札' : r >= 6 ? '大きい数' : '小さい数'}だよぉ`]);
       [kind, text, say1] = pick(opts);
     }
     S.oracle = { text, big, kind, w, hand: S.shoe.hands + 1 };
@@ -387,7 +403,10 @@
   }
   function paintPins() {
     const o = S.oracle;
-    ui.pins.innerHTML = (o ? `<span class="bc-oracle"><b>神託</b>${esc(o.text)}</span>` : '')
+    const st0 = stakeOf(S.bets || {}), mainBet = (S.bets || {}).P || (S.bets || {}).B;
+    const mission = S.phase !== 'bet' ? '' : coins() < C.minBet && !st0 ? 'コインが足りない。「見（ケン）」で流れを見る'
+      : !st0 ? 'どちらが勝つ？　賭ける所を押す' : '「配る」で勝負！';
+    ui.pins.innerHTML = (mission ? `<b class="bc-mission">${mission}</b>` : '') + (o ? `<span class="bc-oracle"><b>神託</b>${esc(o.text)}</span>` : '')
       + S.pledges.map(p => `<span class="bc-pledge" data-st="${p.armed ? 'armed' : 'wait'}"><b>約束</b>${p.html || esc(p.tag)}</span>`).join('')
       + (S.judged || []).map(j => `<span class="bc-pledge" data-judge="${j}">${j === 'kept' ? '有言実行' : '裏切り'}</span>`).join('');
   }
@@ -406,54 +425,54 @@
     const look = (key, cond, pre) => ({ t: '見（ケン）する', kind: 'careful', make: side(key, cond, 'look', `${pre} → 見（ケン）する`, !cond) });
     if (sw && n >= 2 && !has(`s:${sw}:${n + 1}`)) {
       const o = other(sw), k = n + 1, key = `s:${sw}:${k}`, cond = (s) => s.streak.w === sw && s.streak.n >= k, pre = `${SIDE_JA[sw]}${k}連勝なら`;
-      T.push({ q: pick([`いま${SIDE_JA[sw]}が${n}連勝！|${k}連勝まで伸びたら、その次どうします？`, `${SIDE_JA[sw]}、${n}回続いてますねぇ。|もう1回来たら、その次は？`]), opts: [
+      T.push({ q: pick([`いま${SIDE_JA[sw]}が${n}連勝！|${k}連勝まで伸びたら、その次どうする？`, `${SIDE_JA[sw]}、${n}回続いてるねぇ。|もう1回来たら、その次は？`]), opts: [
         { t: `${SIDE_JA[sw]}に乗る`, kind: 'ride', make: side(key, cond, sw, `${pre} → ${SIDE_JA[sw]}に賭ける`) },
         { t: `逆の${SIDE_JA[o]}に賭ける`, kind: 'bold', make: side(key, cond, o, `${pre} → ${SIDE_JA[o]}に賭ける`) }, look(key, cond, pre)] });
     }
     if (!sw || n < 3) {
       const w = [Math.random() < .6 ? 'B' : 'P'].map(x => (has(`s:${x}:3`) ? other(x) : x))[0], o = other(w), key = `s:${w}:3`, cond = (s) => s.streak.w === w && s.streak.n >= 3, pre = `${SIDE_JA[w]}3連勝なら`;
-      if (!has(key)) T.push({ q: pick([`ねえねえ、この先${SIDE_JA[w]}が3回続いたら、|${SIDE_JA[o]}に賭けます？　どうします？`, `もしもの話！　${SIDE_JA[w]}が3連勝したら、|その次はどっちに張ります？`]), opts: [
+      if (!has(key)) T.push({ q: pick([`ねえねえ、この先${SIDE_JA[w]}が3回続いたら、|${SIDE_JA[o]}に賭ける？　どうする？`, `もしもの話！　${SIDE_JA[w]}が3連勝したら、|その次はどっちに張る？`]), opts: [
         { t: `${SIDE_JA[o]}に賭ける`, kind: 'bold', make: side(key, cond, o, `${pre} → ${SIDE_JA[o]}に賭ける`) },
         { t: `${SIDE_JA[w]}に乗る`, kind: 'ride', make: side(key, cond, w, `${pre} → ${SIDE_JA[w]}に賭ける`) }, look(key, cond, pre)] });
     }
     if (!has('now')) {
       if (st.chop >= 3 && sw) {
         const o = other(sw);
-        T.push({ q: `行ったり来たりしてるの！|次も交互なら${SIDE_JA[o]}。どうします？`, opts: [
+        T.push({ q: `行ったり来たりしてるの！|次も交互なら${SIDE_JA[o]}。どうする？`, opts: [
           { t: `交互に乗る（${SIDE_JA[o]}）`, kind: 'ride', make: side('now', null, o, `この1回 → ${SIDE_JA[o]}に賭ける`, true) },
           { t: `切れると見る（${SIDE_JA[sw]}）`, kind: 'bold', make: side('now', null, sw, `この1回 → ${SIDE_JA[sw]}に賭ける`, true) }, look('now', null, 'この1回')] });
       }
       if (lastWasTie && sw) {
         const o = other(sw);
-        T.push({ q: '引き分けのあとって、どっちだと思います？|この1回、どうします？', opts: [
+        T.push({ q: '引き分けのあとって、どっちだと思う？|この1回、どうする？', opts: [
           { t: `前の続きで${SIDE_JA[sw]}`, kind: 'ride', make: side('now', null, sw, `この1回 → ${SIDE_JA[sw]}に賭ける`, true) },
           { t: `逆の${SIDE_JA[o]}`, kind: 'bold', make: side('now', null, o, `この1回 → ${SIDE_JA[o]}に賭ける`, true) }, look('now', null, 'この1回')] });
-        T.push({ q: '引き分けって続くんですよぉ。知らんけど！|この1回、引き分けにも賭けます？', opts: [
+        T.push({ q: '引き分けって続くんだよぉ。知らんけど！|この1回、引き分けにも賭ける？', opts: [
           { t: '賭ける（引き分け）', kind: 'bold', make: side('now', null, 'T', 'この1回 → 引き分けに賭ける', true) },
           { t: 'やめておく', kind: 'careful', make: side('now', null, 'noT', 'この1回 → 引き分けに賭けない', true) }] });
       }
-      if (coins() >= 60 && S.res.length >= 4) T.push({ q: '次の1回、ペアに賭けてみません？|11倍ですよぉ、11倍！', opts: [
+      if (coins() >= 60 && S.res.length >= 4) T.push({ q: '次の1回、ペアに賭けてみない？|11倍だよぉ、11倍！', opts: [
         { t: '賭ける（どちらかのペア）', kind: 'bold', make: side('now', null, 'pair', 'この1回 → ペアに賭ける', true) },
         { t: 'やめておく', kind: 'careful', make: side('now', null, 'nopair', 'この1回 → ペアに賭けない', true) }] });
       if (last && last.nat && last.w !== 'T') {
         const w = last.w, o = other(w);
-        T.push({ q: `さっきのナチュラル、きれいでしたねぇ！|この1回、また${SIDE_JA[w]}に乗ります？`, opts: [
+        T.push({ q: `さっきのナチュラル、きれいだったねぇ！|この1回、また${SIDE_JA[w]}に乗る？`, opts: [
           { t: `乗る（${SIDE_JA[w]}）`, kind: 'ride', make: side('now', null, w, `この1回 → ${SIDE_JA[w]}に賭ける`, true) },
           { t: `逆の${SIDE_JA[o]}`, kind: 'bold', make: side('now', null, o, `この1回 → ${SIDE_JA[o]}に賭ける`, true) }, look('now', null, 'この1回')] });
       }
       // お願い：神託ではない（当たるとは限らない）。聞いてあげると喜ぶ
       if (S.res.length >= 3) {
         const w = pick(['P', 'B']), o = other(w);
-        T.push({ wish: true, q: pick([`お願いがあるんですけどぉ。次の1回だけ、|${SIDE_JA[w]}に賭けてくれます？`, `ウンメちゃんの気まぐれ！　次の1回、|${SIDE_JA[w]}に張ってみません？　理由はないでーす！`]), opts: [
+        T.push({ wish: true, q: pick([`お願いがあるんだけどぉ。次の1回だけ、|${SIDE_JA[w]}に賭けてくれる？`, `ウンメちゃんの気まぐれ！　次の1回、|${SIDE_JA[w]}に張ってみない？　理由はないでーす！`]), opts: [
           { t: `いいですよ（${SIDE_JA[w]}）`, kind: 'wish', make: side('now', null, w, `この1回 → ${SIDE_JA[w]}に賭ける`, true) },
           { t: `いやです（${SIDE_JA[o]}）`, kind: 'none2', make: side('now', null, o, `この1回 → ${SIDE_JA[o]}に賭ける`, true) }, { t: '見（ケン）します', kind: 'none2', make: side('now', null, 'look', 'この1回 → 見（ケン）する', true) }] });
       }
     }
-    if (S.lastStake > 0 && !has('stake')) T.push({ q: pick(['ねえ、次に外れちゃったら、|その次の賭け金どうします？', '外れた後って、人が出ますよねぇ。|次に外れたら、賭け金は？']), opts: [
+    if (S.lastStake > 0 && !has('stake')) T.push({ q: pick(['ねえ、次に外れちゃったら、|その次の賭け金どうする？', '外れた後って、人が出るよねぇ。|次に外れたら、賭け金は？']), opts: [
       { t: '上げて取り返す', kind: 'bold', make: stakeP('stake', 'lose', 'up', '外れたら → 次は賭け金を上げる') },
       { t: '同じ額で続ける', kind: 'ride', make: stakeP('stake', 'lose', 'same', '外れたら → 次も同じ額にする') },
       { t: '下げるか、見する', kind: 'careful', make: stakeP('stake', 'lose', 'down', '外れたら → 次は下げるか見（ケン）する') }] });
-    if (S.lastStake > 0 && !has('stakeW')) T.push({ q: 'じゃあ逆に！　次に当たったら、|その次の賭け金どうします？', opts: [
+    if (S.lastStake > 0 && !has('stakeW')) T.push({ q: 'じゃあ逆に！　次に当たったら、|その次の賭け金どうする？', opts: [
       { t: '上げて攻める', kind: 'bold', make: stakeP('stakeW', 'win', 'up', '当たったら → 次は賭け金を上げる') },
       { t: '同じ額で続ける', kind: 'ride', make: stakeP('stakeW', 'win', 'same', '当たったら → 次も同じ額にする') },
       { t: '下げて守る', kind: 'careful', make: stakeP('stakeW', 'win', 'down', '当たったら → 次は下げるか見（ケン）する') }] });
@@ -508,16 +527,16 @@
       keep(); return;
     }
     const o = q.opts[i], M = MOODS[q.mood];
-    if (o.kind === 'none') { say('goddess', pick(['はぐらかしたー！|つまんなーい！', 'ふーん、慎重ですねぇ。|知らんけど！', 'えー、決めてくれないんですかぁ'])); return; }
+    if (o.kind === 'none') { say('goddess', pick(['はぐらかしたー！|つまんなーい！', 'ふーん、慎重だねぇ。|知らんけど！', 'えー、決めてくれないのぉ？'])); return; }
     S.pledges.push(o.make()); if (S.pledges.length > 3) S.pledges.shift();
     paintPins();
     const liked = o.kind === 'wish' || (!q.wish && o.kind === M.like);
     if (liked) {
-      say('goddess', o.kind === 'wish' ? pick(['やったぁ！　話がわかるぅ！', 'えへへ、ありがとうございまーす！|約束ですよぉ？']) : pick(['それそれ！|そういうの大好きでーす！', 'わかってるぅ！|ウンメちゃん感激！', 'いい返事！|運命の糸がピンって鳴った！', 'そう来なくっちゃ！']));
+      say('goddess', o.kind === 'wish' ? pick(['やったぁ！　話がわかるぅ！', 'えへへ、ありがとー！|約束だよぉ？']) : pick(['それそれ！|そういうの大好きでーす！', 'わかってるぅ！|ウンメちゃん感激！', 'いい返事！|運命の糸がピンって鳴った！', 'そう来なくっちゃ！']));
       setFavor(A.favor + 1, o.kind === 'wish' ? 'お願いを聞いた' : '気分に合う返事');
       if (A.favor >= 3) { setFavor(0); giveOracle(true); }
       else if (Math.random() < .3) giveOracle(false);
-    } else say('goddess', q.wish ? pick(['えー、けちー！|まあ、好きにしてくださーい', 'ふーんだ。じゃあ、それで']) : pick(['へぇ〜、そうするんだ。|覚えときまーす！', 'ふうん。約束ですよぉ？', 'はーい、女神が聞きましたからね！', 'なるほどぉ。……守ってくださいね？']));
+    } else say('goddess', q.wish ? pick(['えー、けちー！|まあ、好きにすればー？', 'ふーんだ。じゃあ、それで']) : pick(['へぇ〜、そうするんだ。|覚えときまーす！', 'ふうん。約束だよぉ？', 'はーい、女神が聞いたからね！', 'なるほどぉ。……守ってよね？']));
     keep();
   }
   // 賭ける場面の頭：約束の時が来たかを見る。果たされていない約束は残す（時効は14手）
@@ -529,7 +548,7 @@
       if (!p.armed && --p.left <= 0) { expired = true; return false; }
       return true;
     });
-    if (armedNow) { say('goddess', pick([`約束の時ですよぉ！|${armedNow.tag.split(' → ')[1]}んですよね？`, `はーい、あの約束の出番でーす！|${armedNow.tag.split(' → ')[1]}んでしたよね？`]), 3400); sfx('reach'); }
+    if (armedNow) { say('goddess', pick([`約束の時だよぉ！|${armedNow.tag.split(' → ')[1]}んだよね？`, `はーい、あの約束の出番でーす！|${armedNow.tag.split(' → ')[1]}んだったよね？`]), 3400); sfx('reach'); }
     else if (expired) say('goddess', 'あの約束、もう時効！|忘れてあげまーす！');
     if (S.pledges.some(p => p.armed) && !S.A.betraySeen) { S.A.betraySeen = true; keep(); say('rico', '約束は守るとご機嫌が上がる。|破ってもいいけど、下がるよ', 3800); }
     paintPins();
@@ -577,15 +596,15 @@
     const st = S.road.stats, sw = st.streak.w, n = st.streak.n, L = [];
     if (sw && n >= 4) L.push([`${SIDE_JA[sw]}のツラ、${n}本目！|どこまで伸びるかなぁ、知らんけど！`, 'ツラは「続いた記録」。|次の1回の確率は変わらないよ'], [`${n}連勝！　${SIDE_JA[sw]}が止まりませーん！|止めるのは誰かなぁ？`, null]);
     if (st.chop >= 4) L.push(['行ったり来たり！|運命の糸、いま大渋滞でーす！', null]);
-    if (S.looks >= 3) L.push(['見てるだけ〜？|運命は賭けた人にしか微笑みませんよぉ！', '見（ケン）は立派な手だよ。|賭けなければ減らないじゃん']);
-    if (S.lossRun >= 3) L.push([`${S.lossRun}回つづけて外れ！|……ねえ、まだやります？`, '取り返そうと上げても、|勝ちやすくはならないよ'], ['あらら、ツイてませんねぇ。|ウンメちゃんのせいじゃないですよぉ？', null]);
-    if (S.winRun >= 3) L.push([`${S.winRun}連勝！|調子に乗っちゃいましょー！`, '勝ってる時こそ、賭け金は決めた額でね'], ['のってますねぇ！|女神の加護かなぁ？　……知らんけど！', null]);
-    if (coins() < C.minBet) L.push(['すっからかん？|見てるだけでもいいですよぉ', null]);
-    if (!L.length) L.push(['次はどっちかなー。|ウンメちゃんは知ってまーす！', null], ['ねえねえ、どっちに賭けるの？', null], ['その顔、迷ってますねぇ！', null],
-      ['さっさと賭けましょー！|リアルタイムアタック！', 'バカラは速さを競う遊びじゃないよ。|ゆっくり決めな'], ['バンカーは少しだけ勝ちやすいんですって。|知らんけど！', 'ほんとだよ。だから勝つと5%引かれるじゃん'],
-      ['サイコロは振ったよ、もう戻せないよ！|……あ、これ札でしたぁ', null], ['罫線って、きれいな模様ですよねぇ。|ウンメちゃんの落書きみたい！', '模様は記録。先のことは書いてないよ'],
-      ['この時計塔、たまに二分ずれるんですって。|知らんけど！', null], ['引き分けは8倍ですよぉ、8倍！|夢がありますねぇ！', '当たるのは10回に1回くらい。店の取り分がいちばん大きいよ'],
-      ['ミミちゃん、手が止まってますよぉ。|運命は待ってくれませーん！', null], ['こういうの、あとで「あれが分かれ目でした」|って言われるやつ〜！', null]);
+    if (S.looks >= 3) L.push(['見てるだけ〜？|運命は賭けた人にしか微笑みませーん！', '見（ケン）は立派な手だよ。|賭けなければ減らないじゃん']);
+    if (S.lossRun >= 3) L.push([`${S.lossRun}回つづけて外れ！|……ねえ、まだやる？`, '取り返そうと上げても、|勝ちやすくはならないよ'], ['あらら、ツイてないねぇ。|ウンメちゃんのせいじゃないよぉ？', null]);
+    if (S.winRun >= 3) L.push([`${S.winRun}連勝！|調子に乗っちゃえー！`, '勝ってる時こそ、賭け金は決めた額でね'], ['のってるねぇ！|女神の加護かなぁ？　……知らんけど！', null]);
+    if (coins() < C.minBet) L.push(['すっからかん？|見てるだけでもいいよぉ', null]);
+    if (!L.length) L.push(['次はどっちかなー。|ウンメちゃんは知ってまーす！', null], ['ねえねえ、どっちに賭けるの？', null], ['その顔、迷ってるねぇ！', null],
+      ['さっさと賭けちゃえー！|リアルタイムアタック！', 'バカラは速さを競う遊びじゃないよ。|ゆっくり決めな'], ['バンカーは少しだけ勝ちやすいんだって。|知らんけど！', 'ほんとだよ。だから勝つと5%引かれるじゃん'],
+      ['サイコロは振ったよ、もう戻せないよ！|……あ、これ札でしたぁ', null], ['罫線って、きれいな模様だよねぇ。|ウンメちゃんの落書きみたい！', '模様は記録。先のことは書いてないよ'],
+      ['この時計塔、たまに二分ずれるんだって。|知らんけど！', null], ['引き分けは8倍だよぉ、8倍！|夢があるねぇ！', '当たるのは10回に1回くらい。店の取り分がいちばん大きいよ'],
+      ['ミミちゃん、手が止まってるよぉ。|運命は待ってくれませーん！', null], ['こういうの、あとで「あれが分かれ目でした」|って言われるやつ〜！', null]);
     // ディーラーの一言か、ウンメとの掛け合い（3回に1回くらい）
     const DT = DL.T || {};
     if (Math.random() < .36 && (DT.idle || DT.banter)) {
@@ -698,14 +717,14 @@
       const tiles = (k) => by(k).map(r => `<i class="bc-bt is-${k}"><b>${lab(r)}</b><small>合計${tot(r)}</small></i>`).join('');
       const rowsB = [['win', 'で 勝ち'], ['tie', 'で 引き分け'], ['lose', 'で 負け'], ['next', 'は もう1枚引く']].filter(([k]) => by(k).length)
         .map(([k, t]) => `<div class="bc-br is-${k}"><span class="bc-br-t">${tiles(k)}</span><b>${t}</b></div>`).join('');
-      ui.brief.innerHTML = `<b class="bc-brief-h">${by('win').length ? 'この1枚に、勝ちがある' : 'この1枚で、勝負が動く'}</b>${rowsB}<button type="button" class="bc-go" data-bc="sqgo"><b>${auto ? 'めくる（待っても進む）' : 'めくる'}</b></button>${auto ? '<i class="bc-brief-bar"></i>' : ''}`;
+      ui.brief.innerHTML = `<b class="bc-brief-h">${by('win').length ? 'この1枚に、勝ちがある' : 'この1枚で、勝負が動く'}</b>${rowsB}<button type="button" class="bc-go" data-bc="sqgo"><b>${auto ? 'めくって（待っても進む）' : '自分でめくる'}</b></button>${auto ? '<i class="bc-brief-bar"></i>' : ''}`;
       const decisive = RANKS.some(r => states[r] !== 'next');
       if (decisive) { ui.brief.hidden = false; ui['sq-cv'].dataset.dim = '1'; }
       hush();
       const wins0 = by('win').map(rankJa);
       if (wins0.length && wins0.length <= 4) { say('goddess', `${wins0.join('か')}！　${wins0.join('か')}来いっ！|ウンメちゃんも祈ってまーす！`, 2800); say('mimi', `お願い……${wins0.join('か')}……！`, 1800); }
       else if (wins0.length) say('goddess', pick(['ここが運命の分かれ目でーす！|……たぶん！', 'さあさあ、何が出るかなぁ！']), 2400);
-      else if (decisive) say('goddess', pick(['あらら、勝ちの目がもう無いですよぉ', 'この札、どうなっても知りませんよぉ？']), 2400);
+      else if (decisive) say('goddess', pick(['あらら、勝ちの目がもう無いよぉ', 'この札、どうなっても知らないよぉ？']), 2400);
       if (decisive) { sfx('reach'); thump(); }
       if (decisive) await new Promise((res, rej) => {
         let t = 0;
@@ -740,12 +759,12 @@
           const alive = by('win', set).map(rankJa).join('か'), hadWin = by('win').length;
           let line = null;
           if (hadWin && !alive && !told.dead) { told.dead = 1; line = 'あーあ、消えちゃった〜。|言わんこっちゃない！'; sfx('lose'); }
-          else if (key === '4,5,6,7,8,9,10') line = alive ? `足あり！　4より上！|${alive}、まだ生きてますよぉ！` : '足あり！　4より上ですよぉ';
+          else if (key === '4,5,6,7,8,9,10') line = alive ? `足あり！　4より上！|${alive}、まだ生きてるよぉ！` : '足あり！　4より上だよぉ';
           else if (has([1, 2, 3]) && set.length <= 3 && !told.low) { told.low = 1; line = alive ? `足なし！　ちっちゃい数！|${alive}、あるある！` : '足なし……ちっちゃい数だぁ'; }
           else if (key === '6,7,8') line = alive ? `横に3つ！　6か7か8！|${alive}来いっ！` : '横に3つ！　6か7か8！';
           else if (key === '9,10') line = alive ? `横に4つ！　9か10！|${alive}来いっ！` : '横に4つ！　9か10！';
-          else if (key === '4,5') line = alive ? `横に2つ！　4か5！|${alive}来いっ！` : '横に2つ。4か5ですよぉ';
-          else if (alive && !first) line = pick(['まだ生きてる！　生きてますよぉ！', 'いま運命の分岐点！|……たぶん！　知らんけど！']);
+          else if (key === '4,5') line = alive ? `横に2つ！　4か5！|${alive}来いっ！` : '横に2つ。4か5だよぉ';
+          else if (alive && !first) line = pick(['まだ生きてる！　生きてるよぉ！', 'いま運命の分岐点！|……たぶん！　知らんけど！']);
           if (line && !told[key]) { told[key] = 1; hush(); say('goddess', line, 2400); if (alive) sfx('reach'); }
         },
         onOpen: () => openRes(),
@@ -782,7 +801,7 @@
       ui['sq-m'].innerHTML = st === 'win' ? `<em>${rankJa(me)}</em>来たーっ！` : st === 'lose' ? `<em>${rankJa(me)}</em>……届かず` : st === 'tie' ? `<em>${rankJa(me)}</em>で引き分け` : `<em>${rankJa(me)}</em>。次の札へ`;
       ui.odds.innerHTML = '';
       hush(); sfx('flip');
-      if (st === 'win') { sfx('bigwin'); say('goddess', pick(['来たぁーっ！　決まりーっ！', 'はい確定！|……ウンメちゃんは前から知ってましたけどね？']), 2400); say('mimi', pick(['来たっ……！', 'やった、これ……！']), 1400); }
+      if (st === 'win') { sfx('bigwin'); say('goddess', pick(['来たぁーっ！　決まりーっ！', 'はい確定！|……ウンメちゃんは前から知ってたけどね？']), 2400); say('mimi', pick(['来たっ……！', 'やった、これ……！']), 1400); }
       else if (st === 'lose') { sfx('lose'); say('goddess', pick(['あーあ、言わんこっちゃない！', '出ちゃった〜！　これが今日の運命でーす！']), 2400); say('mimi', pick(['あぅ……', 'そんなぁ……']), 1400); }
       else if (st === 'tie') sfx('tie');
       await wait(!decisive ? 650 : st === 'win' ? 2300 : st === 'next' ? 1200 : 2000);
@@ -828,7 +847,7 @@
     const A = S.A;
     // ---- 賭ける ----
     if (BC.needNewShoe(S.shoe)) { await switchAsk(); newShoe(false); }
-    S.bets = {}; S.cards = { P: [], B: [] }; S.vals = { P: [], B: [] };
+    S.bets = {}; S.hist = []; S.cards = { P: [], B: [] }; S.vals = { P: [], B: [] };
     for (const w of ['P', 'B']) { ui.sides[w].querySelector('.bc-cards').innerHTML = ''; ui.sides[w].dataset.res = ''; }
     host.querySelectorAll('.bc-spot').forEach(e => { delete e.dataset.res; });
     ui.delta.textContent = ''; delete ui.delta.dataset.s;
@@ -890,11 +909,11 @@
       if (judged.kept && !judged.broken && !A.keepSeen) { A.keepSeen = true; say('rico', '約束を守ると、ウンメさまのご機嫌が上がる。|3つ満ちると神託だよ', 4000); }
       if (judged.broken) {
         if (pay.net > 0) { A.outwit++; say('goddess', pick(['あーっ、裏切ったー！|……なのに当ててる。ずるーい！', '言ったことと違うー！|勝ったからって許しませーん！']), 3200); }
-        else say('goddess', pick(['裏切って、外した！|あーあ、言わんこっちゃない！', '約束やぶりましたよね？|バチが当たったんですよぉ']), 3200);
-      } else say('goddess', pay.net > 0 ? pick(['有言実行！　しかも当たり！|かっこいいでーす！', '言ったとおりにして勝った！|そういう子、大好き！']) : pay.net < 0 ? pick(['約束は守ったのにねぇ。|よしよし', '外れたけどウソはつかなかった！|えらいえらい！']) : '約束どおり！|ちゃんと見てましたよぉ', 3200);
+        else say('goddess', pick(['裏切って、外した！|あーあ、言わんこっちゃない！', '約束やぶったよね？|バチが当たったんだよぉ']), 3200);
+      } else say('goddess', pay.net > 0 ? pick(['有言実行！　しかも当たり！|かっこいいでーす！', '言ったとおりにして勝った！|そういう子、大好き！']) : pay.net < 0 ? pick(['約束は守ったのにねぇ。|よしよし', '外れたけどウソはつかなかった！|えらいえらい！']) : '約束どおり！|ちゃんと見てたよぉ', 3200);
     } else if (stake && pay.net >= stake * 8) say('goddess', 'わ、大当たり！|運命もびっくりでーす！');
     else if (stake && Math.random() < .5) { const DT = DL.T || {}, rl = DT.res ? DT.res(h, pay.net) : pick((pay.net > 0 ? DT.win : pay.net < 0 ? DT.lose : DT.tie) || []); if (rl) dline(rl, 2800); }
-    else if (stake && Math.random() < .3) say('goddess', pick(['決まりーっ！　これが今日の運命でーす！', 'はい確定。……いやほんと、|ウンメちゃんは前から知ってたんですけどね？', '文句は受け付けませーん！']));
+    else if (stake && Math.random() < .3) say('goddess', pick(['決まりーっ！　これが今日の運命でーす！', 'はい確定。……いやほんと、|ウンメちゃんは前から知ってたんだけどね？', '文句は受け付けませーん！']));
     keep();
     await waitTap(stake ? 2600 : 1700);
     S.fresh = false;
@@ -1062,14 +1081,30 @@
     const k = b.dataset.bc;
     if (host.dataset.demo && !['demoskip'].includes(k)) return;
     switch (k) {
-      case 'spot': addBet(b.dataset.k); break;
+      case 'spot': if (!(S.holdFired && Date.now() - S.holdFired < 300)) addBet(b.dataset.k); break;   // 押しっぱなしで置いた直後の離す動きでは足さない
       case 'chip': S.chip = S.A.chip = +b.dataset.v; sfx('tap'); paintBets(); break;
-      case 'clear': if (S.phase === 'bet') { S.bets = {}; paintBets(); } break;
+      case 'clear': if (S.phase === 'bet') { S.bets = {}; S.hist = []; paintBets(); } break;
+      case 'undo': {
+        if (S.phase !== 'bet' || !S.hist || !S.hist.length) break;
+        const [k, add] = S.hist.pop(); S.bets[k] = Math.max(0, (S.bets[k] || 0) - add); if (!S.bets[k]) delete S.bets[k];
+        sfx('tap'); paintBets(); break;
+      }
+      case 'double': {
+        if (S.phase !== 'bet') break;
+        let any = false;
+        for (const k of ['P', 'B', 'T', 'PP', 'BP']) {
+          const cur = S.bets[k] || 0; if (!cur) continue;
+          const cap = (k === 'P' || k === 'B') ? C.maxMain : C.maxSide, add = Math.min(cur, cap - cur, coins() - stakeOf(S.bets));
+          if (add >= C.minBet) { S.bets[k] = cur + add; (S.hist = S.hist || []).push([k, add]); any = true; }
+        }
+        if (any) sfx('bet'); else say('rico', 'これ以上は増やせないよ（上限か、手持ちまで）', 2200);
+        paintBets(); break;
+      }
       case 'rebet': {
         if (S.phase !== 'bet' || !S.A.last) break;
         const st = stakeOf(S.A.last);
         if (st > coins()) { say('rico', 'コインが足りないじゃん', 1800); break; }
-        S.bets = Object.assign({}, S.A.last); sfx('bet'); paintBets(); break;
+        S.bets = Object.assign({}, S.A.last); S.hist = Object.keys(S.bets).map(k => [k, S.bets[k]]); sfx('bet'); paintBets(); break;
       }
       case 'look': if (S.phase === 'bet' && betResolve) betResolve({ look: true }); break;
       case 'deal': if (S.phase === 'bet' && betResolve && stakeOf(S.bets) >= C.minBet) betResolve({ look: false }); break;
@@ -1077,10 +1112,11 @@
       case 'pick': if (pickResolve) pickResolve(b.dataset.id); break;
       case 'sqopen': if (sq) sq.open(); break;
       case 'sqgo': if (briefResolve) briefResolve(); break;
+      case 'sqtake': if (sq && sq.takeover) { sq.takeover(); ui.sq.dataset.auto = '0'; hush(); say('rico', '札の端を引いて、自分でめくりな', 2200); } break;
       case 'sqmode': {
         const order = ['auto', 'manual', 'off'], m = order[(order.indexOf(S.A.sqMode || 'auto') + 1) % 3];
         S.A.sqMode = m; keep(); paintBets(); hush();
-        say('rico', m === 'auto' ? '勝負が決まりそうな札だけ、|自動でめくって見せるよ。指でもめくれる' : m === 'manual' ? '賭けた側の札は、ぜんぶ自分でめくるよ' : '札はディーラーがすぐ開くよ', 2800); break;
+        say('rico', m === 'auto' ? '勝負が決まりそうな札だけ、|自動でめくって見せるよ' : m === 'manual' ? '賭けた側の札は、ぜんぶ自分でめくるよ' : '札はディーラーがすぐ開くよ', 2800); break;
       }
       case 'roads': openRoads(); break;
       case 'guide': openGuide(0); break;
@@ -1108,7 +1144,7 @@
     try { battleGen++; } catch (e) { }
     state = defaultState(); state.screen = 'baccarat';
     render();
-    try { if (isBgmOn()) playSceneBgm('allstar'); } catch (e) { }
+    try { if (isBgmOn()) playSceneBgm(SCENE_BGM.baccarat ? 'baccarat' : 'allstar'); } catch (e) { }
   }
   function mount() {
     const A = store();

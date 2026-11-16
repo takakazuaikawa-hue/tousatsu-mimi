@@ -309,6 +309,13 @@
 .bc-sq:has(.bc-verdict[data-st="lose"]:not([hidden])) { filter: saturate(.55) brightness(.82); }
 @keyframes bc-slam { from { transform: scale(2.2); opacity: 0; } }
 @keyframes bc-flash { from { transform: scale(.5); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
+/* 自動の間、札は触れない（触れるのは「自分でめくる」を押してから） */
+.bc-sq[data-auto="1"] .bc-sq-cv { pointer-events: none; cursor: default; }
+.bc-sq-btns { margin-top: auto; display: flex; gap: calc(var(--u) * 6); }
+.bc-sq-btns .bc-sq-open { flex: 1 1 auto; margin-top: 0; min-width: 0; }
+.bc-sq-take { display: none !important; min-height: max(40px, calc(var(--u) * 40)); }
+.bc-sq[data-auto="1"] .bc-sq-take { display: flex !important; }
+.bc-host[data-phase] .bc-sq .bc-sq-take { filter: none; pointer-events: auto; }
 .bc-sq-open { margin-top: auto; min-height: max(40px, calc(var(--u) * 40)); }
 .bc-host[data-sq] .bc-god { display: none; }
 .bc-host[data-sq] .bc-sub { grid-column: 1 / 3; grid-row: 2 / 5; z-index: 6 !important; margin-left: calc(var(--u) * 10); max-width: 60%; }
@@ -373,3 +380,37 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 
 /* 縦の狭い画面（スマホ横）：絞りの右の欄は、色の凡例と一言を出さない（めくる前の札が同じことを言う）。「開く」が画面の外へ落ちていた */
 @media (max-height: 520px) { .bc-sq-legend, .bc-sq-tip { display: none !important; } }
+
+/* ---- 読ませる文字を目立たせる（2026-11-16 ユーザー「読むべき文字が目に入ってこない」）---- */
+/* 今やること：賭ける間、卓のまん中に金の大きな1行 */
+.bc-pins { justify-content: center; }
+.bc-mission { flex-basis: 100%; text-align: center; font: 800 var(--r-mission, 20px)/1.3 var(--bc-min); letter-spacing: .04em; color: var(--bc-gold-hi); text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+/* 神託：いちばん大事な知らせなので、大きな金の札に */
+.bc-pins > .bc-oracle { flex-basis: 100%; text-align: center; font: 700 var(--r-mission, 20px)/1.3 var(--bc-min); padding: calc(var(--u) * 4) calc(var(--u) * 10); color: #fff3c4; background: linear-gradient(180deg, rgba(90,60,10,.96), rgba(30,16,4,.96)); border: 2px solid var(--bc-gold-hi) !important; animation: bc-pop .5s ease-out 1; }
+.bc-pins > .bc-oracle b { font-size: .8em; padding: 0 .5em; margin-right: .7em; background: var(--bc-gold-hi); color: #2a1608; }
+/* 台詞の帯：話している人の名前を札に、文は明るく太く */
+.bc-sub { background: rgba(6,2,3,.96); border-color: var(--bc-gold); }
+.bc-sub-n { padding: 1px 8px; background: var(--bc-gold-hi); color: #2a1608; }
+.bc-sub[data-who="goddess"] .bc-sub-n { background: #ff9ac0; } .bc-sub[data-who="rico"] .bc-sub-n { background: #f0a37f; } .bc-sub[data-who="mimi"] .bc-sub-n { background: #f6c6d6; }
+.bc-sub-t { color: #fff8e6; font-weight: 700; }
+.bc-sub[data-on="1"] { animation: bc-subin .28s ease-out 1; }
+@keyframes bc-subin { from { transform: translateY(8px); opacity: 0; } }
+/* ---- 賭けやすく：チップを大きく・選んだチップをはっきり・押した手応え ---- */
+.bc-chip { width: calc(var(--u) * 46); height: calc(var(--u) * 46); }
+.bc-chip b { font-size: var(--r-label, 15px); }
+.bc-chip[data-on="1"] { transform: translateY(calc(var(--u) * -6)) scale(1.16); filter: drop-shadow(0 0 7px rgba(255,220,130,1)) drop-shadow(0 0 2px #fff); }
+.bc-chip:not([data-on="1"]):not(:disabled) { filter: brightness(.72) saturate(.8); }
+.bc-host[data-staked="1"] .bc-on-empty, .bc-host:not([data-staked="1"]) .bc-on-staked { display: none !important; }
+.bc-spot { touch-action: manipulation; }
+.bc-spot.is-hit { animation: bc-spot-hit .22s ease-out 1; }
+@keyframes bc-spot-hit { 40% { transform: scale(.97); filter: brightness(1.5); } }
+.bc-plus { position: absolute; right: calc(var(--u) * 10); top: 0; font: 700 calc(var(--u) * 20)/1 var(--bc-num); font-style: normal; color: #fff3c4; pointer-events: none; animation: bc-plus .7s ease-out 1 forwards; }
+@keyframes bc-plus { from { transform: translateY(0); opacity: 1; } to { transform: translateY(calc(var(--u) * -26)); opacity: 0; } }
+.bc-host[data-phase="bet"] .bc-spot:hover { filter: brightness(1.18); }
+
+/* 自分で操作して直した所：今やることの1行は札の欄のまん中へ（欄の線に重なっていた）。チップの絵は枠いっぱいに（絵の余白で小さく見えていた） */
+.bc-host[data-phase="bet"] .bc-pins { margin-top: calc(var(--u) * 106); }
+.bc-chip { background-size: 132% !important; }
+/* 神託がある時は、今やることの1行をゆずる（札の欄に収める）。台詞の帯は札より手前 */
+.bc-pins:has(.bc-oracle) .bc-mission { display: none; }
+.bc-sub { z-index: 3 !important; }
