@@ -16,7 +16,7 @@ const chars = Object.keys(CUT), exps = ['smug', 'think', 'win', 'panic', 'lose']
 for (const c of chars) for (const e of exps) {
   const f = `${c}_${e}`, [cyK, sK] = CUT[c];
   const r = await page.eval(`(async () => {
-    const img = new Image(); img.src = '/assets/battle/chibi/${f}.webp'; await img.decode();
+    const img = new Image(); img.src = '/assets/battle/chibi/${process.env.SUB || ''}${f}.webp'; await img.decode();
     const W = img.naturalWidth, H = img.naturalHeight, c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d'); x.drawImage(img, 0, 0); const d = x.getImageData(0, 0, W, H).data;
     const op = (i, y) => d[(y * W + i) * 4 + 3] > 40;

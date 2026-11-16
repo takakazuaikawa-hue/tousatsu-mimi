@@ -11,7 +11,7 @@ for (let i = 0; i < 60 && !(await page.eval('typeof render === "function" && typ
 await sleep(1500);
 console.log('ずれ:', await page.eval(`JSON.stringify([...Object.values(EPISODES), ...Object.values(HOROYOI_EPISODES), ...Object.values(DEISUI_EPISODES)].filter(e => titleReadMismatch(e)).map(e => e.id))`));
 // 一番長い句（文字が一番小さくなる段）が枠に収まるか
-const keys = which === 'all' ? ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'] : [which];
+const keys = which === 'all' ? ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet', 'ending'] : [which];
 for (const k of keys) {
   await ev(`document.querySelectorAll('.episode-overlay').forEach(e=>e.remove()); showEpisodeTitle('${k}', () => {}, () => {})`);
   await sleep(1500);

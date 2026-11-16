@@ -21212,3 +21212,5 @@ html.is-compact .ep-open-card span:last-child { font-size: calc(14px / var(--gam
 html.is-compact .ep-open-new { font-size: calc(14px / var(--game-scale, 1)); }
 .ep-open-card span:last-child { word-break: keep-all; white-space: nowrap; }
 .ep-unlock { word-break: keep-all; }
+/* 会話の名前の横の丸：ミニキャラの頭は切り出しで真ん中に顔があるので、中央合わせ（2026-11-16） */
+.story-face img { object-position: 50% 50%; }

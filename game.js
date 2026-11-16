@@ -4021,13 +4021,15 @@ function showEpisodeTitle(key, onContinue, onBack, contLabel) {
 // 画面上で小さくなりすぎないよう、CSS 側で --game-scale に合わせて大きくする（.story-overlay の変数）。
 //=============================================================
 const STORY_WHO = {
-  rico: { name: 'リコ先輩', face: 'assets/ui/face_rico.webp' },   // 顔が絵の真ん中にある方（face_rico_bunny は顔が下端に寄り、会話の丸の中で下にずれていた。2026-11-07 指摘）
-  mimi: { name: 'ミミ', face: 'assets/ui/face_mimi.webp' },
+  // 名前の横の丸の顔は、ミニキャラの頭（2026-11-16 ユーザー：丸が小さいので立ち絵の顔よりミニキャラの方が見やすい。見本で全員承認）。
+  // ミニキャラの「考える顔」から頭を切り出した 128px（qa/chibihead.mjs）。夜（ほろ酔い・泥酔）は酔ったミニキャラ（_drunk）
+  rico: { name: 'リコ先輩', face: 'assets/ui/face_chibi_rico.webp' },
+  mimi: { name: 'ミミ', face: 'assets/ui/face_chibi_mimi.webp' },
   goddess: { name: '女神' },
-  polka: { name: 'ポルカ', face: 'assets/ui/face_polka.webp' },
-  selina: { name: 'セリナ', face: 'assets/ui/face_selina.webp' },
-  grano: { name: 'グラーノ', face: 'assets/ui/face_grano.webp' },
-  velvet: { name: 'ヴェルベット', face: 'assets/ui/face_velvet.webp' },
+  polka: { name: 'ポルカ', face: 'assets/ui/face_chibi_polka.webp' },
+  selina: { name: 'セリナ', face: 'assets/ui/face_chibi_selina.webp' },
+  grano: { name: 'グラーノ', face: 'assets/ui/face_chibi_grano.webp' },
+  velvet: { name: 'ヴェルベット', face: 'assets/ui/face_chibi_velvet.webp' },
 };
 // 場面ごとの背景（無ければ assets/episodes/<場面>.webp）。行に art があれば、その行で絵を切り替える
 const STORY_ART = {
@@ -4606,6 +4608,14 @@ const TITLE_READ = {
     ['これまで覚えたブラフ、場札、ベットサイズ、割に合う判断を', '全部つなぎ合わせ', '、', 'つながった！', 'smug'],
     ['相手が本当に強い時にしていることと強く見せたい時にしていることの', '違いを突きつけて', '、', 'そこです！', 'win'],
     ['外れスキル《ぱにゅぱにゅ》で初めて', 'ブラフブレイク', 'まで叩き込む件', '決めます！', 'win']] },
+  episode_006_title: { sub: 'まだ、入口', cl: [
+    ['新人研修という名目で転生直後から', 'ポーカー卓に連行', 'され、', '連行でした…', 'smug'],
+    ['調子乗り初心者のブラフを見抜き、理屈っぽい常連の場札圧に耐え、商人プレイヤーの"安いですよ"攻撃で', '計算力を酷使', 'し、', '全部やった！', 'win'],
+    ['最後にはVIPルームの悪徳ディーラー相手に', 'カードより先に心を折られかけ', 'ながらも、', '折れかけた…', 'lose'],
+    ['外れスキル《ぱにゅぱにゅ》とリコ先輩の雑だけど的確な助言と', '社畜時代に鍛えられた障害対応じみた観察力', 'でなんとか勝ち抜いた私は、', '社畜力！', 'smug'],
+    ['ようやく', '一息つける', 'と思ったのに、', '休める…！', 'win'],
+    ['リコ先輩から「じゃ、次は', '交換所と衣装解放と高難度卓', 'ね」と言われ、', 'まだあるの！？', 'panic'],
+    ['異世界カジノの新人バニー生活がまだ', 'チュートリアルの入口', 'にすぎなかったことを知ってしまう件', '入口！？', 'panic']] },
   horoyoi_001: { sub: '三杯目の先輩', cl: [
     ['全卓制覇の打ち上げで「', '一杯だけね', '」と言われたはずの新人バニーの私が、', '一杯だけ…', 'smug'],
     ['気がつけば', '三杯目', 'のグラスを持たされていて、', '三杯！？', 'panic'],
@@ -4734,6 +4744,12 @@ function playTitleRead(host, ep, onDone) {
   return true;
 }
 
+// 会話の名前の横の顔（夜は酔ったミニキャラ）
+function storyFaceSrc(who) {
+  const f = (STORY_WHO[who] || {}).face;
+  if (!f) return '';
+  return state && state.horoyoi ? f.replace(/\.webp$/, '_drunk.webp') : f;
+}
 let _storyVoiceWait = false;
 function showStoryScene(key, onDone, voiceReady) {
   const steps = PROLOGUES[key];
@@ -4748,7 +4764,7 @@ function showStoryScene(key, onDone, voiceReady) {
   }
   const ep = EPISODES[key] || {};
   const art = STORY_ART[key] || `assets/episodes/${key}.webp`;
-  if (window.MimiAssets) window.MimiAssets.warm([art, ...steps.map(s => s.art).filter(Boolean)]);
+  if (window.MimiAssets) window.MimiAssets.warm([art, ...steps.map(s => s.art).filter(Boolean), ...new Set(steps.map(s => storyFaceSrc(s.who)).filter(Boolean))]);
   const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const sub = ep.sub || String(ep.short || '').split('─').pop().trim();
   const lnLines = String(ep.title || '').split('\n').filter(Boolean);
@@ -4865,7 +4881,7 @@ function showStoryScene(key, onDone, voiceReady) {
     boxEl.classList.toggle('is-mimi', s.who === 'mimi');
     boxEl.classList.toggle('is-think', s.k === 'think');
     nameEl.textContent = who.name || '';
-    const whoFace = who.face ? (state && state.horoyoi && DRUNK_FACE_KEYS.has(s.who) ? faceIconSrc(s.who, true) : who.face) : '';
+    const whoFace = storyFaceSrc(s.who);
     if (whoFace && faceImg.getAttribute('src') !== whoFace) faceImg.setAttribute('src', whoFace);
     type(s.k === 'think' ? `（${s.t}）` : s.t);
   };
