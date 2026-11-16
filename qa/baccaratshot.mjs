@@ -24,7 +24,7 @@ const CHECK = `(() => {
     const fs = parseFloat(getComputedStyle(el).fontSize) * (Number.isFinite(k) && k > 0 ? k : 1);
     if (fs < 13.6) small.push(t.slice(0, 14) + ' ' + fs.toFixed(1));
     if (r.left < -1 || r.top < -1 || r.right > VW + 1 || r.bottom > VH + 1) off.push(t.slice(0, 14));
-    const box = el.closest('button, .bc-sub, .bc-pins > span, .bc-cd, .bc-side-head, .bc-panel, .bc-ask, .bc-wallet, .bc-roads, .bc-sq-side, .bc-sc');
+    const box = el.closest('button, .bc-sub, .bc-pins > span, .bc-cd, .bc-side-head, .bc-panel, .bc-ask, .bc-wallet, .bc-roads, .bc-sq-side, .bc-sc, .bc-brief, .bc-verdict, .bc-fnote');
     if (box) { const b = box.getBoundingClientRect(); if (r.left < b.left - 1.5 || r.right > b.right + 1.5 || r.top < b.top - 1.5 || r.bottom > b.bottom + 1.5) clip.push(t.slice(0, 14) + ' @' + (box.className || box.tagName).toString().split(' ')[0]); }
   }
   return { small: [...new Set(small)], off: [...new Set(off)], clip: [...new Set(clip)], scrollX: document.documentElement.scrollWidth > VW };
@@ -72,6 +72,8 @@ await ev(`${Q}.setFavor(2); ${Q}.answer(1)`); await sleep(400); await snap('answ
 await ev(`${Q}.oracle(true)`); await sleep(500); await snap('oracle', 200);
 // 配る → 絞り
 await ev(`${Q}.deal()`);
+await until(`document.querySelector('.bc-host').dataset.sq === '1' && !document.querySelector('.bc-brief').hidden`, 20000); await snap('squeeze_brief', 500);
+await ev(`document.querySelector('[data-bc="sqgo"]').click()`);
 await until(`document.querySelector('.bc-host').dataset.sq === '1' && !!${Q}.sq()`, 20000); await sleep(500);
 await snap('squeeze_start', 200);
 // 指でめくる（短い辺の下から上へ）
@@ -92,10 +94,12 @@ p = await drag(.34, .2, .6, .62); await snap('squeeze_corner', 150);
 await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: p.x, y: p.y, button: 'left', clickCount: 1 }); await sleep(400);
 console.log('cands', JSON.stringify(await val(`${Q}.sq() && ${Q}.sq().info()`)));
 // 残りは「開く」で進める。3枚目（横向き）が来たら撮る
-let third = false;
+let third = false, verdictShot = false;
 for (let i = 0; i < 200; i++) {
   const ph = await val(`document.querySelector('.bc-host').dataset.phase`);
   if (ph === 'settle') break;
+  if (await val(`!document.querySelector('.bc-brief').hidden`)) { await ev(`document.querySelector('[data-bc="sqgo"]').click()`); await sleep(300); }
+  if (!verdictShot && await val(`!document.querySelector('.bc-verdict').hidden`)) { verdictShot = true; await snap('squeeze_verdict', 250); }
   if (await val(`document.querySelector('.bc-host').dataset.sq === '1' && !!${Q}.sq()`)) {
     if (!third && await val(`${Q}.S().cards.P.length + ${Q}.S().cards.B.length > 4`)) { third = true; p = await drag(.3, .5, .5, .5); await snap('squeeze_third', 150); await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: p.x, y: p.y, button: 'left', clickCount: 1 }); await sleep(300); }
     await ev(`document.querySelector('.bc-sq-open').click()`); await sleep(500); if (i === 0) await snap('squeeze_opened', 0);

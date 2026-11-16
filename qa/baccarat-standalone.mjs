@@ -63,6 +63,8 @@ function toast(m) { var t = document.createElement('div'); t.className = 'pg-toa
 // 効果音：短い電子音（最初に押した後から鳴る）
 var _ac = null;
 function _tone(f, d, type, vol, delay) { try { _ac = _ac || new (window.AudioContext || window.webkitAudioContext)(); var t = _ac.currentTime + (delay || 0) / 1000, o = _ac.createOscillator(), g = _ac.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol || .05, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(_ac.destination); o.start(t); o.stop(t + d + .02); } catch (e) {} }
+function isSfxOn() { return true; }
+function mpTone(f, d, type, vol, a, r, delay) { _tone(f, d, type, vol, delay); }
 function mpSfx(k) {
   if (k === 'tap') _tone(720, .06, 'square', .02); else if (k === 'bet') _tone(380, .07, 'square', .035); else if (k === 'deal') _tone(520, .05, 'triangle', .04);
   else if (k === 'flip') { _tone(620, .08, 'sine', .05); _tone(880, .06, 'triangle', .04, 80); } else if (k === 'check') _tone(500, .07, 'sine', .04);

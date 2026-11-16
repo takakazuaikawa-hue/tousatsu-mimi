@@ -42,6 +42,35 @@
       hello: 'い、いらっしゃいませ！|見習いのピコですっ', nomore: 'ノ、ノーモアベットですぅ！', look: 'け、見（ケン）ですね！　配りますっ',
       natural: 'わっ、ナチュラル{n}です！', p3: 'プレイヤーさんに、もう1枚ですっ', b3: 'バンカーさんに、もう1枚ですっ', shoe: 'あ、新しい山です！　最初の札は{l}なので、|{n}枚捨てますっ' } },
   ];
+  const DTALK = {
+    tika: {
+      idle: ['歯車は正常。賭け金をどうぞ。カチ', '当機の計算では、次の結果は……|申し上げられません。規則でございます', '絞りの時間は、当機の歯車が|なぜか速く回ります。カチカチ', 'ミミ様の耳、角度が変わりました。|迷いの印と記録します'],
+      win: ['お見事でございます。カチ', '配当をお受け取りください。|……当機も少し、うれしいようです', '的中。記録に残します。カチ'],
+      lose: ['残念でございます。次の勝負をどうぞ', '回収いたします。カチ', '確率どおりの結果でございます。|お気を落とさず'],
+      tie: ['引き分けでございます。賭け金は戻ります'],
+      banter: [['女神さま、卓に身を乗り出すのは|規則違反でございます', 'かたいこと言わなーい！|カチカチうるさーい！'], ['女神さまの声量は、基準値の3倍でございます', 'ほめてます？　ほめてますよねぇ！'], ['女神さま、結果の漏洩は|お控えください', 'もらしてませーん！　まだ！']],
+    },
+    ocho: {
+      idle: ['さ、張った張った。|どっちだい？', '兎さん、いい目をしてるね。|博打打ちの目だ', '煙の流れる方に張る客もいたよ。|当たったかは、聞かないでおくれ', '迷った時はね、張らないのも手だよ'],
+      win: ['おや、やるじゃないか', 'いい勝ちっぷりだねぇ。持っていきな', '読みが冴えてるね、兎さん'],
+      lose: ['惜しかったね。次は取りな', '博打は負けて覚えるもんさ', '顔に出てるよ。深呼吸しな'],
+      tie: ['引き分けだ。張った金は戻るよ'],
+      banter: [['女神の姐さん、少し静かにしておくれ。|札が逃げちまう', '逃げませーん！|運命からは逃げられませーん！'], ['あんた、結果を知ってるんだろ？|野暮は言いっこなしだよ', 'えへへ、ないしょでーす！'], ['兎さんをからかうのは、ほどほどにね', 'からかってませーん！　かわいがってまーす！']],
+    },
+    twins: {
+      idle: [['プント', 'ねえねえ、プレイヤーに賭けてよ！|プントが配るんだから！'], ['バンコ', 'バンカーの方が少し勝ちやすいの。|……計算できるでしょ？'], ['プント', 'バンコはすぐ理屈を言うんだよー'], ['バンコ', 'プント、札を振り回さないで']],
+      res: (h, net) => (h.w === 'T' ? ['バンコ', '引き分け。……プント、真似しないで'] : net > 0 ? (h.w === 'P' ? ['プント', 'やったー！　いっしょに勝ったね！'] : ['バンコ', '見る目あるじゃない。|……ほめてあげる']) : net < 0 ? (h.w === 'P' ? ['プント', 'へへー、こっちの勝ち！|次はプントに賭けてね'] : ['バンコ', '言ったでしょ、バンカーは強いの']) : ['プント', '増えも減りもしなかったね！']),
+      banter: [[['プント', '女神さま、どっちが勝つか教えてー！'], 'だーめ！　でもプントちゃんはかわいいから……|やっぱだーめ！'], [['バンコ', '女神さま、うるさい'], 'バンコちゃんこわーい！'], [['プント', '女神さまのツインテール、おそろいにしたい！'], 'いいですよぉ！　ピンクに染めます？']],
+    },
+    pico: {
+      idle: ['え、えっと、賭け金をどうぞですっ', '女神さまが横にいると、|き、緊張しますぅ……', 'さっき札を1枚落としそうになりました……|ないしょですよ？', 'ミミさんのうさ耳、ふわふわですね……|あ、仕事中でしたっ'],
+      win: ['わぁ、おめでとうございますっ！', 'す、すごいです！　配当ですっ', 'やりましたね！　……あ、公平にしなきゃ'],
+      lose: ['あぅ……ざ、残念でした……', 'つ、次はきっと当たりますっ！　たぶん！', 'ご、ごめんなさい……ピコのせいじゃないですよね？'],
+      tie: ['ひ、引き分けです！|賭け金はお返ししますっ'],
+      banter: [['女神さまぁ、次の結果を言っちゃだめですよぅ', 'ピコのくせに生意気ー！|あとでお説教でーす！'], ['女神さま、輪っかが曲がってますぅ', 'えっ、うそ！？|……曲がってませーん！　ピコー！'], ['女神さま、お仕事の邪魔ですぅ……', 'これがウンメちゃんのお仕事でーす！']],
+    },
+  };
+  DEALERS.forEach(d => { d.T = DTALK[d.id]; });
   let DL = DEALERS[0], pickResolve = null;
   function dsay(key, vars, ms) {
     let v = DL.L[key]; if (typeof v === 'function') v = v(vars || {});
@@ -117,6 +146,7 @@
         <div class="bc-god-pic${ART.goddess ? ' has-art' : ''}">${ART.goddess ? `<img src="${ART.goddess}" alt="運命の女神ウンメ">` : wheelSVG()}</div>
         <b class="bc-god-n">運命の女神 ウンメ</b>
         <div class="bc-favor" aria-label="女神のご機嫌"><span>ご機嫌</span><i></i><i></i><i></i></div>
+        <span class="bc-fnote" hidden></span>
       </aside>
       <div class="bc-pins"></div>
       <div class="bc-sub" aria-live="polite"><span class="bc-sub-face"></span><b class="bc-sub-n"></b><span class="bc-sub-t"></span></div>
@@ -133,9 +163,12 @@
       <div class="bc-sq" hidden>
         <div class="bc-sq-score"></div>
         <canvas class="bc-sq-cv"></canvas>
+        <div class="bc-brief" hidden></div>
+        <div class="bc-verdict" hidden></div>
         <div class="bc-sq-side">
           <b class="bc-sq-m">札の端をめくって、数を読む</b>
           <div class="bc-cands"></div>
+          <div class="bc-odds"></div>
           <div class="bc-sq-legend"><span><i class="k-win"></i>勝ち</span><span><i class="k-lose"></i>負け</span><span><i class="k-tie"></i>引き分け</span><span><i class="k-next"></i>次の札へ</span></div>
           <span class="bc-sq-tip">指で札の端を引くと、自分でめくれる</span>
           <button type="button" class="bc-go bc-sq-open" data-bc="sqopen"><b>開く</b></button>
@@ -144,7 +177,7 @@
       <div class="bc-layer"></div>
     </div>`;
     document.getElementById('stage').appendChild(host);
-    ['shoe', 'count', 'next', 'table', 'banner', 'god', 'favor', 'pins', 'sub', 'sub-face', 'sub-n', 'sub-t', 'ask', 'bets', 'rack', 'coins', 'delta', 'sq', 'sq-score', 'sq-cv', 'sq-m', 'cands', 'layer', 'sqmode', 'roads'].forEach(n => { ui[n] = host.querySelector('.bc-' + n); });
+    ['shoe', 'count', 'next', 'table', 'banner', 'god', 'favor', 'pins', 'sub', 'sub-face', 'sub-n', 'sub-t', 'ask', 'bets', 'rack', 'coins', 'delta', 'sq', 'sq-score', 'sq-cv', 'sq-m', 'cands', 'brief', 'verdict', 'odds', 'fnote', 'layer', 'sqmode', 'roads'].forEach(n => { ui[n] = host.querySelector('.bc-' + n); });
     ui.go = host.querySelector('.bc-rack .bc-go'); ui.goS = host.querySelector('.bc-go-s');
     ui.sides = { P: host.querySelector('.bc-p'), B: host.querySelector('.bc-b') };
     host.addEventListener('click', onClick);
@@ -287,45 +320,70 @@
   }
 
   // =============================================================
-  // 運命の女神ウンメ：気分・問いかけ・約束・神託
+  // 運命の女神ウンメ：気分・問いかけ・約束・おしゃべり・神託
   // 人物は「ドラゴンレース紀行」の解説席のウンメちゃんと同じ（2026-11-16 ユーザー）。口調の元：mimi_dragon_race_game/js/data_commentators.js
   //   はじけた女神。言い切らない・すぐ煽る・全部その場のノリ。「知らんけど！」「〜ですよぉ」「〜まーす！」、自分を「ウンメちゃん」と呼ぶ。口癖「リアルタイムアタック！」
-  // 約束は3つまで同時に持てる（前の約束が果たされる前に次の問いが来ても消えない。2026-11-16 ユーザー）
+  // ご機嫌（0〜3）の上がり方は、上がった時に理由つきで見せる（2026-11-16 ユーザー「約束を守ると機嫌がよくなるんですかね？」）：
+  //   気分に合う返事 ＋1／約束を守る ＋1／お願いを聞く ＋1／おしゃべりで気に入られる ＋1（6手に1回まで）／裏切る −2。3つ満ちると神託
+  // 約束は3つまで同時に持てる（前の約束が果たされる前に次の問いが来ても消えない）
   // =============================================================
-  // 気分ごとの「好きな返事」。問いかけの頭の一言と、札の印で見せる
   const MOODS = {
-    bored: { tag: '退屈', like: 'bold', open: ['ふわぁ〜、ウンメちゃん退屈ぅ。', 'なんか刺激が足りなーい！'] },
-    happy: { tag: 'ごきげん', like: 'ride', open: ['るんるん、いい流れですよぉ。', 'ウンメちゃん、今日はごきげんでーす！'] },
-    uneasy: { tag: '胸さわぎ', like: 'careful', open: ['……運命の糸が、ピンって鳴ったの。', 'うーん、風向きがあやしいですよぉ。'] },
+    bored: { tag: '退屈', like: 'bold', hint: '大胆な返事が好きそう', open: ['ふわぁ〜、ウンメちゃん退屈ぅ。', 'なんか刺激が足りなーい！', 'もっとこう、どーんと来てくださいよぉ'] },
+    happy: { tag: 'ごきげん', like: 'ride', hint: '流れに乗る返事が好きそう', open: ['るんるん、いい流れですよぉ。', 'ウンメちゃん、今日はごきげんでーす！', 'この調子この調子ぃ！'] },
+    uneasy: { tag: '胸さわぎ', like: 'careful', hint: '慎重な返事が好きそう', open: ['……運命の糸が、ピンって鳴ったの。', 'うーん、風向きがあやしいですよぉ。', 'なんか、ざわざわしますねぇ'] },
   };
+  // ふつうのおしゃべり（約束にはならない）。[返事, 気に入るか, ウンメの一言]
+  const SMALLTALK = [
+    { q: 'ねえねえ、ウンメちゃんのこの髪型、|どう思います？', o: [['すごく似合ってます', 1, 'でしょでしょー！|見る目ありますねぇ！'], ['輪っかが気になります', 0, '輪っかは女神のしるしですよぉ！'], ['それより次の勝負です', 0, 'つれなーい！']] },
+    { q: '竜のレース、見たことあります？|はやい子はえらいんですよぉ！', o: [['速いのは気持ちいいですよね', 1, 'わかってるぅ！|リアルタイムアタック！'], ['見たことないです', 0, 'えー、もったいなーい！'], ['賭けの方が好きです', 0, 'ふーん、そういう子ですかぁ']] },
+    { q: 'ウンメちゃんって、うるさいですか？|……正直に！', o: [['にぎやかで楽しいです', 1, 'えへへ、もっと喋っちゃいますよぉ！'], ['ちょっとだけ……', 0, 'がーん！|……3秒だけ黙りまーす'], ['静かにしてください', 0, 'やでーす！']] },
+    { q: '運命って、変えられると|思います？', o: [['変えてみせます', 1, 'いい返事！|そういう子、女神は好きでーす！'], ['女神さま次第では？', 0, 'えー、ウンメちゃんのせいにするぅ？'], ['考えたことないです', 0, 'じゃあ今考えてくださーい！']] },
+    { q: 'そのうさ耳、本物なんですよね？|さわってもいい？', o: [['す、少しだけなら……', 1, 'やったぁ！|ふわっふわですねぇ！'], ['だめです！', 0, 'けちー！'], ['勝ったらいいですよ', 1, 'おっ、言いましたね？|覚えときまーす！']] },
+    { q: 'ここのディーラーさんたち、|誰が好きです？', o: [['みんな素敵です', 0, '八方美人ですねぇ〜'], ['ウンメさまが一番です', 1, 'きゃー！　わかってるぅ！'], ['……ないしょです', 0, 'あやしーい！']] },
+    { q: 'ウンメちゃんが次の結果を知ってるって、|信じてます？', o: [['信じてます', 1, 'えっへん！|ほんとに知ってまーす！'], ['半分くらい……', 0, '半分ってなんですかぁ！'], ['教えてくれたら信じます', 0, 'ずるーい！|タダじゃ教えませーん！']] },
+    { q: '運命の糸がピンピン鳴ってるんですよぉ。|聞こえます？', o: [['聞こえる気がします', 1, 'でしょー！|ミミちゃん素質ありますよぉ！'], ['聞こえません', 0, 'ですよねぇ。|女神にしか聞こえませーん'], ['それ耳鳴りでは', 0, 'しっつれーい！']] },
+    { q: 'バカラって、のんびりしてますよねぇ。|もっと速くなりません？', o: [['速く配ってもらいましょう', 1, 'それそれ！|リアルタイムアタック！'], ['このくらいが好きです', 0, 'えー、のんびり屋さーん'], ['絞りはゆっくりがいいです', 0, 'むぅ……それは一理ありますねぇ']] },
+    { q: 'ミミちゃんって、ここに来る前は|何してたんです？', o: [['三日徹夜で働いてました', 1, 'ひえー！|ここの方がずっといいですよぉ！'], ['覚えてないです', 0, 'あらら。まあ、今が楽しければ！'], ['ないしょです', 0, 'ウンメちゃんは知ってますけどねー！']] },
+  ];
   const LIKE_JA = { bold: '大胆な返事', ride: '流れに乗る返事', careful: '慎重な返事' };
-  function setFavor(n) {
+  let favorT = 0;
+  // why＝上がり下がりの理由（ご機嫌の横に「約束を守った ＋1」のように出す）
+  function setFavor(n, why) {
     const A = S.A, was = A.favor;
     A.favor = Math.max(0, Math.min(3, n));
     ui.favor.dataset.n = A.favor;
-    if (A.favor > was) { ui.favor.classList.remove('is-up'); void ui.favor.offsetWidth; ui.favor.classList.add('is-up'); sfx('reach'); }
-    if (A.favor < was) { ui.favor.classList.remove('is-down'); void ui.favor.offsetWidth; ui.favor.classList.add('is-down'); }
+    const d = A.favor - was;
+    if (d > 0) { ui.favor.classList.remove('is-up'); void ui.favor.offsetWidth; ui.favor.classList.add('is-up'); sfx('reach'); }
+    if (d < 0) { ui.favor.classList.remove('is-down'); void ui.favor.offsetWidth; ui.favor.classList.add('is-down'); }
+    if (why && d) {
+      const left = 3 - A.favor;
+      ui.fnote.innerHTML = `${esc(why)} <b>${d > 0 ? '＋' : '−'}${Math.abs(d)}</b>${d > 0 && left > 0 ? `<small>あと${left}で神託</small>` : ''}`;
+      ui.fnote.dataset.s = d > 0 ? 'up' : 'dn'; ui.fnote.hidden = false;
+      clearTimeout(favorT); favorT = setTimeout(() => { if (live()) ui.fnote.hidden = true; }, 3200);
+    }
   }
   // 神託：女神だけが知っている次の結果。big＝勝つ側にかかわること／small＝小さな手がかり。いつも本当のことだけ言う
   function giveOracle(big) {
     const h = BC.peekHand(S.shoe);
-    let text, say1;
+    let text, say1, kind, w = h.w;
     if (big) {
-      if (h.w === 'T' || Math.random() < .5) { text = h.w === 'T' ? '次は引き分け' : `次は${SIDE_JA[h.w]}が勝つ`; say1 = h.w === 'T' ? 'ないしょですよぉ？　次、|引き分け！　……言っちゃった！' : `ないしょですよぉ？　次は|${SIDE_JA[h.w]}！　……言っちゃった！`; }
-      else { const lose = other(h.w); text = `次は${SIDE_JA[lose]}は勝たない`; say1 = `ひとつだけ！　次、${SIDE_JA[lose]}は|勝ちませーん！`; }
+      if (h.w === 'T') { kind = 'tie'; text = '次は引き分け'; say1 = pick(['ないしょですよぉ？　次、|引き分け！　……言っちゃった！', '耳かしてください。次はね、|引き分けでーす！']); }
+      else if (Math.random() < .5) { kind = 'win'; text = `次は${SIDE_JA[h.w]}が勝つ`; say1 = pick([`ないしょですよぉ？　次は|${SIDE_JA[h.w]}！　……言っちゃった！`, `女神の予言！　次は${SIDE_JA[h.w]}！|これはほんとのやつでーす！`]); }
+      else { kind = 'notwin'; w = other(h.w); text = `次は${SIDE_JA[w]}は勝たない`; say1 = pick([`ひとつだけ！　次、${SIDE_JA[w]}は|勝ちませーん！`, `${SIDE_JA[w]}はね、次は勝たないんですよぉ。|それ以上は言わなーい！`]); }
     } else {
       const opts = [];
-      opts.push(h.natural ? ['次はナチュラル（8か9）が出る', 'あ、次ね、ナチュラル出ますよぉ。|どっちにかは言わなーい！'] : ['次は3枚目まで配られる', '次はね、3枚目まで行きますよぉ。|もつれるもつれる！']);
-      if (h.w !== 'T') opts.push(['次は引き分けではない', '次は引き分けじゃないですよぉ。|それだけ！']);
+      opts.push(h.natural ? ['nat', '次はナチュラル（8か9）が出る', 'あ、次ね、ナチュラル出ますよぉ。|どっちにかは言わなーい！'] : ['third', '次は3枚目まで配られる', '次はね、3枚目まで行きますよぉ。|もつれるもつれる！']);
+      if (h.w !== 'T') opts.push(['notie', '次は引き分けではない', '次は引き分けじゃないですよぉ。|それだけ！']);
       const r = h.p[0].rank;
-      opts.push([`プレイヤーの1枚目は${r >= 10 ? '0の札（10か絵札）' : r >= 6 ? '6より上' : '5より下'}`, `プレイヤーの1枚目、|${r >= 10 ? '0の札' : r >= 6 ? '大きい数' : '小さい数'}ですよぉ`]);
-      [text, say1] = pick(opts);
+      opts.push(['p1', `プレイヤーの1枚目は${r >= 10 ? '0の札（10か絵札）' : r >= 6 ? '6より上' : '5より下'}`, `プレイヤーの1枚目、|${r >= 10 ? '0の札' : r >= 6 ? '大きい数' : '小さい数'}ですよぉ`]);
+      [kind, text, say1] = pick(opts);
     }
-    S.oracle = { text, big, hand: S.shoe.hands + 1 };
+    S.oracle = { text, big, kind, w, hand: S.shoe.hands + 1 };
     S.A.oracles++;
     say('goddess', say1, 3600);
     paintPins(); sfx('garapon');
     if (!S.A.orSeen) { S.A.orSeen = true; say('rico', 'ウンメさまの神託はウソをつかない。|ただし、ぜんぶは教えてくれないよ', 3600); }
+    const mh = mimiHint(); if (mh && mh[1] >= 1) say('mimi', `（${mh[0]}）`, 4400);
   }
   function paintPins() {
     const o = S.oracle;
@@ -333,69 +391,85 @@
       + S.pledges.map(p => `<span class="bc-pledge" data-st="${p.armed ? 'armed' : 'wait'}"><b>約束</b>${p.html || esc(p.tag)}</span>`).join('')
       + (S.judged || []).map(j => `<span class="bc-pledge" data-judge="${j}">${j === 'kept' ? '有言実行' : '裏切り'}</span>`).join('');
   }
-  // 問いかけを作る。{ q, opts:[{ t, kind, make? }] }。kind＝bold/ride/careful/none。同じ中身の約束がもうある問いは出さない
+  // 問いかけを作る。{ q, opts:[{ t, kind, make? }], chip?, hint? }。kind＝bold/ride/careful/wish/none。同じ中身の約束がもうある問いは出さない
   function makeQuestion() {
     const st = S.road.stats, sw = st.streak.w, n = st.streak.n, T = [];
-    const lastWasTie = S.res.length && S.res[S.res.length - 1].w === 'T';
+    const last = S.res[S.res.length - 1], lastWasTie = last && last.w === 'T';
     const has = (key) => S.pledges.some(p => p.key === key);
-    const dot = (w, n) => `<i class="bc-dot is-${w}"></i>${n ? '×' + n : ''}`;
+    const dot = (w, k) => `<i class="bc-dot is-${w}"></i>${k ? '×' + k : ''}`;
     const side = (key, cond, promise, tag, now) => () => {
       const m = /^s:(\w):(\d+)$/.exec(key);
-      const html = (m ? `${dot(m[1], m[2])} なら` : 'この1回') + ' → ' + (promise === 'look' ? '見（ケン）' : `${dot(promise)}に賭ける`);
-      return { type: 'side', key, cond, promise, tag, html, armed: !!now, left: 14 };
+      const act = promise === 'look' ? '見（ケン）' : promise === 'pair' ? 'ペアに賭ける' : promise === 'nopair' ? 'ペアに賭けない' : promise === 'noT' ? '引き分けに賭けない' : `${dot(promise)}に賭ける`;
+      return { type: 'side', key, cond, promise, tag, html: (m ? `${dot(m[1], m[2])} なら` : 'この1回') + ' → ' + act, armed: !!now, left: 14 };
     };
+    const stakeP = (key, on, p, tag) => () => ({ type: 'stake', key, on, promise: p, tag, html: (on === 'win' ? '当たったら → ' : '外れたら → ') + { up: '上げる', same: '同じ額', down: '下げるか見' }[p], armed: false, left: 14, base: 0 });
+    const look = (key, cond, pre) => ({ t: '見（ケン）する', kind: 'careful', make: side(key, cond, 'look', `${pre} → 見（ケン）する`, !cond) });
     if (sw && n >= 2 && !has(`s:${sw}:${n + 1}`)) {
-      const o = other(sw), k = n + 1, key = `s:${sw}:${k}`;
-      const cond = (s) => s.streak.w === sw && s.streak.n >= k;
-      T.push({ q: `いま${SIDE_JA[sw]}が${n}連勝！|${k}連勝まで伸びたら、その次どうします？`, opts: [
-        { t: `${SIDE_JA[sw]}に乗る`, kind: 'ride', make: side(key, cond, sw, `${SIDE_JA[sw]}${k}連勝なら → ${SIDE_JA[sw]}に賭ける`) },
-        { t: `逆の${SIDE_JA[o]}に賭ける`, kind: 'bold', make: side(key, cond, o, `${SIDE_JA[sw]}${k}連勝なら → ${SIDE_JA[o]}に賭ける`) },
-        { t: '見（ケン）する', kind: 'careful', make: side(key, cond, 'look', `${SIDE_JA[sw]}${k}連勝なら → 見（ケン）`) },
-      ] });
+      const o = other(sw), k = n + 1, key = `s:${sw}:${k}`, cond = (s) => s.streak.w === sw && s.streak.n >= k, pre = `${SIDE_JA[sw]}${k}連勝なら`;
+      T.push({ q: pick([`いま${SIDE_JA[sw]}が${n}連勝！|${k}連勝まで伸びたら、その次どうします？`, `${SIDE_JA[sw]}、${n}回続いてますねぇ。|もう1回来たら、その次は？`]), opts: [
+        { t: `${SIDE_JA[sw]}に乗る`, kind: 'ride', make: side(key, cond, sw, `${pre} → ${SIDE_JA[sw]}に賭ける`) },
+        { t: `逆の${SIDE_JA[o]}に賭ける`, kind: 'bold', make: side(key, cond, o, `${pre} → ${SIDE_JA[o]}に賭ける`) }, look(key, cond, pre)] });
     }
     if (!sw || n < 3) {
-      const w = [Math.random() < .6 ? 'B' : 'P'].map(x => (has(`s:${x}:3`) ? other(x) : x))[0], o = other(w), key = `s:${w}:3`;
-      const cond = (s) => s.streak.w === w && s.streak.n >= 3;
-      if (!has(key)) T.push({ q: `ねえねえ、この先${SIDE_JA[w]}が3回続いたら、|${SIDE_JA[o]}に賭けます？　どうします？`, opts: [
-        { t: `${SIDE_JA[o]}に賭ける`, kind: 'bold', make: side(key, cond, o, `${SIDE_JA[w]}3連勝なら → ${SIDE_JA[o]}に賭ける`) },
-        { t: `${SIDE_JA[w]}に乗る`, kind: 'ride', make: side(key, cond, w, `${SIDE_JA[w]}3連勝なら → ${SIDE_JA[w]}に賭ける`) },
-        { t: '見（ケン）する', kind: 'careful', make: side(key, cond, 'look', `${SIDE_JA[w]}3連勝なら → 見（ケン）`) },
-      ] });
+      const w = [Math.random() < .6 ? 'B' : 'P'].map(x => (has(`s:${x}:3`) ? other(x) : x))[0], o = other(w), key = `s:${w}:3`, cond = (s) => s.streak.w === w && s.streak.n >= 3, pre = `${SIDE_JA[w]}3連勝なら`;
+      if (!has(key)) T.push({ q: pick([`ねえねえ、この先${SIDE_JA[w]}が3回続いたら、|${SIDE_JA[o]}に賭けます？　どうします？`, `もしもの話！　${SIDE_JA[w]}が3連勝したら、|その次はどっちに張ります？`]), opts: [
+        { t: `${SIDE_JA[o]}に賭ける`, kind: 'bold', make: side(key, cond, o, `${pre} → ${SIDE_JA[o]}に賭ける`) },
+        { t: `${SIDE_JA[w]}に乗る`, kind: 'ride', make: side(key, cond, w, `${pre} → ${SIDE_JA[w]}に賭ける`) }, look(key, cond, pre)] });
     }
-    if (st.chop >= 3 && sw && !has('now')) {
-      const o = other(sw);
-      T.push({ q: `行ったり来たりしてるの！|次も交互なら${SIDE_JA[o]}。どうします？`, opts: [
-        { t: `交互に乗る（${SIDE_JA[o]}）`, kind: 'ride', make: side('now', null, o, `この1回 → ${SIDE_JA[o]}に賭ける`, true) },
-        { t: `切れると見る（${SIDE_JA[sw]}）`, kind: 'bold', make: side('now', null, sw, `この1回 → ${SIDE_JA[sw]}に賭ける`, true) },
-        { t: '見（ケン）する', kind: 'careful', make: side('now', null, 'look', 'この1回 → 見（ケン）', true) },
-      ] });
+    if (!has('now')) {
+      if (st.chop >= 3 && sw) {
+        const o = other(sw);
+        T.push({ q: `行ったり来たりしてるの！|次も交互なら${SIDE_JA[o]}。どうします？`, opts: [
+          { t: `交互に乗る（${SIDE_JA[o]}）`, kind: 'ride', make: side('now', null, o, `この1回 → ${SIDE_JA[o]}に賭ける`, true) },
+          { t: `切れると見る（${SIDE_JA[sw]}）`, kind: 'bold', make: side('now', null, sw, `この1回 → ${SIDE_JA[sw]}に賭ける`, true) }, look('now', null, 'この1回')] });
+      }
+      if (lastWasTie && sw) {
+        const o = other(sw);
+        T.push({ q: '引き分けのあとって、どっちだと思います？|この1回、どうします？', opts: [
+          { t: `前の続きで${SIDE_JA[sw]}`, kind: 'ride', make: side('now', null, sw, `この1回 → ${SIDE_JA[sw]}に賭ける`, true) },
+          { t: `逆の${SIDE_JA[o]}`, kind: 'bold', make: side('now', null, o, `この1回 → ${SIDE_JA[o]}に賭ける`, true) }, look('now', null, 'この1回')] });
+        T.push({ q: '引き分けって続くんですよぉ。知らんけど！|この1回、引き分けにも賭けます？', opts: [
+          { t: '賭ける（引き分け）', kind: 'bold', make: side('now', null, 'T', 'この1回 → 引き分けに賭ける', true) },
+          { t: 'やめておく', kind: 'careful', make: side('now', null, 'noT', 'この1回 → 引き分けに賭けない', true) }] });
+      }
+      if (coins() >= 60 && S.res.length >= 4) T.push({ q: '次の1回、ペアに賭けてみません？|11倍ですよぉ、11倍！', opts: [
+        { t: '賭ける（どちらかのペア）', kind: 'bold', make: side('now', null, 'pair', 'この1回 → ペアに賭ける', true) },
+        { t: 'やめておく', kind: 'careful', make: side('now', null, 'nopair', 'この1回 → ペアに賭けない', true) }] });
+      if (last && last.nat && last.w !== 'T') {
+        const w = last.w, o = other(w);
+        T.push({ q: `さっきのナチュラル、きれいでしたねぇ！|この1回、また${SIDE_JA[w]}に乗ります？`, opts: [
+          { t: `乗る（${SIDE_JA[w]}）`, kind: 'ride', make: side('now', null, w, `この1回 → ${SIDE_JA[w]}に賭ける`, true) },
+          { t: `逆の${SIDE_JA[o]}`, kind: 'bold', make: side('now', null, o, `この1回 → ${SIDE_JA[o]}に賭ける`, true) }, look('now', null, 'この1回')] });
+      }
+      // お願い：神託ではない（当たるとは限らない）。聞いてあげると喜ぶ
+      if (S.res.length >= 3) {
+        const w = pick(['P', 'B']), o = other(w);
+        T.push({ wish: true, q: pick([`お願いがあるんですけどぉ。次の1回だけ、|${SIDE_JA[w]}に賭けてくれます？`, `ウンメちゃんの気まぐれ！　次の1回、|${SIDE_JA[w]}に張ってみません？　理由はないでーす！`]), opts: [
+          { t: `いいですよ（${SIDE_JA[w]}）`, kind: 'wish', make: side('now', null, w, `この1回 → ${SIDE_JA[w]}に賭ける`, true) },
+          { t: `いやです（${SIDE_JA[o]}）`, kind: 'none2', make: side('now', null, o, `この1回 → ${SIDE_JA[o]}に賭ける`, true) }, { t: '見（ケン）します', kind: 'none2', make: side('now', null, 'look', 'この1回 → 見（ケン）する', true) }] });
+      }
     }
-    if (lastWasTie && sw && !has('now')) {
-      const o = other(sw);
-      T.push({ q: `引き分けのあとって、どっちだと思います？|この1回、どうします？`, opts: [
-        { t: `前の続きで${SIDE_JA[sw]}`, kind: 'ride', make: side('now', null, sw, `この1回 → ${SIDE_JA[sw]}に賭ける`, true) },
-        { t: `逆の${SIDE_JA[o]}`, kind: 'bold', make: side('now', null, o, `この1回 → ${SIDE_JA[o]}に賭ける`, true) },
-        { t: '見（ケン）する', kind: 'careful', make: side('now', null, 'look', 'この1回 → 見（ケン）', true) },
-      ] });
-    }
-    if (S.lastStake > 0 && !has('stake')) {
-      const mk = (p, tag) => () => ({ type: 'stake', key: 'stake', promise: p, tag, html: '外れたら → ' + { up: '上げる', same: '同じ額', down: '下げるか見' }[p], armed: false, left: 14, base: 0 });
-      T.push({ q: `ねえ、次に外れちゃったら、|その次の賭け金どうします？`, opts: [
-        { t: '上げて取り返す', kind: 'bold', make: mk('up', '外れたら → 次は賭け金を上げる') },
-        { t: '同じ額で続ける', kind: 'ride', make: mk('same', '外れたら → 次も同じ額') },
-        { t: '下げるか、見する', kind: 'careful', make: mk('down', '外れたら → 次は下げるか見') },
-      ] });
-    }
+    if (S.lastStake > 0 && !has('stake')) T.push({ q: pick(['ねえ、次に外れちゃったら、|その次の賭け金どうします？', '外れた後って、人が出ますよねぇ。|次に外れたら、賭け金は？']), opts: [
+      { t: '上げて取り返す', kind: 'bold', make: stakeP('stake', 'lose', 'up', '外れたら → 次は賭け金を上げる') },
+      { t: '同じ額で続ける', kind: 'ride', make: stakeP('stake', 'lose', 'same', '外れたら → 次も同じ額にする') },
+      { t: '下げるか、見する', kind: 'careful', make: stakeP('stake', 'lose', 'down', '外れたら → 次は下げるか見（ケン）する') }] });
+    if (S.lastStake > 0 && !has('stakeW')) T.push({ q: 'じゃあ逆に！　次に当たったら、|その次の賭け金どうします？', opts: [
+      { t: '上げて攻める', kind: 'bold', make: stakeP('stakeW', 'win', 'up', '当たったら → 次は賭け金を上げる') },
+      { t: '同じ額で続ける', kind: 'ride', make: stakeP('stakeW', 'win', 'same', '当たったら → 次も同じ額にする') },
+      { t: '下げて守る', kind: 'careful', make: stakeP('stakeW', 'win', 'down', '当たったら → 次は下げるか見（ケン）する') }] });
     const q = pick(T);
     if (!q) return null;
-    q.opts.push({ t: 'その時に決める', kind: 'none' });
+    if (!q.wish) q.opts.push({ t: 'その時に決める', kind: 'none' });
     q.mood = pick(Object.keys(MOODS));
     return q;
   }
   function askQuestion() {
-    const q = makeQuestion();
-    if (!q) return;
     const A = S.A;
+    // 4回に1回は、約束にならないふつうのおしゃべり
+    let q = null;
+    if (A.godSeen && Math.random() < .27) { const cands = SMALLTALK.map((x, k) => k).filter(k => k !== A.lastTalk); A.lastTalk = pick(cands); q = { talk: SMALLTALK[A.lastTalk] }; }
+    if (!q) q = makeQuestion();
+    if (!q) return;
     A.asked = S.shoe.hands;
     if (!A.godSeen) {
       A.godSeen = true; keep(); hush();
@@ -406,28 +480,44 @@
     showAsk(q);
   }
   function showAsk(q) {
-    const A = S.A, M = MOODS[q.mood];
+    const A = S.A, favor = `<span class="bc-favor" data-n="${A.favor}"><span>ご機嫌</span><i></i><i></i><i></i></span>`;
     hush();
-    say('goddess', pick(M.open), 2200);
     ui.ask.hidden = false; host.dataset.ask = '1';
-    ui.ask.innerHTML = `<div class="bc-ask-h"><b>運命の女神 ウンメ</b><span class="bc-mood is-${q.mood}">気分：${M.tag}${(A.qn = (A.qn || 0) + 1) <= 3 ? `（${LIKE_JA[M.like]}が好き）` : ''}</span><span class="bc-favor" data-n="${A.favor}"><span>ご機嫌</span><i></i><i></i><i></i></span></div>
-      <p class="bc-ask-q">${esc(q.q).replace(/\|/g, '<br>')}</p>
-      <div class="bc-ask-o">${q.opts.map((o, i) => `<button type="button" data-bc="answer" data-i="${i}">${esc(o.t)}</button>`).join('')}</div>`;
+    let chip, hint, text, opts;
+    if (q.talk) { chip = '<span class="bc-mood is-talk">おしゃべり</span>'; hint = '気に入る返事なら、ご機嫌が上がるかも'; text = q.talk.q; opts = q.talk.o.map(o => o[0]); }
+    else {
+      const M = MOODS[q.mood];
+      chip = q.wish ? '<span class="bc-mood is-wish">お願い（神託ではない）</span>' : `<span class="bc-mood is-${q.mood}">気分：${M.tag}</span>`;
+      hint = q.wish ? '聞いてあげると喜びそう' : M.hint; text = q.q; opts = q.opts.map(o => o.t);
+      if (!q.wish) say('goddess', pick(M.open), 2200);
+    }
+    ui.ask.innerHTML = `<div class="bc-ask-h"><b>運命の女神 ウンメ</b>${favor}${chip}<span class="bc-ask-hint">ミミ「${hint}」</span></div>
+      <p class="bc-ask-q">${esc(text).replace(/\|/g, '<br>')}</p>
+      <div class="bc-ask-o" data-n="${opts.length}">${opts.map((t, i) => `<button type="button" data-bc="answer" data-i="${i}">${esc(t)}</button>`).join('')}</div>`;
     S.q = q; sfx('tap');
   }
   function answer(i) {
     const q = S.q; if (!q) return;
-    const o = q.opts[i], M = MOODS[q.mood];
+    const A = S.A;
     S.q = null; ui.ask.hidden = true; delete host.dataset.ask;
-    if (o.kind === 'none') { say('goddess', pick(['はぐらかしたー！|つまんなーい！', 'ふーん、慎重ですねぇ。|知らんけど！'])); return; }
+    if (q.talk) {
+      const o = q.talk.o[i];
+      say('goddess', o[2], 2800);
+      // おしゃべりで上がるのは6手に1回まで（約束なしで神託を量産させない）
+      if (o[1] && S.shoe.hands - (A.talkUp == null ? -99 : A.talkUp) >= 6) { A.talkUp = S.shoe.hands; setFavor(A.favor + 1, '気に入られた'); if (A.favor >= 3) { setFavor(0); giveOracle(true); } }
+      keep(); return;
+    }
+    const o = q.opts[i], M = MOODS[q.mood];
+    if (o.kind === 'none') { say('goddess', pick(['はぐらかしたー！|つまんなーい！', 'ふーん、慎重ですねぇ。|知らんけど！', 'えー、決めてくれないんですかぁ'])); return; }
     S.pledges.push(o.make()); if (S.pledges.length > 3) S.pledges.shift();
     paintPins();
-    if (o.kind === M.like) {
-      say('goddess', pick(['それそれ！|そういうの大好きでーす！', 'わかってるぅ！|ウンメちゃん感激！', 'いい返事！|運命の糸がピンって鳴った！']));
-      setFavor(S.A.favor + 1);
-      if (S.A.favor >= 3) { setFavor(0); giveOracle(true); }
+    const liked = o.kind === 'wish' || (!q.wish && o.kind === M.like);
+    if (liked) {
+      say('goddess', o.kind === 'wish' ? pick(['やったぁ！　話がわかるぅ！', 'えへへ、ありがとうございまーす！|約束ですよぉ？']) : pick(['それそれ！|そういうの大好きでーす！', 'わかってるぅ！|ウンメちゃん感激！', 'いい返事！|運命の糸がピンって鳴った！', 'そう来なくっちゃ！']));
+      setFavor(A.favor + 1, o.kind === 'wish' ? 'お願いを聞いた' : '気分に合う返事');
+      if (A.favor >= 3) { setFavor(0); giveOracle(true); }
       else if (Math.random() < .3) giveOracle(false);
-    } else say('goddess', pick(['へぇ〜、そうするんだ。|覚えときまーす！', 'ふうん。約束ですよぉ？', 'はーい、女神が聞きましたからね！']));
+    } else say('goddess', q.wish ? pick(['えー、けちー！|まあ、好きにしてくださーい', 'ふーんだ。じゃあ、それで']) : pick(['へぇ〜、そうするんだ。|覚えときまーす！', 'ふうん。約束ですよぉ？', 'はーい、女神が聞きましたからね！', 'なるほどぉ。……守ってくださいね？']));
     keep();
   }
   // 賭ける場面の頭：約束の時が来たかを見る。果たされていない約束は残す（時効は14手）
@@ -439,19 +529,20 @@
       if (!p.armed && --p.left <= 0) { expired = true; return false; }
       return true;
     });
-    if (armedNow) { say('goddess', `約束の時ですよぉ！|${armedNow.tag.split(' → ')[1]}んですよね？`, 3400); sfx('reach'); }
+    if (armedNow) { say('goddess', pick([`約束の時ですよぉ！|${armedNow.tag.split(' → ')[1]}んですよね？`, `はーい、あの約束の出番でーす！|${armedNow.tag.split(' → ')[1]}んでしたよね？`]), 3400); sfx('reach'); }
     else if (expired) say('goddess', 'あの約束、もう時効！|忘れてあげまーす！');
-    if (S.pledges.some(p => p.armed) && !S.A.betraySeen) { S.A.betraySeen = true; keep(); say('rico', '約束は破ってもいい。|ただし、ウンメさまのご機嫌は下がるよ', 3600); }
+    if (S.pledges.some(p => p.armed) && !S.A.betraySeen) { S.A.betraySeen = true; keep(); say('rico', '約束は守るとご機嫌が上がる。|破ってもいいけど、下がるよ', 3800); }
     paintPins();
   }
   // 配る時：効いている約束を1つずつ判定する。戻り値 { kept, broken }（数）
   function pledgeJudge(bets, stake) {
     const out = { kept: 0, broken: 0 };
     S.judged = [];
+    const pair = !!(bets.PP || bets.BP);
     S.pledges = S.pledges.filter(p => {
       if (!p.armed) return true;
       let ok;
-      if (p.type === 'side') ok = p.promise === 'look' ? stake === 0 : !!bets[p.promise];
+      if (p.type === 'side') ok = p.promise === 'look' ? stake === 0 : p.promise === 'pair' ? pair : p.promise === 'nopair' ? !pair : p.promise === 'noT' ? !bets.T : !!bets[p.promise];
       else ok = p.promise === 'up' ? stake > p.base : p.promise === 'same' ? stake === p.base : stake < p.base;
       S.judged.push(ok ? 'kept' : 'broken');
       if (ok) { out.kept++; S.A.kept++; } else { out.broken++; S.A.broken++; }
@@ -460,21 +551,51 @@
     paintPins();
     return out;
   }
-  // 茶々（問いかけの無い時）。[ウンメの一言, リコ先輩のまっとうな一言（無い時は null）]
+  // ---- 賭ける場面の会話：ウンメの茶々／ディーラーの一言・掛け合い／ミミの心の声（助言） ----
+  const dline = (v, ms) => { const a = Array.isArray(v) ? v : [DL.name, v]; say('dealer', a[1], ms, a[0]); };
+  // ミミの心の声：いま見るべき物を1つだけ言う（神託の読み方・約束・ご機嫌・流れ）
+  function mimiHint() {
+    const o = S.oracle, armed = S.pledges.filter(p => p.armed), st = S.road.stats, A = S.A;
+    const sideP = armed.find(p => p.type === 'side' && (p.promise === 'P' || p.promise === 'B'));
+    if (o && o.kind === 'win') {
+      if (sideP && sideP.promise !== o.w) return [`約束は${SIDE_JA[sideP.promise]}。でも神託は${SIDE_JA[o.w]}……|守ってご機嫌か、裏切って勝ちか`, 1];
+      return [`神託は「${SIDE_JA[o.w]}が勝つ」。|ウソはつかない……ここは${SIDE_JA[o.w]}！`, 1];
+    }
+    if (o && o.kind === 'notwin') return [`神託は「${SIDE_JA[o.w]}は勝たない」。|なら${SIDE_JA[other(o.w)]}……引き分けもあるけど`, 1];
+    if (o && o.kind === 'tie') return ['神託は「引き分け」！|8倍……引き分けに賭ける好機', 1];
+    if (o && o.kind === 'notie') return ['引き分けは無い……|引き分けに賭ける意味はない、と', 1];
+    if (armed.length) return [`約束の時。${armed[0].tag.split(' → ')[1]}……|守ればご機嫌が上がる`, 1];
+    if (A.favor === 2) return ['ご機嫌はあと1つ。|満ちれば、神託がもらえる', .7];
+    if (coins() < 50) return ['手持ちが少ない……|見（ケン）で様子を見よう', .8];
+    if (S.lossRun >= 3) return ['続けて外れてる……|上げずに、落ち着こう', .6];
+    if (st.streak.w && st.streak.n >= 4) return [`${SIDE_JA[st.streak.w]}が${st.streak.n}回……でも次の確率は同じ、|って先輩が言ってた`, .5];
+    if (st.chop >= 4) return ['交互に来てる……|でも、いつ切れてもおかしくない', .4];
+    if (S.res.length && S.res.length % 9 === 0) return ['バンカーは少し有利、引き分けは当たりにくい。|先輩の解説、もう一度見ようかな', .5];
+    return null;
+  }
   function chatter() {
     const st = S.road.stats, sw = st.streak.w, n = st.streak.n, L = [];
-    if (sw && n >= 4) L.push([`${SIDE_JA[sw]}のツラ、${n}本目！|どこまで伸びるかなぁ、知らんけど！`, 'ツラは「続いた記録」。|次の1回の確率は変わらないよ']);
+    if (sw && n >= 4) L.push([`${SIDE_JA[sw]}のツラ、${n}本目！|どこまで伸びるかなぁ、知らんけど！`, 'ツラは「続いた記録」。|次の1回の確率は変わらないよ'], [`${n}連勝！　${SIDE_JA[sw]}が止まりませーん！|止めるのは誰かなぁ？`, null]);
     if (st.chop >= 4) L.push(['行ったり来たり！|運命の糸、いま大渋滞でーす！', null]);
     if (S.looks >= 3) L.push(['見てるだけ〜？|運命は賭けた人にしか微笑みませんよぉ！', '見（ケン）は立派な手だよ。|賭けなければ減らないじゃん']);
-    if (S.lossRun >= 3) L.push([`${S.lossRun}回つづけて外れ！|……ねえ、まだやります？`, '取り返そうと上げても、|勝ちやすくはならないよ']);
-    if (S.winRun >= 3) L.push([`${S.winRun}連勝！|調子に乗っちゃいましょー！`, null]);
+    if (S.lossRun >= 3) L.push([`${S.lossRun}回つづけて外れ！|……ねえ、まだやります？`, '取り返そうと上げても、|勝ちやすくはならないよ'], ['あらら、ツイてませんねぇ。|ウンメちゃんのせいじゃないですよぉ？', null]);
+    if (S.winRun >= 3) L.push([`${S.winRun}連勝！|調子に乗っちゃいましょー！`, '勝ってる時こそ、賭け金は決めた額でね'], ['のってますねぇ！|女神の加護かなぁ？　……知らんけど！', null]);
     if (coins() < C.minBet) L.push(['すっからかん？|見てるだけでもいいですよぉ', null]);
     if (!L.length) L.push(['次はどっちかなー。|ウンメちゃんは知ってまーす！', null], ['ねえねえ、どっちに賭けるの？', null], ['その顔、迷ってますねぇ！', null],
       ['さっさと賭けましょー！|リアルタイムアタック！', 'バカラは速さを競う遊びじゃないよ。|ゆっくり決めな'], ['バンカーは少しだけ勝ちやすいんですって。|知らんけど！', 'ほんとだよ。だから勝つと5%引かれるじゃん'],
-      ['サイコロは振ったよ、もう戻せないよ！|……あ、これ札でしたぁ', null]);
-    const [g, r] = pick(L);
-    say('goddess', g);
-    if (r && Math.random() < .6) say('rico', r, 3400);
+      ['サイコロは振ったよ、もう戻せないよ！|……あ、これ札でしたぁ', null], ['罫線って、きれいな模様ですよねぇ。|ウンメちゃんの落書きみたい！', '模様は記録。先のことは書いてないよ'],
+      ['この時計塔、たまに二分ずれるんですって。|知らんけど！', null], ['引き分けは8倍ですよぉ、8倍！|夢がありますねぇ！', '当たるのは10回に1回くらい。店の取り分がいちばん大きいよ'],
+      ['ミミちゃん、手が止まってますよぉ。|運命は待ってくれませーん！', null], ['こういうの、あとで「あれが分かれ目でした」|って言われるやつ〜！', null]);
+    // ディーラーの一言か、ウンメとの掛け合い（3回に1回くらい）
+    const DT = DL.T || {};
+    if (Math.random() < .36 && (DT.idle || DT.banter)) {
+      if (DT.banter && Math.random() < .5) { const b = pick(DT.banter); dline(b[0], 3000); say('goddess', b[1], 3000); }
+      else if (DT.idle) dline(pick(DT.idle), 3200);
+    } else {
+      const [g, r] = pick(L);
+      say('goddess', g);
+      if (r && Math.random() < .6) say('rico', r, 3400);
+    }
   }
 
   // =============================================================
@@ -533,48 +654,77 @@
     if (RANKS.some(r => states[r] === 'win')) return '……届かず。次の札へ';
     return '札の端をめくって、数を読む';
   }
-  // 絞り：賭けた側の札をめくる。auto＝盛り上がる所で自動でめくって見せる（指で触れば、そこから自分でめくれる）
-  // 候補が最後の1つになったら、その場で確定して開く（「開く」を押させない。2026-11-16 ユーザー）
-  function squeeze(w, i, mine, auto) {
-    const c = S.cards[w][i], landscape = i === 2;
-    return new Promise((resolve, reject) => {
-      const g = G;
-      host.dataset.sq = '1'; ui.sq.hidden = false;
-      const others = S.vals[w].filter((v, k) => k !== i && v != null).reduce((a, b) => a + b, 0);
+  // 絞り：賭けた側の札をめくる。4つの拍で見せる（2026-11-16 ユーザー「何が来てほしいのか分からないうちにめくれる・当たりかハズレかが飲み込めない・ドキドキが弱い」）
+  //   拍0 予告：めくる前に「何が出たら勝ち／負け／もう1枚」を大きな札で見せる（自動なら約3秒、押せばすぐ）
+  //   拍1 めくる：足 → 横の数。見えるたびに候補が消え、「当たり n／残り m」の印が減る。鼓動がだんだん速くなる
+  //   拍2 溜め：勝ちと負けが両方残った最後の所で止めて、「どっち！？」
+  //   拍3 判定：開いた札と一緒に「当たり！／ハズレ……／引き分け／まだ決まらない」と、その理由（合計と勝った側）を大きく出す
+  // auto＝自動でめくって見せる（指で触れば、そこから自分でめくれる）。候補が最後の1つになったら、その場で確定して開く
+  function thump() {
+    try {
+      if (typeof isSfxOn === 'function' && !isSfxOn()) return;
+      if (typeof mpTone === 'function') { mpTone(64, .13, 'sine', .12); mpTone(50, .16, 'sine', .1, .005, .06, 150); }
+    } catch (e) { }
+  }
+  let briefResolve = null;
+  async function squeeze(w, i, mine, auto) {
+    const c = S.cards[w][i], landscape = i === 2, g = G;
+    const others = S.vals[w].filter((v, k) => k !== i && v != null).reduce((a, b) => a + b, 0);
+    const tot = (r) => (others + (r >= 10 ? 0 : r)) % 10;
+    const lab = (r) => (r === 1 ? 'A' : r === 11 ? '絵' : String(r));
+    const wt = (r) => (r === 11 ? 3 : 1);   // 絵札は J・Q・K の3種ぶん
+    const states = {}; RANKS.forEach(r => { states[r] = candState(w, i, r, mine); });
+    const by = (k, set) => (set || RANKS).filter(r => states[r] === k);
+    let beatT = 0, mySq = null;
+    const setHeat = (set) => {
+      const alive = by('win', set).length, h = !alive ? 0 : set.length <= 2 ? 3 : set.length <= 4 ? 2 : 1;
+      ui.sq.dataset.heat = h; clearInterval(beatT); beatT = 0;
+      if (h) beatT = setInterval(thump, [0, 1100, 780, 460][h]);
+    };
+    // 当たりの見込み：残っている札の種類を、勝ち・引き分け・負け・もう1枚の印で並べる
+    const paintOdds = (set) => {
+      const pips = ['win', 'tie', 'lose', 'next'].map(k => by(k, set).map(r => `<i class="k-${k}"></i>`.repeat(wt(r))).join('')).join('');
+      const n = by('win', set).reduce((a, r) => a + wt(r), 0), m = set.reduce((a, r) => a + wt(r), 0);
+      ui.odds.innerHTML = RANKS.some(r => states[r] === 'win') ? `<span>当たり <b>${n}</b>／残り <b>${m}</b></span><span class="bc-odds-p">${pips}</span>` : '';
+    };
+    try {
+      host.dataset.sq = '1'; ui.sq.hidden = false; ui.sq.dataset.auto = auto ? '1' : '0'; delete ui.sq.dataset.climax;
+      ui.verdict.hidden = true;
       const row = (x) => `<span class="bc-sc is-${x}${x === w ? ' is-now' : ''}"><b>${SIDE_JA[x]}</b>${S.cards[x].map((cc, k) => (S.vals[x][k] != null ? `<i class="bc-card is-face" style="background-image:url(${SQ.faceURL(cc.card, 160)})"></i>` : `<i class="bc-card is-back${x === w && k === i ? ' is-target' : ''}"></i>`)).join('')}<em>${ui.sides[x].querySelector('.bc-tot').textContent}</em></span>`;
       ui['sq-score'].innerHTML = row(other(w)) + row(w) + `<span class="bc-sc-bet">${SIDE_JA[mine]}に賭けた</span>`;
-      const states = {}; RANKS.forEach(r => { states[r] = candState(w, i, r, mine); });
-      ui.cands.innerHTML = RANKS.map(r => `<span class="bc-cd is-${states[r]}" data-r="${r}"><b>${r === 1 ? 'A' : r === 11 ? '絵' : r}</b><small>合計${(others + (r >= 10 ? 0 : r)) % 10}</small></span>`).join('');
-      const heat = (set) => { const alive = set.filter(r => states[r] === 'win').length; ui.sq.dataset.heat = !alive ? '0' : set.length <= 2 ? '3' : set.length <= 4 ? '2' : '1'; };
-      ui['sq-m'].innerHTML = wantHTML(states, RANKS); heat(RANKS);
-      ui.sq.dataset.auto = auto ? '1' : '0';
-      // めくる前のひと煽り：来てほしい札を名指しで
-      const wins0 = RANKS.filter(r => states[r] === 'win');
+      ui.cands.innerHTML = RANKS.map(r => `<span class="bc-cd is-${states[r]}" data-r="${r}"><b>${lab(r)}</b><small>合計${tot(r)}</small></span>`).join('');
+      ui['sq-m'].innerHTML = wantHTML(states, RANKS); paintOdds(RANKS); ui.sq.dataset.heat = '0';
+      // ---- 拍0：何が来てほしいか ----
+      const tiles = (k) => by(k).map(r => `<i class="bc-bt is-${k}"><b>${lab(r)}</b><small>合計${tot(r)}</small></i>`).join('');
+      const rowsB = [['win', 'で 勝ち'], ['tie', 'で 引き分け'], ['lose', 'で 負け'], ['next', 'は もう1枚引く']].filter(([k]) => by(k).length)
+        .map(([k, t]) => `<div class="bc-br is-${k}"><span class="bc-br-t">${tiles(k)}</span><b>${t}</b></div>`).join('');
+      ui.brief.innerHTML = `<b class="bc-brief-h">${by('win').length ? 'この1枚に、勝ちがある' : 'この1枚で、勝負が動く'}</b>${rowsB}<button type="button" class="bc-go" data-bc="sqgo"><b>${auto ? 'めくる（待っても進む）' : 'めくる'}</b></button>${auto ? '<i class="bc-brief-bar"></i>' : ''}`;
+      const decisive = RANKS.some(r => states[r] !== 'next');
+      if (decisive) { ui.brief.hidden = false; ui['sq-cv'].dataset.dim = '1'; }
       hush();
-      if (wins0.length && wins0.length <= 4) { say('goddess', `${wins0.map(rankJa).join('か')}！　来いっ！|ウンメちゃんも祈ってまーす！`, 2600); say('mimi', `お願い……${wins0.map(rankJa).join('か')}……！`, 1800); }
+      const wins0 = by('win').map(rankJa);
+      if (wins0.length && wins0.length <= 4) { say('goddess', `${wins0.join('か')}！　${wins0.join('か')}来いっ！|ウンメちゃんも祈ってまーす！`, 2800); say('mimi', `お願い……${wins0.join('か')}……！`, 1800); }
       else if (wins0.length) say('goddess', pick(['ここが運命の分かれ目でーす！|……たぶん！', 'さあさあ、何が出るかなぁ！']), 2400);
-      let lastN = 99, told = {}, mySq = null, closing = false;
-      const done = () => {
-        if (closing) return; closing = true;
-        if (g !== G) return reject(STOP);
-        sfx('flip');
-        if (sq) { sq.destroy(); sq = null; }
-        const me = Math.min(11, c.card.rank), st = states[me];
-        ui.cands.querySelectorAll('.bc-cd').forEach(e => { e.classList.toggle('is-out', +e.dataset.r !== me); e.classList.toggle('is-hit', +e.dataset.r === me); });
-        showFace(c.el, c.card); S.vals[w][i] = BC.valueOf(c.card); paintTotals();
-        ui['sq-cv'].classList.add('is-open'); ui['sq-cv'].style.backgroundImage = `url(${SQ.faceURL(c.card, 320)})`;
-        ui['sq-cv'].dataset.land = landscape ? '1' : '0';
-        ui.sq.dataset.heat = '0';
-        ui['sq-m'].innerHTML = st === 'win' ? `<em>${rankJa(me)}</em>来たーっ！` : st === 'lose' ? `<em>${rankJa(me)}</em>……届かず` : st === 'tie' ? `<em>${rankJa(me)}</em>で引き分け` : `<em>${rankJa(me)}</em>。次の札へ`;
-        hush();
-        if (st === 'win') { sfx('bigwin'); say('goddess', pick(['来たぁーっ！　決まりーっ！', 'はい確定！|……ウンメちゃんは前から知ってましたけどね？']), 2200); say('mimi', pick(['来たっ……！', 'やった、これ……！']), 1400); }
-        else if (st === 'lose') { sfx('lose'); say('goddess', pick(['あーあ、言わんこっちゃない！', '出ちゃった〜！　これが今日の運命でーす！']), 2200); say('mimi', pick(['あぅ……', 'そんなぁ……']), 1400); }
-        setTimeout(() => {
-          if (g !== G || !live()) return reject(STOP);
-          ui.sq.hidden = true; delete host.dataset.sq; ui['sq-cv'].classList.remove('is-open'); ui['sq-cv'].style.backgroundImage = '';
-          resolve();
-        }, st === 'next' ? 900 : 1600);
+      else if (decisive) say('goddess', pick(['あらら、勝ちの目がもう無いですよぉ', 'この札、どうなっても知りませんよぉ？']), 2400);
+      if (decisive) { sfx('reach'); thump(); }
+      if (decisive) await new Promise((res, rej) => {
+        let t = 0;
+        briefResolve = () => { clearTimeout(t); briefResolve = null; (g === G && live()) ? res() : rej(STOP); };
+        if (auto) t = setTimeout(() => briefResolve && briefResolve(), 3200);
+      });
+      ui.brief.hidden = true; delete ui['sq-cv'].dataset.dim;
+      // ---- 拍1・2：めくる ----
+      let lastN = 99, told = {}, climaxed = false, curSet = RANKS, openRes = null;
+      const openedP = new Promise(r => { openRes = r; });
+      const hot = (set) => by('win', set).length && set.some(r => states[r] !== 'win');
+      const climaxFx = (set) => {
+        climaxed = true; ui.sq.dataset.climax = '1'; hush();
+        const wn = by('win', set).map(rankJa).join('か');
+        ui['sq-m'].innerHTML = `<em>${wn}</em>なら勝ち！`;
+        say('goddess', pick([`${wn}！？　${wn}なの！？|知ってるけど言わなーい！`, `いま運命の分岐点！|${wn}、来い来い来いっ！`]), 2600);
+        sfx('reach'); thump(); setTimeout(thump, 330); setTimeout(thump, 660);
       };
+      setHeat(RANKS);
       mySq = sq = SQ.create(ui['sq-cv'], {
         card: c.card, landscape, back: ART.back,
         onGrab: () => { sfx('tap'); ui.sq.dataset.auto = '0'; },
@@ -582,37 +732,68 @@
           const set = info.cands.map(r => Math.min(11, r)).filter((r, k, a) => a.indexOf(r) === k);
           ui.cands.querySelectorAll('.bc-cd').forEach(e => e.classList.toggle('is-out', !set.includes(+e.dataset.r)));
           if (set.length >= lastN) return;
-          const first = lastN === 99; lastN = set.length; sfx('check');
-          ui['sq-m'].innerHTML = wantHTML(states, set); heat(set);
-          // 候補が1つ：その場で確定
-          if (set.length === 1) { setTimeout(() => { if (sq === mySq && mySq) mySq.open(); }, 380); return; }
+          const first = lastN === 99; lastN = set.length; curSet = set; sfx('check');
+          ui['sq-m'].innerHTML = wantHTML(states, set); setHeat(set); paintOdds(set);
+          if (set.length === 1) { setTimeout(() => { if (sq === mySq && mySq) mySq.open(); }, 420); return; }
+          if (!auto && !climaxed && hot(set) && set.reduce((a, r) => a + wt(r), 0) <= 3) { climaxFx(set); return; }
           const key = set.join(','), has = (a) => set.every(r => a.includes(r));
-          const alive = set.filter(r => states[r] === 'win'), hadWin = RANKS.some(r => states[r] === 'win');
+          const alive = by('win', set).map(rankJa).join('か'), hadWin = by('win').length;
           let line = null;
-          if (hadWin && !alive.length && !told.dead) { told.dead = 1; line = 'あーあ、消えちゃった〜。|言わんこっちゃない！'; }
-          else if (set.length === 2 && alive.length === 1) line = `どっち！？　${rankJa(alive[0])}なの！？|知ってるけど言わなーい！`;
-          else if (key === '4,5,6,7,8,9,10') line = alive.length ? `足あり！　4より上！|${alive.map(rankJa).join('か')}、まだ生きてますよぉ！` : '足あり！　4より上ですよぉ';
-          else if (has([1, 2, 3]) && set.length <= 3 && !told.low) { told.low = 1; line = alive.length ? `足なし！　ちっちゃい数！|${alive.map(rankJa).join('か')}、あるある！` : '足なし……ちっちゃい数だぁ'; }
-          else if (key === '6,7,8') line = alive.length ? `横に3つ！　6か7か8！|${alive.map(rankJa).join('か')}来いっ！` : '横に3つ！　6か7か8！';
-          else if (key === '9,10') line = alive.length ? `横に4つ！　9か10！|${alive.map(rankJa).join('か')}来いっ！` : '横に4つ！　9か10！';
-          else if (key === '4,5') line = alive.length ? `横に2つ！　4か5！|${alive.map(rankJa).join('か')}来いっ！` : '横に2つ。4か5ですよぉ';
-          else if (alive.length && !first) line = pick(['まだ生きてる！　生きてますよぉ！', 'いま運命の分岐点！|……たぶん！　知らんけど！']);
-          if (line && !told[key]) { told[key] = 1; hush(); say('goddess', line, 2400); if (alive.length) sfx('reach'); }
+          if (hadWin && !alive && !told.dead) { told.dead = 1; line = 'あーあ、消えちゃった〜。|言わんこっちゃない！'; sfx('lose'); }
+          else if (key === '4,5,6,7,8,9,10') line = alive ? `足あり！　4より上！|${alive}、まだ生きてますよぉ！` : '足あり！　4より上ですよぉ';
+          else if (has([1, 2, 3]) && set.length <= 3 && !told.low) { told.low = 1; line = alive ? `足なし！　ちっちゃい数！|${alive}、あるある！` : '足なし……ちっちゃい数だぁ'; }
+          else if (key === '6,7,8') line = alive ? `横に3つ！　6か7か8！|${alive}来いっ！` : '横に3つ！　6か7か8！';
+          else if (key === '9,10') line = alive ? `横に4つ！　9か10！|${alive}来いっ！` : '横に4つ！　9か10！';
+          else if (key === '4,5') line = alive ? `横に2つ！　4か5！|${alive}来いっ！` : '横に2つ。4か5ですよぉ';
+          else if (alive && !first) line = pick(['まだ生きてる！　生きてますよぉ！', 'いま運命の分岐点！|……たぶん！　知らんけど！']);
+          if (line && !told[key]) { told[key] = 1; hush(); say('goddess', line, 2400); if (alive) sfx('reach'); }
         },
-        onOpen: done,
+        onOpen: () => openRes(),
       });
-      S.sqDone = done;
       if (auto) {
-        // 自動の絞り：短い辺（足）→ 長い辺（横の数）→ ゆっくり全部。途中で候補が1つになれば、そこで開く。指で触ると止まる
+        // 自動：短い辺（足）→ 長い辺（横の数）→ ゆっくり全部。勝ちと負けが両方残った最後の所で、いったん止めて溜める
         const steps = landscape
-          ? [{ from: [0, .5], to: [.36, .5], ms: 1300, hold: 1100 }, { from: [.5, 1], to: [.5, .5], ms: 1300, hold: 1100 }, { from: [0, .5], to: [.99, .5], ms: 2600, hold: 200, keep: true }]
-          : [{ from: [.5, 1], to: [.5, .64], ms: 1300, hold: 1100 }, { from: [1, .5], to: [.5, .5], ms: 1300, hold: 1100 }, { from: [1, .5], to: [.01, .5], ms: 2600, hold: 200, keep: true }];
-        setTimeout(() => {
-          if (sq !== mySq || g !== G) return;
-          mySq.demo(steps).then(() => { if (sq === mySq && !mySq.info().opened && !mySq.info().cancelled) mySq.open(); });
-        }, 900);
+          ? [{ from: [0, .5], to: [.36, .5], ms: 1500, hold: 1500 }, { from: [.5, 1], to: [.5, .5], ms: 1500, hold: 1500 }, { from: [0, .5], to: [.99, .5], ms: 3000, hold: 200, keep: true }]
+          : [{ from: [.5, 1], to: [.5, .64], ms: 1500, hold: 1500 }, { from: [1, .5], to: [.5, .5], ms: 1500, hold: 1500 }, { from: [1, .5], to: [.01, .5], ms: 3000, hold: 200, keep: true }];
+        await wait(450);
+        for (let k = 0; k < steps.length; k++) {
+          const I = mySq.info();
+          if (sq !== mySq || I.opened || I.cancelled) break;
+          if (!climaxed && hot(curSet) && (k === steps.length - 1 || curSet.reduce((a, r) => a + wt(r), 0) <= 3)) { climaxFx(curSet); await wait(1700); if (sq !== mySq || mySq.info().cancelled) break; }
+          await mySq.demo([steps[k]]);
+        }
+        const I = mySq.info();
+        if (sq === mySq && !I.opened && !I.cancelled) mySq.open();
       }
-    });
+      await openedP;
+      if (g !== G || !live()) throw STOP;
+      // ---- 拍3：判定 ----
+      clearInterval(beatT); beatT = 0; ui.sq.dataset.heat = '0'; delete ui.sq.dataset.climax;
+      if (sq) { sq.destroy(); sq = null; }
+      const me = Math.min(11, c.card.rank), st = states[me];
+      ui.cands.querySelectorAll('.bc-cd').forEach(e => { e.classList.toggle('is-out', +e.dataset.r !== me); e.classList.toggle('is-hit', +e.dataset.r === me); });
+      showFace(c.el, c.card); S.vals[w][i] = BC.valueOf(c.card); paintTotals();
+      ui['sq-cv'].classList.add('is-open'); ui['sq-cv'].style.backgroundImage = `url(${SQ.faceURL(c.card, 320)})`;
+      ui['sq-cv'].dataset.land = landscape ? '1' : '0';
+      const sum = (x) => S.vals[x].filter(v => v != null).reduce((a, b) => a + b, 0) % 10;
+      const score = `${SIDE_JA.P} ${sum('P')} 対 ${SIDE_JA.B} ${sum('B')}`;
+      const V = { win: ['当たり！', `${score}。${SIDE_JA[mine]}の勝ち`], lose: ['ハズレ……', `${score}。${SIDE_JA[other(mine)]}の勝ち`], tie: ['引き分け', `${score}。同じ数`], next: ['まだ決まらない', `${rankJa(c.card.rank >= 11 ? 11 : c.card.rank)}で合計${tot(me)}。もう1枚引く`] }[st];
+      ui.verdict.dataset.st = st; ui.verdict.innerHTML = `<b>${V[0]}</b><span>${V[1]}</span>`; ui.verdict.hidden = !decisive;
+      ui['sq-m'].innerHTML = st === 'win' ? `<em>${rankJa(me)}</em>来たーっ！` : st === 'lose' ? `<em>${rankJa(me)}</em>……届かず` : st === 'tie' ? `<em>${rankJa(me)}</em>で引き分け` : `<em>${rankJa(me)}</em>。次の札へ`;
+      ui.odds.innerHTML = '';
+      hush(); sfx('flip');
+      if (st === 'win') { sfx('bigwin'); say('goddess', pick(['来たぁーっ！　決まりーっ！', 'はい確定！|……ウンメちゃんは前から知ってましたけどね？']), 2400); say('mimi', pick(['来たっ……！', 'やった、これ……！']), 1400); }
+      else if (st === 'lose') { sfx('lose'); say('goddess', pick(['あーあ、言わんこっちゃない！', '出ちゃった〜！　これが今日の運命でーす！']), 2400); say('mimi', pick(['あぅ……', 'そんなぁ……']), 1400); }
+      else if (st === 'tie') sfx('tie');
+      await wait(!decisive ? 650 : st === 'win' ? 2300 : st === 'next' ? 1200 : 2000);
+    } finally {
+      clearInterval(beatT); briefResolve = null;
+      if (mySq && sq === mySq) { sq.destroy(); sq = null; }
+      if (live()) {
+        ui.brief.hidden = true; ui.verdict.hidden = true; ui.sq.hidden = true; delete host.dataset.sq; delete ui.sq.dataset.climax; ui.sq.dataset.heat = '0';
+        delete ui['sq-cv'].dataset.dim; ui['sq-cv'].classList.remove('is-open'); ui['sq-cv'].style.backgroundImage = '';
+      }
+    }
   }
   // 絞りの出し方（右上の「絞り」で替える）：自動＝勝負が決まるかもしれない札だけ自動でめくって見せる／自分で＝賭けた側は全部自分でめくる／なし＝すぐ開く
   async function reveal(w, i, mine) {
@@ -655,8 +836,12 @@
     setPhase('bet'); paintRoads(); paintTotals();
     pledgeTick();
     if (S.A.favor >= 3 && !S.oracle) { setFavor(0); giveOracle(true); }
-    else if (S.pledges.length < 3 && !S.q && S.shoe.hands - (A.asked || 0) >= 2 && S.res.length >= 2 && Math.random() < .62) askQuestion();
-    else if (Math.random() < .5) chatter();
+    else {
+      if (S.pledges.length < 3 && !S.q && S.shoe.hands - (A.asked || 0) >= 2 && S.res.length >= 2 && Math.random() < .62) askQuestion();
+      else if (Math.random() < .62) chatter();
+      // ミミの心の声（助言）：問いの札が出ていない時だけ
+      if (!S.q && ui.ask.hidden) { const mh = mimiHint(); if (mh && Math.random() < mh[1]) say('mimi', `（${mh[0]}）`, 4400); }
+    }
     const go = await waitBet();
     if (S.q) { S.q = null; ui.ask.hidden = true; delete host.dataset.ask; }
     hush();
@@ -696,18 +881,20 @@
     sfx(pay.net > 0 ? (pay.net >= stake * 3 ? 'bigwin' : 'win') : pay.net < 0 ? 'lose' : 'tie');
     if (stake) { if (pay.net > 0) { S.winRun++; S.lossRun = 0; } else if (pay.net < 0) { S.lossRun++; S.winRun = 0; } }
     // 「外れたら次の賭け金」の約束は、外れた時に効き始める
-    if (stake && pay.net < 0) S.pledges.forEach(p => { if (p.type === 'stake' && !p.armed) { p.armed = true; p.base = stake; } });
+    if (stake && pay.net !== 0) S.pledges.forEach(p => { if (p.type === 'stake' && !p.armed && (p.on === 'win') === (pay.net > 0)) { p.armed = true; p.base = stake; } });
     if (stake) S.lastStake = stake;
     paintBets();
     // ウンメの反応：約束を守ったか × 当たったか（約束が重なった時は、破った方が勝つ）
     if (judged.kept || judged.broken) {
-      setFavor(A.favor + judged.kept - 2 * judged.broken);
+      setFavor(A.favor + judged.kept - 2 * judged.broken, judged.broken ? '約束を破った' : '約束を守った');
+      if (judged.kept && !judged.broken && !A.keepSeen) { A.keepSeen = true; say('rico', '約束を守ると、ウンメさまのご機嫌が上がる。|3つ満ちると神託だよ', 4000); }
       if (judged.broken) {
         if (pay.net > 0) { A.outwit++; say('goddess', pick(['あーっ、裏切ったー！|……なのに当ててる。ずるーい！', '言ったことと違うー！|勝ったからって許しませーん！']), 3200); }
         else say('goddess', pick(['裏切って、外した！|あーあ、言わんこっちゃない！', '約束やぶりましたよね？|バチが当たったんですよぉ']), 3200);
       } else say('goddess', pay.net > 0 ? pick(['有言実行！　しかも当たり！|かっこいいでーす！', '言ったとおりにして勝った！|そういう子、大好き！']) : pay.net < 0 ? pick(['約束は守ったのにねぇ。|よしよし', '外れたけどウソはつかなかった！|えらいえらい！']) : '約束どおり！|ちゃんと見てましたよぉ', 3200);
     } else if (stake && pay.net >= stake * 8) say('goddess', 'わ、大当たり！|運命もびっくりでーす！');
-    else if (stake && Math.random() < .12) say('goddess', pick(['決まりーっ！　これが今日の運命でーす！', 'はい確定。……いやほんと、|ウンメちゃんは前から知ってたんですけどね？']));
+    else if (stake && Math.random() < .5) { const DT = DL.T || {}, rl = DT.res ? DT.res(h, pay.net) : pick((pay.net > 0 ? DT.win : pay.net < 0 ? DT.lose : DT.tie) || []); if (rl) dline(rl, 2800); }
+    else if (stake && Math.random() < .3) say('goddess', pick(['決まりーっ！　これが今日の運命でーす！', 'はい確定。……いやほんと、|ウンメちゃんは前から知ってたんですけどね？', '文句は受け付けませーん！']));
     keep();
     await waitTap(stake ? 2600 : 1700);
     S.fresh = false;
@@ -889,6 +1076,7 @@
       case 'answer': answer(+b.dataset.i); break;
       case 'pick': if (pickResolve) pickResolve(b.dataset.id); break;
       case 'sqopen': if (sq) sq.open(); break;
+      case 'sqgo': if (briefResolve) briefResolve(); break;
       case 'sqmode': {
         const order = ['auto', 'manual', 'off'], m = order[(order.indexOf(S.A.sqMode || 'auto') + 1) % 3];
         S.A.sqMode = m; keep(); paintBets(); hush();
