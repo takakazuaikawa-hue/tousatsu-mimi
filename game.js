@@ -773,7 +773,7 @@ const CG_SETS = {
   // ほろ酔いの夜で初めてヴェルベットに勝った時に渡す（endBattle の save.photobookPending → showPhotobookGift）。採用分は qa/out/velvet_photobook/adopted.json
   cgset_velvet_book: { name: 'ヴェルベット写真集', n: 123, key: 'velvetbook', short: '写真集', gift: 'ほろ酔いの夜のクリア報酬' },
   // 三周目のクリア報酬（11/10 ユーザー決定「5人全員の写真集」）。泥酔の夜で5人に勝ったら渡す。並びは qa/out/deisui_photobook/order.json（人ごと・場面順）
-  cgset_deisui_book: { name: '泥酔の夜 写真集', n: 108, key: 'deisuibook', short: '泥酔写真集', gift: '泥酔の夜のクリア報酬', deisui: true },
+  cgset_deisui_book: { name: '泥酔の夜 写真集', n: 109, key: 'deisuibook', short: '泥酔写真集', gift: '泥酔の夜のクリア報酬', deisui: true },
 };
 const cgSetSrc = (id, k) => `assets/backgrounds/cgset/${CG_SETS[id].key}_${k}.jpg`;
 const cgSetThumb = (id, k) => `assets/backgrounds/cgset/thumb/${CG_SETS[id].key}_${k}.webp`;
