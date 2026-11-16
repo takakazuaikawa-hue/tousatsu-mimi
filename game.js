@@ -905,10 +905,11 @@ function setMimiExpression(expr) {
     if (img.closest('.battle-screen.v2')) {
       // 買った衣装はバストアップの差分が無いので、装備中は衣装の立ち絵の上半身を出す（2026-11-01 9回目の批評：桃色を買っても卓は黒のままだった）
       // 夜（ほろ酔い・泥酔）の卓は酔ったミミが決まりの姿。色替えの立ち絵には酔い版が無く、昼の顔が出て結果画面の酔い顔と食い違っていた（2026-11-16）
-      if (skin && !(state && state.horoyoi)) {
+      const nightSkin = !!(state && state.horoyoi) && MIMI_SKIN_DRUNK.has(skin);
+      if (skin && (!(state && state.horoyoi) || nightSkin)) {
         img.classList.add('is-skin-full');
-        img.onerror = () => { img.onerror = null; img.classList.remove('is-skin-full'); img.src = 'assets/characters/mimi_bust_calm.webp'; };
-        img.src = `assets/characters/mimi_${skin}.webp`;
+        img.onerror = () => { img.onerror = null; img.classList.remove('is-skin-full'); img.src = `assets/characters/mimi_bust_calm${nightSkin ? '_drunk' : ''}.webp`; };
+        img.src = `assets/characters/mimi_${skin}${nightSkin ? '_drunk' : ''}.webp`;
         return;
       }
       img.classList.remove('is-skin-full');
@@ -977,6 +978,8 @@ const OPPONENT_EXPRESSIONS = {
 // mood: 'default' | 'pressure'（大ベット/強気）| 'rattled'（ブラフ露呈/劣勢）
 //       | 'pleased'（勝ち/余裕）| 'defeat'（敗北）
 // ほろ酔いの夜の立ち絵（<key>_drunk_stand.webp）。絵が届いた人だけここに足す（無い人は昼の立ち絵のまま。404 を出さない）
+// 色替えのミミの酔った立ち絵（mimi_<色>_drunk.webp）。絵が届いた色だけここに足す（無い色は、夜は酔ったミミの決まりの姿）
+const MIMI_SKIN_DRUNK = new Set(['pink', 'panda', 'gold']);   // 2026-11-16 描き足した
 const HOROYOI_STAND = new Set(['rico', 'polka', 'selina', 'grano', 'velvet']);   // 11/09 ユーザー選：リコ・ヴェルベットは2、他は1
 // ほろ酔いの夜は顔のアイコンも酔った顔（assets/ui/face_<key>_drunk.webp、qa/drunkfaces.mjs で酔ったカットインから切り出し）
 const DRUNK_FACE_KEYS = new Set(['rico', 'mimi', 'polka', 'selina', 'grano', 'velvet']);
@@ -6374,7 +6377,8 @@ function applyOpponentIdle() {
 function applyBattleRicoOutfit() {
   const img = document.querySelector('.char-rico img');
   if (!img) return;
-  if (state.seriousRicoMode && img.closest('.v2-com-rico')) return;   // 本気のリコ戦はこの欄がミミの心の声（顔はミミ）
+  // 本気のリコ戦と夜のリコ戦はこの欄がミミの心の声（顔はミミ）。2026-11-16：夜のリコ戦で、ミミの心の声の欄にリコ先輩の酔った顔が出ていた
+  if ((state.seriousRicoMode || (state.horoyoi && state.opponentId === 'rico_tutorial')) && img.closest('.v2-com-rico')) return;
   const equipped = save && save.equippedRicoOutfit;
   const found = equipped && equipped !== 'default'
     ? RICO_OUTFITS.find(o => outfitIdFor(o.file) === equipped)
@@ -11677,16 +11681,28 @@ const MIMI_PROFILE = {
 };
 
 // 立ち絵ファイル名を解決（ミミ／リコは装備スキン・衣装を反映）
+// 夜（ほろ酔い・泥酔）に切り替えている時は、夜の姿を出す（2026-11-16：夜のホームからプロフィールを開くと、全員しらふの昼の立ち絵だった）
 function profileArtFile(charId) {
+  const night = typeof isHoroyoi === 'function' && isHoroyoi();
+  const deisui = night && typeof isDeisui === 'function' && isDeisui();
   if (charId === 'mimi') {
     const skin = save && save.equippedMimiSkin;
-    return (skin && skin !== 'default') ? `mimi_${skin}.webp` : 'mimi_default.webp';
+    if (skin && skin !== 'default' && !night) return `mimi_${skin}.webp`;
+    if (skin && skin !== 'default' && MIMI_SKIN_DRUNK.has(skin)) return `mimi_${skin}_drunk.webp`;
+    return deisui ? 'mimi_deisui_stand.webp' : night ? 'mimi_intermission_drunk.webp' : 'mimi_default.webp';
   }
   if (charId === 'rico_tutorial') {
     const o = typeof pickLobbyRico === 'function' ? pickLobbyRico() : null;
-    return o ? o.file : 'rico_default.webp';
+    const f = o ? o.file : 'rico_default.webp';
+    if (night) {
+      if (/^rico_(default|greet).webp$/.test(f)) return deisui ? 'rico_deisui_stand.webp' : 'rico_drunk_stand.webp';
+      const m = /^rico_([a-z]+).webp$/.exec(f);
+      if (m && typeof DRUNK_COSTUMES !== 'undefined' && DRUNK_COSTUMES.has(m[1])) return `rico_${m[1]}_drunk.webp`;
+    }
+    return f;
   }
   const opp = OPPONENTS[charId];
+  if (opp && night && HOROYOI_STAND.has(opp.imgKey)) return `${opp.imgKey}_${deisui ? 'deisui' : 'drunk'}_stand.webp`;
   return opp ? `${opp.imgKey}_default.webp` : 'mimi_default.webp';
 }
 
@@ -12129,7 +12145,7 @@ function showEquipModal() {
         ${rows}
       </div>
       <div class="equip-modal-footer">交換所に入荷した品を買うと選べます</div>
-      <div class="equip-modal-footer equip-modal-note">効果はバトル画面／ミニゲーム画面で反映されます。夜の卓では、リコ先輩とミミは酔った姿のままです</div>
+      <div class="equip-modal-footer equip-modal-note">効果はバトル画面／ミニゲーム画面で反映されます。夜の卓では、ミミとリコ先輩は酔った姿で出ます（ミミの色替えも酔った版）</div>
     </div>
   `;
   document.getElementById('stage').appendChild(overlay);
@@ -15495,7 +15511,8 @@ function horoyoiBattleNow(key) {
   if (STORY_ART['hmid_' + key]) book.push(STORY_ART['hmid_' + key]);
   // 夜の扉絵（題字の背景）も卓に入る前に読む（11/16 ほろ酔い・泥酔の各夜に専用の一枚絵を足した）
   { const oid = key === 'rico' ? 'rico_tutorial' : key, ep = (isDeisui() ? DEISUI_EPISODES : HOROYOI_EPISODES)[oid]; if (ep && ep.img && !horoyoiCleared(oid)) book.push(ep.img); }
-  return [...(HOROYOI_STAND.has(key) ? [`assets/characters/${key}_drunk_stand.webp`] : []), 'assets/characters/mimi_allin_drunk.webp', 'assets/characters/mimi_bust_calm_drunk.webp', 'assets/characters/mimi_bust_think_drunk.webp', ...book];
+  const skinD = save && MIMI_SKIN_DRUNK.has(save.equippedMimiSkin) ? [`assets/characters/mimi_${save.equippedMimiSkin}_drunk.webp`] : [];
+  return [...skinD, 'assets/characters/mimi_cutin_bawl_drunk.webp', ...(HOROYOI_STAND.has(key) ? [`assets/characters/${key}_drunk_stand.webp`] : []), 'assets/characters/mimi_allin_drunk.webp', 'assets/characters/mimi_bust_calm_drunk.webp', 'assets/characters/mimi_bust_think_drunk.webp', ...book];
 }
 function battleAssetsGate(opponentId, resume) {
   const MA = window.MimiAssets; if (!MA) return true;
@@ -21677,6 +21694,13 @@ function buildEmoteFaceCard(who, cfg, heavy, opts) {
 // 表情ごとの画像候補（前から順に試す）
 function emoteFaceSrc(who, expr, useMax) {
   if (who === 'mimi') {
+    // 夜（ほろ酔い・泥酔）は酔ったミミ。泣きは専用の酔ったカットイン、ほかは酔ったバストアップ（2026-11-16 ユーザー：酔った版のカットイン）
+    if (state && state.horoyoi) return [
+      `assets/characters/mimi_cutin_${expr}_drunk.webp`,
+      `assets/characters/mimi_bust_${MIMI_EMOTE_FALLBACK[expr] || 'win'}_drunk.webp`,
+      'assets/characters/mimi_bust_win_drunk.webp',
+      `assets/characters/mimi_cutin_${expr}.webp`,
+    ];
     return [
       ...(useMax ? ['assets/characters/mimi_cutin_' + expr + '_max.webp'] : []),
       `assets/characters/mimi_cutin_${expr}.webp`,
