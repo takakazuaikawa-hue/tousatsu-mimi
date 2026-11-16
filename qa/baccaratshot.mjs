@@ -24,7 +24,7 @@ const CHECK = `(() => {
     const fs = parseFloat(getComputedStyle(el).fontSize) * (Number.isFinite(k) && k > 0 ? k : 1);
     if (fs < 13.6) small.push(t.slice(0, 14) + ' ' + fs.toFixed(1));
     if (r.left < -1 || r.top < -1 || r.right > VW + 1 || r.bottom > VH + 1) off.push(t.slice(0, 14));
-    const box = el.closest('button, .bc-sub, .bc-pins > span, .bc-cd, .bc-side, .bc-panel, .bc-ask, .bc-wallet, .bc-roads, .bc-sq-side, .bc-sc');
+    const box = el.closest('button, .bc-sub, .bc-pins > span, .bc-cd, .bc-side-head, .bc-panel, .bc-ask, .bc-wallet, .bc-roads, .bc-sq-side, .bc-sc');
     if (box) { const b = box.getBoundingClientRect(); if (r.left < b.left - 1.5 || r.right > b.right + 1.5 || r.top < b.top - 1.5 || r.bottom > b.bottom + 1.5) clip.push(t.slice(0, 14) + ' @' + (box.className || box.tagName).toString().split(' ')[0]); }
   }
   return { small: [...new Set(small)], off: [...new Set(off)], clip: [...new Set(clip)], scrollX: document.documentElement.scrollWidth > VW };
@@ -50,7 +50,8 @@ const Q = 'BaccaratUI._qa';
 const demoSeen = process.env.QA_DEMO ? 'false' : 'true';
 await ev(`save = defaultSave(); save.introPlayed = true; save.clearedStages = ${JSON.stringify(ALL)}; save.firstClearRewardClaimed = [...save.clearedStages]; save.readIntroSeen = true; save.coins = 2400; save.homeStageSeen = 5; save.loginBonus = { lastDate: mpTodayKey(), streak: 1 }; save.bestRanks = { velvet: 'A' }; save.endingUnlocked = true; save.allstarUnlocked = true; save.allstar = { unlockSeen: true }; save.baccarat = { demoSeen: ${demoSeen}, godSeen: true, orSeen: true, betraySeen: true, qn: 0, sqMode: ${JSON.stringify(process.env.QA_SQ || "manual")} }; saveProgress()`);
 await ev(`state = defaultState(); state.screen = 'lobby'; render()`);
-await sleep(1500);
+// ホームの読み込みの幕が消えるのを待つ（幕が残ると写真に重なる）
+await until(`!document.querySelector('.loading-veil, .load-veil, #preload-overlay:not([hidden])')`, 20000); await sleep(4500);
 await ev('BaccaratUI.open()');
 await until(`!!document.querySelector('.bc-host')`, 15000); await sleep(900);
 

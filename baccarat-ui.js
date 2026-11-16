@@ -29,7 +29,7 @@
   // ---- ディーラー（2026-11-16 ユーザー：4案とも採用・全員うさ耳あり・入る時に卓を選ぶ＋山が替わる時に交代も選べる）----
   // 台詞は [話す人, 文] にすると名前を替えられる（双子）。{n}{l} は数や札に置き換える。名前と口調は仮（ユーザーの確認待ち）
   const DEALERS = [
-    { id: 'tika', name: 'ティカ', kind: 'ぜんまい人形', intro: '正確無比。|絞りの間だけ、|歯車が速くなる', art: null, L: {
+    { id: 'tika', name: 'ティカ', kind: 'ぜんまい人形', intro: '正確無比。|絞りの間だけ、|歯車が速くなる', art: 'assets/characters/dealer_tika.webp', L: {
       hello: 'いらっしゃいませ。当機がお相手いたします。|カチ', nomore: 'ノーモアベットでございます。カチ', look: '見（ケン）でございますね。では、配ります',
       natural: 'ナチュラル{n}でございます', p3: 'プレイヤーに、もう1枚', b3: 'バンカーに、もう1枚', shoe: '新しい山でございます。最初の札は{l}、|{n}枚を捨てます。カチ' } },
     { id: 'ocho', name: 'お蝶', kind: '賭場の姐さん', intro: '東方の賭場の|壺振り上がり。|「勝負」の一声', art: null, L: {
@@ -108,9 +108,9 @@
         <span class="bc-next"></span>
       </button>
       <section class="bc-table">
-        <div class="bc-dealer"><b class="bc-dealer-n"></b></div>
-        <div class="bc-side bc-p" data-side="P"><span class="bc-side-n">プレイヤー</span><b class="bc-tot"></b><div class="bc-cards"></div></div>
-        <div class="bc-side bc-b" data-side="B"><span class="bc-side-n">バンカー</span><b class="bc-tot"></b><div class="bc-cards"></div></div>
+        <div class="bc-dealer"><span class="bc-dealer-pic"></span><b class="bc-dealer-n"></b></div>
+        <div class="bc-side bc-p" data-side="P"><div class="bc-side-head"><span class="bc-side-n">プレイヤー</span><b class="bc-tot"></b></div><div class="bc-cards"></div></div>
+        <div class="bc-side bc-b" data-side="B"><div class="bc-side-head"><span class="bc-side-n">バンカー</span><b class="bc-tot"></b></div><div class="bc-cards"></div></div>
         <div class="bc-banner" aria-live="polite"></div>
       </section>
       <aside class="bc-god">
@@ -246,6 +246,7 @@
     ui['sub-n'].textContent = s.name || WHO[s.who];
     ui['sub-t'].innerHTML = esc(s.text).replace(/\|/g, '<wbr>');
     if (s.who === 'goddess') { ui.god.classList.remove('is-talk'); void ui.god.offsetWidth; ui.god.classList.add('is-talk'); }
+    if (s.who === 'dealer') { const d = host.querySelector('.bc-dealer'); d.classList.remove('is-talk'); void d.offsetWidth; d.classList.add('is-talk'); }
     subTimer = setTimeout(nextSub, s.ms);
   }
   function hush() { subQueue = []; clearTimeout(subTimer); subTimer = 0; if (live()) ui.sub.dataset.on = '0'; }
@@ -329,7 +330,7 @@
   function paintPins() {
     const o = S.oracle;
     ui.pins.innerHTML = (o ? `<span class="bc-oracle"><b>神託</b>${esc(o.text)}</span>` : '')
-      + S.pledges.map(p => `<span class="bc-pledge" data-st="${p.armed ? 'armed' : 'wait'}"><b>約束</b>${esc(p.tag)}</span>`).join('')
+      + S.pledges.map(p => `<span class="bc-pledge" data-st="${p.armed ? 'armed' : 'wait'}"><b>約束</b>${p.html || esc(p.tag)}</span>`).join('')
       + (S.judged || []).map(j => `<span class="bc-pledge" data-judge="${j}">${j === 'kept' ? '有言実行' : '裏切り'}</span>`).join('');
   }
   // 問いかけを作る。{ q, opts:[{ t, kind, make? }] }。kind＝bold/ride/careful/none。同じ中身の約束がもうある問いは出さない
@@ -337,7 +338,12 @@
     const st = S.road.stats, sw = st.streak.w, n = st.streak.n, T = [];
     const lastWasTie = S.res.length && S.res[S.res.length - 1].w === 'T';
     const has = (key) => S.pledges.some(p => p.key === key);
-    const side = (key, cond, promise, tag, now) => () => ({ type: 'side', key, cond, promise, tag, armed: !!now, left: 14 });
+    const dot = (w, n) => `<i class="bc-dot is-${w}"></i>${n ? '×' + n : ''}`;
+    const side = (key, cond, promise, tag, now) => () => {
+      const m = /^s:(\w):(\d+)$/.exec(key);
+      const html = (m ? `${dot(m[1], m[2])} なら` : 'この1回') + ' → ' + (promise === 'look' ? '見（ケン）' : `${dot(promise)}に賭ける`);
+      return { type: 'side', key, cond, promise, tag, html, armed: !!now, left: 14 };
+    };
     if (sw && n >= 2 && !has(`s:${sw}:${n + 1}`)) {
       const o = other(sw), k = n + 1, key = `s:${sw}:${k}`;
       const cond = (s) => s.streak.w === sw && s.streak.n >= k;
@@ -373,7 +379,7 @@
       ] });
     }
     if (S.lastStake > 0 && !has('stake')) {
-      const mk = (p, tag) => () => ({ type: 'stake', key: 'stake', promise: p, tag, armed: false, left: 14, base: 0 });
+      const mk = (p, tag) => () => ({ type: 'stake', key: 'stake', promise: p, tag, html: '外れたら → ' + { up: '上げる', same: '同じ額', down: '下げるか見' }[p], armed: false, left: 14, base: 0 });
       T.push({ q: `ねえ、次に外れちゃったら、|その次の賭け金どうします？`, opts: [
         { t: '上げて取り返す', kind: 'bold', make: mk('up', '外れたら → 次は賭け金を上げる') },
         { t: '同じ額で続ける', kind: 'ride', make: mk('same', '外れたら → 次も同じ額') },
@@ -686,7 +692,7 @@
     for (const k of ['P', 'B', 'T', 'PP', 'BP']) if (bets[k]) { const d = pay.back[k] - bets[k], el = host.querySelector('.bc-spot-' + k); el.dataset.res = d > 0 ? 'up' : d < 0 ? 'dn' : 'eq'; el.querySelector('.bc-spot-a').textContent = (d > 0 ? '＋' : d < 0 ? '−' : '±') + fmt(Math.abs(d)); }
     ui.banner.innerHTML = `<b class="is-${h.w}">${title}</b>${stake ? '' : '<span class="bc-pay-n">見（増減なし）</span>'}`;
     if (stake) { ui.delta.textContent = (pay.net > 0 ? '＋' : pay.net < 0 ? '−' : '±') + fmt(Math.abs(pay.net)); ui.delta.dataset.s = pay.net > 0 ? 'up' : pay.net < 0 ? 'dn' : 'eq'; }
-    ui.banner.dataset.on = '1';
+    if (!stake) { ui.delta.textContent = '見 ±0'; ui.delta.dataset.s = 'eq'; }
     sfx(pay.net > 0 ? (pay.net >= stake * 3 ? 'bigwin' : 'win') : pay.net < 0 ? 'lose' : 'tie');
     if (stake) { if (pay.net > 0) { S.winRun++; S.lossRun = 0; } else if (pay.net < 0) { S.lossRun++; S.winRun = 0; } }
     // 「外れたら次の賭け金」の約束は、外れた時に効き始める
@@ -824,13 +830,17 @@
     requestAnimationFrame(() => paintBigRoads(el));
   }
   // ---- 卓（ディーラー）を選ぶ：入る時と、山が替わる時 ----
-  function paintDealer() { const el = host && host.querySelector('.bc-dealer-n'); if (el) el.textContent = DL.name; if (host) host.dataset.dealer = DL.id; }
+  function paintDealer() {
+    if (!host) return;
+    host.querySelector('.bc-dealer-n').textContent = DL.name; host.dataset.dealer = DL.id;
+    const pic = host.querySelector('.bc-dealer-pic'); pic.innerHTML = DL.art ? `<img src="${DL.art}" alt="${esc(DL.name)}">` : ''; pic.parentElement.classList.toggle('has-art', !!DL.art);
+  }
   function chooseDealer() {
     return new Promise((res, rej) => {
       const g = G; closeLayer(); hush();
       const el = document.createElement('div'); el.className = 'bc-over bc-pick';
       el.innerHTML = `<section class="bc-panel"><header><b>卓を選ぶ</b><span class="bc-g-pg">どの卓も決まりと配当は同じ</span></header>
-        <div class="bc-pick-g">${DEALERS.map(d => `<button type="button" data-bc="pick" data-id="${d.id}"${d.id === DL.id ? ' class="is-cur"' : ''}>${d.art ? `<img src="${d.art}" alt="">` : ''}<span class="bc-pick-k">${d.kind}</span><b>${d.name}</b><span class="bc-pick-i">${d.intro.replace(/\|/g, '<wbr>')}</span></button>`).join('')}</div></section>`;
+        <div class="bc-pick-g">${DEALERS.map(d => `<button type="button" data-bc="pick" data-id="${d.id}"${d.id === DL.id ? ' class="is-cur"' : ''}>${d.art ? `<span class="bc-pick-pic"><img src="${d.art}" alt=""></span>` : ''}<span class="bc-pick-k">${d.kind}</span><b>${d.name}</b><span class="bc-pick-i">${d.intro.replace(/\|/g, '<wbr>')}</span></button>`).join('')}</div></section>`;
       ui.layer.appendChild(el);
       pickResolve = (id) => {
         pickResolve = null; el.remove();
