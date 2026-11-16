@@ -21110,3 +21110,88 @@ html.is-compact .home-stage.h15-sm .h15-goal { right: calc(450px + var(--sx, 0px
 .deisui-blur-cap { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); z-index: 60; white-space: nowrap;
   font-size: 26px; font-weight: 900; letter-spacing: .06em; color: #ffe1ea; padding: 12px 28px; border-radius: 6px;
   background: rgba(40,6,18,.82); box-shadow: inset 0 0 0 2px rgba(255,140,170,.8), 0 0 30px rgba(255,90,130,.45); pointer-events: none; }
+
+/* ===== 役の早見表：研修の解説（2026-11-16）。話題の行を光らせ、下の帯でリコが例の札つきで教える。文字の大きさは type-roles.css ===== */
+.hand-guide-overlay.is-lesson { cursor: pointer; }
+.hand-guide-overlay.is-lesson .rp-ladder-row { transition: opacity .25s, box-shadow .25s, border-color .25s; }
+.hand-guide-overlay.is-lesson .rp-ladder-row.hg-dim { opacity: .38; }
+.hand-guide-overlay.is-lesson .rp-ladder-row.hg-hi { border-color: #f5d77a; box-shadow: 0 0 0 1px #f5d77a, 0 0 18px rgba(245,215,122,.45); background: #2a1410; }
+.hg-lesson {
+  flex-shrink: 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px;
+  padding: 12px 22px 14px; border-top: 1px solid rgba(217,179,90,.45);
+  background: linear-gradient(180deg, rgba(61,15,28,.92), rgba(24,8,14,.98));
+}
+.hg-lesson .hg-face { width: 52px; height: 62px; }
+.hg-lesson-main { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.hg-lesson-text { margin: 0; color: #f7eecf; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }
+.hg-lesson-text b { color: #f5d77a; font-weight: 700; }
+.hg-ex-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.hg-ex { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px 3px 4px; border: 1px solid rgba(217,179,90,.35); border-radius: 3px; background: rgba(0,0,0,.35); }
+.hg-ex.is-win { border-color: #f5d77a; box-shadow: 0 0 10px rgba(245,215,122,.35); }
+.hg-ex-cards { display: inline-flex; gap: 2px; }
+.hg-ex-cards .card.rp-mini-card { width: 26px; height: 36px; opacity: 1; filter: none; }
+.hg-ex-tag { color: #d8c7a2; white-space: nowrap; }
+.hg-ex.is-win .hg-ex-tag { color: #f5d77a; }
+.hg-vs { color: #f5d77a; font-weight: 700; }
+.hg-next {
+  min-width: 96px; min-height: 48px; padding: 6px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border: 1px solid #d9b35a; border-radius: 3px; color: #ffe9a8; background: linear-gradient(180deg, #7a1a26, #4a0c16); cursor: pointer;
+}
+.hg-next small { color: #d8c7a2; letter-spacing: .05em; }
+html.is-compact .hg-lesson { gap: 10px; padding: 6px 12px 8px; }
+html.is-compact .hg-lesson .hg-face { width: 40px; height: 48px; }
+html.is-compact .hg-lesson-main { gap: 4px; }
+html.is-compact .hg-lesson-text { line-height: 1.4; }
+html.is-compact .hg-ex-cards .card.rp-mini-card { width: 22px; height: 30px; }
+html.is-compact .hg-next { min-width: 76px; min-height: 44px; padding: 4px 10px; }
+.hg-ex-cards .card.rp-mini-card { overflow: hidden; position: relative; }
+.hg-ex-cards .card.rp-mini-card .center-suit { display: none; }
+
+/* ===== 題名を1句ずつ読ませる（案A・2026-11-16）。扉絵（.episode-overlay）と物語の幕（.story-overlay）の上に重ねる。
+   扉絵の幕は画面の px のまま、物語の幕は 1280×800 を縮めて描くので、位置も文字も重ねた層の大きさ（cqw/cqh）で決める
+   （どちらの幕でも画面上で同じ大きさ。844×390 で句の字 22/19/17px、ツッコミ 18px、補足 14px） ===== */
+.tr-layer {
+  position: absolute; inset: 0; z-index: 60; cursor: pointer; user-select: none; -webkit-user-select: none;
+  container-type: size; animation: trIn .35s ease-out both;
+}
+.tr-layer.out { opacity: 0; transition: opacity .3s ease; pointer-events: none; }
+@keyframes trIn { from { opacity: 0; } }
+.tr-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8,2,4,.9) 0%, rgba(8,2,4,.66) 52%, rgba(8,2,4,.16) 100%); }
+.tr-ctr { position: absolute; left: 6cqw; top: 12cqh; font-family: "Shippori Mincho B1", serif; font-weight: 700; font-size: 3.6cqh; letter-spacing: .25em; color: #d8b56c; text-shadow: 0 1px 8px rgba(0,0,0,.8); }
+.tr-bar { position: absolute; left: 6cqw; top: 19cqh; width: 26cqw; height: max(2px, .4cqh); background: rgba(216,181,108,.25); }
+.tr-bar i { display: block; height: 100%; width: 0; background: #fbe3a0; transition: width .4s ease; }
+.tr-one {
+  position: absolute; left: 6cqw; right: 31cqw; top: 25cqh; margin: 0;
+  font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", serif; font-weight: 700; line-height: 1.5; letter-spacing: .03em;
+  color: #f8f1e6; text-shadow: 0 2px 14px rgba(0,0,0,.85);
+  word-break: auto-phrase; text-wrap: pretty;
+  opacity: 0; transform: translateX(-2cqw); transition: opacity .35s ease, transform .45s cubic-bezier(.2,.8,.2,1);
+}
+.tr-one.in { opacity: 1; transform: none; }
+.tr-one.is-l1 { font-size: 5.7cqh; } .tr-one.is-l2 { font-size: 5cqh; } .tr-one.is-l3 { font-size: 4.4cqh; }
+.tr-kw { color: #fbe3a0; text-shadow: 0 0 1.4cqh rgba(251,227,160,.5), 0 2px 10px rgba(0,0,0,.9); }
+.tr-chibi {
+  position: absolute; right: 4.5cqw; bottom: 4cqh; height: 54cqh; width: auto; pointer-events: none;
+  opacity: 0; transform: translateY(30%) scale(.6); transform-origin: 50% 100%;
+  transition: transform .35s cubic-bezier(.3,1.6,.5,1), opacity .2s; filter: drop-shadow(0 1cqh 1.6cqh rgba(0,0,0,.6));
+}
+.tr-chibi.in { opacity: 1; transform: none; }
+.tr-stamp {
+  position: absolute; right: 5cqw; bottom: 61cqh; white-space: nowrap; pointer-events: none;
+  font-family: "Shippori Mincho B1", serif; font-weight: 800; font-size: 4.7cqh; color: #fff;
+  background: #6e1424; border: max(2px, .4cqh) solid #fbe3a0; padding: .5cqh 1.6cqw; box-shadow: 0 1cqh 2.4cqh rgba(0,0,0,.6);
+  transform: rotate(-8deg) scale(0); transition: transform .3s cubic-bezier(.3,1.8,.5,1);
+}
+.tr-stamp.in { transform: rotate(-8deg) scale(1); }
+.tr-skip {
+  position: absolute; right: 2.4cqw; top: 3cqh; min-height: 11.3cqh; padding: 0 2cqw;
+  display: inline-flex; align-items: center; gap: .6cqw; font-size: 3.6cqh; letter-spacing: .12em; color: #f3ead8;
+  background: rgba(10,4,6,.55); border: 1px solid rgba(216,181,108,.55); border-radius: 999px; cursor: pointer;
+}
+.tr-skip svg { width: 1.1em; height: 1.1em; fill: none; stroke: currentColor; stroke-width: 2; }
+.tr-tap { position: absolute; right: 2.4cqw; bottom: 2.4cqh; font-size: 3.6cqh; letter-spacing: .15em; color: rgba(243,234,216,.55); pointer-events: none; }
+/* 読んでいる間は、下の題字の札・物語の飾りを隠す */
+.episode-overlay.is-reading .episode-card { opacity: 0; pointer-events: none; }
+.story-overlay.is-reading :is(.story-title, .story-box, .story-skip, .story-vol, .story-tap) { visibility: hidden; }
+.episode-card .episode-sub { font-weight: 700; color: #f8f1e6; letter-spacing: .04em; }
+@media (prefers-reduced-motion: reduce) { .tr-layer, .tr-one, .tr-chibi, .tr-stamp { animation: none !important; transition: none !important; } }

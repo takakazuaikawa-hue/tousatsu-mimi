@@ -3959,7 +3959,7 @@ function showEpisodeTitle(key, onContinue, onBack, contLabel) {
   probe.src = imgPath;
   overlay.innerHTML = `
     <div class="episode-card episode-card-bottom">
-      <div class="episode-no">${ep.no}　<small class="episode-hint">（背景をクリックで絵だけ表示）</small><button type="button" class="episode-more">題名を全部読む</button></div>
+      <div class="episode-no">${ep.no}${TITLE_READ[ep.id] ? `　<b class="episode-sub">${TITLE_READ[ep.id].sub}</b>` : ''}　<small class="episode-hint">（背景をクリックで絵だけ表示）</small><button type="button" class="episode-more">題名を全部読む</button></div>
       <div class="episode-scroll">
       <h1 class="episode-title">${ep.title.split('\n').map(l => `<span class="ep-line">${l}</span>`).join('<br>')}</h1>
       </div>
@@ -3972,6 +3972,8 @@ function showEpisodeTitle(key, onContinue, onBack, contLabel) {
   // 長文タイトルを枠内スクロールなしで全文見せる（文字の読み込みで行の幅が変わるので、読み込み後にもう一度合わせる）
   fitEpisodeTitle(overlay);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (overlay.isConnected) fitEpisodeTitle(overlay); });
+  // 長い題名は、まず1句ずつ読ませる（案A）。読み終わる・飛ばすと、今までの題字の札（開始・戻る）が出る
+  if (playTitleRead(overlay, ep, () => { overlay.classList.remove('is-reading'); fitEpisodeTitle(overlay); })) overlay.classList.add('is-reading');
   const moreBtn = overlay.querySelector('.episode-more');
   moreBtn.addEventListener('click', (e) => { e.stopPropagation(); overlay.classList.remove('is-brief'); fitEpisodeTitle(overlay); });
   const continueBtn = overlay.querySelector('.episode-continue');
@@ -4545,12 +4547,192 @@ const PROLOGUES = {
     { k: 'say', who: 'rico', t: '登録されてるなら働けるっしょ。細かいことは、あと、あと', voice: 'rico/pro_11' },
     { k: 'say', who: 'rico', t: 'ここのバニーの仕事はね、お客さんとポーカーで勝負すること', voice: 'rico/pro_12' },
     { k: 'say', who: 'mimi', t: 'ポーカー……！？　ルールも知らないです……', voice: 'mimi/pro_13' },
-    { k: 'say', who: 'rico', t: 'だから研修。今日はアタシと3回だけ勝負して、遊びながら覚えよ', voice: 'rico/pro_14' },
+    { k: 'say', who: 'rico', t: 'だから研修。まずはアタシと3回だけ勝負して、基礎を覚えましょ', voice: 'rico/pro_14' },
     { k: 'say', who: 'rico', t: '覚えるのはひとつだけ。ポーカーはチップの取り合い。相手のチップを全部もらったら勝ち', voice: 'rico/pro_15' },
     { k: 'think', who: 'mimi', t: '……耳が勝手にぴくっと動いた。どうやら、逃げ道はないらしい', voice: 'mimi/pro_think_2' },
     { k: 'say', who: 'rico', t: 'さ、卓へ行こ。大丈夫、最初はちゃんと教えるから', voice: 'rico/pro_16' },
   ],
 };
+
+// ── 題名を1句ずつ読ませる（2026-11-16 ユーザーが案Aを選んだ：一句ずつ＋ミミのツッコミ）──
+// 長い題名を一度に出すと読まずに押されるので、1句ずつ大きく出し、要の語を金色にして、ミミのミニキャラが一言ツッコむ。
+// 押せばすぐ次の句、待っていても進む（最後の句だけは押すまで待つ）。右上の「スキップ」で飛ばせる。終わったら今までの題字に戻る。
+// 句は [前, 要の語, 後, ツッコミ, ミミの顔(think/smug/win/panic/lose)]。3つをつなぐと題名の1行と同じ文になる。
+// 第2話から先・夜の sub（短い題）は、この見せ方のために足した（ユーザー承認 2026-11-16）
+const TITLE_READ = {
+  episode_001_title: { sub: '初日、いきなりポーカー卓', cl: [
+    ['デスマーチ明けに', 'トラック転生', 'した私が、', 'トラック！？', 'panic'],
+    ['目覚めた瞬間なぜか異世界カジノの', '新人バニーガール', 'で、', 'バニー！？', 'panic'],
+    ['', '耳も尻尾も本物', 'なのに誰もそこを深刻に受け止めてくれず、', '本物です！', 'lose'],
+    ['先輩バニーから', '「登録されてるなら働けるっしょ」', 'と雑に流され、', '雑！', 'smug'],
+    ['労働契約も世界観説明も制服返却の相談もできないまま', 'ポーカー卓に連行', 'され、', '連行！？', 'panic'],
+    ['初日研修として', 'ブラフの見抜き方', 'まで覚えさせられている件', '件！？', 'think']] },
+  episode_002_title: { sub: '大声と、逃げる指先', cl: [
+    ['異世界カジノの新人バニーとして', '初日からポーカー卓', 'に座らされた私は、', '初日です！', 'panic'],
+    ['そもそも', 'ワンペアとツーペア', 'のありがたみすらまだ体に染み込んでいないのに、', '違いって…？', 'think'],
+    ['', '声が大きい時ほど弱くて強い時ほど静かになる', 'という初心者なのに初心者を惑わせる才能だけは一人前のポルカに絡まれ、', 'そこ大事！', 'think'],
+    ['「へへっ、新人バニーちゃんが相手？ ', '今日はツイてるなー！', '」と失礼なことを言われ、', '失礼！', 'lose'],
+    ['さらに大きなベットと大きな態度と', '大きな鼻息', 'で降ろされそうになったところ、', '鼻息！？', 'panic'],
+    ['リコ先輩から「勝つことだけ考えると負けるよ。', '降りるのも技術', 'だからね」と雑に深い助言を投げられ、', '深い…', 'think'],
+    ['いやその技術を今から身につけるには', '現場が実戦すぎ', 'ませんかと思っていたら、', '本番です！', 'lose'],
+    ['外れスキル', '《ぱにゅぱにゅ》', 'が耳と尻尾を勝手に反応させ、', '勝手に！？', 'panic'],
+    ['相手の手札は見えないのにチップを置いた', '指先の逃げ方', 'だけは妙にはっきり見えてしまい、', '見えた！', 'win'],
+    ['ポーカー初心者のくせに初めての心理バトルで', 'ブラフ看破', 'までやらされる件', 'やります！', 'smug']] },
+  episode_003_title: { sub: '静かな卓の、嫌な金額', cl: [
+    ['ポルカのブラフをなんとか見抜いて', '調子に乗りかけた', '新人バニーの私が、', 'えへへ', 'smug'],
+    ['次こそ少しは楽な相手かと思ったら今度は声を荒げないし態度も崩さないしベット額まで妙に', '理屈っぽい常連プレイヤー', 'のセリナと当たってしまい、', '楽じゃない！', 'panic'],
+    ['「', 'このボードなら、強く出る理由はあります', '」などと落ち着いた声で言われ、', '理由…？', 'think'],
+    ['いや理由があるのは分かりましたけどその理由を', '新人にも分かる日本語', 'で説明してもらえませんかと思いながら、', 'お願いします！', 'lose'],
+    ['', '同じマークが並んだ場札', 'と大きすぎず小さすぎない嫌なベットサイズに耳をぴくぴくさせ、', 'フラッシュ…？', 'think'],
+    ['強い手かブラフか以前に"この場札がどれくらい危ないのか"と"相手がどんな金額で何をさせたいのか"を', '同時に覚えさせられる', '件', '同時！？', 'panic']] },
+  episode_004_title: { sub: '安く見える一枚', cl: [
+    ['場札の危なさとベットサイズのいやらしさを', '覚えたばかり', 'の新人バニーの私が、', 'ばっちり！', 'smug'],
+    ['今度こそ普通に', 'カードの強さだけで勝負', 'できると思ったら、', '今度こそ！', 'win'],
+    ['ポーカー卓に現れたのは何でも商談と値付けで考える', '商人プレイヤー', 'のグラーノで、', '商談！？', 'panic'],
+    ['「お嬢さん、この一枚を', '見るだけなら安いもの', 'ですよ」と優しそうな顔でチップを要求され、', '安い…？', 'think'],
+    ['安いと言われると安い気がするけどそもそも私の財布感覚は', '異世界通貨', 'に対応していないし、', '相場不明！', 'lose'],
+    ['リコ先輩からは「', 'ポットと支払額を比べて', 'みな」と言われ、', '比べる…', 'think'],
+    ['いや新人研修初日に接客と転生とポーカーと割引率の計算を同時にさせるのは', '業務範囲が広すぎ', 'ませんかと思いながら、', '広すぎ！', 'panic'],
+    ['', '見たい気持ちと払いたくない気持ち', 'の間で耳をふるふるさせ、', 'ううう…', 'lose'],
+    ['"安く見えるベット"が本当に得なのか、それとも', '高い授業料', 'なのかを計算させられる件', '計算！？', 'panic']] },
+  episode_005_title: { sub: 'VIPルームの悪徳ディーラー', cl: [
+    ['ブラフも場札の危険度もポットオッズもなんとなく', '分かった気になっていた', '新人バニーの私が、', '気、だけ…', 'smug'],
+    ['そろそろ研修終了かなと思った瞬間に案内されたのはどう見ても新人が入っていい空気ではない', 'VIPルーム', 'で、', 'VIP！？', 'panic'],
+    ['そこにいた妖艶すぎる', '悪徳ディーラー', 'のヴェルベットから、', '悪徳！？', 'panic'],
+    ['「新人が踏み込んでいい卓ではないわ。あなたは', 'カードを見る前から、もう負けている', 'の」とカードゲームなのにカードを見る前から精神を削られ、', 'まだ配ってない！', 'lose'],
+    ['相手のベット額も言葉も視線も', '全部が怖く見える', '中で、', 'こわい…', 'lose'],
+    ['リコ先輩からは「言葉じゃなくて、', '積み重なった証拠を見な', '」といつになく真面目な声で言われ、', '先輩…！', 'think'],
+    ['いや証拠って言われても私は転生初日の新人バニーであって', '名探偵でも百戦錬磨の勝負師でもない', 'んですがと思いながら、', '新人です！', 'panic'],
+    ['これまで覚えたブラフ、場札、ベットサイズ、割に合う判断を', '全部つなぎ合わせ', '、', 'つながった！', 'smug'],
+    ['相手が本当に強い時にしていることと強く見せたい時にしていることの', '違いを突きつけて', '、', 'そこです！', 'win'],
+    ['外れスキル《ぱにゅぱにゅ》で初めて', 'ブラフブレイク', 'まで叩き込む件', '決めます！', 'win']] },
+  horoyoi_001: { sub: '三杯目の先輩', cl: [
+    ['全卓制覇の打ち上げで「', '一杯だけね', '」と言われたはずの新人バニーの私が、', '一杯だけ…', 'smug'],
+    ['気がつけば', '三杯目', 'のグラスを持たされていて、', '三杯！？', 'panic'],
+    ['向かいの席では先生の顔をどこかに置いてきたリコ先輩が「', 'ミミ〜、えらいねえ〜', '」と頭をなで続け、', '先輩！？', 'panic'],
+    ['その流れのまま', '閉店後の卓', 'に座らされ、', '流れで！？', 'lose'],
+    ['助言は全部「', 'ふにゃ……', '」に溶けて、自分の心の声すら聞こえない中で、', 'ふにゃ…', 'think'],
+    ['よくしゃべる先輩が', '急に黙った時だけは本気', 'だと耳で覚えさせられる件', '覚えた！', 'win']] },
+  horoyoi_002: { sub: '泣き上戸のポルカ', cl: [
+    ['ほろ酔いのまま', '次の卓に回された', '私の前に現れたのは、', 'まだ酔ってます…', 'smug'],
+    ['いつもは', '声の大きさで手の弱さがばれる', 'はずのポルカが、', '知ってる！', 'smug'],
+    ['今夜はお酒のせいで', '笑ったり泣いたり', '忙しく、', '忙しい！', 'panic'],
+    ['「', 'ボクなんかぁ……ぐすっ', '」と涙目でチップを押し出してくるので、', '泣いた！？', 'panic'],
+    ['', '同情していいのか警戒していいのか', '分からないまま、', 'どっち！？', 'think'],
+    ['笑いが止まらない時ほどブラフで、', '泣いている時ほど本物', 'だと見抜かされる件', '覚えた！', 'win']] },
+  horoyoi_003: { sub: '眼鏡を外した夜', cl: [
+    ['いつもは', '理屈と眼鏡で武装', 'しているセリナさんが、', 'いつもの…', 'think'],
+    ['今夜はその', '眼鏡を外して', '指先でくるくる回しながら、', '外した！？', 'panic'],
+    ['「計算？ 今夜はしません。', '賭けたいから賭けるんです', '」と大きなチップを置いてきて、', '理屈は！？', 'panic'],
+    ['いや賭け額で強さを読む', '授業はどこへ行った', 'んですかと思いながら、', '授業ー！', 'lose'],
+    ['あれだけ饒舌だった', '口数がふっと減った一瞬', 'だけが、', '今だ…', 'think'],
+    ['', '本当に強い手の合図', 'だと気づかされる件', '見えた！', 'win']] },
+  horoyoi_004: { sub: '全部買う夜', cl: [
+    ['', '値札と勘定', 'で生きているはずのグラーノさんが、', '商人さん…', 'think'],
+    ['今夜は「細かい勘定は', '明日の私に任せます', '！」と上機嫌で、', '明日！？', 'panic'],
+    ['こちらがどれだけ大きく賭けても「買いましょう！」と', '全部コール', 'してくるので、', '全部！？', 'panic'],
+    ['ブラフという名の値引き交渉が', 'まったく通じず', '、', '通じない！', 'lose'],
+    ['結局は強い手が来るまで黙って待ち、', '来た時に高く売りつける', 'という', '待つ…', 'think'],
+    ['', '一番まっとうな商売', 'を教わる件', 'まっとう！', 'win']] },
+  horoyoi_005: { sub: 'ぜーんぶあげる女王', cl: [
+    ['', 'VIPルームの女王', 'ヴェルベットさんが、', '女王様…', 'think'],
+    ['お酒で圧のすべてを色気に変えて「ぜーんぶ、あなたにあげる♡」と', 'オールインを連発', 'し、', '連発！？', 'panic'],
+    ['見つめられるたびに', '耳の先まで熱くなる', '新人バニーの私は、', 'あつい…', 'lose'],
+    ['酔うほど雑になっていく女王の賭けに', '中身が無いことも多い', 'と分かっていながら、', '知ってる…', 'think'],
+    ['怖がらずに', 'いい手で受け止める', 'という、', '受けます！', 'smug'],
+    ['たぶん', '一番むずかしい度胸', 'を試される件', '度胸！', 'win']] },
+  // 泥酔の夜：ツッコミも酔ったミミの言い方
+  deisui_001: { sub: '先輩のおごりの夜', cl: [
+    ['ほろ酔いの夜を全部勝ったおいわいに「', '今夜は先輩のおごり〜', '」って乾杯したはじゅの新人バニーの私が、', 'かんぱ〜い', 'win'],
+    ['気がついたら先輩が私の膝で「', 'まんま〜', '」って丸くなってて、', 'しぇんぱい！？', 'panic'],
+    ['起こそうとしたら「やぁだ、', 'しゃわって、しゃわってぇ〜', '」って腕をつかまれて、', 'ひぃ！', 'panic'],
+    ['しょのまま閉店後の卓にすわりゃされたけど、先輩は', '賭けてる途中でねちゃう', 'し、', 'ねた！？', 'lose'],
+    ['私の', '心の声はじぇんぶ口から出ちゃって', '、もう、なにがなんだか、ひっく、な件', 'ひっく', 'think']] },
+  deisui_002: { sub: 'とびつくポルカ', cl: [
+    ['次の卓のポルカは、私が座る前に「', 'みみちゃあああん！', '」ってとびついてきて、', 'とんできた！', 'panic'],
+    ['わらってたと思ったら', '十びょう', 'で「ボクなんかぁぁ」って泣いて、また十びょうでわらってて、', 'はやい！', 'panic'],
+    ['カードを口にくわえて「', 'これ、たべりぇる？', '」ってきいてくるし、', 'たべない！', 'lose'],
+    ['とちゅうからずっと脚をもじもじしながら「まだいかない！ ', 'かつまでいかないぃ！', '」って泣いてて、', 'いってぇ！', 'panic'],
+    ['かったらかったで、なんかを、あたまのうえで、', 'ぐるぐる、ぐるぐる', '……ひっく、な件', 'ひっく', 'think']] },
+  deisui_003: { sub: '確率の口説き文句', cl: [
+    ['いつもは眼鏡のおくから', '確率でひとをさしてくる', 'セリナしゃんが、', 'いたい…', 'think'],
+    ['今夜は眼鏡をしゃかしゃまにかけたまま、まがおで「みみしゃん、あなたとわたしが今夜', 'むしゅばれる確率', 'をけいしゃんしました」って口説いてきて、', 'くどいた！？', 'panic'],
+    ['しきは途中で「おっぱいのきょくしぇんは、しぇいきぶんぷに、ちかい」っていう', 'なぞの定理', 'にとんでいって、', 'なぞ！', 'panic'],
+    ['トランプを一まいずつ素肌にはって「これでわたしは、', 'ごじゅうにまいの、かくりちゅの、おんな', '」ってむねをはって、', 'はらないでぇ！', 'lose'],
+    ['最後は黒板になぞのしきをかいて、', 'まんじょくげに、ねちゃう', '……ひっく、な件', 'ひっく', 'think']] },
+  deisui_004: { sub: '目玉商品は、わたくし', cl: [
+    ['交換所ではいつも', '値札とあいそ', 'で隙を見しぇないグラーノしゃんが、', 'しょうにんしゃん…', 'think'],
+    ['今夜は自分の体に値札をはって「ほんじちゅの', '目玉しょうひん、わたくし', '、でありましゅ！」って口上を歌いだして、', 'うってる！？', 'panic'],
+    ['口をひらけば下ネタ、舌をだせばよだれ、グラスも瓶も脚にはしゃんで「', 'りょうてが、あいて、しょうばいじょうず！', '」ってわらって、', 'じょうずじゃない！', 'lose'],
+    ['しまいには金貨をゆかにばらまいて、', 'およぐまね', 'をはじめたので、', 'およいだ！？', 'panic'],
+    ['わたしは勝負をしにきたのか、', 'よっぱらいの見しぇもの', 'を見にきたのか、もう、ひっく、な件', 'ひっく', 'think']] },
+  deisui_005: { sub: 'じゃーこの女王', cl: [
+    ['最後の卓のヴェルベットしゃんは、いつもの「ざぁこ♡」が「', 'じゃーこ、じゃーこ♡', '」って赤ちゃんことばになってて、', 'じゃーこ！？', 'panic'],
+    ['私のスカートをめくっては「', 'めくりっこぉ〜♡', '」ってわらって、', 'めくらないでぇ！', 'lose'],
+    ['一まいぬいでは「あちゅいの〜」、もう一まいぬいでは「', 'まだ、あちゅいの〜', '」って言って、', 'ぬがないでぇ！', 'panic'],
+    ['とめようとしたら、ゆかでころがって、', 'だだをこねて', '、', 'こどもだ…', 'think'],
+    ['最後はなにかをあたまにかぶったまま私にだきちゅいて、', 'しゅやしゅや', '、ねいきを……ひっく、な件', 'ひっく', 'smug']] },
+};
+// 題名（ep.title）と句をつないだ文が同じかを確かめる（題名を直した時に句の表を直し忘れないように。qa/titleread.mjs が使う）
+function titleReadMismatch(ep) {
+  const data = TITLE_READ[ep && ep.id];
+  if (!data) return false;
+  const norm = (s) => String(s).replace(/[\s"“”]/g, '');
+  return norm(ep.title) !== norm(data.cl.map(c => c[0] + c[1] + c[2]).join(''));
+}
+function titleReadChibi(face, drunk) { return `assets/battle/chibi/${drunk ? 'drunk/' : ''}mimi_${face}.webp`; }
+// host（扉絵や物語の幕）の上に重ねて流す。終わる・飛ばすと onDone。無ければ何もせず false
+function playTitleRead(host, ep, onDone) {
+  const data = TITLE_READ[ep && ep.id];
+  if (!data || !host) return false;
+  const drunk = /^(horoyoi|deisui)_/.test(ep.id);
+  // ミニキャラはこの題名で使う分だけ先に読む（遅れて出ると興ざめ）
+  const faces = [...new Set(data.cl.map(c => c[4]))].map(f => titleReadChibi(f, drunk));
+  if (window.MimiAssets && window.MimiAssets.warm) window.MimiAssets.warm(faces); else faces.forEach(s => { const im = new Image(); im.src = s; });
+  const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const L = document.createElement('div');
+  L.className = 'tr-layer';
+  L.setAttribute('role', 'dialog'); L.setAttribute('aria-label', `${ep.no || ''}の題名`);
+  L.innerHTML = `<div class="tr-shade"></div><div class="tr-ctr"></div><div class="tr-bar"><i></i></div>
+    <p class="tr-one" aria-live="polite"></p><img class="tr-chibi" alt=""><div class="tr-stamp" aria-hidden="true"></div>
+    <button type="button" class="tr-skip"><span>スキップ</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6l6 6-6 6M12 6l6 6-6 6"/></svg></button>
+    <div class="tr-tap" aria-hidden="true">タップで進む</div>`;
+  host.appendChild(L);
+  const one = L.querySelector('.tr-one'), chibi = L.querySelector('.tr-chibi'), stamp = L.querySelector('.tr-stamp');
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  let i = -1, timers = [], ended = false;
+  const later = (ms, fn) => timers.push(setTimeout(() => { if (L.isConnected && !ended) fn(); }, ms));
+  const clear = () => { timers.forEach(clearTimeout); timers = []; };
+  const end = () => {
+    if (ended) return;
+    ended = true; clear();
+    L.classList.add('out');
+    setTimeout(() => L.remove(), 350);
+    if (onDone) onDone();
+  };
+  const step = () => {
+    clear(); i++;
+    const n = data.cl.length;
+    if (i >= n) { end(); return; }
+    const c = data.cl[i], len = (c[0] + c[1] + c[2]).length;
+    L.querySelector('.tr-ctr').textContent = `${ep.no || ''}　${i + 1} / ${n}`;
+    L.querySelector('.tr-bar i').style.width = ((i + 1) / n * 100) + '%';
+    one.classList.remove('in'); chibi.classList.remove('in'); stamp.classList.remove('in');
+    later(reduce ? 0 : 120, () => {
+      one.className = 'tr-one ' + (len > 52 ? 'is-l3' : len > 34 ? 'is-l2' : 'is-l1');
+      one.innerHTML = `${esc(c[0])}<span class="tr-kw">${esc(c[1])}</span>${esc(c[2])}`;
+      requestAnimationFrame(() => one.classList.add('in'));
+    });
+    later(reduce ? 0 : 650, () => { chibi.src = titleReadChibi(c[4], drunk); chibi.classList.add('in'); stamp.textContent = c[3]; });
+    later(reduce ? 0 : 850, () => { stamp.classList.add('in'); if (typeof mpSfx === 'function') mpSfx('tap'); });
+    // 待っていても進む（長い句ほど長く待つ）。最後の句は押すまで待つ（読み終わる前に消えないように）
+    if (i < n - 1) later(len > 52 ? 3600 : len > 34 ? 3000 : 2400, step);
+  };
+  L.addEventListener('click', (e) => { e.stopPropagation(); if (e.target.closest('.tr-skip')) { end(); return; } step(); });
+  L.addEventListener('pointerdown', (e) => e.stopPropagation());
+  step();
+  return true;
+}
 
 let _storyVoiceWait = false;
 function showStoryScene(key, onDone, voiceReady) {
@@ -4655,6 +4837,11 @@ function showStoryScene(key, onDone, voiceReady) {
       ov.classList.add('has-art');
     }
     if (s.k === 'title') {
+      // 長い題名は、まず1句ずつ読ませる（案A）。読み終わったら今までの題字（全文）を出し切った形で見せる
+      if (!ov.dataset.trDone && playTitleRead(ov, ep, () => { ov.dataset.trDone = '1'; ov.classList.remove('is-reading'); ov.classList.add('is-title', 'title-shown'); holdUntil = 0; })) {
+        ov.classList.add('is-reading');
+        return;
+      }
       ov.classList.add('is-title');
       holdUntil = performance.now() + (reduce ? 0 : 900 + lnLines.length * 160);
       return;
@@ -4690,6 +4877,8 @@ function showStoryScene(key, onDone, voiceReady) {
   };
   const advance = () => {
     if (finished) return;
+    // 題名を1句ずつ読んでいる間は、押す・キーをその層へ渡す（物語は進めない）
+    if (ov.classList.contains('is-reading')) { const L = ov.querySelector('.tr-layer:not(.out)'); if (L) L.click(); return; }
     if (typing) { finishTyping(); return; }
     if (performance.now() < holdUntil) {
       // 演出の途中で押したら、その場面を出し切る（もう一度押すと次へ）
@@ -4707,7 +4896,7 @@ function showStoryScene(key, onDone, voiceReady) {
     if (!ov.isConnected) return;
     if (e.target && e.target.closest && e.target.closest('.story-vol')) return;   // 音量のつまみの矢印キーは、つまみに渡す
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); advance(); }
-    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); const sk = ov.classList.contains('is-reading') && ov.querySelector('.tr-layer:not(.out) .tr-skip'); if (sk) sk.click(); else finish(); }
   };
   function finish() {
     if (finished) return;
@@ -15387,7 +15576,7 @@ function renderHandLadderHTML(mode) {
       ? `<div class="rp-ladder-desc">${h.desc}</div><div class="rp-ladder-cards">${h.cards.map(([s, r]) => rpMiniCardHTML(s, r)).join('')}</div>`
       : '';
     return `
-      <div class="rp-ladder-row rp-tier-${tier}">
+      <div class="rp-ladder-row rp-tier-${tier}" data-hand="${h.name}">
         <div class="rp-ladder-name">${h.name}</div>
         ${detail}
       </div>`;
@@ -15395,8 +15584,20 @@ function renderHandLadderHTML(mode) {
 }
 
 // 役の早見表（ヘルプモーダル）：常設「❓ 役」ボタンから開く。研修中・本編中どちらでも開ける。
-function showHandGuide() {
+// 研修の解説（2026-11-16 ユーザー：役の一覧を光らせた後、実際に開いて、まぎらわしい所＝フラッシュとストレートの強さ・キッカー・ナッツストレートを教える）
+// hi＝光らせる行、ex＝例の札（絵で見せる）
+const HAND_GUIDE_LESSON = [
+  { hi: ['フラッシュ', 'ストレート'], t: 'まぎらわしいのがここ。<b>フラッシュ</b>（同じマーク5枚）の方が、<b>ストレート</b>（数字が5つ連続）より強い。表は上ほど強いよ',
+    ex: [] },   // 光らせた2行が表の上で並ぶので、例の札は重ねない（上にある方が強い）
+  { hi: ['ワンペア'], t: '同じ役どうしなら、役に使っていない札で比べる。これが<b>キッカー</b>。Aのペアどうしなら、Kを持つ方が勝ち',
+    ex: [{ cards: [['♠','A'],['♥','A'],['♦','K']], tag: 'キッカーK', win: true }, { vs: '＞' }, { cards: [['♦','A'],['♣','A'],['♠','9']], tag: 'キッカー9' }] },
+  { hi: ['ストレート'], t: 'ストレートにも上下がある。場が6・7・8・9なら、5より10を持つ方が上。いちばん上を<b>ナッツストレート</b>って言うよ',
+    ex: [{ cards: [['♠','6'],['♥','7'],['♦','8'],['♣','9']], tag: '場札' }, { vs: '＋' }, { cards: [['♥','10']], tag: 'ナッツ', win: true }, { vs: '＞' }, { cards: [['♣','5']], tag: '弱い方' }] },
+];
+function showHandGuide(opts = {}) {
   if (document.querySelector('.hand-guide-overlay')) return; // 多重起動防止
+  // 研修で「押してみよう」と光らせている時に押されたら、解説つきで開く
+  if (!opts.lesson && state && state.__introGuide) { const r = state.__introGuide; state.__introGuide = null; closeCoach(); opts = { lesson: true, onDone: r }; }
   const overlay = document.createElement('div');
   overlay.className = 'hand-guide-overlay';
   overlay.innerHTML = `
@@ -15408,7 +15609,7 @@ function showHandGuide() {
       <div class="hand-guide-body">
         <div class="rp-ladder rp-ladder-help">${renderHandLadderHTML('help')}</div>
       </div>
-      <div class="hand-guide-hint">タップして閉じる</div>
+      ${opts.lesson ? '<div class="hg-lesson" role="note" aria-live="polite"></div>' : '<div class="hand-guide-hint">タップして閉じる</div>'}
     </div>
   `;
   const stage = document.getElementById('stage');
@@ -15417,9 +15618,39 @@ function showHandGuide() {
   (stage || document.body).appendChild(overlay);
   // 見るだけの表なので、どこを押しても閉じる（「タップして閉じる」の通り。スマホでは紙面が画面いっぱいで外側が無い）。Esc でも閉じる
   const onKey = (e) => { if (e.key === 'Escape') close(); };
-  const close = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
-  overlay.addEventListener('click', (e) => { e.stopPropagation(); close(); });
+  let closed = false;
+  const close = () => { if (closed) return; closed = true; overlay.remove(); document.removeEventListener('keydown', onKey); if (opts.onDone) opts.onDone(); };
   document.addEventListener('keydown', onKey);
+  if (!opts.lesson) { overlay.addEventListener('click', (e) => { e.stopPropagation(); close(); }); return; }
+  // 研修の解説：押すたびに次の話（最後で閉じる）。話題の行を光らせ、ほかは沈める
+  overlay.classList.add('is-lesson');
+  const strip = overlay.querySelector('.hg-lesson');
+  const body = overlay.querySelector('.hand-guide-body');
+  const exHTML = (ex) => ex.map(g => g.vs ? `<span class="hg-vs">${g.vs}</span>`
+    : `<span class="hg-ex${g.win ? ' is-win' : ''}"><span class="hg-ex-cards">${g.cards.map(([s, r]) => rpMiniCardHTML(s, r)).join('')}</span><span class="hg-ex-tag">${g.tag}</span></span>`).join('');
+  let page = 0;
+  const show = () => {
+    const L = HAND_GUIDE_LESSON[page], last = page === HAND_GUIDE_LESSON.length - 1;
+    strip.innerHTML = `<span class="coach-face hg-face"><img src="assets/ui/face_rico.webp" alt="リコ先輩"></span>
+      <div class="hg-lesson-main"><p class="hg-lesson-text">${L.t}</p>${L.ex.length ? `<div class="hg-ex-row">${exHTML(L.ex)}</div>` : ''}</div>
+      <button type="button" class="hg-next">${last ? 'わかった' : '次へ'}<small>${page + 1}/${HAND_GUIDE_LESSON.length}</small></button>`;
+    overlay.querySelectorAll('.rp-ladder-row').forEach(r => { const on = L.hi.includes(r.dataset.hand); r.classList.toggle('hg-hi', on); r.classList.toggle('hg-dim', !on); });
+    // 光らせた行が見えるように、表の中だけを動かす（画面全体は動かさない）
+    const rows = [...overlay.querySelectorAll('.rp-ladder-row.hg-hi')];
+    if (rows.length) {
+      const top = Math.min(...rows.map(r => r.offsetTop)), bot = Math.max(...rows.map(r => r.offsetTop + r.offsetHeight));
+      const base = body.querySelector('.rp-ladder').offsetTop;
+      body.scrollTo({ top: Math.max(0, (top + bot) / 2 - base - body.clientHeight / 2 + 12), behavior: page ? 'smooth' : 'auto' });
+    }
+  };
+  overlay.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (e.target.closest('.hand-guide-close')) { close(); return; }
+    if (typeof mpSfx === 'function') mpSfx('check');
+    if (page >= HAND_GUIDE_LESSON.length - 1) { close(); return; }
+    page++; show();
+  });
+  requestAnimationFrame(show);
 }
 
 // ルール入門：3ステップ、各1タップ、計60秒以内。「そろえる／強さ順／賭ける」の最小限だけ教える。
@@ -15900,7 +16131,10 @@ async function introHand1(gen) {
   state.mimiThought = '「Aが……3枚そろった！」';
   render();
   await introCoach('Aが3枚！『スリーカード』。手札と場札から5枚を選んで役を作るよ', '.v2-role, .v2-myhand'); if (!introAlive(gen)) return;
-  await introCoach('役の強い順は、この『役の一覧』でいつでも見られる', '.v2-help-btn'); if (!introAlive(gen)) return;
+  // 光らせた後、実際に押して開いてもらい、まぎらわしい所を早見表の上で教える（閉じたら続き）
+  await new Promise(res => { state.__introGuide = res; introCoach('役の強い順は『役の一覧』でいつでも見られる。押してみて', '.v2-help-btn', { tap: false }); });
+  state.__introGuide = null;
+  if (!introAlive(gen)) return;
   await introWaitAction('check', 0, '強すぎる時は、わざと『チェック』で待つ手もある。今賭けると相手が降りちゃう。もう1枚引かせて、次で大きく取ろう', '.verb-cc'); if (!introAlive(gen)) return;
   state.mimiThought = '「チェック」';
   introBet('mimi', 0);

@@ -181,3 +181,10 @@ html .collection-modal .coll-conv-tab { font-size: var(--r-btn2) !important; }
 html #stage :is(.reward-cg-list-head b, .reward-cg-viewer-x) { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
 html #stage :is(.reward-cg-list-head span, .reward-cg-list-cell i) { font-size: calc(var(--r-label) / var(--game-scale, 1)) !important; }
 html .collection-modal .coll-conv-empty { font-size: var(--r-label) !important; }
+
+/* 役の早見表の研修の解説（2026-11-16）：リコの説明＝台詞、例の札の名札＝補足、次へ＝押す所（小） */
+html body .hg-lesson .hg-lesson-text { font-size: var(--r-speech) !important; }
+html body .hg-lesson :is(.hg-ex-tag, .hg-next small) { font-size: var(--r-note) !important; }
+html body .hg-lesson .hg-next { font-size: var(--r-btn2) !important; }
+html body .hg-lesson .hg-vs { font-size: var(--r-label) !important; }
+html body .hg-ex-cards .card.rp-mini-card :is(.rank, .suit) { font-size: 14px !important; }
