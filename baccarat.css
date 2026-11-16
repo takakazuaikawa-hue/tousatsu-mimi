@@ -387,7 +387,7 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 .bc-mission { flex-basis: 100%; text-align: center; font: 800 var(--r-mission, 20px)/1.3 var(--bc-min); letter-spacing: .04em; color: var(--bc-gold-hi); text-shadow: 0 2px 6px rgba(0,0,0,.8); }
 /* 神託：いちばん大事な知らせなので、大きな金の札に */
 .bc-pins > .bc-oracle { flex-basis: 100%; text-align: center; font: 700 var(--r-mission, 20px)/1.3 var(--bc-min); padding: calc(var(--u) * 4) calc(var(--u) * 10); color: #fff3c4; background: linear-gradient(180deg, rgba(90,60,10,.96), rgba(30,16,4,.96)); border: 2px solid var(--bc-gold-hi) !important; animation: bc-pop .5s ease-out 1; }
-.bc-pins > .bc-oracle b { font-size: .8em; padding: 0 .5em; margin-right: .7em; background: var(--bc-gold-hi); color: #2a1608; }
+.bc-pins > .bc-oracle b { font-size: var(--r-note, 14px); padding: 0 .5em; margin-right: .7em; background: var(--bc-gold-hi); color: #2a1608; }
 /* 台詞の帯：話している人の名前を札に、文は明るく太く */
 .bc-sub { background: rgba(6,2,3,.96); border-color: var(--bc-gold); }
 .bc-sub-n { padding: 1px 8px; background: var(--bc-gold-hi); color: #2a1608; }
@@ -414,3 +414,5 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 /* 神託がある時は、今やることの1行をゆずる（札の欄に収める）。台詞の帯は札より手前 */
 .bc-pins:has(.bc-oracle) .bc-mission { display: none; }
 .bc-sub { z-index: 3 !important; }
+/* 幅の狭い横画面：合計の欄の名前がはみ出さないように */
+@media (max-width: 720px) { .bc-side-head { padding: calc(var(--u) * 3) calc(var(--u) * 3); } .bc-side-n { letter-spacing: 0; } .bc-dealer { width: calc(var(--u) * 80); } }
