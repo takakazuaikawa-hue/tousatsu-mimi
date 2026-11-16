@@ -4333,35 +4333,35 @@ const DEISUI_EPISODES = {
  "rico_tutorial": {
   "id": "deisui_001",
   "no": "泥酔の夜　第1夜",
-  "img": "assets/ui/home/stage-empty_night.webp",
+  "img": "assets/episodes/night/d_rico_tutorial.webp",
   "bg": "bg_vip_room",
   "title": "ほろ酔いの夜を全部勝ったおいわいに「今夜は先輩のおごり〜」って乾杯したはじゅの新人バニーの私が、\n気がついたら先輩が私の膝で「まんま〜」って丸くなってて、\n起こそうとしたら「やぁだ、しゃわって、しゃわってぇ〜」って腕をつかまれて、\nしょのまま閉店後の卓にすわりゃされたけど、先輩は賭けてる途中でねちゃうし、\n私の心の声はじぇんぶ口から出ちゃって、もう、なにがなんだか、ひっく、な件"
  },
  "polka": {
   "id": "deisui_002",
   "no": "泥酔の夜　第2夜",
-  "img": "assets/ui/home/stage-empty_night.webp",
+  "img": "assets/episodes/night/d_polka.webp",
   "bg": "bg_vip_room",
   "title": "次の卓のポルカは、私が座る前に「みみちゃあああん！」ってとびついてきて、\nわらってたと思ったら十びょうで「ボクなんかぁぁ」って泣いて、また十びょうでわらってて、\nカードを口にくわえて「これ、たべりぇる？」ってきいてくるし、\nとちゅうからずっと脚をもじもじしながら「まだいかない！ かつまでいかないぃ！」って泣いてて、\nかったらかったで、なんかを、あたまのうえで、ぐるぐる、ぐるぐる……ひっく、な件"
  },
  "selina": {
   "id": "deisui_003",
   "no": "泥酔の夜　第3夜",
-  "img": "assets/ui/home/stage-empty_night.webp",
+  "img": "assets/episodes/night/d_selina.webp",
   "bg": "bg_vip_room",
   "title": "いつもは眼鏡のおくから確率でひとをさしてくるセリナしゃんが、\n今夜は眼鏡をしゃかしゃまにかけたまま、まがおで「みみしゃん、あなたとわたしが今夜むしゅばれる確率をけいしゃんしました」って口説いてきて、\nしきは途中で「おっぱいのきょくしぇんは、しぇいきぶんぷに、ちかい」っていうなぞの定理にとんでいって、\nトランプを一まいずつ素肌にはって「これでわたしは、ごじゅうにまいの、かくりちゅの、おんな」ってむねをはって、\n最後は黒板になぞのしきをかいて、まんじょくげに、ねちゃう……ひっく、な件"
  },
  "grano": {
   "id": "deisui_004",
   "no": "泥酔の夜　第4夜",
-  "img": "assets/ui/home/stage-empty_night.webp",
+  "img": "assets/episodes/night/d_grano.webp",
   "bg": "bg_vip_room",
   "title": "交換所ではいつも値札とあいそで隙を見しぇないグラーノしゃんが、\n今夜は自分の体に値札をはって「ほんじちゅの目玉しょうひん、わたくし、でありましゅ！」って口上を歌いだして、\n口をひらけば下ネタ、舌をだせばよだれ、グラスも瓶も脚にはしゃんで「りょうてが、あいて、しょうばいじょうず！」ってわらって、\nしまいには金貨をゆかにばらまいて、およぐまねをはじめたので、\nわたしは勝負をしにきたのか、よっぱらいの見しぇものを見にきたのか、もう、ひっく、な件"
  },
  "velvet": {
   "id": "deisui_005",
   "no": "泥酔の夜　第5夜",
-  "img": "assets/ui/home/stage-empty_night.webp",
+  "img": "assets/episodes/night/d_velvet.webp",
   "bg": "bg_vip_room",
   "title": "最後の卓のヴェルベットしゃんは、いつもの「ざぁこ♡」が「じゃーこ、じゃーこ♡」って赤ちゃんことばになってて、\n私のスカートをめくっては「めくりっこぉ〜♡」ってわらって、\n一まいぬいでは「あちゅいの〜」、もう一まいぬいでは「まだ、あちゅいの〜」って言って、\nとめようとしたら、ゆかでころがって、だだをこねて、\n最後はなにかをあたまにかぶったまま私にだきちゅいて、しゅやしゅや、ねいきを……ひっく、な件"
  }
@@ -5234,7 +5234,7 @@ Object.assign(INTERMISSIONS, {
 // ほろ酔いの夜の扉（題字）。絵は人のいない夜の劇場（お酒のある版）
 const HOROYOI_EPISODES = {
   rico_tutorial: {
-    id: 'horoyoi_001', no: 'ほろ酔いの夜　第1夜', img: 'assets/ui/home/stage-empty_night.webp', bg: 'bg_vip_room',
+    id: 'horoyoi_001', no: 'ほろ酔いの夜　第1夜', img: 'assets/episodes/night/h_rico_tutorial.webp', bg: 'bg_vip_room',
     title:
       '全卓制覇の打ち上げで「一杯だけね」と言われたはずの新人バニーの私が、\n' +
       '気がつけば三杯目のグラスを持たされていて、\n' +
@@ -5244,7 +5244,7 @@ const HOROYOI_EPISODES = {
       'よくしゃべる先輩が急に黙った時だけは本気だと耳で覚えさせられる件',
   },
   polka: {
-    id: 'horoyoi_002', no: 'ほろ酔いの夜　第2夜', img: 'assets/ui/home/stage-empty_night.webp', bg: 'bg_vip_room',
+    id: 'horoyoi_002', no: 'ほろ酔いの夜　第2夜', img: 'assets/episodes/night/h_polka.webp', bg: 'bg_vip_room',
     title:
       'ほろ酔いのまま次の卓に回された私の前に現れたのは、\n' +
       'いつもは声の大きさで手の弱さがばれるはずのポルカが、\n' +
@@ -5254,7 +5254,7 @@ const HOROYOI_EPISODES = {
       '笑いが止まらない時ほどブラフで、泣いている時ほど本物だと見抜かされる件',
   },
   selina: {
-    id: 'horoyoi_003', no: 'ほろ酔いの夜　第3夜', img: 'assets/ui/home/stage-empty_night.webp', bg: 'bg_vip_room',
+    id: 'horoyoi_003', no: 'ほろ酔いの夜　第3夜', img: 'assets/episodes/night/h_selina.webp', bg: 'bg_vip_room',
     title:
       'いつもは理屈と眼鏡で武装しているセリナさんが、\n' +
       '今夜はその眼鏡を外して指先でくるくる回しながら、\n' +
@@ -5264,7 +5264,7 @@ const HOROYOI_EPISODES = {
       '本当に強い手の合図だと気づかされる件',
   },
   grano: {
-    id: 'horoyoi_004', no: 'ほろ酔いの夜　第4夜', img: 'assets/ui/home/stage-empty_night.webp', bg: 'bg_vip_room',
+    id: 'horoyoi_004', no: 'ほろ酔いの夜　第4夜', img: 'assets/episodes/night/h_grano.webp', bg: 'bg_vip_room',
     title:
       '値札と勘定で生きているはずのグラーノさんが、\n' +
       '今夜は「細かい勘定は明日の私に任せます！」と上機嫌で、\n' +
@@ -5274,7 +5274,7 @@ const HOROYOI_EPISODES = {
       '一番まっとうな商売を教わる件',
   },
   velvet: {
-    id: 'horoyoi_005', no: 'ほろ酔いの夜　第5夜', img: 'assets/ui/home/stage-empty_night.webp', bg: 'bg_vip_room',
+    id: 'horoyoi_005', no: 'ほろ酔いの夜　第5夜', img: 'assets/episodes/night/h_velvet.webp', bg: 'bg_vip_room',
     title:
       'VIPルームの女王ヴェルベットさんが、\n' +
       'お酒で圧のすべてを色気に変えて「ぜーんぶ、あなたにあげる♡」とオールインを連発し、\n' +
@@ -15356,6 +15356,8 @@ function horoyoiBattleNow(key) {
   const book = key === 'velvet' && !isItemOwned(bookId) ? [cgSetSrc(bookId, 1), cgSetSrc(bookId, 2)] : [];
   // 勝負の途中に挟む一枚絵（HOROYOI_MID_SCENES）も卓に入る前に読む
   if (STORY_ART['hmid_' + key]) book.push(STORY_ART['hmid_' + key]);
+  // 夜の扉絵（題字の背景）も卓に入る前に読む（11/16 ほろ酔い・泥酔の各夜に専用の一枚絵を足した）
+  { const oid = key === 'rico' ? 'rico_tutorial' : key, ep = (isDeisui() ? DEISUI_EPISODES : HOROYOI_EPISODES)[oid]; if (ep && ep.img && !horoyoiCleared(oid)) book.push(ep.img); }
   return [...(HOROYOI_STAND.has(key) ? [`assets/characters/${key}_drunk_stand.webp`] : []), 'assets/characters/mimi_allin_drunk.webp', 'assets/characters/mimi_bust_calm_drunk.webp', 'assets/characters/mimi_bust_think_drunk.webp', ...book];
 }
 function battleAssetsGate(opponentId, resume) {
