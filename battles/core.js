@@ -549,7 +549,7 @@
             const el = document.createElement('div');
             el.className = 'mb-intro' + (kind === 'logic' ? ' is-logic' : '');
             el.innerHTML = `${win('mimi', 'MIMI', 'me')}${win(oid, c.name, 'opp')}<div class="mb-vs-flash"></div>
-              <div class="mb-intro-vs">VS</div><div class="mb-intro-slab"></div><div class="mb-intro-word">${kind === 'logic' ? 'LOGIC BATTLE' : 'PSYCH BATTLE'}<small>${g.title}</small></div>`;
+              <div class="mb-intro-vs">VS</div><div class="mb-intro-slab"></div><div class="mb-intro-word">${'READING'}<small>${g.title}</small></div>`;
             layer.appendChild(el); sfx.whoosh();
             el.querySelectorAll('video').forEach(v => {
               v.playbackRate = 1.4;

@@ -342,8 +342,8 @@ html:not(.is-compact) .mb-host .gg .g { width: 64px; height: 9px; }
 /* 「PSYCH BATTLE / LOGIC BATTLE」は core.js の文字。英語は叫ぶ言葉だけにするので、文字を透明にして
    同じ行に明朝の「心理バトル／論理バトル」を重ねる（大きさは元の行の em に合わせるので、スマホ横の 64px 指定もそのまま効く） */
 .mb-host .mb-intro-word { color: transparent; text-shadow: none; }
-.mb-host .mb-intro-word::before { content: "心理バトル"; position: absolute; left: 0; right: 0; top: 0; font-family: var(--mincho); font-weight: 800; font-size: .78em; line-height: 1.282; letter-spacing: .14em; padding-left: .14em; color: var(--gold-pale); text-shadow: 0 4px 0 rgba(0,0,0,.45), 0 0 26px rgba(239,205,130,.4); pointer-events: none; }
-.mb-host .mb-intro.is-logic .mb-intro-word::before { content: "論理バトル"; }
+.mb-host .mb-intro-word::before { content: "リーディング"; position: absolute; left: 0; right: 0; top: 0; font-family: var(--mincho); font-weight: 800; font-size: .78em; line-height: 1.282; letter-spacing: .14em; padding-left: .14em; color: var(--gold-pale); text-shadow: 0 4px 0 rgba(0,0,0,.45), 0 0 26px rgba(239,205,130,.4); pointer-events: none; }
+.mb-host .mb-intro.is-logic .mb-intro-word::before { content: "リーディング"; }
 @keyframes mb-word { from { opacity: 0; transform: skewY(-4deg) scale(2.2); } }
 @keyframes mb-slideR { from { transform: translateX(70%); opacity: 0; } }
 @keyframes mb-slideL { from { transform: translateX(-70%); opacity: 0; } }

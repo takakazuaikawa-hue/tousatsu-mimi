@@ -1,0 +1,16 @@
+import { launch, sleep } from '../lib/cdp.mjs';
+import { serve } from '../lib/server.mjs';
+import path from 'node:path';
+const W=+(process.argv[2]||844),H=+(process.argv[3]||390);
+const server = await serve(path.resolve('.'), 0);
+const browser = await launch({ width: W, height: H });
+const page = await browser.newPage();
+await page.setViewport(W, H, W<1000);
+const errs=[]; page.on('Runtime.exceptionThrown',p=>errs.push(JSON.stringify(p.exceptionDetails).slice(0,600)));
+await page.goto(`http://127.0.0.1:${server.port}/qa/r2proto/r2proto.html?reset=1${process.argv[4]||""}`, 60000);
+await sleep(2500);
+console.log(JSON.stringify(await page.eval(`(()=>{const v=R2.verify();return {ok:v.ok,bad:v.bad,totals:v.totals,phase:R2.phase,err:R2.error}})()`)));
+await page.screenshot('qa/out/r2proto/smoke_'+W+(process.argv[4]?'p':'')+'.png');
+console.log(errs.join('\n'));
+await browser.close(); await server.close();
+process.exit(0);

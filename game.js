@@ -278,8 +278,7 @@ function defaultSave() {
     panyuFreeDaily: { date: '', count: 0 },  // ロビーのぱにゅぱにゅで今日コインを受け取った回数（1日5回まで）
 
     // ── 設定 ──
-    psychEnabled: true,
-    logicEnabled: true,
+    readingEnabled: true,   // リーディング（心理バトル・論理バトルを1つにまとめた。以前の psychEnabled / logicEnabled のどちらかが ON なら ON）
     bgmVolume: 35,       // BGM 音量（0-100）
     // 曲は最初から鳴らす（2026-11-16 ユーザー：起動時に曲が鳴らない）。DLsite 版（アプリ）は自動再生の決まりが無いのですぐ鳴る。
     // ブラウザ版は最初に画面を押した時に鳴り始める（initGlobalAudioBar の kickBgmOnFirstGesture）
@@ -467,6 +466,9 @@ function loadProgress() {
     const data = JSON.parse(raw);
     const merged = { ...defaultSave(), ...data };
     merged.version = SAVE_VERSION;
+    // 以前の「心理バトル」「論理バトル」の2つのスイッチ → リーディング1つ（どちらかが ON なら ON）
+    if (typeof data.readingEnabled !== 'boolean') merged.readingEnabled = !(data.psychEnabled === false && data.logicEnabled === false);
+    delete merged.psychEnabled; delete merged.logicEnabled;
     // 体験ハンドより前の版のセーブ（記録そのものが無い）：もう遊んでいる人は体験ハンド済みとして扱う
     //   （済みでないと、ホームの今夜の相手がリコ先輩に戻り、ログインボーナスの窓も出なかった）
     if (typeof data.introPlayed !== 'boolean' && ((Array.isArray(data.clearedStages) && data.clearedStages.length) || data.coins > 0)) merged.introPlayed = true;
@@ -3632,7 +3634,13 @@ function applyBindings() {
         break;
       }
       case 'communityCards': renderCardsInto(el, state.community, 5, 'community'); break;
-      case 'playerHand': renderCardsInto(el, state.playerHand, 2, 'player'); break;
+      case 'playerHand': {
+        renderCardsInto(el, state.playerHand, 2, 'player');
+        // リーディングの異議あり：外した異議で、ミミの札が1枚「見せた」扱い（この手の間）
+        const sh = state.rdShown;
+        if (sh && sh.hand === state.handNo && state.screen === 'battle') { const cd = el.children[sh.idx]; if (cd) { cd.classList.add('rd-shown'); cd.insertAdjacentHTML('beforeend', '<i class="rd-shown-tag">見せた</i>'); } }
+        break;
+      }
       case 'opponentHand': renderOpponentHand(el); break;
       case 'psychLog': renderPsychLog(el); break;
       case 'psychStats': el.innerHTML = renderPsychStats(); break;
@@ -3806,7 +3814,7 @@ const EPISODES = {
       'いやその技術を今から身につけるには現場が実戦すぎませんかと思っていたら、\n' +
       '外れスキル《ぱにゅぱにゅ》が耳と尻尾を勝手に反応させ、\n' +
       '相手の手札は見えないのにチップを置いた指先の逃げ方だけは妙にはっきり見えてしまい、\n' +
-      'ポーカー初心者のくせに初めての心理バトルでブラフ看破までやらされる件',
+      'ポーカー初心者のくせに初めてのリーディングでブラフ看破までやらされる件',
     scene:
       '初心者向けポーカー卓。\n' +
       'ミミは困惑しながらカードを持ち、耳がぴくっと反応している。\n' +
@@ -4586,7 +4594,7 @@ const TITLE_READ = {
     ['いやその技術を今から身につけるには', '現場が実戦すぎ', 'ませんかと思っていたら、', '本番です！', 'lose'],
     ['外れスキル', '《ぱにゅぱにゅ》', 'が耳と尻尾を勝手に反応させ、', '勝手に！？', 'panic'],
     ['相手の手札は見えないのにチップを置いた', '指先の逃げ方', 'だけは妙にはっきり見えてしまい、', '見えた！', 'win'],
-    ['ポーカー初心者のくせに初めての心理バトルで', 'ブラフ看破', 'までやらされる件', 'やります！', 'smug']] },
+    ['ポーカー初心者のくせに初めてのリーディングで', 'ブラフ看破', 'までやらされる件', 'やります！', 'smug']] },
   episode_003_title: { sub: '静かな卓の、嫌な金額', cl: [
     ['ポルカのブラフをなんとか見抜いて', '調子に乗りかけた', '新人バニーの私が、', 'えへへ', 'smug'],
     ['次こそ少しは楽な相手かと思ったら今度は声を荒げないし態度も崩さないしベット額まで妙に', '理屈っぽい常連プレイヤー', 'のセリナと当たってしまい、', '楽じゃない！', 'panic'],
@@ -6480,8 +6488,7 @@ function showSettingsModal() {
   document.querySelectorAll('.settings-overlay').forEach(el => el.remove());
   const overlay = document.createElement('div');
   overlay.className = 'settings-overlay';
-  const psy = save.psychEnabled !== false;
-  const log = save.logicEnabled !== false;
+  const rdOn = save.readingEnabled !== false;
   const sw = (kind, on, label) => `
         <button class="settings-modal-toggle ${on ? 'on' : 'off'}" data-toggle="${kind}" aria-label="${label}" aria-pressed="${on}">
           <span class="stm-knob"></span>
@@ -6520,14 +6527,10 @@ function showSettingsModal() {
         <section class="settings-modal-group">
           <h3 class="settings-modal-group-title">遊び方</h3>
           <div class="settings-modal-row">
-            <span class="settings-modal-label">心理バトル</span>
-            ${sw('psych', psy, '心理バトル')}
+            <span class="settings-modal-label">リーディング</span>
+            ${sw('reading', rdOn, 'リーディング')}
           </div>
-          <div class="settings-modal-row">
-            <span class="settings-modal-label">論理バトル</span>
-            ${sw('logic', log, '論理バトル')}
-          </div>
-          <div class="settings-modal-note">講義の間は、この設定にかかわらず両方とも出ます</div>
+          <div class="settings-modal-note">相手の様子から手を読む遊びです。講義の間は、この設定にかかわらず出ます</div>
           <div class="settings-modal-row">
             <span class="settings-modal-label">文字の速さ</span>
             ${seg('textSpeed', [['normal', 'ふつう'], ['fast', '速い'], ['instant', 'すぐ']], save.textSpeed || 'normal')}
@@ -6600,8 +6603,7 @@ function showSettingsModal() {
   overlay.querySelectorAll('[data-toggle]').forEach(btn => {
     btn.addEventListener('click', () => {
       const kind = btn.dataset.toggle;
-      if (kind === 'psych') save.psychEnabled = !(save.psychEnabled !== false);
-      else if (kind === 'logic') save.logicEnabled = !(save.logicEnabled !== false);
+      if (kind === 'reading') save.readingEnabled = !(save.readingEnabled !== false);
       else if (kind === 'backdoor') save.backdoorOn = !save.backdoorOn;
       else if (kind === 'forcesound') setForceSound(!save.forceSound); // 内部でsaveProgress+即反映
       else if (kind === 'liveart') setStillArt(!stillArtOn());
@@ -6610,8 +6612,7 @@ function showSettingsModal() {
       else if (kind === 'voice') { save.voiceOn = !(save.voiceOn !== false); if (save.voiceOn) save.allMute = false; if (!save.voiceOn && window.stopVoice) stopVoice(); }
       saveProgress();
       let isOn;
-      if (kind === 'psych') isOn = (save.psychEnabled !== false);
-      else if (kind === 'logic') isOn = (save.logicEnabled !== false);
+      if (kind === 'reading') isOn = (save.readingEnabled !== false);
       else if (kind === 'forcesound') isOn = !!save.forceSound;
       else if (kind === 'liveart') isOn = !stillArtOn();
       else if (kind === 'bgm') isOn = !!save.bgmOn;
@@ -6635,23 +6636,15 @@ function showSettingsModal() {
 }
 
 function renderLobbySettings() {
-  const psy = save.psychEnabled !== false;
-  const log = save.logicEnabled !== false;
+  const rdOn = save.readingEnabled !== false;
   return `
     <div class="settings-title">${UI_ICON.gear} 設定 <span class="settings-note-inline">※講義モードは設定を無視して常時ON</span></div>
     <div class="settings-grid">
       <div class="settings-row">
-        <span class="settings-label">心理</span>
-        <button class="settings-toggle ${psy ? 'on' : 'off'}" data-action="toggle-psych">
+        <span class="settings-label">リーディング</span>
+        <button class="settings-toggle ${rdOn ? 'on' : 'off'}" data-action="toggle-reading">
           <span class="settings-knob"></span>
-          <span class="settings-status">${psy ? 'ON' : 'OFF'}</span>
-        </button>
-      </div>
-      <div class="settings-row">
-        <span class="settings-label">論理</span>
-        <button class="settings-toggle ${log ? 'on' : 'off'}" data-action="toggle-logic">
-          <span class="settings-knob"></span>
-          <span class="settings-status">${log ? 'ON' : 'OFF'}</span>
+          <span class="settings-status">${rdOn ? 'ON' : 'OFF'}</span>
         </button>
       </div>
     </div>
@@ -6733,7 +6726,7 @@ const NOTE_ARTICLES = {
     body: [
       { h: '相手の手札は1つに決めない', p: '「相手はAを持っている」と決め打つと、外れた時に何も残りません。強い人は<b>「ありうる手札の束」</b>で考えます。束のうち何割が自分より強いか——それが実質の勝率です。' },
       { h: '束は行動で絞られる', p: 'プリフロップで降りなかった時点で弱い札は消え、フロップで大きく賭けた時点で「中途半端な手」も減ります。<b>相手の行動1つごとに束が細くなる</b>ので、リバーで残っている束を見れば、相手が本当に強いのか、それとも押し切ろうとしているだけかが見えます。' },
-      { h: 'このゲームでは', p: 'ヴェルベット撃破で解放。相手側に<b>レンジ帯（強め寄り／五分／弱め寄り）とブラフ候補の割合</b>が常時表示されるようになります。従来は心理バトルに成功した時だけ、しかも「ぱにゅレンジLv2」以上でしか見られなかった情報です。2周目以降、同じ相手の同じ手を「今度は読み切って勝つ」ための装備です。' },
+      { h: 'このゲームでは', p: 'ヴェルベット撃破で解放。相手側に<b>レンジ帯（強め寄り／五分／弱め寄り）とブラフ候補の割合</b>が常時表示されるようになります。従来はリーディングに成功した時だけ、しかも「ぱにゅレンジLv2」以上でしか見られなかった情報です。2周目以降、同じ相手の同じ手を「今度は読み切って勝つ」ための装備です。' },
     ],
   },
   tell: {
@@ -9395,9 +9388,20 @@ function renderCardsInto(el, cards, slotCount, key) {
 
 // 相手の手札：通常は裏向き、ショーダウンで表向き（めくりアニメ付き）
 function renderOpponentHand(el) {
-  if (state.opponentRevealed && state.opponentHand && state.opponentHand.length === 2) {
+  const rdOpen = !!(state.rdOpen && state.rdOpen.hand === state.handNo && state.screen === 'battle');   // リーディングで当てた：この手の間、手札を表に
+  const rdCards = rdOpen ? (state.rdOpen.cards || [0, 1]) : [];
+  if ((state.opponentRevealed || (rdOpen && rdCards.length >= 2)) && state.opponentHand && state.opponentHand.length === 2) {
     renderCardsInto(el, state.opponentHand, 2, 'opp');
     el.classList.add('revealed');
+  } else if (rdOpen && rdCards.length === 1 && state.opponentHand && state.opponentHand.length === 2) {
+    // 異議あり：言い分のわけになった1枚だけ表（もう1枚は裏のまま）
+    el.classList.remove('revealed');
+    const k = state.handNo + ':' + rdCards[0], fresh = state.__rdOpenDrawn !== k; state.__rdOpenDrawn = k;
+    el.innerHTML = [0, 1].map(i => {
+      if (i !== rdCards[0]) return '<div class="card card-back"></div>';
+      const c = state.opponentHand[i], red = c.suit === '♥' || c.suit === '♦';
+      return `<div class="card${red ? ' red' : ''}${fresh ? ' card-flip' : ''} rd-open-one" data-r="${c.label}" data-s="${c.suit}"><span class="rank">${c.label}</span><span class="suit">${c.suit}</span><span class="center-suit">${c.suit}</span></div>`;
+    }).join('');
   } else {
     el.classList.remove('revealed');
     el.innerHTML = '<div class="card card-back"></div><div class="card card-back"></div>';
@@ -9564,7 +9568,7 @@ function renderActionArea(el) {
     return;
   }
   if (state.psychPending) {
-    el.innerHTML = `<div class="status-note">心理バトル中……</div>`;
+    el.innerHTML = `<div class="status-note">リーディング中……</div>`;
     return;
   }
   if (state.handPhase === 'showdown') {
@@ -9750,10 +9754,13 @@ function renderVerbActions(slots, need) {
   const betLabel = raising ? '上乗せ<span class="vl-long">する</span>' : '賭ける';
   const onlyAllin = betS.length === 1 && betS[0].kind === 'allin';
   const betSub = !betS.length ? 'チップが足りない' : onlyAllin ? `残り全部（${betS[0].chipAmount}）だけ` : (raising ? 'レイズ：額を選ぶ' : 'ベット：額を選ぶ');
-  return `<div class="verb-grid">
+  const furi = rdFuriAvailable();
+  const furiBtn = furi ? `<button class="btn verb-btn verb-furi is-furi" data-action="rd-furi"><span class="verb-label">ふり（のこり${3 - ((state.rdCount || {}).furi || 0)}）</span></button>` : '';
+  return `<div class="verb-grid${furi ? ' has-furi' : ''}">
     <button class="btn verb-btn verb-cc${tag('call')}" ${attrs(ccS)}><span class="verb-label">${ccLabel}</span><small class="verb-sub">${ccSub}</small>${num(raising ? pay : 0)}</button>
     <button class="btn verb-btn verb-fold${tag('fold')}" ${foldEnabled ? attrs(foldS) : 'disabled'}><span class="verb-label">降りる</span><small class="verb-sub">${foldEnabled ? 'このハンドをあきらめる' : '今は降りなくていい'}</small></button>
     <button class="btn verb-btn verb-bet${tag('bet')}" ${betS.length ? 'data-action="open-bet-chooser"' : 'disabled'}><span class="verb-label">${betLabel} ▸</span><small class="verb-sub">${betSub}</small></button>
+    ${furiBtn}
   </div>`;
 }
 
@@ -9780,11 +9787,14 @@ function scheduleRicoSuggest(need) {
   if (state.__turnKey === key) return;
   state.__turnKey = key;
   state.__suggest = null;
+  if (state.__suggestLine && state.ricoAdvice === state.__suggestLine) state.ricoAdvice = '';   // 前の局面の「おすすめ」の言葉は消す
+  state.__suggestLine = null;
   battleTimeout(() => {
     if (state.__turnKey !== key || !state.isPlayerTurn || state.psychPending || state.screen !== 'battle') return;
-    const v = computeSuggestVerb(need);
+    const needNow = Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0));
+    const v = computeSuggestVerb(needNow);
     state.__suggest = v;
-    state.ricoAdvice = `「${SUGGEST_LINES[v === 'call' && need === 0 ? 'check' : v]}」`;
+    state.ricoAdvice = state.__suggestLine = `「${SUGGEST_LINES[v === 'call' && needNow === 0 ? 'check' : v]}」`;
     render();
   }, 8000);
 }
@@ -9898,7 +9908,7 @@ function onAction(e) {
         'coins', 'ownedItems', 'shopSeenItems', 'unlockedNotes', 'panyuGaugeMax', 'panyuSkills', 'panyuComboMultiplier', 'carryChips',
         'equippedCardSkin', 'equippedTableSkin', 'equippedRicoOutfit', 'equippedChipSkin', 'equippedMimiSkin', 'equippedCutin',
         'equippedBgmLobby', 'equippedBgmBattle', 'equippedSePack',
-        'loginBonus', 'panyuFreeDaily', 'bgmVolume', 'bgmOn', 'sfxVolume', 'sfxOn', 'voiceVolume', 'voiceOn', 'allMute', 'forceSound', 'psychEnabled', 'logicEnabled',
+        'loginBonus', 'panyuFreeDaily', 'bgmVolume', 'bgmOn', 'sfxVolume', 'sfxOn', 'voiceVolume', 'voiceOn', 'allMute', 'forceSound', 'readingEnabled',
       ];
       save = defaultSave();
       KEEP_KEYS.forEach(k => { if (prev[k] !== undefined) save[k] = JSON.parse(JSON.stringify(prev[k])); });
@@ -10052,6 +10062,7 @@ function onAction(e) {
     case 'player-raise':  playerRaise(+data.size); break;
     case 'player-bet':    playerBet(data.size); break;
     case 'player-allin':  playerAllIn(); break;
+    case 'rd-furi':       rdStartFuri(); break;
     case 'rematch':
       // 本気リコモードを引き継ぐ（直前のバトルが本気だったら再戦も本気）
       if (state.opponentId === 'rico_tutorial' && state.seriousRicoMode) {
@@ -10171,8 +10182,7 @@ function onAction(e) {
     case 'toggle-bgm':    toggleLobbyBgm(); break;
     case 'toggle-audio-all': toggleAllAudio(); break;
     case 'toggle-sfx':    toggleSfx(); mpSfx('tap'); /* 確認音 */ break;
-    case 'toggle-psych':  save.psychEnabled = !(save.psychEnabled !== false); saveProgress(); applyBindings(); break;
-    case 'toggle-logic':  save.logicEnabled = !(save.logicEnabled !== false); saveProgress(); applyBindings(); break;
+    case 'toggle-reading': save.readingEnabled = !(save.readingEnabled !== false); saveProgress(); applyBindings(); break;
     case 'home-ledger': showHomeLedger(); break;
     case 'home-settings': showSettingsModal(); break; // 設定は1枚の窓にまとめた（音・遊び方・ひらく）
     case 'home-fullscreen': requestGameFullscreen(); break;
@@ -16704,7 +16714,7 @@ function readIntroPages(group, gameId) {
   // 本当の手の読み合い：読みを預けて卓で使い、答え合わせはこの手の決着の後
   // 論理の本当の手の遊び：読むのは「付いていくのが割に合うか」
   if (REAL_READ_GAMES.has(gameId) && group === 'logic') return [first, {
-    eyebrow: 'LOGIC BATTLE',
+    eyebrow: 'READING',
     title: 'いま賭かっている手で、付いていくか決める',
     fig: `<div class="mk-dilemma"><div class="mk-dl"><span class="mk-dl-q">?</span><b>付いていく</b><small>勝てる見込みが、払う額に見合う時</small></div><span class="mk-dl-or">か</span><div class="mk-dl"><span class="mk-dl-q">?</span><b>降りる</b><small>見込みが、払う額に届かない時</small></div></div>`,
     note: '札を比べて勝てる見込みを作り、どちらかを決めます。',
@@ -16827,6 +16837,9 @@ function startHand() {
     state.opponentHand = [state.deck.pop(), state.deck.pop()];
     state.scriptedFlop = null;
     state.scriptedTurnRiver = null;
+    // リーディング：ほろ酔い・泥酔の1対戦に1回、おねだりが出せる配りに仕込む（2〜5手目のどれか。出るまで次の手でも）
+    state.rdRigHand = null;
+    try { rdRigOnedariDeal(); } catch (e) { console.error('rdRigOnedariDeal', e); }
   }
   state.community = [];
   state.handActs = []; // この手の相手の動き（読み合いの「卓の記録」に使う）
@@ -17234,11 +17247,20 @@ function opponentTurnDecide() {
   } else {
     action = decideOpponentAction(state.opponentProfile, ctx, { forceLargeBet });
   }
+  // リーディング（ほろ酔いの夜）：おねだりが出た手のリバーは ポットの3分の2 を賭ける（この手だけ固定。来たら value・外れたら bluff。eq は顔に出さない値）
+  //   ／見せ合いっこで決まった払う・降りるに置き換える（state.rdForce）。どちらも read-integrate.md §3-4・§3-5
+  if (state.rdOnedari && state.rdOnedari.hand === state.handNo && state.handPhase === 'river' && !state.rdOnedari.betDone && need <= 0 && state.playerChips > 0) {
+    state.rdOnedari.betDone = true;
+    action = { type: 'bet', size: 'pot_2_3', intent: state.rdOnedari.hit ? 'value' : 'bluff', eq: 0.5 };
+  }
+  if (state.rdForce && state.rdForce.hand === state.handNo) { action = state.rdForce.action; state.rdForce = null; }
   // オールインに対しては「降りる」か「コール」しかない（上乗せしても受ける側がいない）
   if (state.playerChips <= 0 && action.type !== 'fold') action = { ...action, type: 'check_call' };
   state.lastOpponentIntent = action.intent || action.type;
   if (action.intent === 'crazy' && DEISUI_HINT[state.opponentId]) state.__crazyHint = DEISUI_HINT[state.opponentId];
 
+  // リーディング：見せ合いっこ（ほろ酔いの夜・ポルカ。ミミがリバーでポットの3分の2以上を賭けたら、AI の判断にかかわらず開き、払う／降りるを決まりで置き換える）
+  if (need > 0 && maybeRdMise(action, need)) return;
   // フォールド処理
   if (action.type === 'fold' && need > 0) {
     state.opponentSpeech = opponentSpeech(action);
@@ -17349,13 +17371,15 @@ function opponentTurnDecide() {
     battleTimeout(() => maybeOpponentTell(tellEq < 0.42), 700);
   }
 
+  // リーディング：異議あり（ポルカがターン・リバーでポットの3分の2以上を賭けた直後。docs/design-ref/read-integrate.md §1・§3-2）
+  if (maybeRdAfterBet(action, amount)) return;
   const bigEnough = (action.size === 'pot_2_3' || action.size === 'pot_1' || action.size === 'allin');
   const isBluffBet = (action.intent === 'bluff' || action.intent === 'forced_bluff' || action.intent === 'tutorial_bluff');
   const isPostFlop = (state.handPhase === 'flop' || state.handPhase === 'turn' || state.handPhase === 'river');
   const triggerFirstHand = (state.handNo === 1 && state.handPhase === 'flop' && bigEnough && !state.isBoss);
   // フルハンド：大きな賭けなら、ブラフでも本物でも同じ割合で出す。
   // 以前はブラフ意図の時だけ50%で出ていて、「読み合いが出た」こと自体が答えを漏らしていた（2026-11-01 外部の批評）
-  const triggerBluff = (isPostFlop && bigEnough && rand() < 0.35);
+  const triggerBluff = (threeChoiceOk() && isPostFlop && bigEnough && rand() < 0.35);   // 2026-11-17 本編はリーディングの出どころ（§1）に置き換えた
   // ヴェルベット（ボス戦）：条件付き発動
   //   ・1ハンドにつき最大1回（state.bossPsychFiredThisHand）
   //   ・ボスは「優勢時こそ追い込む」心理的支配タイプ
@@ -17377,9 +17401,10 @@ function opponentTurnDecide() {
     const streetMod = state.handPhase === 'flop' ? 0.6 : state.handPhase === 'turn' ? 1.0 : 1.2;
     triggerBoss = rand() < baseChance * streetMod;
   }
+  if (triggerBoss && !threeChoiceOk()) triggerBoss = false;   // 2026-11-17 本編のリーディングは出どころが決まっている（ボスの乱数の引き金は外した）
   // 心理バトル有効判定（チュートリアル中は常時ON、その他は設定に従う）
   // ミミミ MAX で相手性格を読み切った後はこの対戦では発動しない
-  const psychAllowed = (state.tutorialMode || (save.psychEnabled !== false)) && !state.opponentPersonalityRevealed;
+  const psychAllowed = (state.tutorialMode || (save.readingEnabled !== false)) && !state.opponentPersonalityRevealed;
   if (psychAllowed && !state.psychResolved && (triggerFirstHand || triggerBluff || triggerBoss)) {
     render();
     if (triggerBoss) state.bossPsychFiredThisHand = true;
@@ -17392,11 +17417,11 @@ function opponentTurnDecide() {
   }
 
   // 論理バトル：心理バトルが出なかった時、ストリート毎に発動チャンス
-  const logicAllowed = state.tutorialMode || (save.logicEnabled !== false);
+  const logicAllowed = state.tutorialMode || (save.readingEnabled !== false);
   // 応急処置（作り直しまで）：ポルカ卓では出さない（テーマはブラフの読み）。1ハンド1回・1戦2回まで
   // 1ハンド1回・1戦2回まで。ポルカ卓は新しい読み合い（役づくり・ハイ＆ロー）がある時だけ
   const logicRoom = (state.opponentId !== 'polka' || readBattleReady('logic')) && (state.logicCount || 0) < 2 && state.logicHandNo !== state.handNo;
-  const triggerLogic = logicAllowed && logicRoom && isPostFlop && !state.logicResolvedStreet && !state.psychResolved && rand() < 0.55;
+  const triggerLogic = threeChoiceOk() && logicAllowed && logicRoom && isPostFlop && !state.logicResolvedStreet && !state.psychResolved && rand() < 0.55;   // 2026-11-17 本編は出さない
   if (triggerLogic && readBattleReady('logic')) {
     state.logicCount = (state.logicCount || 0) + 1;
     state.logicHandNo = state.handNo;
@@ -17418,6 +17443,10 @@ function opponentTurnDecide() {
     }
   }
 
+  giveTurnAfterBet();
+}
+// 相手が賭けた後：ミミに番を渡す（ミミの考え・リコの助言を添える）
+function giveTurnAfterBet() {
   state.isPlayerTurn = true;
   // 場札があればアセスメント付き、無ければシンプル
   // 表示用：相手の総コミット額と、ミミがコールに必要な額（差額）
@@ -17612,6 +17641,8 @@ function advanceAfterCall() {
       });
     }
   } else if (state.handPhase === 'turn') {
+    // リーディング：おねだり（ほろ酔いの夜）。リバーをめくる前に「言う」の画面。済んだら同じ所からやり直してリバーをめくる
+    if (state.rdSayGate !== state.handNo) { state.rdSayGate = state.handNo; if (maybeRdOnedari(() => advanceAfterCall())) return; }
     // フルハンド：リバー公開
     state.handPhase = 'river';
     state.isPlayerTurn = false;
@@ -17623,6 +17654,8 @@ function advanceAfterCall() {
       done: () => {
         recordEquitySnapshot('リバー');
         log('actions', { phase: 'river', cards: state.community.map(c=>c.label+c.suit) });
+        // リーディング：リバーがめくれた直後、相手の番の前（目利き。docs/design-ref/read-integrate.md §3-1）
+        if (maybeRdAfterRiver(opponentTurn)) return;
         opponentTurn();
       },
     });
@@ -17644,23 +17677,37 @@ const READ_BATTLE_POOLS = {
   // 心理：手がかり探偵は「問いかけ」（ask）に作り替えた（2026-10-27）
   // 最初の相手は見つめ合いとダウトの2種類だけ。同じ読みを繰り返して勝てる手応えを先に（2026-11-02 14回目の批評：ポルカ戦で5種類を覚えさせていた）。
   // 説明の多い役くらべ・問いかけ・ガチャは次の相手から（ダウトはポルカの台詞しか無いのでポルカに残す）
-  polka:  { psych: ['stare', 'doubt'], logic: [] },
-  selina: { psych: ['ask', 'stare', 'gacha'],          logic: ['narrow', 'sniper'] },
-  grano:  { psych: ['gacha'],                                 logic: ['outs', 'handvs'] },
-  // 論理：危険札さがし＋容疑者しぼりは、本当の手の「容疑者しぼり」（narrow）にまとめた（2026-10-27）
-  velvet: { psych: ['objection', 'stare', 'gacha'],          logic: ['narrow'] },
+  // 2026-11-15 作り直し（docs/design-ref/read-remake-plan.md）：心理は「見比べ」(mirror)、論理は「当たり札の灯り」(lights) の1つずつにまとめた。
+  // 古い種類（見つめ合い・ダウト・問いかけ・ガチャ・異議あり・容疑者しぼり・役くらべ・スナイパー・アウツ）は引退（ファイルは残す）
+  // 2026-11-17 リーディングを本編へ（docs/design-ref/read-integrate.md §1）：id は battles/reading/games/ の遊び。まだ作っていない遊びは READ_GAME_OK で false にして出さない
+  polka:  { psych: ['igi', 'furi'], logic: [] },
+  // 目利き：相手ごとの決まり（§3-1）。グラーノ＝ルーペ／セリナ＝めがねは最後の1回／ヴェルベット＝小さな♡と大げさな演技の♡（2026-11-17 セリナ・ヴェルベットも入れた）
+  // 異議あり（igi）はポルカ、押し出すふり（furi）は4人。どちらも卓の本当の事実が揃った時だけ出る（maybeRdAfterBet・rdFuriAvailable）
+  selina: { psych: ['mekiki', 'furi'], logic: [] },
+  grano:  { psych: ['mekiki', 'furi'], logic: [] },
+  velvet: { psych: ['mekiki', 'furi'], logic: [] },
   // 本気のリコ先輩：専用の読み合い「卒業試験」だけ。論理バトル（古い3択を含む）は出さない
   rico_serious: { psych: ['graduation'], logic: [] },
 };
-// ほろ酔いの夜（二周目）は、一周目と同じ読み合いを出さず、酔いが札・勝つ見込みを変える論理の2つだけ（2026-11-09 docs/design-ref/horoyoi-read-spec.md）。
-// 心理の枠は空（案C・Dを作ったら入れる）
+// ほろ酔いの夜・泥酔の夜：おねだり（5人）・見せ合いっこ（ポルカ）。2026-11-17 に入れた。出どころは maybeRdOnedari（ターンの賭けの後・リバー前）・maybeRdOnedariPick・maybeRdMise（降りると決めた所）。表の割り当ては rdNightOk の前提（READ_GAME_OK は使わない）
 const READ_BATTLE_POOLS_HOROYOI = {
-  rico:   { psych: [], logic: ['peek', 'blur'] },
-  polka:  { psych: [], logic: ['peek'] },
-  selina: { psych: [], logic: ['peek', 'blur'] },
-  grano:  { psych: [], logic: ['blur'] },
-  velvet: { psych: [], logic: ['peek'] },
+  rico:   { psych: [], logic: ['onedari'] },
+  polka:  { psych: [], logic: ['onedari', 'mise'] },
+  selina: { psych: [], logic: ['onedari'] },
+  grano:  { psych: [], logic: ['onedari'] },
+  velvet: { psych: [], logic: ['onedari'] },
 };
+// リーディング（battles/reading/reading.js の window.RD）で遊ぶ種類。作った遊びだけ入れる
+const RD_GAMES = new Set(['mekiki', 'igi', 'furi', 'onedari', 'mise']);
+const rdOk = (id, extra) => { try { const T = readBattleTable(id); return !!(T && window.RD && RD.ok[id] && RD.ok[id](T, rdCtx(extra))); } catch (e) { return false; } };
+// 遊びに渡す、卓のようす
+function rdCtx(extra) {
+  return Object.assign({
+    charKey: state.opponentImgKey, horoyoi: !!state.horoyoi, deisui: !!state.deisui, intent: state.lastOpponentIntent,
+    acts: (state.handActs || []).filter(a => a.ph !== 'preflop').map(a => ({ ...a })),
+    pot: state.pot || 0, toCall: Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0)), save,
+  }, extra || {});
+}
 // 読み合いの割り当ての欄：本気のリコ先輩は絵が通常のリコ先輩と同じなので、別の欄で引く
 const readPoolKey = () => (state.seriousRicoMode ? 'rico_serious' : state.opponentImgKey);
 // 今の卓で引く表（ほろ酔いの夜は別の表）
@@ -17706,6 +17753,7 @@ function readBattleReady(group) {
   return true;
 }
 const READ_GAME_OK = {
+  mekiki: () => rdOk('mekiki'), igi: () => false, furi: () => false, mise: () => false, onedari: () => false,
   // 卒業試験：卒業した後は3ハンドに1回まで（2026-11-01 8回目の批評：本気のリコ戦が5ハンドとも試験で、ポーカーが細切れになった）
   graduation: () => (save.gradCount || 0) < 3 || (state.handNo - (state.gradLastHand ?? -99)) >= 3,
   // 役くらべ：場札が5枚そろったリバーだけ（2026-11-01 2回目の外部の批評：フロップ・ターンでは「今勝っている候補の割合」が最後の勝ち負けと違うのに、付いていくかの判断に使っていた）
@@ -17785,7 +17833,7 @@ function readBattleRealHint() {
 function startReadBattle(group) {
   if (state.screen !== 'battle' || !readBattleReady(group)) { state.psychPending = false; state.isPlayerTurn = true; render(); return; }
   // 初めての読み合いは、始まる前に「なぜ始まったか・勝つと何が分かるか」を2枚で見せる
-  if (!save.readIntroSeen) {
+  if (!save.readIntroSeen && !RD_GAMES.has(state.__nextReadGame || pickReadBattle(group))) {
     const gen0 = battleGen;
     if (typeof dismissCutIn === 'function') dismissCutIn(); // 相手のカットイン（画面の一番上）が説明の札を覆っていた
     state.__nextReadGame = pickReadBattle(group);
@@ -17798,6 +17846,7 @@ function startReadBattle(group) {
   }
   const gameId = state.__nextReadGame || pickReadBattle(group);
   state.__nextReadGame = null;
+  if (RD_GAMES.has(gameId)) return startRd(group, gameId);
   if (gameId === 'graduation') state.gradLastHand = state.handNo;
   const stage = document.getElementById('stage') || document.body;
   document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
@@ -17836,7 +17885,7 @@ function startReadBattle(group) {
 // ===== 本当の手の読み合い（2026-10-21）=====
 // 読み合いの中では読みを預けるだけ。答え合わせは手の決着の後（continueAfterHand の頭で showReadVerdict）。
 // 本当の手で遊べる種類だけ table を渡す。渡さない種類は今までどおり架空の場面で、その場で答え合わせ
-const REAL_READ_GAMES = new Set(['stare', 'objection', 'graduation', 'gacha', 'doubt', 'handvs', 'ask', 'narrow', 'outs', 'sniper', 'peek', 'blur']);
+const REAL_READ_GAMES = new Set(['stare', 'objection', 'graduation', 'gacha', 'doubt', 'handvs', 'ask', 'narrow', 'outs', 'sniper', 'peek', 'blur', 'mekiki', 'igi', 'furi', 'mise', 'onedari']);
 const RB_SUIT = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' };
 const rbCard = (c) => ({ r: c.rank, s: RB_SUIT[c.suit] || 's' });
 function readBattleTable(gameId) {
@@ -17884,9 +17933,401 @@ function holdReadBattle(group, gameId, r) {
     }, 700);
   }
 }
+// ===== リーディング（2026-11-17・battles/reading/reading.js の window.RD。docs/design-ref/read-integrate.md）=====
+function rdHost(group) {
+  const stage = document.getElementById('stage') || document.body;
+  document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
+  if (typeof dismissCutIn === 'function') dismissCutIn();
+  const host = document.createElement('div');
+  host.className = 'read-battle-host rd-wrap rb-' + group;
+  stage.appendChild(host);
+  return host;
+}
+// 当てた時の報酬（ぱにゅ・ミミミ・性格の読み切り）。finishReadBattle の当たりの所と手の後の答え合わせの両方から呼ぶ
+function rdScored(correct) {
+  if (!correct) return;
+  state.panyu = Math.min(state.panyuMax, state.panyu + 25);
+  state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
+  state.psychSuccessCount++;
+  if (state.zazazo >= state.zazazoMax && !state.opponentPersonalityRevealed) {
+    state.opponentPersonalityRevealed = true;
+    unlockAchievement('read_first');
+    if (!save.readSetByOpp) save.readSetByOpp = {};
+    save.readSetByOpp[state.opponentId] = true;
+    if (['polka', 'selina', 'grano', 'velvet'].every(o => save.readSetByOpp[o])) unlockAchievement('read_all');
+    saveProgress();
+    state.__pendingReveal = true;
+    state.__pendingBluffBreak = true;
+  }
+}
+// rdScored が立てた「性格の読み切り」の演出を、卓に戻ってから出す
+function rdFlushReveal(gen) {
+  const bb = state.__pendingBluffBreak, rv = state.__pendingReveal;
+  state.__pendingBluffBreak = false; state.__pendingReveal = false;
+  if (!bb && !rv) return Promise.resolve();
+  // ブラフブレイク → 2.6秒後に読み切りの帯（finishReadBattle と同じ順）。帯が閉じるまで待つ（手の後の答え合わせの時は、次の手へ進む前に）
+  return new Promise(resolve => {
+    battleTimeout(() => {
+      if (gen !== battleGen || state.screen !== 'battle') return resolve();
+      if (bb) triggerBluffBreak();
+      const banner = () => {
+        if (gen !== battleGen || state.screen !== 'battle') return resolve();
+        if (rv) showPersonalityRevealBanner();
+        let n = 0;
+        const poll = () => { if (!document.querySelector('.personality-reveal-banner') || ++n > 400 || gen !== battleGen) return resolve(); setTimeout(poll, 150); };
+        setTimeout(poll, 300);
+      };
+      if (rv) battleTimeout(banner, bb ? 2600 : 200); else battleTimeout(resolve, 2600);
+    }, 900);
+  });
+}
+// リーディングを出してよい卓か（研修・講義・ほろ酔い・本気リコ・オールスターでは出さない）
+function rdTableOk() {
+  if (!window.RD || state.screen !== 'battle' || threeChoiceOk() || isHoroyoi() || state.seriousRicoMode || state.isAllstar) return false;
+  if (save.readingEnabled === false) return false;
+  return true;
+}
+// 異議あり：ポルカがターン・リバーでポットの3分の2以上を賭けた直後（出したら true。終わったらミミに番を渡す）
+function maybeRdAfterBet(action, amount) {
+  try {
+    if (maybeRdOnedariPick(action, amount)) return true;
+    if (!window.RD || !RD.ok.igi || !rdTableOk()) return false;
+    if (state.opponentImgKey !== 'polka' || action.type !== 'bet') return false;
+    if (state.handPhase !== 'turn' && state.handPhase !== 'river') return false;
+    if (!(state.playerChips > 0 && amount > 0)) return false;
+    if (state.pendingRead || state.readHandNo === state.handNo) return false;
+    if (!(readPools().psych || []).includes('igi')) return false;
+    const cnt = state.rdCount || (state.rdCount = {});
+    if ((cnt.igi || 0) >= 3) return false;
+    const potBefore = state.pot - amount;
+    if (amount < Math.floor(potBefore * 2 / 3)) return false;
+    if (!rdOk('igi')) return false;
+    // 「作れる」が正解の場が約8割あり、いつも「作れる」を押す人が得をする。作れる場は3割だけ出して、答えを半々に近づける（2026-11-17 本体）
+    try { const sc = RD.plan.igi(readBattleTable('igi'), rdCtx()); if (sc && sc.ans === 'O' && rand() >= 0.3) return false; } catch (e) {}
+    cnt.igi = (cnt.igi || 0) + 1;
+    state.psychPending = true; state.isPlayerTurn = false;
+    const hand = state.handNo, gen = battleGen;
+    render();
+    // 賭けのチップと相手の台詞が落ち着いてから出す
+    battleTimeout(() => {
+      if (gen !== battleGen || state.screen !== 'battle' || state.handNo !== hand) return;
+      startRd('psych', 'igi', giveTurnAfterBet);
+    }, 1100);
+    return true;
+  } catch (e) { console.error('maybeRdAfterBet', e); return false; }
+}
+// おねだりの仕込みの手：ほろ酔い・泥酔の1対戦に1回（2〜5手目のどれか。おねだりがまだ出ていなければ、出るまで次の手でも）、
+// 相手の手札2枚＋場札（フロップ3・ターン1・リバー1）を、おねだりの条件（battles/reading/games/onedari.js の plan）に合う形で決めてデッキに積む。
+// 相手＝待ちだけの強い待ち（同じマーク4枚か、両側が開いた4つ続き）・ミミ＝場札4枚でペア以上。リバーは待ちが来る45%・来ない55%。
+function rdRigOnedariDeal() {
+  if (!window.RD || !RD.plan || !RD.plan.onedari) return false;
+  if (!state.horoyoi || state.seriousRicoMode || state.isAllstar || threeChoiceOk() || save.readingEnabled === false) return false;
+  if (!(readPools().logic || []).includes('onedari')) return false;
+  if (state.rdRigNo == null) state.rdRigNo = 2 + Math.floor(rand() * 4);
+  if (state.handNo < state.rdRigNo || ((state.rdCount || {}).onedari || 0) >= 1) return false;
+  const L = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' }, SY = ['♠', '♥', '♦', '♣'];
+  const ri = (n) => Math.floor(rand() * n);
+  const wantHit = rand() < 0.45;
+  const key = state.opponentImgKey;
+  for (let tries = 0; tries < 300; tries++) {
+    const used = new Set();
+    const mk = (rank, suit) => { const k = rank + suit; if (used.has(k)) return null; used.add(k); return { suit, rank, label: RANK_NAMES[rank - 2] }; };
+    const anyCard = (offSuit) => { for (let g = 0; g < 40; g++) { const c = mk(2 + ri(13), offSuit ? pick(SY.filter(x => x !== offSuit)) : pick(SY)); if (c) return c; } return null; };
+    let her, board, flushSuit = null;
+    if (rand() < 0.5) {
+      flushSuit = pick(SY);
+      const rs = shuffle([...Array(13).keys()].map(i => i + 2));
+      her = [mk(rs[0], flushSuit), mk(rs[1], flushSuit)];
+      board = [mk(rs[2], flushSuit), mk(rs[3], flushSuit), anyCard(flushSuit), anyCard(flushSuit)];
+    } else {
+      const a = 3 + ri(8);                                   // a..a+3 の4つ続き（両側が開く）
+      const rs = shuffle([a, a + 1, a + 2, a + 3]);
+      her = [mk(rs[0], pick(SY)), mk(rs[1], pick(SY))];
+      board = [mk(rs[2], pick(SY)), mk(rs[3], pick(SY)), anyCard(), anyCard()];
+    }
+    if (her.some(c => !c) || board.some(c => !c)) continue;
+    // ミミ：場札のどれかと同じ数字を1枚（ペア）。もう1枚は何でもよい
+    const pr = pick(board).rank; let m1 = null;
+    for (let g = 0; g < 10 && !m1; g++) m1 = mk(pr, pick(SY));
+    const m2 = anyCard(flushSuit);
+    if (!m1 || !m2) continue;
+    const mimi = [m1, m2];
+    const toT = (c) => ({ r: c.rank, s: L[c.suit] });
+    const T = { board: board.map(toT), mine: mimi.map(toT), her: her.map(toT), pot: 0 };
+    let nullRun = 0;
+    // リバーの候補を1枚ずつ plan にかける（全部は重いので、切り混ぜた順に、望みの答え（来る／来ない）が見つかるまで）
+    const cands = [];
+    for (const s of SY) for (let r = 2; r <= 14; r++) if (!used.has(r + s)) cands.push({ suit: s, rank: r, label: RANK_NAMES[r - 2] });
+    let river = null, seenOk = false;
+    for (const c of shuffle(cands)) {
+      let sc = null; try { sc = RD.plan.onedari(T, { charKey: key, fin: { r: c.rank, s: L[c.suit] }, pot: 0, toCall: 0 }); } catch (e) { sc = null; }
+      if (sc) { seenOk = true; if (!!sc.hit === wantHit) { river = c; break; } } else if (!seenOk && ++nullRun >= 8) break;
+    }
+    if (!river) continue;
+    const rest = cands.filter(c => !(c.suit === river.suit && c.rank === river.rank));
+    state.playerHand = mimi; state.opponentHand = her;
+    state.deck = shuffle(rest).concat([river, board[3], board[2], board[1], board[0]]);   // pop の順：フロップ3枚→ターン→リバー
+    state.rdRigHand = state.handNo;
+    return true;
+  }
+  return false;
+}
+// ほろ酔いの夜・泥酔の夜のリーディング（おねだり・見せ合いっこ）を出してよい卓か
+function rdNightOk() {
+  if (!window.RD || state.screen !== 'battle' || !state.horoyoi || threeChoiceOk() || state.seriousRicoMode || state.isAllstar) return false;
+  if (save.readingEnabled === false) return false;
+  if (state.pendingRead || state.readHandNo === state.handNo) return false;
+  return true;
+}
+// おねだり：ターンの賭けが済み、リバーをめくる前（出したら true。終わったら next＝リバーをめくる）。1対戦1回・出る見込み60%・どちらかのチップが0なら出さない
+function maybeRdOnedari(next) {
+  try {
+    if (!RD.ok.onedari || !rdNightOk()) return false;
+    if (!(state.playerChips > 0 && state.opponentChips > 0)) return false;
+    if (state.handPhase !== 'turn' || (state.community || []).length !== 4 || !state.deck || !state.deck.length) return false;
+    if (!(readPools().logic || []).includes('onedari')) return false;
+    const cnt = state.rdCount || (state.rdCount = {});
+    if ((cnt.onedari || 0) >= 1) return false;
+    const T = readBattleTable('onedari'); if (!T) return false;
+    const top = state.deck[state.deck.length - 1];            // 次にめくる本物のリバー
+    const sc = RD.plan.onedari(T, rdCtx({ fin: { r: top.rank, s: RB_SUIT[top.suit] }, toCall: 0, pot: state.pot }));
+    if (!sc) return false;
+    // 答えの偏り：待ちが来る手は少ない（約2割）ので、来ない手は出す回数を絞って「払う／降りる」を半々に近づける（2026-11-17 本体）
+    // 仕込みの手（startHand の rdRigOnedariDeal）は、間引かずに必ず出す
+    const rig = state.rdRigHand === state.handNo;
+    if (!rig && !sc.hit && rand() >= RD_ONEDARI_MISS_SHOW) return false;
+    if (!rig && rand() >= 0.6) return false;
+    cnt.onedari = 1;
+    state.rdOnedari = { hand: state.handNo, sc, hit: !!sc.hit };
+    state.psychPending = true; state.isPlayerTurn = false;
+    const hand = state.handNo, gen = battleGen;
+    battleTimeout(() => {
+      if (gen !== battleGen || state.screen !== 'battle' || state.handNo !== hand) return;
+      startRd('logic', 'onedari', next, { mode: 'say', scene: sc });
+    }, 300);
+    return true;
+  } catch (e) { console.error('maybeRdOnedari', e); return false; }
+}
+const RD_ONEDARI_MISS_SHOW = 0.3;
+const RD_MISE_HIDE_SHOW = 0.4;
+// おねだり：相手が賭けた直後に「払う？降りる？」（卓のコール／フォールドになる）
+function maybeRdOnedariPick(action, amount) {
+  try {
+    const o = state.rdOnedari;
+    if (!o || o.hand !== state.handNo || o.picked || state.handPhase !== 'river' || action.type !== 'bet' || !window.RD) return false;
+    if (!(state.playerChips > 0 && amount > 0)) return false;
+    o.picked = true;
+    const toCall = Math.min(Math.max(0, state.playerChips || 0), Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0)));
+    const sc = Object.assign({}, o.sc, { bet: toCall, pot: Math.max(0, state.pot - (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0)) });
+    state.psychPending = true; state.isPlayerTurn = false;
+    const hand = state.handNo, gen = battleGen;
+    render();
+    battleTimeout(() => {
+      if (gen !== battleGen || state.screen !== 'battle' || state.handNo !== hand) return;
+      startRd('logic', 'onedari', giveTurnAfterBet, { mode: 'pick', scene: sc });
+    }, 1100);
+    return true;
+  } catch (e) { console.error('maybeRdOnedariPick', e); return false; }
+}
+// 見せ合いっこ：リバーでミミがポットの3分の2以上を賭けた後（AI の判断にかかわらず。出したら true。画面の後、ポルカの払う／降りるを置き換えて続ける）。1対戦1回・出る見込み70%
+function maybeRdMise(action, need) {
+  try {
+    if (!RD.ok.mise || !rdNightOk() || state.opponentImgKey !== 'polka') return false;
+    if (state.handPhase !== 'river' || (state.community || []).length !== 5 || !(need > 0) || state.opponentChips < need) return false;
+    if (!(readPools().logic || []).includes('mise')) return false;
+    const cnt = state.rdCount || (state.rdCount = {});
+    if ((cnt.mise || 0) >= 1) return false;
+    const T = readBattleTable('mise'); if (!T) return false;
+    const pot0 = Math.max(0, state.pot - (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0));
+    const sc = RD.plan.mise(T, rdCtx({ pot0, bet: need }));
+    if (!sc) return false;
+    // ミミがポットの3分の2以上を賭けた（上乗せした）時だけ。AI が払う・降りるのどちらでも出す
+    if ((state.currentBetPlayer || 0) < Math.floor(pot0 * 2 / 3)) return false;
+    // 答えの偏り：ミミが負けている手では「見せない」が正解になりやすい（配りの全部を数えると約8割）。見せない場は絞って、左・右・見せないを半々に近づける
+    if (sc.ans === 2 && rand() >= RD_MISE_HIDE_SHOW) return false;
+    if (rand() >= 0.7) return false;
+    cnt.mise = 1;
+    state.psychPending = true; state.isPlayerTurn = false;
+    const hand = state.handNo, gen = battleGen;
+    render();
+    battleTimeout(() => {
+      if (gen !== battleGen || state.screen !== 'battle' || state.handNo !== hand) return;
+      startRd('logic', 'mise', null, { scene: sc });
+    }, 700);
+    return true;
+  } catch (e) { console.error('maybeRdMise', e); return false; }
+}
+// ふりのボタンを出してよいか（リバーで相手が大きく賭けた、ミミの番。同じ手で別のリーディングが出ていたら出さない）
+function rdFuriAvailable() {
+  try {
+    if (!window.RD || !RD.ok.furi || !rdTableOk()) return false;
+    if (state.handPhase !== 'river' || (state.community || []).length !== 5 || !state.isPlayerTurn || state.psychPending) return false;
+    if (state.pendingRead || state.readHandNo === state.handNo) return false;
+    if (!(readPools().psych || []).includes('furi')) return false;
+    if (((state.rdCount || {}).furi || 0) >= 3) return false;
+    const toCall = Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0));
+    if (toCall <= 0 || !(state.playerChips > 0)) return false;
+    const last = (state.handActs || []).slice(-1)[0];
+    if (!last || last.ph !== 'river' || !['bet', 'raise', 'allin'].includes(last.t)) return false;
+    const potBefore = state.pot - (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0);
+    if ((state.currentBetOpponent || 0) < Math.floor(potBefore * 2 / 3)) return false;
+    // ミミに役（ペア以上）がある時だけ。役なしでは顔を見ても払えず、くらべる所が無い（セリナはリバーではったりをしないので、降りるの一択に偏っていた）
+    try { if (evaluateHand(state.playerHand.concat(state.community)).rank < 1) return false; } catch (e) {}
+    return rdOk('furi');
+  } catch (e) { return false; }
+}
+function rdStartFuri() {
+  if (!rdFuriAvailable()) return;
+  const cnt = state.rdCount || (state.rdCount = {});
+  cnt.furi = (cnt.furi || 0) + 1;
+  startRd('psych', 'furi');
+}
+// 目利きを出してよいか・出す（リバーがめくれた直後。出したら true を返し、終わったら next を呼ぶ）
+function maybeRdAfterRiver(next) {
+  try {
+    if (!window.RD || !RD.ok.mekiki) return false;
+    if (state.screen !== 'battle' || threeChoiceOk() || isHoroyoi() || state.seriousRicoMode || state.isAllstar) return false;
+    if (save.readingEnabled === false) return false;
+    if (!(state.playerChips > 0 && state.opponentChips > 0)) return false;
+    if (state.pendingRead || state.readHandNo === state.handNo) return false;
+    const pool = readPools().psych || [];
+    if (!pool.includes('mekiki')) return false;
+    const cnt = state.rdCount || (state.rdCount = {});
+    if ((cnt.mekiki || 0) >= 2) return false;
+    if (!rdOk('mekiki')) return false;
+    if (rand() >= 0.4) return false;
+    cnt.mekiki = (cnt.mekiki || 0) + 1;
+    startRd('psych', 'mekiki', next);
+    return true;
+  } catch (e) { console.error('maybeRdAfterRiver', e); return false; }
+}
+function startRd(group, gameId, next, extra) {
+  const host = rdHost(group);
+  state.isPlayerTurn = false; state.psychPending = true;
+  const gen = battleGen, hand = state.handNo, oppKey = state.opponentImgKey;
+  const T = readBattleTable(gameId);
+  const back = () => { state.psychPending = false; state.psychResolving = false; if (typeof next === 'function') next(); else { state.isPlayerTurn = true; render(); } };
+  let inst = null;
+  try {
+    inst = window.RD.mount(host, Object.assign({
+      game: gameId, charKey: oppKey, drunk: !!state.horoyoi, table: T, ctx: rdCtx(), save, saveProgress, volume: isSfxOn() ? sfxVolFloat() : 0 }, extra || {}, {
+      onExit: (r) => {
+        try { inst && inst.destroy(); } catch (e) {}
+        host.remove(); state.readBattle = null;
+        saveProgress();
+        if (gen !== battleGen || state.screen !== 'battle') return;
+        r = r || {};
+        const name = (state.opponentName || '相手').replace(/（.*）/, '');
+        if (gameId === 'mise') {
+          // 見せ合いっこ：決めた結果は画面の中で明かし済み。ポルカの払う／降りるを、卓の AI に置き換えて続ける（払う → 本当に払って勝負・降りる → ポットはミミへ）
+          if (r.correct) rdScored(true);
+          log('psych', { qid: 'rd_mise', success: !!r.correct });
+          const call = r.act === 'call';
+          state.mimiThought = r.correct ? (call ? `「見せ方が合った……！ ${name}が払ってくれる」` : `「見せない……正解。${name}は怖がって降りる」`) : (call ? '「見せた札で、弱いのがばれた……」' : '「逃げられた……。見せ方で変わったのかも」');
+          state.ricoAdvice = '「相手から自分の札がどう見えるか。それも読み合いだよ」';
+          state.psychPending = false; state.psychResolving = false;
+          render();
+          state.rdForce = { hand, action: call ? { type: 'check_call', intent: 'reluctant_call' } : { type: 'fold', intent: 'fear' } };
+          battleTimeout(() => { if (gen !== battleGen || state.screen !== 'battle' || state.handNo !== hand) return; opponentTurnDecide(); }, 500);
+          rdFlushReveal(gen);
+          return;
+        }
+        if (r.correct) {
+          rdScored(true);
+          state.rdOpen = { hand, cards: Array.isArray(r.open) ? r.open : [0, 1], game: gameId };
+          const one = state.rdOpen.cards.length === 1;
+          state.mimiThought = gameId === 'igi' ? `「異議あり、通った……！ ${name}の札が1枚、見える」` : `「見立て通り……！ ${name}の手札が見える」`;
+          state.ricoAdvice = one ? `「罰で、${name}の札が1枚、表になったよ。この手の間は見えたまま」` : `「手札が表になったよ。この手の間、${name}の2枚は見えたまま」`;
+          log('psych', { qid: 'rd_' + gameId, success: true });
+        } else if (r.shown != null) {
+          // 外した異議：ミミの札が1枚「見せた」扱い（卓の自分の札に印）
+          state.rdShown = { hand, idx: r.shown, game: gameId };
+          state.mimiThought = '「異議が外れた……。ミミの札を1枚、見せてしまった」';
+          state.ricoAdvice = '「見せた札は、この手の間 相手に見えてるよ。そのつもりで決めて」';
+          log('psych', { qid: 'rd_' + gameId, success: false });
+        } else if (r.pending) {
+          state.pendingRead = { ...r.pending, kind: 'rd', gameId, group, oppKey, handNo: hand };
+          if (gameId === 'furi') {
+            const t = r.tell || {};
+            state.mimiThought = t.bluff ? (oppKey === 'polka' ? `「${name}は、あわてた……。はったりかもしれない」` : `「${name}の光る場札は無かった。はったりかもしれない」`)
+              : (oppKey === 'polka' ? `「${name}は、にやけて「${t.say || '役'}」と漏らした」` : `「${name}の目が場札へ。光った札が、彼女の役」`);
+            state.ricoAdvice = '「決める時は、ミミの役とくらべてね。答え合わせは手の後で」';
+          } else if (gameId === 'igi') {
+            state.mimiThought = '「異議は言わない。作れる役かもしれない」';
+            state.ricoAdvice = '「答え合わせは手の後で。いまは手札と場札で決めよう」';
+          } else if (gameId === 'onedari') {
+            state.mimiThought = r.act === 'fold' ? '「おねだりの札が来たなら、本物かもしれない。降りる」' : '「おねだりの札は来ていない。払う」';
+            state.ricoAdvice = '「答え合わせは手の後で。待ちの札が来たかどうかを見よう」';
+          } else {
+            state.mimiThought = '「外れ……でも損はない。手札は見えないまま決めよう」';
+            state.ricoAdvice = '「答え合わせは手の後で。いまは手札と場札で決めよう」';
+          }
+        } else if (gameId === 'furi' && r.tell) {
+          const t = r.tell;
+          state.mimiThought = t.bluff ? `「${name}は、あわてた……。はったりかもしれない」` : `「${name}は、にやけた。本物かもしれない」`;
+          state.ricoAdvice = '「ミミの役とくらべて決めよう」';
+        }
+        render();
+        back();
+        // ふり：払う／降りるは、そのまま卓のコール／フォールド（holdReadBattle の autoAct と同じ考え）
+        if (r.act) {
+          const act = r.act;
+          battleTimeout(() => {
+            if (gen !== battleGen || state.screen !== 'battle' || state.handNo !== hand || !state.isPlayerTurn || state.psychPending) return;
+            const toCallNow = Math.min(Math.max(0, state.playerChips || 0), Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0)));
+            if (act === 'fold' && toCallNow > 0) playerFold(); else playerCheckCall();
+          }, 600);
+        }
+        rdFlushReveal(gen);
+      },
+    }));
+  } catch (e) {
+    console.error('reading failed', e);
+    host.remove(); state.psychPending = false; back(); return;
+  }
+  state.readBattle = { inst, host };
+  state.readBattlePlayed = state.readBattlePlayed || {};
+  state.readBattlePlayed[gameId] = (state.readBattlePlayed[gameId] || 0) + 1;
+  state.readHandNo = hand;
+  if (!save.readBattleSeen) save.readBattleSeen = {};
+  save.readBattleSeen[gameId] = true;
+}
+// 卓の結果の1行（答え合わせ用）
+function rdResultText(p) {
+  const last = (state.handResults || []).filter(h => h.hand === p.handNo).slice(-1)[0];
+  if (!last) return '';
+  if (last.winner === 'split') return '引き分け（ポットを半分ずつ）';
+  if (last.winner === 'player') return last.reason === 'fold' ? `相手が降りた（ポット${last.pot}）` : `ミミの勝ち（ポット${last.pot}）`;
+  return last.reason === 'fold' ? 'ミミは降りた' : `相手の勝ち（ポット${last.pot}）`;
+}
+// 手の決着の後：リーディングの答え合わせ
+function showRdVerdict(p) {
+  return new Promise(resolve => {
+    if (!window.RD || state.screen !== 'battle') return resolve();
+    const host = rdHost(p.group || 'psych');
+    const gen = battleGen;
+    let inst = null;
+    try {
+      inst = window.RD.verdict(host, {
+        pending: p, charKey: p.oppKey, drunk: !!state.horoyoi, save, saveProgress, volume: isSfxOn() ? sfxVolFloat() : 0,
+        result: rdResultText(p), hand: (state.handResults || []).filter(h => h.hand === p.handNo).slice(-1)[0] || null,
+        onExit: (r) => {
+          try { inst && inst.destroy(); } catch (e) {}
+          host.remove();
+          if (gen !== battleGen) return resolve();
+          log('psych', { qid: 'rd_' + p.game, success: !!(r && r.correct) });
+          if (r && r.correct) rdScored(true);
+          saveProgress();
+          rdFlushReveal(gen).then(resolve);
+        },
+      });
+    } catch (e) { console.error('reading verdict failed', e); host.remove(); resolve(); }
+  });
+}
 // 手の決着の後：相手の札をめくって読みの答え合わせ
 function showReadVerdict() {
   const p = state.pendingRead; state.pendingRead = null;
+  if (p && p.kind === 'rd') return showRdVerdict(p);
   return new Promise(resolve => {
     if (!p || !window.MB || state.screen !== 'battle') return resolve();
     const stage = document.getElementById('stage') || document.body;
@@ -17920,15 +18361,11 @@ function showReadVerdict() {
             save.gradCount = (save.gradCount || 0) + 1;
             if (save.gradCount >= 3) { unlockAchievement('graduate'); graduatedNow = !save.gradCgSeen; }
           }
-          if (r && r.correct) {
-            state.panyu = Math.min(state.panyuMax, state.panyu + 25);
-            state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
-            state.psychSuccessCount++;
-          }
+          if (r && r.correct) rdScored(true);   // ぱにゅ・ミミミ・ブラフブレイク・性格の読み切り（共通）
           // 卒業の一枚絵は勝負の決着（結果の画面）の後に出す（2026-11-01 8回目の批評：持ち点が尽きた直後に合格の台詞→敗北の画面で、何に合格したのか分からなかった）
           if (graduatedNow) save.gradCgPending = true;
           saveProgress();
-          resolve();
+          rdFlushReveal(gen).then(resolve);
         },
       });
     } catch (e) { console.error('read verdict failed', e); host.remove(); resolve(); }
@@ -17944,9 +18381,7 @@ function finishReadBattle(group, gameId, r, gain) {
   log('psych', { qid: 'mb_' + gameId, success: !!r.correct, mult: r.mult || 1 });
   let hint = null;
   if (r.correct) {
-    state.panyu = Math.min(state.panyuMax, state.panyu + 25);
-    state.zazazo = Math.min(state.zazazoMax, (state.zazazo || 0) + 1);
-    state.psychSuccessCount++;
+    rdScored(true);   // ぱにゅ・ミミミ・性格の読み切り（共通）
     hint = readBattleRealHint();
     if (!state.tellTags) state.tellTags = [];
     state.tellTags.push(hint.tag);
@@ -17955,16 +18390,6 @@ function finishReadBattle(group, gameId, r, gain) {
     // ご褒美の一言は、このハンドの間ずっと右の吹き出しに残す（決める時に読み返せるように。吹き出しは2行まで）
     const T = READ_TELLS.find(t => t.k === hint.k) || READ_TELLS[1];
     state.ricoAdvice = `「読み：${(state.opponentName || '相手').replace(/（.*）/, '')}は${T.word}。${READ_ADVICE_SHORT[T.k]}」`;
-    if (state.zazazo >= state.zazazoMax && !state.opponentPersonalityRevealed) {
-      state.opponentPersonalityRevealed = true;
-      unlockAchievement('read_first');
-      if (!save.readSetByOpp) save.readSetByOpp = {};
-      save.readSetByOpp[state.opponentId] = true;
-      if (['polka', 'selina', 'grano', 'velvet'].every(o => save.readSetByOpp[o])) unlockAchievement('read_all');
-      saveProgress();
-      state.__pendingReveal = true;
-      state.__pendingBluffBreak = true;
-    }
   } else {
     state.mimiThought = '「読み違えた……。でも、手札はまだ生きてる」';
     state.ricoAdvice = '「外れても、ここからの判断は別の勝負。落ち着いて」';
@@ -18064,9 +18489,9 @@ function triggerPsychBattle(qid) {
       const chapterSub = q.chapterTitle || '— ポーカーの基礎を学ぶ —';
       titleEl.innerHTML = `リコ先輩の講義<small class="battle-subtitle">${chapterSub}</small>`;
     } else if (isLogic) {
-      titleEl.innerHTML = '<span class="v2p-title-en v2-disp">LOGIC BATTLE</span><span class="v2p-title-jp">論理バトル</span>';
+      titleEl.innerHTML = '<span class="v2p-title-en v2-disp">READING</span><span class="v2p-title-jp">リーディング</span>';
     } else {
-      titleEl.innerHTML = '<span class="v2p-title-en v2-disp">PSYCH BATTLE</span><span class="v2p-title-jp">心理バトル</span>';
+      titleEl.innerHTML = '<span class="v2p-title-en v2-disp">READING</span><span class="v2p-title-jp">リーディング</span>';
     }
     titleEl.classList.toggle('logic-mode', isLogic && !isLecture);
     titleEl.classList.toggle('lecture-mode', isLecture);
@@ -19444,7 +19869,7 @@ function resolvePsych(qid, choice, btn) {
     const resultPrefix = isCorrect ? '✓ 正解！　' : '✗ 残念……　';
     const onCutInClose = state.tutorialMode && state.opponentId === 'rico_tutorial' && !state.lectureMode
       ? () => showTutorial('after_psych',
-          '心理バトル解決！ぱにゅゲージが回復したね。<br>' +
+          'リーディング解決！ぱにゅゲージが回復したね。<br>' +
           'あとはAペアの強さを信じて、<b>「コール」</b>か<b>「1/2ポット」</b>でベットしてみよう。<br>' +
           '私はもう手を引くから、安心していいよ。')
       : null;
@@ -19540,7 +19965,7 @@ function showPersonalityRevealBanner() {
         ${p.traits.map(t => `<li>${t}</li>`).join('')}
       </ul>
       <div class="prb-exploit">攻略：${p.exploit}</div>
-      <div class="prb-note">この対戦の心理バトルは封印されます</div>
+      <div class="prb-note">この対戦のリーディングは封印されます</div>
       <button class="btn btn-primary prb-close-btn">OK（読み切った）</button>
     </div>
   `;
@@ -20414,7 +20839,7 @@ function endBattle() {
   if (state.psychSuccessCount > 0) {
     const s = SCORE_TABLE.psychSuccess * state.psychSuccessCount;
     score += s;
-    reasons.push(`心理バトル成功×${state.psychSuccessCount} +${s}`);
+    reasons.push(`リーディング成功×${state.psychSuccessCount} +${s}`);
   }
   if (state.bluffBreakHappened) { score += SCORE_TABLE.bluffBreak; reasons.push(`ブラフブレイク +${SCORE_TABLE.bluffBreak}`); }
   if (state.goodFolds > 0) {
@@ -20525,7 +20950,7 @@ function endBattle() {
     rewards.push(`読み合いボーナス：+${state.readBattleBonus}`);
   }
   if (!won && state.playerChips <= 0 && (state.rebuysLeft || 0) > 0 && !usedReads()) {
-    rewards.push('ヒント：心理バトル・論理バトル・降りる、のどれかを1回でも使うと、飛んでも1回だけ座り直せます');
+    rewards.push('ヒント：リーディング・降りる、のどれかを1回でも使うと、飛んでも1回だけ座り直せます');
   }
   // note_bankroll：コイン獲得効率+10%
   if (save.unlockedNotes && save.unlockedNotes.includes('bankroll') && earned > 0) {
@@ -21448,10 +21873,10 @@ function finishLecture(skipped) {
 function endTutorial(isFirstClear) {
   showTutorial('ending',
     '<b>チュートリアル完了！</b><br>' +
-    '心理バトルの基本、つかめたかな？<br>' +
-    '・<b>ぱにゅゲージ</b>：心理バトル成功で増える。ぱにゅぱにゅで相手の動きが読みやすくなる<br>' +
-    '・<b>ミミミゲージ</b>：心理バトルで読みが当たるとたまる。MAXで相手の性格を読み切れる<br>' +
-    '・<b>選択肢シャッフル</b>：心理バトルは毎回順番が変わるから、暗記は通じない<br>' +
+    'リーディングの基本、つかめたかな？<br>' +
+    '・<b>ぱにゅゲージ</b>：リーディング成功で増える。ぱにゅぱにゅで相手の動きが読みやすくなる<br>' +
+    '・<b>ミミミゲージ</b>：リーディングで読みが当たるとたまる。MAXで相手の性格を読み切れる<br>' +
+    '・<b>選択肢シャッフル</b>：リーディングは毎回順番が変わるから、暗記は通じない<br>' +
     '次は<b>第2戦「ポルカ」</b>で本番だよ。チップが尽きるまで勝負！',
     () => {
       const goLobbyWithReward = () => {

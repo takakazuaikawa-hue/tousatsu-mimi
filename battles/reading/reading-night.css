@@ -1,0 +1,134 @@
+/* リーディング：おねだり（games/onedari.js）・見せ合いっこ（games/mise.js）の画面（2026-11-17）。reading.css・reading-games.css の後に読む。
+   試作 qa/onedari/app.css・qa/h4mise/app.css を .sg.one / .sg.mise の中に閉じ込めた物。800x370 の板を transform で拡大縮小（zoom は使わない）。
+   板の中の最小の文字は 18px。今やることの1行は 22px。押す所は高さ52px以上。 */
+.rd-host .sg:is(.one,.mise) .top{left:302px;right:8px;top:8px}
+.rd-host .sg:is(.one,.mise) .tbtn{width:76px}
+.rd-host .sg:is(.one,.mise).coaching .ins{visibility:hidden}
+.rd-host .sg:is(.one,.mise).demo .top{right:96px}
+.rd-host .sg:is(.one,.mise) .face{transition:opacity .15s}
+.rd-host .sg:is(.one,.mise) .win.shake .face.on{animation:rd-shk2 .4s}
+@keyframes rd-shk2{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(4px)}}
+.rd-host .sg:is(.one,.mise) .ins.warn{color:#ffd9a0}
+/* 札 */
+.rd-host .sg:is(.one,.mise) .cd{width:60px;height:82px}
+.rd-host .sg:is(.one,.mise) .cd b{font-size:38px}
+.rd-host .sg:is(.one,.mise) .cd.back{background:repeating-linear-gradient(45deg,#7d1022 0 4px,#5a0e1c 4px 8px);box-shadow:0 2px 5px rgba(0,0,0,.6),inset 0 0 0 2px var(--gold2);color:transparent}
+.rd-host .sg:is(.one,.mise) .cd.back::after{inset:8px;border-width:1px;border-radius:2px}
+.rd-host .sg:is(.one,.mise) .cd.hid{opacity:0}
+.rd-host .sg:is(.one,.mise) .cd.lk{box-shadow:0 0 0 3px #fff3c4,0 0 16px 4px rgba(245,215,122,.95);transform:translateY(-4px)}
+.rd-host .sg:is(.one,.mise) .cd.pop{box-shadow:0 0 0 3px #fff3c4,0 0 16px 4px rgba(245,215,122,.95)}
+.rd-host .sg:is(.one,.mise) .cd.swap{animation:rd-swp2 .5s}
+@keyframes rd-swp2{0%{transform:translateY(-30px) rotate(-8deg);opacity:0}100%{transform:none;opacity:1}}
+.rd-host .sg:is(.one,.mise) .hc0,.rd-host .sg:is(.one,.mise) .hc1{position:absolute;top:72px;z-index:4}
+.rd-host .sg:is(.one,.mise) .hc0{left:308px}.rd-host .sg:is(.one,.mise) .hc1{left:374px}
+.rd-host .sg:is(.one,.mise) .bd{position:absolute;left:452px;top:72px;display:flex;gap:6px;z-index:4}
+/* 役の札 */
+.rd-host .sg:is(.one,.mise) .chip{position:absolute;left:308px;z-index:5;height:26px;padding:0 14px;line-height:25px;font-family:var(--serif);font-weight:800;font-size:18px;white-space:nowrap;border:1px solid var(--gold3);box-shadow:0 2px 5px rgba(0,0,0,.55);opacity:0;transition:opacity .3s,top .5s cubic-bezier(.3,1.3,.5,1),box-shadow .3s,filter .3s}
+.rd-host .sg:is(.one,.mise) .chip.on{opacity:1}
+.rd-host .sg:is(.one,.mise) .chip.hc{top:170px;background:linear-gradient(90deg,#8e1228,#5a0e1c);color:var(--ivory);border-left:4px solid var(--gold)}
+.rd-host .sg:is(.one,.mise) .chip.sc{top:200px;background:linear-gradient(90deg,#1f6e55,#0f3f30);color:#eafff3;border-left:4px solid #9df0b8}
+.rd-host .sg:is(.one,.mise) .chip.mch{top:340px;background:linear-gradient(90deg,#1f6e55,#0f3f30);color:#eafff3;border-left:4px solid #9df0b8}
+.rd-host .sg:is(.one,.mise) .chip.up{box-shadow:0 0 0 2px #fff3c4,0 0 14px 4px rgba(245,215,122,.95)}
+.rd-host .sg:is(.one,.mise) .chip.dn{filter:brightness(.78)}
+.rd-host .sg:is(.one,.mise) .chip.lit{box-shadow:0 0 0 2px #fff3c4,0 0 14px 4px rgba(245,215,122,.95);animation:rd-chl 1s ease-in-out 3}
+@keyframes rd-chl{50%{box-shadow:0 0 0 3px #fff3c4,0 0 22px 8px rgba(245,215,122,1)}}
+/* 決まり・理由 */
+.rd-host .sg:is(.one,.mise) .rule,.rd-host .sg:is(.one,.mise) .reason{position:absolute;left:308px;width:484px;height:auto;z-index:4;display:block;font-size:18px;line-height:21px;font-weight:700;text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s;word-break:keep-all;overflow-wrap:break-word;white-space:normal;color:var(--ivory)}
+.rd-host .sg:is(.one,.mise) .rule em{font-style:normal;color:#9df0b8}
+.rd-host .sg:is(.one,.mise) .rule em.u{color:#ffb0b8}
+.rd-host .sg:is(.one,.mise) .reason{font-size:19px;line-height:22px}
+.rd-host .sg:is(.one,.mise) .rule.on,.rd-host .sg:is(.one,.mise) .reason.on{opacity:1}
+/* ミミの札2枚 */
+.rd-host .sg:is(.one,.mise) .mc{position:absolute;top:248px;z-index:5;width:72px;height:88px;opacity:0;transform:translateY(14px);transition:opacity .3s,transform .22s,filter .3s}
+.rd-host .sg:is(.one,.mise) .mc.m0{left:308px}.rd-host .sg:is(.one,.mise) .mc.m1{left:386px}
+.rd-host .sg:is(.one,.mise) .mc.on{opacity:1;transform:none}
+.rd-host .sg:is(.one,.mise) .mc .cd{width:72px;height:88px}
+.rd-host .sg:is(.one,.mise) .mc .cd b{font-size:46px}.rd-host .sg:is(.one,.mise) .mc .cd s{font-size:34px}
+/* ボタン */
+.rd-host .sg:is(.one,.mise) .opts{position:absolute;left:470px;top:248px;width:322px;height:88px;display:block;gap:0;z-index:5;opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s;pointer-events:none}
+.rd-host .sg:is(.one,.mise) .opts.on{opacity:1;transform:none;pointer-events:auto}
+.rd-host .sg:is(.one,.mise) .opts button{position:absolute;top:0;height:88px;border:2px solid var(--gold);color:#fff4d8;box-shadow:0 5px 12px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.35);text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;transition:transform .15s,filter .3s}
+.rd-host .sg:is(.one,.mise) .opts button:not(:disabled):active{transform:translateY(3px)}
+.rd-host .sg:is(.one,.mise) .opts button:disabled{filter:grayscale(.7) brightness(.62);cursor:default}
+.rd-host .sg:is(.one,.mise) .opts button.press{transform:translateY(4px);filter:brightness(1.35)}
+.rd-host .sg:is(.one,.mise) .ready{animation:rd-rdy 1s ease-in-out infinite}
+@keyframes rd-rdy{50%{box-shadow:0 0 0 3px #fff3c4,0 0 20px 6px rgba(245,215,122,.95)}}
+/* 台詞 */
+.rd-host .sg:is(.one,.mise) .speech{position:absolute;left:308px;top:236px;width:484px;min-height:58px;z-index:6;background:linear-gradient(90deg,#8e1228,#4a0c1a);border-left:3px solid var(--gold2);padding:6px 12px;font-family:var(--serif);font-weight:800;font-size:19px;line-height:23px;color:var(--ivory);box-shadow:0 4px 10px rgba(0,0,0,.5);display:flex;align-items:center;opacity:0;transform:translateX(-6px);pointer-events:none;word-break:keep-all}
+.rd-host .sg:is(.one,.mise) .speech.on{opacity:1;transform:none}
+.rd-host .sg:is(.one,.mise) .speech::before{content:"";position:absolute;left:-13px;top:20px;border:6px solid transparent;border-right:7px solid var(--gold2)}
+.rd-host .sg:is(.one,.mise) .go{left:640px;top:312px}
+/* リコ */
+.rd-host .sg:is(.one,.mise) .rsay{left:308px;top:15px;bottom:auto;width:484px;min-height:48px;display:flex;align-items:center}
+.rd-host .sg:is(.one,.mise) .rsay::before{left:-12px;top:16px;bottom:auto}
+.rd-host .sg:is(.one,.mise).live .rsay{width:392px}
+.rd-host .sg:is(.one,.mise).demo .rsay{width:400px}
+.rd-host .sg:is(.one,.mise) .skip{left:716px;top:8px;width:76px}
+.rd-host .sg:is(.one,.mise) .panel .pi i{width:96px}
+.rd-host .sg:is(.one,.mise) .panel .pi{margin-bottom:6px}
+
+/* ===== おねだり ===== */
+.rd-host .sg.one .who{position:absolute;left:12px;top:54px;z-index:7;padding:2px 12px;font-family:var(--serif);font-weight:800;font-size:18px;color:var(--ivory);background:rgba(20,4,10,.6);border-left:3px solid var(--gold);text-shadow:0 1px 3px #000}
+.rd-host .sg.one .bd .cd.fin5{box-shadow:0 0 0 2px var(--gold),0 0 12px 2px rgba(245,215,122,.6),inset 0 0 0 2px var(--gold2)}
+.rd-host .sg.one .bd .cd.back.tr{box-shadow:0 0 0 3px #ff8a99,0 0 22px 8px rgba(255,60,90,.95),inset 0 0 0 2px var(--gold2)}
+.rd-host .sg.one .bd .cd.back.tb{box-shadow:0 0 0 3px #dfe6f5,0 0 22px 8px rgba(170,190,240,.9),inset 0 0 0 2px var(--gold2)}
+.rd-host .sg.one .cd.fin{box-shadow:0 0 0 3px var(--gold),0 0 14px 3px rgba(245,215,122,.8)}
+.rd-host .sg.one .cd.lit{box-shadow:0 0 0 3px #fff3c4,0 0 18px 6px rgba(245,215,122,.95)}
+.rd-host .sg.one .tick{position:absolute;left:308px;top:162px;height:58px;z-index:5;display:flex;align-items:center;gap:12px;padding:0 18px 0 0;background:linear-gradient(160deg,#f6ead0,#e0c98f);border:2px solid var(--gold3);color:#3a1a10;box-shadow:0 4px 10px rgba(0,0,0,.55);opacity:0;transition:opacity .3s}
+.rd-host .sg.one .tick.on{opacity:1}
+.rd-host .sg.one .tick.off{opacity:0;transition:none}
+.rd-host .sg.one .tick.lit{box-shadow:0 0 0 3px #fff3c4,0 0 18px 6px rgba(245,215,122,.95)}
+.rd-host .sg.one .tick i{align-self:stretch;display:flex;align-items:center;padding:0 12px;font-style:normal;font-family:var(--serif);font-weight:800;font-size:18px;background:linear-gradient(90deg,#8e1228,#5a0e1c);color:var(--gold);border-right:3px solid var(--gold)}
+.rd-host .sg.one .tick .sy{font-size:38px;line-height:56px;font-weight:700;color:#1b1b1f}
+.rd-host .sg.one .tick .sy.r{color:#c4162f}
+.rd-host .sg.one .tick .tk{font-family:var(--bebas);font-size:36px;line-height:42px;color:#1b1b1f;border:2px solid var(--gold3);border-radius:4px;padding:0 10px;background:#fffdf6}
+.rd-host .sg.one .tick em{font-style:normal;font-size:22px;font-weight:800}
+.rd-host .sg.one .tick .cnt{font-family:var(--serif);font-weight:800;font-size:26px;line-height:54px}
+.rd-host .sg.one .tick .cnt b{line-height:1;vertical-align:-3px;font-family:var(--bebas);font-weight:400;font-size:44px;margin:0 4px;color:#8e1228}
+.rd-host .sg.one .tick .col{font-family:var(--serif);font-weight:800;font-size:30px;line-height:40px;color:#1b1b1f}
+.rd-host .sg.one .tick .col.r{color:#c4162f}
+.rd-host .sg.one .lineup{position:absolute;left:308px;top:164px;width:484px;height:66px;z-index:5;display:none;align-items:center;gap:8px}
+.rd-host .sg.one .lineup.on{display:flex}
+.rd-host .sg.one .lineup .cd{width:52px;height:62px}
+.rd-host .sg.one .lineup .cd b{font-size:32px}.rd-host .sg.one .lineup .cd s{font-size:24px}
+.rd-host .sg.one .lineup .cd.pop{animation:rd-lpop .35s}
+@keyframes rd-lpop{0%{transform:translateY(-14px) scale(.8);opacity:0}100%{transform:none;opacity:1}}
+.rd-host .sg.one .lineup .cd.slotx{background:rgba(0,0,0,.5);box-shadow:none;border:2px dashed rgba(233,196,106,.55);color:rgba(233,196,106,.8)}
+.rd-host .sg.one .lineup .cd.slotx b{font-size:30px}
+.rd-host .sg.one .lineup .cd.hit{box-shadow:0 0 0 3px #fff3c4,0 0 18px 6px rgba(245,215,122,1)}
+.rd-host .sg.one .stamp{flex:1;height:62px;border:2px solid var(--gold);display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:var(--serif);font-weight:800;opacity:0;transition:opacity .3s}
+.rd-host .sg.one .stamp.on{opacity:1}
+.rd-host .sg.one .stamp b{font-size:28px;line-height:34px}
+.rd-host .sg.one .stamp span{font-size:18px;line-height:20px;white-space:nowrap}
+.rd-host .sg.one .stamp.ok{background:linear-gradient(90deg,#1f6e55,#0f3f30);color:#eafff3}
+.rd-host .sg.one .stamp.no{background:linear-gradient(90deg,#8e1228,#4a0c1a);color:#ffd9de}
+.rd-host .sg.one .rule{top:226px;white-space:nowrap}
+.rd-host .sg.one .reason{top:236px}
+.rd-host .sg.one .chip.hc{top:308px}
+.rd-host .sg.one .chip.mch{top:340px}
+.rd-host .sg.one .mc{pointer-events:none}
+.rd-host .sg.one .pay{left:0;width:156px;background:linear-gradient(180deg,#e03a52,#8a1126 78%)}
+.rd-host .sg.one .fold{left:166px;width:156px;background:linear-gradient(180deg,#2f8a63,#14503a 78%)}
+.rd-host .sg.one .pay b,.rd-host .sg.one .fold b{display:block;font-family:var(--serif);font-weight:800;font-size:28px;line-height:38px;white-space:nowrap}
+.rd-host .sg.one .pay span,.rd-host .sg.one .fold span{display:block;font-size:18px;line-height:20px;font-weight:700;opacity:.95;white-space:nowrap}
+
+/* ===== 見せ合いっこ ===== */
+.rd-host .sg.mise .thr{position:absolute;inset:0;width:800px;height:370px;z-index:6;pointer-events:none;overflow:visible}
+.rd-host .sg.mise .thr path{fill:none;stroke:#ffe9a0;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 5px rgba(245,215,122,.95));stroke-dasharray:1;stroke-dashoffset:1;animation:rd-draw .6s ease-out forwards}
+@keyframes rd-draw{to{stroke-dashoffset:0}}
+.rd-host .sg.mise .rule{top:200px}
+.rd-host .sg.mise .reason{top:168px;width:424px}
+.rd-host .sg.mise .clone{position:absolute;left:738px;top:166px;z-index:5;opacity:0;pointer-events:none}
+.rd-host .sg.mise .clone.on{opacity:1}
+.rd-host .sg.mise .clone .cd{width:52px;height:62px;box-shadow:0 0 0 3px #fff3c4,0 0 14px 3px rgba(245,215,122,.9)}
+.rd-host .sg.mise .clone .cd b{font-size:32px}.rd-host .sg.mise .clone .cd s{font-size:24px}
+.rd-host .sg.mise .mc{cursor:pointer}
+.rd-host .sg.mise .mc.up{transform:translateY(-8px)}
+.rd-host .sg.mise .mc.up .cd{box-shadow:0 0 0 3px #fff3c4,0 0 20px 6px rgba(245,215,122,.95)}
+.rd-host .sg.mise .mc.gone{opacity:.18!important}
+.rd-host .sg.mise .shw{left:0;width:146px;background:linear-gradient(180deg,#e03a52,#8a1126 78%);font-family:var(--serif);font-weight:800;font-size:22px;white-space:nowrap}
+.rd-host .sg.mise .hide{left:154px;width:168px;background:linear-gradient(180deg,#2f8a63,#14503a 78%)}
+.rd-host .sg.mise .hide b{display:block;font-family:var(--serif);font-weight:800;font-size:26px;line-height:30px;white-space:nowrap}
+.rd-host .sg.mise .hide span{display:block;font-size:18px;line-height:20px;font-weight:700;opacity:.95}
+.rd-host .sg.mise .speech.narrow{left:476px;top:236px;width:316px}
+.rd-host .sg.mise .speech.tiny{left:476px;top:256px;width:150px;min-height:46px;font-size:22px;justify-content:center}

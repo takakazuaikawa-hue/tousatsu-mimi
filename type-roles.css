@@ -188,3 +188,14 @@ html body .hg-lesson :is(.hg-ex-tag, .hg-next small) { font-size: var(--r-note) 
 html body .hg-lesson .hg-next { font-size: var(--r-btn2) !important; }
 html body .hg-lesson .hg-vs { font-size: var(--r-label) !important; }
 html body .hg-ex-cards .card.rp-mini-card :is(.rank, .suit) { font-size: 14px !important; }
+
+/* ---------- 性格の読み切りの帯（ミミミ MAX。#stage の中＝縮めて描くので ÷ --game-scale。2026-11-17：844x390 で 7〜10px だった） ---------- */
+html #stage .personality-reveal-banner .prb-title { font-size: calc(var(--r-mission) / var(--game-scale, 1)) !important; }
+html #stage .personality-reveal-banner .prb-name { font-size: calc(var(--r-mission) / var(--game-scale, 1)) !important; }
+html #stage .personality-reveal-banner :is(.prb-traits, .prb-exploit) { font-size: calc(var(--r-body) / var(--game-scale, 1)) !important; }
+html #stage .personality-reveal-banner .prb-traits li::before { font-size: calc(var(--r-note) / var(--game-scale, 1)) !important; }
+html #stage .personality-reveal-banner .prb-note { font-size: calc(var(--r-note) / var(--game-scale, 1)) !important; }
+html #stage .personality-reveal-banner .prb-close-btn { font-size: calc(var(--r-btn2) / var(--game-scale, 1)) !important; }
+html #stage .personality-reveal-banner .prb-inner { max-width: calc(600px / var(--game-scale, 1)) !important; width: calc(100% - 40px); padding: calc(10px / var(--game-scale, 1)) calc(22px / var(--game-scale, 1)) !important; }
+html #stage .personality-reveal-banner .prb-traits li { padding-left: calc(22px / var(--game-scale, 1)) !important; }
+html #stage .personality-reveal-banner .prb-traits li::before { top: calc(8px / var(--game-scale, 1)) !important; }
