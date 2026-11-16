@@ -38,7 +38,7 @@
     { id: 'twins', name: 'プントとバンコ', kind: '双子', intro: '青のプントが|プレイヤー側、|赤のバンコが|バンカー側', art: 'assets/characters/dealer_twins.webp', wide: true, L: {
       hello: ['プント', 'いらっしゃーい！|プレイヤー側はプントが配るよ'], nomore: ['プント', 'はい、そこまで！　ノーモアベット！'], look: ['バンコ', '見（ケン）ね。ちゃんと見てなさいよ'],
       natural: (v) => [v.side === 'P' ? 'プント' : 'バンコ', 'ナチュラル{n}！'], p3: ['プント', 'プレイヤーにもう1枚、いくよ！'], b3: ['バンコ', 'バンカーにもう1枚。見てて'], shoe: ['プント', '新しい山だよ！　最初は{l}だから、|{n}枚ポイっと捨てるね'] } },
-    { id: 'pico', name: 'ピコ', kind: '見習い天使', intro: '女神さまの部下。|おどおどしながら|一生けんめい', art: null, L: {
+    { id: 'pico', name: 'ピコ', kind: '見習い天使', intro: '女神さまの部下。|おどおどしながら|一生けんめい', art: 'assets/characters/dealer_pico.webp', L: {
       hello: 'い、いらっしゃいませ！|見習いのピコですっ', nomore: 'ノ、ノーモアベットですぅ！', look: 'け、見（ケン）ですね！　配りますっ',
       natural: 'わっ、ナチュラル{n}です！', p3: 'プレイヤーさんに、もう1枚ですっ', b3: 'バンカーさんに、もう1枚ですっ', shoe: 'あ、新しい山です！　最初の札は{l}なので、|{n}枚捨てますっ' } },
   ];
@@ -263,7 +263,7 @@
   function paintBets() {
     for (const [k] of SPOTS) {
       const el = host.querySelector('.bc-spot-' + k), a = S.bets[k] || 0;
-      el.querySelector('.bc-spot-a').textContent = a ? fmt(a) : '';
+      if (!el.dataset.res) el.querySelector('.bc-spot-a').textContent = a ? fmt(a) : '';   // 決着の間は増減（＋28 など）を出したままにする
       el.querySelector('.bc-spot-chips').innerHTML = chipsHTML(a);
       el.dataset.on = a ? '1' : '0';
     }

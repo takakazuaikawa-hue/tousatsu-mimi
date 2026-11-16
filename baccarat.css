@@ -323,3 +323,6 @@
 
 /* スマホの「全画面で遊ぶ」は、対戦の卓と同じく出さない（チップの上に重なる） */
 body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
+
+/* 縦に余裕のある画面（PC）：卓の札を大きく */
+@media (min-height: 620px) { .bc-table .bc-card { --w: calc(var(--u) * 62); } }
