@@ -34,6 +34,9 @@ jobs:
           mkdir -p _site/battles/games
           cp battles/core.js battles/core.css battles/read-pc.css _site/battles/
           cp battles/games/*.js _site/battles/games/
+          mkdir -p _site/battles/reading/games
+          cp battles/reading/*.js battles/reading/*.css _site/battles/reading/
+          cp battles/reading/games/*.js _site/battles/reading/games/
           rsync -a --exclude '_source_png' --exclude '_original' --exclude '*.md' assets/ _site/assets/
           mkdir -p _site/docs/design-ref
           cp docs/design-ref/panyu-mesh.html _site/docs/design-ref/
