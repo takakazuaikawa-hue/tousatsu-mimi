@@ -293,6 +293,33 @@
   }
   function hush() { subQueue = []; clearTimeout(subTimer); subTimer = 0; if (live()) ui.sub.dataset.on = '0'; }
 
+  // ---- ウンメのカットイン（決め所だけ）：斜めの帯にウンメの上半身がはみ出す。1.5秒ほどで消え、操作は止めない ----
+  //   kind＝oracle（金：大きな神託）／betray（赤：約束の裏切り）／climax（桃：めくりの溜め）／jackpot（金：大当たり）
+  //   face＝表情の差分の名前（UMME にあれば使い、無ければ今の絵）
+  const UMME = { base: ART.goddess };
+  let cutinT = 0;
+  function cutin(kind, head, main, sub, face, ms) {
+    if (!host || !live() || !ART.goddess) return;
+    host.querySelectorAll('.bc-cutin').forEach(e => e.remove()); clearTimeout(cutinT);
+    const el = document.createElement('div');
+    el.className = 'bc-cutin is-' + kind; el.setAttribute('aria-live', 'polite');
+    el.innerHTML = `<i class="bc-ci-band"></i><img class="bc-ci-pic" src="${UMME[face] || UMME.base}" alt=""><div class="bc-ci-t"><b class="bc-ci-h">${esc(head)}</b><strong class="bc-ci-m">${esc(main).replace(/\|/g, '<wbr>')}</strong>${sub ? `<span class="bc-ci-s">${esc(sub).replace(/\|/g, '<wbr>')}</span>` : ''}</div>`;
+    host.appendChild(el);
+    cutinT = setTimeout(() => { el.classList.add('is-out'); cutinT = setTimeout(() => el.remove(), 380); }, ms || 1500);
+  }
+  // 台詞を「見出し｜残り」に分ける（カットインの大きな1行と小さな1行）
+  const splitLine = (t) => { const k = t.indexOf('|'); return k < 0 ? [t, ''] : [t.slice(0, k), t.slice(k + 1)]; };
+
+  // ---- ディーラーの身のこなし：配る・開く時に配る側へ乗り出す／決着で反応する ----
+  function dealerMove(w) {
+    const d = host && host.querySelector('.bc-dealer'); if (!d) return;
+    d.dataset.move = w; d.classList.remove('is-deal'); void d.offsetWidth; d.classList.add('is-deal');
+  }
+  function dealerReact(r) {
+    const d = host && host.querySelector('.bc-dealer'); if (!d) return;
+    d.dataset.react = r; d.classList.remove('is-react'); void d.offsetWidth; d.classList.add('is-react');
+  }
+
   // =============================================================
   // 賭ける
   // =============================================================
@@ -362,6 +389,10 @@
     { q: 'ミミちゃんって、ここに来る前は|何してたの？', o: [['三日徹夜で働いてました', 1, 'ひえー！|ここの方が|ずっといいじゃーん！'], ['覚えてないです', 0, 'あらら。まあ、|今が楽しければ！'], ['ないしょです', 0, 'ウンメちゃんは|知ってるけどねー！']] },
   ];
   const LIKE_JA = { bold: '大胆な返事', ride: '流れに乗る返事', careful: '慎重な返事' };
+  // 稼ぎの釣り合いのつまみ（試算 qa/baccaratecon.mjs で決める）
+  //   lookQuiet＝見（ケン）がこの手数つづく間、女神は問いかけない（運命は賭けた人にしか微笑まない）
+  //   cool＝大きな神託のあと、この手数は口がかたい（問いかけず、ご機嫌が満ちても神託は待つ）
+  const TUNE = { lookQuiet: Infinity, cool: 0 };
   let favorT = 0;
   // why＝上がり下がりの理由（ご機嫌の横に「約束を守った ＋1」のように出す）
   function setFavor(n, why) {
@@ -396,6 +427,8 @@
     }
     S.oracle = { text, big, kind, w, hand: S.shoe.hands + 1 };
     S.A.oracles++;
+    if (big && TUNE.cool) S.A.coolTo = S.A.hands + 1 + TUNE.cool;   // この手（神託の手）の後、cool 手は口がかたい
+    if (big) cutin('oracle', '神託', text, say1.replace(/\|/g, ''), 'doya', 1700);
     say('goddess', say1, 3600);
     paintPins(); sfx('garapon');
     if (!S.A.orSeen) { S.A.orSeen = true; say('rico', 'ウンメさまの神託は|ウソをつかない。|ただし、ぜんぶは|教えてくれないよ', 3600); }
@@ -489,7 +522,7 @@
     if (A.godSeen && Math.random() < .27) { const cands = SMALLTALK.map((x, k) => k).filter(k => k !== A.lastTalk); A.lastTalk = pick(cands); q = { talk: SMALLTALK[A.lastTalk] }; }
     if (!q) q = makeQuestion();
     if (!q) return;
-    A.asked = S.shoe.hands;
+    A.askedAt = A.hands;   // 通しの手数で覚える（札の山の手数は山ごとに0へ戻るので、2つ目の山から問いが来なくなっていた）
     if (!A.godSeen) {
       A.godSeen = true; keep(); hush();
       say('rico', '女神のウンメさまは|次の結果を知ってる。|気分に合う返事で、|口をすべらせるよ', 4200);
@@ -523,7 +556,7 @@
       const o = q.talk.o[i];
       say('goddess', o[2], 2800);
       // おしゃべりで上がるのは6手に1回まで（約束なしで神託を量産させない）
-      if (o[1] && S.shoe.hands - (A.talkUp == null ? -99 : A.talkUp) >= 6) { A.talkUp = S.shoe.hands; setFavor(A.favor + 1, '気に入られた'); if (A.favor >= 3) { setFavor(0); giveOracle(true); } }
+      if (o[1] && A.hands - (A.talkAt == null ? -99 : A.talkAt) >= 6) { A.talkAt = A.hands; setFavor(A.favor + 1, '気に入られた'); if (A.favor >= 3) { setFavor(0); giveOracle(true); } }
       keep(); return;
     }
     const o = q.opts[i], M = MOODS[q.mood];
@@ -643,12 +676,12 @@
     const el = cardEl(w + i, landscape);
     ui.sides[w].querySelector('.bc-cards').appendChild(el);
     S.cards[w][i] = { card, el }; S.vals[w][i] = null;
-    sfx('deal'); paintTotals();
+    sfx('deal'); paintTotals(); dealerMove(w);
     await wait(260);
   }
   async function flip(w, i) {
     const c = S.cards[w][i];
-    c.el.classList.add('is-flip'); sfx('flip');
+    c.el.classList.add('is-flip'); sfx('flip'); dealerMove(w);
     await wait(150);
     showFace(c.el, c.card); c.el.classList.remove('is-flip'); S.vals[w][i] = BC.valueOf(c.card);
     paintTotals();
@@ -662,6 +695,8 @@
   }
   const RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
   const rankJa = (r) => (r === 1 ? 'A' : r === 11 ? '絵札' : String(r));
+  // めくりの右の候補の札：めくっている札と同じマークのトランプの絵（足・横の数と見比べる）＋右下に合計。絵札は K の絵で代表
+  const candTile = (r, st, suit, t) => `<span class="bc-cd is-${st}" data-r="${r}" aria-label="${rankJa(r)}（合計${t}）"><i class="bc-cd-f" style="background-image:url(${SQ.faceURL({ suit, rank: r === 11 ? 13 : r }, 96)})"></i><small>${t}</small></span>`;
   // 「何が来てほしいか」を大きく言う。set＝まだあり得る数
   function wantHTML(states, set) {
     const wins = set.filter(r => states[r] === 'win'), ties = set.filter(r => states[r] === 'tie'), loses = set.filter(r => states[r] === 'lose');
@@ -711,7 +746,7 @@
       ui.verdict.hidden = true;
       const row = (x) => `<span class="bc-sc is-${x}${x === w ? ' is-now' : ''}"><b>${SIDE_JA[x]}</b>${S.cards[x].map((cc, k) => (S.vals[x][k] != null ? `<i class="bc-card is-face" style="background-image:url(${SQ.faceURL(cc.card, 160)})"></i>` : `<i class="bc-card is-back${x === w && k === i ? ' is-target' : ''}"></i>`)).join('')}<em>${ui.sides[x].querySelector('.bc-tot').textContent}</em></span>`;
       ui['sq-score'].innerHTML = row(other(w)) + row(w) + `<span class="bc-sc-bet">${SIDE_JA[mine]}に賭けた</span>`;
-      ui.cands.innerHTML = RANKS.map(r => `<span class="bc-cd is-${states[r]}" data-r="${r}"><b>${lab(r)}</b><small>合計${tot(r)}</small></span>`).join('');
+      ui.cands.innerHTML = RANKS.map(r => candTile(r, states[r], c.card.suit, tot(r))).join('');
       ui['sq-m'].innerHTML = wantHTML(states, RANKS); paintOdds(RANKS); ui.sq.dataset.heat = '0';
       // ---- 拍0：何が来てほしいか ----
       const tiles = (k) => by(k).map(r => `<i class="bc-bt is-${k}"><b>${lab(r)}</b><small>合計${tot(r)}</small></i>`).join('');
@@ -740,7 +775,10 @@
         climaxed = true; ui.sq.dataset.climax = '1'; hush();
         const wn = by('win', set).map(rankJa).join('か');
         ui['sq-m'].innerHTML = `<em>${wn}</em>なら勝ち！`;
-        say('goddess', pick([`${wn}！？　${wn}なの！？|知ってるけど言わなーい！`, `いま運命の分岐点！|${wn}、来い来い来いっ！`]), 2600);
+        const cl = pick([`${wn}！？　${wn}なの！？|知ってるけど言わなーい！`, `いま運命の分岐点！|${wn}、来い来い来いっ！`]);
+        say('goddess', cl, 2600);
+        // 自動の時だけカットイン（自分でめくっている最中は札を隠さない）
+        if (auto) cutin('climax', '運命の分岐点', `${wn}なら勝ち！`, splitLine(cl)[1], 'inori', 1350);
         sfx('reach'); thump(); setTimeout(thump, 330); setTimeout(thump, 660);
       };
       setHeat(RANKS);
@@ -753,7 +791,12 @@
           if (set.length >= lastN) return;
           const first = lastN === 99; lastN = set.length; curSet = set; sfx('check');
           ui['sq-m'].innerHTML = wantHTML(states, set); setHeat(set); paintOdds(set);
-          if (set.length === 1) { setTimeout(() => { if (sq === mySq && mySq) mySq.open(); }, 420); return; }
+          // 残った候補の結果が全部同じ（全部当たり・全部ハズレ・全部引き分け）になったら、その瞬間に確定して開く（候補が1つの時も同じ）
+          const sts = new Set(set.map(r => states[r]));
+          if (set.length === 1 || (decisive && sts.size === 1)) {
+            if (sts.has('lose') && by('win').length && !told.dead) { told.dead = 1; hush(); say('goddess', 'あーあ、消えちゃった〜。|言わんこっちゃない！', 2400); }
+            setTimeout(() => { if (sq === mySq && mySq) mySq.open(); }, 420); return;
+          }
           if (!auto && !climaxed && hot(set) && set.reduce((a, r) => a + wt(r), 0) <= 3) { climaxFx(set); return; }
           const key = set.join(','), has = (a) => set.every(r => a.includes(r));
           const alive = by('win', set).map(rankJa).join('か'), hadWin = by('win').length;
@@ -854,9 +897,10 @@
     ui.banner.dataset.on = '0'; ui.table.dataset.win = '';
     setPhase('bet'); paintRoads(); paintTotals();
     pledgeTick();
-    if (S.A.favor >= 3 && !S.oracle) { setFavor(0); giveOracle(true); }
+    const cooling = (A.coolTo || 0) > A.hands;
+    if (S.A.favor >= 3 && !S.oracle && !cooling) { setFavor(0); giveOracle(true); }
     else {
-      if (S.pledges.length < 3 && !S.q && S.shoe.hands - (A.asked || 0) >= 2 && S.res.length >= 2 && Math.random() < .62) askQuestion();
+      if (S.pledges.length < 3 && !S.q && !cooling && S.looks < TUNE.lookQuiet && A.hands - (A.askedAt == null ? -99 : A.askedAt) >= 2 && S.res.length >= 2 && Math.random() < .62) askQuestion();
       else if (Math.random() < .62) chatter();
       // ミミの心の声（助言）：問いの札が出ていない時だけ
       if (!S.q && ui.ask.hidden) { const mh = mimiHint(); if (mh && Math.random() < mh[1]) say('mimi', `（${mh[0]}）`, 4400); }
@@ -902,16 +946,20 @@
     // 「外れたら次の賭け金」の約束は、外れた時に効き始める
     if (stake && pay.net !== 0) S.pledges.forEach(p => { if (p.type === 'stake' && !p.armed && (p.on === 'win') === (pay.net > 0)) { p.armed = true; p.base = stake; } });
     if (stake) S.lastStake = stake;
+    if (stake) dealerReact(pay.net > 0 ? 'sad' : pay.net < 0 ? 'glad' : 'calm');   // 客が勝てばのけぞる・負ければ小さく弾む
     paintBets();
     // ウンメの反応：約束を守ったか × 当たったか（約束が重なった時は、破った方が勝つ）
     if (judged.kept || judged.broken) {
       setFavor(A.favor + judged.kept - 2 * judged.broken, judged.broken ? '約束を破った' : '約束を守った');
       if (judged.kept && !judged.broken && !A.keepSeen) { A.keepSeen = true; say('rico', '約束を守ると、ウンメさまのご機嫌が上がる。|3つ満ちると神託だよ', 4000); }
       if (judged.broken) {
-        if (pay.net > 0) { A.outwit++; say('goddess', pick(['あーっ、裏切ったー！|……なのに当ててる。ずるーい！', '言ったことと違うー！|勝ったからって許しませーん！']), 3200); }
-        else say('goddess', pick(['裏切って、外した！|あーあ、言わんこっちゃない！', '約束やぶったよね？|バチが当たったんだよぉ']), 3200);
+        const bl = pay.net > 0 ? pick(['あーっ、裏切ったー！|……なのに当ててる。ずるーい！', '言ったことと違うー！|勝ったからって許しませーん！']) : pick(['裏切って、外した！|あーあ、言わんこっちゃない！', '約束やぶったよね？|バチが当たったんだよぉ']);
+        if (pay.net > 0) A.outwit++;
+        const [bm, bs] = splitLine(bl);
+        cutin('betray', '約束やぶり', bm, bs, pay.net > 0 ? 'muku' : 'jito', 1500);
+        say('goddess', bl, 3200);
       } else say('goddess', pay.net > 0 ? pick(['有言実行！　|しかも当たり！|かっこいいでーす！', '言ったとおりにして|勝った！|そういう子、|大好き！']) : pay.net < 0 ? pick(['約束は守ったのにねぇ。|よしよし', '外れたけど|ウソはつかなかった！|えらいえらい！']) : '約束どおり！|ちゃんと見てたよぉ', 3200);
-    } else if (stake && pay.net >= stake * 8) say('goddess', 'わ、大当たり！|運命もびっくりでーす！');
+    } else if (stake && pay.net >= stake * 8) { cutin('jackpot', '大当たり', `＋${fmt(pay.net)}`, '運命もびっくりでーす！', 'odoroki', 1600); say('goddess', 'わ、大当たり！|運命もびっくりでーす！'); }
     else if (stake && Math.random() < .5) { const DT = DL.T || {}, rl = DT.res ? DT.res(h, pay.net) : pick((pay.net > 0 ? DT.win : pay.net < 0 ? DT.lose : DT.tie) || []); if (rl) dline(rl, 2800); }
     else if (stake && Math.random() < .3) say('goddess', pick(['決まりーっ！　|これが今日の|運命でーす！', 'はい確定。|……いやほんと、|ウンメちゃんは|前から知ってたんだけどね？', '文句は|受け付けませーん！']));
     keep();
@@ -956,7 +1004,7 @@
       host.dataset.sq = '1'; ui.sq.hidden = false;
       ui['sq-score'].innerHTML = '<span class="bc-sc is-B"><b>バンカー</b><em>7</em></span><span class="bc-sc is-P is-now"><b>プレイヤー</b><em>4+?</em></span>';
       const RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-      ui.cands.innerHTML = RANKS.map(r => `<span class="bc-cd is-${candState('P', 1, r, 'P')}" data-r="${r}"><b>${r === 1 ? 'A' : r === 11 ? '絵' : r}</b><small>合計${(4 + (r >= 10 ? 0 : r)) % 10}</small></span>`).join('');
+      ui.cands.innerHTML = RANKS.map(r => candTile(r, candState('P', 1, r, 'P'), '♠', (4 + (r >= 10 ? 0 : r)) % 10)).join('');
       ui['sq-m'].innerHTML = '<em>4・5</em>来い！';
       sq = SQ.create(ui['sq-cv'], { card: c.card, back: ART.back, onSeen: (info) => { const set = info.cands.map(r => Math.min(11, r)); ui.cands.querySelectorAll('.bc-cd').forEach(e => e.classList.toggle('is-out', !set.includes(+e.dataset.r))); } });
       await wait(500);
@@ -1031,9 +1079,28 @@
     const st = S.road.stats, el = document.createElement('div'); el.className = 'bc-over bc-bigroads';
     el.innerHTML = `<section class="bc-panel"><header><b>罫線</b><span class="bc-count"><i class="is-B"></i>バンカー ${st.B}<i class="is-P"></i>プレイヤー ${st.P}<i class="is-T"></i>引き分け ${st.T}</span><button type="button" data-bc="guide4">読み方</button><button type="button" data-bc="close">閉じる</button></header>
       <div class="bc-br-grid"><span class="bc-br-l">結果の順</span><canvas class="bc-rd r-bead"></canvas><span class="bc-br-l">大路</span><canvas class="bc-rd r-big"></canvas>
-      <span class="bc-br-l">下の3つ</span><span class="bc-br-3"><canvas class="bc-rd r-eye"></canvas><canvas class="bc-rd r-small"></canvas><canvas class="bc-rd r-roach"></canvas></span></div></section>`;
+      <span class="bc-br-l">下の3つ</span><span class="bc-br-3"><canvas class="bc-rd r-eye"></canvas><canvas class="bc-rd r-small"></canvas><canvas class="bc-rd r-roach"></canvas></span></div>${verifyHTML()}</section>`;
     ui.layer.appendChild(el);
     requestAnimationFrame(() => paintBigRoads(el));
+  }
+  // この山の検算：山の番号（種）から札を並べ直して最初から配り直し、画面の罫線と1手ずつ照らし合わせる（偏りを疑った時に確かめられるように）
+  function verifyShoe() {
+    // 罫線に書かれた手まで照らし合わせる（配っている最中は、山の手数が罫線より1つ先に進んでいる）
+    const sh = BC.createShoe(S.shoe.seed), n = S.res.length, cnt = { P: 0, B: 0, T: 0 };
+    let bad = -1;
+    for (let k = 0; k < n; k++) { const h = BC.dealHand(sh); cnt[h.w]++; if (bad < 0 && S.res[k].w !== h.w) bad = k; }
+    const ahead = S.shoe.hands - n;
+    if (bad < 0 && ahead !== 0 && ahead !== 1) bad = n;
+    return { n, cnt, bad, seed: S.shoe.seed };
+  }
+  function verifyHTML() {
+    try {
+      const v = verifyShoe();
+      if (!v.n) return '';
+      return v.bad < 0
+        ? `<p class="bc-verify" data-ok="1"><b>この山の検算：一致</b>山の番号 ${v.seed} から札を並べ直して配り直すと、${v.n}手すべて上の罫線と同じ（バンカー ${v.cnt.B}・プレイヤー ${v.cnt.P}・引き分け ${v.cnt.T}）。長い目で見ると、バンカー約46%・プレイヤー約45%・引き分け約10%</p>`
+        : `<p class="bc-verify" data-ok="0"><b>この山の検算：不一致</b>山の番号 ${v.seed} から配り直すと、${v.bad + 1}手目から上の罫線と合いません</p>`;
+    } catch (e) { return ''; }
   }
   // ---- 卓（ディーラー）を選ぶ：入る時と、山が替わる時 ----
   function paintDealer() {
@@ -1259,7 +1326,7 @@
 
   // ---- 検査の出入口（qa/baccaratshot.mjs だけが使う） ----
   const _qa = {
-    S: () => S, host: () => host, sq: () => sq,
+    S: () => S, host: () => host, sq: () => sq, tune: TUNE, cutin, umme: UMME,
     bet(k, n) { for (let i = 0; i < (n || 1); i++) addBet(k); },
     deal() { if (betResolve) betResolve({ look: false }); }, look() { if (betResolve) betResolve({ look: true }); },
     ask: askQuestion, oracle: giveOracle, answer, setFavor, guide: openGuide, roads: openRoads,

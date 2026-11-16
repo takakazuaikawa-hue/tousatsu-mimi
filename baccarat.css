@@ -425,6 +425,64 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 .bc-sub { z-index: 3 !important; }
 /* 判定の札は札のまん中の高さに（下に置くと、同時に出るウンメの台詞の帯に隠れていた） */
 .bc-verdict { align-self: center; margin-bottom: 0; }
+/* めくりの右の候補：トランプの絵（めくっている札と同じマーク）で並べ、足・横の数と見比べられるように。合計は右下の数字。6枚×2段 */
+.bc-cands { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: calc(var(--u) * 3); }
+.bc-cd { position: relative; min-height: 0; padding: 2px; justify-content: flex-start; border-width: 2px; }
+.bc-cd-f { display: block; width: 100%; aspect-ratio: .714; background: center / contain no-repeat; border-radius: 2px; }
+.bc-cd small { position: absolute; right: 0; bottom: 0; min-width: 1.35em; padding: 0 3px; font: 700 var(--r-note, 14px)/1.2 var(--bc-num); color: #fff8e6; text-align: center; background: color-mix(in srgb, var(--k, #8b8173) 80%, #0d0506); }
+.bc-cd.is-win small { color: #2a1608; }
+.bc-cd.is-next .bc-cd-f { filter: brightness(.82); }
+
+/* 罫線の大きな窓の下：この山の検算（一致なら金、不一致なら赤） */
+.bc-verify { margin: calc(var(--u) * 6) 0 0; font-size: var(--r-note, 14px); line-height: 1.5; color: var(--bc-ivory); }
+.bc-verify b { margin-right: .7em; padding: 0 .5em; color: #2a1608; background: var(--bc-gold-hi); }
+.bc-verify[data-ok="0"] b { background: #e0525c; color: #fff; }
+
+/* ---- ウンメのカットイン（決め所だけ）：斜めの帯に上半身がはみ出す（枠で囲まない）。操作は止めない ---- */
+.bc-cutin { position: absolute; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; --k: #f5d77a; --k2: rgba(118,72,12,.96); animation: bc-ci-in .2s ease-out 1; }
+.bc-cutin.is-betray { --k: #ff6b78; --k2: rgba(122,12,26,.96); }
+.bc-cutin.is-climax { --k: #ff9ac0; --k2: rgba(112,20,62,.96); }
+.bc-cutin::before { content: ""; position: absolute; inset: 0; background: radial-gradient(75% 85% at 55% 50%, rgba(0,0,0,.2), rgba(0,0,0,.72)); }
+.bc-cutin.is-out { animation: bc-ci-out .38s ease-in 1 forwards; }
+.bc-ci-band { position: absolute; left: -12%; right: -12%; top: 36%; height: 32%; transform: skewY(-5deg); background: linear-gradient(90deg, rgba(14,4,6,.97) 0%, var(--k2) 46%, rgba(14,4,6,.97) 100%); border-block: 3px solid var(--k); box-shadow: 0 0 calc(var(--u) * 30) color-mix(in srgb, var(--k) 50%, transparent); animation: bc-ci-band .34s cubic-bezier(.2, 1.2, .4, 1) 1; }
+.bc-ci-band::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(100deg, transparent 0 calc(var(--u) * 26), rgba(255,240,200,.09) calc(var(--u) * 26) calc(var(--u) * 30)); animation: bc-ci-lines .6s linear infinite; }
+.bc-ci-pic { position: absolute; left: 1%; top: -6%; height: 150%; width: auto; max-width: none; filter: drop-shadow(0 0 calc(var(--u) * 14) rgba(0,0,0,.75)); animation: bc-ci-pic .4s cubic-bezier(.2, 1.3, .4, 1) 1; }
+.bc-ci-t { position: absolute; left: 45%; right: 3%; top: 36%; height: 32%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: calc(var(--u) * 4); transform: skewY(-5deg); }
+.bc-ci-h { font: 800 var(--r-label, 15px)/1.35 var(--bc-min); letter-spacing: .24em; color: #2a1608; background: var(--k); padding: 0 .8em; }
+.bc-ci-m { font: 800 calc(var(--u) * 38)/1.15 var(--bc-min); letter-spacing: .04em; color: #fff8e6; text-shadow: 0 0 calc(var(--u) * 14) var(--k), 0 3px 0 rgba(0,0,0,.6); word-break: keep-all; overflow-wrap: anywhere; animation: bc-slam .42s cubic-bezier(.2, 1.6, .4, 1) 1; }
+.bc-ci-s { font: 700 var(--r-speech, 16px)/1.4 var(--bc-min); color: #fff3dc; text-shadow: 0 2px 4px rgba(0,0,0,.8); }
+@keyframes bc-ci-in { from { opacity: 0; } }
+@keyframes bc-ci-out { to { opacity: 0; } }
+@keyframes bc-ci-band { from { transform: skewY(-5deg) translateX(60%); } }
+@keyframes bc-ci-pic { from { transform: translateX(-45%); opacity: 0; } }
+@keyframes bc-ci-lines { to { background-position: calc(var(--u) * 60) 0; } }
+
+/* ---- ディーラーの身のこなし（絵は1枚のまま、軽い変形だけ） ---- */
+.bc-dealer-pic img { transform-origin: 50% 100%; animation: bc-breathe 4.6s ease-in-out infinite; will-change: transform; }
+@keyframes bc-breathe { 0%, 100% { transform: translateX(-50%) translateY(0) scale(1); } 50% { transform: translateX(-50%) translateY(calc(var(--u) * -1.2)) scale(1.012); } }
+/* ピコ：見習い天使なので、ふわふわ浮く */
+.bc-host[data-dealer="pico"] .bc-dealer-pic img { animation: bc-float 3.2s ease-in-out infinite; }
+@keyframes bc-float { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(calc(var(--u) * -4)); } }
+/* ティカ：ぜんまい人形なので、ときどき「カチッ」と傾く */
+.bc-host[data-dealer="tika"] .bc-dealer-pic img { animation: bc-tick 5.2s infinite; animation-timing-function: step-end; }
+@keyframes bc-tick { 0% { transform: translateX(-50%) rotate(0); } 44% { transform: translateX(-50%) rotate(-1.8deg); } 50% { transform: translateX(-50%) rotate(0); } 88% { transform: translateX(-50%) rotate(1.4deg); } 93% { transform: translateX(-50%) rotate(0); } }
+/* プントとバンコ：双子で左右に揺れる */
+.bc-host[data-dealer="twins"] .bc-dealer-pic img { animation: bc-sway 3.8s ease-in-out infinite; }
+@keyframes bc-sway { 0%, 100% { transform: translateX(-50%) rotate(-1deg); } 50% { transform: translateX(-50%) rotate(1deg); } }
+/* お蝶：息づかい＋煙管の煙がゆらっと上る */
+.bc-host[data-dealer="ocho"] .bc-dealer::after { content: ""; position: absolute; left: var(--smoke-x, 84%); top: var(--smoke-y, 44%); width: calc(var(--u) * 14); height: calc(var(--u) * 14); border-radius: 50%; z-index: 2; pointer-events: none;
+  background: radial-gradient(circle, rgba(240,236,230,.6), rgba(240,236,230,0) 70%); filter: blur(1.5px); opacity: 0; animation: bc-smoke 5.6s ease-out infinite; }
+@keyframes bc-smoke { 0% { transform: translate(0, 0) scale(.5); opacity: 0; } 14% { opacity: .85; } 100% { transform: translate(calc(var(--u) * -10), calc(var(--u) * -46)) scale(2.6); opacity: 0; } }
+/* 配る・開く時に、配る側へ乗り出す */
+.bc-dealer.is-deal[data-move="P"] .bc-dealer-pic { animation: bc-deal-l .34s ease-out 1; }
+.bc-dealer.is-deal[data-move="B"] .bc-dealer-pic { animation: bc-deal-r .34s ease-out 1; }
+@keyframes bc-deal-l { 40% { transform: translateX(calc(var(--u) * -5)) rotate(-2.5deg); } }
+@keyframes bc-deal-r { 40% { transform: translateX(calc(var(--u) * 5)) rotate(2.5deg); } }
+/* 決着：客が勝てば少しのけぞる・負ければ小さく弾む */
+.bc-dealer.is-react[data-react="sad"] .bc-dealer-pic { animation: bc-sad .8s ease-out 1; }
+.bc-dealer.is-react[data-react="glad"] .bc-dealer-pic { animation: bc-glad .7s ease-out 1; }
+@keyframes bc-sad { 30% { transform: translateY(calc(var(--u) * 3)) rotate(-2deg); } 60% { transform: translateY(calc(var(--u) * 2)) rotate(-1deg); } }
+@keyframes bc-glad { 25% { transform: translateY(calc(var(--u) * -5)); } 50% { transform: translateY(0); } 70% { transform: translateY(calc(var(--u) * -2.5)); } }
 /* 幅の狭い横画面：合計の欄の名前がはみ出さないように */
 @media (max-width: 720px) { .bc-side-head { padding: calc(var(--u) * 3) calc(var(--u) * 3); } .bc-side-n { letter-spacing: 0; } .bc-dealer { width: calc(var(--u) * 80); } }
 
