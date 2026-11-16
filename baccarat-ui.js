@@ -35,7 +35,7 @@
     { id: 'ocho', name: 'お蝶', kind: '賭場の姐さん', intro: '東方の賭場の|壺振り上がり。|「勝負」の一声', art: 'assets/characters/dealer_ocho.webp', L: {
       hello: 'いらっしゃい。お手柔らかにね、兎さん', nomore: 'よござんすか。……勝負', look: 'おや、見（ケン）かい。目の肥えたお客だね',
       natural: 'ナチュラル{n}。きれいな目だねぇ', p3: 'プレイヤーに、もう一枚', b3: 'バンカーに、もう一枚', shoe: '山を替えるよ。頭の札は{l}、|{n}枚、流すからね' } },
-    { id: 'twins', name: 'プントとバンコ', kind: '双子', intro: '青のプントが|プレイヤー側、|赤のバンコが|バンカー側', art: null, L: {
+    { id: 'twins', name: 'プントとバンコ', kind: '双子', intro: '青のプントが|プレイヤー側、|赤のバンコが|バンカー側', art: 'assets/characters/dealer_twins.webp', wide: true, L: {
       hello: ['プント', 'いらっしゃーい！|プレイヤー側はプントが配るよ'], nomore: ['プント', 'はい、そこまで！　ノーモアベット！'], look: ['バンコ', '見（ケン）ね。ちゃんと見てなさいよ'],
       natural: (v) => [v.side === 'P' ? 'プント' : 'バンコ', 'ナチュラル{n}！'], p3: ['プント', 'プレイヤーにもう1枚、いくよ！'], b3: ['バンコ', 'バンカーにもう1枚。見てて'], shoe: ['プント', '新しい山だよ！　最初は{l}だから、|{n}枚ポイっと捨てるね'] } },
     { id: 'pico', name: 'ピコ', kind: '見習い天使', intro: '女神さまの部下。|おどおどしながら|一生けんめい', art: null, L: {
@@ -833,14 +833,14 @@
   function paintDealer() {
     if (!host) return;
     host.querySelector('.bc-dealer-n').textContent = DL.name; host.dataset.dealer = DL.id;
-    const pic = host.querySelector('.bc-dealer-pic'); pic.innerHTML = DL.art ? `<img src="${DL.art}" alt="${esc(DL.name)}">` : ''; pic.parentElement.classList.toggle('has-art', !!DL.art);
+    const pic = host.querySelector('.bc-dealer-pic'); pic.innerHTML = DL.art ? `<img src="${DL.art}" alt="${esc(DL.name)}">` : ''; pic.classList.toggle('is-wide', !!DL.wide); pic.parentElement.classList.toggle('has-art', !!DL.art);
   }
   function chooseDealer() {
     return new Promise((res, rej) => {
       const g = G; closeLayer(); hush();
       const el = document.createElement('div'); el.className = 'bc-over bc-pick';
       el.innerHTML = `<section class="bc-panel"><header><b>卓を選ぶ</b><span class="bc-g-pg">どの卓も決まりと配当は同じ</span></header>
-        <div class="bc-pick-g">${DEALERS.map(d => `<button type="button" data-bc="pick" data-id="${d.id}"${d.id === DL.id ? ' class="is-cur"' : ''}>${d.art ? `<span class="bc-pick-pic"><img src="${d.art}" alt=""></span>` : ''}<span class="bc-pick-k">${d.kind}</span><b>${d.name}</b><span class="bc-pick-i">${d.intro.replace(/\|/g, '<wbr>')}</span></button>`).join('')}</div></section>`;
+        <div class="bc-pick-g">${DEALERS.map(d => `<button type="button" data-bc="pick" data-id="${d.id}"${d.id === DL.id ? ' class="is-cur"' : ''}>${d.art ? `<span class="bc-pick-pic${d.wide ? ' is-wide' : ''}"><img src="${d.art}" alt=""></span>` : ''}<span class="bc-pick-k">${d.kind}</span><b>${d.name}</b><span class="bc-pick-i">${d.intro.replace(/\|/g, '<wbr>')}</span></button>`).join('')}</div></section>`;
       ui.layer.appendChild(el);
       pickResolve = (id) => {
         pickResolve = null; el.remove();
