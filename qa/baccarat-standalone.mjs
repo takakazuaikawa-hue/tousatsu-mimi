@@ -40,9 +40,9 @@ ${css}
 <div id="stage"><div id="app"></div>
   <div class="pg-start" id="pg-start">
     <h1>バカラ（試遊）</h1>
-    <p>クリア後のおまけ「バカラ」を、これだけで試せるページです。コインはこのページの中だけの物で、本編のセーブには関係しません。ディーラーと女神の絵は、案を選んでいただいてから入れます。</p>
+    <p>クリア後のおまけ「バカラ」を、これだけで試せるページです。コインはこのページの中だけの物で、本編のセーブには関係しません。曲は「リアルタイムアタック」と「バグ利用します」を交互に流します。</p>
     <p id="pg-coins"></p>
-    <div class="row"><button type="button" class="go" id="pg-go">卓に着く</button><button type="button" id="pg-demo">お手本から見る</button><button type="button" id="pg-reset">コインを2,400に戻す</button></div>
+    <div class="row"><button type="button" class="go" id="pg-go">卓に着く</button><button type="button" id="pg-demo">お手本から見る</button><button type="button" id="pg-reset">コインを2,400に戻す</button><button type="button" id="pg-bgm"></button></div>
   </div>
 </div>
 <div class="pg-turn">端末を横向きにしてください。<br>（このゲームは横画面で遊びます）</div>
@@ -53,13 +53,21 @@ var save = { coins: 2400, baccarat: null };
 try { var _s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (_s && typeof _s.coins === 'number') save = _s; } catch (e) {}
 function saveProgress() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
 function isEndingUnlocked() { return true; }
-function isBgmOn() { return false; }
-function playSceneBgm() {}
-var SCENE_BGM = {};
+// 曲：本編と同じく2曲を交互に（付属の bgm/ の mp3。卓に着くボタンを押した時に鳴り始める）
+var BGM = ['bgm/realtime-attack.mp3', 'bgm/bug-riyou-shimasu.mp3'], _bi = 0, _ba = null;
+var bgmOn = true; try { bgmOn = localStorage.getItem(KEY + '_bgm') !== '0'; } catch (e) {}
+function isBgmOn() { return bgmOn; }
+function playSceneBgm() {
+  if (!bgmOn) return;
+  if (!_ba) { _ba = new Audio(BGM[0]); _ba.volume = .3; _ba.onended = function () { _bi = (_bi + 1) % BGM.length; _ba.src = BGM[_bi]; _ba.play().catch(function () {}); }; }
+  if (_ba.paused) _ba.play().catch(function () {});
+}
+function stopBgm() { if (_ba) { _ba.pause(); _ba = null; _bi = 0; } }
+var SCENE_BGM = { baccarat: {} };
 var battleGen = 0, state = { screen: 'start' };
 function defaultState() { return { screen: 'start' }; }
 function render() { if (state.screen === 'baccarat') { document.getElementById('pg-start').hidden = true; BaccaratUI.mount(); } }
-function goLobby() { BaccaratUI.teardown(); state = { screen: 'start' }; paintStart(); document.getElementById('pg-start').hidden = false; }
+function goLobby() { stopBgm(); BaccaratUI.teardown(); state = { screen: 'start' }; paintStart(); document.getElementById('pg-start').hidden = false; }
 function toast(m) { var t = document.createElement('div'); t.className = 'pg-toast'; t.textContent = m; document.body.appendChild(t); setTimeout(function () { t.remove(); }, 2400); }
 // 効果音：短い電子音（最初に押した後から鳴る）
 var _ac = null;
@@ -78,7 +86,7 @@ function mpSfx(k) {
 function fit() { var r = document.documentElement, W = innerWidth, H = innerHeight; r.style.setProperty('--rb-w', W + 'px'); r.style.setProperty('--rb-h', H + 'px'); r.classList.toggle('is-compact', H < 520 || W < 900); }
 addEventListener('resize', fit); fit();
 if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(document.documentElement);
-function paintStart() { document.getElementById('pg-coins').textContent = '手持ち ' + Number(save.coins || 0).toLocaleString('ja-JP') + ' コイン'; }
+function paintStart() { document.getElementById('pg-coins').textContent = '手持ち ' + Number(save.coins || 0).toLocaleString('ja-JP') + ' コイン'; document.getElementById('pg-bgm').textContent = bgmOn ? '曲：あり' : '曲：なし'; }
 </script>
 <script>
 ${js}
@@ -88,11 +96,15 @@ paintStart();
 document.getElementById('pg-go').addEventListener('click', function () { BaccaratUI.open(); });
 document.getElementById('pg-demo').addEventListener('click', function () { if (save.baccarat) save.baccarat.demoSeen = false; BaccaratUI.open(); });
 document.getElementById('pg-reset').addEventListener('click', function () { save.coins = 2400; saveProgress(); paintStart(); });
+document.getElementById('pg-bgm').addEventListener('click', function () { bgmOn = !bgmOn; try { localStorage.setItem(KEY + '_bgm', bgmOn ? '1' : '0'); } catch (e) {} paintStart(); });
 </script>
 `;
 const out = path.join(REPO, 'qa', 'out', 'baccarat', 'baccarat-play.html');
 fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, html);
+// 曲は付属ファイルとして公開する（files: bgm/…）。手元の _wrap.html からも同じ相対パスで鳴る
+fs.mkdirSync(path.join(path.dirname(out), 'bgm'), { recursive: true });
+for (const m of ['realtime-attack.mp3', 'bug-riyou-shimasu.mp3']) fs.copyFileSync(path.join(REPO, 'assets', 'bgm', m), path.join(path.dirname(out), 'bgm', m));
 // 手元の検査ブラウザで開く用（公開の時に付く外枠と同じ物で包む）
 fs.writeFileSync(path.join(path.dirname(out), '_wrap.html'), '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>' + html + '</body></html>');
 console.log(out, (html.length / 1024 / 1024).toFixed(2) + ' MB');

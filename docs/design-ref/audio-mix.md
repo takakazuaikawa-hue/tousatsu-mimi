@@ -20,6 +20,8 @@
 | hokorobu-hoho（幕間） | -16.6 |
 | royal-flush（勝ち） | -16.3 |
 | velvet-dice-run（零時の卓） | -15.0 |
+| realtime-attack（女神バカラ1曲目「リアルタイムアタック」、gain 0.79） | -15.8 |
+| bug-riyou-shimasu（女神バカラ2曲目「バグ利用します」、gain 0.81） | -16.1 |
 | velvet-night-casino（ロビー、gain 1） | -16.5 |
 | ending | -16.2（エンディングは別に 1.6 倍） |
 

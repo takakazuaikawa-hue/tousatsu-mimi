@@ -92,6 +92,9 @@
 .bc-side[data-res="win"] .bc-side-head::after, .bc-side[data-res="tie"] .bc-side-head::after { content: "勝ち"; font: 800 var(--r-label, 15px)/1.2 var(--bc-min); letter-spacing: .1em; color: #2a1608; background: linear-gradient(180deg, #f1d590, #c79a4c); padding: 0 .6em; align-self: flex-start; animation: bc-pop .5s ease-out 1; }
 .bc-b[data-res] .bc-side-head::after { align-self: flex-end; }
 .bc-side[data-res="tie"] .bc-side-head::after { content: "引き分け"; background: linear-gradient(180deg, #8fe0b0, #3aa96a); }
+/* 印は1行のまま（小さいスマホで「引き分／け」と折れ、欄の高さを越えて名前を上へ押し出していた） */
+.bc-side[data-res] .bc-side-head::after { white-space: nowrap; }
+.bc-side[data-res="tie"] .bc-side-head::after { letter-spacing: .02em; padding: 0 .35em; }
 .bc-banner { display: none; }
 .bc-card { --w: calc(var(--u) * 42); display: block; flex: none; width: var(--w); height: calc(var(--w) / .714); border-radius: calc(var(--w) * .06);
   background: #fffdf8 center / 100% 100% no-repeat; box-shadow: 0 calc(var(--u) * 4) calc(var(--u) * 9) rgba(0,0,0,.55); transition: transform .15s; animation: bc-deal .26s ease-out both; }
@@ -376,7 +379,13 @@
 body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 
 /* 縦に余裕のある画面（PC）：卓の札を大きく */
-@media (min-height: 620px) { .bc-table .bc-card { --w: calc(var(--u) * 62); } }
+@media (min-height: 620px) {
+  .bc-table .bc-card { --w: calc(var(--u) * 62); transition: width .3s ease-out, height .3s ease-out; }
+  /* 3枚目（横向き）が来たら、欄からはみ出さない大きさへ縮める（62 のままだと右の線を越えていた） */
+  .bc-table .bc-cards:has(.is-side) .bc-card { --w: calc(var(--u) * 48); }
+  /* 今やることの1行は札の欄のまん中へ（スマホと同じ余白だと、ディーラーの絵の腰に重なっていた） */
+  .bc-host.bc-host[data-phase="bet"] .bc-pins { align-self: center; margin-top: calc(var(--u) * 60); }
+}
 
 /* 縦の狭い画面（スマホ横）：絞りの右の欄は、色の凡例と一言を出さない（めくる前の札が同じことを言う）。「開く」が画面の外へ落ちていた */
 @media (max-height: 520px) { .bc-sq-legend, .bc-sq-tip { display: none !important; } }
@@ -414,6 +423,8 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 /* 神託がある時は、今やることの1行をゆずる（札の欄に収める）。台詞の帯は札より手前 */
 .bc-pins:has(.bc-oracle) .bc-mission { display: none; }
 .bc-sub { z-index: 3 !important; }
+/* 判定の札は札のまん中の高さに（下に置くと、同時に出るウンメの台詞の帯に隠れていた） */
+.bc-verdict { align-self: center; margin-bottom: 0; }
 /* 幅の狭い横画面：合計の欄の名前がはみ出さないように */
 @media (max-width: 720px) { .bc-side-head { padding: calc(var(--u) * 3) calc(var(--u) * 3); } .bc-side-n { letter-spacing: 0; } .bc-dealer { width: calc(var(--u) * 80); } }
 
