@@ -10994,7 +10994,11 @@ function showEndingFinalButtonsInner(stage, opts = {}) {
       <div class="ep-divider"></div>
       <div class="ep-last-line">「おつかれ、ミミ。<br>……次のハンドも、アタシが見ててあげる」</div>
       <div class="ep-signed">— リコ先輩</div>
-      ${replay ? '' : '<div class="ep-unlock"><span class="ep-unlock-k">解放：</span>コレクションで エンディング・主題歌・スタッフロール／交換所に新入荷</div>'}
+      ${replay ? '' : `<div class="ep-open">
+        <div class="ep-open-card is-midnight"><span class="ep-open-new">NEW</span><b>零時の卓</b><span>6人が一斉に座る大会<br>ホームの「今夜の卓」から</span></div>
+        <div class="ep-open-card is-horoyoi"><span class="ep-open-new">NEW</span><b>ほろ酔いの夜</b><span>酔った5人と、もう一度<br>ホーム上の月のボタンから</span></div>
+      </div>
+      <div class="ep-unlock"><span class="ep-unlock-k">ほかにも：</span>コレクションにエンディング／交換所に新入荷</div>`}
     </div>
     <div class="ending-final-buttons">
       <button type="button" class="btn btn-secondary" data-ep-exit="collection">コレクションを見る</button>

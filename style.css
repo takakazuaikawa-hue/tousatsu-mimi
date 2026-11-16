@@ -21195,3 +21195,20 @@ html.is-compact .hg-next { min-width: 76px; min-height: 44px; padding: 4px 10px;
 .story-overlay.is-reading :is(.story-title, .story-box, .story-skip, .story-vol, .story-tap) { visibility: hidden; }
 .episode-card .episode-sub { font-weight: 700; color: #f8f1e6; letter-spacing: .04em; }
 @media (prefers-reduced-motion: reduce) { .tr-layer, .tr-one, .tr-chibi, .tr-stamp { animation: none !important; transition: none !important; } }
+
+/* エンディング：新しく開いた2つ（零時の卓・ほろ酔いの夜）を入り方つきで（11/16 ユーザー「ちゃんとわかるように」） */
+.ep-open { display: flex; gap: 14px; justify-content: center; margin: 2px auto 10px; animation: epLineFadeIn 1.4s ease-out 2.6s both; }
+.ep-open-card { position: relative; width: 300px; padding: 14px 16px 12px; text-align: left; display: flex; flex-direction: column; gap: 4px;
+  background: linear-gradient(180deg, rgba(74,12,20,.95), rgba(28,6,10,.95)); border: 1px solid #e3b964; box-shadow: inset 0 0 0 1px rgba(227,185,100,.3), 0 0 24px rgba(227,185,100,.25); }
+.ep-open-card.is-horoyoi { background: linear-gradient(180deg, rgba(48,18,70,.95), rgba(20,8,32,.95)); border-color: #c9a0ff; box-shadow: inset 0 0 0 1px rgba(201,160,255,.3), 0 0 24px rgba(160,110,255,.25); }
+.ep-open-card b { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-size: 24px; font-weight: 800; color: #ffe7a6; letter-spacing: .06em; }
+.ep-open-card.is-horoyoi b { color: #ecd9ff; }
+.ep-open-card span:last-child { font-size: 15px; line-height: 1.5; color: #f2e6cf; }
+.ep-open-new { position: absolute; top: -11px; right: 12px; font-family: "Bebas Neue", sans-serif; font-size: 16px; letter-spacing: .12em; color: #1d080e; background: #f5d77a; padding: 0 8px; }
+html.is-compact .ep-open { gap: calc(10px / var(--game-scale, 1)); margin-bottom: calc(6px / var(--game-scale, 1)); }
+html.is-compact .ep-open-card { width: calc(250px / var(--game-scale, 1)); padding: calc(10px / var(--game-scale, 1)) calc(12px / var(--game-scale, 1)) calc(8px / var(--game-scale, 1)); }
+html.is-compact .ep-open-card b { font-size: calc(19px / var(--game-scale, 1)); }
+html.is-compact .ep-open-card span:last-child { font-size: calc(14px / var(--game-scale, 1)); }
+html.is-compact .ep-open-new { font-size: calc(14px / var(--game-scale, 1)); }
+.ep-open-card span:last-child { word-break: keep-all; white-space: nowrap; }
+.ep-unlock { word-break: keep-all; }
