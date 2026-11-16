@@ -38,7 +38,7 @@ function initScript(cfg) {
 }
 
 export async function openSession({ width = 1280, height = 800, mobile = false, speed = 1, seed = 12345, save = null, clear = true, probes = [], cacheControl = 'no-store' } = {}) {
-  const server = await serve(REPO, 0, cacheControl);
+  const server = await serve(process.env.QA_ROOT || REPO, 0, cacheControl);   // QA_ROOT：直す前の写しなど別の置き場を配る時
   const browser = await launch({ width, height });
   const page = await browser.newPage();
   await page.setViewport(width, height, mobile);

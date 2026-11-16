@@ -904,7 +904,8 @@ function setMimiExpression(expr) {
     // v2 バトル画面：バストアップ差分（think / shock / win）を優先。無ければ従来PNGへ
     if (img.closest('.battle-screen.v2')) {
       // 買った衣装はバストアップの差分が無いので、装備中は衣装の立ち絵の上半身を出す（2026-11-01 9回目の批評：桃色を買っても卓は黒のままだった）
-      if (skin) {
+      // 夜（ほろ酔い・泥酔）の卓は酔ったミミが決まりの姿。色替えの立ち絵には酔い版が無く、昼の顔が出て結果画面の酔い顔と食い違っていた（2026-11-16）
+      if (skin && !(state && state.horoyoi)) {
         img.classList.add('is-skin-full');
         img.onerror = () => { img.onerror = null; img.classList.remove('is-skin-full'); img.src = 'assets/characters/mimi_bust_calm.webp'; };
         img.src = `assets/characters/mimi_${skin}.webp`;
@@ -5700,6 +5701,10 @@ const STAGE_ORDER = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
 //-------------------------------------------------------------
 function isHoroyoi() { return !!(save && save.horoyoiMode) && isEndingUnlocked(); }
 const hKey = (id) => (isDeisui() ? 'd_' : 'h_') + id;
+// コレクションの「ほろ酔いの夜」の欄は、今どちらの夜にいても h_ の鍵で数える（泥酔の夜の最中に開くと欄が d_ にすり替わり、枚数も合わなかった 2026-11-16）
+const nightCollKey = (id) => 'h_' + id;
+// コレクションの CG集の分母：泥酔の夜の写真集は、泥酔の夜が開くまで数えない（公開前は 7/8 で止まっていた）。持っていれば数える
+function collCgSetIds() { return Object.keys(CG_SETS).filter(id => !CG_SETS[id].deisui || deisuiOpen() || isItemOwned(id)); }
 // 一周目の初回・再戦・S評価の1.5倍（リコ先輩は講義の代わりに本当の対戦なので、再戦とSはポルカの段に合わせた）
 const HOROYOI_REWARD = {
   rico_tutorial: { rewardFirst: 450,  rewardRematch: 225, rewardSBonus: 150 },
@@ -6664,6 +6669,13 @@ const TACTIC_NOTES = {
   // 交換所の「バンクロール管理」で unlockedNotes に入る。ここに無かったため知識ノートが 6/5 になっていた
   bankroll:     { name: 'バンクロール管理',       desc: '手持ちのうち、1回の勝負に賭けていい割合を決めておく' },
 };
+// まだ持っていないノートの手に入れ方（以前は全部「撃破か購入で解放」と出て、撃破だけ・購入だけのノートと食い違っていた 2026-11-16）
+function noteHowToGet(id) {
+  const by = Object.keys(OPPONENTS).filter(k => OPPONENTS[k] && OPPONENTS[k].unlockNoteOnClear === id).map(k => OPPONENTS[k].name + '撃破');
+  const shop = SHOP_ITEMS.some(i => i.id === 'note_' + id) ? ['交換所の交換'] : [];
+  const ways = by.concat(shop);
+  return ways.length ? ways.join('か') + 'で解放' : '最初から持っている';
+}
 function tacticNoteName(id) { return (TACTIC_NOTES[id] && TACTIC_NOTES[id].name) || id; }
 
 // 戦術ノートの本文。解放しても「読む場所」が無かったため、コレクションの知識ノートから開く。
@@ -6679,11 +6691,11 @@ const NOTE_ARTICLES = {
     ],
   },
   board_danger: {
-    effect: '場札の危険度バーに「3段階の判定」と「根拠になった札」が出る',
+    effect: '場札の危険度の目盛りの横に、危ない理由になった札（例：♠3枚）が出る。何も無ければ「刺さる並びなし」と出る',
     body: [
       { h: '危ないのは自分の役ではなく場札', p: 'ワンペアやツーペアの強さは、<b>場札がどれだけ危ないか</b>で意味が変わります。同じツーペアでも、バラバラの場札なら勝ち手、フラッシュが完成しうる場札なら「負けているのに降りられない罠」になります。' },
       { h: '3つの警戒サイン', p: '<b>同じマークが2枚以上</b>＝フラッシュ気配。<b>数字が近い札が並ぶ</b>＝ストレート気配。<b>場札にペアがある</b>＝相手がスリーカード以上を作れる（さらに自分の役は場札で作れてしまうので価値が下がる）。危険な場札ほど<b>ポットを小さく保つ</b>のが基本です。' },
-      { h: 'このゲームでは', p: '場札の下の危険度バーが、ノート解放後は<b>「安全／注意／危険」の判定と、その根拠になった札</b>まで表示します（例：危険 ♠3枚・9-10-J連番）。相手が大きく賭けてきた時、この判定が「危険」なら、こちらの役が中くらいでも降りる判断が正解になりやすくなります。' },
+      { h: 'このゲームでは', p: '場札の下の危険度バーが、ノート解放後は目盛りの横に<b>危ない理由になった札</b>まで表示します（例：♠3枚・9-10-J連番）。危ない並びが無い時は<b>「刺さる並びなし」</b>と出るので、見落としと区別できます。相手が大きく賭けてきた時、目盛りが長く理由の札が2つ以上並んでいるなら、こちらの役が中くらいでも降りる判断が正解になりやすくなります。' },
     ],
   },
   pot_odds: {
@@ -6808,14 +6820,14 @@ const SHOP_ITEMS = [
   { id: 'outfit_rico_school',   cat: 'skin',  name: 'リコ・学生風',       price: 550,  desc: 'リコ先輩の衣装：先輩感のある学生風制服' },
   { id: 'outfit_rico_bunny',    cat: 'skin',  name: 'リコ・バニー',       price: 1150, desc: 'リコ先輩の衣装：カジノクイーン仕様のバニーガール' },
   { id: 'outfit_rico_gym',      cat: 'skin',  name: 'リコ・ジム服',       price: 500,  desc: 'リコ先輩の衣装：鍛えてる最近のジム服' },
-  { id: 'outfit_rico_swimsuit', cat: 'skin',  name: 'リコ・水着',         price: 1300, desc: 'リコ先輩の衣装：夏限定の水着姿。撃破の報酬', requires: 'ending' },
+  { id: 'outfit_rico_swimsuit', cat: 'skin',  name: 'リコ・水着',         price: 1300, desc: 'リコ先輩の衣装：夏限定の水着姿。ヴェルベット撃破で入荷', requires: 'ending' },
   { id: 'outfit_rico_witch',    cat: 'skin',  name: 'リコ・魔女',         price: 850, desc: 'リコ先輩の衣装：ハロウィン気分の魔女姿' },
   { id: 'outfit_rico_santa',    cat: 'skin',  name: 'リコ・サンタ',       price: 850, desc: 'リコ先輩の衣装：メリクリ仕様のサンタ姿' },
   /* カード裏 */
   { id: 'skin_blue_silver_card', cat: 'skin',  name: '蒼銀カード',            price: 150, desc: 'カード裏：氷のように冷たい蒼と銀。霜の結晶紋入り' },
   { id: 'skin_obsidian_card',    cat: 'skin',  name: '漆黒カード',            price: 250, desc: 'カード裏：漆黒の地に、金の紋様がうっすら浮かぶ' },
   { id: 'skin_floral_card',      cat: 'skin',  name: '花鳥カード',            price: 250, desc: 'カード裏：深紅の地に金の桜と燕を描いた和の意匠' },
-  { id: 'skin_galaxy_card',      cat: 'skin',  name: '銀河カード',            price: 250,  desc: 'カード裏：星がまたたき、深紅の星雲がゆっくり渦巻く宇宙柄。撃破の報酬', requires: 'ending' },
+  { id: 'skin_galaxy_card',      cat: 'skin',  name: '銀河カード',            price: 250,  desc: 'カード裏：星がまたたき、深紅の星雲がゆっくり渦巻く宇宙柄。ヴェルベット撃破で入荷', requires: 'ending' },
   /* テーブル */
   { id: 'table_emerald',         cat: 'skin',  name: 'エメラルド卓',        price: 300,  desc: 'テーブル：卓の羅紗が深いエメラルドグリーンに。正統派の緑卓' },
   { id: 'table_neon',            cat: 'skin',  name: 'ネオン卓',            price: 450,  desc: 'テーブル：卓を夜の暗さに沈め、上下の縁で深紅と金のネオン管が明滅する' },
@@ -6827,7 +6839,7 @@ const SHOP_ITEMS = [
   /* ミミの見た目（卓とプロフィールは専用の立ち絵、ミニゲームのミミは色替え） */
   { id: 'mimi_skin_pink',        cat: 'skin',  name: 'ミミ・桃色',          price: 300,  desc: '卓とプロフィールのミミが桃色のバニー衣装に（ミニゲームのミミも桃色に）' },
   { id: 'mimi_skin_panda',       cat: 'skin',  name: 'ミミ・パンダ柄',      price: 450,  desc: '卓とプロフィールのミミが白黒のパンダ柄のバニー衣装に（うさ耳も白黒。ミニゲームのミミは白黒に）' },
-  { id: 'mimi_skin_gold',        cat: 'skin',  name: 'ミミ・黄金',          price: 2500, desc: '卓とプロフィールのミミが黄金色のバニー衣装に。撃破の報酬', requires: 'ending' },
+  { id: 'mimi_skin_gold',        cat: 'skin',  name: 'ミミ・黄金',          price: 2500, desc: '卓とプロフィールのミミが黄金色のバニー衣装に。ヴェルベット撃破で入荷（零時の卓で初めて優勝しても、ただでもらえる）', requires: 'ending' },
   /* カットイン演出 */
   { id: 'cutin_classic',         cat: 'skin',  name: 'カットイン・古典派',  price: 350,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）が集中線＆モノクロ調に' },
   { id: 'cutin_neon',            cat: 'skin',  name: 'カットイン・ネオン',  price: 350,  desc: 'カットイン（相手の大きな賭け・リコ先輩の解説）に深紅と金のネオン光線が走る' },
@@ -6839,7 +6851,7 @@ const SHOP_ITEMS = [
   { id: 'bgm_lobby_jazz',        cat: 'memory', name: 'BGM「夜のジャズ」',   price: 150,  desc: 'ロビーBGMをしっとりジャズに切替可能' },
   { id: 'bgm_battle_tense',      cat: 'memory', name: 'BGM「緊迫の弦楽」',  price: 150,  desc: 'バトルBGMを緊張感ある弦楽四重奏に' },
   { id: 'bgm_battle_techno',     cat: 'memory', name: 'BGM「電脳テクノ」',  price: 200,  desc: 'バトルBGMをサイバーテクノに' },
-  { id: 'se_pack_casino',        cat: 'memory', name: 'SEパック「カジノ」', price: 150,  desc: 'チップ音・カード音をリアル寄りに変更' },
+  { id: 'se_pack_casino',        cat: 'memory', name: 'SEパック「カジノ」', price: 150,  desc: 'ベット・コール・オールインのチップ音に、本物のチップが鳴る音を重ねる' },
   { id: 'gallery_rico',          cat: 'memory', name: 'リコ先輩設定資料',    price: 350,  desc: 'リコ先輩の人物設定・口調メモ・ボツ衣装の話を読める' },
   { id: 'gallery_opponents',     cat: 'memory', name: '対戦相手図鑑',        price: 450,  desc: '対戦相手の打ち筋と口癖を読める（撃破した相手のみ）' },
   { id: 'gallery_mimi',          cat: 'memory', name: 'ミミ百態',            price: 300,  desc: 'ミミの表情メモと、ぱにゅぱにゅの裏話を読める' },
@@ -6852,7 +6864,7 @@ const SHOP_ITEMS = [
   { id: 'cgset_rival',    cat: 'cgset', name: 'CG集「ライバルと卓で」', price: 100, desc: 'ポルカ・ヴェルベットと|ミミの、|幻の一枚たち。|3枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_horoyoi',  cat: 'cgset', name: 'CG集「ほろ酔いの別カット」', price: 100, desc: 'ほろ酔いの夜の、|もうひとつの|一枚たち。|12枚入り。|コレクションで|いつでも見られる' },
   { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 300,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
-  { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 350, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。撃破の報酬', requires: 'ending' },
+  { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 350, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。ヴェルベット撃破で入荷', requires: 'ending' },
   // 音声は無い。旧「ボイス集」（900）を実態どおりの「セリフ集」に改め値下げ。買った人の所持はそのまま
   { id: 'omake_voice_pack',      cat: 'memory', name: 'リコ先輩セリフ集',    price: 150,  desc: 'リコ先輩の勝った時・負けた時・励ましなどのセリフ集。押すとリコ先輩の声で聞ける' },
   { id: 'omake_credit',          cat: 'memory', name: 'スタッフロール再生',  price: 0, clearBonus: true, desc: '本編のスタッフロールをいつでも再生できる', requires: 'ending' },
@@ -7398,8 +7410,16 @@ function shop3Face(item, art) {
   if (art.type === 'object') return `<span class="sh3-face is-object"><img src="${art.src}" alt="" loading="lazy">${art.big ? `<em>${art.big}</em>` : ''}</span>`;
   return `<span class="sh3-face is-emblem">${art.swatch ? `<i class="sh3-swatch" style="background:${art.swatch}"></i>` : `<i class="sh3-glyph">${shopCatIconSvg(art.cat)}</i>`}${art.big ? `<em>${art.big}</em>` : ''}</span>`;
 }
+// 札を表に出すか：入荷済み、または持っている（「コインと所持品を持って最初から」で撃破の記録が戻ると、買った品まで伏せ札になって売り場から消えていた 2026-11-16）
+// 今その品を装備しているか（装備変更の欄の選択とセーブを見る）。交換所の台の「入手済」を「装備中」に替える（買った品は自動で装備されるのに、交換所では分からなかった 2026-11-16）
+function shopItemEquipped(id) {
+  if (typeof EQUIP_CATEGORIES === 'undefined') return false;
+  for (const c of EQUIP_CATEGORIES) { const ch = c.choices.find(x => x.itemId === id); if (ch) return save[c.key] === ch.id; }
+  return false;
+}
+function shop3Visible(id) { return isShopItemUnlocked(id) || isItemOwned(id); }
 function shop3CardHTML(item, k) {
-  if (!isShopItemUnlocked(item.id)) {
+  if (!shop3Visible(item.id)) {
     const who = shop3UnlockWho(item);
     return `<button type="button" class="sh3-card is-back" data-sh3="${item.id}" style="--k:${k}" aria-label="未入荷の品"><span class="sh3-face is-backface"></span><span class="sh3-cap">${who ? who + 'に勝つと' : '近日入荷'}</span></button>`;
   }
@@ -7430,7 +7450,7 @@ function shop3BindCard(c) {
     const it = SHOP_ITEMS.find(i => i.id === c.dataset.sh3);
     if (!it) return;
     if (typeof mpSfx === 'function') mpSfx('tap');
-    if (!isShopItemUnlocked(it.id)) {
+    if (!shop3Visible(it.id)) {
       const who = shop3UnlockWho(it);
       shop3Say(who ? `そちらはまだ入荷前でしてな。${who}に勝たれた頃に、お持ちしましょう` : 'そちらはまだ入荷前でしてな');
       return;
@@ -7442,12 +7462,12 @@ function shop3BindCard(c) {
 function shop3RenderRow(deal) {
   const row = document.querySelector('.sh3-row'); if (!row) return;
   // 並び：新入荷→未所持→所持→未入荷（伏せ札）
-  const rank = i => !isShopItemUnlocked(i.id) ? 3 : isItemOwned(i.id) ? 2 : isShopItemNew(i.id) ? 0 : 1;
+  const rank = i => !shop3Visible(i.id) ? 3 : isItemOwned(i.id) ? 2 : isShopItemNew(i.id) ? 0 : 1;
   const kind = i => /^outfit_rico_/.test(i.id) ? 0 : /^mimi_skin_/.test(i.id) ? 1 : /^pwear_/.test(i.id) ? 2 : 0;
   const sorted = shop3Items(shop3.group).slice().sort((a, b) => (rank(a) === 3) - (rank(b) === 3) || kind(a) - kind(b) || rank(a) - rank(b));
-  if (!shop3.sel || !sorted.some(i => i.id === shop3.sel && isShopItemUnlocked(i.id))) {
-    const pick = sorted.filter(i => isShopItemUnlocked(i.id) && !isItemOwned(i.id) && !i.clearBonus).sort((a, b) => (isShopItemNew(b.id) - isShopItemNew(a.id)) || (b.price - a.price))[0];
-    const first = pick || sorted.find(i => isShopItemUnlocked(i.id));
+  if (!shop3.sel || !sorted.some(i => i.id === shop3.sel && shop3Visible(i.id))) {
+    const pick = sorted.filter(i => shop3Visible(i.id) && !isItemOwned(i.id) && !i.clearBonus).sort((a, b) => (isShopItemNew(b.id) - isShopItemNew(a.id)) || (b.price - a.price))[0];
+    const first = pick || sorted.find(i => shop3Visible(i.id));
     shop3.sel = first ? first.id : null;
   }
   row.innerHTML = sorted.map((it, k) => shop3CardHTML(it, k)).join('');
@@ -7493,7 +7513,7 @@ function shop3RenderStage(item) {
     buy.className = 'sh3-buy is-owned';
     buy.innerHTML = play
       ? `<button type="button" class="sh3-buybtn" data-action="${play.action}" data-memory-id="${item.id}"><span class="sh3-buy-l">${play.label}</span></button>`
-      : `<div class="sh3-buybtn is-done"><span class="sh3-seal">入手済</span></div>`;
+      : `<div class="sh3-buybtn is-done"><span class="sh3-seal">${shopItemEquipped(item.id) ? '装備中' : '入手済'}</span></div>`;
     if (play && typeof bindActions === 'function') bindActions();
   } else if (block) {
     buy.className = 'sh3-buy is-block';
@@ -7537,7 +7557,7 @@ function shop3BaseUrls() { return ['assets/backgrounds/shop_counter.webp', 'asse
 function shop3GroupUrls(gid) {
   const out = new Set();
   shop3Items(gid).forEach(it => {
-    if (!isShopItemUnlocked(it.id)) return;
+    if (!shop3Visible(it.id)) return;
     const a = shop3Art(it);
     if (a.src) out.add(a.src);
     if (a.type === 'stack') ['chip_red', 'chip_gold', 'chip_white', 'chip_blue'].forEach(c => out.add(`assets/ui/${c}.webp`));
@@ -9965,19 +9985,21 @@ function onAction(e) {
       // 物語の回想：題名のあと、勝った後の会話（幕間）を再戦せずに読み返す（3回目の外部の批評：題名しか開かなかった）
       const ek = data.episode;
       const canRead = INTERMISSIONS[ek] && Array.isArray(save.rewardCgSeen) && save.rewardCgSeen.includes(ek);
-      showEpisodeTitle(ek, canRead ? () => showIntermission(ek, () => startBgmForScreen()) : null, canRead ? () => {} : undefined, canRead ? '▶ 勝った後の会話を読む' : undefined);
+      // 会話の顔は場面の昼・夜で決める（今の切り替えや前の卓の値で決めない 2026-11-16）
+      if (state) state.horoyoi = false;
+      showEpisodeTitle(ek, canRead ? () => showIntermission(ek, () => { if (state) state.horoyoi = isHoroyoi(); startBgmForScreen(); }) : null, canRead ? () => {} : undefined, canRead ? '▶ 勝った後の会話を読む' : undefined);
       break;
     }
     case 'recall-night-ims': {
       // コレクションから：ほろ酔いの夜に勝った後の会話（幕間 h_<相手>）を再戦せずに読み返す
       const hk = data.ims;
-      if (INTERMISSIONS[hk] && Array.isArray(save.rewardCgSeen) && save.rewardCgSeen.includes(hk)) showIntermission(hk, () => startBgmForScreen());
+      if (INTERMISSIONS[hk] && Array.isArray(save.rewardCgSeen) && save.rewardCgSeen.includes(hk)) { if (state) state.horoyoi = true; showIntermission(hk, () => { if (state) state.horoyoi = isHoroyoi(); startBgmForScreen(); }); }
       break;
     }
     case 'recall-night-mid': {
       // コレクションから：ほろ酔いの夜の勝負の途中の会話（見た分だけ）
       const oid = data.opp;
-      if (HOROYOI_MID_SCENES[oid] && (save.horoyoiMidSeen || []).includes(oid)) showStoryScene('hmid_' + oid, () => startBgmForScreen());
+      if (HOROYOI_MID_SCENES[oid] && (save.horoyoiMidSeen || []).includes(oid)) { if (state) state.horoyoi = true; showStoryScene('hmid_' + oid, () => { if (state) state.horoyoi = isHoroyoi(); startBgmForScreen(); }); }
       break;
     }
     case 'home-night-toggle': {
@@ -9987,6 +10009,8 @@ function onAction(e) {
       else if (!save.deisuiMode && deisuiOpen()) save.deisuiMode = true;
       else { save.horoyoiMode = false; save.deisuiMode = false; }
       saveProgress();
+      // 前の卓の「夜かどうか」を持ち越さない（夜の卓の後に昼へ戻すと、会話の顔が酔ったミニキャラのままだった 2026-11-16）
+      if (state) state.horoyoi = isHoroyoi();
       if (save.horoyoiMode) { mpSfx('pour'); setTimeout(() => mpSfx('clink'), 1150); }
       toast(save.deisuiMode ? '泥酔の夜へ' : save.horoyoiMode ? 'ほろ酔いの夜へ' : '一周目（昼）に戻りました');
       render();
@@ -12008,7 +12032,7 @@ function showEquipModal() {
         ${rows}
       </div>
       <div class="equip-modal-footer">交換所に入荷した品を買うと選べます</div>
-      <div class="equip-modal-footer equip-modal-note">効果はバトル画面／ミニゲーム画面で反映されます</div>
+      <div class="equip-modal-footer equip-modal-note">効果はバトル画面／ミニゲーム画面で反映されます。夜の卓では、リコ先輩とミミは酔った姿のままです</div>
     </div>
   `;
   document.getElementById('stage').appendChild(overlay);
@@ -14669,7 +14693,8 @@ function showCollectionModal() {
 
   const allItems = SHOP_ITEMS;
   // 所持数は「今の棚にある品のうち持っているもの」で数える（クリア特典はクリアで所持扱い。廃止品は数えない）
-  const ownedItems = SHOP_ITEMS.filter(i => isItemOwned(i.id)).map(i => i.id);
+  // チップ拡張は上位を持つと下位が買えなくなる（効果が無いため）。その下位は「持っている」と数える（上から買うと100%に届かなかった 2026-11-16）
+  const ownedItems = SHOP_ITEMS.filter(i => isItemOwned(i.id) || ((shopItemBlock(i) || {}).kind === 'superseded')).map(i => i.id);
   const itemsByCat = {};
   allItems.forEach(i => {
     if (!itemsByCat[i.cat]) itemsByCat[i.cat] = [];
@@ -14705,14 +14730,16 @@ function showCollectionModal() {
   // 称号（30種）と物語の達成は、下の「称号」の欄に1つにまとめた。完成度の数え方も同じ範囲にそろえる
   const titleTotal = ACHIEVEMENTS.length;
   const titleGot = ACHIEVEMENTS.filter(a => save.achievements[a.id]).length;
+  // 完成度では、運だけで数万ハンドに1回の称号（神の手＝ロイヤルフラッシュ）は、取れた時だけ数える（無いと100%に届かなかった）
+  const luckOnly = ACHIEVEMENTS.filter(a => a.id === 'win_royal' && !save.achievements[a.id]).length;
 
   // 完成度（全体％）
   const totalScore =
-    stages.length + achievements.length + titleTotal + allItems.length + outfits.length;
+    stages.length + achievements.length + titleTotal - luckOnly + allItems.length;
+  // リコの衣装は交換所の品（見た目）で数えるので、衣装ギャラリーは完成度に足さない（同じ衣装を2回数えていた）
   const gotScore =
     stageCleared + achievements.filter(a => a.achieved).length + titleGot +
-    ownedItems.length + outfitUnlocked;
-  const progressPct = Math.round((gotScore / totalScore) * 100);
+    ownedItems.length;
 
   const stagesHtml = stages.map(s => `
     <div class="coll-stage ${s.cleared ? 'cleared' : 'locked'}">
@@ -14749,7 +14776,7 @@ function showCollectionModal() {
         <div class="coll-cg-label"><small>卒業試験に<wbr>合格で開放</small></div></div>`)
     // ほろ酔いの夜（二周目）の一枚絵：エンディングの後だけ欄を出す
     + (isEndingUnlocked() ? stageOrder.map(id => {
-      const opp = OPPONENTS[id], hk = hKey(id), ims = INTERMISSIONS[hk];
+      const opp = OPPONENTS[id], hk = nightCollKey(id), ims = INTERMISSIONS[hk];
       if (!opp || !ims) return '';
       if (rewardCgSeen.includes(hk)) return `<button class="coll-cg-card on is-night" data-action="view-reward-cg" data-cg-id="${hk}" title="ほろ酔いの${opp.name}の一枚絵を見る">
         <img src="${ims.cg}" alt="ほろ酔いの${opp.name}" loading="lazy"><span class="coll-cg-tag">夜</span><div class="coll-cg-label">ほろ酔い・${opp.name}<small class="coll-cg-more">${HOROYOI_CG_N[id]}枚</small></div></button>`;
@@ -14771,7 +14798,13 @@ function showCollectionModal() {
     return `<div class="coll-cg-card off is-set" title="未入手"><div class="coll-cg-locked">${GOLD_LOCK}</div>
         <div class="coll-cg-label"><small>「${c.name}」<wbr>${c.gift ? c.gift.replace('の夜の', 'の夜の<wbr>') : '交換所で入手'}</small></div></div>`;
   }).join('');
-  const rewardCgCount = stageOrder.filter(id => rewardCgSeen.includes(id)).length + (save.gradCgSeen ? 1 : 0) + (isEndingUnlocked() ? stageOrder.filter(id => rewardCgSeen.includes(hKey(id))).length : 0);   // ほろ酔いの夜の5枠も数える
+  const rewardCgCount = stageOrder.filter(id => rewardCgSeen.includes(id)).length + (save.gradCgSeen ? 1 : 0) + (isEndingUnlocked() ? stageOrder.filter(id => rewardCgSeen.includes(nightCollKey(id))).length : 0);   // ほろ酔いの夜の5枠も数える
+  // 完成度には一枚絵・CG集・戦術ノートも入れる（入れていなかったので、一枚絵が 0/11 でも 100% と出ていた 2026-11-16）。どれも手に入る道筋がある
+  const cgTotal = stageOrder.length + 1 + (isEndingUnlocked() ? stageOrder.length : 0);
+  const cgSetIdsColl = collCgSetIds().filter(id => !SHOP_ITEMS.some(i => i.id === id));   // 交換所の CG集は「交換所の品」で数え済み。ここは写真集（夜の報酬）だけ
+  const pctTotal = totalScore + cgTotal + cgSetIdsColl.length + Object.keys(TACTIC_NOTES).length;
+  const pctGot = gotScore + rewardCgCount + cgSetIdsColl.filter(id => isItemOwned(id)).length + notesCount;
+  const progressPct = Math.floor((pctGot / pctTotal) * 100);
 
   const achHtml = achievements.map(a => `
     <div class="coll-ach ${a.achieved ? 'on' : 'off'}">
@@ -14816,7 +14849,7 @@ function showCollectionModal() {
         <div class="collection-title">コレクション</div>
         <div class="collection-progress">
           <div class="collection-progress-bar"><div class="collection-progress-fill" style="width:${progressPct}%"></div></div>
-          <div class="collection-progress-text">${progressPct}% （${gotScore} / ${totalScore}）</div>
+          <div class="collection-progress-text">${progressPct}% （${pctGot} / ${pctTotal}）</div>
         </div>
         <div class="collection-coins">${UI_ICON.coin} 所持コイン：${save.coins}</div>
       </div>
@@ -14827,7 +14860,7 @@ function showCollectionModal() {
           <div class="coll-cgs">${rewardCgHtml}${rewardCgHtmlSecret}</div>
         </section>
         ${cgSetHtml ? `<section class="coll-section">
-          <h3 class="coll-section-title">CG集 <span class="coll-section-count">${Object.keys(CG_SETS).filter(id => isItemOwned(id)).length}/${Object.keys(CG_SETS).length}</span></h3>
+          <h3 class="coll-section-title">CG集 <span class="coll-section-count">${collCgSetIds().filter(id => isItemOwned(id)).length}/${collCgSetIds().length}</span></h3>
           <div class="coll-cgs">${cgSetHtml}</div>
         </section>` : ""}
         ${(() => {
@@ -14839,9 +14872,9 @@ function showCollectionModal() {
           const dayCards = ids.map(id => `<button class="memory-card" data-action="recall-episode" data-episode="${id}"><div class="memory-card-title">${OPPONENTS[id].name}に勝った後の会話</div><div class="memory-card-play">読む</div></button>`).join('');
           if (!night) return `<section class="coll-section"><h3 class="coll-section-title">会話 <span class="coll-section-count">${ids.length}/${stageOrder.length}</span></h3>
             <div class="memory-grid">${dayCards}</div></section>`;
-          const nIms = stageOrder.filter(id => OPPONENTS[id] && INTERMISSIONS[hKey(id)] && rewardCgSeen.includes(hKey(id)));
+          const nIms = stageOrder.filter(id => OPPONENTS[id] && INTERMISSIONS[nightCollKey(id)] && rewardCgSeen.includes(nightCollKey(id)));
           const nMid = stageOrder.filter(id => OPPONENTS[id] && HOROYOI_MID_SCENES[id] && (save.horoyoiMidSeen || []).includes(id));
-          const nightCards = nIms.map(id => `<button class="memory-card is-night" data-action="recall-night-ims" data-ims="${hKey(id)}"><div class="memory-card-title">ほろ酔い・${OPPONENTS[id].name}に勝った後の会話</div><div class="memory-card-play">読む</div></button>`).join('')
+          const nightCards = nIms.map(id => `<button class="memory-card is-night" data-action="recall-night-ims" data-ims="${nightCollKey(id)}"><div class="memory-card-title">ほろ酔い・${OPPONENTS[id].name}に勝った後の会話</div><div class="memory-card-play">読む</div></button>`).join('')
             + nMid.map(id => `<button class="memory-card is-night" data-action="recall-night-mid" data-opp="${id}"><div class="memory-card-title">ほろ酔い・${OPPONENTS[id].name}との勝負の途中の会話</div><div class="memory-card-play">読む</div></button>`).join('');
           return `<section class="coll-section coll-conv" data-tab="day"><h3 class="coll-section-title">会話</h3>
             <div class="coll-conv-tabs" role="tablist">
@@ -14868,7 +14901,7 @@ function showCollectionModal() {
         </section>
         <section class="coll-section">
           <h3 class="coll-section-title">戦術ノート <span class="coll-section-count">${notesCount}/${Object.keys(TACTIC_NOTES).length}</span></h3>
-          <div class="coll-notes">${Object.keys(TACTIC_NOTES).map(function(id){var n=TACTIC_NOTES[id];var got=(save.unlockedNotes||[]).indexOf(id)>=0;var eff=(NOTE_ARTICLES[id]||{}).effect||'';return `<div class="coll-note ${got?"on":"off"}" data-action="open-note" data-note="${id}" role="button" tabindex="0"><div class="coll-note-name">${got?n.name:"？？？"}</div><div class="coll-note-desc">${got?n.desc:"対戦相手の撃破か、交換所での購入で解放"}</div>${got&&eff?`<div class="coll-note-effect">対戦中の効果：${eff}</div>`:''}<div class="coll-note-read">${got?'▸ 本文を読む':'▸ 内容を見る（未解放）'}</div></div>`;}).join("")}</div>
+          <div class="coll-notes">${Object.keys(TACTIC_NOTES).map(function(id){var n=TACTIC_NOTES[id];var got=(save.unlockedNotes||[]).indexOf(id)>=0;var eff=(NOTE_ARTICLES[id]||{}).effect||'';return `<div class="coll-note ${got?"on":"off"}" data-action="open-note" data-note="${id}" role="button" tabindex="0"><div class="coll-note-name">${got?n.name:"？？？"}</div><div class="coll-note-desc">${got?n.desc:noteHowToGet(id)}</div>${got&&eff?`<div class="coll-note-effect">対戦中の効果：${eff}</div>`:''}<div class="coll-note-read">${got?'▸ 本文を読む':'▸ 内容を見る（未解放）'}</div></div>`;}).join("")}</div>
         </section>
         <section class="coll-section">
           <h3 class="coll-section-title">リコ衣装ギャラリー <span class="coll-section-count">${outfitUnlocked}/${outfits.length}</span></h3>

@@ -118,3 +118,12 @@
 
 - 11/15 泥酔の写真集（cgset_deisui_book、106枚・人ごと場面順、並び qa/out/deisui_photobook/order.json、検査 qa/deisuibook.mjs）とセリナ場面2の台詞・声の書き換えを配信（20261115a）。返事待ちの描き直し（sheet_r3〜r6）は指摘なし＝採用として入れた。受け取りの幕のリコの一言「みんにゃで、ぜーんぶうつってましゅ……あしたには、わしゅれてね♡」はユーザー承認済み（11/15）。残り：ぱにゃぱにゃの報酬、泥酔のホームの絵、DEISUI_READY=true と通しの検査。心理・論理・ほろ酔いの途中のバトルの作り直しは別の作業（local_b925688c）
 - 11/16 ほろ酔い・泥酔の夜の扉絵（題字の背景）10枚を描いて入れた（assets/episodes/night/h_|d_<相手>.webp、変換 qa/doorconvert.mjs、元絵と依頼文 qa/out/night_doors）。それまでは夜のホームの空の舞台の絵で代用していた。ほろ酔い第1夜は最初の絵が既存の一枚絵 horoyoi/rico_1 と構図が近く描き直した版を採用。リコの幕間の一言「圧が全部色気に」の声を「いろけ」の読みで作り直した（ims_h_grano_4）。絵はユーザーの確認待ち（指摘なし＝採用）
+
+## 11/16 交換所の総点検の残り（直したものは版の印 20261116i のコミット）
+| やること | 状態 | 次の一手 |
+|---|---|---|
+| 夜のミミのカットインの顔（mimi_cutin_*）とキャラ紹介の立ち絵に酔った版が無い | 未着手（絵が要る） | 描くかをユーザーに聞く。描くなら採用済みの酔ったミミを絵柄見本に |
+| 泥酔の夜のホームがほろ酔いと同じ絵 | 泥酔の公開前 | 泥酔の夜の絵をそろえる時に一緒に |
+| 昔「ボード危険度」ノートを買った人の払い戻しで、撃破でもらったノートまで消える恐れ（DISCONTINUED_REFUND） | 該当者は未確認 | 払い戻しの時に clearedStages に selina があれば board_danger を残す |
+| 廃止5品（panyu_range_lv2/3・panyu_gauge_plus_20/50・panyu_chrono）の残りのデータ | 害なし | 掃除するなら SHOP_COMMENTS・SHOP_UNLOCK・SHOP_TIERS・SHOP_PREREQ・applyItemEffect |
+| 点検の台本 | 使える | qa/shopaudit.mjs（3つの大きさ×全部の品）・qa/shopnight.mjs（夜の卓・持ち越し・完成度。QA_FULL=1 で 100% の確かめ） |

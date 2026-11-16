@@ -21214,3 +21214,17 @@ html.is-compact .ep-open-new { font-size: calc(14px / var(--game-scale, 1)); }
 .ep-unlock { word-break: keep-all; }
 /* 会話の名前の横の丸：ミニキャラの頭は切り出しで真ん中に顔があるので、中央合わせ（2026-11-16） */
 .story-face img { object-position: 50% 50%; }
+
+/* 2026-11-16 交換所の総点検：分類が7つ（CG集）に増え、スマホで7つ目の札が「ロビーへ」の上に重なって押せなかった。
+   8つの押す所（分類7＋ロビーへ）を縦に収める。1つ94（縮めた舞台で 667x375 でも 44px）、間4 */
+html.is-compact .shop-screen.v3 .sh3-cats { top: 8px; gap: 4px; }
+html.is-compact .shop-screen.v3 .sh3-cat { height: 94px; }
+html.is-compact .shop-screen.v3 .sh3-back { top: 694px; height: 94px; }
+/* 衣装の札：左上の「だれが着るか」の印が、右上の「入手済」を隠していた。入手済は印の下へずらす */
+.shop-screen.v3 .sh3-card .sh3-who ~ .sh3-owned { top: 22px; }
+html.is-compact .shop-screen.v3 .sh3-card .sh3-who ~ .sh3-owned { top: calc(22px * var(--inv-scale, 1)); }
+/* 細めの横画面（667x375 など、横÷縦が 1.95 未満）：舞台の幅が狭く、品の絵がグラーノの後ろに半分隠れていた。品の絵を少し細くして説明の欄の左に寄せ、手前に出す（グラーノの顔にはかからない） */
+@media (max-aspect-ratio: 39/20) {
+  html.is-compact .shop-screen.v3 .sh3-model { z-index: 4; width: 400px; right: 456px; }
+  html.is-compact .shop-screen.v3 .sh3-model.is-scene .sh3-frame { width: 392px; }
+}
