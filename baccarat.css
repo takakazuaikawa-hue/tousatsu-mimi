@@ -416,3 +416,30 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 .bc-sub { z-index: 3 !important; }
 /* 幅の狭い横画面：合計の欄の名前がはみ出さないように */
 @media (max-width: 720px) { .bc-side-head { padding: calc(var(--u) * 3) calc(var(--u) * 3); } .bc-side-n { letter-spacing: 0; } .bc-dealer { width: calc(var(--u) * 80); } }
+
+/* ---- 今夜の演目（クリア後の遊び5つを選ぶ窓）。.enc-*。ホームの上に重ねる ---- */
+#stage > .enc-host { background: rgba(4,1,2,.82); display: grid; place-items: center; padding: calc(var(--u) * 8) max(var(--safe-x, 0px), calc(var(--u) * 12)); z-index: 60; animation: bc-fade .18s; }
+.enc-panel { width: min(100%, calc(var(--u) * 800)) !important; }
+.enc-g { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: calc(var(--u) * 7); }
+.enc-c { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--u) * 2); padding: 0 0 calc(var(--u) * 6); text-align: left; overflow: hidden;
+  background: linear-gradient(180deg, #4d0f15, #22060a); border: 1px solid var(--bc-gold-d); outline: 1px solid rgba(217,178,105,.3); outline-offset: -4px; border-radius: 2px; transition: filter .15s, box-shadow .15s, transform .15s; }
+.enc-c:hover:not(.is-lock) { filter: brightness(1.15); box-shadow: 0 0 0 2px var(--bc-gold-hi); }
+.enc-c:active:not(.is-lock) { transform: translateY(2px); }
+.enc-c.is-cur { box-shadow: 0 0 0 2px var(--bc-gold-hi), 0 0 calc(var(--u) * 14) rgba(239,205,130,.4); }
+.enc-pic { display: block; width: 100%; aspect-ratio: 1 / .72; background: #1a0508 center / cover no-repeat; -webkit-mask-image: linear-gradient(#000 76%, transparent); mask-image: linear-gradient(#000 76%, transparent); }
+.enc-c > b { padding: 0 calc(var(--u) * 8); font: 800 var(--r-btn2, 16px)/1.25 var(--bc-min); color: var(--bc-gold-hi); letter-spacing: .02em; }
+.enc-d { padding: 0 calc(var(--u) * 8); font-size: var(--r-note, 14px); line-height: 1.4; color: var(--bc-ivory); min-height: 2.8em; }
+.enc-s { margin: calc(var(--u) * 2) calc(var(--u) * 8) 0; padding: 1px 7px; font-size: var(--r-note, 14px); line-height: 1.4; color: #2a1608; background: linear-gradient(180deg, #f1d590, #c79a4c); }
+.enc-s.is-lock { color: var(--bc-muted); background: rgba(0,0,0,.45); border: 1px solid rgba(217,178,105,.3); }
+.enc-s.is-need { color: var(--bc-ivory); background: rgba(40,80,160,.55); }
+.enc-c.is-lock { cursor: default; }
+.enc-c.is-lock .enc-pic, .enc-c.is-lock > b, .enc-c.is-lock .enc-d { filter: grayscale(1) brightness(.5); }
+.enc-new { position: absolute; left: calc(var(--u) * 6); top: calc(var(--u) * 6); padding: 0 7px; font: 700 var(--r-note, 14px)/1.4 var(--bc-num); font-style: normal; letter-spacing: .1em; color: #2a1608; background: var(--bc-gold-hi); box-shadow: 0 0 10px rgba(239,205,130,.8); }
+.enc-panel footer button { min-height: max(36px, calc(var(--u) * 34)); padding: 0 14px; font-size: var(--r-btn2, 16px); border: 1px solid var(--bc-gold-d); border-radius: 2px; background: rgba(20,5,7,.9); }
+@media (max-width: 720px) { .enc-c > b { font-size: var(--r-label, 15px); } }
+/* 幅の狭い横画面：合計の数字を少し小さく（「勝ち」の印が欄から出ていた） */
+@media (max-width: 720px) { .bc-tot { font-size: calc(var(--u) * 28); } }
+.enc-c { word-break: keep-all; overflow-wrap: normal; }
+.enc-c > b { white-space: nowrap; letter-spacing: 0; }
+.enc-s { white-space: nowrap; }
+@media (max-width: 900px) { .enc-c > b { font-size: var(--r-label, 15px); } }

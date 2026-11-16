@@ -1161,6 +1161,7 @@
     requestAnimationFrame(() => { paintRoads(); loop(); });
   }
   function teardown() {
+    closeHub();
     G++;
     if (S && S.pending) { save.coins = coins() + S.pending; S.pending = 0; if (S.A) S.A.pendingRet = 0; keep(); }
     if (sq) { sq.destroy(); sq = null; }
@@ -1170,7 +1171,91 @@
     document.querySelectorAll('#stage > .bc-host').forEach(e => e.remove());
     S = null;
   }
-  function onAction(action) { if (action === 'baccarat-open') open(); }
+  // =============================================================
+  // 今夜の演目：クリア後の遊び5つ（零時の卓・ほろ酔いの夜・泥酔の夜・5ポーカー・女神バカラ）を1か所から選ぶ（2026-11-16 ユーザー）
+  // ホームの札（昼）と月のボタンから開く。夜への切り替えも、ここの札で行う。画面の本当の px で描く（バカラの卓と同じ作り）
+  // =============================================================
+  let hub = null;
+  const gameAction = (action) => { try { onGameAction({ currentTarget: { dataset: { action } }, preventDefault() { }, stopPropagation() { }, target: document.body }); } catch (e) { console.error(e); } };
+  const onGameAction = (e) => window.onAction ? window.onAction(e) : onAction_(e);
+  function onAction_(e) { /* game.js の onAction（同じページの関数）を名前で呼ぶ */ return (0, eval)('onAction')(e); }
+  function hubCards() {
+    const night = !!save.horoyoiMode, deisui = night && !!save.deisuiMode;
+    const hDone = (save.horoyoiCleared || []).length, dDone = (save.deisuiCleared || []).length, N = STAGE_ORDER.length;
+    const ri = window.AllstarUI && AllstarUI.runInfo ? AllstarUI.runInfo() : null;
+    const A = store() || {};
+    let dOpen = false, hAll = false, dDev = false;
+    try { dOpen = deisuiOpen(); hAll = horoyoiAllCleared(); dDev = deisuiDev(); } catch (e) { }
+    const mpOwn = (() => { try { return isItemOwned('memory_minipoker'); } catch (e) { return false; } })();
+    return [
+      { id: 'allstar', title: '零時の卓', desc: '六人で一つの卓。|最後の一人が優勝', art: 'assets/ui/allstar_opening.webp', pos: '50% 30%',
+        st: ri ? `続き・残り${ri.alive}人` : '優勝 2,000', act: 'game:' + (ri ? 'allstar-resume' : 'allstar-open'), lock: !(window.AllstarUI && AllstarUI.isUnlocked()) && 'ヴェルベットに|勝つと開く' },
+      { id: 'horoyoi', title: 'ほろ酔いの夜', desc: '酔った5人と、|もう一周', art: 'assets/episodes/night/h_rico_tutorial.webp', pos: '50% 20%',
+        st: night && !deisui ? 'いま、ここ' : hDone >= N ? '制覇' : `第${hDone + 1}夜／全${N}夜`, cur: night && !deisui, act: 'night-h' },
+      { id: 'deisui', title: '泥酔の夜', desc: '記憶が飛ぶ、|むちゃくちゃな夜', art: 'assets/episodes/night/d_rico_tutorial.webp', pos: '50% 20%',
+        st: deisui ? 'いま、ここ' : dDone >= N ? '制覇' : `第${dDone + 1}夜／全${N}夜`, cur: deisui, act: 'night-d', lock: !dOpen && (!hAll ? 'ほろ酔いの夜を|制覇すると開く' : '準備中') },
+      { id: 'five', title: 'ファイブポーカー', desc: '5枚を替えて、|役を作る', art: 'assets/characters/mimi_mini.webp', pos: '50% 20%', fit: 'contain',
+        st: mpOwn ? 'コインを賭ける' : '交換所で入手', act: 'game:' + (mpOwn ? 'play-minipoker' : 'open-shop'), need: !mpOwn },
+      { id: 'baccarat', title: '女神バカラ', desc: 'ウンメの横で、|勝つ方に賭ける', art: ART.goddess, pos: '62% 12%',
+        st: A.hands ? `${A.hands}手・通算 ${A.net >= 0 ? '＋' : '−'}${fmt(Math.abs(A.net || 0))}` : '卓は4つ', act: 'baccarat', fresh: !A.hands },
+    ];
+  }
+  function closeHub() { if (hub) { hub.remove(); hub = null; } document.querySelectorAll('#stage > .enc-host').forEach(e => e.remove()); }
+  function openHub() {
+    if (!isUnlocked()) { try { toast('今夜の演目は、エンディングの後に開きます'); } catch (e) { } return; }
+    closeHub();
+    const night = !!save.horoyoiMode;
+    hub = document.createElement('div');
+    hub.className = 'bc-host enc-host';
+    hub.innerHTML = `<section class="bc-panel enc-panel" role="dialog" aria-modal="true" aria-label="今夜の演目">
+      <header><b>今夜の演目</b><span class="bc-g-pg">クリア後の遊びを選ぶ</span><button type="button" data-enc="close">閉じる</button></header>
+      <div class="enc-g">${hubCards().map(c => `<button type="button" class="enc-c${c.cur ? ' is-cur' : ''}${c.lock ? ' is-lock' : ''}" data-enc="go" data-act="${c.lock ? '' : c.act}" data-id="${c.id}"${c.lock ? ' aria-disabled="true"' : ''}>
+        <span class="enc-pic" style="background-image:url('${c.art}');background-position:${c.pos};${c.fit ? 'background-size:' + c.fit + ';' : ''}"></span>
+        ${c.fresh ? '<i class="enc-new">NEW</i>' : ''}
+        <b>${c.title}</b><span class="enc-d">${c.desc.replace(/\|/g, '<br>')}</span>
+        <span class="enc-s${c.lock ? ' is-lock' : c.need ? ' is-need' : ''}">${(c.lock || c.st).replace(/\|/g, '<br>')}</span></button>`).join('')}</div>
+      ${night ? '<footer><button type="button" data-enc="go" data-act="night-off">一周目（昼）に戻る</button></footer>' : ''}</section>`;
+    hub.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-enc]');
+      if (!b) { if (e.target === hub) closeHub(); return; }
+      if (b.dataset.enc === 'close') return closeHub();
+      const act = b.dataset.act; if (!act) { sfx('tap'); return; }
+      closeHub();
+      if (act === 'baccarat') open();
+      else if (act.startsWith('night-')) nightSet(act.slice(6));
+      else if (act.startsWith('game:')) gameAction(act.slice(5));
+    });
+    document.getElementById('stage').appendChild(hub);
+    sfx('flip');
+  }
+  // 昼⇔ほろ酔い⇔泥酔の切り替え（game.js の home-night-toggle と同じ後始末）
+  function nightSet(mode) {
+    if (!isUnlocked()) return;
+    if (mode === 'd' && !(typeof deisuiOpen === 'function' && deisuiOpen())) return;
+    save.horoyoiMode = mode !== 'off'; save.deisuiMode = mode === 'd';
+    keep();
+    try { if (state) state.horoyoi = isHoroyoi(); } catch (e) { }
+    if (save.horoyoiMode) { sfx('pour'); setTimeout(() => sfx('clink'), 1150); }
+    try { toast(save.deisuiMode ? '泥酔の夜へ' : save.horoyoiMode ? 'ほろ酔いの夜へ' : '一周目（昼）に戻りました'); } catch (e) { }
+    try { render(); } catch (e) { }
+  }
+  // ホーム：エンディングの後、月のボタンと（昼の）卓の札を「今夜の演目」の入口にする。home.js の renderHomeLobby から呼ぶ
+  function decorateHome(root) {
+    if (!root || !isUnlocked()) return;
+    const sw = root.querySelector('.h15-night');
+    if (sw) { sw.dataset.action = 'baccarat-hub'; sw.hidden = false; sw.title = '今夜の演目（遊びを選ぶ）'; sw.setAttribute('aria-label', '今夜の演目：クリア後の遊びを選ぶ'); }
+    const ticket = root.querySelector('.h15-ticket');
+    if (ticket && !save.horoyoiMode) {
+      ticket.dataset.action = 'baccarat-hub'; delete ticket.dataset.opponent;
+      ticket.querySelector('.h15-lbl').textContent = '今夜の演目';
+      ticket.querySelector('.h15-prize').innerHTML = '<span>遊びを選ぶ</span>';
+      ticket.setAttribute('aria-label', '今夜の演目へ。零時の卓・ほろ酔いの夜・泥酔の夜・ファイブポーカー・女神バカラから選ぶ');
+    }
+  }
+  function onAction(action) {
+    if (action === 'baccarat-open') open();
+    else if (action === 'baccarat-hub') openHub();
+  }
 
   // ---- 検査の出入口（qa/baccaratshot.mjs だけが使う） ----
   const _qa = {
@@ -1181,5 +1266,5 @@
     pick(id) { if (pickResolve) pickResolve(id); }, picking: () => !!pickResolve, dealers: DEALERS,
     feed(str) { S.res = S.A.res = str.split('').map(w => ({ w, pp: false, bp: false, nat: false })); paintRoads(); },
   };
-  window.BaccaratUI = { mount, teardown, onAction, open, isUnlocked, ART, _qa };
+  window.BaccaratUI = { mount, teardown, onAction, open, openHub, closeHub, decorateHome, isUnlocked, ART, _qa };
 })();

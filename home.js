@@ -64,6 +64,8 @@ function renderHomeLobby() {
   // クリア後（ヴェルベットに勝った後）は札と額が「零時の卓」の入口になる（allstar-ui.js）
   // ほろ酔いの夜の間は、札と額をほろ酔いの卓の入口のままにする（零時の卓は昼に戻すと入れる）
   if (window.AllstarUI && !night) AllstarUI.decorateHome(root);
+  // エンディングの後：月のボタンと（昼の）札を「今夜の演目」（零時の卓・ほろ酔いの夜・泥酔の夜・ファイブポーカー・女神バカラを選ぶ窓）の入口にする（baccarat-ui.js）
+  if (window.BaccaratUI) BaccaratUI.decorateHome(root);
   root.querySelector('.h15-frame .h15-sub').textContent = night ? (next ? dnm + 'の相手' : dnm + '制覇') : root.querySelector('.h15-frame .h15-sub').textContent;
   // 昼⇔夜の切り替え（エンディングを見た後だけ出す）
   const sw = root.querySelector('[data-action="home-night-toggle"]');
