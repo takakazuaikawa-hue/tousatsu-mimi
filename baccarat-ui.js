@@ -26,6 +26,28 @@
     mimi: 'assets/ui/face_chibi_mimi.webp',
   };
   const DEALER_NAME = 'ディーラー';
+  // ---- ディーラー（2026-11-16 ユーザー：4案とも採用・全員うさ耳あり・入る時に卓を選ぶ＋山が替わる時に交代も選べる）----
+  // 台詞は [話す人, 文] にすると名前を替えられる（双子）。{n}{l} は数や札に置き換える。名前と口調は仮（ユーザーの確認待ち）
+  const DEALERS = [
+    { id: 'tika', name: 'ティカ', kind: 'ぜんまい人形', intro: '正確無比。|絞りの間だけ、|歯車が速くなる', art: null, L: {
+      hello: 'いらっしゃいませ。当機がお相手いたします。|カチ', nomore: 'ノーモアベットでございます。カチ', look: '見（ケン）でございますね。では、配ります',
+      natural: 'ナチュラル{n}でございます', p3: 'プレイヤーに、もう1枚', b3: 'バンカーに、もう1枚', shoe: '新しい山でございます。最初の札は{l}、|{n}枚を捨てます。カチ' } },
+    { id: 'ocho', name: 'お蝶', kind: '賭場の姐さん', intro: '東方の賭場の|壺振り上がり。|「勝負」の一声', art: null, L: {
+      hello: 'いらっしゃい。お手柔らかにね、兎さん', nomore: 'よござんすか。……勝負', look: 'おや、見（ケン）かい。目の肥えたお客だね',
+      natural: 'ナチュラル{n}。きれいな目だねぇ', p3: 'プレイヤーに、もう一枚', b3: 'バンカーに、もう一枚', shoe: '山を替えるよ。頭の札は{l}、|{n}枚、流すからね' } },
+    { id: 'twins', name: 'プントとバンコ', kind: '双子', intro: '青のプントが|プレイヤー側、|赤のバンコが|バンカー側', art: null, L: {
+      hello: ['プント', 'いらっしゃーい！|プレイヤー側はプントが配るよ'], nomore: ['プント', 'はい、そこまで！　ノーモアベット！'], look: ['バンコ', '見（ケン）ね。ちゃんと見てなさいよ'],
+      natural: (v) => [v.side === 'P' ? 'プント' : 'バンコ', 'ナチュラル{n}！'], p3: ['プント', 'プレイヤーにもう1枚、いくよ！'], b3: ['バンコ', 'バンカーにもう1枚。見てて'], shoe: ['プント', '新しい山だよ！　最初は{l}だから、|{n}枚ポイっと捨てるね'] } },
+    { id: 'pico', name: 'ピコ', kind: '見習い天使', intro: '女神さまの部下。|おどおどしながら|一生けんめい', art: null, L: {
+      hello: 'い、いらっしゃいませ！|見習いのピコですっ', nomore: 'ノ、ノーモアベットですぅ！', look: 'け、見（ケン）ですね！　配りますっ',
+      natural: 'わっ、ナチュラル{n}です！', p3: 'プレイヤーさんに、もう1枚ですっ', b3: 'バンカーさんに、もう1枚ですっ', shoe: 'あ、新しい山です！　最初の札は{l}なので、|{n}枚捨てますっ' } },
+  ];
+  let DL = DEALERS[0], pickResolve = null;
+  function dsay(key, vars, ms) {
+    let v = DL.L[key]; if (typeof v === 'function') v = v(vars || {});
+    let name = DL.name; if (Array.isArray(v)) { name = v[0]; v = v[1]; }
+    say('dealer', v.replace(/\{(\w+)\}/g, (_, k) => (vars && vars[k] != null ? vars[k] : '')), ms, name);
+  }
   const SIDE_JA = { P: 'プレイヤー', B: 'バンカー', T: '引き分け' };
   const SPOTS = [['PP', 'プレイヤーのペア', '11倍'], ['P', 'プレイヤー', '1倍'], ['T', '引き分け', '8倍'], ['B', 'バンカー', '1倍 −5%'], ['BP', 'バンカーのペア', '11倍']];
   const C = BC.CONFIG;
@@ -86,7 +108,7 @@
         <span class="bc-next"></span>
       </button>
       <section class="bc-table">
-        <div class="bc-dealer"><b>${DEALER_NAME}</b></div>
+        <div class="bc-dealer"><b class="bc-dealer-n"></b></div>
         <div class="bc-side bc-p" data-side="P"><span class="bc-side-n">プレイヤー</span><b class="bc-tot"></b><div class="bc-cards"></div></div>
         <div class="bc-side bc-b" data-side="B"><span class="bc-side-n">バンカー</span><b class="bc-tot"></b><div class="bc-cards"></div></div>
         <div class="bc-banner" aria-live="polite"></div>
@@ -209,8 +231,8 @@
   // =============================================================
   const WHO = { goddess: '運命の女神', rico: 'リコ先輩', mimi: 'ミミ', dealer: DEALER_NAME };
   let subTimer = 0, subQueue = [];
-  function say(who, text, ms) {
-    subQueue.push({ who, text, ms: ms || Math.min(4200, 1500 + text.length * 75) });
+  function say(who, text, ms, name) {
+    subQueue.push({ who, text, name, ms: ms || Math.min(4200, 1500 + text.length * 75) });
     if (!subTimer) nextSub();
   }
   function nextSub() {
@@ -220,7 +242,7 @@
     if (!s) { ui.sub.dataset.on = '0'; return; }
     ui.sub.dataset.on = '1'; ui.sub.dataset.who = s.who;
     ui['sub-face'].innerHTML = ART[s.who] ? `<img src="${ART[s.who]}" alt="">` : '';
-    ui['sub-n'].textContent = WHO[s.who];
+    ui['sub-n'].textContent = s.name || WHO[s.who];
     ui['sub-t'].innerHTML = esc(s.text).replace(/\|/g, '<wbr>');
     if (s.who === 'goddess') { ui.god.classList.remove('is-talk'); void ui.god.offsetWidth; ui.god.classList.add('is-talk'); }
     subTimer = setTimeout(nextSub, s.ms);
@@ -554,12 +576,12 @@
     S.shoe = BC.createShoe(Math.floor(Math.random() * 2 ** 31) + 1);
     S.res = A.res = []; A.shoe = { seed: S.shoe.seed, pos: S.shoe.pos, hands: 0 };
     S.oracle = null; S.pledge = null; paintPins();
-    if (!first) say('dealer', `新しいシューです。最初の1枚は${S.shoe.burn.label}、|${S.shoe.burned}枚を捨てます`, 3200);
+    if (!first) dsay('shoe', { l: S.shoe.burn.label, n: S.shoe.burned }, 3400);
   }
   async function hand() {
     const A = S.A;
     // ---- 賭ける ----
-    if (BC.needNewShoe(S.shoe)) newShoe(false);
+    if (BC.needNewShoe(S.shoe)) { await switchAsk(); newShoe(false); }
     S.bets = {}; S.cards = { P: [], B: [] }; S.vals = { P: [], B: [] };
     for (const w of ['P', 'B']) { ui.sides[w].querySelector('.bc-cards').innerHTML = ''; ui.sides[w].dataset.res = ''; }
     host.querySelectorAll('.bc-spot').forEach(e => { delete e.dataset.res; });
@@ -583,15 +605,15 @@
     keep();
     setPhase('deal');
     S.looks = stake ? 0 : S.looks + 1;
-    say('dealer', stake ? 'ノーモアベット' : '見（ケン）ですね。では', 1400);
+    dsay(stake ? 'nomore' : 'look', null, 1700);
     await dealCard('P', 0, h.p[0]); await dealCard('B', 0, h.b[0]); await dealCard('P', 1, h.p[1]); await dealCard('B', 1, h.b[1]);
     const mine = bets.P ? 'P' : bets.B ? 'B' : null;
     const first = mine ? other(mine) : 'P', second = other(first);
     await flip(first, 0); await flip(first, 1);
     await reveal(second, 0, mine); await reveal(second, 1, mine);
-    if (h.natural) { say('dealer', `ナチュラル${Math.max(BC.total(h.p.slice(0, 2)), BC.total(h.b.slice(0, 2)))}`, 1500); await wait(500); }
-    if (h.p[2]) { say('dealer', 'プレイヤーに、もう1枚', 1400); await dealCard('P', 2, h.p[2], true); await reveal('P', 2, mine); }
-    if (h.b[2]) { say('dealer', 'バンカーに、もう1枚', 1400); await dealCard('B', 2, h.b[2], true); await reveal('B', 2, mine); }
+    if (h.natural) { const pn = BC.total(h.p.slice(0, 2)), bn = BC.total(h.b.slice(0, 2)); dsay('natural', { n: Math.max(pn, bn), side: pn >= bn ? 'P' : 'B' }, 1700); await wait(500); }
+    if (h.p[2]) { dsay('p3', null, 1500); await dealCard('P', 2, h.p[2], true); await reveal('P', 2, mine); }
+    if (h.b[2]) { dsay('b3', null, 1500); await dealCard('B', 2, h.b[2], true); await reveal('B', 2, mine); }
     // ---- 決着 ----
     setPhase('settle');
     save.coins = coins() + pay.ret; S.pending = 0; A.pendingRet = 0;
@@ -627,6 +649,7 @@
     const g = G;
     try {
       if (!S.A.demoSeen) await demo();
+      if (!S.dealerChosen) await chooseDealer();
       while (g === G && live()) await hand();
     } catch (e) { if (e !== STOP) console.error(e); }
   }
@@ -739,6 +762,37 @@
     ui.layer.appendChild(el);
     requestAnimationFrame(() => paintBigRoads(el));
   }
+  // ---- 卓（ディーラー）を選ぶ：入る時と、山が替わる時 ----
+  function paintDealer() { const el = host && host.querySelector('.bc-dealer-n'); if (el) el.textContent = DL.name; if (host) host.dataset.dealer = DL.id; }
+  function chooseDealer() {
+    return new Promise((res, rej) => {
+      const g = G; closeLayer(); hush();
+      const el = document.createElement('div'); el.className = 'bc-over bc-pick';
+      el.innerHTML = `<section class="bc-panel"><header><b>卓を選ぶ</b><span class="bc-g-pg">どの卓も決まりと配当は同じ</span></header>
+        <div class="bc-pick-g">${DEALERS.map(d => `<button type="button" data-bc="pick" data-id="${d.id}"${d.id === DL.id ? ' class="is-cur"' : ''}>${d.art ? `<img src="${d.art}" alt="">` : ''}<span class="bc-pick-k">${d.kind}</span><b>${d.name}</b><span class="bc-pick-i">${d.intro.replace(/\|/g, '<wbr>')}</span></button>`).join('')}</div></section>`;
+      ui.layer.appendChild(el);
+      pickResolve = (id) => {
+        pickResolve = null; el.remove();
+        if (g !== G || !live()) return rej(STOP);
+        DL = DEALERS.find(d => d.id === id) || DL; S.A.dealer = DL.id; S.dealerChosen = true; keep(); paintDealer(); sfx('flip');
+        dsay('hello', null, 2600); res();
+      };
+    });
+  }
+  function switchAsk() {
+    return new Promise((res, rej) => {
+      const g = G; closeLayer(); hush();
+      const el = document.createElement('div'); el.className = 'bc-over bc-pick';
+      el.innerHTML = `<section class="bc-panel bc-sw"><header><b>札の山が替わります</b></header><p class="bc-sw-t">罫線は新しくなります。ディーラーはどうしますか？</p>
+        <footer><button type="button" data-bc="pick" data-id="@other">卓を替える</button><button type="button" class="bc-go" data-bc="pick" data-id="@stay"><b>${DL.name}のまま</b></button></footer></section>`;
+      ui.layer.appendChild(el);
+      pickResolve = (id) => {
+        pickResolve = null; el.remove();
+        if (g !== G || !live()) return rej(STOP);
+        if (id === '@other') chooseDealer().then(res, rej); else res();
+      };
+    });
+  }
   function closeLayer() { ui.layer.querySelectorAll('.bc-over').forEach(e => e.remove()); }
 
   // =============================================================
@@ -762,6 +816,7 @@
       case 'look': if (S.phase === 'bet' && betResolve) betResolve({ look: true }); break;
       case 'deal': if (S.phase === 'bet' && betResolve && stakeOf(S.bets) >= C.minBet) betResolve({ look: false }); break;
       case 'answer': answer(+b.dataset.i); break;
+      case 'pick': if (pickResolve) pickResolve(b.dataset.id); break;
       case 'sqopen': if (sq) sq.open(); break;
       case 'sqmode': S.A.sq = !S.A.sq; keep(); paintBets(); say('rico', S.A.sq ? '賭けた側の札は、自分でめくるよ' : '札はディーラーがすぐ開くよ', 2000); break;
       case 'roads': openRoads(); break;
@@ -776,7 +831,7 @@
     }
   }
   function replayDemo() { G++; if (betResolve) betResolve = null; S.A.demoSeen = false; restart(); }
-  function restart() { G++; tapResolve = null; betResolve = null; loop(); }
+  function restart() { G++; tapResolve = null; betResolve = null; pickResolve = null; closeLayer(); loop(); }
   function quit() { try { goLobby(); } catch (e) { teardown(); } }
 
   // =============================================================
@@ -798,7 +853,8 @@
     if (host && host.isConnected) return;
     G++;
     S = { A, bets: {}, cards: { P: [], B: [] }, vals: { P: [], B: [] }, phase: 'bet', chip: A.chip || 10, res: A.res || [], looks: 0, winRun: 0, lossRun: 0, lastStake: 0, pledge: null, oracle: null, q: null, pending: 0 };
-    build();
+    DL = DEALERS.find(d => d.id === A.dealer) || DEALERS[0];
+    build(); paintDealer();
     try { S.shoe = A.shoe ? BC.restoreShoe(A.shoe) : null; } catch (e) { S.shoe = null; }
     if (!S.shoe || BC.needNewShoe(S.shoe)) newShoe(true);
     ui.favor.dataset.n = A.favor;
@@ -809,7 +865,7 @@
     G++;
     if (S && S.pending) { save.coins = coins() + S.pending; S.pending = 0; if (S.A) S.A.pendingRet = 0; keep(); }
     if (sq) { sq.destroy(); sq = null; }
-    hush(); tapResolve = null; betResolve = null;
+    hush(); tapResolve = null; betResolve = null; pickResolve = null;
     if (ui.ro) { ui.ro.disconnect(); ui.ro = null; }
     if (host) { host.remove(); host = null; }
     document.querySelectorAll('#stage > .bc-host').forEach(e => e.remove());
@@ -823,6 +879,7 @@
     bet(k, n) { for (let i = 0; i < (n || 1); i++) addBet(k); },
     deal() { if (betResolve) betResolve({ look: false }); }, look() { if (betResolve) betResolve({ look: true }); },
     ask: askQuestion, oracle: giveOracle, answer, setFavor, guide: openGuide, roads: openRoads,
+    pick(id) { if (pickResolve) pickResolve(id); }, picking: () => !!pickResolve, dealers: DEALERS,
     feed(str) { S.res = S.A.res = str.split('').map(w => ({ w, pp: false, bp: false, nat: false })); paintRoads(); },
   };
   window.BaccaratUI = { mount, teardown, onAction, open, isUnlocked, ART, _qa };

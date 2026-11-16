@@ -59,6 +59,8 @@ if (process.env.QA_DEMO) {
   for (const [n, t] of [['demo_1', 1500], ['demo_bet', 4200], ['demo_deal', 6500], ['demo_sq1', 9500], ['demo_sq2', 4800], ['demo_sq3', 4500], ['demo_end', 5200]]) { await sleep(t); await snap(n, 0); }
   await until(`!document.querySelector('.bc-host').dataset.demo`, 30000); await sleep(600);
 }
+// 卓（ディーラー）を選ぶ窓
+if (await until(`${Q}.picking()`, 6000)) { await snap('pick', 400); await ev(`${Q}.pick('${process.env.QA_DEALER || 'ocho'}')`); await sleep(700); }
 // 罫線を入れて、賭ける場面
 await ev(`${Q}.feed('BBBPBBPPPBTBBBBBBBPPBPBPPBBTPPPPBB')`); await sleep(300);
 await snap('bet_empty');

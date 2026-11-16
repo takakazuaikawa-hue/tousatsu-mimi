@@ -250,6 +250,18 @@
 .bc-br-l { font: 700 var(--r-note, 14px)/1.2 var(--bc-min); color: var(--bc-gold); white-space: nowrap; }
 .bc-br-grid .r-bead { height: calc(var(--u) * 84); } .bc-br-grid .r-big { height: calc(var(--u) * 96); }
 .bc-br-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; } .bc-br-3 .bc-rd { height: calc(var(--u) * 54); }
+.bc-pick .bc-panel { width: min(100%, calc(var(--u) * 760)); }
+.bc-pick-g { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: calc(var(--u) * 8); }
+.bc-pick-g button { display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--u) * 3); min-height: calc(var(--u) * 150); padding: calc(var(--u) * 8) calc(var(--u) * 9); text-align: left; overflow: hidden;
+  background: linear-gradient(180deg, #5a1218, #2a0709); border: 1px solid var(--bc-gold-d); outline: 1px solid rgba(217,178,105,.3); outline-offset: -4px; border-radius: 2px; transition: filter .15s, box-shadow .15s; }
+.bc-pick-g button img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: 50% 8%; margin-bottom: 2px; }
+.bc-pick-g button.is-cur { box-shadow: 0 0 0 2px var(--bc-gold-hi); }
+.bc-pick-g button:active { filter: brightness(1.3); }
+.bc-pick-k { font-size: var(--r-note, 14px); color: var(--bc-gold); letter-spacing: .08em; }
+.bc-pick-g b { font: 800 var(--r-mission, 20px)/1.2 var(--bc-min); color: var(--bc-ivory); }
+.bc-pick-i { font-size: var(--r-note, 14px); line-height: 1.4; color: var(--bc-muted); overflow-wrap: normal; }
+.bc-sw { width: min(100%, calc(var(--u) * 420)) !important; }
+.bc-sw-t { margin: 0; font-size: var(--r-body, 17px); line-height: 1.5; }
 .bc-demo-skip { position: absolute; right: max(var(--safe-x, 0px), calc(var(--u) * 12)); top: calc(var(--u) * 5); pointer-events: auto; min-height: max(30px, calc(var(--u) * 30)); padding: 0 12px !important; font-size: var(--r-label, 15px); background: rgba(20,5,7,.96) !important; border: 1px solid var(--bc-gold) !important; border-radius: 2px; }
 .bc-host[data-demo] .bc-tools { visibility: hidden; }
 
