@@ -155,7 +155,7 @@
     loadBack(opt.back);
     const g = canvas.getContext('2d');
     let W = 0, H = 0, dpr = 1, cw = 0, ch = 0, x0 = 0, y0 = 0, face = null;
-    let grab = null, cur = null, fold = null, opened = false, dead = false, raf = 0, spring = 0;
+    let grab = null, cur = null, fold = null, opened = false, dead = false, raf = 0, spring = 0, autoRun = false, cancelled = false;
     const seen = {};           // 見えた手がかり（離しても覚えている）
     let seenFrame = false, cands = allCands();
 
@@ -302,6 +302,7 @@
       const pad = Math.min(cw, ch) * .5;
       if (p[0] < x0 - pad || p[0] > x0 + cw + pad || p[1] < y0 - pad || p[1] > y0 + ch + pad) return;
       cancelAnimationFrame(spring); spring = 0;
+      if (autoRun) { autoRun = false; cancelled = true; }   // 自動のめくりの途中で触ったら、そこから自分でめくる
       grab = edgePoint(p); cur = p;
       try { canvas.setPointerCapture(ev.pointerId); } catch (e) { }
       if (opt.onGrab) opt.onGrab();
@@ -332,16 +333,17 @@
     }
     // お手本：指の代わりに、決めた道すじでめくって見せる。steps = [{ from:[u,v], to:[u,v], ms, hold }]（札の枠を1とした位置）
     function demo(steps) {
+      autoRun = true; cancelled = false;
       return steps.reduce((p, s) => p.then(() => new Promise(res => {
-        if (dead || opened) return res();
+        if (dead || opened || cancelled) return res();
         const A = [x0 + s.from[0] * cw, y0 + s.from[1] * ch], B = [x0 + s.to[0] * cw, y0 + s.to[1] * ch], t0 = performance.now();
         grab = edgePoint(A);
         const tick = (t) => {
-          if (dead || opened) return res();
+          if (dead || opened || cancelled) return res();
           const k = Math.min(1, (t - t0) / s.ms), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
           cur = [A[0] + (B[0] - A[0]) * e, A[1] + (B[1] - A[1]) * e]; setFold(cur);
           if (k < 1) requestAnimationFrame(tick);
-          else setTimeout(() => { if (!s.keep) { up(); setTimeout(res, 260); } else res(); }, s.hold || 0);
+          else setTimeout(() => { if (cancelled) return res(); if (!s.keep) { up(); setTimeout(res, 260); } else res(); }, s.hold || 0);
         };
         requestAnimationFrame(tick);
       })), Promise.resolve());
@@ -357,7 +359,7 @@
     if (!backImg && opt.back) setTimeout(() => { if (!dead) draw(); }, 400);
     return {
       open, demo,
-      info: () => ({ cands: cands.slice(), seen: Object.keys(seen), frame: seenFrame, opened }),
+      info: () => ({ cands: cands.slice(), seen: Object.keys(seen), frame: seenFrame, opened, cancelled }),
       destroy() { dead = true; cancelAnimationFrame(raf); cancelAnimationFrame(spring); if (ro) ro.disconnect(); canvas.removeEventListener('pointerdown', down); canvas.removeEventListener('pointermove', move); canvas.removeEventListener('pointerup', up); canvas.removeEventListener('pointercancel', up); },
     };
   }

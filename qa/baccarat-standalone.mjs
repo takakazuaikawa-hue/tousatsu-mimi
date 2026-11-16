@@ -7,7 +7,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rd = (f) => fs.readFileSync(path.join(REPO, f), 'utf8');
 const MIME = { webp: 'image/webp', jpg: 'image/jpeg', png: 'image/png' };
 const uri = (f) => `data:${MIME[f.split('.').pop()]};base64,${fs.readFileSync(path.join(REPO, f)).toString('base64')}`;
-const ASSETS = ['assets/backgrounds/bg_lobby_clock.jpg', 'assets/ui/card_back_default.webp', 'assets/ui/chip_white.webp', 'assets/ui/chip_red.webp', 'assets/ui/chip_blue.webp', 'assets/ui/chip_gold.webp', 'assets/ui/face_chibi_rico.webp', 'assets/ui/face_chibi_mimi.webp'];
+const ASSETS = ['assets/backgrounds/bg_lobby_clock.jpg', 'assets/ui/card_back_default.webp', 'assets/ui/chip_white.webp', 'assets/ui/chip_red.webp', 'assets/ui/chip_blue.webp', 'assets/ui/chip_gold.webp', 'assets/ui/face_chibi_rico.webp', 'assets/ui/face_chibi_mimi.webp', 'assets/characters/goddess_lean.webp'];
 const embed = (s) => ASSETS.reduce((t, a) => t.split(a).join(uri(a)), s);
 const css = embed(rd('baccarat.css'));
 const js = [rd('baccarat.js'), rd('baccarat-squeeze.js'), embed(rd('baccarat-ui.js'))].join('\n;\n').replace(/<\/script/g, '<\\/script');

@@ -48,7 +48,7 @@ async function snap(name, settle = 350) {
 }
 const Q = 'BaccaratUI._qa';
 const demoSeen = process.env.QA_DEMO ? 'false' : 'true';
-await ev(`save = defaultSave(); save.introPlayed = true; save.clearedStages = ${JSON.stringify(ALL)}; save.firstClearRewardClaimed = [...save.clearedStages]; save.readIntroSeen = true; save.coins = 2400; save.homeStageSeen = 5; save.loginBonus = { lastDate: mpTodayKey(), streak: 1 }; save.bestRanks = { velvet: 'A' }; save.endingUnlocked = true; save.allstarUnlocked = true; save.allstar = { unlockSeen: true }; save.baccarat = { demoSeen: ${demoSeen}, godSeen: true, orSeen: true, qn: 0 }; saveProgress()`);
+await ev(`save = defaultSave(); save.introPlayed = true; save.clearedStages = ${JSON.stringify(ALL)}; save.firstClearRewardClaimed = [...save.clearedStages]; save.readIntroSeen = true; save.coins = 2400; save.homeStageSeen = 5; save.loginBonus = { lastDate: mpTodayKey(), streak: 1 }; save.bestRanks = { velvet: 'A' }; save.endingUnlocked = true; save.allstarUnlocked = true; save.allstar = { unlockSeen: true }; save.baccarat = { demoSeen: ${demoSeen}, godSeen: true, orSeen: true, betraySeen: true, qn: 0, sqMode: ${JSON.stringify(process.env.QA_SQ || "manual")} }; saveProgress()`);
 await ev(`state = defaultState(); state.screen = 'lobby'; render()`);
 await sleep(1500);
 await ev('BaccaratUI.open()');
