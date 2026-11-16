@@ -393,6 +393,9 @@
 .as-tcu { text-combine-upright: all; -webkit-text-combine: horizontal; }
 .as-res-big b { writing-mode: vertical-rl; white-space: nowrap; font: 800 84px/1 var(--as-min); letter-spacing: .1em; color: var(--as-gold-hi); text-shadow: 0 0 22px rgba(255,214,120,.45), 0 4px 10px #000; }
 .as-res-big > span { writing-mode: vertical-rl; white-space: nowrap; font: 700 15px/1 var(--as-min); letter-spacing: .4em; color: var(--as-muted); }
+/* 2026-11-16「数字が小さい」：type-roles.css の .as-res-big span（下の「金時計杯」用の補足の段）が順位の数字の span にも効き、
+   「第」「位」84px の間で数字だけ小さかった。数字は縦中横のまま「第」「位」より少し大きく、一番明るい金にする */
+html :is(#stage > .as-host, .as-dialog) .as-res-big b > .as-tcu.as-tcu { font-size: 1.12em !important; letter-spacing: 0; color: #ffe9ad; text-shadow: 0 0 26px rgba(255, 220, 130, .7), 0 4px 10px #000; }
 .as-res-board { left: 700px; top: 60px; width: 540px; height: 408px; margin: 0; padding: 4px 0; list-style: none; display: flex; flex-direction: column; justify-content: space-between;
   border: 1px solid var(--as-gold-d); background: rgba(14,5,7,.88); box-shadow: inset 0 0 0 3px #190608, inset 0 0 0 4px rgba(227,185,100,.5), 0 20px 50px rgba(0,0,0,.7); }
 .as-res-row { position: relative; display: grid; grid-template-columns: 54px 60px minmax(0, 1fr) 120px 80px 34px; align-items: center; gap: 8px; height: 64px; padding: 0 4px 0 10px;

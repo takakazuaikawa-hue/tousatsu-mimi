@@ -3571,6 +3571,7 @@ function applyBindings() {
         el.innerHTML = renderSituationAnalysis();
         // 戦況内に追加した data-action ボタンに onAction をバインド
         el.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', onAction));
+        queueMicrotask(syncV2DetailToggle);   // ほかの欄の表示が決まってから、詳細データのボタンを出すか決める
         break;
       }
       case 'ricoAdvice': {
@@ -4520,11 +4521,13 @@ const STRUGGLE_SCENES = {
     { k: 'say', who: 'rico', t: 'ヴェルベットは演技がうまい。強がった時ほど怪しいよ。逆を読んでみな', art: 'assets/episodes/struggle_velvet_8.webp' },
   ],
 };
-// 苦戦の場面を出す時か：まだ勝っていない相手・チップが最初の6割以下・その相手ではまだ見ていない
+// 苦戦の場面を出す時か：チップが最初の6割以下・その相手ではまだ見ていない。
+// 2026-11-16 勝った後の再戦でも見られるようにした（以前は勝った相手では二度と出ず、強い人ほど取り逃した。ユーザー決定）。
+// 二周目（ほろ酔い）・泥酔の夜は場面の空気が違うので出さない
 function struggleSceneDue() {
-  if (state.tutorialMode || state.introHandMode || state.lectureMode || state.seriousRicoMode) return null;
+  if (state.tutorialMode || state.introHandMode || state.lectureMode || state.seriousRicoMode || state.horoyoi || state.deisui) return null;
   const id = state.opponentId;
-  if (!STRUGGLE_SCENES[id] || (save.clearedStages || []).includes(id)) return null;
+  if (!STRUGGLE_SCENES[id]) return null;
   if (!save.struggleSeen) save.struggleSeen = [];
   if (save.struggleSeen.includes(id)) return null;
   const init = state.__initialChips || 0;
@@ -5628,6 +5631,7 @@ function showRewardCgViewer(id) {
     </div>
     ${list.length > 2 ? '<button type="button" class="reward-cg-viewer-x" aria-label="閉じる">×</button>' : ''}
     ${isSet ? '<button type="button" class="reward-cg-viewer-listbtn" aria-label="一覧を開く">一覧</button>' : ''}
+    ${list.length > 1 ? '<button type="button" class="reward-cg-nav is-prev" aria-label="前の一枚">‹</button><button type="button" class="reward-cg-nav is-next" aria-label="次の一枚">›</button>' : ''}
   `;
   const body = overlay.querySelector('.reward-cg-viewer-body'), img = overlay.querySelector('img'), hint = overlay.querySelector('.reward-cg-viewer-hint');
   const show = () => {
@@ -5640,8 +5644,11 @@ function showRewardCgViewer(id) {
     attachLiveCg(img);
     if (c.motion) { img.dataset.motion = c.motion; img.dataset.motionReplay = '1'; attachMotion(img); }
     // 枚数の多い綴り（CG集）は、左の3割で前へ・それ以外で次へ。次の一枚は先に読んでおく（遅れて描かれないように）
-    hint.textContent = list.length > 2 ? `${at + 1} / ${list.length}　${at > 0 ? '左で前・' : ''}${at < list.length - 1 ? '右で次' : 'タップして閉じる'}${resumed ? '　（前の続きです）' : ''}`
-      : list.length > 1 ? (at < list.length - 1 ? `${at + 1} / ${list.length}　タップで次の一枚` : `${at + 1} / ${list.length}　タップして閉じる`) : 'タップして閉じる';
+    // 2026-11-16「左で前右で次という表記はわかりにくい」：文をやめ、絵の左右の端の ‹ › で送る。下は枚数だけ
+    hint.textContent = list.length > 1 ? `${at + 1} / ${list.length}` : 'タップして閉じる';
+    const pv = overlay.querySelector('.reward-cg-nav.is-prev'), nx = overlay.querySelector('.reward-cg-nav.is-next');
+    if (pv) pv.classList.toggle('is-end', at <= 0);
+    if (nx) nx.classList.toggle('is-end', at >= list.length - 1);
     if (list[at + 1]) { const pre = new Image(); pre.src = list[at + 1].src; }
     remember();
   };
@@ -5675,9 +5682,20 @@ function showRewardCgViewer(id) {
   };
   const onKey = (e) => { if (overlay.querySelector('.reward-cg-list')) { if (e.key === 'Escape') { overlay.querySelector('.reward-cg-list').remove(); e.preventDefault(); } return; } if (e.key === 'Escape') close(); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') step(1); else return; e.preventDefault(); };
   document.addEventListener('keydown', onKey);
+  // 指の左右のすべらせ：左へすべらせると次、右へすべらせると前（すべらせた後のタップ扱いは捨てる）
+  let tx = 0, ty = 0, swiped = false;
+  overlay.addEventListener('touchstart', (e) => { const t = e.changedTouches[0]; tx = t.clientX; ty = t.clientY; }, { passive: true });
+  overlay.addEventListener('touchend', (e) => {
+    if (overlay.querySelector('.reward-cg-list')) return;
+    const t = e.changedTouches[0], dx = t.clientX - tx, dy = t.clientY - ty;
+    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) { swiped = true; if (dx < 0) { if (at < list.length - 1) step(1); } else step(-1); setTimeout(() => { swiped = false; }, 450); }
+  }, { passive: true });
   overlay.addEventListener('click', (e) => {
     if (e.target.closest('.reward-cg-viewer-x')) { close(); return; }
     if (e.target.closest('.reward-cg-viewer-listbtn')) { openList(); return; }
+    if (e.target.closest('.reward-cg-nav.is-prev')) { step(-1); return; }
+    if (e.target.closest('.reward-cg-nav.is-next')) { if (at < list.length - 1) step(1); return; }
+    if (swiped) { swiped = false; return; }
     const pane = overlay.querySelector('.reward-cg-list');
     if (pane) {
       const cell = e.target.closest('.reward-cg-list-cell');
@@ -7459,6 +7477,53 @@ function shop3BindCard(c) {
     shop3Select(it.id, true);
   });
 }
+// 横にすべる列の送りボタン（2026-11-16「選べるものが多いときに右や左へ進むボタンがありません」）。
+// 列が入りきらない時だけ、列の左右に ‹ › を重ねて出す。押すと1画面分すべる。端では薄くして押せなくする。
+// 指でのすべらせはそのまま効く。PC のホイール（縦回し）も横すべりにする。列を描き直した時は呼び直す
+function attachRowArrows(row, cls) {
+  if (!row) return;
+  if (row.__arrows) { row.__arrows.update(); return; }
+  const mk = (dir) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `row-arrow is-${dir}${cls ? ' ' + cls : ''}`;
+    b.setAttribute('aria-label', dir === 'prev' ? '左の続きへ' : '右の続きへ');
+    b.textContent = dir === 'prev' ? '‹' : '›';
+    b.hidden = true;
+    b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (typeof mpSfx === 'function') mpSfx('tap');
+      row.scrollBy({ left: (dir === 'prev' ? -1 : 1) * Math.max(80, row.clientWidth * 0.85), behavior: 'smooth' });
+    });
+    row.parentNode.insertBefore(b, row.nextSibling);
+    return b;
+  };
+  const prev = mk('prev'), next = mk('next');
+  const update = () => {
+    if (!row.isConnected) { prev.remove(); next.remove(); ro.disconnect(); return; }
+    const over = row.scrollWidth > row.clientWidth + 4;
+    prev.hidden = next.hidden = !over;
+    if (!over) return;
+    // 列と同じ親の中で、列の左右の端・上下の中央に置く（offsetLeft/Top は縮める舞台の中でも同じ単位）
+    const top = row.offsetTop + (row.offsetHeight - prev.offsetHeight) / 2;
+    prev.style.top = next.style.top = top + 'px';
+    prev.style.left = row.offsetLeft + 'px';
+    next.style.left = (row.offsetLeft + row.offsetWidth - next.offsetWidth) + 'px';
+    prev.classList.toggle('is-end', row.scrollLeft <= 2);
+    next.classList.toggle('is-end', row.scrollLeft + row.clientWidth >= row.scrollWidth - 2);
+  };
+  row.addEventListener('scroll', update, { passive: true });
+  row.addEventListener('wheel', (e) => {
+    if (row.scrollWidth <= row.clientWidth + 4 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    e.preventDefault();
+    row.scrollLeft += e.deltaY;
+  }, { passive: false });
+  const ro = new ResizeObserver(update);
+  ro.observe(row);
+  row.__arrows = { update, prev, next };
+  update();
+}
+
 function shop3RenderRow(deal) {
   const row = document.querySelector('.sh3-row'); if (!row) return;
   // 並び：新入荷→未所持→所持→未入荷（伏せ札）
@@ -7477,6 +7542,7 @@ function shop3RenderRow(deal) {
   // 2026-11-01 選んでいる品を棚の真ん中に見せる（外部の批評：棚は先頭に戻り、選ばれている品が画面の外にあって、何を買う欄か分からなかった）
   const selCard = row.querySelector('.sh3-card.is-sel');
   if (selCard) row.scrollLeft = Math.max(0, selCard.offsetLeft - (row.clientWidth - selCard.offsetWidth) / 2);
+  attachRowArrows(row, 'for-shop');
 }
 function shop3Say(text) {
   const el = document.querySelector('[data-bind="ricoShopComment"]'); if (!el) return;
@@ -8172,6 +8238,21 @@ function closeV2Detail() {
   if (closeV2Detail._esc) { document.removeEventListener('keydown', closeV2Detail._esc); closeV2Detail._esc = null; }
 }
 
+// 詳細データの中身があるか（2026-11-16「詳細データが空欄です」）。配る前・決着の後・ほろ酔いの夜は
+// 戦況（situationAnalysis）が空で、ざわざわ・心理の記録も出ていない時は、題と閉じるボタンだけの窓になっていた
+function v2DetailHasContent(panel) {
+  if (!panel) return false;
+  return [...panel.children].some(k => !k.classList.contains('v2-detail-close')
+    && getComputedStyle(k).display !== 'none' && k.textContent.trim() !== '');
+}
+// 中身が無い間は「詳細データ」のボタンを隠す（場所は残す）。開いたまま空になったら閉じる
+function syncV2DetailToggle() {
+  const panel = document.querySelector('.v2-detail');
+  const has = v2DetailHasContent(panel);
+  document.querySelectorAll('.v2-detail-toggle[data-action="toggle-v2-detail"]').forEach(b => { b.style.visibility = has ? '' : 'hidden'; });
+  if (!has && panel && panel.classList.contains('open')) closeV2Detail();
+}
+
 function openV2DetailScrim(panel) {
   const screen = panel.closest('.battle-screen') || document.getElementById('stage');
   if (!screen) return;
@@ -8738,9 +8819,9 @@ function renderDangerBar() {
   if (!label) {
     // ノート所持時は「安全」も明示する。何も出ないと「見落としたのか」が分からないため。
     if (!hasNote('board_danger')) return '';
+    // 2026-11-16「危険の赤文字が注目を集めすぎる」：判定の札（安全・注意・危険）は出さず、目盛りと理由の文だけにする
     return `<div class="v2-danger-track is-safe"><div class="v2-danger-fill" style="width:8%"></div></div>`
-         + `<div class="v2-danger-label"><span class="dg-verdict dg-safe">安全</span>`
-         + `<span class="dg-why">刺さる並びなし</span></div>`;
+         + `<div class="v2-danger-label"><span class="dg-why">刺さる並びなし</span></div>`;
   }
   if (!hasNote('board_danger')) {
     return `<div class="v2-danger-track"><div class="v2-danger-fill" style="width:${pct}%"></div></div><div class="v2-danger-label">${label}</div>`;
@@ -8748,11 +8829,9 @@ function renderDangerBar() {
   // ノート解放：3段階の判定＋「どの札のせいで危ないか」。帯は1行しか無いので、
   // 曖昧な「フラッシュ気配」ではなく具体的な根拠札の方を出す（同じことを2度書かない）。
   const level = d.flushMade || parts.length >= 2 ? 'danger' : 'caution';
-  const verdict = level === 'danger' ? '危険' : '注意';
   const why = boardDangerEvidence(vc).join('・');
   return `<div class="v2-danger-track is-${level}"><div class="v2-danger-fill" style="width:${pct}%"></div></div>`
-       + `<div class="v2-danger-label"><span class="dg-verdict dg-${level}">${verdict}</span>`
-       + `<span class="dg-why">${why || label}</span></div>`;
+       + `<div class="v2-danger-label"><span class="dg-why">${why || label}</span></div>`;
 }
 function renderStreetTracker() {
   const order = ['preflop', 'flop', 'turn', 'river', 'showdown'];
@@ -10121,6 +10200,7 @@ function onAction(e) {
       const panel = document.querySelector('.v2-detail');
       if (!panel) break;
       const willOpen = !panel.classList.contains('open');
+      if (willOpen && !v2DetailHasContent(panel)) { syncV2DetailToggle(); break; }   // 中身が無い時は空の窓を開かない
       panel.classList.toggle('open', willOpen);
       // 開いたら閉じる手段を必ず用意する（従来は出しっぱなしになっていた）
       if (willOpen && !panel.querySelector('.v2-detail-close')) {
@@ -11438,6 +11518,22 @@ function toggleSoundPanel(btn) {
   setTimeout(() => document.addEventListener('pointerdown', away, true), 0);
 }
 
+// 音量などのつまみ：つまみより左だけ金に塗るため、値の割合を --fill で CSS へ渡す（2026-11-16「メーターが黄色になってよくわかりません」）。
+// 指で動かした時（input）・画面に足された時（MutationObserver）・値を書き換えた時（refreshAudioBars）に塗り直す
+function paintRange(el) {
+  const min = el.min !== '' ? +el.min : 0, max = el.max !== '' ? +el.max : 100;
+  const p = max > min ? Math.min(100, Math.max(0, (+el.value - min) / (max - min) * 100)) : 0;
+  el.style.setProperty('--fill', p.toFixed(1) + '%');
+}
+function paintRangesIn(root) {
+  if (!root || root.nodeType !== 1) return;
+  if (root.matches('input[type="range"]')) paintRange(root);
+  root.querySelectorAll('input[type="range"]').forEach(paintRange);
+}
+document.addEventListener('input', (e) => { if (e.target && e.target.matches && e.target.matches('input[type="range"]')) paintRange(e.target); }, true);
+new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.tagName === 'INPUT' || n.querySelector('input[type="range"]'))) paintRangesIn(n); })
+  .observe(document.documentElement, { childList: true, subtree: true });
+
 function refreshAudioBars() {
   const icon = save.bgmOn ? '音 入' : '音 切';
   const vol = save.bgmVolume != null ? save.bgmVolume : 35;
@@ -11450,6 +11546,7 @@ function refreshAudioBars() {
     t.title = t.ariaLabel = on ? '音を消す（BGM・効果音）' : '音を出す（BGM・効果音）';
   });
   document.querySelectorAll('.audio-bar-volume').forEach(v => v.value = vol);
+  queueMicrotask(() => paintRangesIn(document.body));   // 値を書き換えたつまみの金の塗りを合わせる
   document.querySelectorAll('.lb-bgm-toggle').forEach(t => t.textContent = icon);
   // ★ '.lb-vol' は効果音スライダー（class="lb-vol lb-vol-sfx"）にも一致してしまい、
   //   BGM音量で上書きしていた。BGM用だけに限定する。
@@ -14889,11 +14986,17 @@ function showCollectionModal() {
           <div class="coll-stages">${stagesHtml}</div>
         </section>
         ${(() => {
-          // 台帳37：初対戦の苦戦の場面は、勝った後に思い出で見返せる
-          const ids = ['polka', 'selina', 'grano', 'velvet'].filter(id => (save.struggleSeen || []).includes(id) && (save.clearedStages || []).includes(id));
-          if (!ids.length) return '';
-          return `<section class="coll-section"><h3 class="coll-section-title">苦戦の思い出 <span class="coll-section-count">${ids.length}件</span></h3>
-            <div class="memory-grid">${ids.map(id => `<button class="memory-card" data-action="replay-struggle" data-opp="${id}"><div class="memory-card-title">${(STORY_WHO[id] || {}).name}戦</div><div class="memory-card-desc">${STRUGGLE_SCENES[id][2].t}</div><div class="memory-card-play">見る</div></button>`).join('')}</div></section>`;
+          // 台帳37：苦戦の場面は、見た後に思い出で見返せる。
+          // 2026-11-16 まだの相手の欄も鍵つきで並べ、見られる条件を1行で書く（条件が分からず取り逃したまま忘れられていた）
+          const all = ['polka', 'selina', 'grano', 'velvet'];
+          const seen = all.filter(id => (save.struggleSeen || []).includes(id));
+          return `<section class="coll-section"><h3 class="coll-section-title">苦戦の思い出 <span class="coll-section-count">${seen.length}/${all.length}</span></h3>
+            <div class="memory-grid">${all.map(id => {
+              const who = (STORY_WHO[id] || {}).name || id;
+              if (seen.includes(id)) return `<button class="memory-card" data-action="replay-struggle" data-opp="${id}"><div class="memory-card-title">${who}戦</div><div class="memory-card-desc">${STRUGGLE_SCENES[id][2].t}</div><div class="memory-card-play">見る</div></button>`;
+              const again = (save.clearedStages || []).includes(id) ? '（勝った後の再戦でも見られる）' : '';
+              return `<div class="memory-card is-locked" aria-disabled="true"><div class="memory-card-title"><span class="memory-card-lock" aria-hidden="true">${UI_ICON.lock}</span>${who}戦</div><div class="memory-card-desc">${who}戦で、ミミのチップが最初の6割以下まで減ると見られる${again}</div></div>`;
+            }).join('')}</div></section>`;
         })()}
         <section class="coll-section">
           <h3 class="coll-section-title">交換所アイテム <span class="coll-section-count">${ownedItems.length}/${allItems.length}</span></h3>
@@ -14996,6 +15099,7 @@ function showCollectionModal() {
       nav.appendChild(b);
     });
     body.parentNode.insertBefore(nav, body);
+    attachRowArrows(nav, 'for-jump');   // 狭い画面（667×375 など）で右端の見出しが隠れていた
   }
 }
 

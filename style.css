@@ -12927,6 +12927,7 @@ body.is-danger .bu-remain-num {
 .result-breakdown-toggle {
   list-style: none;
   display: inline-flex;
+  align-items: center;   /* 2026-11-16 文字が斜めの札の上に寄っていた（高さ36pxの中で4.5px上） */
 }
 .result-breakdown-toggle::-webkit-details-marker { display: none; }
 .result-reason {
@@ -12948,6 +12949,13 @@ body.is-danger .bu-remain-num {
   flex-direction: column;
   gap: 12px;
 }
+/* 2026-11-16「ボタンにかぶってる」：ご褒美の札が多いと欄が縦にあふれ、下の「幕間へ」が「スコア内訳を見る」の上に重なった。
+   欄の中だけ縦にスクロールし、ボタンは欄の下に固定（上をぼかして、下に続きがあると分かるように）。スマホの配置と同じ作り。
+   斜めのボタンの光が欄の端で切れないよう、左右に余白を足して同じ分だけ外へ広げる */
+.result-screen .rz-panel { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #c9a25a rgba(0,0,0,.35); }
+html:not(.is-compact) .result-screen .rz-panel { padding-left: 18px; padding-right: 18px; margin-left: -18px; margin-right: -18px; }
+.result-screen .rz-panel > * { flex-shrink: 0; }
+.result-screen .rz-panel > .result-buttons { position: sticky; bottom: 0; z-index: 4; padding: 18px 0 2px; background: linear-gradient(rgba(10,4,7,0), rgba(10,4,7,.92) 34%); }
 .result-main-btn {
   height: 68px;
   border: 0;
@@ -14925,6 +14933,9 @@ button.lb4-hook:hover { border-color: rgba(245,215,122,.7); color: #f0e2b8; }
   color: #1d080e; font-size: 22px; font-weight: 900; letter-spacing: .28em;
   transform: skewX(-10deg); box-shadow: 0 0 26px rgba(245,215,122,.45), 0 5px 0 rgba(0,0,0,.4);
   position: relative; overflow: hidden;
+  /* 2026-11-16 文字がぼやける：.btn-primary.big の黒いぼかし影（白い字の赤いボタン用）が、暗い字の金ボタンに残っていた。
+     暗い字の周りに黒いにじみが出るので、明るい1pxの浮き彫りだけにする */
+  text-shadow: 0 1px 0 rgba(255, 246, 220, 0.4);
 }
 .battle-screen.v2 .action-area .btn-primary.big::after {
   content: ''; position: absolute; top: 0; bottom: 0; width: 60px;
@@ -16794,7 +16805,10 @@ body[data-cutin-skin="neon"] .cutin-flash {
   font-size: 40px;
   line-height: 1.2;
   letter-spacing: 0.08em;
-  padding: 0.55em 0.3em 0.6em;
+  /* 2026-11-16 題が帯の中で下にずれていた：リボンの絵（600×90）は赤い板が上の2〜74pxで、下の15pxは透明。
+     板の上下の中央は箱の高さの42%なので、箱の中央に置いた文字は板から見て下にずれる。箱の高さ（2.35em）は変えず、
+     上の余白を減らして下を増やし、文字の中央を板の中央に合わせる */
+  padding: 0.4em 0.3em 0.75em;
   margin: 0 5.2em;
   max-width: calc(100vw - 10.4em - 32px);
   text-shadow: 0 2px 0 rgba(70, 8, 18, 0.95), 0 0 14px rgba(245, 215, 122, 0.45), 0 3px 10px rgba(0, 0, 0, 0.85);
@@ -17273,7 +17287,10 @@ body[data-table-skin="neon"] .battle-screen.v2.t8 > .t8-felt { box-shadow: inset
 }
 .battle-screen.v2.t8 .v2-danger::before { content: '場の危険'; font-size: 14px; font-weight: 500; letter-spacing: .14em; color: var(--t8-muted); opacity: 1; }
 .battle-screen.v2.t8 .v2-danger-track { width: 90px; height: 3px; background: rgba(243,236,224,.14); }
-.battle-screen.v2.t8 .v2-danger-label { font-size: 14px; font-weight: 500; color: #ff9aa9; }
+.battle-screen.v2.t8 .v2-danger-label { font-size: 14px; font-weight: 500; color: #d8cebf; }
+/* 2026-11-16 場の危険：赤・桃色が卓の中で目を引きすぎた。理由の文は地の文の色、目盛りは金の1色にそろえる */
+.battle-screen.v2.t8 .v2-danger-label .dg-why { font-weight: 500; color: #d8cebf; }
+.battle-screen.v2.t8 .v2-danger-fill, .battle-screen.v2.t8 .v2-danger-track.is-safe .v2-danger-fill { background: rgba(216, 181, 108, 0.8); }
 
 /* 札の顔：四隅の数字（右下は逆さ）＋中央の大きなマーク。紙の白と細い内枠 */
 .battle-screen.v2.t8 .card:not(.empty):not(.card-back) {
@@ -18969,17 +18986,20 @@ html.is-compact .shop-screen.v2 .shop-item-newtag, html.is-compact .shop-screen.
 
 /* ===== 音のボタン（対戦・交換所・結果）：BGM と効果音をまとめて切り替える。止める手段が無かった（2026-10-16） ===== */
 .sound-toggle { position: absolute; z-index: 40; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; margin: 0;
-  background: rgba(12,9,10,.6); border: 1px solid rgba(217,179,90,.5); border-radius: 2px; color: #f0e2b8; cursor: pointer; }
-.sound-toggle svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  background: rgba(12,9,10,.72); border: 1px solid rgba(217,179,90,.85); border-radius: 2px; color: #fff3d2; cursor: pointer; }
+/* 2026-11-16「音声ボタンの色が薄すぎる」：線1.7・枠の濃さ5割で、隣の「役の一覧」より沈んでいた。線を太く、枠を濃く */
+.sound-toggle svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .sound-toggle:hover { border-color: rgba(245,215,122,.9); color: #fff; }
-.sound-toggle.is-off { color: #9b8b74; border-color: rgba(217,179,90,.3); }
+.sound-toggle.is-off { color: #e3cfa3; border-color: rgba(217,179,90,.6); }
+/* 卓では .battle-screen.v2 > * { z-index: 2 } の方が強く、音のボタンが z2 になって上端の暗い帯（.t8-topbar z5・暗さ94%）の下に沈み、3割の明るさにしか見えなかった */
+.battle-screen.v2 > .sound-toggle { z-index: 40; }
 .sound-toggle:focus-visible { outline: 2px solid #f3d58e; outline-offset: 2px; }
 .battle-screen.v2.t8 > .sound-toggle { top: 18px; right: 236px; width: 44px; height: 38px; }
 .battle-screen.v2.t8 .backdoor-toggle { right: 292px !important; }
 .shop-screen.v2 > .sound-toggle { top: 100px; right: 156px; width: 40px; height: 40px; }
 .result-screen > .sound-toggle { top: 20px; right: 24px; }
 html.is-compact .sound-toggle { width: calc(44px / var(--game-scale, 1)); height: calc(44px / var(--game-scale, 1)); }
-html.is-compact .sound-toggle svg { width: calc(20px / var(--game-scale, 1)); height: calc(20px / var(--game-scale, 1)); }
+html.is-compact .sound-toggle svg { width: calc(22px / var(--game-scale, 1)); height: calc(22px / var(--game-scale, 1)); }
 html.is-compact .battle-screen.v2.t8 > .sound-toggle { top: 6px; right: calc(18px + 140px + 260px); height: var(--fx-tap, calc(44px / var(--game-scale, 1))); }
 html.is-compact .shop-screen.v2 > .sound-toggle { top: 30px; right: 600px; }
 html.is-compact .result-screen > .sound-toggle { top: 12px; right: 24px; }
@@ -19165,7 +19185,11 @@ html.is-compact .ek-name { font-size: calc(14px / var(--game-scale, 1)); }
 .cr-line { font-size: 19px; font-weight: 600; color: #f2e6cf; }
 .cr-line.is-person { color: #efcd82; text-shadow: 0 0 10px rgba(239,205,130,.4), 0 2px 6px rgba(0,0,0,.85); }
 /* 制作協力：役割を先に、名前を後に（1行ずつ） */
-.cr-line.has-role { display: flex; justify-content: center; align-items: baseline; gap: .9em; }
+/* エンドロールの役目つきの行：中央の線で「役目（右寄せ）｜名前（左寄せ）」に分ける。ほかの行はすべて中央寄せ（2026-11-16） */
+.credits-inner .cr-line { display: block; text-align: center; }
+.credits-inner .cr-line.has-role { display: grid; grid-template-columns: 1fr 1fr; align-items: baseline; column-gap: 1.1em; }
+.credits-inner .cr-line.has-role .cr-line-role { text-align: right; }
+.credits-inner .cr-line.has-role .cr-line-name { text-align: left; }
 .cr-line-role { color: #b19a74; font-size: .84em; letter-spacing: .12em; }
 html.is-compact .cr-line-role { font-size: max(.84em, calc(14px / var(--game-scale, 1))); }
 .cr-line-name { color: #f2e6cf; }
@@ -19441,6 +19465,12 @@ html.is-compact .home-dialog .home-legal { font-size: calc(12px * var(--inv-scal
 .collection-modal .memory-card .memory-card-title { font-size: 15px; font-weight: 700; color: #efcd82; }
 .collection-modal .memory-card .memory-card-desc { font-size: 14px; line-height: 1.55; opacity: 1; color: #b19a74; }
 .collection-modal .memory-card .memory-card-play { font-size: 14px; color: #efcd82; font-weight: 700; }
+/* 2026-11-16 苦戦の思い出：まだ見ていない相手の欄（鍵つき・薄い札・見られる条件を1行） */
+.collection-modal .memory-grid .memory-card.is-locked { cursor: default; border-style: dashed; border-color: rgba(138, 90, 30, .8); background: rgba(20, 8, 10, .75); }
+.collection-modal .memory-grid .memory-card.is-locked:hover { background: rgba(20, 8, 10, .75); border-color: rgba(138, 90, 30, .8); }
+.collection-modal .memory-card.is-locked .memory-card-title { color: #b19a74; display: flex; align-items: center; gap: 6px; }
+.collection-modal .memory-card.is-locked .memory-card-lock .ui-ic { width: 15px; height: 15px; }
+.collection-modal .memory-card.is-locked .memory-card-desc { color: #c9b590; }
 
 /* ---- メモリ閲覧（寸劇・設定資料・図鑑）の窓：ui-modal.css の劇場の型（黒・深紅・金、二重の金線、四隅の金飾り、角2px）。
         紫の #1a0820 と画像の枠をやめ、外枠は固定で中身だけ動かす。閉じるは四角い金縁 44px ---- */
@@ -19980,6 +20010,16 @@ html.is-compact .story-vol-mute svg, html.is-compact .story-vol-mute .ui-ic { wi
 .shop-screen.v3 .sh3-row { position: absolute; left: 150px; right: 318px; bottom: 18px; height: 196px; z-index: 6; display: flex; align-items: flex-end; gap: 12px; padding: 0 22px 8px 4px; box-sizing: border-box;
   overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-mask: linear-gradient(90deg, #000 88%, transparent); mask: linear-gradient(90deg, #000 88%, transparent); }
 .shop-screen.v3 .sh3-row::-webkit-scrollbar { display: none; }
+/* 横にすべる列の送りボタン（game.js attachRowArrows）。入りきらない時だけ列の左右に重ねる。端では薄く押せない */
+.row-arrow { position: absolute; z-index: 8; width: 40px; height: 64px; display: grid; place-items: center; padding: 0 0 4px; margin: 0;
+  border: 1px solid rgba(239, 205, 130, .75); border-radius: 2px; background: rgba(18, 6, 9, .9); color: #f5d77a;
+  font: 700 32px/1 "Shippori Mincho B1", "Yu Mincho", serif; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, .6); transition: opacity .2s, background-color .15s; }
+.row-arrow[hidden] { display: none; }
+.row-arrow:hover { background: rgba(70, 18, 28, .95); color: #fff3d2; }
+.row-arrow:focus-visible { outline: 2px solid #f3d58e; outline-offset: 2px; }
+.row-arrow.is-end { opacity: .28; pointer-events: none; }
+.row-arrow.for-jump { width: 36px; height: 40px; font-size: 26px; }
+html.is-compact .shop-screen .row-arrow { width: calc(44px / var(--game-scale, 1)); height: calc(72px / var(--game-scale, 1)); font-size: calc(34px / var(--game-scale, 1)); }
 .shop-screen.v3 .sh3-card { position: relative; flex: 0 0 112px; height: 168px; padding: 0; border: 0; cursor: pointer; scroll-snap-align: start; background: none; transition: transform .22s cubic-bezier(.2,.7,.2,1); }
 .shop-screen.v3 .sh3-row.is-deal .sh3-card { animation: sh3Deal .5s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--k, 0) * 55ms); }
 @keyframes sh3Deal { from { opacity: 0; transform: translate(-60px, -26px) rotate(-8deg); } to { opacity: 1; transform: none; } }
@@ -20508,8 +20548,9 @@ canvas.live-cg.on { opacity: 1; }
 .cr-list { display: grid; gap: 4px; max-height: 26em; overflow: auto; padding-right: 6px; }
 .cr-head { margin-top: 12px; padding-bottom: 2px; border-bottom: 1px solid rgba(214,176,104,.35); }
 .cr-head:first-child { margin-top: 0; }
-.cr-line { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; color: #f3e6d8; text-align: left; }
-.cr-role { min-width: 10em; color: #c9b48a; text-align: left; }
+/* 2026-11-16 クレジットの小窓の中だけに絞る（絞りが無く、エンドロールの行まで左寄せの flex になっていた） */
+.cr-list .cr-line { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; color: #f3e6d8; text-align: left; }
+.cr-list .cr-role { min-width: 10em; color: #c9b48a; text-align: left; }
 .cr-legal { margin: 6px 0 0; color: #c9bfb2; line-height: 1.5; overflow-wrap: anywhere; }
 /* スマホ：確認の窓は縮めずに描かれる。押す所は44px以上、余白は詰める（文字は type-roles.css） */
 html.is-compact #stage .mimi-confirm-overlay .mimi-confirm-actions .btn, html.is-compact #stage .tr-btns .btn { min-height: 44px; }
@@ -21064,6 +21105,26 @@ html.is-compact .home-stage.h15-sm .h15-goal { right: calc(450px + var(--sx, 0px
    押す所は画面上で最小44px（舞台は縮めて描くので ÷ --game-scale）。文字の大きさは type-roles.css */
 .reward-cg-viewer-x { width: calc(48px / var(--game-scale, 1)); height: calc(48px / var(--game-scale, 1)); right: calc(12px / var(--game-scale, 1)); top: calc(12px / var(--game-scale, 1)); }
 .reward-cg-viewer-listbtn { position: absolute; right: calc(14px / var(--game-scale, 1)); bottom: calc(12px / var(--game-scale, 1)); z-index: 3; min-width: calc(76px / var(--game-scale, 1)); min-height: calc(48px / var(--game-scale, 1)); padding: 0 calc(14px / var(--game-scale, 1)); color: #f3ece0; background: rgba(12,6,8,.78); border: 1px solid rgba(214,176,104,.8); border-radius: 2px; cursor: pointer; font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 700; }
+/* 一枚絵・写真集の送りボタン（2026-11-16）：絵の左右の端に ‹ ›。金の縁・半透明、端では薄く押せない */
+.reward-cg-nav { position: absolute; top: 50%; z-index: 3; width: calc(56px / var(--game-scale, 1)); height: calc(104px / var(--game-scale, 1)); margin-top: calc(-52px / var(--game-scale, 1)); padding: 0 0 calc(6px / var(--game-scale, 1));
+  display: grid; place-items: center; font: 700 calc(46px / var(--game-scale, 1))/1 "Shippori Mincho B1", "Yu Mincho", serif; color: #f5d77a;
+  background: rgba(12, 6, 8, .55); border: 1px solid rgba(214, 176, 104, .85); border-radius: 2px; box-shadow: 0 6px 18px rgba(0, 0, 0, .5); cursor: pointer; transition: opacity .2s, background-color .15s; }
+.reward-cg-nav.is-prev { left: calc(12px / var(--game-scale, 1)); }
+.reward-cg-nav.is-next { right: calc(12px / var(--game-scale, 1)); }
+.reward-cg-nav:hover { background: rgba(60, 16, 24, .8); color: #fff3d2; }
+.reward-cg-nav:focus-visible { outline: 2px solid #f3d58e; outline-offset: 2px; }
+.reward-cg-nav.is-end { opacity: .25; pointer-events: none; }
+/* 音量のつまみ（2026-11-16「メーターが黄色になってよくわかりません」）：溝はつまみより左だけ金、右は暗い溝。
+   値の割合は game.js paintRange が --fill で渡す。設定・音の小窓・物語の場面・エンディングの小窓・ロビー・タイトル・ホームの設定を同じ見た目に */
+:is(.ending-prompt-vol, .settings-modal-volume, .sound-panel .sp-range, .story-vol-range, .lb-vol, .audio-bar-volume, .home-dialog input[type="range"]) { -webkit-appearance: none; appearance: none; background: transparent; border: 0; padding: 0; cursor: pointer; accent-color: auto; }
+:is(.ending-prompt-vol, .settings-modal-volume, .sound-panel .sp-range, .story-vol-range, .lb-vol, .audio-bar-volume, .home-dialog input[type="range"])::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; border: 0;
+  background: linear-gradient(90deg, #e6c172 0, #c99a48 var(--fill, 50%), rgba(255, 240, 210, .14) var(--fill, 50%), rgba(255, 240, 210, .14) 100%);
+  box-shadow: inset 0 0 0 1px rgba(217, 179, 90, .4); }
+:is(.ending-prompt-vol, .settings-modal-volume, .sound-panel .sp-range, .story-vol-range, .lb-vol, .audio-bar-volume, .home-dialog input[type="range"])::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fff3cf 0, #e2bd6a 45%, #9a6a26 100%); border: 1px solid #3a2410; box-shadow: 0 1px 4px rgba(0, 0, 0, .65); }
+:is(.ending-prompt-vol, .settings-modal-volume, .sound-panel .sp-range, .story-vol-range, .lb-vol, .audio-bar-volume, .home-dialog input[type="range"])::-moz-range-track { height: 6px; border-radius: 3px; border: 0; background: rgba(255, 240, 210, .14); box-shadow: inset 0 0 0 1px rgba(217, 179, 90, .4); }
+:is(.ending-prompt-vol, .settings-modal-volume, .sound-panel .sp-range, .story-vol-range, .lb-vol, .audio-bar-volume, .home-dialog input[type="range"])::-moz-range-progress { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #e6c172, #c99a48); }
+:is(.ending-prompt-vol, .settings-modal-volume, .sound-panel .sp-range, .story-vol-range, .lb-vol, .audio-bar-volume, .home-dialog input[type="range"])::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #fff3cf 0, #e2bd6a 45%, #9a6a26 100%); border: 1px solid #3a2410; box-shadow: 0 1px 4px rgba(0, 0, 0, .65); }
 .reward-cg-list { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; background: #060308; cursor: default; }
 .reward-cg-list-head { flex: none; display: flex; align-items: center; gap: calc(14px / var(--game-scale, 1)); padding: calc(6px / var(--game-scale, 1)) calc(12px / var(--game-scale, 1)); color: #efcd82; font-family: "Shippori Mincho B1", "Yu Mincho", serif; border-bottom: 1px solid rgba(214,176,104,.4); }
 .reward-cg-list-head span { flex: 1 1 auto; color: #c4b89a; }
