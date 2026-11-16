@@ -143,7 +143,7 @@
         <div class="bc-banner" aria-live="polite"></div>
       </section>
       <aside class="bc-god">
-        <div class="bc-god-pic${ART.goddess ? ' has-art' : ''}">${ART.goddess ? `<img src="${ART.goddess}" alt="運命の女神ウンメ">` : wheelSVG()}</div>
+        <div class="bc-god-pic${ART.goddess ? ' has-art' : ''}">${ART.goddess ? `<img src="${ART.goddess}" alt="運命の女神ウンメ"><img class="bc-god-face" src="${ART.goddess}" alt="">` : wheelSVG()}</div>
         <b class="bc-god-n">運命の女神 ウンメ</b>
         <div class="bc-favor" aria-label="女神のご機嫌"><span>ご機嫌</span><i></i><i></i><i></i></div>
         <span class="bc-fnote" hidden></span>
@@ -296,7 +296,17 @@
   // ---- ウンメのカットイン（決め所だけ）：斜めの帯にウンメの上半身がはみ出す。1.5秒ほどで消え、操作は止めない ----
   //   kind＝oracle（金：大きな神託）／betray（赤：約束の裏切り）／climax（桃：めくりの溜め）／jackpot（金：大当たり）
   //   face＝表情の差分の名前（UMME にあれば使い、無ければ今の絵）
-  const UMME = { base: ART.goddess };
+  //   横の絵の表情違い（同じ構図で顔だけ違う。2026-11-17 ユーザー選択：ウインク＝umme_doya_2・驚き＝umme_odoroki_1）。むくれ・祈る・ジト目・あくびは描いたら足す
+  const UMME = { base: ART.goddess, doya: 'assets/characters/umme_lean_doya.webp', odoroki: 'assets/characters/umme_lean_odoroki.webp' };
+  // 横の絵の顔を少しのあいだ変えて、元の顔へ戻す（上に重ねた層をふわっと出し入れ。UMME に無い顔は何もしない）
+  let faceT = 0;
+  function godFace(name, ms) {
+    const el = host && host.querySelector('.bc-god-face'), src = UMME[name];
+    if (!el || !src || name === 'base') return;
+    if (!el.src.endsWith(src)) el.src = src;
+    el.classList.add('is-on'); clearTimeout(faceT);
+    faceT = setTimeout(() => el.classList.remove('is-on'), ms || 2600);
+  }
   // カットイン専用の絵（場面ごとの束。出るたびに1枚を選ぶ。2026-11-17 ユーザー「カットインの顔は特別なものの方がいい。種類も欲しい」）。空の場面は表情の差分→今の絵の順で代わりに出す
   const CI_ART = {
     oracle: ['assets/characters/umme_ci_oracle_1.webp'],     // こっそり教える（指を突きつけてささやく。ユーザー選択「神託2」）
@@ -323,6 +333,7 @@
     host.querySelectorAll('.bc-cutin').forEach(e => e.remove()); clearTimeout(cutinT);
     const el = document.createElement('div');
     const special = ciPick(kind);
+    godFace(face, (ms || 1500) + 2000);
     el.className = 'bc-cutin is-' + kind + (special ? ' has-ci' : ''); el.setAttribute('aria-live', 'polite');
     el.innerHTML = `<i class="bc-ci-band"></i><img class="bc-ci-pic" src="${special || UMME[face] || UMME.base}" alt=""><div class="bc-ci-t"><b class="bc-ci-h">${esc(head)}</b><strong class="bc-ci-m">${esc(main).replace(/\|/g, '<wbr>')}</strong>${sub ? `<span class="bc-ci-s">${esc(sub).replace(/\|/g, '<wbr>')}</span>` : ''}</div>`;
     host.appendChild(el);
@@ -462,7 +473,7 @@
     S.oracle = { text, big, kind, w, hand: S.shoe.hands + 1 };
     S.A.oracles++;
     if (big && TUNE.cool) S.A.coolTo = S.A.hands + 1 + TUNE.cool;   // この手（神託の手）の後、cool 手は口がかたい
-    if (big) cutin('oracle', '神託', text, say1.replace(/\|/g, ''), 'doya', 1700);
+    if (big) cutin('oracle', '神託', text, say1.replace(/\|/g, ''), 'doya', 1700); else godFace('doya', 3000);
     say('goddess', say1, 3600);
     if (big && TUNE.cool) { say('goddess', pick(TUNE.askInCool ? ['……しゃべりすぎちゃった！|しばらく神託はおあずけでーす！', 'あ、言いすぎた！|次の神託はしばらく先でーす！'] : ['……しゃべりすぎちゃった！|しばらく内緒でーす！', 'あ、言いすぎた！|しばらくお口チャックでーす！']), 2600); paintCool(); }
     paintPins(); sfx('garapon');
@@ -595,13 +606,13 @@
       keep(); return;
     }
     const o = q.opts[i], M = MOODS[q.mood];
-    if (o.kind === 'none') { say('goddess', pick(['はぐらかしたー！|つまんなーい！', 'ふーん、慎重だねぇ。|知らんけど！', 'えー、決めてくれないのぉ？'])); return; }
+    if (o.kind === 'none') { godFace('jito', 2600); say('goddess', pick(['はぐらかしたー！|つまんなーい！', 'ふーん、慎重だねぇ。|知らんけど！', 'えー、決めてくれないのぉ？'])); return; }
     S.pledges.push(o.make()); if (S.pledges.length > 3) S.pledges.shift();
     paintPins();
     const liked = o.kind === 'wish' || (!q.wish && o.kind === M.like);
     if (liked) {
       say('goddess', o.kind === 'wish' ? pick(['やったぁ！　話がわかるぅ！', 'えへへ、ありがとー！|約束だよぉ？']) : pick(['それそれ！|そういうの大好きでーす！', 'わかってるぅ！|ウンメちゃん感激！', 'いい返事！|運命の糸がピンって鳴った！', 'そう来なくっちゃ！']));
-      setFavor(A.favor + 1, o.kind === 'wish' ? 'お願いを聞いた' : '気分に合う返事');
+      setFavor(A.favor + 1, o.kind === 'wish' ? 'お願いを聞いた' : '気分に合う返事'); godFace('doya', 2600);
       if (!tryBig() && Math.random() < .3) giveOracle(false);
     } else say('goddess', q.wish ? pick(['えー、けちー！|まあ、好きにすればー？', 'ふーんだ。じゃあ、それで']) : pick(['へぇ〜、そうするんだ。|覚えときまーす！', 'ふうん。約束だよぉ？', 'はーい、女神が聞いたからね！', 'なるほどぉ。……守ってよね？']));
     keep();
@@ -994,8 +1005,9 @@
         const [bm, bs] = splitLine(bl);
         cutin('betray', '約束やぶり', bm, bs, pay.net > 0 ? 'muku' : 'jito', 1500);
         say('goddess', bl, 3200);
-      } else say('goddess', pay.net > 0 ? pick(['有言実行！　|しかも当たり！|かっこいいでーす！', '言ったとおりにして|勝った！|そういう子、|大好き！']) : pay.net < 0 ? pick(['約束は守ったのにねぇ。|よしよし', '外れたけど|ウソはつかなかった！|えらいえらい！']) : '約束どおり！|ちゃんと見てたよぉ', 3200);
+      } else { godFace(pay.net >= 0 ? 'doya' : 'base', 3000); } if (!judged.broken) say('goddess', pay.net > 0 ? pick(['有言実行！　|しかも当たり！|かっこいいでーす！', '言ったとおりにして|勝った！|そういう子、|大好き！']) : pay.net < 0 ? pick(['約束は守ったのにねぇ。|よしよし', '外れたけど|ウソはつかなかった！|えらいえらい！']) : '約束どおり！|ちゃんと見てたよぉ', 3200);
     } else if (stake && pay.net >= stake * 8) { cutin('jackpot', '大当たり', `＋${fmt(pay.net)}`, '運命もびっくりでーす！', 'odoroki', 1600); say('goddess', 'わ、大当たり！|運命もびっくりでーす！'); }
+    else if (h.w === 'T' && !orc) { godFace('odoroki', 2400); if (stake && Math.random() < .5) say('goddess', pick(['引き分けーっ！|これはびっくり！', 'えっ、引き分け！？|……知ってたけどね！'])); }
     else if (stake && Math.random() < .5) { const DT = DL.T || {}, rl = DT.res ? DT.res(h, pay.net) : pick((pay.net > 0 ? DT.win : pay.net < 0 ? DT.lose : DT.tie) || []); if (rl) dline(rl, 2800); }
     else if (stake && Math.random() < .3) say('goddess', pick(['決まりーっ！　|これが今日の|運命でーす！', 'はい確定。|……いやほんと、|ウンメちゃんは|前から知ってたんだけどね？', '文句は|受け付けませーん！']));
     // 大きな神託に従って勝った：「神託どおり！」（ほかのカットインが出ている時は重ねない）
@@ -1368,7 +1380,7 @@
 
   // ---- 検査の出入口（qa/baccaratshot.mjs だけが使う） ----
   const _qa = {
-    S: () => S, host: () => host, sq: () => sq, tune: TUNE, cutin, umme: UMME,
+    S: () => S, host: () => host, sq: () => sq, tune: TUNE, cutin, umme: UMME, face: godFace,
     bet(k, n) { for (let i = 0; i < (n || 1); i++) addBet(k); },
     deal() { if (betResolve) betResolve({ look: false }); }, look() { if (betResolve) betResolve({ look: true }); },
     ask: askQuestion, oracle: giveOracle, answer, setFavor, guide: openGuide, roads: openRoads,
