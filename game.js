@@ -17995,6 +17995,14 @@ function rdFlushReveal(gen) {
   });
 }
 // リーディングを出してよい卓か（研修・講義・ほろ酔い・本気リコ・オールスターでは出さない）
+// テンポの決まり（2026-11-18）：自動で出るリーディング（異議あり・目利き・おねだり・見せ合いっこ）は、全種合わせて1対戦に3回まで。続けての手では出さない。
+// 押し出すふりは、プレイヤーが自分でボタンを押す遊びなので数えない（のこり3は別に持つ）。
+function rdBudgetOk() {
+  const c = state.rdCount || {};
+  if ((c.igi || 0) + (c.mekiki || 0) + (c.onedari || 0) + (c.mise || 0) >= 3) return false;
+  if (state.rdLastHand != null && state.rdLastHand < state.handNo && state.handNo - state.rdLastHand === 1) return false;
+  return true;
+}
 function rdTableOk() {
   if (!window.RD || state.screen !== 'battle' || threeChoiceOk() || isHoroyoi() || state.seriousRicoMode || state.isAllstar) return false;
   if (save.readingEnabled === false) return false;
@@ -18003,7 +18011,7 @@ function rdTableOk() {
 // 異議あり：ポルカがターンでポットの3分の2以上を賭けた直後（出したら true。終わったらミミに番を渡す）
 function maybeRdAfterBet(action, amount) {
   try {
-    if (!window.RD || !RD.ok.igi || !rdTableOk()) return false;
+    if (!window.RD || !RD.ok.igi || !rdTableOk() || !rdBudgetOk()) return false;
     if (state.opponentImgKey !== 'polka' || action.type !== 'bet') return false;
     // ターンだけ（2026-11-17 Codex 2回目 指摘4）：リバーでは、外しても相手の次の判断が無く、情報公開の罰が効かない
     if (state.handPhase !== 'turn') return false;
@@ -18045,7 +18053,7 @@ function maybeRdOnedari(next) { return false; }   // 2026-11-18：卓の上に�
 // 盤の中で「おねだり（待ちの印）→ リバーがめくれる → 払う？降りる？」まで済ませ、決めた方がそのまま卓のコール／フォールドになる。配りの仕込みはしない。1対戦に2回まで。
 function maybeRdOnedariPick(action, amount) {
   try {
-    if (!window.RD || !RD.ok.onedari || !rdNightOk()) return false;
+    if (!window.RD || !RD.ok.onedari || !rdNightOk() || !rdBudgetOk()) return false;
     if (action.type !== 'bet' || state.handPhase !== 'river' || (state.community || []).length !== 5) return false;
     if (!(state.playerChips > 0 && state.opponentChips >= 0 && amount > 0)) return false;
     if (!(readPools().logic || []).includes('onedari')) return false;
@@ -18089,7 +18097,7 @@ function rdOnedariDecide(pick) {
 // 見せ合いっこ：リバーでミミがポットの3分の2以上を賭けた後（AI の判断にかかわらず。出したら true。画面の後、ポルカの払う／降りるを置き換えて続ける）。1対戦1回・出る見込み70%
 function maybeRdMise(action, need) {
   try {
-    if (!RD.ok.mise || !rdNightOk() || state.opponentImgKey !== 'polka') return false;
+    if (!RD.ok.mise || !rdNightOk() || !rdBudgetOk() || state.opponentImgKey !== 'polka') return false;
     if (state.handPhase !== 'river' || (state.community || []).length !== 5 || !(need > 0) || state.opponentChips < need) return false;
     if (!(readPools().logic || []).includes('mise')) return false;
     const cnt = state.rdCount || (state.rdCount = {});
@@ -18181,7 +18189,7 @@ function rdMkStreet(phase, next) { return next(); }
 // リバーが卓でめくれた直後：リバーの反応と印 → 見立て3つを選ばせる → 当たりは手札が表に／外れは答え合わせを手の後に。出したら true を返し、終わったら next を呼ぶ
 function maybeRdAfterRiver(next) {
   try {
-    if (!window.RD || !RD.ok.mekiki) return false;
+    if (!window.RD || !RD.ok.mekiki || !rdBudgetOk()) return false;
     if (state.screen !== 'battle' || threeChoiceOk() || isHoroyoi() || state.seriousRicoMode || state.isAllstar) return false;
     if (save.readingEnabled === false) return false;
     if (!(state.playerChips > 0 && state.opponentChips > 0)) return false;
@@ -18292,6 +18300,7 @@ function startRd(group, gameId, next, extra) {
   state.readBattlePlayed = state.readBattlePlayed || {};
   state.readBattlePlayed[gameId] = (state.readBattlePlayed[gameId] || 0) + 1;
   state.readHandNo = hand;
+  if (gameId !== 'furi') state.rdLastHand = hand;   // 続けての手では出さない（rdBudgetOk）
   if (!save.readBattleSeen) save.readBattleSeen = {};
   save.readBattleSeen[gameId] = true;
 }
