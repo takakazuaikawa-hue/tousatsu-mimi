@@ -313,6 +313,8 @@ function normalizeSave(s) {
   // 配列・オブジェクトが null/undefined にならないよう保証
   if (!Array.isArray(s.clearedStages)) s.clearedStages = [];
   if (!Array.isArray(s.ownedItems)) s.ownedItems = [];
+  // 11/18 CG集「零時の寝台と卓」「ライバルと卓で」は「夜のYシャツと卓」にまとめた
+  if (s.ownedItems.some(id => id === 'cgset_midnight' || id === 'cgset_rival')) { s.ownedItems = s.ownedItems.filter(id => id !== 'cgset_midnight' && id !== 'cgset_rival'); if (!s.ownedItems.includes('cgset_yshirt')) s.ownedItems.push('cgset_yshirt'); }
   if (!Array.isArray(s.shopSeenItems)) s.shopSeenItems = [];
   if (!Array.isArray(s.firstClearRewardClaimed)) s.firstClearRewardClaimed = [];
   if (!Array.isArray(s.rewardCgSeen)) s.rewardCgSeen = [];
@@ -765,9 +767,7 @@ const SECRET_CG = {
 const CG_SETS = {
   cgset_bath:     { name: '湯上がり',         n: 6, key: 'bath' },
   cgset_morning:  { name: '朝と夕暮れ',       n: 4, key: 'morning', short: '朝と夕' },
-  cgset_yshirt:   { name: '夜のYシャツ',      n: 4, key: 'yshirt', short: 'Yシャツ' },
-  cgset_midnight: { name: '零時の寝台と卓',   n: 2, key: 'midnight', short: '寝台と卓' },
-  cgset_rival:    { name: 'ライバルと卓で',   n: 2, key: 'rival', short: 'ライバル' },
+  cgset_yshirt:   { name: '夜のYシャツと卓',      n: 8, key: 'yshirt', short: 'Yシャツと卓' },
   // ほろ酔いの夜の一枚絵で、採用した絵と構図が似ていた別カット（11/09 ユーザー「採用版以外はCG集に。出来はいい」）
   cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 11, key: 'horoyoi', short: 'ほろ酔い' },
   // 二周目のクリア報酬（11/09 ユーザー「2周目のクリア報酬のヴェルベット写真集として」「勝った時に渡す」）。交換所には出さない。
@@ -6873,11 +6873,9 @@ const SHOP_ITEMS = [
   { id: 'gallery_mimi',          cat: 'memory', name: 'ミミ百態',            price: 300,  desc: 'ミミの表情メモと、ぱにゅぱにゅの裏話を読める' },
   { id: 'cg_selina_fireside',    cat: 'memory', name: '暖炉のセリナ',        price: 550, desc: '眼鏡を外したセリナの、|暖炉の部屋での一枚。|手に入れると|コレクションで|いつでも見られる' },
   { id: 'cgset_morning',  cat: 'cgset', name: 'CG集「朝と夕暮れ」',     price: 100, desc: '朝の寝室のTシャツと、|夕暮れのジム。|4枚入り。|コレクションで|いつでも見られる' },
-  { id: 'cgset_bath',     cat: 'cgset', name: 'CG集「湯上がり」',       price: 100, desc: '湯気の残る浴室で、|肌着のミミ。|8枚入り。|コレクションで|いつでも見られる' },
-  { id: 'cgset_yshirt',   cat: 'cgset', name: 'CG集「夜のYシャツ」',     price: 100, desc: '月の見える寝室で、|Yシャツ一枚のミミ。|7枚入り。|コレクションで|いつでも見られる' },
-  { id: 'cgset_midnight', cat: 'cgset', name: 'CG集「零時の寝台と卓」', price: 100, desc: 'バニーと水着で、|寝台と卓に|身を預けるミミ。|5枚入り。|コレクションで|いつでも見られる' },
-  { id: 'cgset_rival',    cat: 'cgset', name: 'CG集「ライバルと卓で」', price: 100, desc: 'ポルカ・ヴェルベットと|ミミの、|幻の一枚たち。|3枚入り。|コレクションで|いつでも見られる' },
-  { id: 'cgset_horoyoi',  cat: 'cgset', name: 'CG集「ほろ酔いの別カット」', price: 100, desc: 'ほろ酔いの夜の、|もうひとつの|一枚たち。|12枚入り。|コレクションで|いつでも見られる' },
+  { id: 'cgset_bath',     cat: 'cgset', name: 'CG集「湯上がり」',       price: 100, desc: '湯気の残る浴室で、|肌着のミミ。|6枚入り。|コレクションで|いつでも見られる' },
+  { id: 'cgset_yshirt',   cat: 'cgset', name: 'CG集「夜のYシャツと卓」',     price: 100, desc: '月の見える寝室の|Yシャツ一枚のミミと、|零時の卓の一枚、|ライバルとの幻の一枚。|8枚入り。|コレクションで|いつでも見られる' },
+  { id: 'cgset_horoyoi',  cat: 'cgset', name: 'CG集「ほろ酔いの別カット」', price: 100, desc: 'ほろ酔いの夜の、|もうひとつの|一枚たち。|11枚入り。|コレクションで|いつでも見られる' },
   { id: 'omake_drama_1',         cat: 'memory', name: 'おまけ寸劇「初出勤」', price: 300,  desc: 'リコ先輩がカジノに初出勤した日の小話を読める' },
   { id: 'omake_drama_2',         cat: 'memory', name: 'おまけ寸劇「VIPルームの前で」', price: 350, desc: 'ヴェルベット戦の直前、リコとミミの小話を読める。ヴェルベット撃破で入荷', requires: 'ending' },
   // 音声は無い。旧「ボイス集」（900）を実態どおりの「セリフ集」に改め値下げ。買った人の所持はそのまま
@@ -6974,9 +6972,7 @@ const SHOP_COMMENTS = {
   cgset_morning:         '寝ぼけまなこの|ミミちゃん。|朝の光は|正直ですな',
   cgset_bath:            '湯上がりの一冊。|湯気で曇る前に、|お早めにどうぞ',
   cgset_yshirt:          'Yシャツ一枚の夜……|どなたのシャツかは、|聞かぬが花です',
-  cgset_midnight:        '零時を過ぎた|卓と寝台。|これは閉店後の|品でしてな',
   cgset_horoyoi:         'ほろ酔いの夜の|別カットですぞ。|酔った皆さんは、|実に無防備で',
-  cgset_rival:           '表に出せなかった|幻の一枚。|ポルカさんには|内緒ですよ',
   omake_drama_1:         'リコさんがこの店に来た最初の日……短いお話、お楽しみあれ',
   omake_drama_2:         '決戦直前の小話。これはクリアされた方にだけ、お聞かせできる品です',
   omake_voice_pack:      'リコさんの口癖を書き留めた一冊。押せば、あの声がそのまま聞こえますぞ',
@@ -7151,8 +7147,6 @@ const SHOP_UNLOCK = {
   cgset_morning:         'always',
   cgset_bath:            'polka',
   cgset_yshirt:          'selina',
-  cgset_midnight:        'grano',
-  cgset_rival:           'velvet',
   cgset_horoyoi:         'h:polka',   // ほろ酔いの夜でポルカに勝つと入荷
   memory_minipoker:      'selina',  // セリナ撃破で「ふんわり息抜き」枠を入荷
 
