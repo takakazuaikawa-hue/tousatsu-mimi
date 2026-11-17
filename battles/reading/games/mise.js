@@ -2,6 +2,7 @@
 // リバーでミミが賭けた後、ポルカの AI が「降りる」と決めた所で開く。酔ったポルカが「1枚ずつ見せっこしよ？」と言い出し、自分の1枚を先にめくる。
 // 決まり：彼女は「見えた1枚＋場札」の役を、自分の本当の役とくらべる。下なら払う。上（同じ）なら降りる。乱数は無い。
 // 決めるのは3択：左の札／右の札／見せない。見せた時だけ、ポルカの払う／降りるを、この決まりで計算して卓の AI と置き換える（払う → 本当に払って勝負・降りる → ポットはミミへ）。
+// 警戒（2026-11-17 Codex 2回目 指摘6）：その対戦で一度「弱く見える札」で払わされたポルカは、次から警戒する（sc.wary）。弱く見える札を見せても「罠でしょ」と疑い、元の AI の判断に戻る（必ずは払わない）。強く見える札を見せた時だけ、今まで通り降りる。
 // 見せない時は、卓の AI が元々決めていた判断（払う／降りる）のまま（2026-11-17 Codex 指摘3。sc.ai＝'fold'｜'pay'）。
 // 出す場は、見えない札（ポルカの伏せた方の札・AI の元の判断）がどうであっても、最善の答えが変わらない場だけ（指摘2）。
 (function () {
@@ -48,15 +49,16 @@
     for (const c of her) { if (cmp(core(score(board.concat([c]))), core(real)) === 0) return { card: c, real }; }
     return null;
   }
-  function react(board, herReal, shown) { if (!shown) return 'fold'; return cmp(score(board.concat([shown])), herReal) < 0 ? 'call' : 'fold'; }
-  function solve(board, mimi, her) {
+  // 'call'＝払う／'fold'＝降りる／'orig'＝罠を疑って、元の AI の判断のまま（警戒中に弱く見える札を見せた時）
+  function react(board, herReal, shown, wary) { if (!shown) return 'fold'; return cmp(score(board.concat([shown])), herReal) < 0 ? (wary ? 'orig' : 'call') : 'fold'; }
+  function solve(board, mimi, her, wary) {
     const hs = herShow(board, her); if (!hs) return null;
     const mReal = score(board.concat(mimi)), ahead = cmp(mReal, hs.real);
-    const out = [0, 1].map(i => react(board, hs.real, mimi[i]));
+    const out = [0, 1].map(i => react(board, hs.real, mimi[i], wary));
     const pay = ahead > 0 ? 2 : ahead < 0 ? -1 : 0;
-    const val = (o) => o === 'call' ? pay : 1;
+    const val = (o, hide) => o === 'call' ? pay : o === 'orig' ? hide : 1;
     // 見せない時の結果は、卓の AI の元の判断しだい（降りる＝1・払う＝勝負の結果）。どちらの判断でも最善の答えを、本当の答えにする
-    const bestOf = (hide) => { const vals = [val(out[0]), val(out[1]), hide]; const m = Math.max(...vals); return vals.map((v, i) => v === m ? i : -1).filter(i => i >= 0); };
+    const bestOf = (hide) => { const vals = [val(out[0], hide), val(out[1], hide), hide]; const m = Math.max(...vals); return vals.map((v, i) => v === m ? i : -1).filter(i => i >= 0); };
     const bF = bestOf(1), bP = bestOf(pay);
     const ans = bF.filter(i => bP.includes(i));
     return { hs, mReal, ahead, out, ans, bF, bP };
@@ -76,11 +78,11 @@
   // 場面の全部（表示に使う物）を計算から出す
   function derive(sc) {
     const board = sc.board.split(' ').map(P), mimi = sc.mimi.split(' ').map(P), her = sc.polka.split(' ').map(P);
-    const r = solve(board, mimi, her);
+    const r = solve(board, mimi, her, !!sc.wary);
     const hsIdx = her.findIndex(c => c.t === r.hs.card.t);
     return { board, mimi, her, r, hsIdx, hsLink: linkOf(board, r.hs.card),
       herName: hname(r.hs.real), herShort: sname(r.hs.real), mimiName: hname(r.mReal),
-      seen: [0, 1].map(i => linkOf(board, mimi[i])), ahead: r.ahead, ans: r.ans[0], pot0: sc.pot0 || 0, bet: sc.bet || 0, ai: sc.ai === 'pay' ? 'pay' : 'fold' };
+      seen: [0, 1].map(i => linkOf(board, mimi[i])), ahead: r.ahead, ans: r.ans[0], best: r.ans.slice(), wary: !!sc.wary, pot0: sc.pot0 || 0, bet: sc.bet || 0, ai: sc.ai === 'pay' ? 'pay' : 'fold' };
   }
   // T＝卓の table（board は5枚）。ctx.charKey は polka だけ。ctx.pot0＝この通りの賭けの前のポット・ctx.bet＝ミミの賭け（ポルカが払う額）。作れなければ null
   function plan(T, ctx) {
@@ -90,8 +92,11 @@
     const mk = (c) => P(RANKS[c.r - 2] + c.s);
     const board = T.board.map(mk), her = T.her.map(mk), mimi = T.mine.map(mk);
     const all = board.concat(her, mimi); if (new Set(all.map(c => c.t)).size !== all.length) return null;
-    const r = solve(board, mimi, her);
-    if (!r || r.ahead === 0 || r.ans.length !== 1) return null;     // 同点・どちらでも払う／どちらでも降りる場では出さない
+    const wary = !!ctx.wary;
+    const r = solve(board, mimi, her, wary);
+    // 同点・どちらでも払う／どちらでも降りる場では出さない。警戒中は、同じ結果になる選び方が2つ残ってよい（弱く見える札と見せない＝元の判断のまま）が、3つ全部が同じ場は出さない
+    const okAns = (rr) => rr && rr.ahead !== 0 && (wary ? rr.ans.length >= 1 && rr.ans.length < 3 : rr.ans.length === 1);
+    if (!okAns(r)) return null;
     // 見えていない札の全部に替えてみる：見せる札（hs.card）はそのまま、伏せた方の札を山の残り全部に替えて、最善の答えが変わる場は出さない（Codex 指摘2）
     const shown = r.hs.card, hiddenIdx = her.findIndex(c => c.t !== shown.t), seenSet = new Set(all.map(c => c.t));
     for (const h of FULL) {
@@ -99,16 +104,17 @@
       const alt = her.slice(); alt[hiddenIdx] = h;
       const hs2 = herShow(board, alt);
       if (!hs2 || hs2.card.t !== shown.t) continue;      // この伏せ札なら、彼女は別の札を見せる（または見せる札が無い）＝今見えている場面ではない
-      const r2 = solve(board, mimi, alt);
-      if (!r2 || r2.ahead === 0 || r2.ans.length !== 1 || r2.ans[0] !== r.ans[0]) return null;
+      const r2 = solve(board, mimi, alt, wary);
+      if (!okAns(r2) || r2.ans.join() !== r.ans.join()) return null;
     }
-    const sc = { board: board.map(c => c.t).join(' '), mimi: mimi.map(c => c.t).join(' '), polka: her.map(c => c.t).join(' '), ans: r.ans[0], pot0: ctx.pot0 || 0, bet: ctx.bet || 0 };
+    const sc = { board: board.map(c => c.t).join(' '), mimi: mimi.map(c => c.t).join(' '), polka: her.map(c => c.t).join(' '), ans: r.ans[0], best: r.ans.slice(), pot0: ctx.pot0 || 0, bet: ctx.bet || 0, wary };   // ans＝最善の選び方（警戒中は同じ結果の2つのうち小さい方。正解の判定は plan の best＝sc.best）
     return sc;
   }
 
   // ================= 台詞・お手本 =================
   const DEMO = { board: 'Kh 9c 4d 2s Jc', mimi: 'Ks 4c', polka: '9d 6h', ans: 1, pot0: 600, bet: 300 };
   const OPEN = ['う〜、こわいよぉ……。|ねえ、1枚ずつ 見せっこしよ？', 'あたし、これ〜！|弱そうだったら、払うから〜'];
+  const OPEN_WARY = ['……ねえ。さっきの、|ほんとは弱くなかったの〜？', 'こんどは だまされないよ〜！|あたし、これ〜！'];
   const RK = (c) => RN(c.r);
   const herUp = (d) => d.r.hs.real[0] === 2 ? 'あたしはツーペアだもん♪' : `あたしの ${RK(d.r.hs.card)} のほうが上〜♪`;
   const herCant = (d) => d.r.hs.real[0] === 2 ? 'あたしのツーペアじゃ、勝てないよぉ……' : `あたしの ${RK(d.r.hs.card)} じゃ、勝てないよぉ……`;
@@ -123,7 +129,7 @@
     if (pick === 2) {
       // 見せない：ポルカは、卓の AI が元々決めていた払う／降りるのまま（d.ai）。ミミが勝っている（a）かどうかで結果が決まる
       const callC = d.r.out.map((o, i) => o === 'call' ? i : -1).filter(i => i >= 0), foldC = d.r.out.map((o, i) => o === 'fold' ? i : -1).filter(i => i >= 0);
-      const good = d.ans === 2;
+      const good = d.best.includes(2);
       if (d.ai === 'pay') {
         if (a) {
           return { kind: 'hidepay', mark: good ? '◎ 払わせた' : '△ 払われた（運）', delta: d.pot0 + d.bet, sign: 1, cls: good ? 'good' : 'warn', steps: [{ face: 'drunk', t: '見せてくれないの〜？|……まあいっか、払う払う〜！' }, { face: 'panic', t: `えっ……ミミちゃんが|${sname(d.r.mReal)}！？`, flip: true }, { face: 'bawl', t: 'ず、ずる〜い！|うわぁ〜ん！' }], flip: true, act: null,
@@ -141,7 +147,20 @@
         reason: good ? (d.r.mReal[0] === 0 ? 'ミミは役なし。見せなくても、ポルカは自分で降りた' : `ミミは ${d.mimiName}。${d.herName}には負けている。|見せなくても、ポルカは自分で降りた`) :
           `ポルカは、元々降りるつもりだった。|${foldC.length ? RK(d.mimi[foldC[0]]) + ' を見せれば、確実に降ろせた' : ''}` };
     }
+    // 警戒中に弱く見える札を見せた：「罠でしょ」と疑い、元の AI の判断のまま（見せない時と同じ結果。決めるのは卓の AI の元の判断）
+    if (d.r.out[pick] === 'orig') {
+      const o = outcome(d, 2), good = d.best.includes(pick), s0 = d.seen[pick];
+      return Object.assign({}, o, { kind: 'doubt' + o.kind, act: 'orig', mark: good ? '◎ 罠を疑われても、これが最善' : '△ 疑われた（警戒中）', cls: good ? 'good' : 'warn',
+        steps: [{ face: 'drunk2', t: '……それ、わざと弱く|見せてない〜？ 罠でしょ〜' }].concat(o.steps.slice(1)),
+        reason: 'ポルカは警戒中。『' + s0.name + '』に見えても、罠を疑う。|だから元の考え（' + (d.ai === 'pay' ? '払う' : '降りる') + '）のまま。強く見える札なら、降りる' });
+    }
     const card = d.mimi[pick], oth = d.mimi[1 - pick], s = d.seen[pick], call = d.r.out[pick] === 'call';
+    if (!call && !a) {
+      // ミミが負けている手で、強く見える札を見せて降ろした
+      return { kind: 'drop', mark: d.best.includes(pick) ? '◎ 降ろした' : '△ 降ろせた', delta: d.pot0, sign: 1, cls: d.best.includes(pick) ? 'good' : 'warn', flip: false, act: 'fold',
+        steps: [{ face: 'panic', t: `${s.name}！？|${herCant(d)}` }, { face: 'plead', t: '降りる〜……ひっく' }],
+        reason: `ミミは ${d.mimiName}で、${d.herName}には負けている。|${RK(card)} が『${s.name}』に見えて、${d.herShort}より上なので、降りてくれた` };
+    }
     if (!call) {
       const okOth = d.r.out[1 - pick] === 'call';
       return { kind: 'fled', mark: '△ 逃げられた', delta: d.pot0, sign: 1, cls: 'warn', flip: false, act: 'fold',
@@ -168,7 +187,7 @@
     s1: 'ポルカは 9 のペア。ミミは勝ってるね。|払ってくれたら、もっともうかるよ',
     s2: 'K を見せると、K のペアに見える。|9 より上だから、こわがって降りちゃう',
     s3: '4 なら 4 のペア。9 より下だから、払う。|こわい札は、場札とつながる札' };
-  const CARD4 = [['目的', '迷っているポルカに、払ってもらう。|ただし、ミミが負けている時は、降りてもらう。'], ['やり方', 'ミミの札を1枚選んで見せる。|「見せない」なら、ポルカ次第。'], ['危なさ', '負けている時に見せると、弱いのが|ばれて、払われて負ける。'], ['見る物', 'ポルカの役の札と、ミミの札が場札と|つながるか（同じ数字・並び・同じマーク）。']];
+  const CARD4 = [['危なさ', '負けている時に見せると、弱いのが|ばれて、払われて負ける。'], ['決まり', 'ポルカの役の札と、ミミの札が場札と|つながるか（同じ数字・並び・同じマーク）。']];
   // 酔ったポルカの顔（assets/characters/polka_cutin_*。窓に収まる位置は試作 qa/h4mise のまま）
   const FACES = {
     drunk: { img: 'assets/characters/polka_cutin_drunk.webp', pos: '-246px 8px' },
@@ -196,6 +215,7 @@
   <svg class="thr" viewBox="0 0 800 370"><g class="gh"></g><g class="gm"></g></svg>
   <div class="chip hc"></div><div class="chip sc"></div>
   <div class="rule">見せた1枚＋場札の役が、彼女の役より<em>下</em>に見えれば、払う。<em class="u">上</em>なら、降りる</div>
+  <div class="wary"><svg viewBox="0 0 64 40"><path d="M3 22 Q32 2 61 22 Q32 40 3 22Z" fill="#fff4d8" stroke="#3a1a10" stroke-width="3"/><circle cx="32" cy="24" r="9" fill="#7a3a1a"/><circle cx="32" cy="24" r="4" fill="#1a0a06"/><path d="M1 23 Q32 -2 63 23 L63 17 Q32 -8 1 17Z" fill="#c9a26a" stroke="#3a1a10" stroke-width="3" stroke-linejoin="round"/></svg><b>けいかい中</b></div>
   <div class="reason"></div>
   <div class="clone"></div>
   <div class="mc m0"></div><div class="mc m1"></div>
@@ -208,7 +228,7 @@
   <button type="button" class="skip">とばす</button>
   <div class="hand">${HAND}</div>
   <div class="intro"><div class="in"><div class="rd">READING</div><div class="tt">リーディング：見せ合いっこ</div><div class="sn"></div></div></div>
-  <div class="panel"><div class="ph">この遊びの4つのこと</div><div class="pl"></div><button type="button" class="pgo btnA">はじめる</button></div>`;
+  <div class="panel"><div class="ph">お手本の後で、おぼえておくこと</div><div class="pl"></div><button type="button" class="pgo btnA">はじめる</button></div>`;
     const q = (s) => root.querySelector(s);
     Object.keys(FACES).forEach(k => { const f = FACES[k], e = q('.f-' + k); e.style.backgroundImage = `url('${f.img}')`; e.style.backgroundSize = 'auto 360px'; e.style.backgroundPosition = f.pos; });
     q('.rimg').style.backgroundImage = "url('assets/battle/chibi/rico_think.webp')";
@@ -240,6 +260,8 @@
       ['.hc', '.sc', '.mch'].forEach(s => { const c = q('.chip' + s); c.className = 'chip ' + s.slice(1); c.style.top = ''; c.textContent = ''; });
       q('.clone').classList.remove('on'); q('.clone').innerHTML = '';
       S.rule(false); S.say(null); S.reason(null); S.go(null, false); S.face('drunk'); S.rico(null);
+      q('.wary').classList.toggle('on', !!d.wary);
+      q('.rule').innerHTML = d.wary ? '強く見える札なら、降りる。<br><em>弱く見えても、罠を疑う</em>' : '見せた1枚＋場札の役が、彼女の役より<em>下</em>に見えれば、払う。<em class="u">上</em>なら、降りる';
       S.opts(false); S.optsEnable(false, false);
       q('.hand').classList.remove('on', 'tap');
     };
@@ -416,9 +438,10 @@
       S.ins('ミミが賭けた。ポルカは迷っている');
       await S.showBoard(run, true);
       run.ff = false;
-      S.say(OPEN[0]); await ST.wait(run, 1500);
+      const OP = S.d.wary ? OPEN_WARY : OPEN;
+      S.say(OP[0]); await ST.wait(run, 1500);
       await S.herFlip(run);
-      S.say(OPEN[1]); await ST.wait(run, 1400);
+      S.say(OP[1]); await ST.wait(run, 1400);
       run.ff = false; S.say(null);
       // 決める
       S.phase = 'pick';
@@ -449,7 +472,8 @@
       S.phase = 'done';
       await new Promise(res => { S.q('.go').onclick = res; });
       S.q('.go').onclick = null;
-      fin({ act: pick === 2 ? 'orig' : out.act, correct: pick === d.ans, pick, kind: out.kind, hiddenPay: pick === 2 && d.ai === 'pay' });
+      const orig = pick === 2 || out.act === 'orig';
+      fin({ act: orig ? 'orig' : out.act, correct: d.best.includes(pick), pick, kind: out.kind, hiddenPay: orig && d.ai === 'pay', paidWeak: pick < 2 && out.act === 'call' });
     };
     go();
   }

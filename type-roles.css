@@ -199,3 +199,13 @@ html #stage .personality-reveal-banner .prb-close-btn { font-size: calc(var(--r-
 html #stage .personality-reveal-banner .prb-inner { max-width: calc(600px / var(--game-scale, 1)) !important; width: calc(100% - 40px); padding: calc(10px / var(--game-scale, 1)) calc(22px / var(--game-scale, 1)) !important; }
 html #stage .personality-reveal-banner .prb-traits li { padding-left: calc(22px / var(--game-scale, 1)) !important; }
 html #stage .personality-reveal-banner .prb-traits li::before { top: calc(8px / var(--game-scale, 1)) !important; }
+
+/* ---------- 手の結果に併記する読みの答え（2026-11-17 リーディング・Codex 2回目 指摘7）：役目＝本文（--fx-body）と注記（--fx-cap） ---------- */
+.hand-result-overlay .hr-read { align-self: stretch; margin: 6px 0 2px; padding: 8px 14px 9px; border: 1px solid rgba(217,179,90,.5); border-left-width: 5px; background: rgba(12,28,18,.72); border-radius: 6px; text-align: left; display: flex; flex-direction: column; gap: 3px; }
+.hand-result-overlay .hr-read.is-ok { border-color: #8fe0a6; background: rgba(14,48,28,.78); }
+.hand-result-overlay .hr-read.is-ng { border-color: #e8a0a0; background: rgba(52,20,22,.74); }
+.hand-result-overlay .hr-read-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.hand-result-overlay .hr-read-t { font-size: var(--fx-cap, 14px) !important; color: #d8c79a; letter-spacing: .04em; }
+.hand-result-overlay .hr-read-m { font-size: var(--fx-body, 16px) !important; color: #fff3cf; font-weight: 800; }
+.hand-result-overlay .hr-read-real, .hand-result-overlay .hr-read-why { font-size: var(--fx-body, 16px) !important; color: #f4ecdc; line-height: 1.35; }
+.hand-result-overlay .hr-read-gain { font-size: var(--fx-cap, 14px) !important; color: #ffe08a; }

@@ -13,19 +13,21 @@ const SC = {
   // ターン：ポルカ Qh 6h・場 Ks 9h 4h 2c（♥は手と場で4枚・場には2枚）→ フラッシュは作れない
   hit: { phase: 'turn', board: 'Ks 9h 4h 2c', her: 'Qh 6h', mine: 'Ad Jc', pot: 400, intent: 'bluff' },
   // リバー：ポルカ Kc 5c（本当のフラッシュ）・場 Qc 9d 8c 4s 2c（♣3枚）→ 作れる
-  miss: { phase: 'river', board: 'Qc 9d 8c 4s 2c', her: 'Kc 5c', mine: 'Ad Jh', pot: 400, intent: 'value' },
+  miss: { phase: 'turn', board: 'Qc 9d 8c 2c', her: 'Kc 5c', mine: 'Ad Jh', pot: 400, intent: 'value' },   // 異議ありはターンだけ（11/17 2回目 指摘4）
   // リバー：ポルカ 9s 8c（6・7・8・9）・場 6c 7d Js Qh 2d → ストレートは作れない（4つ続きで届かなかった）
-  oX: { phase: 'river', board: '6c 7d Js Qh 2d', her: '9s 8c', mine: 'Ah Qd', pot: 500, intent: 'bluff' },
-  oOk: { phase: 'river', board: 'Qc 9d 8c 4s 2c', her: 'Kc 5c', mine: 'Ad Jh', pot: 400, intent: 'value' },
+  oX: { phase: 'turn', board: '6c 7d Js Qh', her: '9s 8c', mine: 'Ah Qd', pot: 500, intent: 'bluff' },
+  oOk: { phase: 'turn', board: 'Qc 9d 8c 2c', her: 'Kc 5c', mine: 'Ad Jh', pot: 400, intent: 'value' },
 };
 
 async function run(which) {
   const T = await open('polka', { W, H, save: which === 'hit' ? {} : { rdDemo: { igi: true } } });
   const { ev, log, shot, waitFor, q, click, close } = T;
-  const tag = 'igi_' + which;
+  const tag = 'fix8_igi_' + which;
   const sc = SC[which];
   log(`--- ${which}`);
+  await ev(`window.__r0 = window.__r0 || rand; rand = () => 0.01; return 1;`);   // 「作れる」が正解の場は3割だけ出す乱数を、出る側に固定
   await T.bet(sc);
+  await sleep(300); await ev(`rand = window.__r0; return 1;`);
   await waitFor(`!!document.querySelector('.rd-host')`, 15000);
   await sleep(400);
   log('出た', await ev(`return JSON.stringify({ cnt: state.rdCount, readHand: state.readHandNo, phase: state.handPhase, pp: state.psychPending })`));
@@ -65,16 +67,10 @@ async function run(which) {
   if (!pickX) {
     await T.restoreAI();
     await ev(`playerFold(); return 1;`); await sleep(1800); await shot(tag, 'hand_result');
-    await T.nextHand();
-    await waitFor(q('.sg'), 15000); await sleep(2200); await shot(tag, 'verdict');
-    await waitFor(q('.sg.live .sl.open, .sg.live .sl.miss, .sg.live .sl.full'), 8000);
-    await sleep(5500); await shot(tag, 'verdict_reveal');
-    await waitFor(q('.sg .go.on'), 10000);
-    await click('.sg .go');
-    await waitFor(`!document.querySelector('.rd-host')`, 6000);
-    await sleep(1200);
-    log('答え合わせ後', await ev(`return JSON.stringify({ panyu: state.panyu, success: state.psychSuccessCount })`));
-    await shot(tag, 'after_verdict');
+    log('手の結果の答えの欄', await ev(`return JSON.stringify({ hrRead: !!document.querySelector('.hand-result-overlay .hr-read'), text: (document.querySelector('.hand-result-overlay .hr-read') || {}).innerText || '', pend: !!state.pendingRead })`));
+    const h0 = await ev('return state.handNo');
+    await T.nextHand(); await sleep(3000);
+    log('次のハンド', await ev(`return JSON.stringify({ hand: state.handNo, was: ${h0}, board: !!document.querySelector('.rd-host') })`));
   }
   await close();
 }

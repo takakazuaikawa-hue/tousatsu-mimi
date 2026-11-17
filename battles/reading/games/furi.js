@@ -3,6 +3,7 @@
 //  ポルカ：「あわてたら、はったり。にやけたら、本物——口がすべって、役を言う」
 //  ほか3人：「光った場札が、彼女の役。何も光らなければ、はったり」（役の名前は言わない。光るのは相手の役に使う場札）
 // 顔は卓の事実から（相手の賭けのつもり intent）。払う／降りるは、そのまま卓のコール／フォールド（卓の AI は触らない）。
+// 押し方は2つ（2026-11-17 Codex 2回目 指摘2）：「ちょい押し」＝のこり1・相手の顔の反応だけ（演技をするヴェルベットは顔が当てにならない）／「ぐい押し」＝のこり2・顔に加えて、相手の役になっている場札が光る。1対戦のふりののこりは3。
 // 手の後の答え合わせは verdict。相手の合図（ポルカ＝役の名前／ほか3人＝光った場札）に合う相手の手を全部調べ、どれでもミミが勝つ・どれでもミミが負ける（引き分け）なら判子を押す。
 // 決まらない時（同じ合図でも、手によってミミの勝ち負けが変わる）は採点しない（verdict を出さない）。画面には「この形は運しだい」と出す（2026-11-17 Codex 指摘6）。
 (function () {
@@ -87,8 +88,11 @@
   }
 
   // 合図に合う相手の手を全部調べて、ミミの勝ち負けが同じなら true（採点できる場）。合図に合う＝plan が出す条件を満たし、合図（役の名前／光る場札）が同じ手
-  function scoreable(sc) {
+  function scoreable(sc, mode) {
     const A = analyze(sc), ck = sc.char || 'polka';
+    // ちょい押し（顔だけ）：ポルカは役の名前を口走る（今まで通り）。ほか3人は「本物か・はったり」の顔だけで、光る場札の合図は無い。ヴェルベットは顔が演技なので合図が無い（採点しない）
+    const faceOnly = mode === 1 && ck !== 'polka', noCue = faceOnly && ck === 'velvet';
+    if (noCue) return false;
     const used = new Set([...A.B, ...A.M].map(c => c.t)), rest = [];
     for (const r of RANKS) for (const s of 'shdc') if (!used.has(r + s)) rest.push(P1(r + s));
     const sgn = (k) => Math.sign(cmp(A.bm.key, k));
@@ -100,8 +104,10 @@
         if (qc < 1 || A.boardCat >= qc) continue;
         if (ck === 'polka') { if (qc !== A.qc) continue; }
         else {
-          const g = madeCards(bq).filter(x => A.B.some(y => y.t === x.t)).map(x => x.t);
-          if (A.B.map((x, k) => g.includes(x.t) ? k : -1).filter(k => k >= 0).join(',') !== gl) continue;
+          if (!faceOnly) {
+            const g = madeCards(bq).filter(x => A.B.some(y => y.t === x.t)).map(x => x.t);
+            if (A.B.map((x, k) => g.includes(x.t) ? k : -1).filter(k => k >= 0).join(',') !== gl) continue;
+          }
         }
       }
       if (sgn(bq.key) !== real) return false;
@@ -235,16 +241,17 @@
   const DEMO = { board: 'Ks 9d 6c 4h 2s', mimi: '9s 8s', polka: 'Qh Jh', bluff: true, bet: 600, pot: 600 };
   // お手本は「手引き付きの1回」（自動で見せない）：指の印 → プレイヤーが自分でチップを押す → 反応で止まってリコが一言（l2）→ 払う／降りるを決める（l3 は選ぶ間の案内）→ 明かし → 本物の型を1行（l4）
   const DEMO_COACH = (CH, ck) => ({
+    l00: 'まず「ちょい押し」。|顔だけ見るよ（のこり1）',
     l0: 'チップを押して、金の線まで|近づけてみよう',
-    l2: ck === 'polka' ? 'あわてたね。はったりだよ' : '何も光らない。はったりだよ',
-    l3: 'ミミは {P}。はったりには勝てる',
-    l4: ck === 'polka' ? 'にやけたら、本物。口がすべって、役を言うよ。|その時は、ミミの役とくらべてね' : '場札が光ったら、本物。光った札が相手の役。|その時は、ミミの役とくらべてね',
+    l2: ck === 'polka' ? 'あわてたね。はったりだよ' : ck === 'velvet' ? '顔は演技。ちょい押しでは、|本当かは分からないよ' : 'あわてたね。はったりかも',
+    l3: ck === 'velvet' ? 'ミミは {P}。迷う時は、|ぐい押しで確かめよう' : 'ミミは {P}。はったりには勝てる',
+    l4: ck === 'polka' ? 'にやけたら、本物。口がすべって、役を言うよ。|その時は、ミミの役とくらべてね' : ck === 'velvet' ? '顔の芝居は当てにならない。|決める前に、ミミの役とくらべてね' : 'にやけたら、本物かも。|その時は、ミミの役とくらべてね',
+    l5: 'ぐい押しは、役の札まで光る。|のこり2、使うよ',
   });
+  // お手本（自分で押した後）で見せた事は削り、危なさと、その相手だけの決まり（2026-11-17 Codex 2回目 指摘9）
   const CARD4 = (CH) => [
-    ['目的', CH.name + 'の大きな賭けが、はったりか本物かを|見やぶって、払うか降りるかを決める。'],
-    ['やり方', 'チップの山を金の線まで近づけて、顔を見る。|それから「払う」か「降りる」。'],
     ['危なさ', '本物に、下の役で払うと負ける。|はったりに降りると、取れたポットを逃す。'],
-    ['見る物', CH.look],
+    ['決まり', CH.look],
   ];
   const LADDER = [[6, 'フルハウス'], [5, 'フラッシュ'], [4, 'ストレート'], [3, 'スリーカード'], [2, 'ツーペア'], [1, 'ペア']];
   const HAND = '<path d="M17 5a4.5 4.5 0 0 1 9 0v21h1.5v-5a4.5 4.5 0 0 1 9 0v5h1v-3.5a4.5 4.5 0 0 1 9 0V38c0 10-6 17-16 17h-4c-8 0-13-5-16-12l-4-9a4.2 4.2 0 0 1 7-4.5l5 6.5z" fill="#fff4d8" stroke="#7a4e0f" stroke-width="2.2" stroke-linejoin="round"/>';
@@ -277,6 +284,7 @@
   <div class="lane"><div class="road"></div><div class="gline"></div><div class="glabel">ここまでが ふり</div>
    <div class="hint"><svg viewBox="0 0 46 56">${HAND}</svg><b>➜</b></div>
    <div class="pile"><div class="chip">${'' }</div></div></div>
+  <div class="modes"><button type="button" class="mode m1" data-m="1"><i class="mchip"><u></u></i><span class="mt">ちょい押し</span><small>顔だけ・のこり1</small></button><button type="button" class="mode m2" data-m="2"><i class="mchip"><u></u><u></u></i><span class="mt">ぐい押し</span><small>札も光る・のこり2</small></button></div>
   <div class="opts"><button type="button" class="opt" data-a="払う">払う</button><button type="button" class="opt" data-a="降りる">降りる</button><button type="button" class="opt back" data-a="卓">卓にもどって決める</button></div>
   <button type="button" class="go">次へ</button>
   <button type="button" class="askrico">リコに聞く</button>
@@ -284,11 +292,11 @@
   <button type="button" class="skip">とばす</button>
   <div class="hand"><svg viewBox="0 0 46 56">${HAND}</svg></div>
   <div class="intro"><div class="in"><div class="rd">READING</div><div class="tt">${CH.title}</div><div class="sn"></div></div></div>
-  <div class="panel"><div class="ph">この遊びの4つのこと</div><div class="pl"></div><button type="button" class="pgo btnA">はじめる</button></div>`;
+  <div class="panel"><div class="ph">お手本の後で、おぼえておくこと</div><div class="pl"></div><button type="button" class="pgo btnA">はじめる</button></div>`;
     const q = (s) => root.querySelector(s);
     FACE_KEYS.forEach(k => { const f = CH.faces[k], e = q('.f-' + k); e.style.backgroundImage = `url('${f.img}')`; e.style.backgroundSize = f.size; e.style.backgroundPosition = f.pos; });
     q('.rimg').style.backgroundImage = "url('assets/battle/chibi/rico_think.webp')";
-    const S = { root, demo, sc: null, q, A: null, pos: 0, stage: 0, near: false, tellDone: false, locked: false, ck, CH };
+    const S = { root, demo, sc: null, q, A: null, pos: 0, stage: 0, near: false, tellDone: false, locked: false, ck, CH, mode: 1, vAct: Math.random() < .5 };
     const pile = q('.pile'), lane = q('.lane');
     S.face = (n) => { S.curFace = n; FACE_KEYS.forEach(k => q('.f-' + k).classList.toggle('on', k === n)); };
     S.shake = () => { const w = q('.win'); w.classList.remove('shake', 'bounce'); void w.offsetWidth; w.classList.add('shake'); };
@@ -300,6 +308,9 @@
     S.mark = (k) => { q('.mk.sweat').classList.toggle('on', k === 'sweat'); q('.mk.note').classList.toggle('on', k === 'note'); };
     S.rule = (on) => q('.rule').classList.toggle('on', !!on);
     S.reason = (t) => { const r = q('.reason'); if (t) { r.innerHTML = br(S.fill(t)); r.classList.add('on'); } else r.classList.remove('on'); };
+    S.modesOn = (on, o) => { const m = q('.modes'); o = o || {}; m.classList.toggle('on', !!on); m.querySelectorAll('.mode').forEach(b => { const n = +b.dataset.m; b.disabled = !!on && (n > (o.left == null ? 3 : o.left) || (o.only && n !== o.only)); b.classList.toggle('lit', !!o.only && n === o.only); b.classList.toggle('off', !!o.only && n !== o.only); }); };
+    // 押し方を決めたら、決まりの文もその押し方のものにする（ちょい押し＝顔だけ／ぐい押し＝役の札も光る）
+    S.setMode = (n) => { S.mode = n; q('.rule').innerHTML = (polka || n === 2) ? CH.rule : ck === 'velvet' ? '顔の芝居は、<u>当てにならない</u>。<br>役の札は、<em>ぐい押し</em>で光る' : '<u>あわてたら、はったり。</u><br>にやけたら、<em>本物かも</em>'; };
     S.laneOn = (on) => q('.lane').classList.toggle('on', !!on);
     S.opts = (on) => { const o = q('.opts'); o.classList.toggle('on', !!on); if (!on) o.classList.remove('lit'); };
     S.optsEnable = (on) => q('.opts').querySelectorAll('.opt').forEach(b => { b.disabled = !on; b.classList.remove('press'); });
@@ -320,6 +331,7 @@
       ld.innerHTML = LADDER.map(([c, n]) => `<div class="lr" data-c="${c}"><i></i><span>${n}</span></div>`).join('');
       q('.pile .chip').textContent = sc.bet ? String(sc.bet) : '';
       q('.opt[data-a="払う"]').textContent = sc.bet ? '払う ' + sc.bet : '払う';
+      S.mode = 1; S.modesOn(false); q('.rule').innerHTML = CH.rule;
       S.pos = 0; S.stage = 0; S.near = false; S.tellDone = false; S.tellPending = false; S.locked = false; S.onNear = null; S.onTellDone = null; S.onStageLog = null;
       pile.style.transition = 'none'; pile.style.left = START + 'px'; pile.className = 'pile'; lane.className = 'lane';
       S.face('def'); S.say(null); S.mark(null); S.rule(false); S.reason(null); S.laneOn(false); S.opts(false); S.optsEnable(false);
@@ -350,25 +362,32 @@
     S.react = (st, prev) => {
       const A = S.A;
       if (S.onStageLog) S.onStageLog(st, prev);
+      // 見せる顔：ヴェルベットは演技なので、顔は本当の手と関係なく決まる（場面ごとの乱数）。ほか3人は本当の手のまま
+      const showB = S.ck === 'velvet' ? S.vAct : A.bluff;
       if (st === 2) {
-        if (A.bluff) {
+        if (showB) {
           S.face('bluff'); S.say(CH.panic); if (polka) S.mark('sweat');
+        } else {
+          S.face('real'); S.say(CH.smug); if (polka) S.mark('note');
+        }
+        if (A.bluff && showB) {
           if (!S.tellDone) { S.near = true; if (polka) S.setSlip('あわてた'); S.tellDone = true; if (S.onNear) S.onNear(); if (S.onTellDone) ST.later(S.onTellDone, 50); }
           else S.near = true;
         } else {
-          S.face('real'); S.say(CH.smug); if (polka) S.mark('note');
           if (!S.tellDone && !S.tellPending) {
             S.tellPending = true; S.near = true; if (S.onNear) S.onNear();
             ST.later(() => {
-              if (polka) { if (S.stage === 2) S.say(CH.oops); S.setSlip(A.polkaName); }
-              S.glint(true); S.tellDone = true; S.tellPending = false;
+              if (polka && !A.bluff) { if (S.stage === 2) S.say(CH.oops); S.setSlip(A.polkaName); }
+              // ぐい押し：役になっている場札が光る（ちょい押しは顔だけ）
+              if (S.mode === 2 && !A.bluff) S.glint(true);
+              S.tellDone = true; S.tellPending = false;
               if (S.onTellDone) S.onTellDone();
             }, polka ? 650 : 450);
           }
         }
       } else {
         S.face('def'); S.say(CH.calm);
-        S.mark(polka && st === 1 ? (A.bluff ? 'sweat' : 'note') : null);
+        S.mark(polka && st === 1 ? (showB ? 'sweat' : 'note') : null);
       }
     };
     S.tap = () => { const st = S.stage; S.placePile(st === 0 ? .55 : st === 1 ? 1 : 0, 380); };
@@ -439,8 +458,13 @@
       D.intro(true, 'お手本'); await ST.wait(run, 600); D.intro(false); await ST.wait(run, 100);
       D.ins(CH.name + 'が大きく賭けた。|' + (ck === 'polka' ? 'すまし顔で、がまんしている' : '落ち着いた顔をしている'));
       const bl = CH.bet(sc.bet); D.say(bl[0]); D.shake(); await ST.wait(run, 700); D.say(bl[1]); await ST.wait(run, 500);
+      // 押し方：お手本は「ちょい押し」だけ（ぐい押しは最後の1行で見せる）
+      D.ins('押し方を選ぶ'); D.modesOn(true, { only: 1 }); D.rule(true);
+      D.rico(C.l00, true);
+      await until(new Promise(res => { D.q('.modes').onclick = (e) => { const b = e.target.closest('.mode'); if (!b || b.disabled) return; res(); }; }));
+      D.q('.modes').onclick = null; D.setMode(1); D.modesOn(false); D.rico(null);
       // 指の印：チップを押すのは、プレイヤー自身
-      D.ins('チップを近づけて、顔を見る'); D.laneOn(true); D.rule(true);
+      D.ins('チップを近づけて、顔を見る'); D.laneOn(true);
       D.q('.lane').classList.add('hinting', 'glowline');
       D.rico(C.l0, true);
       D.onTouch = () => { D.q('.lane').classList.remove('hinting'); D.rico(null); };
@@ -462,6 +486,7 @@
       await reveal(ST, run, D, pick === '払う', { noPile: false, scale: .7 });
       // 本物の型は、その回の後に1行で
       D.rico(C.l4, true); await hold(C.l4);
+      D.rico(C.l5, true); await hold(C.l5);
     } catch (e) { if (!e || e.message !== 'cancel') { runDemo.on = false; D.root.remove(); throw e; } }
     if (!ST.dead) await ruleCard(ST, D, CH, replay);
     D.root.remove();
@@ -479,10 +504,9 @@
 
   // ================= 卓から =================
   function mount(ST, opts, fin) {
-    const save = opts.save, ck = opts.charKey || 'polka', CH = CHARS[ck];
+    const save = opts.save, ck = opts.charKey || 'polka', CH = CHARS[ck], left = opts.left == null ? 3 : opts.left;
     const sc = CH && plan(opts.table, Object.assign({}, opts.ctx || {}, { charKey: ck }));
     if (!sc) return fin({});
-    sc.stamp = scoreable(sc);   // 採点できる場か（決まらない形は「運しだい」と出して、判子も答え合わせも出さない）
     Object.values(CH.faces).forEach(f => { const im = new Image(); im.src = f.img; });
     const cnt0 = (save && save.rdCount && save.rdCount.furi) || 0;
     window.RD.saveSet(save, 'rdCount', 'furi', cnt0 + 1, opts.saveProgress);
@@ -517,8 +541,15 @@
       S.ins(CH.name + 'が大きく賭けた。|' + (ck === 'polka' ? 'すまし顔で、がまんしている' : '落ち着いた顔をしている'));
       const bl = CH.bet(sc.bet); S.say(bl[0]); S.shake(); await ST.wait(run, 1000); S.say(bl[1]);
       run.ff = false; await ST.wait(run, 900);
+      S.phase = 'mode';
+      // 押し方を選ぶ（ちょい押し＝のこり1・顔だけ／ぐい押し＝のこり2・役の札も光る）。足りない押し方は押せない
+      S.ins('押し方を選ぶ（のこり' + left + '）'); S.modesOn(true, { left }); S.rule(true);
+      const mode = await new Promise(res => { S.q('.modes').onclick = (e) => { const b = e.target.closest('.mode'); if (!b || b.disabled) return; res(+b.dataset.m); }; });
+      S.q('.modes').onclick = null; S.setMode(mode); S.modesOn(false);
+      if (typeof opts.spend === 'function') opts.spend(mode);
+      sc.stamp = scoreable(sc, mode);   // 採点できる場か（決まらない形は「運しだい」と出して、判子も答え合わせも出さない）
       S.phase = 'push';
-      S.ins('チップを近づけて、顔を見る'); S.laneOn(true); S.rule(true);
+      S.ins('チップを近づけて、顔を見る'); S.laneOn(true);
       if (!save || !save.rdFuriHinted) S.q('.lane').classList.add('hinting');
       S.q('.lane').classList.add('glowline');
       S.onTouch = () => { S.q('.lane').classList.remove('hinting'); if (save) { save.rdFuriHinted = true; } };
@@ -532,6 +563,8 @@
       S.opts(true); S.optsEnable(false); S.q('.opts').classList.add('lit');
       const coach = ck === 'polka'
         ? (A.bluff ? 'あわてた。はったりだよ。|ミミは {P}。払って勝てる？' : 'にやけた。本物だよ。{F}って言っちゃったね。|ミミは {M}。はしごで、どっちが上？')
+        : ck === 'velvet' && mode === 1 ? '顔は演技。当てにならないよ。|ミミは {M}。決め手が無いなら、卓で決めてもいい'
+        : mode === 1 ? (S.A.bluff ? 'あわてた。はったりかも。|ミミは {P}。払って勝てる？' : 'にやけた。本物かも。|ミミは {M}。はしごで、どっちが上？')
         : (A.bluff ? '何も光らなかった。はったりだよ。|ミミは {P}。払って勝てる？' : '光った場札が、彼女の役だよ。|ミミは {M}。はしごで、どっちが上？');
       S.q('.askrico').onclick = () => { S.rico(coach, true); S.ask(false); };
       S.q('.rico').onclick = () => { S.rico(null); S.ask(coachOn); };
@@ -544,12 +577,22 @@
       const act = pick === '払う' ? 'pay' : pick === '降りる' ? 'fold' : null;
       S.opts(false); S.laneOn(false);
       if (act) { S.pileOut(act === 'pay'); S.face(act === 'pay' ? 'def' : 'def'); S.say(null); S.ins(act === 'pay' ? 'そのまま、払う' : 'そのまま、降りる'); await ST.wait(run, 700); }
-      const pending = sc.stamp ? { game: 'furi', title: CH.title, charKey: ck, pick: act, ans: A.ans, scene: sc } : null;
-      fin({ correct: false, act, back: !act, pending, tell: { bluff: A.bluff, say: A.say, glint: A.glint.length } });
+      const pending = sc.stamp ? { game: 'furi', title: CH.title, charKey: ck, pick: act, ans: A.ans, scene: sc, mode } : null;
+      fin({ correct: false, act, back: !act, pending, tell: { bluff: A.bluff, say: A.say, glint: A.glint.length, mode, vAct: S.vAct } });
     };
     go();
   }
 
+  // 手の結果の画面に併記する答え
+  function summary(p, ctx) {
+    const sc = p.scene, ck = p.charKey || 'polka', CH = CHARS[ck], A = analyze(sc);
+    let pick = p.pick;
+    if (!pick) { const h = ctx.hand || {}; pick = (h.winner === 'opponent' && h.reason === 'fold') ? 'fold' : 'pay'; }
+    const pay = pick === 'pay', O = stampsOf(outcomeOf(A, pay), A, ck);
+    return { correct: (pay ? '払う' : '降りる') === A.ans, mark: O.stamp[0],
+      real: CH.name + 'は' + (A.bluff ? 'はったり（手は' + A.polkaName + '）' : '本物の' + A.polkaName) + '。ミミは' + A.mimiName,
+      reason: String(O.reason).split('|').join(''), gain: '' };
+  }
   function verdict(ST, opts, fin) {
     const p = opts.pending, sc = p.scene, ck = p.charKey || 'polka', CH = CHARS[ck];
     Object.values(CH.faces).forEach(f => { const im = new Image(); im.src = f.img; });
@@ -575,6 +618,6 @@
     go();
   }
 
-  window.RD.reg('furi', { id: 'furi', title: 'リーディング：押し出すふり', plan, mount, verdict, CHARS });
+  window.RD.reg('furi', { id: 'furi', title: 'リーディング：押し出すふり', plan, mount, verdict, summary, CHARS });
   window.RD.furiEngine = { analyze, plan, scoreable, best, eval5, cmp, madeCards, CAT };
 })();

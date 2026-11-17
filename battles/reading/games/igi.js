@@ -146,10 +146,8 @@
     l4: '場に3枚あったら『作れる』。異議は言わないでね。|外すと、ミミの札を1枚見せることになるよ',
   };
   const CARD4 = [
-    ['目的', 'ポルカが言い張る役が、この場札で|作れるかを見やぶる。ウソなら、罰で|彼女の札が1枚、卓で表になる。'],
-    ['やり方', '場札を見て、「異議あり！」か「作れる」を|押す。'],
     ['危なさ', '作れる役に異議を言うと、ミミの札を|1枚、見せることになる。'],
-    ['見る物', '言い分の札の枠3つ（場から3枚）と、|場札のマークと数字。'],
+    ['決まり', 'ポルカがターンで大きく賭けた時だけ。|1対戦に3回まで。'],
   ];
   const FACES = {
     smug: { img: 'assets/characters/polka_cutin_smug.webp', size: 'auto 360px', pos: '-232px 10px' },
@@ -184,7 +182,7 @@
   <button type="button" class="skip">とばす</button>
   <div class="hand">${HAND}</div>
   <div class="intro"><div class="in"><div class="rd">READING</div><div class="tt">リーディング：異議あり</div><div class="sn"></div></div></div>
-  <div class="panel"><div class="ph">この遊びの4つのこと</div><div class="pl"></div><button type="button" class="pgo btnA">はじめる</button></div>`;
+  <div class="panel"><div class="ph">お手本の後で、おぼえておくこと</div><div class="pl"></div><button type="button" class="pgo btnA">はじめる</button></div>`;
     const q = (s) => root.querySelector(s);
     Object.keys(FACES).forEach(k => { const f = FACES[k], e = q('.f-' + k); e.style.backgroundImage = `url('${f.img}')`; e.style.backgroundSize = f.size; e.style.backgroundPosition = f.pos; });
     q('.rimg').style.backgroundImage = "url('assets/battle/chibi/rico_think.webp')";
@@ -422,6 +420,13 @@
     go();
   }
 
+  // 手の結果の画面に併記する答え（「作れる」を選んだ時）
+  function summary(p, ctx) {
+    const sc = p.scene, hole = sc.polka.split(' ').map(t => rn(P(t).r) + SJ[t[1]]).join(' '), ok = sc.ans === 'O';
+    return { correct: ok, mark: ok ? '◎ 当たり（作れる役だった）' : '✕ 見逃し（盛っていた）',
+      real: 'ポルカの手札は ' + hole + '。言い分は' + CATN[sc.cat] + (ok ? '（作れた）' : '（作れない盛り）'),
+      reason: String(sc.reason).split('|').join('') + '。', gain: ok ? '' : '損はなし' };
+  }
   function verdict(ST, opts, fin) {
     const p = opts.pending, sc = p.scene;
     Object.values(FACES).forEach(f => { const im = new Image(); im.src = f.img; });
@@ -442,6 +447,6 @@
     go();
   }
 
-  window.RD.reg('igi', { id: 'igi', title: 'リーディング：異議あり', plan, mount, verdict });
+  window.RD.reg('igi', { id: 'igi', title: 'リーディング：異議あり', plan, mount, verdict, summary });
   window.RD.igiEngine = { P, evalCat, countMakers, ruleSays, plan3, claimFor, plan, DECK };
 })();

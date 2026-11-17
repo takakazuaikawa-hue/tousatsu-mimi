@@ -48,6 +48,8 @@
       const w = host.clientWidth || 800, h = host.clientHeight || 370;
       scale = Math.min(w / 800, h / 370);
       board.style.transform = `translate(-50%, -50%) scale(${scale})`;
+      // 画面に出る実際の倍率＝盤の縮小 × 舞台（#stage）の縮小。小さいスマホで実寸14px を割らないよう、盤の中の18px の文字の元の大きさを引き上げる（Codex 2回目 指摘8）
+      try { const rc = host.getBoundingClientRect(), vis = host.clientWidth ? rc.width / host.clientWidth : 1, eff = scale * vis; host.classList.toggle('rd-narrow', eff < 0.78); host.style.setProperty('--f18', (eff > 0 ? Math.max(18, Math.ceil(14.3 / eff * 10) / 10) : 18) + 'px'); } catch (e) {}
     };
     fit();
     let ro = null;
@@ -114,6 +116,11 @@
     const fin = (r) => { if (done) return; done = true; try { opts.onExit && opts.onExit(r || {}); } catch (e) { console.error(e); } };
     Promise.resolve().then(() => g.verdict(ST, opts, fin)).catch(e => { if (!(e && e.message === 'cancel')) { console.error('RD.verdict', e); fin({}); } });
     return { destroy() { ST.destroy(); } };
+  };
+
+  // 手の結果の画面に併記する、読みの答え（2026-11-17 Codex 2回目 指摘7）。各遊びの summary(p, ctx) が { correct, mark, real, reason } を返す
+  RD.summary = function (p, ctx) {
+    try { const g = RD.games[p && p.game]; return g && g.summary ? g.summary(p, ctx || {}) : null; } catch (e) { console.error('RD.summary', e); return null; }
   };
 
   // ---- 卓の上に重ねる部品（2026-11-17・目利きとおねだり：盤を開かず、本物の卓の上に印・顔の窓・吹き出し・見立ての札を出す）

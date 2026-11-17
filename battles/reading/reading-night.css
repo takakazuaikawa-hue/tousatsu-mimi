@@ -23,7 +23,7 @@
 .rd-host .sg:is(.one,.mise) .hc0{left:308px}.rd-host .sg:is(.one,.mise) .hc1{left:374px}
 .rd-host .sg:is(.one,.mise) .bd{position:absolute;left:452px;top:72px;display:flex;gap:6px;z-index:4}
 /* 役の札 */
-.rd-host .sg:is(.one,.mise) .chip{position:absolute;left:308px;z-index:5;height:26px;padding:0 14px;line-height:25px;font-family:var(--serif);font-weight:800;font-size:18px;white-space:nowrap;border:1px solid var(--gold3);box-shadow:0 2px 5px rgba(0,0,0,.55);opacity:0;transition:opacity .3s,top .5s cubic-bezier(.3,1.3,.5,1),box-shadow .3s,filter .3s}
+.rd-host .sg:is(.one,.mise) .chip{position:absolute;left:308px;z-index:5;height:26px;padding:0 14px;line-height:25px;font-family:var(--serif);font-weight:800;font-size:var(--f18,18px);white-space:nowrap;border:1px solid var(--gold3);box-shadow:0 2px 5px rgba(0,0,0,.55);opacity:0;transition:opacity .3s,top .5s cubic-bezier(.3,1.3,.5,1),box-shadow .3s,filter .3s}
 .rd-host .sg:is(.one,.mise) .chip.on{opacity:1}
 .rd-host .sg:is(.one,.mise) .chip.hc{top:170px;background:linear-gradient(90deg,#8e1228,#5a0e1c);color:var(--ivory);border-left:4px solid var(--gold)}
 .rd-host .sg:is(.one,.mise) .chip.sc{top:200px;background:linear-gradient(90deg,#1f6e55,#0f3f30);color:#eafff3;border-left:4px solid #9df0b8}
@@ -33,7 +33,7 @@
 .rd-host .sg:is(.one,.mise) .chip.lit{box-shadow:0 0 0 2px #fff3c4,0 0 14px 4px rgba(245,215,122,.95);animation:rd-chl 1s ease-in-out 3}
 @keyframes rd-chl{50%{box-shadow:0 0 0 3px #fff3c4,0 0 22px 8px rgba(245,215,122,1)}}
 /* 決まり・理由 */
-.rd-host .sg:is(.one,.mise) .rule,.rd-host .sg:is(.one,.mise) .reason{position:absolute;left:308px;width:484px;height:auto;z-index:4;display:block;font-size:18px;line-height:21px;font-weight:700;text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s;word-break:keep-all;overflow-wrap:break-word;white-space:normal;color:var(--ivory)}
+.rd-host .sg:is(.one,.mise) .rule,.rd-host .sg:is(.one,.mise) .reason{position:absolute;left:308px;width:484px;height:auto;z-index:4;display:block;font-size:var(--f18,18px);line-height:21px;font-weight:700;text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s;word-break:keep-all;overflow-wrap:break-word;white-space:normal;color:var(--ivory)}
 .rd-host .sg:is(.one,.mise) .rule em{font-style:normal;color:#9df0b8}
 .rd-host .sg:is(.one,.mise) .rule em.u{color:#ffb0b8}
 .rd-host .sg:is(.one,.mise) .reason{font-size:19px;line-height:22px}
@@ -68,7 +68,7 @@
 .rd-host .sg:is(.one,.mise) .panel .pi{margin-bottom:6px}
 
 /* ===== おねだり ===== */
-.rd-host .sg.one .who{position:absolute;left:12px;top:54px;z-index:7;padding:2px 12px;font-family:var(--serif);font-weight:800;font-size:18px;color:var(--ivory);background:rgba(20,4,10,.6);border-left:3px solid var(--gold);text-shadow:0 1px 3px #000}
+.rd-host .sg.one .who{position:absolute;left:12px;top:54px;z-index:7;padding:2px 12px;font-family:var(--serif);font-weight:800;font-size:var(--f18,18px);color:var(--ivory);background:rgba(20,4,10,.6);border-left:3px solid var(--gold);text-shadow:0 1px 3px #000}
 .rd-host .sg.one .bd .cd.fin5{box-shadow:0 0 0 2px var(--gold),0 0 12px 2px rgba(245,215,122,.6),inset 0 0 0 2px var(--gold2)}
 .rd-host .sg.one .bd .cd.back.tr{box-shadow:0 0 0 3px #ff8a99,0 0 22px 8px rgba(255,60,90,.95),inset 0 0 0 2px var(--gold2)}
 .rd-host .sg.one .bd .cd.back.tb{box-shadow:0 0 0 3px #dfe6f5,0 0 22px 8px rgba(170,190,240,.9),inset 0 0 0 2px var(--gold2)}
@@ -78,7 +78,7 @@
 .rd-host .sg.one .tick.on{opacity:1}
 .rd-host .sg.one .tick.off{opacity:0;transition:none}
 .rd-host .sg.one .tick.lit{box-shadow:0 0 0 3px #fff3c4,0 0 18px 6px rgba(245,215,122,.95)}
-.rd-host .sg.one .tick i{align-self:stretch;display:flex;align-items:center;padding:0 12px;font-style:normal;font-family:var(--serif);font-weight:800;font-size:18px;background:linear-gradient(90deg,#8e1228,#5a0e1c);color:var(--gold);border-right:3px solid var(--gold)}
+.rd-host .sg.one .tick i{align-self:stretch;display:flex;align-items:center;padding:0 12px;font-style:normal;font-family:var(--serif);font-weight:800;font-size:var(--f18,18px);background:linear-gradient(90deg,#8e1228,#5a0e1c);color:var(--gold);border-right:3px solid var(--gold)}
 .rd-host .sg.one .tick .sy{font-size:38px;line-height:56px;font-weight:700;color:#1b1b1f}
 .rd-host .sg.one .tick .sy.r{color:#c4162f}
 .rd-host .sg.one .tick .tk{font-family:var(--bebas);font-size:36px;line-height:42px;color:#1b1b1f;border:2px solid var(--gold3);border-radius:4px;padding:0 10px;background:#fffdf6}
@@ -99,7 +99,7 @@
 .rd-host .sg.one .stamp{flex:1;height:62px;border:2px solid var(--gold);display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:var(--serif);font-weight:800;opacity:0;transition:opacity .3s}
 .rd-host .sg.one .stamp.on{opacity:1}
 .rd-host .sg.one .stamp b{font-size:28px;line-height:34px}
-.rd-host .sg.one .stamp span{font-size:18px;line-height:20px;white-space:nowrap}
+.rd-host .sg.one .stamp span{font-size:var(--f18,18px);line-height:20px;white-space:nowrap}
 .rd-host .sg.one .stamp.ok{background:linear-gradient(90deg,#1f6e55,#0f3f30);color:#eafff3}
 .rd-host .sg.one .stamp.no{background:linear-gradient(90deg,#8e1228,#4a0c1a);color:#ffd9de}
 .rd-host .sg.one .rule{top:226px;white-space:nowrap}
@@ -110,7 +110,7 @@
 .rd-host .sg.one .pay{left:0;width:156px;background:linear-gradient(180deg,#e03a52,#8a1126 78%)}
 .rd-host .sg.one .fold{left:166px;width:156px;background:linear-gradient(180deg,#2f8a63,#14503a 78%)}
 .rd-host .sg.one .pay b,.rd-host .sg.one .fold b{display:block;font-family:var(--serif);font-weight:800;font-size:28px;line-height:38px;white-space:nowrap}
-.rd-host .sg.one .pay span,.rd-host .sg.one .fold span{display:block;font-size:18px;line-height:20px;font-weight:700;opacity:.95;white-space:nowrap}
+.rd-host .sg.one .pay span,.rd-host .sg.one .fold span{display:block;font-size:var(--f18,18px);line-height:20px;font-weight:700;opacity:.95;white-space:nowrap}
 
 /* ===== 見せ合いっこ ===== */
 .rd-host .sg.mise .thr{position:absolute;inset:0;width:800px;height:370px;z-index:6;pointer-events:none;overflow:visible}
@@ -129,6 +129,6 @@
 .rd-host .sg.mise .shw{left:0;width:146px;background:linear-gradient(180deg,#e03a52,#8a1126 78%);font-family:var(--serif);font-weight:800;font-size:22px;white-space:nowrap}
 .rd-host .sg.mise .hide{left:154px;width:168px;background:linear-gradient(180deg,#2f8a63,#14503a 78%)}
 .rd-host .sg.mise .hide b{display:block;font-family:var(--serif);font-weight:800;font-size:26px;line-height:30px;white-space:nowrap}
-.rd-host .sg.mise .hide span{display:block;font-size:18px;line-height:20px;font-weight:700;opacity:.95}
+.rd-host .sg.mise .hide span{display:block;font-size:var(--f18,18px);line-height:20px;font-weight:700;opacity:.95}
 .rd-host .sg.mise .speech.narrow{left:476px;top:236px;width:316px}
 .rd-host .sg.mise .speech.tiny{left:476px;top:256px;width:150px;min-height:46px;font-size:22px;justify-content:center}

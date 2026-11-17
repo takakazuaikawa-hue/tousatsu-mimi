@@ -32,7 +32,7 @@
 .rd-host .sg.igi .grp{position:relative;display:flex;gap:6px;padding-bottom:22px}
 .rd-host .sg.igi .grp.h{margin-right:12px}
 .rd-host .sg.igi .grp.h::after{content:"";position:absolute;right:-9px;top:4px;bottom:24px;width:2px;background:rgba(122,78,15,.45)}
-.rd-host .sg.igi .grp label{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:18px;line-height:20px;font-weight:700;color:#5a2a14;white-space:nowrap;transition:color .2s}
+.rd-host .sg.igi .grp label{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:var(--f18,18px);line-height:20px;font-weight:700;color:#5a2a14;white-space:nowrap;transition:color .2s}
 .rd-host .sg.igi .grp label.red{color:#b3142c}.rd-host .sg.igi .grp label.ok{color:#17703f}
 .rd-host .sg.igi .sl{width:40px;height:56px;flex:none;border-radius:4px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;opacity:0;transform:translateY(-14px)}
 .rd-host .sg.igi .sl.in{opacity:1;transform:none;transition:opacity .25s,transform .25s cubic-bezier(.3,1.5,.5,1)}
@@ -56,18 +56,18 @@
 .rd-host .sg.igi .cd.glow{transform:translateY(-8px)}
 .rd-host .sg.igi .cd.swap{animation:rd-swp .5s}
 @keyframes rd-swp{0%{transform:translateY(-30px) rotate(-8deg);opacity:0}100%{transform:none;opacity:1}}
-.rd-host .sg.igi .rule,.rd-host .sg.igi .pen{position:absolute;left:308px;width:484px;height:22px;z-index:4;font-size:18px;line-height:22px;font-weight:700;white-space:nowrap;text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s;display:block}
+.rd-host .sg.igi .rule,.rd-host .sg.igi .pen{position:absolute;left:308px;width:484px;height:22px;z-index:4;font-size:var(--f18,18px);line-height:22px;font-weight:700;white-space:nowrap;text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s;display:block}
 .rd-host .sg.igi .rule{top:246px;color:var(--ivory)}
 .rd-host .sg.igi .pen{top:268px;color:#ffd9a0}
 .rd-host .sg.igi .rule.on,.rd-host .sg.igi .pen.on{opacity:1}
-.rd-host .sg.igi .reason{position:absolute;left:308px;top:244px;width:484px;height:44px;z-index:4;font-size:18px;line-height:22px;font-weight:700;color:var(--ivory);text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s;word-break:keep-all}
+.rd-host .sg.igi .reason{position:absolute;left:308px;top:244px;width:484px;height:44px;z-index:4;font-size:var(--f18,18px);line-height:22px;font-weight:700;color:var(--ivory);text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s;word-break:keep-all}
 .rd-host .sg.igi .reason.on{opacity:1}
 .rd-host .sg.igi .opts{left:308px;top:292px;width:484px;height:70px;gap:8px}
 .rd-host .sg.igi .opt{position:relative;flex:1;min-width:0;border:2px solid var(--gold);color:#fff4d8;padding:0;box-shadow:0 5px 12px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.35);text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;transition:transform .15s,filter .3s}
 .rd-host .sg.igi .opt[data-a="X"]{background:linear-gradient(180deg,#e03a52,#8a1126 78%)}
 .rd-host .sg.igi .opt[data-a="O"]{background:linear-gradient(180deg,#2f8a63,#14503a 78%)}
 .rd-host .sg.igi .opt b{display:block;font-family:var(--serif);font-weight:800;font-size:28px;line-height:32px;white-space:nowrap}
-.rd-host .sg.igi .opt span{display:block;font-size:18px;line-height:20px;font-weight:700;opacity:.95;white-space:nowrap}
+.rd-host .sg.igi .opt span{display:block;font-size:var(--f18,18px);line-height:20px;font-weight:700;opacity:.95;white-space:nowrap}
 .rd-host .sg.igi .opt:not(:disabled):active{transform:translateY(3px)}
 .rd-host .sg.igi .opt:disabled{filter:grayscale(.65) brightness(.65);cursor:default}
 .rd-host .sg.igi .opt.press{transform:translateY(4px);filter:brightness(1.35)}
@@ -77,7 +77,7 @@
 .rd-host .sg.igi .mimi.on{display:block;animation:rd-swp .5s}
 .rd-host .sg.igi .mimi .cd{width:52px;height:72px;box-shadow:0 0 0 3px var(--gold),0 0 14px 3px rgba(245,215,122,.8)}
 .rd-host .sg.igi .mimi .cd b{font-size:32px}.rd-host .sg.igi .mimi .cd s{font-size:26px}
-.rd-host .sg.igi .mimi .shown{position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);white-space:nowrap;font-style:normal;font-weight:800;font-size:18px;line-height:22px;padding:0 8px;color:#fff4d8;background:#8e1228;border:1px solid var(--gold2);box-shadow:0 2px 5px rgba(0,0,0,.6)}
+.rd-host .sg.igi .mimi .shown{position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);white-space:nowrap;font-style:normal;font-weight:800;font-size:var(--f18,18px);line-height:22px;padding:0 8px;color:#fff4d8;background:#8e1228;border:1px solid var(--gold2);box-shadow:0 2px 5px rgba(0,0,0,.6)}
 .rd-host .sg.igi .go{top:300px}
 .rd-host .sg.igi .rsay{bottom:78px;padding:3px 12px}
 .rd-host .sg.igi.demo .rsay{bottom:6px}
@@ -107,7 +107,7 @@
 .rd-host .sg.furi .cd.back::after{inset:8px;border-width:1px}
 .rd-host .sg.furi .cd.glow{box-shadow:0 0 0 3px #fff3c4,0 0 16px 5px rgba(245,215,122,.95);transform:translateY(-5px)}
 .rd-host .sg.furi .slips{position:absolute;left:404px;top:128px;z-index:4;display:flex;flex-direction:column;gap:4px}
-.rd-host .sg.furi .sp{height:30px;padding:0 12px 0 10px;font-family:var(--serif);font-weight:800;font-size:18px;line-height:30px;white-space:nowrap;color:#3a1a10;background:linear-gradient(160deg,#f6ead0,#e0c98f);border-left:5px solid #b3142c;box-shadow:0 2px 6px rgba(0,0,0,.55);align-self:flex-start;transition:opacity .25s,transform .25s}
+.rd-host .sg.furi .sp{height:30px;padding:0 12px 0 10px;font-family:var(--serif);font-weight:800;font-size:var(--f18,18px);line-height:30px;white-space:nowrap;color:#3a1a10;background:linear-gradient(160deg,#f6ead0,#e0c98f);border-left:5px solid #b3142c;box-shadow:0 2px 6px rgba(0,0,0,.55);align-self:flex-start;transition:opacity .25s,transform .25s}
 .rd-host .sg.furi .sp.mimi{border-left-color:#1d9a57}
 .rd-host .sg.furi .sp.polka{opacity:0;transform:translateX(-14px) scale(.9)}
 .rd-host .sg.furi .sp.polka.on{opacity:1;transform:none}
@@ -116,13 +116,13 @@
 @keyframes rd-pop2{0%{transform:translateY(-26px) scale(.6);opacity:0}100%{transform:none;opacity:1}}
 .rd-host .sg.furi .ladder{position:absolute;left:642px;top:62px;width:152px;height:138px;z-index:4;padding:3px 0;background:linear-gradient(160deg,#f6ead0,#e0c98f);border:2px solid var(--gold3);box-shadow:0 4px 10px rgba(0,0,0,.55);color:#3a1a10;opacity:0;transform:translateY(-8px);transition:opacity .3s,transform .3s;pointer-events:none}
 .rd-host .sg.furi .ladder.on{opacity:1;transform:none}
-.rd-host .sg.furi .lr{display:flex;align-items:center;height:21px;font-family:var(--serif);font-weight:800;font-size:18px;line-height:21px}
-.rd-host .sg.furi .lr i{flex:none;width:24px;height:20px;margin-left:5px;font-style:normal;font-family:var(--sans);font-weight:900;font-size:18px;line-height:20px;text-align:center;color:transparent}
+.rd-host .sg.furi .lr{display:flex;align-items:center;height:21px;font-family:var(--serif);font-weight:800;font-size:var(--f18,18px);line-height:21px}
+.rd-host .sg.furi .lr i{flex:none;width:24px;height:20px;margin-left:5px;font-style:normal;font-family:var(--sans);font-weight:900;font-size:var(--f18,18px);line-height:20px;text-align:center;color:transparent}
 .rd-host .sg.furi .lr i.on.p{background:#b3142c;color:#fff}
 .rd-host .sg.furi .lr i.on.m{background:#1d9a57;color:#fff}
 .rd-host .sg.furi .lr span{margin-left:6px;white-space:nowrap}
 .rd-host .sg.furi .lr.hit{background:rgba(245,215,122,.45)}
-.rd-host .sg.furi .rule,.rd-host .sg.furi .reason{position:absolute;left:296px;top:204px;width:498px;height:44px;z-index:4;font-size:18px;line-height:21px;font-weight:700;color:var(--ivory);text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s;word-break:keep-all;display:block;white-space:normal}
+.rd-host .sg.furi .rule,.rd-host .sg.furi .reason{position:absolute;left:296px;top:204px;width:498px;height:44px;z-index:4;font-size:var(--f18,18px);line-height:21px;font-weight:700;color:var(--ivory);text-shadow:0 1px 3px #000,0 0 8px #000;opacity:0;transition:opacity .3s;word-break:keep-all;display:block;white-space:normal}
 .rd-host .sg.furi .rule.on,.rd-host .sg.furi .reason.on{opacity:1}
 .rd-host .sg.furi .rule em{font-style:normal;color:var(--gold)}
 .rd-host .sg.furi .rule u{text-decoration:none;color:#ffb0b8}
@@ -134,7 +134,7 @@
 .rd-host .sg.furi .lane.glowline .gline{animation:rd-gl 1s ease-in-out infinite alternate}
 @keyframes rd-gl{from{box-shadow:0 0 6px 1px rgba(245,215,122,.6)}to{box-shadow:0 0 22px 8px rgba(255,235,150,1)}}
 .rd-host .sg.furi .glabel.luck{color:var(--gold);font-weight:800}
-.rd-host .sg.furi .glabel{position:absolute;left:74px;top:19px;font-size:18px;line-height:22px;font-weight:700;color:var(--ivory);opacity:.95;white-space:nowrap;text-shadow:0 1px 3px #000}
+.rd-host .sg.furi .glabel{position:absolute;left:74px;top:19px;font-size:var(--f18,18px);line-height:22px;font-weight:700;color:var(--ivory);opacity:.95;white-space:nowrap;text-shadow:0 1px 3px #000}
 .rd-host .sg.furi .pile{position:absolute;top:2px;left:474px;width:56px;height:56px;z-index:3;touch-action:none;cursor:grab}
 .rd-host .sg.furi .pile::before{content:"";position:absolute;inset:-12px}
 .rd-host .sg.furi .pile .chip{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff7186,#c01835 55%,#7d1022);border:3px dashed #fff4d8;box-shadow:0 5px 0 #8e1228,0 10px 0 #5a0e1c,0 14px 10px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-family:var(--bebas);font-size:22px;letter-spacing:.02em;color:#fff4d8;text-shadow:0 2px 2px #000;line-height:1}
@@ -145,11 +145,27 @@
 @keyframes rd-hnt{0%{transform:translateX(120px);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateX(-30px);opacity:0}}
 .rd-host .sg.furi .hint svg{position:absolute;left:0;top:0;width:46px;height:56px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.7))}
 .rd-host .sg.furi .hint b{position:absolute;left:50px;top:12px;font-family:var(--serif);font-size:30px;line-height:32px;color:var(--gold);text-shadow:0 2px 4px #000;transform:scaleX(-1)}
+/* 押し方の2択（ちょい押し＝チップ1枚／ぐい押し＝チップ2枚）。盤の中の文字は18px以上、ボタンは52px以上 */
+.rd-host .sg.furi .modes{position:absolute;left:300px;top:252px;width:494px;height:58px;z-index:6;display:flex;gap:8px;opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s;pointer-events:none}
+.rd-host .sg.furi .modes.on{opacity:1;transform:none;pointer-events:auto}
+.rd-host .sg.furi .mode{position:relative;flex:1;min-width:0;display:grid;grid-template-columns:48px 1fr;grid-template-rows:auto auto;align-items:center;column-gap:6px;padding:2px 8px;text-align:left;border:2px solid var(--gold);color:#fff4d8;background:linear-gradient(180deg,#2f8a63,#14503a 78%);box-shadow:0 5px 12px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.35);font-family:var(--serif);cursor:pointer}
+.rd-host .sg.furi .mode.m2{background:linear-gradient(180deg,#b6761f,#6f400c 78%)}
+.rd-host .sg.furi .mode .mchip{grid-row:1 / 3;position:relative;display:block;width:44px;height:44px}
+.rd-host .sg.furi .mode .mchip u{position:absolute;left:4px;width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff7186,#c01835 55%,#7d1022);border:3px dashed #fff4d8;box-shadow:0 3px 0 #5a0e1c}
+.rd-host .sg.furi .mode .mchip u:nth-child(1){top:6px}
+.rd-host .sg.furi .mode .mchip u:nth-child(2){top:0;left:4px;transform:translateY(-4px)}
+.rd-host .sg.furi .mode .mchip u:nth-child(1):not(:last-child){top:10px}
+.rd-host .sg.furi .mode .mt{font-weight:800;font-size:22px;line-height:26px;white-space:nowrap}
+.rd-host .sg.furi .mode small{font-family:var(--sans);font-weight:700;font-size:var(--f18,18px);line-height:20px;white-space:nowrap;color:#fff4d8;opacity:.96}
+.rd-host .sg.furi .mode:disabled{filter:grayscale(.7) brightness(.6);cursor:default}
+.rd-host .sg.furi .mode.off{opacity:.35}
+.rd-host .sg.furi .mode.lit:not(:disabled){animation:rd-lit 1s ease-in-out infinite alternate}
+.rd-host .sg.furi .mode:not(:disabled):active{transform:translateY(3px)}
 .rd-host .sg.furi .opts{left:300px;top:314px;width:494px;height:52px;gap:8px}
 .rd-host .sg.furi .opt{position:relative;flex:1;min-width:0;border:2px solid var(--gold);color:#fff4d8;padding:0;box-shadow:0 5px 12px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.35);text-align:center;font-family:var(--serif);font-weight:800;font-size:28px;line-height:32px;white-space:nowrap;transition:transform .15s,filter .3s;display:block}
 .rd-host .sg.furi .opt[data-a="払う"]{background:linear-gradient(180deg,#2f8a63,#14503a 78%)}
 .rd-host .sg.furi .opt[data-a="降りる"]{background:linear-gradient(180deg,#e03a52,#8a1126 78%)}
-.rd-host .sg.furi .opt.back{flex:none;width:196px;font-size:18px;background:rgba(90,14,28,.92);border-color:var(--gold3);color:var(--gold)}
+.rd-host .sg.furi .opt.back{flex:none;width:196px;font-size:var(--f18,18px);background:rgba(90,14,28,.92);border-color:var(--gold3);color:var(--gold)}
 .rd-host .sg.furi .opt:not(:disabled):active{transform:translateY(3px)}
 .rd-host .sg.furi .opt:disabled{filter:grayscale(.65) brightness(.65);cursor:default}
 .rd-host .sg.furi .opts.lit .opt:not(:disabled):not(.back){animation:rd-lit 1s ease-in-out infinite alternate}
@@ -173,3 +189,9 @@ html.is-compact .battle-screen.v2.t8 .verb-furi .verb-label{font-size:var(--fx-m
 .card.rd-shown{box-shadow:0 0 0 3px #ffd9a0,0 0 14px 3px rgba(255,217,160,.7)!important}
 .card .rd-shown-tag{position:absolute;left:50%;bottom:calc(-8px / var(--game-scale,1));transform:translateX(-50%);z-index:4;padding:0 calc(8px / var(--game-scale,1));font-style:normal;font-weight:800;font-size:calc(14px / var(--game-scale,1));line-height:calc(20px / var(--game-scale,1));white-space:nowrap;color:#fff4d8;background:#8e1228;border:1px solid #e9c46a;box-shadow:0 2px 4px rgba(0,0,0,.6)}
 .rd-host .sg.furi.demo .rico.up .rsay{bottom:58px}
+
+/* 見せ合いっこ：ポルカの警戒（じと目の印）。盤の中の文字は18px以上 */
+.rd-host .sg.mise .wary{position:absolute;left:176px;top:46px;z-index:6;display:none;align-items:center;gap:6px;padding:2px 10px 2px 6px;border:2px solid var(--gold3);border-radius:4px;background:linear-gradient(160deg,#f6ead0,#e0c98f);box-shadow:0 3px 8px rgba(0,0,0,.6);pointer-events:none}
+.rd-host .sg.mise .wary.on{display:flex}
+.rd-host .sg.mise .wary svg{width:46px;height:30px;display:block}
+.rd-host .sg.mise .wary b{font-family:var(--serif);font-weight:800;font-size:var(--f18,18px);line-height:22px;color:#7d1022;white-space:nowrap}

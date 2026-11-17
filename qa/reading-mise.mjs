@@ -10,14 +10,14 @@ const [W, H] = size.split('x').map(Number);
 async function run(which, first) {
   const T = await open('polka', { W, H, night, save: first ? {} : { rdDemo: { mise: true } } });
   const { ev, log, shot, waitFor, q, click, close } = T;
-  const tag = `mise_${which}${night === 'deisui' ? '_deisui' : ''}`;
+  const tag = `fix8_mise_${which}${night === 'deisui' ? '_deisui' : ''}`;
   log(`--- ${tag}  ほろ酔い ${await ev('return isHoroyoi() + " deisui " + state.deisui')}`);
   const want = which === 'left' ? 0 : which === 'right' ? 1 : (which === 'hide' || which === 'caught') ? 2 : 1;
   const found = JSON.parse(await ev(`
     const RB = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' }, rb = (c) => ({ r: c.rank, s: RB[c.suit] });
     for (let n = 0; n < 200000; n++) {
       const d = newDeck(); const mine = d.slice(0, 2), her = d.slice(2, 4), b5 = d.slice(4, 9);
-      const sc = RD.plan.mise({ board: b5.map(rb), mine: mine.map(rb), her: her.map(rb) }, { charKey: 'polka', pot0: 600, bet: 300 });
+      const sc = RD.plan.mise({ board: b5.map(rb), mine: mine.map(rb), her: her.map(rb) }, { charKey: 'polka', pot0: 600, bet: 400 });
       if (!sc || sc.ans !== ${want}) continue;
       state.playerHand = mine; state.opponentHand = her; state.community = b5; state.handPhase = 'river';
       return JSON.stringify({ n, sc });
@@ -26,7 +26,7 @@ async function run(which, first) {
   if (!found) { log('場面が見つからない'); await close(); return; }
   log('場面', JSON.stringify(found.sc));
   await ev(`
-    state.pot = 900; state.currentBetPlayer = 300; state.currentBetOpponent = 0; state.playerChips = Math.max(state.playerChips, 900); state.opponentChips = Math.max(state.opponentChips, 900);
+    state.pot = 1000; state.currentBetPlayer = 400; state.currentBetOpponent = 0; state.playerChips = Math.max(state.playerChips, 900); state.opponentChips = Math.max(state.opponentChips, 900);
     state.pendingRead = null; state.readHandNo = -1; state.rdCount = null; state.rdOpen = null; state.rdShown = null; state.rdOnedari = null; state.rdForce = null; state.psychResolved = false; state.psychPending = false; state.isPlayerTurn = false; state.handActs = [];
     render(); return 1;`);
   await sleep(400);

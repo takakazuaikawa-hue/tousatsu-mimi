@@ -91,7 +91,7 @@
     const all = d.b5.concat(d.mimi, d.her); if (new Set(all.map(c => c.t)).size !== all.length) why.push('札のだぶり');
     if (score(d.board4.concat(d.her))[0] !== 0) why.push('彼女が4枚の時点で待ちだけではない');
     if (d.kind === 'mixed') why.push('待ちの種類が1つに決まらない');
-    if (d.mimi4[0] < 1) why.push('ミミがペア以上ではない');
+    // （ミミがペア以上、の条件は外した：2026-11-17 自然な待ちだけで出すため。勝ち負けは ahead で決まり、下の「外れなのにミミが負ける」などで守る）
     if (d.ahead === 0) why.push('引き分け');
     if (d.hit) { if (d.herFinal[0] < 4) why.push('当たりなのに役ができていない'); if (d.ahead > 0) why.push('当たりなのにミミが勝つ'); }
     else { if (d.herFinal[0] !== 0) why.push('外れなのに役がある'); if (d.ahead < 0) why.push('外れなのにミミが負ける'); }
@@ -299,7 +299,7 @@
   <button type="button" class="skip">とばす</button>
   <div class="hand">${HAND}</div>
   <div class="intro"><div class="in"><div class="rd">READING</div><div class="tt">リーディング：おねだり</div><div class="sn"></div></div></div>
-  <div class="panel"><div class="ph">この遊びの4つのこと</div><div class="pl"></div><button type="button" class="pgo btnA">はじめる</button></div>`;
+  <div class="panel"><div class="ph">お手本の後で、おぼえておくこと</div><div class="pl"></div><button type="button" class="pgo btnA">はじめる</button></div>`;
     const q = (s) => root.querySelector(s);
     q('.rimg').style.backgroundImage = "url('assets/battle/chibi/rico_think.webp')";
     const S = { root, demo, sc: null, d: null, q, who: null, lkH: [], lkB: [] };
@@ -544,6 +544,12 @@
     (mode === 'pick' ? goPick : goSay)();
   }
 
+  // 手の結果の画面に併記する答え（来た／来なかった・彼女の本当の手）
+  function summary(p, ctx) {
+    const sc = p.scene, d = derive(sc), out = outcome(d, p.pick);
+    return { correct: p.pick === d.answer, mark: out.mark + '（おねだりの札は' + (d.hit ? '来た' : '来なかった') + '）',
+      real: sc.who + 'の手札は ' + d.herHole.join(' ') + '（' + d.herName + '）', reason: String(out.reason).split('|').join(' '), gain: '' };
+  }
   // 手の後の答え合わせ：選んだ方の結果（待ちの5枚の列）
   function verdict(ST, opts, fin) {
     const p = opts.pending, sc = p.scene;
@@ -570,33 +576,54 @@
   // 「言う」は盤を開かず、卓の上に、相手の吹き出しと、おねだりの印（札の絵）を出すだけ。印は、卓の本物のリバーがめくれる時にも残す
   // （RD.tbl.close() で消す：「払う？降りる？」の盤を開く時・手が変わる時）。位置は卓の相手の絵（.v2-opp）の実際の場所から取る。
   const TBL_ONE = {
-    begin(key, sc) {
+    begin(key, sc, bo) {
       const T = window.RD.tbl, { el } = window.RD.util;
       const d = derive(sc), L = T.ensure();
       const faces = {};
       FACE_NAMES.forEach(n => { faces[n] = { img: faceUrl(key, n), size: 'auto 360px', pos: Math.round(-(CX[key + '_' + n] * 0.64 - 150)) + 'px 8px' }; });
       const W = T.win(faces, 'drunk'), B = T.say(W);
       // 印（札の絵）：suit＝マークの札／rank＝数字の札（か でつなぐ）／color＝赤い札か黒い札／count＝「あと○枚」
-      const sg = el('div', 'rdt-sign'), s = d.sign; let h = '<i>おねだり</i>';
+      const sg = el('div', 'rdt-sign' + (d.sign.t === 'count' ? ' cnt' : '')), s = d.sign; let h = '<i>おねだり</i>';
       if (s.t === 'suit') h += '<div class="row"><div class="cdi' + (s.suit === 'h' || s.suit === 'd' ? ' r' : '') + '">' + SJ[s.suit] + '</div></div>';
       else if (s.t === 'rank') h += '<div class="row">' + s.ranks.map(r => '<div class="cdi tk">' + RN(r) + '</div>').join('<span class="or">か</span>') + '</div>';
       else if (s.t === 'color') h += '<div class="row"><div class="cdi col' + (s.red ? '' : ' k') + '">' + (s.red ? '赤いの' : '黒いの') + '</div></div>';
-      else h += '<div class="pill">あと' + s.n + '枚</div>';
+      else {
+        // セリナの「あと○枚」：文で覚えさせず、絵の印で（同じマーク＝同じ色の5つ／両はし＝両側が光る並び／間＝まん中が光る並び。マークや数字は出さない）
+        const bx = (n, x) => '<b' + (x ? ' class="x"' : '') + '></b>'.repeat(1) , row = (a) => '<div class="pic">' + a.map(x => bx(0, x)).join('') + '</div>';
+        h += '<div class="pill">あと' + s.n + '枚</div>';
+        if (d.kind === 'flush') h += row([0, 0, 0, 0, 0]).replace(/<b>/g, '<b class="f">') + '<em>同じマーク</em>';
+        else if (d.outs.length >= 8) h += row([1, 0, 0, 0, 0, 1]) + '<em>両はし</em>';
+        else h += row([0, 0, 1, 0, 0]) + '<em>間</em>';
+      }
       sg.innerHTML = h; L.appendChild(sg);
       const place = () => {
         // 場札の5枚目（リバー）の右に置く：めくれたリバーと、すぐ隣で見くらべられる（相手の絵の横は卓の文字に重なった。11/17）
-        const sp = T.span(), w = sg.offsetWidth || 70, h = sg.offsetHeight || 70, cr = T.cardRects();
+        sg.classList.remove('flat');
+        const sp = T.span(), cr = T.cardRects(); let w = sg.offsetWidth || 70, h = sg.offsetHeight || 70;
         if (cr.length) {
           const pitch = cr.length > 1 ? cr[1].left - cr[0].left : cr[0].width + 6;
           const right5 = cr[0].left + pitch * 4 + cr[0].width;
-          const x = right5 + 12, y = cr[0].top + cr[0].height / 2 - h / 2;
-          if (x + w <= sp.right) { sg.style.left = x + 'px'; sg.style.top = Math.max(4, y) + 'px'; return; }
+          let x = right5 + 12, y = cr[0].top + cr[0].height / 2 - h / 2;
+          // 卓のボタン（コール／降りる）に重なる幅なら、横に寝かせた形にして、ボタンと「リコのおすすめ」の札の上へ逃がす（667幅で印がコールを隠した。11/18）
+          const ac = document.querySelector('.battle-screen .v2-actions'), ar = ac ? ac.getBoundingClientRect() : null;
+          if (ar && ar.width && x + w > ar.left - 4 && y + h > ar.top - 30) {
+            sg.classList.add('flat'); w = sg.offsetWidth || w; h = sg.offsetHeight || h;
+            x = Math.min(right5 + 6, sp.right - w); y = ar.top - 30 - h - 2;
+          }
+          // 寝かせた印が相手の台詞に重なる時は、台詞を引っ込める（字が重なって読めないより、印を読ませる）
+          const bt = document.querySelector('.battle-screen .v2-band-text'), br = bt ? bt.getBoundingClientRect() : null;
+          T.body('rdt-flat-on', !!(sg.classList.contains('flat') && br && br.width && x < br.right + 4 && x + w > br.left && y < br.bottom && y + h > br.top));
+          if (x + w <= sp.right + 1) { sg.style.left = x + 'px'; sg.style.top = Math.max(4, y) + 'px'; return; }
         }
         const r = W.rect; if (!r) return;
         let x = r.left - w - 8; if (x < sp.left) x = r.right + 8;
         sg.style.left = x + 'px'; sg.style.top = (r.top + 16) + 'px';
       };
-      T.add(place);
+      // 初回だけ、リコの一言（卓の吹き出しは夜は酔って崩れるので、ここに出す。印のすぐ下）
+      let co = null;
+      if (bo && bo.first) { co = el('div', 'rdt-coach', '<b>リコ</b>「あの札が来なければ、|役はできてない」'.split('|').join('<wbr>')); L.appendChild(co); }
+      const placeCo = () => { if (!co) return; const r = sg.getBoundingClientRect(), sp = T.span(), w = co.offsetWidth || 200, h = co.offsetHeight || 46; let x = Math.max(sp.left, Math.min(r.left, sp.right - w)); co.style.left = x + 'px'; co.style.top = Math.max(4, r.top - h - 4) + 'px'; };   // 印の真上（ミミの札にも印にも重ならない）
+      T.add(place); T.add(placeCo);
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       let alive = true;
       return {
@@ -608,12 +635,13 @@
           await wait(2600);
           if (!alive) return;
           B.set(null); W.show(false);
+          if (co) { co.classList.add('on'); placeCo(); setTimeout(() => co.classList.remove('on'), 4800); }   // リコの一言は、相手の言う声が終わってから（重ならないように）。リバーをめくる間だけ見せて引っ込める（相手の台詞を隠さない）
         },
         close() { alive = false; T.close(); },
       };
     },
   };
   window.RD.onedariTable = TBL_ONE;
-  window.RD.reg('onedari', { id: 'onedari', title: 'リーディング：おねだり', plan, mount, verdict });
+  window.RD.reg('onedari', { id: 'onedari', title: 'リーディング：おねだり', plan, mount, verdict, summary });
   window.RD.onedariEngine = { P, FULL, score, cmp, RN, SJ, hname, outsOf, derive, problems, signFor, plan, outcome, WHO, DEMO, NAME, altsOf, unambiguous, signTextOf };
 })();

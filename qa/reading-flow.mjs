@@ -27,12 +27,14 @@ for (let i = 0; i < 8; i++) { await ev(`const b = [...document.querySelectorAll(
 for (let i = 0; i < 40 && (await ev('return state.screen')) !== 'battle'; i++) { await sleep(700); if (i % 6 === 3 && (await ev('return state.screen')) === 'lobby') await ev(`window.__skipEpisodeOnce = true; startBattle(${JSON.stringify(opp)}); return 1;`); await ev(`const b = [...document.querySelectorAll('button')].find(b => /開始|はじめる|スキップ|OK/.test(b.textContent) && b.offsetParent); if (b) b.click(); return 1;`); }
 console.log('unlock', await ev(`return String(horoyoiUnlocked(${JSON.stringify(opp)})) + ' ' + JSON.stringify(save.horoyoiCleared) + ' ' + save.horoyoiMode`));
 console.log('開始後', await ev(`return state.screen + ' hand ' + state.handNo + ' horoyoi ' + isHoroyoi()`));
+let hrRead = 0, hrReadSeen = new Set();
 let last = '', lastT = Date.now(), maxHand = 0, rdSeen = 0, rdVerd = 0, frozen = false, steps = 0, furiPressed = 0;
 const t0 = Date.now();
 while (Date.now() - t0 < 280000 && maxHand < HANDS + 1) {
   steps++;
   const st = JSON.parse(await ev(`return JSON.stringify({ hand: state.handNo, ph: state.handPhase, pot: state.pot, turn: state.isPlayerTurn, scr: state.screen, rd: !!document.querySelector('.rd-host'), cnt: state.rdCount || null, pend: !!state.pendingRead, open: !!state.rdOpen, toCall: Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0)), chips: [state.playerChips, state.opponentChips] })`));
   maxHand = Math.max(maxHand, st.hand || 0);
+  if (await ev(`return !!document.querySelector('.hand-result-overlay .hr-read')`) === true && !hrReadSeen.has(st.hand)) { hrReadSeen.add(st.hand); hrRead++; await page.screenshot(path.join(OUT, `fix8_flow_${which.replace(':', '_')}_hr${st.hand}.png`)); }
   if (st.rd) rdSeen++;
   const key = JSON.stringify([st.hand, st.ph, st.pot, st.turn, st.rd, st.scr]);
   if (key !== last) { last = key; lastT = Date.now(); }
@@ -43,7 +45,8 @@ while (Date.now() - t0 < 280000 && maxHand < HANDS + 1) {
   if (mkp === true) { rdSeen++; lastT = Date.now(); await sleep(900); continue; }
   // 読み合いの画面：進める（お手本・卓へ・次へ）
   if (st.rd) {
-    // ふりの画面：山を2回押して顔を出す（押さないと払う／降りるが光らない）
+    // ふりの画面：押し方を選び（ちょい押し・ぐい押しを交互。足りなければ押せるほう）、山を押して顔を出す（押さないと払う／降りるが光らない）
+    await ev(`const m = [...document.querySelectorAll('.rd-host .sg.live.furi .modes.on .mode')].filter(b => !b.disabled); if (m.length) { m[${steps} % m.length].click(); } return 1;`);
     await ev(`const p = document.querySelector('.rd-host .sg.live.furi .pile'); const lane = document.querySelector('.rd-host .sg.live.furi .lane.on'); if (p && lane && !document.querySelector('.rd-host .sg.live.furi .opts.on')) { const o = { bubbles: true, pointerId: 1, clientX: 100, clientY: 100 }; p.dispatchEvent(new PointerEvent('pointerdown', o)); p.dispatchEvent(new PointerEvent('pointerup', o)); } return 1;`);
     await ev(`const b = [...document.querySelectorAll('.rd-host button')].find(b => b.offsetParent && !b.disabled && /卓へ|次へ|はじめる|これだ|もどる|めくる/.test(b.textContent)); if (b) b.click(); else { const o = document.querySelector('.rd-host .opts.on .opt, .rd-host .opts.on .pay, .rd-host .opts.on .hide'); if (o && !o.disabled) o.click(); } return 1;`);
     await sleep(500); continue;
@@ -61,7 +64,7 @@ while (Date.now() - t0 < 280000 && maxHand < HANDS + 1) {
   await sleep(350);
 }
 const fin = JSON.parse(await ev(`return JSON.stringify({ hand: state.handNo, cnt: state.rdCount || null, readHand: state.readHandNo, errs: 0 })`));
-console.log(`相手 ${which}（ほろ酔い ${await ev('return isHoroyoi()')}・泥酔 ${await ev('return !!state.deisui')}）：進んだ手 ${maxHand}（目標 ${HANDS}）／リーディング起動 ${JSON.stringify(fin.cnt)}／ふりのボタンを押した ${furiPressed}／読み合い画面が見えた回数 ${rdSeen}／固まり ${frozen ? 'あり' : 'なし'}`);
+console.log(`相手 ${which}（ほろ酔い ${await ev('return isHoroyoi()')}・泥酔 ${await ev('return !!state.deisui')}）：進んだ手 ${maxHand}（目標 ${HANDS}）／リーディング起動 ${JSON.stringify(fin.cnt)}／ふりのボタンを押した ${furiPressed}／読み合い画面が見えた回数 ${rdSeen}／手の結果に答えの欄が出た ${hrRead}／固まり ${frozen ? 'あり' : 'なし'}`);
 console.log('errors', JSON.stringify(await page.eval('window.__QA.errors.slice(0, 5)')));
 console.log('exceptions', JSON.stringify(s.exceptions.slice(0, 3)));
 await s.close();

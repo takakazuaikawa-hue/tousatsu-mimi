@@ -218,7 +218,13 @@
     if (rks.length >= 2) cand.push('two' + rks[0] + rks[1]);
     // ヴェルベットは演技の印に合う見立てを置くため、候補を広げる（場札の数字の全部のツーペア・スリーカード）
     if (ck === 'velvet') { for (let i = 0; i < rks.length; i++) { for (let j = i + 1; j < rks.length; j++) { const k2 = 'two' + rks[i] + rks[j]; if (!cand.includes(k2)) cand.push(k2); } cand.push('trips' + rks[i]); } }
-    const ok = cand.filter(k => k !== truth && !tally[k]);
+    // 外れの見立ては、場札だけを見れば成立しうる役に限る（2026-11-17 Codex 2回目 指摘3）。印を追った人だけが消せる3択にする
+    const canBoard = (k) => {
+      if (k.startsWith('flush')) return board.filter(c => c.s === k[5]).length >= 3;
+      if (k === 'straight') { const rs = new Set(board.map(c => c.r)); for (let lo = -1; lo <= 8; lo++) { let n = 0; for (let q = 0; q < 5; q++) { const v = lo + q; if (rs.has(v < 0 ? 12 : v)) n++; } if (n >= 3) return true; } return false; }
+      return true;   // none・ペア・ツーペア・スリーカードは、場札の数字から作る候補だけを上で並べている
+    };
+    const ok = cand.filter(k => k !== truth && !tally[k] && canBoard(k));
     for (let i = ok.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [ok[i], ok[j]] = [ok[j], ok[i]]; }
     if (ok.length < 2) return null;
     // ヴェルベット：演技の印を、役の上がらない札に1つ。見立ての外れの1つは、その演技の印に合う手にする（演技を信じると外れる）
@@ -270,11 +276,10 @@
       l45: 'A のペア！ 当たり。|手札が見えたまま卓に戻れるよ',
     };
   };
+  // お手本で見せた事（目的・やり方）は削り、危なさと、その相手だけの決まりを1行ずつ（2026-11-17 Codex 2回目 指摘9）
   const CARD4 = (CH) => [
-    ['目的', CH.name + 'の伏せた手札を当てる。|当てると、手札が開いたまま卓に戻れる。'],
-    ['やり方', '場札が1枚ずつめくれる。|' + (CH.name === 'セリナ' ? 'セリナがめがねを直した札に印が付く。' : CH.name === 'ヴェルベット' ? '小さな♡が出た札に印が付く。' : CH.name + 'がルーペでのぞいた札に印が付く。') + '|3つの見立てから1つ選ぶ。'],
     ['危なさ', '外れても損はしない。|ただ、手札は見えないまま。'],
-    ['見る物', CH.look],
+    ['決まり', CH.look],
   ];
 
   // ================= 画面 =================
@@ -440,6 +445,17 @@
     go();
   }
 
+  // 手の結果の画面に併記する答え（外れの時だけ。当たりは卓で手札が開く）
+  function summary(p, ctx) {
+    const sc = p.scene, ck = p.charKey || 'grano', CH = CHARS[ck] || CHARS.grano;
+    const show = (t) => t.split(' ').map(x => rn(x[0]) + SJ[x[1]]).join(' ');
+    const mine = sc.opts[p.pick], truth = sc.opts[sc.ans];
+    return { correct: p.pick === sc.ans, mark: p.pick === sc.ans ? '◎ 当たり' : '✕ 外れ',
+      real: CH.name + 'の手札は ' + show(sc.hole) + '（' + truth.label + '）',
+      reason: p.pick === sc.ans ? '決め手：' + String(truth.why).split('|').join('') + '。' : '「' + mine.label + '」は合わない：' + String(mine.why).split('|').join('') + '。|' + (mine.why === truth.why ? '答えは「' + truth.label + '」。' : '答えの決め手：' + String(truth.why).split('|').join('') + '。'),
+      gain: p.pick === sc.ans ? '' : '外れても損はなし' };
+  }
+
   // 明かし：相手の伏せ札がめくれ、役を作る札が寄って光る。見立て3つに理由が付く
   async function reveal(ST, run, S, CH, sc, hit, o) {
     const ev = S.evidence(), fast = !!(o && o.fast);
@@ -476,7 +492,7 @@
   <div class="rico"><div class="rimg"></div><div class="rsay"></div></div>
   <button type="button" class="skip">とばす</button>
   <div class="intro"><div class="in"><div class="rd">READING</div><div class="tt">${CH.title}</div><div class="sn"></div></div></div>
-  <div class="panel"><div class="ph">この遊びの4つのこと</div><div class="pl"></div><button type="button" class="pgo btnA">はじめる</button></div>`;
+  <div class="panel"><div class="ph">お手本の後で、おぼえておくこと</div><div class="pl"></div><button type="button" class="pgo btnA">はじめる</button></div>`;
     const q = (s) => root.querySelector(s);
     FACE_KEYS.forEach(k => { const f = CH.faces[k] || CH.faces.peek, e = q('.f-' + k); e.style.backgroundImage = `url('${f.img}')`; e.style.backgroundSize = f.size; e.style.backgroundPosition = f.pos; });
     q('.rimg').style.backgroundImage = "url('assets/battle/chibi/rico_think.webp')";
@@ -684,7 +700,7 @@
     },
   };
   window.RD.mekikiTable = TBL_MK;
-  window.RD.reg('mekiki', { id: 'mekiki', title: 'リーディング：目利き', plan, mount, verdict, CHARS });
+  window.RD.reg('mekiki', { id: 'mekiki', title: 'リーディング：目利き', plan, mount, verdict, summary, CHARS });
   // 計算だけ外から使う（検査用）
   window.RD.mekikiEngine = { P, evalCat, pins, finKey, made, plan, labelOf, DECK, RANKS };
 })();

@@ -9,7 +9,7 @@ const [W, H] = size.split('x').map(Number);
 const isFirst = first === 'first';
 const T = await open(ck, { W, H, speed: +process.env.SPEED || 1, save: isFirst ? {} : { rdDemo: { mekiki: true }, rdRule: { ['mekiki:' + ck]: true } } });
 const { ev, log, shot, waitFor, page } = T;
-const tag = `form7_mekiki_${ck}_${want}${isFirst ? '_first' : ''}`;
+const tag = `fix8_mekiki_${ck}_${want}${isFirst ? '_first' : ''}`;
 log('--- ' + tag);
 const found = JSON.parse(await ev(`
   const RB = { '♠': 's', '♥': 'h', '♦': 'd', '♣': 'c' }, rb = (c) => ({ r: c.rank, s: RB[c.suit] });
@@ -62,5 +62,12 @@ while (Date.now() - t0 < 120000) {
   await sleep(300);
 }
 await ev(`rand = window.__rand0; return 1;`);
+if (want === 'miss') {
+  // 外れ：手の結果に答えの欄（11/17 2回目 指摘7）
+  await ev(`playerCheckCall(); return 1;`);
+  for (let i = 0; i < 40; i++) { if (await ev(`return !!document.querySelector('.hand-result-overlay')`) === true) break; await ev(`if (state.isPlayerTurn && state.handPhase !== 'idle') playerCheckCall(); return 1;`); await sleep(1500); }
+  await sleep(1500); await shot(tag, 'hand_result');
+  log('手の結果の答えの欄', await ev(`return JSON.stringify({ hrRead: !!document.querySelector('.hand-result-overlay .hr-read'), text: (document.querySelector('.hand-result-overlay .hr-read') || {}).innerText || '' })`));
+}
 log('終わり', await ev(`return JSON.stringify({ phase: state.handPhase, open: !!state.rdOpen, pend: !!state.pendingRead, count: state.rdCount, layer: !!document.querySelector('.rdt-layer') })`));
 await T.close();
