@@ -747,7 +747,7 @@ const MOTION_OK = !(window.matchMedia && window.matchMedia('(prefers-reduced-mot
 // リコ先輩とグラーノは2026-10-18、ポルカ・ヴェルベット・セリナは2026-10-30に絵を差し替えたので、新しい絵の動画ができるまで外す（古い絵の動画が流れないように）
 const MOTION_CG = [];
 // 2枚目のご褒美がある相手：勝った時に1枚目の次に続けて見せ、コレクションでも続けて見られる（2026-10-30 ユーザー：セリナは3と4を採用）
-const REWARD_CG_MORE = { selina: ['assets/backgrounds/reward_cg_selina_2.jpg'] };
+const REWARD_CG_MORE = {};   // 11/18 セリナの1枚目を外し、2枚目を1枚目に繰り上げた（reward_cg_selina.jpg に2枚目の絵）
 // ほろ酔いの夜の一枚絵：1人 HOROYOI_CG_N 枚（11/08 ユーザー「すべて採用」「倍ほしい」）。1枚目は幕間の後、続けて残りを見せる
 // 人ごとの枚数（11/09 破綻の絵は不採用にして描き直し、全員6枚）
 const HOROYOI_CG_N = { rico_tutorial: 6, polka: 6, selina: 6, grano: 6, velvet: 6 };   // S6-1 は幕間の後ではなく、勝負の途中の会話（HOROYOI_MID_SCENES）に出す（11/09 ユーザー）
@@ -757,25 +757,24 @@ const HOROYOI_CG_N = { rico_tutorial: 6, polka: 6, selina: 6, grano: 6, velvet: 
 // 交換所の「秘蔵の一枚」（2026-10-30 ユーザー：出来のよい1と2もどこかに）。手に入れるとコレクションのご褒美CGの欄に並ぶ。
 // VIPサロンの二人は前のセリナのご褒美CGで、その時の動画がそのまま使える
 const SECRET_CG = {
-  cg_selina_salon:    { src: 'assets/backgrounds/secret_cg_selina_salon.jpg', motion: 'assets/motion/cg_selina.mp4' },
   cg_selina_fireside: { src: 'assets/backgrounds/secret_cg_selina_fireside.jpg' },
 };
 // CG集（2026-11-08 D17 ユーザー「一枚絵はセットにして交換所で変えるようにしましょう。コイン交換で、コレクションに載って、いつでも見られるように」）。
 // ぱにゅぱにゅ用に描いて構図に使わなかった絵・没になったご褒美の案を、場所ごとのセットに。1セット100コイン（ユーザー決定）。
 // 絵は assets/backgrounds/cgset/<名>.jpg（1600x900）、見本は thumb/<名>.webp（480x270）。作り方 qa/cgconvert.mjs
 const CG_SETS = {
-  cgset_bath:     { name: '湯上がり',         n: 8, key: 'bath' },
+  cgset_bath:     { name: '湯上がり',         n: 6, key: 'bath' },
   cgset_morning:  { name: '朝と夕暮れ',       n: 4, key: 'morning', short: '朝と夕' },
-  cgset_yshirt:   { name: '夜のYシャツ',      n: 7, key: 'yshirt', short: 'Yシャツ' },
-  cgset_midnight: { name: '零時の寝台と卓',   n: 5, key: 'midnight', short: '寝台と卓' },
-  cgset_rival:    { name: 'ライバルと卓で',   n: 3, key: 'rival', short: 'ライバル' },
+  cgset_yshirt:   { name: '夜のYシャツ',      n: 4, key: 'yshirt', short: 'Yシャツ' },
+  cgset_midnight: { name: '零時の寝台と卓',   n: 2, key: 'midnight', short: '寝台と卓' },
+  cgset_rival:    { name: 'ライバルと卓で',   n: 2, key: 'rival', short: 'ライバル' },
   // ほろ酔いの夜の一枚絵で、採用した絵と構図が似ていた別カット（11/09 ユーザー「採用版以外はCG集に。出来はいい」）
-  cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 12, key: 'horoyoi', short: 'ほろ酔い' },
+  cgset_horoyoi:  { name: 'ほろ酔いの別カット', n: 11, key: 'horoyoi', short: 'ほろ酔い' },
   // 二周目のクリア報酬（11/09 ユーザー「2周目のクリア報酬のヴェルベット写真集として」「勝った時に渡す」）。交換所には出さない。
   // ほろ酔いの夜で初めてヴェルベットに勝った時に渡す（endBattle の save.photobookPending → showPhotobookGift）。採用分は qa/out/velvet_photobook/adopted.json
-  cgset_velvet_book: { name: 'ヴェルベット写真集', n: 123, key: 'velvetbook', short: '写真集', gift: 'ほろ酔いの夜のクリア報酬' },
+  cgset_velvet_book: { name: 'ヴェルベット写真集', n: 120, key: 'velvetbook', short: '写真集', gift: 'ほろ酔いの夜のクリア報酬' },
   // 三周目のクリア報酬（11/10 ユーザー決定「5人全員の写真集」）。泥酔の夜で5人に勝ったら渡す。並びは qa/out/deisui_photobook/order.json（人ごと・場面順）
-  cgset_deisui_book: { name: '泥酔の夜 写真集', n: 114, key: 'deisuibook', short: '泥酔写真集', gift: '泥酔の夜のクリア報酬', deisui: true },
+  cgset_deisui_book: { name: '泥酔の夜 写真集', n: 100, key: 'deisuibook', short: '泥酔写真集', gift: '泥酔の夜のクリア報酬', deisui: true },
 };
 const cgSetSrc = (id, k) => `assets/backgrounds/cgset/${CG_SETS[id].key}_${k}.jpg`;
 const cgSetThumb = (id, k) => `assets/backgrounds/cgset/thumb/${CG_SETS[id].key}_${k}.webp`;
@@ -4528,8 +4527,8 @@ const STRUGGLE_SCENES = {
   velvet: [
     { k: 'say', who: 'velvet', t: 'ようこそ、あたしの卓へ。……あら、もう震えてるの？', art: 'assets/episodes/struggle_velvet_a.webp' },
     { k: 'say', who: 'velvet', t: 'ふふっ、もう半分しか残ってないの。ざぁこ♡', art: 'assets/episodes/struggle_velvet_6.webp' },
-    { k: 'think', who: 'mimi', t: '強気に言われるたびに、引いちゃってる……', art: 'assets/episodes/struggle_velvet_c.webp' },
-    { k: 'say', who: 'velvet', t: 'ほら、降りなさい。それが賢い子のやり方よ', art: 'assets/episodes/struggle_velvet_b.webp' },
+    { k: 'think', who: 'mimi', t: '強気に言われるたびに、引いちゃってる……' },
+    { k: 'say', who: 'velvet', t: 'ほら、降りなさい。それが賢い子のやり方よ' },
     { k: 'think', who: 'mimi', t: '……でも、あの笑い方、どこか作ってるみたい', art: 'assets/episodes/struggle_velvet_7.webp' },
     { k: 'say', who: 'rico', t: 'ヴェルベットは演技がうまい。強がった時ほど怪しいよ。逆を読んでみな', art: 'assets/episodes/struggle_velvet_8.webp' },
   ],
@@ -6872,7 +6871,6 @@ const SHOP_ITEMS = [
   { id: 'gallery_rico',          cat: 'memory', name: 'リコ先輩設定資料',    price: 350,  desc: 'リコ先輩の人物設定・口調メモ・ボツ衣装の話を読める' },
   { id: 'gallery_opponents',     cat: 'memory', name: '対戦相手図鑑',        price: 450,  desc: '対戦相手の打ち筋と口癖を読める（撃破した相手のみ）' },
   { id: 'gallery_mimi',          cat: 'memory', name: 'ミミ百態',            price: 300,  desc: 'ミミの表情メモと、ぱにゅぱにゅの裏話を読める' },
-  { id: 'cg_selina_salon',       cat: 'memory', name: 'VIPサロンの二人',     price: 500,  desc: 'セリナとミミ、VIPサロンでの一枚。|手に入れると|コレクションで|いつでも見られる' },
   { id: 'cg_selina_fireside',    cat: 'memory', name: '暖炉のセリナ',        price: 550, desc: '眼鏡を外したセリナの、|暖炉の部屋での一枚。|手に入れると|コレクションで|いつでも見られる' },
   { id: 'cgset_morning',  cat: 'cgset', name: 'CG集「朝と夕暮れ」',     price: 100, desc: '朝の寝室のTシャツと、|夕暮れのジム。|4枚入り。|コレクションで|いつでも見られる' },
   { id: 'cgset_bath',     cat: 'cgset', name: 'CG集「湯上がり」',       price: 100, desc: '湯気の残る浴室で、|肌着のミミ。|8枚入り。|コレクションで|いつでも見られる' },
@@ -6972,7 +6970,6 @@ const SHOP_COMMENTS = {
   gallery_rico:          'リコさんの設定メモ……ファンには堪らぬ品ですよ。私からの内緒です',
   gallery_opponents:     '撃破された相手の図鑑。勝者の特権、というやつですな',
   gallery_mimi:          'ミミちゃんの表情メモ。読んでいるだけで顔がゆるみますよ',
-  cg_selina_salon:       'セリナ様と|ミミちゃんの一枚。|眼鏡の奥の目が、|ずいぶん柔らかいでしょう',
   cg_selina_fireside:    '暖炉の前で|眼鏡を外した|セリナ様……|門外不出の一枚ですよ',
   cgset_morning:         '寝ぼけまなこの|ミミちゃん。|朝の光は|正直ですな',
   cgset_bath:            '湯上がりの一冊。|湯気で曇る前に、|お早めにどうぞ',
@@ -7149,7 +7146,6 @@ const SHOP_UNLOCK = {
   bgm_battle_tense:      'selina',
   se_pack_casino:        'selina',
   omake_drama_1:         'selina',
-  cg_selina_salon:       'selina',
   cg_selina_fireside:    'selina',
   // CG集：撃破のたびに1セットずつ入荷（朝と夕暮れは最初から）
   cgset_morning:         'always',
