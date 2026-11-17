@@ -3316,6 +3316,7 @@ function render() {
     case 'result':      renderTemplate('tpl-result'); applyBindings(); if (isBgmOn() && state.resultWon) playSceneBgm('victory'); break;
     case 'shop':        renderTemplate('tpl-shop'); applyBindings(); bindShop(); break;
     case 'ending':      renderTemplate('tpl-ending'); stopSceneBgm(); _stopNonSceneBgm(); showEndingMusicPrompt(); break;
+    case 'baccarat':    app.innerHTML = ''; if (window.BaccaratUI) BaccaratUI.mount(); break; // クリア後のおまけ「バカラ」（baccarat-ui.js が #stage に自前で描く）
     case 'allstar':     app.innerHTML = ''; if (window.AllstarUI) AllstarUI.mount(); break; // 零時の卓（allstar-ui.js が #stage に自前で描く）
   }
   bindActions();
@@ -9809,7 +9810,7 @@ function bindActions() {
 }
 // 体験版で押せない入口（押すと「続きは製品版で」の窓）。製品版では呼ばれない
 function trialBlocksAction(action, data) {
-  if (/^allstar-/.test(action || '')) return true;
+  if (/^(allstar|baccarat)-/.test(action || '')) return true;
   if (['open-shop', 'panyu-free', 'play-minipoker', 'skip-stage', 'open-rico-viewer', 'equip-change'].includes(action)) return true;
   if (action === 'battle-start' && data && data.opponent && !isStageUnlocked(data.opponent)) return true;
   return false;
@@ -9868,6 +9869,7 @@ function onAction(e) {
   // 零時の卓の入口（入場案内・着席・続きから・記録）は allstar-ui.js が受け取る
   if (IS_TRIAL && trialBlocksAction(action, data)) { showTrialEnd(true); return; }
   if (/^allstar-/.test(action || '')) { if (window.AllstarUI) AllstarUI.onAction(action, data, e); return; }
+  if (/^baccarat-/.test(action || '')) { if (window.BaccaratUI) BaccaratUI.onAction(action, data, e); return; }   // クリア後のおまけ「バカラ」
   switch (action) {
     case 'start':
       // P2: 初回起動（未クリア＆体験ハンド未消化）はロビーではなく体験ハンドへ直行
@@ -11176,6 +11178,7 @@ function goLobby() {
   if (window.MimiVoice) stopVoice();   // 場面を出たら声は止める
   delete state.homePreviewOutfit;
   battleGen++;
+  if (window.BaccaratUI) BaccaratUI.teardown(); // バカラ：配った後なら戻りのコインを足して畳む
   if (window.AllstarUI) AllstarUI.teardown(); // 零時の卓：途中ならハンドの頭で保存して畳む
   if (state && state.readBattle) { try { state.readBattle.inst && state.readBattle.inst.destroy(); } catch (e) {} state.readBattle = null; }
   document.querySelectorAll('.read-battle-host').forEach(el => el.remove());
@@ -11330,7 +11333,16 @@ const SCENE_BGM = {
   intermission: { file: 'assets/bgm/hokorobu-hoho.mp3', gain: 0.85 }, // 幕間とご褒美の絵「ほころぶ頬」 -16.6
   victory:  { file: 'assets/bgm/royal-flush.mp3', gain: 0.83 },   // 勝った結果「ロイヤルフラッシュ」 -16.3
   allstar:  { file: 'assets/bgm/velvet-dice-run.mp3', gain: 0.72 }, // 零時の卓「Velvet Dice Run」 -15.0
+  // 女神バカラはウンメの2曲を交互に（next＝この曲が終わったら次に流す曲。next のある曲は繰り返さずに次へ渡す）
+  baccarat:  { file: 'assets/bgm/realtime-attack.mp3',   gain: 0.79, next: 'baccarat2' }, // 「リアルタイムアタック」 -15.8
+  baccarat2: { file: 'assets/bgm/bug-riyou-shimasu.mp3', gain: 0.81, next: 'baccarat' },  // 「バグ利用します」 -16.1
 };
+// a から next をたどって b に着くか（同じ「続けて流す組」の曲か）
+function _sameBgmChain(a, b) {
+  let k = a;
+  for (let i = 0; i < 8 && k && SCENE_BGM[k]; i++) { if (k === b) return true; k = SCENE_BGM[k].next; }
+  return false;
+}
 let _sceneBgmKey = null;
 let _sceneElB = false;   // いま鳴らしているのが2本目（scene-bgm-audio-b）か
 function _sceneEl() { return document.getElementById(_sceneElB ? 'scene-bgm-audio-b' : 'scene-bgm-audio') || document.getElementById('scene-bgm-audio'); }
@@ -11342,10 +11354,18 @@ function _stopNonSceneBgm() {
   if (endA) endA.pause();
   if (typeof _stopSkinBgm === 'function') _stopSkinBgm();
 }
-function playSceneBgm(key) {
+function playSceneBgm(key, advance) {
+  // 続けて流す組の途中（バカラの2曲目など）で同じ組の頭の曲を頼まれたら、頭に戻さずいまの曲を続ける
+  // （advance＝曲が終わって次へ進む時。この時だけは頼まれた曲に替える）
+  if (!advance && _sceneBgmKey && _sceneBgmKey !== key && _sameBgmChain(key, _sceneBgmKey)) key = _sceneBgmKey;
   const def = SCENE_BGM[key];
   let a = _sceneEl();
   if (!def || !a) return;
+  // 曲が終わった時：next があれば次の曲へ（その時もこの曲のままなら）。無ければ繰り返し
+  const chain = el => {
+    el.loop = !def.next;
+    el.onended = def.next ? () => { if (_sceneBgmKey === key && el === _sceneEl()) playSceneBgm(def.next, true); } : null;
+  };
   if (!isBgmOn()) { _bgmFadeStop(a); a.pause(); return; }      // BGM全体OFFなら鳴らさない（既定OFF）
   _stopNonSceneBgm();
   const vol = () => bgmVolFloat() * def.gain;
@@ -11358,7 +11378,7 @@ function playSceneBgm(key) {
     }
     _bgmFadeStop(a);
     routeThroughWebAudio(a);                    // 旧iOSでだけ消音スイッチに従わせる保険
-    a.loop = true;
+    chain(a);
     _sceneBgmKey = key;
     a.src = def.file;
     a.currentTime = 0;
@@ -11369,7 +11389,7 @@ function playSceneBgm(key) {
   }
   // 同じ曲なら頭出しせず継続（再レンダーで途切れない）。止まっていれば上げながら再開
   routeThroughWebAudio(a);
-  a.loop = true;
+  chain(a);
   bgmFadeInPlay(a, vol);
 }
 function stopSceneBgm() {
@@ -11388,6 +11408,7 @@ function startBgmForScreen() {
   else if (sc === 'battle') { if (typeof startBattleBgmSkin === 'function') startBattleBgmSkin(); }
   else if (sc === 'ending') { stopSceneBgm(); }   // ED音源はプロンプトで別途
   else if (sc === 'allstar') playSceneBgm('allstar');
+  else if (sc === 'baccarat') playSceneBgm(SCENE_BGM.baccarat ? 'baccarat' : 'allstar');   // バカラの曲：assets/bgm に置いて SCENE_BGM に baccarat を足すと鳴る
   else                      tryStartLobbyBgm();
 }
 
