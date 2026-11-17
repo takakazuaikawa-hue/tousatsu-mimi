@@ -130,3 +130,53 @@
 .rd-host .sg .btnA:active,.rd-host .sg .btnB:active{transform:translateY(2px)}
 .rd-host .sg .rib.demo{background:linear-gradient(90deg,#d8354d,#7d1022);border:2px solid var(--gold);border-left-width:3px;font-size:22px;padding:3px 18px;top:18px}
 .rd-host .sg .opt.mine::after{content:'あなた';position:absolute;left:-4px;top:-12px;padding:0 8px;font-size:18px;line-height:22px;font-weight:800;color:#fff4d8;background:#7d1022;border:1px solid var(--gold);box-shadow:0 2px 5px rgba(0,0,0,.6)}
+
+/* ===== 卓の上に重ねる部品（2026-11-17・目利き／おねだり。実寸の px。reading.js の RD.tbl）===== */
+.rdt-layer{--gold:#f5d77a;--gold2:#e9c46a;--gold3:#b8862f;--ivory:#fff4d8;--serif:"Shippori Mincho B1","Yu Mincho","Hiragino Mincho ProN","MS Mincho",serif;
+ position:fixed;inset:0;z-index:8500;pointer-events:none;font-family:"Noto Sans JP","Yu Gothic UI","Yu Gothic","Hiragino Sans","Meiryo",sans-serif;color:var(--ivory);-webkit-text-size-adjust:none;text-size-adjust:none;user-select:none;-webkit-user-select:none}
+.rdt-layer *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+.rdt-layer button{font-family:inherit;color:inherit;cursor:pointer;border:0;padding:0;background:none;pointer-events:auto}
+.rdt-win{position:absolute;clip-path:polygon(0 0,100% 0,88% 100%,0 100%);background:linear-gradient(160deg,#6a0c1e 0%,#3a0714 55%,#1c0409 100%);opacity:0;transition:opacity .25s;filter:drop-shadow(0 4px 8px rgba(0,0,0,.6))}
+.rdt-win.on{opacity:1}
+.rdt-win .face{position:absolute;inset:0;background-repeat:no-repeat;opacity:0;transition:opacity .15s}
+.rdt-win .face.on{opacity:1}
+.rdt-win.shake .face.on{animation:rd-shk .35s}
+.rdt-say{position:absolute;transform:translateX(-50%);max-width:300px;padding:4px 12px;background:linear-gradient(90deg,#8e1228,#4a0c1a);border:2px solid var(--gold2);font-family:var(--serif);font-weight:800;font-size:16px;line-height:19px;color:var(--ivory);text-align:center;white-space:normal;word-break:keep-all;width:max-content;box-shadow:0 3px 8px rgba(0,0,0,.6);opacity:0;transition:opacity .18s}
+.rdt-say.on{opacity:1}
+.rdt-mk{position:absolute;pointer-events:none;z-index:3}
+.rdt-mk svg{display:block;width:100%;height:100%;animation:rd-pop .45s cubic-bezier(.2,1.6,.4,1) both;filter:drop-shadow(0 2px 3px rgba(0,0,0,.85))}
+.rdt-mk.sm svg{filter:saturate(1.9) brightness(.74) contrast(1.15) drop-shadow(0 0 2px rgba(0,0,0,.9))}
+.rdt-mk.fk svg{animation:rd-pop .45s cubic-bezier(.2,1.6,.4,1) both,rd-beat .9s ease-in-out .5s infinite alternate}
+.rdt-mk.glow svg{filter:drop-shadow(0 0 8px #ffd35a) drop-shadow(0 2px 3px rgba(0,0,0,.7))}
+.rdt-cardmark{position:absolute;border:2px solid #ffd35a;border-radius:5px;box-shadow:0 0 10px 2px rgba(255,211,90,.85);pointer-events:none;animation:rd-pop .35s ease-out both}
+/* 目利き：見立ての札（卓の場札の下に重ねる小さな盤） */
+.rdt-panel{position:absolute;z-index:2;display:flex;gap:6px;align-items:stretch;padding:6px;background:linear-gradient(160deg,rgba(60,8,20,.97),rgba(30,4,12,.97));border:2px solid var(--gold3);box-shadow:0 6px 16px rgba(0,0,0,.7);opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s}
+.rdt-panel.on{opacity:1;transform:none}
+.rdt-panel .opts{display:flex;gap:6px;flex:1;min-width:0}
+.rdt-layer .rdt-opt{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3px 3px;background:linear-gradient(160deg,#f6ead0,#e0c98f);border:2px solid var(--gold3)!important;color:#3a1a10!important;box-shadow:inset 0 0 0 2px rgba(184,134,47,.25);transition:transform .15s,box-shadow .15s}
+.rdt-layer .rdt-opt b{display:block;font-family:var(--serif);font-weight:800;font-size:15px;line-height:17px;word-break:keep-all}
+.rdt-layer .rdt-opt span{display:block;font-size:14px;line-height:16px;font-weight:700;word-break:keep-all;margin-top:1px}
+.rdt-layer .rdt-opt.sel{transform:translateY(-6px);box-shadow:0 0 0 3px #fff3c4,0 0 14px 3px rgba(245,215,122,.95)}
+.rdt-layer .rdt-btn{flex:none;font-family:var(--serif);font-weight:800;font-size:16px;white-space:nowrap;border:2px solid var(--gold3)!important;color:var(--gold)!important;background:rgba(90,14,28,.92)!important}
+.rdt-layer .rdt-btn.go{background:linear-gradient(180deg,#d8354d,#7d1022 75%)!important;border-color:var(--gold)!important;color:#fff4d8!important}
+.rdt-layer .rdt-btn:disabled{filter:grayscale(.7) brightness(.6);cursor:default}
+.rdt-layer .rdt-btn:not(:disabled):active{transform:translateY(2px)}
+/* おねだり：卓に重ねる印（札の絵） */
+.rdt-sign{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;opacity:0;transition:opacity .25s}
+.rdt-sign.on{opacity:1}
+.rdt-sign i{font-style:normal;font-family:var(--serif);font-weight:800;font-size:14px;line-height:16px;color:var(--gold);text-shadow:0 1px 3px #000,0 0 8px #000;white-space:nowrap}
+.rdt-sign .row{display:flex;gap:3px;align-items:center}
+.rdt-sign .cdi{width:38px;height:52px;border-radius:5px;background:linear-gradient(160deg,#fffdf4,#efe3c4);border:2px solid #ffd35a;box-shadow:0 0 12px 2px rgba(255,211,90,.75),0 3px 8px rgba(0,0,0,.6);display:grid;place-items:center;font-family:var(--serif);font-weight:900;font-size:32px;line-height:1;color:#111;animation:rd-pop .4s cubic-bezier(.2,1.6,.4,1) both}
+.rdt-sign .cdi.r{color:#d0132f}
+.rdt-sign .cdi.tk{font-size:26px}
+.rdt-sign .cdi.col{background:linear-gradient(160deg,#ff8da0,#d0132f);color:#fff;font-size:14px;line-height:15px;padding:2px;text-align:center}
+.rdt-sign .cdi.col.k{background:linear-gradient(160deg,#555,#111)}
+.rdt-sign .or{font-size:14px;font-weight:800;color:var(--ivory);text-shadow:0 1px 3px #000}
+.rdt-sign .pill{padding:4px 10px;border-radius:14px;background:linear-gradient(90deg,#8e1228,#4a0c1a);border:2px solid #ffd35a;font-family:var(--serif);font-weight:900;font-size:16px;line-height:18px;color:#fff4d8;white-space:nowrap;box-shadow:0 0 12px rgba(255,211,90,.6),0 3px 8px rgba(0,0,0,.6);animation:rd-pop .4s cubic-bezier(.2,1.6,.4,1) both}
+/* 重ねている間：卓の「役」の行と押す所（今は押せない）を隠す */
+body.rdt-mk-on .battle-screen .v2-role{visibility:hidden}
+body.rdt-pick-on .battle-screen .v2-actions{visibility:hidden}
+/* 見立ての間と、相手の顔の窓に一言が出ている間は、卓の相手の名前と台詞を隠す（吹き出しの下から端がのぞくため） */
+body.rdt-pick-on .battle-screen .v2-band,body:has(.rdt-say.on) .battle-screen .v2-band{visibility:hidden}
+/* 盤（お手本の見直し・おねだりの「払う？降りる？」）を開いている間は、卓に重ねた物を隠す（重なり順に頼らない） */
+body:has(.read-battle-host) .rdt-layer{visibility:hidden}

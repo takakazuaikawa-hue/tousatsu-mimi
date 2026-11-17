@@ -3,7 +3,8 @@
 //  ポルカ：「あわてたら、はったり。にやけたら、本物——口がすべって、役を言う」
 //  ほか3人：「光った場札が、彼女の役。何も光らなければ、はったり」（役の名前は言わない。光るのは相手の役に使う場札）
 // 顔は卓の事実から（相手の賭けのつもり intent）。払う／降りるは、そのまま卓のコール／フォールド（卓の AI は触らない）。
-// 手の後の答え合わせは verdict。ミミの手が同じ種類の役の時は判子を押さない（verdict を出さない）。
+// 手の後の答え合わせは verdict。相手の合図（ポルカ＝役の名前／ほか3人＝光った場札）に合う相手の手を全部調べ、どれでもミミが勝つ・どれでもミミが負ける（引き分け）なら判子を押す。
+// 決まらない時（同じ合図でも、手によってミミの勝ち負けが変わる）は採点しない（verdict を出さない）。画面には「この形は運しだい」と出す（2026-11-17 Codex 指摘6）。
 (function () {
   'use strict';
   // ================= 計算（試作 qa/s1furi/engine.js の写し）=================
@@ -82,8 +83,30 @@
     }
     return Object.assign(sc, {
       bet: ctx.toCall != null ? ctx.toCall : (T.toCall || 0), pot: ctx.pot != null ? ctx.pot : (T.pot || 0),
-      stamp: !(A.sameCat && !bluff),         // 同じ種類の役どうしは判子を押さない
     });
+  }
+
+  // 合図に合う相手の手を全部調べて、ミミの勝ち負けが同じなら true（採点できる場）。合図に合う＝plan が出す条件を満たし、合図（役の名前／光る場札）が同じ手
+  function scoreable(sc) {
+    const A = analyze(sc), ck = sc.char || 'polka';
+    const used = new Set([...A.B, ...A.M].map(c => c.t)), rest = [];
+    for (const r of RANKS) for (const s of 'shdc') if (!used.has(r + s)) rest.push(P1(r + s));
+    const sgn = (k) => Math.sign(cmp(A.bm.key, k));
+    const real = sgn(A.bq.key), gl = A.glint.join(',');
+    for (let i = 0; i < rest.length; i++) for (let j = i + 1; j < rest.length; j++) {
+      const bq = best([...A.B, rest[i], rest[j]]), qc = bq.cat;
+      if (A.bluff) { if (qc !== 0) continue; }
+      else {
+        if (qc < 1 || A.boardCat >= qc) continue;
+        if (ck === 'polka') { if (qc !== A.qc) continue; }
+        else {
+          const g = madeCards(bq).filter(x => A.B.some(y => y.t === x.t)).map(x => x.t);
+          if (A.B.map((x, k) => g.includes(x.t) ? k : -1).filter(k => k >= 0).join(',') !== gl) continue;
+        }
+      }
+      if (sgn(bq.key) !== real) return false;
+    }
+    return true;
   }
 
   // ================= 相手ごとの決まり・絵・台詞（read-integrate §3-3）=================
@@ -210,11 +233,12 @@
 
   // ================= お手本（固定の場面）=================
   const DEMO = { board: 'Ks 9d 6c 4h 2s', mimi: '9s 8s', polka: 'Qh Jh', bluff: true, bet: 600, pot: 600 };
+  // お手本は「手引き付きの1回」（自動で見せない）：指の印 → プレイヤーが自分でチップを押す → 反応で止まってリコが一言（l2）→ 払う／降りるを決める（l3 は選ぶ間の案内）→ 明かし → 本物の型を1行（l4）
   const DEMO_COACH = (CH, ck) => ({
-    l1: CH.name + '、すまし顔でがまんしてる。|払うふりで、チップを近づけてみよう'.replace('すまし顔でがまんしてる', ck === 'polka' ? 'すまし顔でがまんしてる' : '落ち着いた顔でいる'),
-    l2: ck === 'polka' ? 'あわてたね。払われたら負ける手——|はったりだよ' : '何も光らないね。光る場札が無いのは、|はったりだよ',
-    l3: 'ミミは {P}。はったりになら、|これで勝てる。払おう',
-    l4: ck === 'polka' ? 'もし にやけたら、本物。うれしくて、役まで言っちゃうよ。|その時は、ミミの役とくらべてね' : 'もし場札が光ったら、本物。光った札が、|相手の役。その時は、ミミの役とくらべてね',
+    l0: 'チップを押して、金の線まで|近づけてみよう',
+    l2: ck === 'polka' ? 'あわてたね。はったりだよ' : '何も光らない。はったりだよ',
+    l3: 'ミミは {P}。はったりには勝てる',
+    l4: ck === 'polka' ? 'にやけたら、本物。口がすべって、役を言うよ。|その時は、ミミの役とくらべてね' : '場札が光ったら、本物。光った札が相手の役。|その時は、ミミの役とくらべてね',
   });
   const CARD4 = (CH) => [
     ['目的', CH.name + 'の大きな賭けが、はったりか本物かを|見やぶって、払うか降りるかを決める。'],
@@ -374,6 +398,7 @@
   // 明かし（選んだ事と起きた事に台詞を必ず合わせる）。pay＝払う。実際に札が開くかは相手ごと
   async function reveal(ST, run, S, pay, o) {
     o = o || {};
+    const sk = o.scale || 1;
     const A = S.A, ck = S.ck, kind = outcomeOf(A, pay), O = stampsOf(kind, A, ck);
     const steps = OUTS[ck][kind];
     S.say(null); S.mark(null); S.rule(false); S.optsEnable(false); S.opts(false); S.laneOn(false); S.rico(null); S.ask(false); S.locked = true;
@@ -388,7 +413,7 @@
       if (st.fx.includes('mimilit')) { S.q('.mc').classList.add('lit'); S.q('.sp.mimi').classList.add('lit'); }
       if (st.fx.includes('stamp')) S.ins(O.stamp[0], O.stamp[1]);
       if (st.fx.includes('reason')) S.reason(O.reason);
-      await ST.wait(run, st.ms);
+      await ST.wait(run, st.ms * sk);
     }
     S.ins(O.stamp[0], O.stamp[1]); S.reason(O.reason);
     return { kind, stamp: O.stamp, reason: O.reason };
@@ -402,34 +427,41 @@
     const run = ST.newRun(); run.noPause = true;
     const D = makeScreen(ST, CH, ck, true); ST.board.appendChild(D.root);
     D.root.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) return; run.kick(); });
-    D.q('.skip').addEventListener('click', () => { run.kill(); });
+    // 「とばす」：待ちの約束（プレイヤーの操作待ち）も止める
+    let skipped = false, skipRes = null; const skipP = new Promise(r => { skipRes = r; });
+    D.q('.skip').addEventListener('click', () => { skipped = true; run.kill(); skipRes(); });
+    const until = async (p) => { await Promise.race([p, skipP]); if (skipped) throw new Error('cancel'); };
     const sc = Object.assign({}, DEMO, { char: ck });
-    D.load(sc); D.rib('<b>お手本</b>'); D.q('.rib').classList.add('demo'); D.tbtn(false);
+    D.load(sc); D.rib('<b>お手本（手引き付き）</b>'); D.q('.rib').classList.add('demo'); D.tbtn(false);
     const C = DEMO_COACH(CH, ck);
-    const pileX = (p) => LANEX + pileLeft(p) + 14;
+    const hold = (t) => ST.wait(run, U.stopMs(t));
     try {
-      D.intro(true, 'お手本'); await ST.wait(run, 1000); D.intro(false); await ST.wait(run, 250);
+      D.intro(true, 'お手本'); await ST.wait(run, 600); D.intro(false); await ST.wait(run, 100);
       D.ins(CH.name + 'が大きく賭けた。|' + (ck === 'polka' ? 'すまし顔で、がまんしている' : '落ち着いた顔をしている'));
-      const bl = CH.bet(sc.bet); D.say(bl[0]); D.shake(); await ST.wait(run, 1000); D.say(bl[1]); await ST.wait(run, 1000);
-      D.laneOn(true); D.q('.lane').classList.add('glowline'); D.rule(true);
-      D.rico(C.l1); await ST.wait(run, 4000);
-      D.rico(null); D.q('.lane').classList.remove('glowline'); await ST.wait(run, 200);
-      D.ins('チップを近づけて、顔を見る');
-      D.hand(pileX(0), LANEY + 14, true); await ST.wait(run, 500);
-      D.hand(pileX(.55), null, true); D.placePile(.55, 800); await ST.wait(run, 1100);
-      D.hand(pileX(1), null, true); D.placePile(1, 700); await ST.wait(run, 1700);
+      const bl = CH.bet(sc.bet); D.say(bl[0]); D.shake(); await ST.wait(run, 700); D.say(bl[1]); await ST.wait(run, 500);
+      // 指の印：チップを押すのは、プレイヤー自身
+      D.ins('チップを近づけて、顔を見る'); D.laneOn(true); D.rule(true);
+      D.q('.lane').classList.add('hinting', 'glowline');
+      D.rico(C.l0, true);
+      D.onTouch = () => { D.q('.lane').classList.remove('hinting'); D.rico(null); };
+      D.onNear = () => { D.q('.lane').classList.remove('glowline'); };
+      const tellP = new Promise(res => { D.onTellDone = res; });
+      await until(tellP);
+      D.q('.lane').classList.remove('hinting', 'glowline');
+      // 反応が出たら止まる：リコが一言
       D.q('.sp.polka').classList.add('lit'); D.q('.rule').classList.add('lit');
-      D.rico(C.l2, true); await ST.wait(run, 4000);
+      D.rico(C.l2, true); await hold(C.l2);
       D.rico(null); D.q('.sp.polka').classList.remove('lit'); D.q('.rule').classList.remove('lit');
-      D.hand(pileX(0), null, true); D.placePile(0, 900); await ST.wait(run, 1500); D.hand(null, null, false);
+      // 払う？降りる？：プレイヤーが決める（どちらを押しても、明かしで結果が出る）
+      D.ins('払う？ 降りる？'); D.opts(true); D.optsEnable(true);
       D.q('.sp.mimi').classList.add('lit'); D.q('.mc').classList.add('lit');
-      D.rico(C.l3, true); await ST.wait(run, 4000);
-      D.rico(null); D.q('.sp.mimi').classList.remove('lit'); D.q('.mc').classList.remove('lit');
-      D.ins('払う？ 降りる？'); D.opts(true); D.optsEnable(true); await ST.wait(run, 500);
-      D.hand(380, 326, true); await ST.wait(run, 900);
-      D.hand(null, null, true, true); D.q('.opt[data-a="払う"]').classList.add('press'); await ST.wait(run, 400); D.hand(null, null, false);
-      await reveal(ST, run, D, true, { noPile: false });
-      D.rico(C.l4, true); await ST.wait(run, 4500);
+      D.rico(C.l3, true); D.q('.rico').classList.add('up');   // 決める間は、払う／降りるに重ならない高さに
+      const pick = await new Promise(res => { D.q('.opts').onclick = (e) => { const b = e.target.closest('.opt'); if (!b || b.disabled || b.dataset.a === '卓') return; D.optsEnable(false); b.classList.add('press'); res(b.dataset.a); }; });
+      if (skipped) throw new Error('cancel');
+      D.q('.opts').onclick = null; D.q('.sp.mimi').classList.remove('lit'); D.q('.mc').classList.remove('lit'); D.rico(null); D.q('.rico').classList.remove('up');
+      await reveal(ST, run, D, pick === '払う', { noPile: false, scale: .7 });
+      // 本物の型は、その回の後に1行で
+      D.rico(C.l4, true); await hold(C.l4);
     } catch (e) { if (!e || e.message !== 'cancel') { runDemo.on = false; D.root.remove(); throw e; } }
     if (!ST.dead) await ruleCard(ST, D, CH, replay);
     D.root.remove();
@@ -450,6 +482,7 @@
     const save = opts.save, ck = opts.charKey || 'polka', CH = CHARS[ck];
     const sc = CH && plan(opts.table, Object.assign({}, opts.ctx || {}, { charKey: ck }));
     if (!sc) return fin({});
+    sc.stamp = scoreable(sc);   // 採点できる場か（決まらない形は「運しだい」と出して、判子も答え合わせも出さない）
     Object.values(CH.faces).forEach(f => { const im = new Image(); im.src = f.img; });
     const cnt0 = (save && save.rdCount && save.rdCount.furi) || 0;
     window.RD.saveSet(save, 'rdCount', 'furi', cnt0 + 1, opts.saveProgress);
@@ -494,7 +527,9 @@
       S.q('.lane').classList.remove('hinting', 'glowline');
       const coachOn = cnt0 < 2;   // 手引きの段：最初の2回だけ「リコに聞く」
       if (coachOn) { S.ladderOn(ck === 'polka', true); S.ask(true); }   // 役のはしご：ポルカは口がすべった役が印になる。ほかの3人は役の名前を言わないので、ミミの印だけ
-      S.ins('払う？ 降りる？'); S.opts(true); S.optsEnable(false); S.q('.opts').classList.add('lit');
+      S.ins('払う？ 降りる？');
+      if (!sc.stamp) { const gl = S.q('.glabel'); gl.textContent = 'この形は運しだい（採点なし）'; gl.classList.add('luck'); }   // 2行になって右の場札に重なったので、運しだいの印は金の線の横（道の上）に出す（11/17 直し）
+      S.opts(true); S.optsEnable(false); S.q('.opts').classList.add('lit');
       const coach = ck === 'polka'
         ? (A.bluff ? 'あわてた。はったりだよ。|ミミは {P}。払って勝てる？' : 'にやけた。本物だよ。{F}って言っちゃったね。|ミミは {M}。はしごで、どっちが上？')
         : (A.bluff ? '何も光らなかった。はったりだよ。|ミミは {P}。払って勝てる？' : '光った場札が、彼女の役だよ。|ミミは {M}。はしごで、どっちが上？');
@@ -541,5 +576,5 @@
   }
 
   window.RD.reg('furi', { id: 'furi', title: 'リーディング：押し出すふり', plan, mount, verdict, CHARS });
-  window.RD.furiEngine = { analyze, plan, best, eval5, cmp, madeCards, CAT };
+  window.RD.furiEngine = { analyze, plan, scoreable, best, eval5, cmp, madeCards, CAT };
 })();

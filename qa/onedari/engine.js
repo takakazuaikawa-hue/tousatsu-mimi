@@ -93,6 +93,34 @@ function verifyScene(sc){
   if(d.hit&&d.lineup.length&&!d.lineup.some(x=>x&&x.fin))why.push('並びに最後の札が入らない');
   return{id:sc.id,ok:!why.length,why,d};
 }
-return{RANKS,SUITS,SJ,P,FULL,score,cmp,RN,name,cname,isRed,outsOf,derive,verifyScene};
+// 見える情報（場札4枚・ミミの2枚・印の文字・めくれた最後の札）に合う「彼女の伏せ札」を全部調べ、
+// 「来た／来なかった」か「払う／降りる」が違うものを返す（空なら、印だけで答えが決まる場。2026-11-17 Codex 指摘1）
+// key＝その人の印のぼかし方（sc.sign：suit／rank／color／count）。
+function signTxtOf(t,kind,outs){
+  const outSuit=kind==='flush'?outs[0].card.s:null;
+  if(t==='suit')return SJ[outSuit];
+  if(t==='rank')return[...new Set(outs.map(o=>o.card.r))].sort((a,b)=>a-b).map(RN).join(' か ');
+  if(t==='color')return(outSuit==='h'||outSuit==='d')?'赤いの':'黒いの';
+  return'あと'+outs.length+'枚';
+}
+function conflicts(sc){
+  const d=derive(sc),conf=[];
+  const used=new Set(d.board4.concat(d.mimi).map(c=>c.t));
+  const pool=FULL.filter(c=>!used.has(c.t));
+  for(let i=0;i<pool.length;i++)for(let j=i+1;j<pool.length;j++){
+    const her=[pool[i],pool[j]];
+    if(her.some(c=>c.t===d.fin.t))continue;
+    if(score(d.board4.concat(her))[0]!==0)continue;
+    const outs=outsOf(d.board4,her);if(!outs.length)continue;
+    const kind=outs.every(o=>o.cls>=5)?'flush':outs.every(o=>o.cls===4)?'straight':'mixed';
+    if(kind==='mixed')continue;
+    if(signTxtOf(sc.sign,kind,outs)!==d.signTxt)continue;
+    const hit=outs.some(o=>o.card.t===d.fin.t);
+    const ahead=cmp(d.mimiFinal,score(d.b5.concat(her)));
+    if(hit!==d.hit||(hit?ahead>=0:ahead<=0))conf.push({her:her.map(cname).join(' '),hit,ahead});
+  }
+  return conf;
+}
+return{RANKS,SUITS,SJ,P,FULL,score,cmp,RN,name,cname,isRed,outsOf,derive,verifyScene,conflicts};
 })();
 if(typeof module!=='undefined')module.exports=ONE_ENGINE;

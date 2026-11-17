@@ -64,7 +64,7 @@ while (Date.now() - t0 < 300000 && maxHand < HANDS + 1) {
   const clicked = await ev(`const re = /次のハンド|圧倒モードへ|閉じる|わかった|OK|スキップ|次へ|続ける|はじめる|対戦開始|^\\s*▶?\\s*開始/; const b = [...document.querySelectorAll('button')].find(b => b.offsetParent && !b.disabled && re.test(b.textContent) && !b.closest('.rd-host')); if (b) { b.click(); return true; } return false;`);
   if (clicked === true) { await sleep(400); continue; }
   if (st.turn && st.scr === 'battle') {
-    if (kind === 'mise' && st.ph === 'river' && st.toCall === 0) await ev(`playerBet('pot_1_2'); return 1;`);
+    if (kind === 'mise' && st.ph === 'river' && st.toCall === 0) await ev(`playerBet('pot_2_3'); return 1;`);
     else await ev(`playerCheckCall(); return 1;`);
   }
   await sleep(350);

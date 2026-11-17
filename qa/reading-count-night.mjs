@@ -1,7 +1,7 @@
 // おねだり・見せ合いっこを、本物の配り（52枚を切る）と本物の相手の打ち方（ほろ酔いの AI）で数える（2026-11-17）。node qa/reading-count-night.mjs [配り数=3000]
 // おねだり：ミミ2枚・相手2枚・場札5枚を配り、「場札4枚の時点」で RD.plan.onedari が作れるか（＝出せる割合）。当たり（待ちが来る）／外れの内訳、5人それぞれの印の種類。
 //   実際は「ターンの賭けまで両方が降りずに来た手」だけなので、出せる割合は配りの全部に対する上限。出す時は 外れを30%に絞り・全体で60%（game.js maybeRdOnedari）
-// 見せ合いっこ：リバーでミミが半ポットを賭け、ほろ酔いのポルカの AI（decideOpponentAction）が「降りる」と決めた配りで、RD.plan.mise が作れるか。答えの内訳（左・右・見せない）
+// 見せ合いっこ：リバーでミミが半ポット・3分の2・ポットを賭けた時、ほろ酔いのポルカの AI（decideOpponentAction）が払う／降りる のどちらでも（2026-11-17 に AI の判断にかかわらず出す形へ）、RD.plan.mise が作れるか。答えの内訳（左・右・見せない）と、AI の判断の内訳（見せない時は AI の元の判断のまま）
 // 注意：ミミが途中で降りた手は無い（全部の配りを最後まで見る）。
 import { openSession, sleep } from './lib/session.mjs';
 const N = +(process.argv[2] || 3000);
@@ -29,17 +29,16 @@ const code = (n) => `(() => {
     // 見せ合いっこ：ミミがリバーで 1/2・2/3・ポット を賭けた時の、ほろ酔いのポルカの出方
     for (const [bn, frac] of [['半ポット', 0.5], ['3分の2', 2 / 3], ['ポット', 1]]) {
       const board = board5, pot = 600, mb = Math.floor(pot * frac);
-      const M = out.mise[bn] = out.mise[bn] || { fold: 0, show: 0, noTie: 0, ok: 0, ans: {}, ahead: {} };
+      const M = out.mise[bn] = out.mise[bn] || { fold: 0, show: 0, noTie: 0, ok: 0, ans: {}, ahead: {}, ai: {}, aiAns: {} };
       const c2 = { handStrength: handStrength01([...her, ...board]), toCall: mb, boardDanger: evaluateBoardDanger(board), canCheck: false, hole: her, board, pot: pot + mb, potBeforeBet: pot, playerShoves: 0, playerAllIn: false, playerCalls: 0, playerFolds: 0, handNo: 6 };
       const a = decideOpponentAction(polka, c2, {});
-      if (a.type !== 'fold') continue;
-      M.fold++;
+      M.fold++; inc(M.ai, a.type === 'fold' ? '降りる' : '払う');
       const T = { board: board.map(rb), mine: mine.map(rb), her: her.map(rb), toCall: mb, pot: pot + mb };
       const E = RD.miseEngine, mk = (c) => E.P('23456789TJQKA'[c.r - 2] + c.s);
       const bb = T.board.map(mk), hh = T.her.map(mk), mm = T.mine.map(mk);
       if (E.herShow(bb, hh)) { M.show++; const r = E.solve(bb, mm, hh); if (r.ahead !== 0) M.noTie++; }
       const sc = RD.plan.mise(T, { charKey: 'polka', pot0: pot, bet: mb });
-      if (sc) { M.ok++; inc(M.ans, ['左', '右', '見せない'][sc.ans]); const D = E.derive(sc); inc(M.ahead, D.ahead > 0 ? 'ミミが勝ち' : 'ミミが負け'); }
+      if (sc) { M.ok++; inc(M.ans, ['左', '右', '見せない'][sc.ans]); const D = E.derive(sc); inc(M.ahead, D.ahead > 0 ? 'ミミが勝ち' : 'ミミが負け'); inc(M.aiAns, (a.type === 'fold' ? '降りる' : '払う') + ':' + ['左', '右', '見せない'][sc.ans]); }
     }
   }
   return JSON.stringify(out);
@@ -49,7 +48,7 @@ for (let done = 0; done < N; done += CHUNK) {
   const r = JSON.parse(await page.eval(code(Math.min(CHUNK, N - done))));
   A.deals += r.deals;
   for (const [k, v] of Object.entries(r.one)) A.one[k] = (A.one[k] || 0) + v;
-  for (const [bn, M] of Object.entries(r.mise)) { const T = A.mise[bn] = A.mise[bn] || { fold: 0, show: 0, noTie: 0, ok: 0, ans: {}, ahead: {} }; for (const k of ['fold', 'show', 'noTie', 'ok']) T[k] += M[k]; for (const g of ['ans', 'ahead']) for (const [k, v] of Object.entries(M[g])) T[g][k] = (T[g][k] || 0) + v; }
+  for (const [bn, M] of Object.entries(r.mise)) { const T = A.mise[bn] = A.mise[bn] || { fold: 0, show: 0, noTie: 0, ok: 0, ans: {}, ahead: {}, ai: {}, aiAns: {} }; for (const k of ['fold', 'show', 'noTie', 'ok']) T[k] += M[k]; for (const g of ['ans', 'ahead', 'ai', 'aiAns']) for (const [k, v] of Object.entries(M[g])) T[g][k] = (T[g][k] || 0) + v; }
 }
 const pc = (a, b) => b ? (a / b * 100).toFixed(2) + '%' : '-';
 console.log(`配り ${A.deals} 手`);
@@ -60,7 +59,7 @@ for (const ck of ['polka', 'rico', 'selina', 'grano', 'velvet']) {
   const shown = hit + miss * 0.3;   // 外れは30%に絞る
   console.log(`おねだり ${ck}：出せる ${ok}（${pc(ok, A.deals)}）／待ちが来る ${hit}・来ない ${miss}（来る割合 ${pc(hit, ok)}）／印 ${signs}／答え ${ans}／外れを30%に絞った後：来る ${pc(hit, shown)}（出る見込み ${pc(shown * 0.6, A.deals)}）`);
 }
-for (const [bn, M] of Object.entries(A.mise)) console.log(`見せ合いっこ（ミミの賭け＝${bn}）：ポルカが降りると決めた ${M.fold}（${pc(M.fold, A.deals)}）→ 彼女の1枚＋場札で役 ${M.show} → 同点なし ${M.noTie} → 答えが1つ（出せる） ${M.ok}（降りる手の ${pc(M.ok, M.fold)}・全配りの ${pc(M.ok, A.deals)}）／答え ${JSON.stringify(M.ans)}／${JSON.stringify(M.ahead)}`);
+for (const [bn, M] of Object.entries(A.mise)) console.log(`見せ合いっこ（ミミの賭け＝${bn}）：ポルカの判断（降りる/払う ${JSON.stringify(M.ai)}）全部で ${M.fold}（${pc(M.fold, A.deals)}）→ 彼女の1枚＋場札で役 ${M.show} → 同点なし ${M.noTie} → 答えが1つ（出せる） ${M.ok}（全部の手の ${pc(M.ok, M.fold)}・全配りの ${pc(M.ok, A.deals)}）／答え ${JSON.stringify(M.ans)}／${JSON.stringify(M.ahead)}／ポルカの元の判断×答え ${JSON.stringify(M.aiAns)}`);
 console.log('errors', JSON.stringify(await page.eval('window.__QA.errors.slice(0, 5)')));
 await s.close();
 process.exit(0);

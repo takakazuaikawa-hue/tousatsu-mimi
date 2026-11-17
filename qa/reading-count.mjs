@@ -50,7 +50,7 @@ const code = (chars, doIgi, doFuri, n) => `(() => {
         const T = { board: board.map(rb), mine: mine.map(rb), her: her.map(rb), toCall: amount, pot: pot + amount };
         const cx = { charKey: ck, intent: a.intent, toCall: amount, pot: pot + amount };
         ${doIgi ? `if (ck === 'polka') { const sc = RD.plan.igi(T, cx); if (sc && sc.ans === 'O' && Math.random() >= 0.3) { inc(O.igi, street + ':thinned'); } else if (sc) { inc(O.igi, street + ':' + sc.kind + ':' + sc.ans); inc(O.igi, street + ':all'); } else inc(O.igi, street + ':none:' + a.intent); }` : ''}
-        ${doFuri ? `if (street === 'river') { const sc = RD.plan.furi(T, cx); if (sc && evaluateHand(mine.concat(board)).rank < 1) { inc(O.furi, 'noPair'); } else if (sc) { const A = RD.furiEngine.analyze(sc); const k = sc.bluff ? 'bluff' : (A.sameCat ? 'real:same' : A.polkaHigher ? 'real:polkaHigher' : 'real:mimiHigher'); inc(O.furi, k); inc(O.furi, 'all'); if (A.win) inc(O.furi, 'ans:pay'); else inc(O.furi, 'ans:fold'); if (!sc.bluff && !A.glint.length) inc(O.furi, 'noglint'); } else inc(O.furi, 'none:' + a.intent); }` : ''}
+        ${doFuri ? `if (street === 'river') { const sc = RD.plan.furi(T, cx); if (sc && evaluateHand(mine.concat(board)).rank < 1) { inc(O.furi, 'noPair'); } else if (sc) { const A = RD.furiEngine.analyze(sc); const k = sc.bluff ? 'bluff' : (A.sameCat ? 'real:same' : A.polkaHigher ? 'real:polkaHigher' : 'real:mimiHigher'); inc(O.furi, k); inc(O.furi, 'all'); inc(O.furi, 'score:' + (RD.furiEngine.scoreable(Object.assign({}, sc, { char: ck })) ? 'yes' : 'no')); if (A.win) inc(O.furi, 'ans:pay'); else inc(O.furi, 'ans:fold'); if (!sc.bluff && !A.glint.length) inc(O.furi, 'noglint'); } else inc(O.furi, 'none:' + a.intent); }` : ''}
       }
     }
   }
@@ -87,6 +87,7 @@ for (const [ck, A] of Object.entries(agg)) {
     const all = A.furi.all || 0;
     console.log(`  ふり（リバー）：出せた ${all}／${A.big.river} ＝ ${pc(all, A.big.river)}（全配りに対して ${pc(all, A.deals)}）`);
     console.log(`    本物か・はったりか・ミミの役：はったり ${A.furi.bluff || 0}／本物・ミミが上 ${A['furi']['real:mimiHigher'] || 0}／本物・相手が上 ${A.furi['real:polkaHigher'] || 0}／本物・同じ種類 ${A.furi['real:same'] || 0}`);
+    console.log(`    採点できる（合図に合うどの手でもミミの勝ち負けが同じ）：できる ${A.furi['score:yes'] || 0}／運しだい（採点なし） ${A.furi['score:no'] || 0}`);
     console.log(`    正解：払う ${A.furi['ans:pay'] || 0}／降りる ${A.furi['ans:fold'] || 0}　光る場札なしの本物 ${A.furi.noglint || 0}／ミミが役なしで出さなかった ${A.furi.noPair || 0}`);
     const none = Object.entries(A.furi).filter(([k]) => k.startsWith('none:')).map(([k, v]) => k.slice(5) + ' ' + v);
     console.log('    出せなかった内訳（賭けのつもり別）' + none.join('／'));

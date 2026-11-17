@@ -107,7 +107,60 @@
     return kind === 'flush' ? 'suit' : 'rank';
   }
   const NAME = { polka: 'ポルカ', grano: 'グラーノ', rico: 'リコ', selina: 'セリナ', velvet: 'ヴェルベット' };
+  // 印の文字（相手ごとのぼかし方 t と、待ち outs から）
+  function signTextOf(t, kind, outs) {
+    const outSuit = kind === 'flush' ? outs[0].card.s : null;
+    if (t === 'suit') return SJ[outSuit];
+    if (t === 'rank') return [...new Set(outs.map(o => o.card.r))].sort((a, b) => a - b).map(RN).join(' か ');
+    if (t === 'color') return (outSuit === 'h' || outSuit === 'd') ? '赤いの' : '黒いの';
+    return 'あと' + outs.length + '枚';
+  }
+  // 4枚の時点（場札4枚＋彼女の2枚＝six）で「待ちだけ」か（役なし）と、その待ち（outs）を、札を数えて直接出す（outsOf と同じ結果。伏せ札の総当たり用に速くしてある）
+  // 待ち＝同じマーク4枚ならそのマークの残り全部（cls 5）／5つ並びの窓に4つ入っていれば、足りない数字の残り全部（cls 4。同じマーク4枚のマークの札なら cls 5）
+  function drawOuts(six, board4Set, her) {
+    const bySuit = { s: 0, h: 0, d: 0, c: 0 }, rs = new Set(); let dup = false;
+    for (const c of six) { bySuit[c.s]++; if (rs.has(c.r)) dup = true; rs.add(c.r); }
+    if (dup) return null;                                   // ペア以上がある
+    const fl = Object.keys(bySuit).filter(k => bySuit[k] >= 4);
+    if (fl.some(k => bySuit[k] >= 5)) return null;          // もうフラッシュ
+    const lowA = rs.has(12), has = (r) => rs.has(r) || (r === -1 && lowA);
+    const need = new Set();
+    for (let lo = -1; lo <= 8; lo++) { let n = 0, miss = null; for (let k = 0; k < 5; k++) { if (has(lo + k)) n++; else miss = lo + k; } if (n === 5) return null; if (n === 4) need.add(miss < 0 ? 12 : miss); }
+    const fs0 = fl.length ? fl[0] : null, outs = [];
+    for (const c of FULL) { if (board4Set.has(c.t) || c.t === her[0].t || c.t === her[1].t) continue; if (c.s === fs0) outs.push({ card: c, cls: 5 }); else if (need.has(c.r)) outs.push({ card: c, cls: 4 }); }
+    return outs;
+  }
+
+  // 見える札（場札4枚・ミミの2枚）に合いうる「彼女の伏せ札」を全部。4枚の時点で待ちだけで、待ちの種類が1つに決まる手。リバー（fin）には依らない部分（2026-11-17 Codex 指摘1）
+  function altsOf(board4, mimi, key) {
+    const used = new Set(board4.concat(mimi).map(c => c.t));
+    const pool = FULL.filter(c => !used.has(c.t)), out = [];
+    const b4Set = new Set(board4.map(c => c.t));   // 待ちの数え方は outsOf と同じ：場札4枚と彼女の2枚だけを除く（ミミの札は、彼女には見えない＝数える）
+    for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) {
+      const her = [pool[i], pool[j]];
+      const outs = drawOuts(board4.concat(her), b4Set, her); if (!outs || !outs.length) continue;
+      const kind = outs.every(o => o.cls >= 5) ? 'flush' : outs.every(o => o.cls === 4) ? 'straight' : 'mixed';
+      if (kind === 'mixed') continue;
+      const st = signFor(key, kind);
+      out.push({ her, outs, kind, st, txt: signTextOf(st, kind, outs), set: new Set(outs.map(o => o.card.t)) });
+    }
+    return out;
+  }
+  // 見える情報（場札・ミミの札・印・めくれた最後の札）に合う伏せ札が、どれでも「来た／来なかった」と「払う／降りる」が同じになるか。
+  // 違う伏せ札が1つでもあれば false（印だけでは答えが決まらない場）
+  function unambiguous(d, alts) {
+    for (const a of alts) {
+      if (a.st !== d.sign.t || a.txt !== d.signTxt) continue;
+      if (a.her.some(c => c.t === d.fin.t)) continue;
+      const hit = a.set.has(d.fin.t);
+      if (hit !== d.hit) return false;
+      const ahead = cmp(d.mimiFinal, score(d.b5.concat(a.her)));
+      if (hit ? ahead >= 0 : ahead <= 0) return false;
+    }
+    return true;
+  }
   // T＝卓の table（board は4枚）。ctx.charKey・ctx.fin（次にめくる本物のリバー {r,s}）・ctx.toCall・ctx.pot。作れなければ null
+  // ctx.alts があれば（仕込みの下見）、伏せ札の総当たりを使い回す
   function plan(T, ctx) {
     ctx = ctx || {};
     const key = ctx.charKey;
@@ -121,6 +174,7 @@
     const sc = Object.assign({}, base, { key, who: NAME[key], sign: signFor(key, d0.kind) });
     const d = derive(sc);
     if (problems(d).length) return null;
+    if (!unambiguous(d, ctx.alts || altsOf(board4, mimi, key))) return null;
     sc.hit = d.hit; sc.answer = d.answer;
     return sc;
   }
@@ -168,16 +222,22 @@
   const FACE_NAMES = ['drunk', 'drunk2', 'smug', 'panic'];
   // お手本の固定の場面（ポルカ・♥待ちのフラッシュは来ない）
   const DEMO = { key: 'polka', who: 'ポルカ', board: 'Ks 9h 4h 2c 6s', mimi: 'Kd Jc', her: 'Ah 7h', sign: 'suit', bet: 600, pot: 800 };
+  // お手本の止まる所は2つ（2026-11-17 docs/design-ref/read-demo-length.md）：①欲しい札の印と、めくれた瞬間の「来ない→はったり」を1回に／③自分に役があれば払う（短い1行）。明かしは止めずに流す
   const DEMO_COACH = {
-    s1: d => `ポルカは ${d.signTxt} がほしいの。|${d.signTxt} が来れば、フラッシュができるよ`,
-    s2: d => `来たのは ${d.finName}。${d.signTxt} じゃないね。|おねだりが来なければ、役はできてない`,
-    s3: d => `ミミは ${d.mimiName}。役なしの人には勝てる。|だから、払おう`,
-    s4: d => `ポルカの ${d.herHole.join(' ')}。${d.signTxt} は ${d.lineup.filter(x => x.card && !x.fin).length}枚で止まった。|はったりを、見やぶれたね` };
-  const CARD4 = [
+    s12: d => `おねだりは ${d.signTxt}。来たのは ${d.finName}。|来なければ、役はできてない。はったり`,
+    s3: d => `ミミは ${d.mimiName}。役があるから、払おう` };
+  // お手本の後の4点の札。4つ目の「印の読み方」は、その相手が使う印だけ（2026-11-17 Codex 指摘10）
+  const READ_BY = {
+    polka: '♥ や 9 は、そのまま。|来た札と、見くらべる。',
+    grano: '♥ や 9 は、そのまま。|来た札と、見くらべる。',
+    rico: '「5 か 10」のように、数字が2つなら|そのどちらか。来た札と見くらべる。',
+    selina: '「あと9枚」は同じマークの待ち。|8枚は並びの両はし。|4枚は間の1枚。',
+    velvet: '「赤いの」は ♥ か ♦ のどちらか。|黒い札なら、役はできない。' };
+  const card4Of = (key) => [
     ['目的', '彼女が欲しい札を、最後の札の前に|声に出す。来たかを見て、決める。'],
     ['決まり', 'おねだりの札が来なければ、|彼女の役はできていない（はったり）。'],
     ['決め方', '来ない＝払う。来た＝降りる。|小さい札でも、来たら本物。'],
-    ['印の読み方', '♥や 9 はそのまま。「赤」は ♥ か ♦。|「あと9枚」＝同じマーク。|8枚＝並びの両はし。4枚＝間の1枚。']];
+    ['印の読み方', READ_BY[key] || READ_BY.polka]];
   const coachOf = (d) => {
     const t = d.sign.t;
     if (t === 'suit') return `おねだりは ${d.signTxt}。来たのは ${d.finName}。|小さい札でも、マークが合えば……？`;
@@ -299,21 +359,21 @@
     };
     S.lk = () => { S.bcards.forEach((e, i) => e.classList.toggle('lk', S.lkB.includes(i))); S.hcs.forEach((e, i) => e.classList.toggle('lk', S.lkH.includes(i))); };
     // 最後の札：先に色（赤か黒）の光、次に数字がめくれる
-    S.finalFlip = async (run) => {
-      const e = S.bcards[4]; e.classList.remove('hid'); e.classList.add(S.d.finRed ? 'tr' : 'tb'); await ST.wait(run, 750);
-      e.classList.remove('back', 'tr', 'tb', 'fin5'); e.classList.add('flip', 'fin'); await ST.wait(run, 450);
+    S.finalFlip = async (run, fast) => {
+      const e = S.bcards[4]; e.classList.remove('hid'); e.classList.add(S.d.finRed ? 'tr' : 'tb'); await ST.wait(run, fast ? 450 : 750);
+      e.classList.remove('back', 'tr', 'tb', 'fin5'); e.classList.add('flip', 'fin'); await ST.wait(run, fast ? 300 : 450);
     };
     S.mimiIn = async (run) => { q('.mc.m0').classList.add('on'); await ST.wait(run, 120); q('.mc.m1').classList.add('on'); };
     // 答え合わせ：彼女の2枚がめくれ、待ちの札が1列に寄る
-    S.herFlip = async (run) => {
+    S.herFlip = async (run, fast) => {
       const d = S.d;
       S.mcs.forEach(m => { m.style.opacity = '0'; });
       for (const e of S.hcs) { e.classList.remove('back'); e.classList.add('flip'); }
       S.lkH = d.lineup.filter(x => x && x.from === 'her').map(x => x.i);
       S.lkB = d.lineup.filter(x => x && x.from === 'board').map(x => x.i);
-      await ST.wait(run, 500); S.lk();
+      await ST.wait(run, fast ? 350 : 500); S.lk();
       const c = q('.chip.hc'); c.textContent = S.who + '：' + d.herName; c.classList.add('on');
-      await ST.wait(run, 350);
+      await ST.wait(run, fast ? 200 : 350);
     };
     S.lineupShow = async (run) => {
       const d = S.d, L = q('.lineup'); L.innerHTML = ''; L.classList.add('on'); q('.tick').classList.add('off');
@@ -334,24 +394,24 @@
     const out = outcome(d, pick), who = S.sc.key;
     S.rule(false); S.opts(false); S.rico(null); S.say(null);
     S.ins('彼女の札を見る……');
-    await S.herFlip(run);
-    await S.lineupShow(run);
-    await ST.wait(run, 900);
-    for (const st of WHO[who][out.kind]) {
+    await S.herFlip(run, isDemo);
+    if (!isDemo) { await S.lineupShow(run); await ST.wait(run, 900); }
+    const lines = isDemo ? WHO[who][out.kind].slice(0, 1) : WHO[who][out.kind];
+    for (const st of lines) {
       S.face(st.face); if (st.face === 'panic') S.shake(); else S.bounce();
       S.say(tx(st.t, d));
-      await ST.wait(run, 1800);
+      await ST.wait(run, isDemo ? 1300 : 1800);
     }
     S.say(null);
     S.ins(out.mark + '　' + out.delta, out.cls);
-    await ST.wait(run, 350);
+    await ST.wait(run, isDemo ? 200 : 350);
     S.reason(out.reason);
-    await ST.wait(run, isDemo ? 1200 : 600);
+    await ST.wait(run, isDemo ? 900 : 600);
     return out;
   }
 
   // ================= お手本 =================
-  async function runDemo(ST, replay) {
+  async function runDemo(ST, replay, key) {
     const { fm } = window.RD.util;
     if (runDemo.on) return;
     runDemo.on = true;
@@ -363,41 +423,35 @@
     const d = D.d, hand = D.q('.hand'), C = DEMO_COACH;
     const card4 = async () => {
       D.q('.skip').classList.add('off'); D.rico(null); D.say(null);
-      D.q('.pl').innerHTML = CARD4.map(([a, b]) => `<div class="pi"><i>${a}</i><span>${fm(b)}</span></div>`).join('');
+      D.q('.pl').innerHTML = card4Of(key).map(([a, b]) => `<div class="pi"><i>${a}</i><span>${fm(b)}</span></div>`).join('');
       D.q('.pgo').textContent = replay ? 'もどる' : 'はじめる';
       D.q('.panel').classList.add('on');
       await new Promise(res => D.q('.pgo').addEventListener('click', res, { once: true }));
     };
     try {
-      D.intro(true, 'お手本'); await ST.wait(run, 1000); D.intro(false); await ST.wait(run, 250);
-      // 拍1：おねだり
+      const hold = (t, look) => ST.wait(run, window.RD.util.stopMs(t, look));
+      D.intro(true, 'お手本'); await ST.wait(run, 600); D.intro(false); await ST.wait(run, 100);
+      // 拍1：おねだり（卓では吹き出しと印だけ。お手本は盤で見せる）
       await D.showBoard(run, true, 4);
       D.bcards[4].classList.remove('hid');
-      D.tickOn(true); D.say(WHO.polka.ask(d)); await ST.wait(run, 1800); D.say(null);
-      // 止1：印を指す
+      D.tickOn(true); D.say(WHO.polka.ask(d)); await ST.wait(run, 1000); D.say(null);
       D.q('.tick').classList.add('lit');
-      D.rico(C.s1(d)); await ST.wait(run, 4000);
-      D.rico(null); D.q('.tick').classList.remove('lit'); await ST.wait(run, 200);
-      // 拍2：最後の札がめくれる
-      D.face('drunk2'); await D.finalFlip(run);
-      const b = WHO.polka.bet(d); D.face(b.face); D.bounce(); D.say(b.t); await ST.wait(run, 1500); D.say(null);
-      // 止2：来たか、来ないか
-      D.bcards[4].classList.add('lit');
-      D.rico(C.s2(d), true); await ST.wait(run, 4000);
-      D.rico(null); D.bcards[4].classList.remove('lit');
-      // 拍3：ミミの手
+      // 拍2：最後の札がめくれる → 止1：来ない → はったり
+      D.face('drunk2'); await D.finalFlip(run, true);
+      D.q('.tick').classList.remove('lit'); D.bcards[4].classList.add('lit');
+      const b = WHO.polka.bet(d); D.face(b.face); D.bounce(); D.say(b.t);
+      D.rico(C.s12(d), true); await hold(C.s12(d), true);
+      D.rico(null); D.say(null); D.bcards[4].classList.remove('lit');
+      // 拍3：ミミの手 → 止2：役があれば払う（短い1行）。払うを押す
       D.mimiChip(d.mimiName); await D.mimiIn(run); D.rule(true);
-      D.q('.chip.mch').classList.add('lit'); await ST.wait(run, 600);
-      // 止3
-      D.rico(C.s3(d), true); await ST.wait(run, 4000);
+      D.q('.chip.mch').classList.add('lit'); D.opts(true); D.optsEnable(true);
+      D.rico(C.s3(d), true); await hold(C.s3(d));
       D.rico(null); D.q('.chip.mch').classList.remove('lit');
-      // 拍4：払う
-      D.opts(true); D.optsEnable(true); await ST.wait(run, 500);
-      hand.style.left = '526px'; hand.style.top = '300px'; hand.classList.add('on'); await ST.wait(run, 700);
-      hand.classList.add('tap'); D.q('.pay').classList.add('press'); await ST.wait(run, 350);
+      hand.style.left = '526px'; hand.style.top = '300px'; hand.classList.add('on'); await ST.wait(run, 450);
+      hand.classList.add('tap'); D.q('.pay').classList.add('press'); await ST.wait(run, 300);
       hand.classList.remove('on'); D.opts(false);
+      // 明かし（止めずに流す）
       await reveal(ST, run, D, d, 'call', true);
-      D.rico(C.s4(d), true); await ST.wait(run, 3400);
     } catch (e) { if (!e || e.message !== 'cancel') { runDemo.on = false; D.root.remove(); throw e; } }
     if (!ST.dead) await card4();
     D.root.remove();
@@ -410,6 +464,19 @@
     const sc = opts.scene;
     if (!sc) return fin({});
     preload(sc.key);
+    // お手本だけ盤で流す形（2026-11-17：「言う」は卓の上に出すだけ。初回のお手本は盤で見せる。mode='demo'＝初回のお手本、'replay'＝見直し）
+    if (mode === 'demo' || mode === 'replay') {
+      (async () => {
+        const replay = mode === 'replay';
+        if (replay || !window.RD.saveGet(save, 'rdDemo', 'onedari')) {
+          await runDemo(ST, replay, sc.key);
+          if (ST.dead) return;
+          if (!replay) window.RD.saveSet(save, 'rdDemo', 'onedari', true, opts.saveProgress);
+        }
+        fin({ demo: true });
+      })().catch(e => { if (!(e && e.message === 'cancel')) console.error('onedari demo', e); fin({ demo: true }); });
+      return;
+    }
     const cnt0 = (save && save.rdCount && save.rdCount.onedari) || 0;
     if (mode === 'say') window.RD.saveSet(save, 'rdCount', 'onedari', cnt0 + 1, opts.saveProgress);
     const plays = mode === 'say' ? cnt0 + 1 : cnt0;   // 何回目の遊びか（手引きの段：最初の2回だけ「リコに聞く」）
@@ -420,12 +487,12 @@
     let demoOn = false;
     S.q('.tbtn').addEventListener('click', () => {
       if (demoOn || ST.pauseP) return; demoOn = true; ST.pause();
-      runDemo(ST, true).then(() => { demoOn = false; ST.unpause(); });
+      runDemo(ST, true, sc.key).then(() => { demoOn = false; ST.unpause(); });
     });
     const goSay = async () => {
       S.load(sc, false); S.ins(''); S.tbtn(false); S.ask(false);
       if (!window.RD.saveGet(save, 'rdDemo', 'onedari')) {
-        await runDemo(ST, false);
+        await runDemo(ST, false, sc.key);
         if (ST.dead) return;
         window.RD.saveSet(save, 'rdDemo', 'onedari', true, opts.saveProgress);
       }
@@ -499,6 +566,54 @@
     go();
   }
 
+  // ================= 卓に重ねる形（2026-11-17）=================
+  // 「言う」は盤を開かず、卓の上に、相手の吹き出しと、おねだりの印（札の絵）を出すだけ。印は、卓の本物のリバーがめくれる時にも残す
+  // （RD.tbl.close() で消す：「払う？降りる？」の盤を開く時・手が変わる時）。位置は卓の相手の絵（.v2-opp）の実際の場所から取る。
+  const TBL_ONE = {
+    begin(key, sc) {
+      const T = window.RD.tbl, { el } = window.RD.util;
+      const d = derive(sc), L = T.ensure();
+      const faces = {};
+      FACE_NAMES.forEach(n => { faces[n] = { img: faceUrl(key, n), size: 'auto 360px', pos: Math.round(-(CX[key + '_' + n] * 0.64 - 150)) + 'px 8px' }; });
+      const W = T.win(faces, 'drunk'), B = T.say(W);
+      // 印（札の絵）：suit＝マークの札／rank＝数字の札（か でつなぐ）／color＝赤い札か黒い札／count＝「あと○枚」
+      const sg = el('div', 'rdt-sign'), s = d.sign; let h = '<i>おねだり</i>';
+      if (s.t === 'suit') h += '<div class="row"><div class="cdi' + (s.suit === 'h' || s.suit === 'd' ? ' r' : '') + '">' + SJ[s.suit] + '</div></div>';
+      else if (s.t === 'rank') h += '<div class="row">' + s.ranks.map(r => '<div class="cdi tk">' + RN(r) + '</div>').join('<span class="or">か</span>') + '</div>';
+      else if (s.t === 'color') h += '<div class="row"><div class="cdi col' + (s.red ? '' : ' k') + '">' + (s.red ? '赤いの' : '黒いの') + '</div></div>';
+      else h += '<div class="pill">あと' + s.n + '枚</div>';
+      sg.innerHTML = h; L.appendChild(sg);
+      const place = () => {
+        // 場札の5枚目（リバー）の右に置く：めくれたリバーと、すぐ隣で見くらべられる（相手の絵の横は卓の文字に重なった。11/17）
+        const sp = T.span(), w = sg.offsetWidth || 70, h = sg.offsetHeight || 70, cr = T.cardRects();
+        if (cr.length) {
+          const pitch = cr.length > 1 ? cr[1].left - cr[0].left : cr[0].width + 6;
+          const right5 = cr[0].left + pitch * 4 + cr[0].width;
+          const x = right5 + 12, y = cr[0].top + cr[0].height / 2 - h / 2;
+          if (x + w <= sp.right) { sg.style.left = x + 'px'; sg.style.top = Math.max(4, y) + 'px'; return; }
+        }
+        const r = W.rect; if (!r) return;
+        let x = r.left - w - 8; if (x < sp.left) x = r.right + 8;
+        sg.style.left = x + 'px'; sg.style.top = (r.top + 16) + 'px';
+      };
+      T.add(place);
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      let alive = true;
+      return {
+        // おねだりを言う：窓に顔と吹き出し、印が出る。窓と吹き出しは言い終わったら引っ込め、印は残す
+        async say() {
+          W.show(true); W.face('drunk'); await wait(350);
+          if (!alive) return;
+          B.set(WHO[key].ask(d)); sg.classList.add('on'); place();   // | は折り目（fm で <wbr>）
+          await wait(2600);
+          if (!alive) return;
+          B.set(null); W.show(false);
+        },
+        close() { alive = false; T.close(); },
+      };
+    },
+  };
+  window.RD.onedariTable = TBL_ONE;
   window.RD.reg('onedari', { id: 'onedari', title: 'リーディング：おねだり', plan, mount, verdict });
-  window.RD.onedariEngine = { P, FULL, score, cmp, RN, SJ, hname, outsOf, derive, problems, signFor, plan, outcome, WHO, DEMO, NAME };
+  window.RD.onedariEngine = { P, FULL, score, cmp, RN, SJ, hname, outsOf, derive, problems, signFor, plan, outcome, WHO, DEMO, NAME, altsOf, unambiguous, signTextOf };
 })();

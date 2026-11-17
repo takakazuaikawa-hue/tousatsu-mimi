@@ -1,12 +1,15 @@
 // リーディング：見せ合いっこ（ほろ酔いの夜・泥酔の夜／相手はポルカ）（2026-11-17・試作 qa/h4mise、仕様 docs/design-ref/read-h4-spec.md §6、read-integrate.md §3-5）
 // リバーでミミが賭けた後、ポルカの AI が「降りる」と決めた所で開く。酔ったポルカが「1枚ずつ見せっこしよ？」と言い出し、自分の1枚を先にめくる。
-// 決まり：彼女は「見えた1枚＋場札」の役を、自分の本当の役とくらべる。下なら払う。上（同じ）なら降りる。見せなければ降りる。乱数は無い。
-// 決めるのは3択：左の札／右の札／見せない。ポルカの払う／降りるは、この決まりで計算して卓の AI と置き換える（払う → 本当に払って勝負・降りる → ポットはミミへ）。
+// 決まり：彼女は「見えた1枚＋場札」の役を、自分の本当の役とくらべる。下なら払う。上（同じ）なら降りる。乱数は無い。
+// 決めるのは3択：左の札／右の札／見せない。見せた時だけ、ポルカの払う／降りるを、この決まりで計算して卓の AI と置き換える（払う → 本当に払って勝負・降りる → ポットはミミへ）。
+// 見せない時は、卓の AI が元々決めていた判断（払う／降りる）のまま（2026-11-17 Codex 指摘3。sc.ai＝'fold'｜'pay'）。
+// 出す場は、見えない札（ポルカの伏せた方の札・AI の元の判断）がどうであっても、最善の答えが変わらない場だけ（指摘2）。
 (function () {
   'use strict';
   // ================= 計算 =================
   const RANKS = '23456789TJQKA', SUITS = 'shdc';
   const P = (s) => ({ r: RANKS.indexOf(s[0]), s: s[1], t: s });
+  const FULL = []; for (const r of RANKS) for (const s of SUITS) FULL.push(P(r + s));
   function straightTop(rs) {
     const u = [...new Set(rs)]; if (u.includes(12)) u.push(-1); u.sort((a, b) => b - a);
     for (let i = 0; i + 4 < u.length; i++) { let ok = true; for (let k = 1; k < 5; k++) if (!u.includes(u[i] - k)) { ok = false; break; } if (ok) return u[i]; }
@@ -50,10 +53,13 @@
     const hs = herShow(board, her); if (!hs) return null;
     const mReal = score(board.concat(mimi)), ahead = cmp(mReal, hs.real);
     const out = [0, 1].map(i => react(board, hs.real, mimi[i]));
-    const val = (o) => o === 'call' ? (ahead > 0 ? 2 : ahead < 0 ? -1 : 0) : 1;
-    const vals = [val(out[0]), val(out[1]), 1]; const best = Math.max(...vals);
-    const ans = vals.map((v, i) => v === best ? i : -1).filter(i => i >= 0);
-    return { hs, mReal, ahead, out, vals, best, ans };
+    const pay = ahead > 0 ? 2 : ahead < 0 ? -1 : 0;
+    const val = (o) => o === 'call' ? pay : 1;
+    // 見せない時の結果は、卓の AI の元の判断しだい（降りる＝1・払う＝勝負の結果）。どちらの判断でも最善の答えを、本当の答えにする
+    const bestOf = (hide) => { const vals = [val(out[0]), val(out[1]), hide]; const m = Math.max(...vals); return vals.map((v, i) => v === m ? i : -1).filter(i => i >= 0); };
+    const bF = bestOf(1), bP = bestOf(pay);
+    const ans = bF.filter(i => bP.includes(i));
+    return { hs, mReal, ahead, out, ans, bF, bP };
   }
   // 「この札が場札とつながる」所：糸で結ぶ場札の番号（つながらなければ空）と、見える役
   function linkOf(board, card) {
@@ -74,7 +80,7 @@
     const hsIdx = her.findIndex(c => c.t === r.hs.card.t);
     return { board, mimi, her, r, hsIdx, hsLink: linkOf(board, r.hs.card),
       herName: hname(r.hs.real), herShort: sname(r.hs.real), mimiName: hname(r.mReal),
-      seen: [0, 1].map(i => linkOf(board, mimi[i])), ahead: r.ahead, ans: r.ans[0], pot0: sc.pot0 || 0, bet: sc.bet || 0 };
+      seen: [0, 1].map(i => linkOf(board, mimi[i])), ahead: r.ahead, ans: r.ans[0], pot0: sc.pot0 || 0, bet: sc.bet || 0, ai: sc.ai === 'pay' ? 'pay' : 'fold' };
   }
   // T＝卓の table（board は5枚）。ctx.charKey は polka だけ。ctx.pot0＝この通りの賭けの前のポット・ctx.bet＝ミミの賭け（ポルカが払う額）。作れなければ null
   function plan(T, ctx) {
@@ -86,6 +92,16 @@
     const all = board.concat(her, mimi); if (new Set(all.map(c => c.t)).size !== all.length) return null;
     const r = solve(board, mimi, her);
     if (!r || r.ahead === 0 || r.ans.length !== 1) return null;     // 同点・どちらでも払う／どちらでも降りる場では出さない
+    // 見えていない札の全部に替えてみる：見せる札（hs.card）はそのまま、伏せた方の札を山の残り全部に替えて、最善の答えが変わる場は出さない（Codex 指摘2）
+    const shown = r.hs.card, hiddenIdx = her.findIndex(c => c.t !== shown.t), seenSet = new Set(all.map(c => c.t));
+    for (const h of FULL) {
+      if (seenSet.has(h.t)) continue;
+      const alt = her.slice(); alt[hiddenIdx] = h;
+      const hs2 = herShow(board, alt);
+      if (!hs2 || hs2.card.t !== shown.t) continue;      // この伏せ札なら、彼女は別の札を見せる（または見せる札が無い）＝今見えている場面ではない
+      const r2 = solve(board, mimi, alt);
+      if (!r2 || r2.ahead === 0 || r2.ans.length !== 1 || r2.ans[0] !== r.ans[0]) return null;
+    }
     const sc = { board: board.map(c => c.t).join(' '), mimi: mimi.map(c => c.t).join(' '), polka: her.map(c => c.t).join(' '), ans: r.ans[0], pot0: ctx.pot0 || 0, bet: ctx.bet || 0 };
     return sc;
   }
@@ -94,8 +110,8 @@
   const DEMO = { board: 'Kh 9c 4d 2s Jc', mimi: 'Ks 4c', polka: '9d 6h', ans: 1, pot0: 600, bet: 300 };
   const OPEN = ['う〜、こわいよぉ……。|ねえ、1枚ずつ 見せっこしよ？', 'あたし、これ〜！|弱そうだったら、払うから〜'];
   const RK = (c) => RN(c.r);
-  const herUp = (d) => d.r.hs.real[0] === 2 ? 'あたしはツーペアだもん♪' : `あたしの ${RK(d.r.hs.card)} のほうが上〜♪`;
-  const herCant = (d) => d.r.hs.real[0] === 2 ? 'あたしのツーペアじゃ、勝てないよぉ……' : `あたしの ${RK(d.r.hs.card)} じゃ、勝てないよぉ……`;
+  const herUp = (d) => d.r.hs.real[0] === 2 ? 'あたしはツーペアだもん♪' : `あたしの ${RK(d.r.hs.card)} のほうが上〜♪`;
+  const herCant = (d) => d.r.hs.real[0] === 2 ? 'あたしのツーペアじゃ、勝てないよぉ……' : `あたしの ${RK(d.r.hs.card)} じゃ、勝てないよぉ……`;
   function seenCall(d, i) {
     const s = d.seen[i];
     if (s.score[0] === 0) return ['なーんだ、何もないじゃん！|はったりだ〜♪'];
@@ -105,26 +121,38 @@
   function outcome(d, pick) {
     const a = d.ahead > 0;
     if (pick === 2) {
+      // 見せない：ポルカは、卓の AI が元々決めていた払う／降りるのまま（d.ai）。ミミが勝っている（a）かどうかで結果が決まる
+      const callC = d.r.out.map((o, i) => o === 'call' ? i : -1).filter(i => i >= 0), foldC = d.r.out.map((o, i) => o === 'fold' ? i : -1).filter(i => i >= 0);
+      const good = d.ans === 2;
+      if (d.ai === 'pay') {
+        if (a) {
+          return { kind: 'hidepay', mark: good ? '◎ 払わせた' : '△ 払われた（運）', delta: d.pot0 + d.bet, sign: 1, cls: good ? 'good' : 'warn', steps: [{ face: 'drunk', t: '見せてくれないの〜？|……まあいっか、払う払う〜！' }, { face: 'panic', t: `えっ……ミミちゃんが|${sname(d.r.mReal)}！？`, flip: true }, { face: 'bawl', t: 'ず、ずる〜い！|うわぁ〜ん！' }], flip: true, act: null,
+            reason: good ? 'どの札を見せても、降りられてしまう手。|見せないで、そのまま払ってもらえた' : `ポルカは、見せなくても払うつもりだった。|${callC.length ? RK(d.mimi[callC[0]]) + ' を見せれば、確実に払わせられた' : ''}` };
+        }
+        return { kind: 'hidepaylost', mark: good ? '△ 負けた（どの札でも同じ）' : '✕ 払われて負けた', delta: d.bet, sign: -1, cls: 'bad', steps: [{ face: 'drunk', t: '見せてくれないの〜？|……まあいっか、払う払う〜！' }, { face: 'drunk', t: 'やった〜！|あたしの勝ち〜♪', flip: true }], flip: true, act: null,
+          reason: good ? `ミミは ${d.mimiName}。${d.herName}には負けている。|どの札を見せても、払われてしまう手` : `ポルカは、見せなくても払うつもりだった。|${foldC.length ? RK(d.mimi[foldC[0]]) + ' を見せれば、降ろせた' : ''}` };
+      }
       const steps = [{ face: 'plead', t: 'え〜！ あたしだけ|見せたのに〜！ ずるい〜！' }, { face: 'bawl', t: '……やっぱり こわいから、|降りる〜' }];
       if (!a) steps.push({ face: 'plead', t: 'ねえ、ほんとは|何 持ってたの〜？' });
-      const good = d.r.out.map((o, i) => o === 'call' ? i : -1).filter(i => i >= 0);
-      const other = good.length ? d.mimi[good[0]] : null;
-      return { kind: a ? 'fled' : 'drop', mark: a ? '△ 逃げられた' : '◎ 降ろした', delta: d.pot0, sign: 1, cls: a ? 'warn' : 'good', steps, flip: false, act: 'fold',
-        reason: a ? (other ? `${RK(other)} を見せていれば、安心して払ってくれた` : '見せなかったので、降りられた') :
-          (d.r.mReal[0] === 0 ? 'ミミは役なし。見せなかったので、こわがったまま降りた' : `ミミは ${d.mimiName}。${d.herName}には負けている。見せなかったので、こわがったまま降りた`) };
+      const other = callC.length ? d.mimi[callC[0]] : null;
+      if (a) return { kind: 'fled', mark: good ? '◎ 降ろした' : '△ 逃げられた', delta: d.pot0, sign: 1, cls: good ? 'good' : 'warn', steps, flip: false, act: null,
+        reason: good ? 'どの札を見せても、降りられてしまう手。|見せなくても、ポルカは降りた' : (other ? `${RK(other)} を見せていれば、安心して払ってくれた` : '見せなかったので、降りられた') };
+      return { kind: 'drop', mark: good ? '◎ 降ろした' : '△ 運よく降ろせた', delta: d.pot0, sign: 1, cls: good ? 'good' : 'warn', steps, flip: false, act: null,
+        reason: good ? (d.r.mReal[0] === 0 ? 'ミミは役なし。見せなくても、ポルカは自分で降りた' : `ミミは ${d.mimiName}。${d.herName}には負けている。|見せなくても、ポルカは自分で降りた`) :
+          `ポルカは、元々降りるつもりだった。|${foldC.length ? RK(d.mimi[foldC[0]]) + ' を見せれば、確実に降ろせた' : ''}` };
     }
     const card = d.mimi[pick], oth = d.mimi[1 - pick], s = d.seen[pick], call = d.r.out[pick] === 'call';
     if (!call) {
       const okOth = d.r.out[1 - pick] === 'call';
       return { kind: 'fled', mark: '△ 逃げられた', delta: d.pot0, sign: 1, cls: 'warn', flip: false, act: 'fold',
         steps: [{ face: 'panic', t: `${s.name}！？|${herCant(d)}` }, { face: 'plead', t: '降りる〜……ひっく' }],
-        reason: `${RK(card)} は『${s.name}』に見える。${d.herShort}より上なので、降りた。${okOth ? RK(oth) + ' なら払ってくれた' : ''}` };
+        reason: `${RK(card)} は『${s.name}』に見える。${d.herShort}より上なので、降りた。|${okOth ? RK(oth) + ' なら払ってくれた' : ''}` };
     }
     const lines = seenCall(d, pick);
     const pay = { face: 'drunk', t: lines[0] };
-    const why = s.score[0] === 0 ? `${RK(card)} は場札とつながらない。『役なし』に見えるので、安心して払った` :
-      (s.improved ? `${RK(card)} は『${s.name}』に見える。${d.herShort}より下なので、安心して払った` :
-        `${RK(card)} は場札とつながらない。場の『${s.name}』だけに見える。${d.herShort}より下なので、安心して払った`);
+    const why = s.score[0] === 0 ? `${RK(card)} は場札とつながらない。『役なし』に見えるので、安心して払った` :
+      (s.improved ? `${RK(card)} は『${s.name}』に見える。${d.herShort}より下なので、安心して払った` :
+        `${RK(card)} は場札とつながらない。場の『${s.name}』だけに見える。${d.herShort}より下なので、安心して払った`);
     if (a) {
       const fl = d.r.mReal[0] === 5 ? SJ[d.mimi[0].s] : RK(oth);
       const flipLine = d.r.mReal[0] === 5 ? `えっ……${fl}！？|${sname(d.r.mReal)}！？` : `えっ……${fl} も！？|${sname(d.r.mReal)}！？`;
@@ -135,12 +163,12 @@
       steps: [pay, { face: 'drunk', t: '払う払う〜！' }, { face: 'drunk', t: 'やった〜！|あたしの勝ち〜♪', flip: true }],
       reason: '見せた札で、弱いのがばれた。負けている時は、見せない' };
   }
+  // 止まる所は3つ（2026-11-17 docs/design-ref/read-demo-length.md）。s4（こわい札＝場札とつながる札）は s3 の後ろに続けて1回に
   const DEMO_COACH = {
     s1: 'ポルカは 9 のペア。ミミは勝ってるね。|払ってくれたら、もっともうかるよ',
     s2: 'K を見せると、K のペアに見える。|9 より上だから、こわがって降りちゃう',
-    s3: '4 なら、4 のペアに見える。|9 より下だから、安心して払ってくれるよ',
-    s4: '大きい札がこわい札、とは限らないの。|場札とつながる札がこわいんだよ' };
-  const CARD4 = [['目的', '迷っているポルカに、払ってもらう。|ただし、ミミが負けている時は、降りてもらう。'], ['やり方', 'ミミの札を1枚選んで見せる。|または「見せない」。'], ['危なさ', '負けている時に見せると、弱いのが|ばれて、払われて負ける。'], ['見る物', 'ポルカの役の札と、ミミの札が場札と|つながるか（同じ数字・並び・同じマーク）。']];
+    s3: '4 なら 4 のペア。9 より下だから、払う。|こわい札は、場札とつながる札' };
+  const CARD4 = [['目的', '迷っているポルカに、払ってもらう。|ただし、ミミが負けている時は、降りてもらう。'], ['やり方', 'ミミの札を1枚選んで見せる。|「見せない」なら、ポルカ次第。'], ['危なさ', '負けている時に見せると、弱いのが|ばれて、払われて負ける。'], ['見る物', 'ポルカの役の札と、ミミの札が場札と|つながるか（同じ数字・並び・同じマーク）。']];
   // 酔ったポルカの顔（assets/characters/polka_cutin_*。窓に収まる位置は試作 qa/h4mise のまま）
   const FACES = {
     drunk: { img: 'assets/characters/polka_cutin_drunk.webp', pos: '-246px 8px' },
@@ -172,7 +200,7 @@
   <div class="clone"></div>
   <div class="mc m0"></div><div class="mc m1"></div>
   <div class="chip mch"></div>
-  <div class="opts"><button type="button" class="shw">これを見せる</button><button type="button" class="hide"><b>見せない</b><span>こわがったまま、<br>降りる</span></button></div>
+  <div class="opts"><button type="button" class="shw">これを見せる</button><button type="button" class="hide"><b>見せない</b><span>ポルカの<br>考えしだい</span></button></div>
   <div class="speech"></div>
   <button type="button" class="go">卓へ</button>
   <button type="button" class="askrico">リコに聞く</button>
@@ -287,25 +315,26 @@
       S.ins('ポルカが見くらべる……');
       S.mimiBack(1 - pick, true);
       await S.flyTo(run, pick, 'こう見えた');
-      await ST.wait(run, 1300);
+      await ST.wait(run, isDemo ? 700 : 1300);
     } else {
       S.ins('見せない'); S.mimiBack(0, true); S.mimiBack(1, true); S.lift(null);
       await ST.wait(run, 900);
     }
     S.q('.chip.hc').classList.remove('up', 'dn');
     const oth = pick < 2 ? 1 - pick : null;
-    for (const st of out.steps) {
+    const steps = isDemo ? out.steps.filter((_, i) => i !== 1) : out.steps;   // お手本は止めずに短く流す（2つ目の「払う払う〜」は省く）
+    for (const st of steps) {
       S.face(st.face); if (st.face === 'bawl' || st.face === 'panic') S.shake(); else S.bounce();
       S.say(st.t, 'narrow');
-      if (st.flip && oth != null) { await S.mimiFlip(run, oth); }
-      await ST.wait(run, 1700);
+      if (st.flip) { if (oth != null) await S.mimiFlip(run, oth); else { await S.mimiFlip(run, 0); await S.mimiFlip(run, 1); } }
+      await ST.wait(run, isDemo ? 1100 : 1700);
     }
     S.say(null);
     S.ins(out.mark + '　' + (out.sign > 0 ? '＋' : '−') + out.delta, out.cls);
     S.q('.chip.hc').classList.remove('on'); S.q('.chip.sc').classList.remove('on');
-    await ST.wait(run, 350);
+    await ST.wait(run, isDemo ? 200 : 350);
     S.reason(out.reason);
-    await ST.wait(run, isDemo ? 1200 : 600);
+    await ST.wait(run, isDemo ? 800 : 600);
     return out;
   }
 
@@ -328,27 +357,27 @@
       await new Promise(res => D.q('.pgo').addEventListener('click', res, { once: true }));
     };
     try {
-      D.intro(true, 'お手本'); await ST.wait(run, 1000); D.intro(false); await ST.wait(run, 250);
+      const hold = (t) => ST.wait(run, window.RD.util.stopMs(t));
+      D.intro(true, 'お手本'); await ST.wait(run, 600); D.intro(false); await ST.wait(run, 100);
       await D.showBoard(run, true);
-      D.say(OPEN[0]); await ST.wait(run, 1600);
+      D.say(OPEN[0]); await ST.wait(run, 1000);
       await D.herFlip(run);
-      D.say(OPEN[1]); await ST.wait(run, 1500); D.say(null);
+      D.say(OPEN[1]); await ST.wait(run, 1000); D.say(null);
       D.face('drunk2'); await D.mimiIn(run);
       D.q('.chip.hc').classList.add('lit'); D.q('.chip.mch').classList.add('lit');
-      D.rico(C.s1); await ST.wait(run, 4000);
-      D.rico(null); D.q('.chip.hc').classList.remove('lit'); D.q('.chip.mch').classList.remove('lit'); await ST.wait(run, 200);
-      D.lift(0); D.shownTo(0, 'こう見える'); await ST.wait(run, 1500);
-      D.face('panic'); D.say('ひぃっ', 'tiny'); D.rico(C.s2, true); await ST.wait(run, 4000);
+      D.rico(C.s1); await hold(C.s1);
+      D.rico(null); D.q('.chip.hc').classList.remove('lit'); D.q('.chip.mch').classList.remove('lit'); await ST.wait(run, 100);
+      D.lift(0); D.shownTo(0, 'こう見える'); await ST.wait(run, 500);
+      D.face('panic'); D.say('ひぃっ', 'tiny'); D.rico(C.s2, true); await hold(C.s2);
       D.rico(null); D.say(null); D.face('drunk2');
-      D.shownOff(); D.lift(1); D.shownTo(1, 'こう見える'); await ST.wait(run, 1500);
-      D.face('drunk'); D.say('ほっ', 'tiny'); D.rico(C.s3, true); await ST.wait(run, 4000);
+      D.shownOff(); D.lift(1); D.shownTo(1, 'こう見える'); await ST.wait(run, 500);
+      D.face('drunk'); D.say('ほっ', 'tiny'); await ST.wait(run, 600); D.say(null); D.rico(C.s3, true);   // 「ほっ」を消してから札の押す所を出す（吹き出しが「これを見せる」に重なった）
+      D.opts(true); D.optsEnable(true, true); await hold(C.s3);
       D.rico(null); D.say(null);
-      D.opts(true); D.optsEnable(true, true); await ST.wait(run, 500);
-      hand.style.left = '520px'; hand.style.top = '296px'; hand.classList.add('on'); await ST.wait(run, 700);
-      hand.classList.add('tap'); D.q('.shw').classList.add('press'); await ST.wait(run, 350);
+      hand.style.left = '520px'; hand.style.top = '296px'; hand.classList.add('on'); await ST.wait(run, 500);
+      hand.classList.add('tap'); D.q('.shw').classList.add('press'); await ST.wait(run, 300);
       hand.classList.remove('on'); D.opts(false);
       await reveal(ST, run, D, D.d, 1, true);
-      D.rico(C.s4, true); await ST.wait(run, 3200);
     } catch (e) { if (!e || e.message !== 'cancel') { runDemo.on = false; D.root.remove(); throw e; } }
     if (!ST.dead) await card4();
     D.root.remove();
@@ -400,7 +429,7 @@
       S.ask(guided);
       await S.mimiIn(run);
       const showPrev = (i2) => { if (!guided) return; if (i2 == null) { S.shownOff(); S.rule(true); } else { S.rule(false); S.shownTo(i2, 'こう見える'); } };
-      const coach = d.ahead < 0 ? `ミミは ${d.mimiName}。ポルカは ${d.herName}。|見せたら、安心して払われて負けちゃうよ` : `札を持ち上げると「こう見える」が出るよ。|ポルカの役より下に見える札が、安心して払われる札`;
+      const coach = d.ahead < 0 ? `ミミは ${d.mimiName}。ポルカは ${d.herName}。|札を持ち上げて、ポルカが降りそうな札を探そう。|見せない時は、ポルカ次第だよ` : `札を持ち上げると「こう見える」が出るよ。|ポルカの役より下に見える札が、安心して払われる札`;
       S.q('.askrico').onclick = () => { S.rico(coach, true); S.ask(false); };
       S.q('.rico').onclick = () => { S.rico(null); S.ask(guided); };
       await ST.wait(run, 400); S.optsEnable(false, true);
@@ -420,7 +449,7 @@
       S.phase = 'done';
       await new Promise(res => { S.q('.go').onclick = res; });
       S.q('.go').onclick = null;
-      fin({ act: out.act, correct: pick === d.ans, pick });
+      fin({ act: pick === 2 ? 'orig' : out.act, correct: pick === d.ans, pick, kind: out.kind, hiddenPay: pick === 2 && d.ai === 'pay' });
     };
     go();
   }

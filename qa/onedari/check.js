@@ -10,6 +10,8 @@ const rows=[];
 for(const sc of all){
   const v=E.verifyScene(sc);const d=v.d;
   v.why.forEach(w=>fail(sc.id,w));
+  // 見える情報に合う伏せ札を全部調べる：どれでも「来た／来なかった」と答えが同じか（Codex 指摘1）
+  {const cf=E.conflicts(sc);if(cf.length)fail(sc.id,'印だけでは答えが決まらない（伏せ札が違えば答えが変わる）: '+cf.slice(0,3).map(x=>x.her+(x.hit?'＝来た':'＝来ない')).join(' / ')+' ほか'+cf.length+'通り');}
   const W=S.WHO[sc.who];if(!W){fail(sc.id,'人が無い');continue;}
   // 印の文言が、計算した印を含む
   const must={suit:E.SJ[d.outSuit],rank:d.outRanks.map(E.RN)[0],color:'赤',count:String(d.outs.length)}[sc.sign];

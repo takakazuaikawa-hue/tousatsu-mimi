@@ -139,11 +139,11 @@
   const DEMO = { board: 'Ks 9h 4h 2c 7d', polka: 'Qh 6h', mimi: 'Ad Jc', cat: 5, ans: 'X', kind: 'draw', bet: 300, claim: CLAIM[5],
     reason: '♥は場に2枚だけ。|3枚ないと、フラッシュは作れない', why: ['な、なんで|分かったの〜！？', '♥、4枚までは|あったんだよ〜！'], openIdx: 0, mimiIdx: 0 };
   const DEMO_AFTER = { board: 'Qc 9d 8c 4s 2c', polka: 'Kc 5c' };
+  // 止まる所は3つ（2026-11-17 docs/design-ref/read-demo-length.md）。l3「罰で1枚見えた」は止めずに帯で流す（ins と吹き出し）。l4 は2行に削った
   const COACH = {
-    l1: 'フラッシュは同じマークが5枚。ポルカの手札は2枚だけ。だから、あと3枚は場札に要るよ',
-    l2: '♥は2枚だけ。枠が1つ埋まらない。この場では、フラッシュは作れない',
-    l3: '当たり。罰で、ポルカの札が1枚見えたね',
-    l4: '場に3枚あったら『作れる』。本当に持っているかは分からないから、異議は言わないでね。外すと、ミミの札を1枚見せることになるよ',
+    l1: '手札は2枚だけ。あと3枚は場札に要るよ',
+    l2: '♥は2枚だけ。枠が埋まらない。作れない',
+    l4: '場に3枚あったら『作れる』。異議は言わないでね。|外すと、ミミの札を1枚見せることになるよ',
   };
   const CARD4 = [
     ['目的', 'ポルカが言い張る役が、この場札で|作れるかを見やぶる。ウソなら、罰で|彼女の札が1枚、卓で表になる。'],
@@ -241,12 +241,13 @@
     const rel = (e) => { const r = e.getBoundingClientRect(), b = root.getBoundingClientRect(), sc = ST.scale() || 1; return { x: (r.left - b.left) / sc, y: (r.top - b.top) / sc, w: r.width / sc, h: r.height / sc }; };
     S.flyOne = async (run, b, slot) => {
       const a = rel(b.e), t = rel(slot);
+      const dur = S.fast ? 300 : 520;
       const cl = el('div', 'cd fly' + (isRed({ s: b.c.s }) ? ' r' : ''), cardHTML(b.c));
       cl.style.cssText = `left:${a.x}px;top:${a.y}px;width:${a.w}px;height:${a.h}px`; root.appendChild(cl);
       b.e.classList.remove('glow'); b.e.classList.add('lent');
       const dx = t.x - a.x, dy = t.y - a.y, sx = t.w / a.w, sy = t.h / a.h;
-      try { cl.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(0,-24px) scale(1.1)', offset: .28 }, { transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})` }], { duration: run.ff ? 130 : 520, easing: 'ease-in-out', fill: 'forwards' }); } catch (e) {}
-      try { await ST.wait(run, 520); } finally { cl.remove(); }
+      try { cl.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(0,-24px) scale(1.1)', offset: .28 }, { transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})` }], { duration: run.ff ? 130 : dur, easing: 'ease-in-out', fill: 'forwards' }); } catch (e) {}
+      try { await ST.wait(run, dur); } finally { cl.remove(); }
       slot.className = 'sl bs in full' + (isRed({ s: b.c.s }) ? ' r' : ''); slot.innerHTML = cardHTML(b.c);
     };
     S.sortBoard = async (run) => {
@@ -261,7 +262,7 @@
       let cards = S.fillCards(pl);
       if (S.sc.cat === 4) cards = cards.sort((a, b) => a.c.r - b.c.r);
       const n = upto == null ? cards.length : upto;
-      for (let k = 0; k < n; k++) { await S.flyOne(run, cards[k], S.bslots[k]); await ST.wait(run, 140); }
+      for (let k = 0; k < n; k++) { await S.flyOne(run, cards[k], S.bslots[k]); await ST.wait(run, S.fast ? 60 : 140); }
       return cards;
     };
     S.settle = (pl) => {
@@ -324,32 +325,35 @@
       await new Promise(res => D.q('.pgo').addEventListener('click', res, { once: true }));
     };
     try {
-      D.intro(true, 'お手本'); await ST.wait(run, 1000); D.intro(false); await ST.wait(run, 250);
+      const hold = (t, look) => ST.wait(run, window.RD.util.stopMs(t, look));
+      D.fast = true;
+      D.intro(true, 'お手本'); await ST.wait(run, 600); D.intro(false); await ST.wait(run, 100);
       D.ins(`ポルカが${sc.bet}賭けて、揺さぶってきた`);
-      D.q('.claim').classList.add('on'); await ST.wait(run, 1800);
-      for (const e of D.hslots.concat(D.bslots)) { e.classList.add('in'); await ST.wait(run, 110); }
-      D.glowSlots(true); D.rico(COACH.l1); await ST.wait(run, 4000);
-      D.rico(null); D.glowSlots(false); await ST.wait(run, 200);
+      D.q('.claim').classList.add('on'); await ST.wait(run, 800);
+      for (const e of D.hslots.concat(D.bslots)) { e.classList.add('in'); await ST.wait(run, 70); }
+      D.glowSlots(true); D.rico(COACH.l1); await hold(COACH.l1, true);
+      D.rico(null); D.glowSlots(false); await ST.wait(run, 100);
       D.ins('場札が枠へ入る');
       await D.flyAll(run, D.plan);
-      D.settle(D.plan); D.rico(COACH.l2, true); await ST.wait(run, 4000);
+      D.settle(D.plan); D.rico(COACH.l2, true); await hold(COACH.l2, true);
       D.rico(null);
-      D.ins('その役、この場札で作れる？'); D.rule(true); D.opts(true); D.optsEnable(false); await ST.wait(run, 700);
-      hand.classList.add('on'); hand.style.left = '520px'; hand.style.top = '296px'; await ST.wait(run, 650);
-      hand.classList.add('tap'); D.q('.opt[data-a="X"]').classList.add('press'); await ST.wait(run, 350);
+      D.ins('その役、この場札で作れる？'); D.rule(true); D.opts(true); D.optsEnable(false); await ST.wait(run, 400);
+      hand.classList.add('on'); hand.style.left = '520px'; hand.style.top = '296px'; await ST.wait(run, 500);
+      hand.classList.add('tap'); D.q('.opt[data-a="X"]').classList.add('press'); await ST.wait(run, 300);
       hand.classList.remove('on'); D.rule(false); D.opts(false);
       D.q('.opt[data-a="X"]').classList.remove('press');
-      D.band(); D.face('busted'); D.shake(); await ST.wait(run, 700);
-      D.say(sc.why[0]); D.ins('◎ 見破った！', 'good'); D.reason(sc.reason); await ST.wait(run, 1500);
-      D.flipHole(0); D.face('plead'); D.say(sc.why[1]); await ST.wait(run, 2000); D.say(null); D.rico(COACH.l3, true); await ST.wait(run, 2800);
-      D.rico(null); D.say(null); D.reason(null); D.face('smug'); D.ins('場に3枚あったら', '');
+      // l3：罰で1枚見える（止めずに帯と吹き出しで流す）
+      D.band(); D.face('busted'); D.shake(); await ST.wait(run, 600);
+      D.say(sc.why[0]); D.ins('◎ 見破った！ 罰で札が1枚、開く', 'good'); D.reason(sc.reason); await ST.wait(run, 1100);
+      D.flipHole(0); D.face('plead'); D.say(sc.why[1]); await ST.wait(run, 1300); D.say(null);
+      D.reason(null); D.face('smug'); D.ins('場に3枚あったら', '');
       D.setBoard(DEMO_AFTER.board, true); D.resetSlots(); D.hslots.concat(D.bslots).forEach(e => e.classList.add('in'));
-      await ST.wait(run, 700);
+      await ST.wait(run, 400);
       D.holeC = DEMO_AFTER.polka.split(' ').map(P);
       const pl2 = plan3(D.boardC, D.holeC, 5);
       D.sc = Object.assign({}, sc, { cat: 5 });
       await D.flyAll(run, pl2); D.settle(pl2);
-      D.rico(COACH.l4, true); await ST.wait(run, 4500);
+      D.rico(COACH.l4, true); await hold(COACH.l4);
     } catch (e) { if (!e || e.message !== 'cancel') { runDemo.on = false; D.root.remove(); throw e; } }
     if (!ST.dead) await card4();
     D.root.remove();

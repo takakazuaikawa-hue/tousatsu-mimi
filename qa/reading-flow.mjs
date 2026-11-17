@@ -38,6 +38,9 @@ while (Date.now() - t0 < 280000 && maxHand < HANDS + 1) {
   if (key !== last) { last = key; lastT = Date.now(); }
   if (st.ph === 'idle' && (st.chips[0] <= 0 || st.chips[1] <= 0)) { console.log('勝負がついた（チップが尽きた）'); break; }
   if (Date.now() - lastT > 25000) { frozen = true; await page.screenshot(path.join(OUT, `flow_${which}_frozen.png`)); console.log('固まり', key, JSON.stringify(st)); break; }
+  // 目利き（卓に重ねる形）：見立ての札が卓の上に出たら、1つ選んで「これだ！」
+  const mkp = await ev(`const p = document.querySelector('.rdt-panel'); if (!p) return false; const o = p.querySelectorAll('.rdt-opt'); o[${steps} % o.length].click(); setTimeout(() => { const g = p.querySelector('.rdt-btn.go'); if (g) g.click(); }, 300); return true;`);
+  if (mkp === true) { rdSeen++; lastT = Date.now(); await sleep(900); continue; }
   // 読み合いの画面：進める（お手本・卓へ・次へ）
   if (st.rd) {
     // ふりの画面：山を2回押して顔を出す（押さないと払う／降りるが光らない）

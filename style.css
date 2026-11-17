@@ -18227,7 +18227,7 @@ html.is-compact .hand-result-overlay .hr-title { font-size: calc(20px / var(--ga
 html.is-compact .hand-result-overlay .hr-pot { font-size: var(--fx-cap); }
 html.is-compact .hand-result-overlay .hr-pot b { font-size: var(--fx-num); }
 html.is-compact .hand-result-overlay .hr-pot small, html.is-compact .hand-result-overlay .hr-verdict-desc, html.is-compact .hand-result-overlay .hr-fold-note { font-size: var(--fx-cap); }
-html.is-compact .hand-result-overlay .hr-player-name, html.is-compact .hand-result-overlay .hr-player-eval, html.is-compact .hand-result-overlay .hr-board-label, html.is-compact .hand-result-overlay .hr-fold-msg { font-size: var(--fx-cap); }
+html.is-compact .hand-result-overlay .hr-player-name, html.is-compact .hand-result-overlay .hr-vs, html.is-compact .hand-result-overlay .hr-player-eval, html.is-compact .hand-result-overlay .hr-board-label, html.is-compact .hand-result-overlay .hr-fold-msg { font-size: var(--fx-cap); }
 html.is-compact .hand-result-overlay .hr-pcard { font-size: var(--fx-sub); }
 html.is-compact .hand-result-overlay .hr-showdown { display: grid; grid-template-columns: 1fr auto 1fr; }
 /* 細かい分析（勝率の推移・決め手・伏せた札の解析）はスマホでは畳む */

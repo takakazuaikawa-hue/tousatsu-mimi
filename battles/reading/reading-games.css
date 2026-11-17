@@ -133,6 +133,7 @@
 .rd-host .sg.furi .gline{position:absolute;left:2px;top:0;bottom:0;width:6px;background:linear-gradient(90deg,#fff3c4,#e9c46a,#b8862f);box-shadow:0 0 10px 2px rgba(245,215,122,.8)}
 .rd-host .sg.furi .lane.glowline .gline{animation:rd-gl 1s ease-in-out infinite alternate}
 @keyframes rd-gl{from{box-shadow:0 0 6px 1px rgba(245,215,122,.6)}to{box-shadow:0 0 22px 8px rgba(255,235,150,1)}}
+.rd-host .sg.furi .glabel.luck{color:var(--gold);font-weight:800}
 .rd-host .sg.furi .glabel{position:absolute;left:74px;top:19px;font-size:18px;line-height:22px;font-weight:700;color:var(--ivory);opacity:.95;white-space:nowrap;text-shadow:0 1px 3px #000}
 .rd-host .sg.furi .pile{position:absolute;top:2px;left:474px;width:56px;height:56px;z-index:3;touch-action:none;cursor:grab}
 .rd-host .sg.furi .pile::before{content:"";position:absolute;inset:-12px}
@@ -171,3 +172,4 @@ html.is-compact .battle-screen.v2.t8 .verb-furi .verb-label{font-size:var(--fx-m
 @keyframes rd-furi-glow{from{box-shadow:0 0 4px 0 rgba(143,224,180,.4)}to{box-shadow:0 0 14px 3px rgba(143,224,180,.95)}}
 .card.rd-shown{box-shadow:0 0 0 3px #ffd9a0,0 0 14px 3px rgba(255,217,160,.7)!important}
 .card .rd-shown-tag{position:absolute;left:50%;bottom:calc(-8px / var(--game-scale,1));transform:translateX(-50%);z-index:4;padding:0 calc(8px / var(--game-scale,1));font-style:normal;font-weight:800;font-size:calc(14px / var(--game-scale,1));line-height:calc(20px / var(--game-scale,1));white-space:nowrap;color:#fff4d8;background:#8e1228;border:1px solid #e9c46a;box-shadow:0 2px 4px rgba(0,0,0,.6)}
+.rd-host .sg.furi.demo .rico.up .rsay{bottom:58px}

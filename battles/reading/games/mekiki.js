@@ -10,6 +10,7 @@
   const rn = (ch) => (ch === 'T' ? '10' : ch);
   const P = (s) => ({ r: RANKS.indexOf(s[0]), s: s[1], t: s });
   const DECK = []; for (const r of RANKS) for (const s of SUITS) DECK.push(P(r + s));
+  function straightTopOf(rs) { const u = [...new Set(rs)]; if (u.includes(12)) u.push(-1); u.sort((a, b) => b - a); for (let i = 0; i + 4 < u.length; i++) { let ok = true; for (let k = 1; k < 5; k++) if (!u.includes(u[i] - k)) { ok = false; break; } if (ok) return u[i]; } return -2; }
   function evalCat(cards) {
     const cnt = {}, su = {};
     for (const c of cards) { cnt[c.r] = (cnt[c.r] || 0) + 1; (su[c.s] = su[c.s] || []).push(c.r); }
@@ -47,9 +48,12 @@
     else if (fin.cat === 2) ranksWith(2).slice(0, 2).forEach(r => byR[r].forEach(c => out.add(c.id)));
     else if (fin.cat === 3) ranksWith(3).slice(0, 1).forEach(r => byR[r].forEach(c => out.add(c.id)));
     else if (fin.cat === 7) ranksWith(4).slice(0, 1).forEach(r => byR[r].forEach(c => out.add(c.id)));
-    else if (fin.cat === 6) { ranksWith(3).slice(0, 1).forEach(r => byR[r].forEach(c => out.add(c.id))); const t = ranksWith(3)[0]; ranksWith(2).filter(r => r !== t).slice(0, 1).forEach(r => byR[r].forEach(c => out.add(c.id))); }
-    else if (fin.cat === 5 || fin.cat === 8) { const su = fin.key.slice(5); const f = cards.filter(c => c.s === su); if (su) f.sort((a, b) => b.r - a.r).slice(0, 5).forEach(c => out.add(c.id)); else cards.forEach(c => out.add(c.id)); }
-    else if (fin.cat === 4) { let r = fin.top; while (byR[r < 0 ? 12 : r]) { out.add(byR[r < 0 ? 12 : r][0].id); r--; if (r < -1) break; } }
+    else if (fin.cat === 6) { ranksWith(3).slice(0, 1).forEach(r => byR[r].forEach(c => out.add(c.id))); const t = ranksWith(3)[0]; ranksWith(2).filter(r => r !== t).slice(0, 1).forEach(r => byR[r].slice(0, 2).forEach(c => out.add(c.id))); }
+    else if (fin.cat === 8) {   // ストレートフラッシュ：同じマークの並びの5枚だけ
+      for (const su of SUITS) { const f = cards.filter(c => c.s === su); const top = straightTopOf(f.map(c => c.r)); if (top > -2) { for (let k = 0; k < 5; k++) { const r = top - k < 0 ? 12 : top - k; const c = f.find(x => x.r === r); if (c) out.add(c.id); } } }
+    }
+    else if (fin.cat === 5) { const su = fin.key.slice(5); const f = cards.filter(c => c.s === su); f.sort((a, b) => b.r - a.r).slice(0, 5).forEach(c => out.add(c.id)); }   // フラッシュ：高い方から5枚
+    else if (fin.cat === 4) { for (let k = 0; k < 5; k++) { const r = fin.top - k < 0 ? 12 : fin.top - k; if (byR[r]) out.add(byR[r][0].id); } }   // ストレート：評価で選ばれた5枚だけ（A K Q J 10 9 の6つ続きでも、上の5枚。2026-11-17 Codex 指摘11）
     return out;
   }
   const labelOf = (key) => {
@@ -141,7 +145,7 @@
       },
       peekLine: ['ほう……！', 'ほほう……！'], noPin: '……さて、どうですかな',
       hit: 'な、なぜそれを……！|お見通しですな', hitNone: '……空箱とは、お恥ずかしい。|お見通しですな', miss: 'はっはっは。|目利きは、まだまだですな',
-      coach: { l1: '今、A をルーペでのぞいたね。|グラーノは、自分の役ができた札だけ、ついのぞいちゃうの', l2: 'あとの4枚は知らん顔。|役ができたのは、A の時だけ' },
+      coach: { l1: 'A でルーペをのぞいたね。|役ができた札だけ、ついのぞいちゃうの', l2: 'あとの4枚は知らん顔。|役ができたのは、A の時だけ' },
     },
     selina: {
       name: 'セリナ', title: 'リーディング：目利き', mark: 'めがね', icon: 'rdglasses',
@@ -155,7 +159,7 @@
       },
       peekLine: ['……ふぅ。'], noPin: '……さあ、どうかしら',
       hit: '……っ。|見抜かれたわね', hitNone: '……手ぶら、とはね。|見抜かれたわね', miss: '……まだ、|甘いわね',
-      coach: { l1: '今、A でめがねを直したね。|セリナは、役が上がった最後の1回だけ、めがねを直すの', l2: 'あとの4枚は知らん顔。|役が上がったのは、A の時だけ' },
+      coach: { l1: 'A でめがねを直したね。|役が上がった最後の1回だけ、直すの', l2: 'あとの4枚は知らん顔。|役が上がったのは、A の時だけ' },
     },
     velvet: {
       name: 'ヴェルベット', title: 'リーディング：目利き', mark: 'ハート', icon: 'rdheart',
@@ -170,7 +174,7 @@
       },
       subtle: true, peekLine: [''], fakeLine: 'まあ♡|すごいわぁ♡', noPin: 'うふふ、どうかしら♡',
       hit: 'あらぁ……|見抜かれちゃった♡', hitNone: 'あらぁ、空っぽ……|見抜かれちゃった♡', miss: 'うふふ♡|まだまだね',
-      coach: { l1: '今、A で小さな♡が出たね。|ヴェルベットは、役ができた札で、つい小さく♡が出ちゃうの', l2: '大きな♡は演技だから、数えないよ。|役ができたのは、A の時だけ', l2d: '' },
+      coach: { l1: 'A で小さな♡が出たね。|役ができた札で、つい小さく出ちゃうの', l2: '大きな♡は演技だから、数えないよ。|役ができたのは、A の時だけ', l2d: '' },
     },
   };
 
@@ -262,8 +266,8 @@
       l3: ck === 'velvet' ? '4 の♡は演技だから、4 のペアではない。|役なしなら、小さな♡は出ない。残るのは……'
         : ck === 'selina' ? '9 のペアなら 9 でめがねを直すはず。|役なしなら、1回も直さない。残るのは……'
         : '9 のペアなら 9 でのぞくはず。|役なしなら、どれものぞかない。残るのは……',
-      l4: 'A のペア！',
-      l5: '当たり。|手札が見えたまま卓に戻れるよ',
+      fk: '大きな♡は演技。|数えないよ',
+      l45: 'A のペア！ 当たり。|手札が見えたまま卓に戻れるよ',
     };
   };
   const CARD4 = (CH) => [
@@ -305,6 +309,26 @@
   function mount(ST, opts, fin) {
     const U = window.RD.util, { el, fm, cardHTML, isRed } = U;
     const save = opts.save, ck = opts.charKey || 'grano', CH = CHARS[ck] || CHARS.grano;
+    // お手本だけ盤で流す形（2026-11-17：本番は卓の上に重ねる。mode='demo'＝初回のお手本／その相手の決まりの1枚、'replay'＝見立ての札の「お手本」ボタンから見直す）
+    if (opts.mode === 'demo' || opts.mode === 'replay') {
+      ST.board.insertAdjacentHTML('afterbegin', SVGDEFS);
+      Object.values(CH.faces).forEach(f => { const im = new Image(); im.src = f.img; });
+      (async () => {
+        const replay = opts.mode === 'replay';
+        if (replay || !window.RD.saveGet(save, 'rdDemo', 'mekiki')) {
+          await runDemo(ST, CH, ck, replay);
+          if (ST.dead) return;
+          if (!replay) { window.RD.saveSet(save, 'rdDemo', 'mekiki', true, opts.saveProgress); window.RD.saveSet(save, 'rdRule', 'mekiki:' + ck, true, opts.saveProgress); }
+        } else if (!window.RD.saveGet(save, 'rdRule', 'mekiki:' + ck)) {
+          const D = makeScreen(ST, CH, true); ST.board.appendChild(D.root);
+          await ruleCard(D, CH, false); D.root.remove();
+          if (ST.dead) return;
+          window.RD.saveSet(save, 'rdRule', 'mekiki:' + ck, true, opts.saveProgress);
+        }
+        fin({ demo: true });
+      })().catch(e => { if (!(e && e.message === 'cancel')) console.error('mekiki demo', e); fin({ demo: true }); });
+      return;
+    }
     const sc = plan(opts.table, Object.assign({}, opts.ctx || {}, { charKey: ck }));
     if (!sc) return fin({});
     ST.board.insertAdjacentHTML('afterbegin', SVGDEFS);
@@ -418,18 +442,18 @@
 
   // 明かし：相手の伏せ札がめくれ、役を作る札が寄って光る。見立て3つに理由が付く
   async function reveal(ST, run, S, CH, sc, hit, o) {
-    const ev = S.evidence();
+    const ev = S.evidence(), fast = !!(o && o.fast);
     S.say(null); S.note(null); S.face(hit ? 'hit' : 'miss'); if (hit) S.shake();
-    S.flip('h0'); await ST.wait(run, 350); S.flip('h1'); await ST.wait(run, 500);
+    S.flip('h0'); await ST.wait(run, fast ? 220 : 350); S.flip('h1'); await ST.wait(run, fast ? 280 : 500);
     S.say(hit ? (sc.truthKey === 'none' && CH.hitNone ? CH.hitNone : CH.hit) : CH.miss);
     S.rule(false);
-    await ST.wait(run, 500);
+    await ST.wait(run, fast ? 350 : 500);
     S.dimAll(ev.size ? ev : null); S.glow(ev.size ? ev : null);
     if (o && o.ins) S.ins(o.ins);
-    await ST.wait(run, 500);
+    await ST.wait(run, fast ? 250 : 500);
     S.q('.opts').classList.add('rev');
     const order = sc.opts.map((_, i) => i).sort((a, b) => (a === sc.ans) - (b === sc.ans));
-    for (const i of order) { S.badge(i, i === sc.ans); await ST.wait(run, 320); }
+    for (const i of order) { S.badge(i, i === sc.ans); await ST.wait(run, fast ? 150 : 320); }
   }
 
   const FACE_KEYS = ['calm', 'peek', 'fake', 'hit', 'miss'];
@@ -533,36 +557,133 @@
     D.load(DEMO); D.rib('<b>お手本</b>'); D.root.querySelector('.rib').classList.add('demo'); D.ins(''); D.tbtn(false);
     const card4 = () => ruleCard(D, CH, replay);
     try {
-      D.intro(true, 'お手本'); await ST.wait(run, 1000); D.intro(false); await ST.wait(run, 250);
+      // 止まる所は3つ（ヴェルベットは演技の印の1回を足して4つ）。2026-11-17 docs/design-ref/read-demo-length.md：
+      //  ①印＝役ができた札（②の「印の無い札も手がかり」は①の後に暗くするだけで止めない）／③見立てを消す手順（芯）／④当たり（「A のペア」と「手札が見えたまま」を1つに）
+      const hold = (t, look) => ST.wait(run, window.RD.util.stopMs(t, look));
+      D.intro(true, 'お手本'); await ST.wait(run, 600); D.intro(false); await ST.wait(run, 100);
       D.ins('めくれる札と、顔を見て');
       D.flip('b0');
-      if (CH.subtle) { await ST.wait(run, 350); D.pin(0); await ST.wait(run, 700); }
-      else { D.face('peek'); D.say(CH.peekLine[0]); await ST.wait(run, 350); D.pin(0); await ST.wait(run, 700); }
-      D.glow(new Set(['b0'])); D.rico(COACH.l1); await ST.wait(run, 4000);
-      D.rico(null); D.glow(null); D.say(null); D.face('calm'); await ST.wait(run, 300);
+      if (CH.subtle) { await ST.wait(run, 250); D.pin(0); await ST.wait(run, 500); }
+      else { D.face('peek'); D.say(CH.peekLine[0]); await ST.wait(run, 250); D.pin(0); await ST.wait(run, 500); }
+      D.glow(new Set(['b0'])); D.rico(COACH.l1); await hold(COACH.l1, true);
+      D.rico(null); D.glow(null); D.say(null); D.face('calm'); await ST.wait(run, 150);
       for (let k = 1; k < 5; k++) {
-        D.flip('b' + k); await ST.wait(run, 500);
-        if (DEMO.fake === k) { D.face('fake'); D.say(CH.fakeLine); D.pin(k, true); await ST.wait(run, 1300); D.face('calm'); D.say(null); }
+        D.flip('b' + k); await ST.wait(run, 300);
+        if (DEMO.fake === k) { D.face('fake'); D.say(CH.fakeLine); D.pin(k, true); await ST.wait(run, 700); D.say(null); D.rico(COACH.fk, true); await hold(COACH.fk); D.rico(null); D.face('calm'); D.say(null); }
       }
-      D.dimBoard([0]); D.rico(COACH.l2, true); await ST.wait(run, 4000);
-      D.rico(null); D.dimBoard(null); await ST.wait(run, 200);
-      D.ins(CH.name + 'の手は、3つのどれ？'); D.rule(true); D.opts(true); await ST.wait(run, 1000);
-      D.rico(COACH.l3); await ST.wait(run, 600);
-      D.cross(1); await ST.wait(run, 900);
-      D.cross(2); await ST.wait(run, 2500);
+      D.dimBoard([0]); D.ins('印の無い札も、手がかり'); await ST.wait(run, 900); D.dimBoard(null);
+      D.ins(CH.name + 'の手は、3つのどれ？'); D.rule(true); D.opts(true); await ST.wait(run, 400);
+      D.rico(COACH.l3); await ST.wait(run, 500);
+      D.cross(1); await ST.wait(run, 700);
+      D.cross(2); await ST.wait(run, Math.max(600, window.RD.util.stopMs(COACH.l3) - 1200));
       D.rico(null); D.clearBadges();
-      D.select(0); D.rico(COACH.l4, true); D.go('これだ！', 'on'); await ST.wait(run, 900);
-      D.q('.go').classList.add('press'); await ST.wait(run, 600);
-      D.q('.go').classList.remove('press'); D.go(null, 'off'); D.rule(false); D.rico(null);
-      await reveal(ST, run, D, CH, DEMO, true, null);
-      await ST.wait(run, 1500); D.say(null); D.rico(COACH.l5, true); D.ins('当たり！ 手札が開いたまま卓へ');
-      await ST.wait(run, 3000);
+      D.select(0); D.go('これだ！', 'on'); await ST.wait(run, 500);
+      D.q('.go').classList.add('press'); await ST.wait(run, 400);
+      D.q('.go').classList.remove('press'); D.go(null, 'off'); D.rule(false);
+      await reveal(ST, run, D, CH, DEMO, true, { fast: true });
+      D.say(null); D.rico(COACH.l45, true); D.ins('当たり！ 手札が開いたまま卓へ');
+      await hold(COACH.l45);
     } catch (e) { if (!e || e.message !== 'cancel') { DEMO_ON = false; D.root.remove(); throw e; } }
     if (!ST.dead) await card4();
     D.root.remove();
     DEMO_ON = false;
   }
 
+  // ================= 卓に重ねる形（2026-11-17）=================
+  // 卓の本物のめくり（フロップ3・ターン・リバー）の間に、相手の顔の反応（窓の表情と短い吹き出し）と、場札の下の印を卓の上に出す。
+  // リバーの後に、見立て3つを卓の上の小さな盤で選ばせる。当たり・外れ・手の後の答え合わせは今のまま（盤）。
+  // 位置は卓の場札（.community-cards .card）の実際の場所から取る（reading.js の RD.tbl が250msごとに置き直す）。
+  const TBL_MK = {
+    begin(ck, sc) {
+      const T = window.RD.tbl, { el, fm } = window.RD.util;
+      const CH = CHARS[ck] || CHARS.grano;
+      const L = T.ensure();
+      L.insertAdjacentHTML('afterbegin', SVGDEFS);
+      Object.values(CH.faces).forEach(f => { const im = new Image(); im.src = f.img; });
+      const faces = {}; FACE_KEYS.forEach(k => { faces[k] = CH.faces[k] || CH.faces.peek; });
+      const W = T.win(faces, 'calm'), B = T.say(W);
+      const marks = [];   // { i, el, ring, big, sm }
+      const place = () => {
+        const cr = T.cardRects();
+        marks.forEach(m => {
+          const r = cr[m.i]; if (!r) return;
+          const pk = true;   // 見立ての間は札に重ねるので、少し小さく（演技の大きな♡が隣の札の数字を隠さないように）
+          const base = Math.max(20, Math.min(26, r.width * .84)), s = base * (m.big ? (pk ? 1.05 : 1.45) : m.sm ? .8 : (pk ? .9 : 1));
+          m.el.style.width = m.el.style.height = s + 'px'; m.el.style.left = (r.cx - s / 2) + 'px'; m.el.style.top = (r.bottom - s * .6) + 'px';   // 見立ての札を出している間は、札の下の端に重ねる（札の盤に隠れないように）
+          if (m.ring) { m.ring.style.left = (r.left - 2) + 'px'; m.ring.style.top = (r.top - 2) + 'px'; m.ring.style.width = (r.width + 4) + 'px'; m.ring.style.height = (r.height + 4) + 'px'; }
+        });
+      };
+      T.add(place);
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      let np = 0, alive = true;
+      const C = {
+        W, B, marks, CH,
+        pin(i, fake) {
+          T.body('rdt-mk-on', true);
+          const m = { i, big: !!fake, sm: !fake && !!CH.subtle };
+          m.el = el('div', 'rdt-mk' + (fake ? ' fk' : CH.subtle ? ' sm' : ''), lpOf(CH)); L.appendChild(m.el);
+          if (!fake) { m.ring = el('div', 'rdt-cardmark'); L.appendChild(m.ring); }
+          marks.push(m); place();
+        },
+        // カード idxs（0〜4）が、いま卓でめくれた。顔と印を順に出す（1枚ずつ）
+        async street(idxs) {
+          if (!alive) return;
+          W.show(true); W.face('calm');
+          for (const k of idxs) {
+            await wait(400);
+            if (!alive) return;
+            if (sc.fake === k) { W.face('fake'); B.set(CH.fakeLine); C.pin(k, true); await wait(1000); W.face('calm'); B.set(null); }
+            else if (sc.pins.includes(k)) {
+              np++;
+              if (CH.subtle) { C.pin(k); await wait(650); }
+              else { W.face('peek'); B.set(CH.peekLine[Math.min(np, CH.peekLine.length) - 1]); await wait(250); C.pin(k); await wait(750); W.face('calm'); B.set(null); }
+            }
+          }
+          await wait(350);
+          if (!alive) return;
+          W.show(false);
+        },
+        // 見立て3つを卓の上に重ねて選ばせる。o.demo()＝お手本（盤）を流す約束を返す。選んだ番号を返す
+        pick(o) {
+          o = o || {};
+          return new Promise(res => {
+            T.body('rdt-pick-on', true);
+            W.show(true); W.face('calm');
+            let sel = -1, chosen = false;
+            const title = CH.name + 'の手は、3つのどれ？';
+            B.set(sc.pins.length ? title : CH.noPin);
+            if (!sc.pins.length) setTimeout(() => { if (alive && !chosen) B.set(title); }, 2200);
+            const P = el('div', 'rdt-panel');
+            P.innerHTML = '<button type="button" class="rdt-btn demo">お手本</button><div class="opts">' + sc.opts.map((x, i) => '<button type="button" class="rdt-opt" data-i="' + i + '"><b>' + String(x.label).replace(/s+/g, ' ').replace(/の(?=[^の]*$)/, 'の<wbr>') + '</b><span>' + (/♡/.test(x.why) ? String(x.why).split('|').join('<br>') : fm(x.why)) + '</span></button>').join('') + '</div><button type="button" class="rdt-btn go" disabled>これだ！</button>';
+            L.appendChild(P);
+            const lay = () => {
+              const cr = T.cardRects(), sp = T.span(), bottom = cr.length ? Math.max(...cr.map(r => r.bottom)) : 290;
+              const top = bottom + 6, w = sp.right - sp.left;
+              P.style.left = sp.left + 'px'; P.style.width = w + 'px'; P.style.top = top + 'px'; P.style.height = Math.max(70, window.innerHeight - top - 5) + 'px';
+              P.querySelector('.demo').style.width = (w < 600 ? 66 : 80) + 'px';
+              P.querySelector('.go').style.width = (w < 600 ? 84 : 104) + 'px';
+            };
+            T.add(lay); setTimeout(() => P.classList.add('on'), 30);   // rAF は隠れたタブで止まるので、時計で
+            const go = P.querySelector('.go');
+            P.querySelector('.opts').addEventListener('click', (e) => { const b = e.target.closest('.rdt-opt'); if (!b || chosen) return; sel = +b.dataset.i; P.querySelectorAll('.rdt-opt').forEach((x, k) => x.classList.toggle('sel', k === sel)); go.disabled = false; });
+            go.addEventListener('click', () => { if (sel < 0 || chosen) return; chosen = true; P.remove(); T.body('rdt-pick-on', false); res(sel); });
+            const dm = P.querySelector('.demo');
+            dm.addEventListener('click', async () => { if (!o.demo || dm.disabled) return; dm.disabled = true; try { await o.demo(); } finally { dm.disabled = false; } });
+          });
+        },
+        // 結果（当たり：手札が見える／外れ：損なし）。顔と一言を出して、少し見せる
+        async result(hit) {
+          if (!alive) return;
+          W.show(true); W.face(hit ? 'hit' : 'miss'); if (hit) W.shake();
+          B.set(hit ? (sc.truthKey === 'none' && CH.hitNone ? CH.hitNone : CH.hit) : CH.miss);
+          await wait(1800);
+        },
+        close() { alive = false; T.close(); },
+      };
+      return C;
+    },
+  };
+  window.RD.mekikiTable = TBL_MK;
   window.RD.reg('mekiki', { id: 'mekiki', title: 'リーディング：目利き', plan, mount, verdict, CHARS });
   // 計算だけ外から使う（検査用）
   window.RD.mekikiEngine = { P, evalCat, pins, finKey, made, plan, labelOf, DECK, RANKS };
