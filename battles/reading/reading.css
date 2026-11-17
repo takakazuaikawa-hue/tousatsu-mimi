@@ -200,3 +200,5 @@ body:has(.read-battle-host) .rdt-layer{visibility:hidden}
 .rdt-sign.flat .row,.rdt-sign.flat .pill{order:3}
 .rdt-sign.flat .pic{order:4;margin-top:0}
 body.rdt-flat-on .battle-screen .v2-band-text{visibility:hidden}
+/* 手の結果の画面にリーディングの答えの欄がある時は、相手の表情のカットイン（.emote-cutin）を出さない（欄の真上に重なって、判定と理由が読めなかった。11/18） */
+body:has(.hand-result-overlay .hr-read) .emote-cutin{display:none}
