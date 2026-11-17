@@ -208,7 +208,7 @@
       caught: [{ face: 'smug', t: d => `……当然の結果です。|待ちの ${d.outs.length} 枚を、引きました` }] },
     // ヴェルベット：「赤いの」だけ言う。賭ける時の芝居は逆（来たのに残念そう・来ないのに嬉しそう）
     velvet: { ask: d => `${d.signTxt}が欲しいな♡|ねぇ、わかる？`,
-      bet: d => d.hit ? { face: 'panic', t: `あ〜あ、来ちゃった〜……|${d.bet}` } : { face: 'smug', t: `やったぁ、来た来た〜♡|${d.bet}！` },
+      bet: d => d.hit ? { face: 'panic', t: `あ〜あ、来ちゃった〜……` } : { face: 'smug', t: `やったぁ、来た来た〜♡|${d.bet}！` },
       beaten: [{ face: 'panic', t: () => 'ちぇっ。|ざぁこのくせに〜♡' }],
       fooled: [{ face: 'smug', t: () => 'うふふ♡ 引っかかった〜|やっぱり顔を見ちゃう？' }],
       dodged: [{ face: 'drunk2', t: () => 'ちぇっ、降りるんだ。|つまんなぁい♡' }],

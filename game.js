@@ -369,6 +369,9 @@ function normalizeSave(s) {
     panyu_gauge_plus_20: 900,
     panyu_gauge_plus_50: 2200,
     panyu_chrono:       1600,
+    // 2026-11-18 作者決定：新しいリーディングは外してもコインを失わないので、「外した時に失うコインを減らす」2品は効き目が無い。廃止して払い戻す
+    panyu_sense_lv2:     150,
+    panyu_sense_lv3:    1000,
   };
   let refundTotal = 0;
   const refundedNames = [];
@@ -387,6 +390,7 @@ function normalizeSave(s) {
     }
   });
   if (refundedNames.some(id => id.startsWith('panyu_'))) { s.panyuGaugeMax = 100; if (s.panyuSkills) s.panyuSkills.rangeLevel = 1; }
+  if (refundedNames.some(id => id.startsWith('panyu_sense_')) && s.panyuSkills) s.panyuSkills.senseLevel = 1;
   if (refundTotal > 0) {
     s.coins = (s.coins || 0) + refundTotal;
     // ロード直後にトーストで知らせるため、次のrender後に一度だけ表示するフラグを立てる
@@ -6787,7 +6791,6 @@ function showNoteArticle(id) {
 //   一周目（約5,000）で小物とほしい物の一部、二周目のほろ酔いの夜で目玉まで、残りは遊び込み（再戦・零時の卓は1時間 約4,000 前後）。
 //   再戦の報酬は初回の4〜5割、S評価のボーナスも半分にした（ヴェルベット再戦が1時間 約6,000〜10,000 と飛び抜けていた）
 const SHOP_ITEMS = [
-  { id: 'panyu_sense_lv2',     cat: 'panyu', name: 'ぱにゅぱにゅLv2',         price: 150, desc: '読み合いで読みを外した時に失うコインが半分になる' },
   { id: 'note_pot_odds',       cat: 'note',  name: 'ポットオッズ入門',         price: 250, desc: 'コールの札に「要る勝ち目◯%」＝勝つのに最低限いる勝率が出る' },
   { id: 'skin_red_gold_card',  cat: 'skin',  name: '赤金カジノカード',         price: 200, desc: 'カード裏：深紅の地に金の菱格子とダイヤ紋のカジノ柄' },
   { id: 'table_vip',           cat: 'skin',  name: 'VIPポーカーテーブル',     price: 350, desc: 'テーブル：卓を暗く沈め、画面を金の額縁で囲み、天井から光を落としてVIPルーム風に' },
@@ -6804,7 +6807,6 @@ const SHOP_ITEMS = [
 
   /* ===== 追加：ぱにゅ強化（中盤以降の差別化） ===== */
   { id: 'panyu_combo_x2',      cat: 'panyu', name: 'ぱにゅコンボ倍率',        price: 500,  desc: 'ロビーのぱにゅぱにゅ（30タップ）完走でもらえるコインが2倍に' },
-  { id: 'panyu_sense_lv3',     cat: 'panyu', name: 'ぱにゅぱにゅLv3',         price: 1000, desc: '読み合いで読みを外した時に失うコインが4分の1になる（Lv2の上位）' },
 
   /* ===== ぱにゅ衣装：ロビーのぱにゅぱにゅで着られる服。最初はバニーだけで、買うと衣装替えの候補に増える（2026-10-17） ===== */
   { id: 'pwear_pajama', cat: 'panyu', name: 'ぱにゅ衣装：パジャマ', price: 300, thumb: 'assets/ui/shop/pwear_pajama.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ふわふわのパジャマ。寝る前のゆるい揺れ' },
