@@ -419,6 +419,8 @@
     { q: 'ウンメちゃんが次の結果を知ってるって、|信じてる？', o: [['信じてます', 1, 'えっへん！|ほんとに知ってまーす！'], ['半分くらい……', 0, '半分ってなにさー！'], ['教えてくれたら信じます', 0, 'ずるーい！|タダじゃ教えませーん！']] },
     { q: '運命の糸がピンピン鳴ってるの。|聞こえる？', o: [['聞こえる気がします', 1, 'でしょー！|ミミちゃん素質あるよぉ！'], ['聞こえません', 0, 'だよねぇ。|女神にしか聞こえませーん'], ['それ耳鳴りでは', 0, 'しっつれーい！']] },
     { q: 'バカラって、のんびりしてるよねぇ。|もっと速くならないの？', o: [['速く配ってもらいましょう', 1, 'それそれ！|リアルタイムアタック！'], ['このくらいが好きです', 0, 'えー、のんびり屋さーん'], ['絞りはゆっくりがいいです', 0, 'むぅ……それは一理あるかも']] },
+    // プロローグで外れスキルを告げた声はウンメ（11/17 ユーザー「回収する」）。ぱにゅぱにゅに意味はつけない
+    { q: 'ねえねえ、ミミちゃんのスキルって|《ぱ●ぱ●》だよね？', o: [['女神さまが|付けたんです？', 1, 'ウンメちゃんでーす！|外れって言って|ごめーん！'], ['意味が|分かりません', 0, 'ウンメちゃんにも|分かりませーん！'], ['気に入ってます', 0, 'えー、ほんと？|じゃあ|当たりスキルだね！']] },
     { q: 'ミミちゃんって、ここに来る前は|何してたの？', o: [['三日徹夜で働いてました', 1, 'ひえー！|ここの方が|ずっといいじゃーん！'], ['覚えてないです', 0, 'あらら。まあ、|今が楽しければ！'], ['ないしょです', 0, 'ウンメちゃんは|知ってるけどねー！']] },
   ];
   const LIKE_JA = { bold: '大胆な返事', ride: '流れに乗る返事', careful: '慎重な返事' };
@@ -583,16 +585,16 @@
     hush();
     ui.ask.hidden = false; host.dataset.ask = '1';
     let chip, hint, text, opts;
-    if (q.talk) { chip = '<span class="bc-mood is-talk">おしゃべり</span>'; hint = '気に入る返事なら、ご機嫌が上がるかも'; text = q.talk.q; opts = q.talk.o.map(o => o[0]); }
+    if (q.talk) { chip = '<span class="bc-mood is-talk">おしゃべり</span>'; hint = '喜ぶ返事でご機嫌アップ'; text = q.talk.q; opts = q.talk.o.map(o => o[0]); }
     else {
       const M = MOODS[q.mood];
       chip = q.wish ? '<span class="bc-mood is-wish">お願い（神託ではない）</span>' : `<span class="bc-mood is-${q.mood}">気分：${M.tag}</span>`;
       hint = q.wish ? '聞いてあげると喜びそう' : M.hint; text = q.q; opts = q.opts.map(o => o.t);
       if (!q.wish) say('goddess', pick(M.open), 2200);
     }
-    ui.ask.innerHTML = `<div class="bc-ask-h"><b>運命の女神 ウンメ</b>${favor}${chip}<span class="bc-ask-hint">ミミ「${hint}」</span></div>
+    ui.ask.innerHTML = `<div class="bc-ask-h"><b>運命の女神 ウンメ</b>${favor}${chip}<span class="bc-ask-hint">ミミ「${esc(hint).replace(/、/g, '、<wbr>')}」</span></div>
       <p class="bc-ask-q">${esc(text).replace(/\|/g, '<br>')}</p>
-      <div class="bc-ask-o" data-n="${opts.length}">${opts.map((t, i) => `<button type="button" data-bc="answer" data-i="${i}">${esc(t)}</button>`).join('')}</div>`;
+      <div class="bc-ask-o" data-n="${opts.length}">${opts.map((t, i) => `<button type="button" data-bc="answer" data-i="${i}">${esc(t).replace(/\|/g, '<wbr>')}</button>`).join('')}</div>`;
     S.q = q; sfx('tap');
   }
   function answer(i) {
@@ -601,7 +603,7 @@
     S.q = null; ui.ask.hidden = true; delete host.dataset.ask;
     if (q.talk) {
       const o = q.talk.o[i];
-      say('goddess', o[2], 2800);
+      say('goddess', o[2], 2800); if (o[1]) godFace('doya', 2600);
       // おしゃべりで上がるのは6手に1回まで（約束なしで神託を量産させない）
       if (o[1] && A.hands - (A.talkAt == null ? -99 : A.talkAt) >= 6) { A.talkAt = A.hands; setFavor(A.favor + 1, '気に入られた'); tryBig(); }
       keep(); return;
@@ -1383,7 +1385,7 @@
 
   // ---- 検査の出入口（qa/baccaratshot.mjs だけが使う） ----
   const _qa = {
-    S: () => S, host: () => host, sq: () => sq, tune: TUNE, cutin, umme: UMME, face: godFace,
+    S: () => S, host: () => host, sq: () => sq, tune: TUNE, cutin, umme: UMME, face: godFace, talk(i) { showAsk({ talk: SMALLTALK[i] }); }, smalltalk: () => SMALLTALK,
     bet(k, n) { for (let i = 0; i < (n || 1); i++) addBet(k); },
     deal() { if (betResolve) betResolve({ look: false }); }, look() { if (betResolve) betResolve({ look: true }); },
     ask: askQuestion, oracle: giveOracle, answer, setFavor, guide: openGuide, roads: openRoads,

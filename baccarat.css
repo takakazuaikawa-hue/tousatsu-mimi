@@ -528,3 +528,6 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 /* 横の絵の表情違い：同じ構図の顔だけ違う絵を上に重ねて、ふわっと出し入れする（godFace） */
 .bc-god-pic.has-art .bc-god-face { position: absolute; inset: 0; opacity: 0; transition: opacity .28s ease-out; pointer-events: none; }
 .bc-god-pic.has-art .bc-god-face.is-on { opacity: 1; }
+
+/* ミミの一言は読点のあとで折り返す（小さいスマホで1行のまま女神の絵の下にもぐっていた） */
+.bc-ask-hint { white-space: normal; }
