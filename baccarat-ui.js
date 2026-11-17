@@ -296,10 +296,11 @@
   // ---- ウンメのカットイン（決め所だけ）：斜めの帯にウンメの上半身がはみ出す。1.5秒ほどで消え、操作は止めない ----
   //   kind＝oracle（金：大きな神託）／betray（赤：約束の裏切り）／climax（桃：めくりの溜め）／jackpot（金：大当たり）
   //   face＝表情の差分の名前（UMME にあれば使い、無ければ今の絵）
-  //   横の絵の表情違い（同じ構図で顔だけ違う。2026-11-17 ユーザー選択：ウインク＝umme_doya_2・驚き＝umme_odoroki_1）。むくれ・祈る・ジト目・あくびは描いたら足す
-  const UMME = { base: ART.goddess, doya: 'assets/characters/umme_lean_doya.webp', odoroki: 'assets/characters/umme_lean_odoroki.webp' };
+  //   横の絵の表情違い（同じ構図で顔だけ違う。2026-11-17 ユーザー選択：ウインク＝umme_doya_2・驚き＝umme_odoroki_1）。むくれ・祈る・ジト目・あくびも同じ作り
+  const UMME = { base: ART.goddess, doya: 'assets/characters/umme_lean_doya.webp', odoroki: 'assets/characters/umme_lean_odoroki.webp',
+    muku: 'assets/characters/umme_lean_muku.webp', inori: 'assets/characters/umme_lean_inori.webp', jito: 'assets/characters/umme_lean_jito.webp', akubi: 'assets/characters/umme_lean_akubi.webp' };   // むくれ＝muku_2・祈る＝inori_1・ジト目＝jito_3・あくび＝akubi_3（11/17 ユーザー選択）
   // 横の絵の顔を少しのあいだ変えて、元の顔へ戻す（上に重ねた層をふわっと出し入れ。UMME に無い顔は何もしない）
-  let faceT = 0;
+  let faceT = 0, yawnT = 0;
   function godFace(name, ms) {
     const el = host && host.querySelector('.bc-god-face'), src = UMME[name];
     if (!el || !src || name === 'base') return;
@@ -823,7 +824,7 @@
         const cl = pick([`${wn}！？　${wn}なの！？|知ってるけど言わなーい！`, `いま運命の分岐点！|${wn}、来い来い来いっ！`]);
         say('goddess', cl, 2600);
         // 自動の時だけカットイン（自分でめくっている最中は札を隠さない）
-        if (auto) cutin('climax', '運命の分岐点', `${wn}なら勝ち！`, splitLine(cl)[1], 'inori', 1350);
+        if (auto) cutin('climax', '運命の分岐点', `${wn}なら勝ち！`, splitLine(cl)[1], 'inori', 1350); else godFace('inori', 3200);
         sfx('reach'); thump(); setTimeout(thump, 330); setTimeout(thump, 660);
       };
       setHeat(RANKS);
@@ -951,7 +952,9 @@
       // ミミの心の声（助言）：問いの札が出ていない時だけ
       if (!S.q && ui.ask.hidden) { const mh = mimiHint(); if (mh && Math.random() < mh[1]) say('mimi', `（${mh[0]}）`, 4400); }
     }
-    const go = await waitBet();
+    // 長く考え込んでいる時：ウンメがあくび（責めない。5手に1回まで）
+    { const g0 = G; clearTimeout(yawnT); yawnT = setTimeout(() => { if (g0 === G && live() && S.phase === 'bet' && betResolve && !S.q && A.hands - (A.yawnAt == null ? -99 : A.yawnAt) >= 5) { A.yawnAt = A.hands; godFace('akubi', 3800); say('goddess', pick(['ふわぁ……|ゆっくりでいいよぉ。|ウンメちゃんは待てる女神でーす', 'ふぁ〜あ……|あ、見てない見てない！|ゆっくり考えてねー！']), 3200); } }, 22000); }
+    const go = await waitBet(); clearTimeout(yawnT);
     if (S.q) { S.q = null; ui.ask.hidden = true; delete host.dataset.ask; }
     hush();
     // ---- 配る（結果はここで決まっている。コインは先に引き、戻りは決着で足す）----
