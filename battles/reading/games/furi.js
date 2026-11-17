@@ -559,7 +559,7 @@
       const coachOn = cnt0 < 2;   // 手引きの段：最初の2回だけ「リコに聞く」
       if (coachOn) { S.ladderOn(ck === 'polka', true); S.ask(true); }   // 役のはしご：ポルカは口がすべった役が印になる。ほかの3人は役の名前を言わないので、ミミの印だけ
       S.ins('払う？ 降りる？');
-      if (!sc.stamp) { const gl = S.q('.glabel'); gl.textContent = 'この形は運しだい（採点なし）'; gl.classList.add('luck'); }   // 2行になって右の場札に重なったので、運しだいの印は金の線の横（道の上）に出す（11/17 直し）
+      if (!sc.stamp) { const gl = S.q('.glabel'); gl.textContent = 'この形は運しだい（採点なし）'; gl.classList.add('luck'); } else { S.q('.glabel').textContent = ''; }   // 決める時は「ここまでが ふり」を消す（押す時にだけ要る説明。11/18）   // 2行になって右の場札に重なったので、運しだいの印は金の線の横（道の上）に出す（11/17 直し）
       S.opts(true); S.optsEnable(false); S.q('.opts').classList.add('lit');
       const coach = ck === 'polka'
         ? (A.bluff ? 'あわてた。はったりだよ。|ミミは {P}。払って勝てる？' : 'にやけた。本物だよ。{F}って言っちゃったね。|ミミは {M}。はしごで、どっちが上？')
