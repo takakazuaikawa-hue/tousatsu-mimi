@@ -5569,7 +5569,7 @@ function showGraduationScene(onDone) {
   overlay.className = 'grad-scene-overlay';
   overlay.innerHTML = `
     <img class="grad-scene-img" src="${GRADUATION_CG}" alt="リコ先輩がミミの頭をなでる">
-    <div class="grad-scene-title"><small>読み合いの試験</small>卒業</div>
+    <div class="grad-scene-title"><small>リーディングの試験</small>卒業</div>
     <div class="grad-scene-line"><b>リコ</b>「……合格よ、ミミ。<wbr>もう、アタシが<wbr>教えることは<wbr>何もないわ」</div>
     <div class="grad-scene-hint">タップして続ける</div>`;
   (document.getElementById('stage') || document.body).appendChild(overlay);
@@ -16682,7 +16682,7 @@ function houseRulesPages() {
       // 2026-11-01 初戦の前の説明は1ページに（外部の批評：扉・卓の説明3ページ・読み合いの説明と続いて、ポーカーの前に疲れる）。
       // 「2倍で始まる」は帯の数字で見せ、参加費が上がることは最初に上がる直前に結果の札で知らせる（hr-ante）
       // チップ拡張を買っていると2倍ではない（2026-11-01 外部の批評：2700対2400なのに「2倍」と書いていた）。基本値と上乗せを数字で言う
-      note: `${P * 2 === O ? `${opp}はミミの <b>2</b> 倍のチップで始まります。` : P * 2 < O ? `${opp}は ${O}、ミミは ${P} で始まります。` : `基本は${opp}がミミの2倍。チップ拡張でミミに <b>+${P - Math.round(O / 2)}</b> 上乗せされています。`}1回の勝負では決まらず、どちらかが 0 になるまで続きます。<br>ミミが 0 になっても、それまでに<b>「降りる」か読み合いを1回でもしていれば</b>、1回だけチップを戻してやり直せます（いきなり全部賭けて負けた時は、やり直せません）。`,
+      note: `${P * 2 === O ? `${opp}はミミの <b>2</b> 倍のチップで始まります。` : P * 2 < O ? `${opp}は ${O}、ミミは ${P} で始まります。` : `基本は${opp}がミミの2倍。チップ拡張でミミに <b>+${P - Math.round(O / 2)}</b> 上乗せされています。`}1回の勝負では決まらず、どちらかが 0 になるまで続きます。<br>ミミが 0 になっても、それまでに<b>「降りる」かリーディングを1回でもしていれば</b>、1回だけチップを戻してやり直せます（いきなり全部賭けて負けた時は、やり直せません）。`,
       rico: '上の帯は、チップの綱引き。金色を右の端まで押し切ったら勝ち。少しずつ削っていこう',
       next: '対戦へ' },
   ];
@@ -16714,16 +16714,16 @@ function readIntroPages(group, gameId) {
             <span class="mk-dl-or">それとも</span>
             <div class="mk-dl">${back}<b>ハッタリ</b><small>なら、受けて立てば取れる</small></div>
           </div>`,
-        note: '相手の手札は見えません。ここで「読み合い」が始まります。',
+        note: '相手の手札は見えません。ここで「リーディング」が始まります。',
         rico: `${opp}の心を読んでみよう。読み勝つと、手の強さがわかるよ` }
     : { eyebrow: 'READ BATTLE',
-        title: '読み合いのチャンス',
+        title: 'リーディングのチャンス',
         fig: `<div class="mk-dilemma">
             <div class="mk-dl">${back}<b>${opp}の手札</b><small>は見えない</small></div>
             <span class="mk-dl-or">だから</span>
             <div class="mk-dl"><span class="mk-dl-q">?</span><b>場札と賭け方</b><small>から推理する</small></div>
           </div>`,
-        note: 'ここで「読み合い」が始まります。',
+        note: 'ここで「リーディング」が始まります。',
         rico: `${opp}の手を推理してみよう。読み勝つと、手の強さがわかるよ` };
   // 本当の手の読み合い：読みを預けて卓で使い、答え合わせはこの手の決着の後
   // 論理の本当の手の遊び：読むのは「付いていくのが割に合うか」
@@ -16739,7 +16739,7 @@ function readIntroPages(group, gameId) {
     fig: '<div class="mk-dilemma"><div class="mk-dl"><span class="mk-dl-q">1</span><b>自信を賭ける</b><small>迷わなければ上げる</small></div><span class="mk-dl-or">→</span><div class="mk-dl"><span class="mk-dl-q">2</span><b>答え合わせ</b><small>この手の決着の後</small></div></div>',
     note: '外れても、卓のチップは減りません。',
     rico: '3回続けて当てると、ご褒美が2倍になるよ',
-    next: '読み合いへ',
+    next: 'リーディングへ',
   }];
   if (REAL_READ_GAMES.has(gameId)) return [first, {
     eyebrow: 'READ BATTLE',
@@ -16753,7 +16753,7 @@ function readIntroPages(group, gameId) {
     fig: '<div class="mk-dilemma"><div class="mk-dl"><span class="mk-dl-q">1</span><b>自信を賭ける</b><small>迷わなければ上げる</small></div><span class="mk-dl-or">→</span><div class="mk-dl"><span class="mk-dl-q">2</span><b>答え合わせ</b><small>この手の決着の後。<br>降りても確かめる</small></div></div>',
     note: '外れても、卓のチップは減りません。',
     rico: '3回続けて当てると、ご褒美が2倍になるよ',
-    next: '読み合いへ',
+    next: 'リーディングへ',
   }];
   return [first, {
     eyebrow: 'READ BATTLE',
@@ -16761,7 +16761,7 @@ function readIntroPages(group, gameId) {
     fig: readTellsRow(null) + '<p class="mk-fig-cap">このどれか1つ。コインのおまけも付きます</p>',
     note: '読み合いは、卓とは別の小さな勝負です。札も別のものが出ます。読み違えても、卓のチップは減りません。',
     rico: 'わかったら、その一言を信じて、付いていくか降りるか決めよう',
-    next: '読み合いへ',
+    next: 'リーディングへ',
   }];
 }
 // 読み合いから卓に戻った瞬間：ご褒美（相手の今の手）を真ん中で大きく見せる（以前は非表示の枠に入っていて見えなかった）
@@ -16776,7 +16776,7 @@ function showReadReward(correct, hint, gameId) {
   if (!correct) {
     return showMustKnow([{ eyebrow: 'READ BATTLE', count: '読み違い', cls: 'is-miss',
       title: '読み違えた……',
-      note: '読み合いで外れても、卓のチップは減っていません。ここからは、手札と場札で決めよう。',
+      note: 'リーディングで外れても、卓のチップは減っていません。ここからは、手札と場札で決めよう。',
       rico: '外れても大丈夫。落ち着いて決めよう', next: '卓へ' }], { cls: 'is-reward' });
   }
   const T = READ_TELLS.find(t => t.k === hint.k) || READ_TELLS[1];
@@ -18234,7 +18234,7 @@ function startRd(group, gameId, next, extra) {
           const call = orig ? origAct.type !== 'fold' : r.act === 'call';
           state.mimiThought = doubt ? (r.correct ? `「${name}は罠を疑った。それでも、これが最善だった」` : `「${name}に罠を疑われた。弱く見せても、もう払ってくれない」`) : orig ? (r.correct ? `「見せない……正解。${name}は自分の考えのまま」` : (call ? `「見せなくても${name}は払うつもりだった……」` : '「見せなくても降りた。運がよかったのかも」'))
             : r.correct ? (call ? `「見せ方が合った……！ ${name}が払ってくれる」` : `「見せ方が合った……！ ${name}は怖がって降りる」`) : (call ? '「見せた札で、弱いのがばれた……」' : '「逃げられた……。見せ方で変わったのかも」');
-          state.ricoAdvice = '「相手から自分の札がどう見えるか。それも読み合いだよ」';
+          state.ricoAdvice = '「相手から自分の札がどう見えるか。それもリーディングだよ」';
           state.psychPending = false; state.psychResolving = false;
           render();
           state.rdForce = { hand, action: orig ? origAct : (call ? { type: 'check_call', intent: 'reluctant_call' } : { type: 'fold', intent: 'fear' }) };
@@ -20989,7 +20989,7 @@ function endBattle() {
   if (practice) rewards.push('練習モード：称号・ランクは記録されません');
   if ((state.readBattleBonus || 0) > 0) {
     earned += state.readBattleBonus;
-    rewards.push(`読み合いボーナス：+${state.readBattleBonus}`);
+    rewards.push(`リーディングボーナス：+${state.readBattleBonus}`);
   }
   if (!won && state.playerChips <= 0 && (state.rebuysLeft || 0) > 0 && !usedReads()) {
     rewards.push('ヒント：リーディング・降りる、のどれかを1回でも使うと、飛んでも1回だけ座り直せます');
