@@ -48,7 +48,7 @@ while (Date.now() - t0 < 280000 && maxHand < HANDS + 1) {
     // ふりの画面：押し方を選び（ちょい押し・ぐい押しを交互。足りなければ押せるほう）、山を押して顔を出す（押さないと払う／降りるが光らない）
     await ev(`const m = [...document.querySelectorAll('.rd-host .sg.live.furi .modes.on .mode')].filter(b => !b.disabled); if (m.length) { m[${steps} % m.length].click(); } return 1;`);
     await ev(`const p = document.querySelector('.rd-host .sg.live.furi .pile'); const lane = document.querySelector('.rd-host .sg.live.furi .lane.on'); if (p && lane && !document.querySelector('.rd-host .sg.live.furi .opts.on')) { const o = { bubbles: true, pointerId: 1, clientX: 100, clientY: 100 }; p.dispatchEvent(new PointerEvent('pointerdown', o)); p.dispatchEvent(new PointerEvent('pointerup', o)); } return 1;`);
-    await ev(`const b = [...document.querySelectorAll('.rd-host button')].find(b => b.offsetParent && !b.disabled && /卓へ|次へ|はじめる|これだ|もどる|めくる/.test(b.textContent)); if (b) b.click(); else { const o = document.querySelector('.rd-host .opts.on .opt, .rd-host .opts.on .pay, .rd-host .opts.on .hide'); if (o && !o.disabled) o.click(); } return 1;`);
+    await ev(`const b = [...document.querySelectorAll('.rd-host button')].find(b => b.offsetParent && !b.disabled && /卓へ|次へ|はじめる|これだ|もどる|めくる/.test(b.textContent)); if (b) b.click(); else if (document.querySelector(".rd-host .opt.sel") && document.querySelector(".rd-host .go.on:not(:disabled)")) document.querySelector(".rd-host .go.on").click(); else { const o = document.querySelector('.rd-host .opts.on .opt, .rd-host .opts.on .pay, .rd-host .opts.on .hide'); if (o && !o.disabled) o.click(); } return 1;`);
     await sleep(500); continue;
   }
   // 結果・読み合いの出口・演出：閉じる

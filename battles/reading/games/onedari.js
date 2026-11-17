@@ -479,7 +479,7 @@
     }
     const cnt0 = (save && save.rdCount && save.rdCount.onedari) || 0;
     if (mode === 'say') window.RD.saveSet(save, 'rdCount', 'onedari', cnt0 + 1, opts.saveProgress);
-    const plays = mode === 'say' ? cnt0 + 1 : cnt0;   // 何回目の遊びか（手引きの段：最初の2回だけ「リコに聞く」）
+    const plays = cnt0 + 1;   // 何回目の遊びか（手引きの段：最初の2回だけ「リコに聞く」）
     const S = makeScreen(ST, false);
     ST.board.appendChild(S.root);
     const run = ST.newRun();
@@ -514,12 +514,25 @@
       fin({ say: true });
     };
     const goPick = async () => {
-      S.load(sc, true); S.tbtn(false); S.ask(false);
+      // 専用の盤1回で済ませる（2026-11-18）：初回はお手本 → 場札4枚と伏せたリバー → おねだり（待ちの印）→ リバーがめくれる → 賭けてきた → 払う？降りる？
+      S.load(sc, false); S.tbtn(false); S.ask(false); S.ins('');
+      if (!window.RD.saveGet(save, 'rdDemo', 'onedari')) {
+        await runDemo(ST, false, sc.key);
+        if (ST.dead) return;
+        window.RD.saveSet(save, 'rdDemo', 'onedari', true, opts.saveProgress);
+      }
+      window.RD.saveSet(save, 'rdCount', 'onedari', cnt0 + 1, opts.saveProgress);
+      S.phase = 'say';
+      S.ins('最後の札の前に、おねだりが出ていた');
+      await S.showBoard(run, true, 4);
+      S.bcards[4].classList.remove('hid');
+      S.face('drunk'); S.tickOn(true); S.say(WHO[sc.key].ask(S.d)); await ST.wait(run, 2000);
+      run.ff = false;
+      S.say(null); S.ins('最後の札は……');
+      await S.finalFlip(run, false);
+      run.ff = false;
       S.phase = 'pick';
-      S.ins('');
-      await S.showBoard(run, false, 5);
-      S.bcards[4].classList.add('fin');
-      S.tickOn(true); S.tbtn(true);
+      S.tbtn(true);
       const d = S.d;
       const b = WHO[sc.key].bet(d);
       S.face(b.face); S.bounce(); S.say(b.t); await ST.wait(run, 1700); S.say(null);

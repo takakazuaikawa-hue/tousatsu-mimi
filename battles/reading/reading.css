@@ -74,7 +74,7 @@
 .rd-host .sg .opt{position:relative;flex:1;min-width:0;background:linear-gradient(160deg,#f6ead0,#e0c98f);border:2px solid var(--gold3);color:#3a1a10;box-shadow:0 4px 10px rgba(0,0,0,.6),inset 0 0 0 3px rgba(184,134,47,.25);text-align:center;padding:4px 5px;display:flex;flex-direction:column;justify-content:center;align-items:center;transition:transform .2s,box-shadow .2s,filter .3s}
 .rd-host .sg .opt b{display:block;font-family:var(--serif);font-weight:800;font-size:19px;line-height:22px;word-break:keep-all}
 .rd-host .sg .opt .why{display:none;font-size:var(--f18,18px);line-height:20px;font-weight:700;margin-top:2px;word-break:keep-all}
-.rd-host .sg .opt.sel{transform:translateY(-10px);box-shadow:0 0 0 3px #fff3c4,0 0 16px 4px rgba(245,215,122,.95),0 10px 14px rgba(0,0,0,.6)}
+.rd-host .sg .opt.sel{transform:translateY(-3px);box-shadow:0 0 0 3px #fff3c4,0 0 16px 4px rgba(245,215,122,.95),0 10px 14px rgba(0,0,0,.6)}
 .rd-host .sg .opts.rev{pointer-events:none}
 .rd-host .sg .opt.no .why,.rd-host .sg .opt.ok .why{display:block}
 .rd-host .sg .opt .bdg{position:absolute;right:-6px;top:-10px;width:30px;height:30px;border-radius:50%;display:none;place-items:center;font-style:normal;font-weight:900;font-size:20px;line-height:30px;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.6);z-index:2}
