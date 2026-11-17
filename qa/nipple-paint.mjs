@@ -23,11 +23,18 @@ const r = await page.eval(`(async()=>{
     const vals=[]; for(let a=0;a<64;a++){ for(const k of [1.5,1.8,2.2]){ const t=a/64*Math.PI*2; const d=px(s.x+Math.cos(t)*R*k, s.y+Math.sin(t)*R*k*sq); const l=d[0]+d[1]+d[2]; if(l<700) vals.push([d[0],d[1],d[2],l]); } }
     vals.sort((p,q)=>p[3]-q[3]); const m=vals[Math.floor(vals.length/2)]||[230,170,150];
     const skin=[m[0],m[1],m[2]];
+    if (s.fill) { // 先の位置にある黒い点などを、周りの肌の色で埋めてから描く
+      const FR=R*0.6; for(let y=Math.floor(s.y-FR);y<=s.y+FR;y++) for(let x=Math.floor(s.x-FR);x<=s.x+FR;x++){ if(Math.hypot(x-s.x,y-s.y)>FR) continue; const o=(y*c.width+x)*4; if(Math.max(ID[o],ID[o+1],ID[o+2])<170){ g.fillStyle='rgb('+skin.join(',')+')'; g.fillRect(x,y,1,1); } } }
     // 乳輪の色：肌を少し暗く・赤みに寄せる。乗算の色＝目標/肌
     const tgtA=[skin[0]*(s.ka?.[0]??0.92), skin[1]*(s.ka?.[1]??0.76), skin[2]*(s.ka?.[2]??0.78)];
     const tgtN=[skin[0]*(s.kn?.[0]??0.85), skin[1]*(s.kn?.[1]??0.62), skin[2]*(s.kn?.[2]??0.66)];
     const mul=(t)=>t.map((v,k)=>Math.min(255,Math.round(v/skin[k]*255)));
     const mA=mul(tgtA), mN=mul(tgtN);
+    if (s.cloth) { // 布越しのふくらみ：布の色のまま、下に影・上に光
+      g.save(); g.translate(s.x,s.y); g.rotate(ang); g.scale(1,sq); const t=R*0.55;
+      g.globalCompositeOperation='multiply'; let q=g.createRadialGradient(t*0.15,t*0.35,0,t*0.15,t*0.35,t*1.1); q.addColorStop(0,'rgba(120,90,90,0.55)'); q.addColorStop(0.6,'rgba(150,120,120,0.3)'); q.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=q; g.beginPath(); g.arc(t*0.15,t*0.35,t*1.1,0,Math.PI*2); g.fill();
+      g.globalCompositeOperation='screen'; q=g.createRadialGradient(-t*0.2,-t*0.3,0,-t*0.2,-t*0.3,t*0.8); q.addColorStop(0,'rgba(255,245,240,0.75)'); q.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=q; g.beginPath(); g.arc(-t*0.2,-t*0.3,t*0.8,0,Math.PI*2); g.fill();
+      g.restore(); info.push({cloth:true}); continue; }
     g.save(); g.translate(s.x,s.y); g.rotate(ang); g.scale(1,sq);
     g.globalCompositeOperation='multiply';
     let gr=g.createRadialGradient(0,0,0,0,0,R);
@@ -52,8 +59,8 @@ const r = await page.eval(`(async()=>{
   }
   // 金の鎖・飾り・服（肌でない色）の上には塗らない：元の画素に戻す
   const NEW=g.getImageData(0,0,c.width,c.height);
-  const isSkin=(r,gg,b)=>{ const mx=Math.max(r,gg,b), mn=Math.min(r,gg,b); if(mx<60) return false; const s=(mx-mn)/mx; let h=0; if(mx!==mn){ if(mx===r) h=((gg-b)/(mx-mn))*60; else if(mx===gg) h=(2+(b-r)/(mx-mn))*60; else h=(4+(r-gg)/(mx-mn))*60; } if(h<0) h+=360; return (h<=30||h>=340) && s>0.12; };
-  for (const s of spots) { const R=s.r*1.1; for(let y=Math.floor(s.y-R);y<=s.y+R;y++) for(let x=Math.floor(s.x-R);x<=s.x+R;x++){ const o=(y*c.width+x)*4; if(!isSkin(ID[o],ID[o+1],ID[o+2])){ NEW.data[o]=ID[o]; NEW.data[o+1]=ID[o+1]; NEW.data[o+2]=ID[o+2]; } } }
+  const isSkin=(r,gg,b)=>{ const mx=Math.max(r,gg,b), mn=Math.min(r,gg,b); if(mx<90) return false; const sat=(mx-mn)/mx; if(sat<0.18) return true; let h=0; if(mx===r) h=((gg-b)/(mx-mn))*60; else if(mx===gg) h=(2+(b-r)/(mx-mn))*60; else h=(4+(r-gg)/(mx-mn))*60; if(h<0) h+=360; if(h>=28&&h<=70&&sat>0.35) return false; if(h>70&&h<330&&sat>0.25) return false; return true; };
+  for (const s of spots) { if (s.cloth) continue; const R=s.r*1.1; for(let y=Math.floor(s.y-R);y<=s.y+R;y++) for(let x=Math.floor(s.x-R);x<=s.x+R;x++){ const o=(y*c.width+x)*4; if((s.maskY!=null&&y<s.maskY)||(!s.fill&&!isSkin(ID[o],ID[o+1],ID[o+2]))){ NEW.data[o]=ID[o]; NEW.data[o+1]=ID[o+1]; NEW.data[o+2]=ID[o+2]; } } }
   g.putImageData(NEW,0,0);
   return JSON.stringify({ png: c.toDataURL('image/jpeg', 0.93), info });
 })()`, 60000);
