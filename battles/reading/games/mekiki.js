@@ -654,7 +654,7 @@
             B.set(sc.pins.length ? title : CH.noPin);
             if (!sc.pins.length) setTimeout(() => { if (alive && !chosen) B.set(title); }, 2200);
             const P = el('div', 'rdt-panel');
-            P.innerHTML = '<button type="button" class="rdt-btn demo">お手本</button><div class="opts">' + sc.opts.map((x, i) => '<button type="button" class="rdt-opt" data-i="' + i + '"><b>' + String(x.label).replace(/s+/g, ' ').replace(/の(?=[^の]*$)/, 'の<wbr>') + '</b><span>' + (/♡/.test(x.why) ? String(x.why).split('|').join('<br>') : fm(x.why)) + '</span></button>').join('') + '</div><button type="button" class="rdt-btn go" disabled>これだ！</button>';
+            P.innerHTML = '<button type="button" class="rdt-btn demo">お手本</button><div class="opts">' + sc.opts.map((x, i) => '<button type="button" class="rdt-opt" data-i="' + i + '"><b>' + String(x.label).replace(/s+/g, ' ').replace(/の(?=[^の]*$)/, 'の<wbr>') + '</b></button>').join('') + '</div><button type="button" class="rdt-btn go" disabled>これだ！</button>';
             L.appendChild(P);
             const lay = () => {
               const cr = T.cardRects(), sp = T.span(), bottom = cr.length ? Math.max(...cr.map(r => r.bottom)) : 290;

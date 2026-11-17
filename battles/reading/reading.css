@@ -154,7 +154,7 @@
 .rdt-panel.on{opacity:1;transform:none}
 .rdt-panel .opts{display:flex;gap:6px;flex:1;min-width:0}
 .rdt-layer .rdt-opt{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3px 3px;background:linear-gradient(160deg,#f6ead0,#e0c98f);border:2px solid var(--gold3)!important;color:#3a1a10!important;box-shadow:inset 0 0 0 2px rgba(184,134,47,.25);transition:transform .15s,box-shadow .15s}
-.rdt-layer .rdt-opt b{display:block;font-family:var(--serif);font-weight:800;font-size:15px;line-height:17px;word-break:keep-all}
+.rdt-layer .rdt-opt b{display:block;font-family:var(--serif);font-weight:800;font-size:19px;line-height:23px;word-break:keep-all}
 .rdt-layer .rdt-opt span{display:block;font-size:14px;line-height:16px;font-weight:700;word-break:keep-all;margin-top:1px}
 .rdt-layer .rdt-opt.sel{transform:translateY(-6px);box-shadow:0 0 0 3px #fff3c4,0 0 14px 3px rgba(245,215,122,.95)}
 .rdt-layer .rdt-btn{flex:none;font-family:var(--serif);font-weight:800;font-size:16px;white-space:nowrap;border:2px solid var(--gold3)!important;color:var(--gold)!important;background:rgba(90,14,28,.92)!important}
