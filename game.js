@@ -10094,8 +10094,10 @@ function onAction(e) {
     case 'home-night-toggle': {
       // ほろ酔いの夜（二周目）⇔一周目。エンディングの後だけ（2026-11-08 ユーザー「ホームでボタンから切り替える」）
       if (!isEndingUnlocked()) break;
-      if (!save.horoyoiMode) { save.horoyoiMode = true; save.deisuiMode = false; }
-      else if (!save.deisuiMode && deisuiOpen()) save.deisuiMode = true;
+      const goH = !save.horoyoiMode, goD = !goH && !save.deisuiMode && deisuiOpen();
+      const doToggle = () => {
+      if (goH) { save.horoyoiMode = true; save.deisuiMode = false; }
+      else if (goD) save.deisuiMode = true;
       else { save.horoyoiMode = false; save.deisuiMode = false; }
       saveProgress();
       // 前の卓の「夜かどうか」を持ち越さない（夜の卓の後に昼へ戻すと、会話の顔が酔ったミニキャラのままだった 2026-11-16）
@@ -10103,6 +10105,8 @@ function onAction(e) {
       if (save.horoyoiMode) { mpSfx('pour'); setTimeout(() => mpSfx('clink'), 1150); }
       toast(save.deisuiMode ? '泥酔の夜へ' : save.horoyoiMode ? 'ほろ酔いの夜へ' : '一周目（昼）に戻りました');
       render();
+      };
+      if (goH || goD) nightAgeGate(goD).then(ok => { if (ok) doToggle(); }); else doToggle();
       break;
     }
     case 'go-intermission': {
@@ -22642,6 +22646,10 @@ function showCreditsPanel() {
   showPanel({ title: 'クレジット', cls: 'is-credits', html: `<div class="cr-list">${rows}</div><div class="mimi-confirm-actions"><button type="button" class="btn btn-secondary" data-panel-close>閉じる</button></div>` });
 }
 
+// 11/18 ユーザー：ほろ酔いの夜・泥酔の夜に入る時だけ、18歳未満お断りと配信の注意を出す（入るたびに出す）
+function nightAgeGate(deisui) {
+  return showConfirm({ title: deisui ? '泥酔の夜へ' : 'ほろ酔いの夜へ', body: '18歳未満の方はお断りしています。\n配信・録画を公開する時は、修正が必要になるケースがあります。', ok: '18歳以上なので入る', cancel: 'やめる' });
+}
 function showConfirm({ title = '確認', body = '', ok = 'はい', cancel = 'やめる', danger = false } = {}) {
   return new Promise((resolve) => {
     document.querySelectorAll('.mimi-confirm-overlay').forEach(el => el.remove());

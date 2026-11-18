@@ -1355,9 +1355,12 @@
     sfx('flip');
   }
   // 昼⇔ほろ酔い⇔泥酔の切り替え（game.js の home-night-toggle と同じ後始末）
-  function nightSet(mode) {
+  async function nightSet(mode) {
     if (!isUnlocked()) return;
     if (mode === 'd' && !(typeof deisuiOpen === 'function' && deisuiOpen())) return;
+    // 夜に入る時だけ、18歳未満お断りと配信の注意（11/18 ユーザー）。今と同じ夜を選び直した時は出さない
+    const cur = !save.horoyoiMode ? 'off' : save.deisuiMode ? 'd' : 'h';
+    if (mode !== 'off' && mode !== cur && typeof nightAgeGate === 'function' && !(await nightAgeGate(mode === 'd'))) return;
     save.horoyoiMode = mode !== 'off'; save.deisuiMode = mode === 'd';
     keep();
     try { if (state) state.horoyoi = isHoroyoi(); } catch (e) { }
