@@ -4059,7 +4059,7 @@ const STORY_ART = {
 // ===== 泥酔の夜（三周目、D21）=====
 // ほろ酔いの夜の仕組みに重ねる（state.horoyoi も true のまま）。違いは state.deisui で出す。
 // 絵がそろうまでは開発中：DEISUI_READY が false の間は、URL に ?deisui=1 か localStorage mp_deisui_dev=1 の時だけ切り替えに出す
-const DEISUI_READY = false;
+const DEISUI_READY = true;   // 11/18 絵・報酬（写真集・ぱにゃぱにゃ）・夜のホームがそろったので公開
 function deisuiDev() { try { return DEISUI_READY || /[?&]deisui=1/.test(location.search) || localStorage.getItem('mp_deisui_dev') === '1'; } catch (e) { return DEISUI_READY; } }
 function horoyoiAllCleared() { return !!save && STAGE_ORDER.every(id => (save.horoyoiCleared || []).includes(id)); }
 function deisuiOpen() { return deisuiDev() && horoyoiAllCleared(); }
@@ -5333,7 +5333,7 @@ function showIntermission(opponentId, onDone, voiceReady) {
   overlay.innerHTML = `
     <div class="ims-bg">
       <img class="ims-bg-img" alt=""
-           src="${/^[hd]_/.test(String(opponentId)) ? 'assets/ui/home/stage-empty_night.webp' : 'assets/backgrounds/bg_intermission.jpg'}"
+           src="${/^d_/.test(String(opponentId)) ? 'assets/ui/home/stage-empty_deisui.webp' : /^h_/.test(String(opponentId)) ? 'assets/ui/home/stage-empty_night.webp' : 'assets/backgrounds/bg_intermission.jpg'}"
            onerror="this.onerror=null;this.src='assets/backgrounds/lobby.webp';">
     </div>
     <div class="ims-stage">
@@ -18842,10 +18842,11 @@ function panyuRoll(boost) {
 }
 // 押した所に弾ける擬音
 const PANYU_SOUNDS = ['ぱにゅ', 'ぷにっ', 'ぽよん', 'むにゅ', 'ぷるん', 'ぱにゅ♡'];
+const PANYA_SOUNDS = ['ぱにゃ', 'ふにゃ', 'ひっく', 'ぱにゃ♡', 'にゃふ〜', 'ぽよよん'];   // ぱにゃぱにゃ（泥酔の衣装）の時の文字
 function spawnPanyuWord(overlay, x, y, big) {
   const el = document.createElement('div');
   el.className = 'pv2-word' + (big ? ' is-big' : '');
-  el.textContent = pick(PANYU_SOUNDS);
+  el.textContent = pick(panyuOutfit() === 'deisui' ? PANYA_SOUNDS : PANYU_SOUNDS);
   el.style.left = x + 'px'; el.style.top = y + 'px';
   el.style.setProperty('--r', ((rand() - 0.5) * 24).toFixed(1) + 'deg');
   el.style.setProperty('--dx', ((rand() - 0.5) * 90).toFixed(0) + 'px');
@@ -18870,16 +18871,16 @@ function applyPanyuBg(overlay) {
 // ぱにゅぱにゅ30タップミニゲーム
 // ぱにゅぱにゅの衣装（網目＋ばねの描画は docs/design-ref/panyu-mesh.html を埋め込んで使う）
 // 網目のページを直したら PANYU_MESH_V を上げる（ブラウザに残った古いページを使わせない）
-const PANYU_MESH_V = '20261108t';
+const PANYU_MESH_V = '20261118a';
 const PANYU_OUTFITS = [
   { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'gothic', name: 'ゴスロリ' }, { id: 'jirai', name: '地雷系' }, { id: 'vintage', name: '古着' }, { id: 'nurse', name: 'ナース' }, { id: 'santa', name: 'サンタ' },
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
-  { id: 'gym', name: 'ジムウェア' }, { id: 'yshirt', name: 'Yシャツ' }, { id: 'tshirt', name: 'Tシャツ' }, { id: 'inner', name: '肌着' },   // 11/07：押すたびに胸の先が布越しにとがる衣装
+  { id: 'gym', name: 'ジムウェア' }, { id: 'yshirt', name: 'Yシャツ' }, { id: 'tshirt', name: 'Tシャツ' }, { id: 'inner', name: '肌着' }, { id: 'deisui', name: '泥酔' },   // 11/07：押すたびに胸の先が布越しにとがる衣装
 ];
-const PANYU_OUTFIT_IMG = { bunny: 'panyu_reach', pajama: 'panyu_pajama_reach', pajama2: 'panyu_pajama2_reach', gothic: 'panyu_gothic_reach', jirai: 'panyu_jirai_reach', vintage: 'panyu_vintage_reach', nurse: 'panyu_nurse_reach', santa: 'panyu_santa_reach', bikini: 'panyu_bikini_reach', halter: 'panyu_halter_reach', white: 'panyu_white_reach', dress: 'panyu_dress_reach', gym: 'panyu_gym_reach', yshirt: 'panyu_yshirt_reach', tshirt: 'panyu_tshirt_reach', inner: 'panyu_inner_reach' };
+const PANYU_OUTFIT_IMG = { bunny: 'panyu_reach', pajama: 'panyu_pajama_reach', pajama2: 'panyu_pajama2_reach', gothic: 'panyu_gothic_reach', jirai: 'panyu_jirai_reach', vintage: 'panyu_vintage_reach', nurse: 'panyu_nurse_reach', santa: 'panyu_santa_reach', bikini: 'panyu_bikini_reach', halter: 'panyu_halter_reach', white: 'panyu_white_reach', dress: 'panyu_dress_reach', gym: 'panyu_gym_reach', yshirt: 'panyu_yshirt_reach', tshirt: 'panyu_tshirt_reach', inner: 'panyu_inner_reach', deisui: 'panyu_deisui_reach' };
 // 構図違い（2026-11-07）：同じ衣装の別のポーズ。開くたびにどれか1つ（前回と同じ構図は続けない）。'' は元の構図
 // 網目のページでは「衣装@構図」で開く。絵は assets/characters/panyu_<衣装>_<構図>_reach.webp
-const PANYU_POSES = { bunny: ['', 'dressing', 'pool'], vintage: ['', 'dressing', 'pool'], pajama: ['', 'dressing', 'pool'], gothic: ['', 'dressing', 'pool'], jirai: ['', 'dressing', 'pool'], nurse: ['', 'dressing', 'pool'], santa: ['', 'dressing', 'pool'], bikini: ['', 'dressing'], halter: ['', 'dressing'], white: ['', 'dressing'], dress: ['', 'dressing'], gym: ['', 'cheek', 'wrists'], yshirt: ['', 'cheek', 'back'], inner: ['', 'peace'], tshirt: ['', 'stretch'] };   // 楽屋×前開き6着は、開き方が不自然（襟のV字の先で左右がつながったまま）なので直すまで外す（11/07）   // 構図は胸が前へ張り出した形だけ（ベッド・卓は胸が押しつけられて揺れと合わないのでやめた 11/07）
+const PANYU_POSES = { bunny: ['', 'dressing', 'pool'], vintage: ['', 'dressing', 'pool'], pajama: ['', 'dressing', 'pool'], gothic: ['', 'dressing', 'pool'], jirai: ['', 'dressing', 'pool'], nurse: ['', 'dressing', 'pool'], santa: ['', 'dressing', 'pool'], bikini: ['', 'dressing'], halter: ['', 'dressing'], white: ['', 'dressing'], dress: ['', 'dressing'], gym: ['', 'cheek', 'wrists'], yshirt: ['', 'cheek', 'back'], inner: ['', 'peace'], tshirt: ['', 'stretch'], deisui: [''] };   // 楽屋×前開き6着は、開き方が不自然（襟のV字の先で左右がつながったまま）なので直すまで外す（11/07）   // 構図は胸が前へ張り出した形だけ（ベッド・卓は胸が押しつけられて揺れと合わないのでやめた 11/07）
 let panyuPoseNext = null, panyuPoseLast = {};
 function panyuPoseFor(id) {
   if (panyuPoseNext && panyuPoseNext.id === id) return panyuPoseNext.pose;
@@ -18891,7 +18892,8 @@ function panyuPoseFor(id) {
 function panyuVariantKey(id, pose) { return pose ? id + '@' + pose : id; }
 function panyuVariantImg(id, pose) { return pose ? 'panyu_' + id + '_' + pose + '_reach' : PANYU_OUTFIT_IMG[id]; }
 // バニー以外はショップの「ぱにゅ衣装」を買うと着られる
-function panyuOutfitOwned(id) { return id === 'bunny' || isItemOwned('pwear_' + id); }
+// 11/18 ぱにゃぱにゃ（泥酔版ぱにゅぱにゅ）：衣装「泥酔」は泥酔の夜の制覇で開く（店では売らない）
+function panyuOutfitOwned(id) { return id === 'bunny' || (id === 'deisui' ? !!(save && save.deisuiAllCleared) : isItemOwned('pwear_' + id)); }
 function panyuOwnedOutfits() { return PANYU_OUTFITS.filter(o => panyuOutfitOwned(o.id)); }
 function panyuOutfit() { try { const v = localStorage.getItem('mimi.panyuOutfit'); if (PANYU_OUTFITS.some(o => o.id === v) && panyuOutfitOwned(v)) return v; } catch (_) {} return 'bunny'; }
 function setPanyuOutfit(id) { try { localStorage.setItem('mimi.panyuOutfit', id); } catch (_) {} }
@@ -20951,11 +20953,12 @@ function endBattle() {
     // クリア記録（velvet なら endingUnlocked も同時に立つ）。練習の勝ちはクリアに数えない
     if (state.horoyoi) {
       if (!practice && !horoyoiCleared(state.opponentId)) (state.deisui ? save.deisuiCleared : save.horoyoiCleared).push(state.opponentId);
-      // 三周目のクリア報酬：泥酔の夜で5人に勝ったら「泥酔の夜 写真集」（ぱにゃぱにゃは別に足す）
+      // 三周目のクリア報酬：泥酔の夜で5人に勝ったら「泥酔の夜 写真集」＋ぱにゃぱにゃ（ぱにゅぱにゅの衣装「泥酔」。deisuiAllCleared で開く）
       if (!practice && state.deisui && state.opponentId === 'velvet' && STAGE_ORDER.every(horoyoiCleared) && !save.deisuiAllCleared) {
         save.deisuiAllCleared = true;
         if (!save.ownedItems.includes('cgset_deisui_book')) { save.ownedItems.push('cgset_deisui_book'); save.photobookPending = 'cgset_deisui_book'; }
         rewards.push('泥酔の夜を制覇：泥酔の夜 写真集（コレクションでいつでも見られる）');
+        rewards.push('ぱにゃぱにゃ解放：ロビーのぱにゅぱにゅで衣装「泥酔」が選べる');
       }
       // 二周目のクリア報酬：ほろ酔いの夜で初めてヴェルベットに勝ったら写真集（結果を見せた後に受け取りの幕を出す）
       if (!practice && !state.deisui && state.opponentId === 'velvet' && STAGE_ORDER.every(horoyoiCleared) && !save.ownedItems.includes('cgset_velvet_book')) {

@@ -122,7 +122,7 @@
       // 額と台帳の小さな顔の窓は、額のために描いた肖像（home.js の framePortrait）
       ...['rico','polka','selina','grano','velvet','mimi'].map(k => `assets/ui/portrait_${k}.webp`).filter(u => MAN[u]),
       // 夜（ほろ酔い・泥酔）に切り替えてあれば、夜のホームの背景も先に読む（切り替え直後に背景の差し替えが遅れないように 2026-11-16）
-      ...((typeof save !== 'undefined' && save && save.horoyoiMode) ? ['scene_night', 'stage-empty_night'].map(k => `assets/ui/home/${k}.webp`).filter(u => MAN[u]) : []),
+      ...((typeof save !== 'undefined' && save && save.horoyoiMode) ? (typeof isDeisui === 'function' && isDeisui() ? ['scene_deisui', 'stage-empty_deisui'] : ['scene_night', 'stage-empty_night']).map(k => `assets/ui/home/${k}.webp`).filter(u => MAN[u]) : []),
     ],
     // 対戦に入る瞬間に要るもの（そろうまで「準備中」で待つ）
     battleNow: (oppId, key) => [

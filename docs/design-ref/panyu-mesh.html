@@ -210,6 +210,8 @@
     parts: ys.map(y => ({ c: [gx, y], w: 22, h: 22, round: 1 })), openStage: [90, (ys[0] + ys[1]) / 2, (ys[1] + ys[2]) / 2, 9], gap: { ...OUTFITS[k].gap, gx, gy: ys[0] - 26, wide: 0.0001, ends: [ys[0] - 36, (ys[0] + ys[1]) / 2, (ys[1] + ys[2]) / 2, 800] } });
   YB('yshirt@cheek', 'panyu_yshirt_cheek_open.webp', 709, [686, 734, 780]);
   YB('yshirt@back', 'panyu_yshirt_back_open.webp', 710, [651, 703, 756]);
+  // 11/18 ぱにゃぱにゃ（泥酔版ぱにゅぱにゅ、泥酔の夜の制覇で開く）：バニーと同じ構図に顔と髪だけ泥酔に描き替えた絵（位置合わせ済み）。揺れる範囲・ボタンはバニーのまま。驚き顔は素面の顔なので使わず、頭ののけぞりだけ
+  OUTFITS.deisui = { ...OUTFITS.bunny, name: '泥酔', img: 'panyu_deisui_reach.webp', pose: { cups: [[607, 600, 132], [795, 600, 132]], cheek: [[636, 324], [764, 324]], eyes: [[640, 281], [762, 281]], faceR: [560, 170, 290, 250], faceC: [701, 315, 118, 92], blushC: [699, 322, 120, 56], head: [701, 330, 400], focus: [701, 548], surprise: '' } };
   const QS = new URLSearchParams(location.search), EMBED = QS.get('embed') === '1';   // 本編の中に埋め込まれた時（試作の帯を隠し、押した・外れたを本編へ知らせる）
   if (EMBED) document.body.classList.add('embed');
   const tell = (m) => { if (EMBED && parent !== window) try { parent.postMessage(Object.assign({ panyu: 1 }, m), '*'); } catch (_) {} };

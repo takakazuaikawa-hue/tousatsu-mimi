@@ -101,7 +101,7 @@ function renderHomeLobby() {
   panyuFreeRefreshLobby();
   applyHomeCostume();
   // 切り替えた瞬間に暗い画面を待たせないよう、もう一方（昼／夜）の絵を先に読んでおく（エンディングの後だけ）
-  if (isEndingUnlocked()) ['assets/ui/home/scene_night.webp', 'assets/ui/home/stage-empty_night.webp', 'assets/ui/home/scene.webp', 'assets/ui/home/stage-empty.webp'].forEach(src => { const im = new Image(); im.src = src; });
+  if (isEndingUnlocked()) ['assets/ui/home/scene_night.webp', 'assets/ui/home/stage-empty_night.webp', 'assets/ui/home/scene.webp', 'assets/ui/home/stage-empty.webp', ...(typeof isDeisui === 'function' && isDeisui() ? ['assets/ui/home/scene_deisui.webp', 'assets/ui/home/stage-empty_deisui.webp'] : [])].forEach(src => { const im = new Image(); im.src = src; });
   buildHomeArt(root);
   // 勝ち数＝劇場の段階。前回ホームで見た段階より進んでいたら、一度だけ「開幕の儀」で変化を見せる
   const seen = Math.min(save.homeStageSeen ?? clearedCount, clearedCount);
@@ -250,8 +250,10 @@ async function applyHomeCostume() {
   // ほろ酔いの夜（二周目）に切り替えている時は、夜の版の絵（2026-11-08 ユーザー「切り替え後のホーム画面背景も作って」）
   const night = homeIsNight();
   root.classList.toggle('is-night', night);
-  const SCENE = night ? 'assets/ui/home/scene_night.webp' : 'assets/ui/home/scene.webp';
-  const EMPTY = night ? 'assets/ui/home/stage-empty_night.webp' : 'assets/ui/home/stage-empty.webp';
+  // 泥酔の夜（三周目）は、夜更けに散らかった卓で泥酔したリコ先輩の版（11/18）
+  const deisui = night && homeIsDeisui();
+  const SCENE = deisui ? 'assets/ui/home/scene_deisui.webp' : night ? 'assets/ui/home/scene_night.webp' : 'assets/ui/home/scene.webp';
+  const EMPTY = deisui ? 'assets/ui/home/stage-empty_deisui.webp' : night ? 'assets/ui/home/stage-empty_night.webp' : 'assets/ui/home/stage-empty.webp';
   const urls = uniform ? [SCENE] : [EMPTY, costumeSrc(outfit.file)];
   try {
     if (!urls.every(src => window.MimiAssets?.isReady(src))) {
