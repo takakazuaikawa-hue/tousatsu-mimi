@@ -215,6 +215,8 @@
   //   元の構図＝ナイトプールの白フリル（元のバニーに位置合わせ）、@stripe＝最初の縞（元の構図）、@hair＝髪をかき上げる（新しい構図）
   OUTFITS.rise = { ...OUTFITS.bunny, name: 'ずり上がり水着', img: 'panyu_rise_reach.webp', open: 'panyu_rise_open.webp', openB: [701, 2000, 0], jewel: 0, parts: [], covers: [], coverLeft: [0, 0, 0], label: '', what: '', tip: 12, rise: [700, 555, 142], riseX: [612, 812, 260, 740] };
   OUTFITS['rise@stripe'] = { ...OUTFITS.rise, name: 'ずり上がり水着（縞）', img: 'panyu_rise_stripe_reach.webp', open: 'panyu_rise_stripe_open.webp', rise: [680, 565, 82], riseX: [604, 796, 250, 730] };
+  OUTFITS['rise@lean'] = { ...OUTFITS.rise, name: 'ずり上がり水着（前かがみ）', img: 'panyu_rise_lean_reach.webp', open: 'panyu_rise_lean_open.webp', rise: [670, 585, 122], riseX: [620, 830, 270, 715],
+    pose: NP({ cups: [[620, 562, 140], [830, 562, 140]], cheek: [[655, 310], [800, 310]], eyes: [[652, 252], [790, 252]], head: [720, 262, 380], focus: [725, 545] }) };
   OUTFITS['rise@hair'] = { ...OUTFITS.rise, name: 'ずり上がり水着（髪をかき上げる）', img: 'panyu_rise_hair_reach.webp', open: 'panyu_rise_hair_open.webp', rise: [645, 445, 135], riseX: [640, 840, 245, 705],
     pose: NP({ cups: [[640, 548, 128], [838, 548, 128]], cheek: [[650, 285], [795, 275]], eyes: [[656, 228], [776, 218]], head: [716, 240, 380], focus: [738, 530] }) };
   OUTFITS.deisui = { ...OUTFITS.bunny, name: '泥酔', img: 'panyu_deisui_reach.webp', jewel: 0, parts: [], covers: [], coverLeft: [0, 0, 0], label: '', what: '', pose: { cups: [[607, 600, 132], [795, 600, 132]], cheek: [[636, 324], [764, 324]], eyes: [[640, 281], [762, 281]], faceR: [560, 170, 290, 250], faceC: [701, 315, 118, 92], blushC: [699, 322, 120, 56], head: [701, 330, 400], focus: [701, 548], surprise: '' } };
