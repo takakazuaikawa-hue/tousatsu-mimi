@@ -1,0 +1,28 @@
+// ファイブポーカーの今の画面を撮る（D18 の整理の前後比べ）。node qa/fiveshot.mjs [pc|phone] [tag]
+import fs from 'node:fs';
+import { openSession, sleep } from './lib/session.mjs';
+const mode = process.argv[2] || 'phone', tag = process.argv[3] || 'before';
+const size = { pc: [1280, 800], phone: [844, 390], small: [667, 375] }[mode];
+const O = 'qa/out/fiveshot'; fs.mkdirSync(O, { recursive: true });
+const session = await openSession({ width: size[0], height: size[1], mobile: mode !== 'pc', speed: 2 });
+const { page } = session;
+const ev = (js) => page.eval(`(() => { ${js}; return 1; })()`).catch(e => console.log('ERR', e.message.slice(0, 160)));
+const q = (js) => page.eval(js).catch(e => 'ERR ' + e.message.slice(0, 160));
+for (let i = 0; i < 60 && !(await page.eval('typeof render === "function" && typeof save === "object"').catch(() => false)); i++) await sleep(500);
+const ALL = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
+await ev(`save.coins = 900; save.introPlayed = true; save.clearedStages = ${JSON.stringify(ALL)}; save.endingUnlocked = true; save.homeStageSeen = 5; save.loginBonus = { lastDate: mpTodayKey(), streak: 1 }; save.ownedItems = [...(save.ownedItems||[]), 'memory_minipoker']; save.minipoker = Object.assign(save.minipoker || {}, { tutorialSeen: true, tutorialDone: true }); state = defaultState(); state.screen = 'lobby'; render()`);
+await sleep(3000);
+await ev(`document.querySelectorAll('.mp-tut, .modal-overlay').forEach(e=>{}); showMiniPokerGame()`);
+await sleep(4000);
+// 入門が出たら閉じる
+await ev(`document.querySelectorAll('.mp-tut-skip, .mp-tut-close, [data-mp-tut="skip"]').forEach(b=>b.click())`); await sleep(1500);
+await page.screenshot(`${O}/${mode}_${tag}_1bet.png`);
+await ev(`document.querySelector('[data-mp="deal"]')?.click()`); await sleep(6000);
+await page.screenshot(`${O}/${mode}_${tag}_2choose.png`);
+await ev(`document.querySelectorAll('.mp-card-player, .mp-player .mp-card').forEach((c,i)=>{ if(i<2) c.click(); })`); await sleep(800);
+await page.screenshot(`${O}/${mode}_${tag}_3held.png`);
+await ev(`document.querySelector('[data-mp="draw"]')?.click()`); await sleep(9000);
+await page.screenshot(`${O}/${mode}_${tag}_4result.png`);
+console.log('phase', await q('document.querySelector(".mp-center")?.innerText.slice(0,200)'));
+console.log('err', JSON.stringify(session.exceptions).slice(0, 600));
+await session.close();

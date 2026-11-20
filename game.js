@@ -5192,6 +5192,8 @@ Object.assign(INTERMISSIONS, {
 // 途中の場面＝<話し手>/dmid<1|2>_<相手>_<n>、幕間＝<話し手>/ims_d_<相手>_<n>、締め＝<相手の声>/close_d_<相手>_<n>
 (() => {
   for (const [id, scenes] of Object.entries(DEISUI_MID_SCENES)) (scenes || []).forEach((lines, w) => (lines || []).forEach((l, i) => { if (l && l.who && !l.voice) l.voice = l.who + '/dmid' + (w + 1) + '_' + id + '_' + (i + 1); }));
+  // 11/18 ほろ酔いの夜の勝負の途中（hmid）と初対戦の苦戦（struggle）の会話にも声（台帳 phase6m.json）。声の無い行は manifest に無いので鳴らない
+  for (const [p, O] of [['hmid', HOROYOI_MID_SCENES], ['struggle', STRUGGLE_SCENES]]) for (const [id, lines] of Object.entries(O)) (lines || []).forEach((l, i) => { if (l && l.who && !l.voice) l.voice = l.who + '/' + p + '_' + id + '_' + (i + 1); });
   for (const [k, im] of Object.entries(INTERMISSIONS)) {
     if (!k.startsWith('d_') || !im || !im.lines) continue;
     const id = k.slice(2);
