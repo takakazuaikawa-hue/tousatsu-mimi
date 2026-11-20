@@ -6820,6 +6820,7 @@ const SHOP_ITEMS = [
   { id: 'pwear_jirai', cat: 'panyu', name: 'ぱにゅ衣装：地雷系', price: 550, thumb: 'assets/ui/shop/pwear_jirai.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。甘めの地雷系コーデ' },
   { id: 'pwear_halter', cat: 'panyu', name: 'ぱにゅ衣装：ホルター', price: 800, thumb: 'assets/ui/shop/pwear_halter.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。首で結ぶホルターネック' },
   { id: 'pwear_white', cat: 'panyu', name: 'ぱにゅ衣装：白サテン', price: 850, thumb: 'assets/ui/shop/pwear_white.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。つややかな白サテン' },
+  { id: 'pwear_rise', cat: 'panyu', name: 'ぱにゅ衣装：ずり上がり水着', price: 1200, thumb: 'assets/ui/shop/pwear_rise.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。触るたびにバンドゥが少しずつずり上がるナイトプールの水着（構図3つ）' },
   { id: 'pwear_gym', cat: 'panyu', name: 'ぱにゅ衣装：ジムウェア', price: 900, thumb: 'assets/ui/shop/pwear_gym.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。ぴったり薄手のジムウェア' },
   { id: 'pwear_yshirt', cat: 'panyu', name: 'ぱにゅ衣装：Yシャツ', price: 1000, thumb: 'assets/ui/shop/pwear_yshirt.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。白いワイシャツ' },
   { id: 'pwear_tshirt', cat: 'panyu', name: 'ぱにゅ衣装：Tシャツ', price: 1000, thumb: 'assets/ui/shop/pwear_tshirt.webp', desc: 'ロビーのぱにゅぱにゅでミミが着られる衣装が増える。薄手の白いTシャツ' },
@@ -6920,6 +6921,7 @@ const SHOP_COMMENTS = {
   pwear_white: '光をまとう白サテン。高級品は手触りが違います',
   pwear_dress: '夜会の一着。VIPの夜を越えた方にこそ',
   pwear_gym: '薄手は正直な生地。……触れるほど、よくわかります',
+  pwear_rise: 'あら、濡れた水着って……少しずつ上がってくるのよね♡',
   pwear_yshirt: '白いシャツは素直です。隠すのは、案外苦手でしてな',
   pwear_tshirt: '飾らぬ一枚ほど、中身が映るものですな',
   pwear_inner: '肌に沿う薄さが売りでして。……着心地は、ご本人に',
@@ -7111,6 +7113,7 @@ const SHOP_UNLOCK = {
   pwear_white: 'grano',
   pwear_dress: 'velvet',
   pwear_gym: 'grano',
+  pwear_rise: 'velvet',
   pwear_yshirt: 'velvet',
   pwear_tshirt: 'velvet',
   pwear_inner: 'velvet',
@@ -18879,16 +18882,16 @@ function applyPanyuBg(overlay) {
 // ぱにゅぱにゅ30タップミニゲーム
 // ぱにゅぱにゅの衣装（網目＋ばねの描画は docs/design-ref/panyu-mesh.html を埋め込んで使う）
 // 網目のページを直したら PANYU_MESH_V を上げる（ブラウザに残った古いページを使わせない）
-const PANYU_MESH_V = '20261118b';
+const PANYU_MESH_V = '20261121a';
 const PANYU_OUTFITS = [
   { id: 'bunny', name: 'バニー' }, { id: 'pajama', name: 'パジャマ' }, { id: 'pajama2', name: 'パジャマ2' }, { id: 'gothic', name: 'ゴスロリ' }, { id: 'jirai', name: '地雷系' }, { id: 'vintage', name: '古着' }, { id: 'nurse', name: 'ナース' }, { id: 'santa', name: 'サンタ' },
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
-  { id: 'gym', name: 'ジムウェア' }, { id: 'yshirt', name: 'Yシャツ' }, { id: 'tshirt', name: 'Tシャツ' }, { id: 'inner', name: '肌着' }, { id: 'deisui', name: '泥酔' },   // 11/07：押すたびに胸の先が布越しにとがる衣装
+  { id: 'gym', name: 'ジムウェア' }, { id: 'yshirt', name: 'Yシャツ' }, { id: 'tshirt', name: 'Tシャツ' }, { id: 'inner', name: '肌着' }, { id: 'deisui', name: '泥酔' }, { id: 'rise', name: 'ずり上がり水着' },   // 11/07：押すたびに胸の先が布越しにとがる衣装
 ];
-const PANYU_OUTFIT_IMG = { bunny: 'panyu_reach', pajama: 'panyu_pajama_reach', pajama2: 'panyu_pajama2_reach', gothic: 'panyu_gothic_reach', jirai: 'panyu_jirai_reach', vintage: 'panyu_vintage_reach', nurse: 'panyu_nurse_reach', santa: 'panyu_santa_reach', bikini: 'panyu_bikini_reach', halter: 'panyu_halter_reach', white: 'panyu_white_reach', dress: 'panyu_dress_reach', gym: 'panyu_gym_reach', yshirt: 'panyu_yshirt_reach', tshirt: 'panyu_tshirt_reach', inner: 'panyu_inner_reach', deisui: 'panyu_deisui_reach' };
+const PANYU_OUTFIT_IMG = { bunny: 'panyu_reach', pajama: 'panyu_pajama_reach', pajama2: 'panyu_pajama2_reach', gothic: 'panyu_gothic_reach', jirai: 'panyu_jirai_reach', vintage: 'panyu_vintage_reach', nurse: 'panyu_nurse_reach', santa: 'panyu_santa_reach', bikini: 'panyu_bikini_reach', halter: 'panyu_halter_reach', white: 'panyu_white_reach', dress: 'panyu_dress_reach', gym: 'panyu_gym_reach', yshirt: 'panyu_yshirt_reach', tshirt: 'panyu_tshirt_reach', inner: 'panyu_inner_reach', deisui: 'panyu_deisui_reach', rise: 'panyu_rise_reach' };
 // 構図違い（2026-11-07）：同じ衣装の別のポーズ。開くたびにどれか1つ（前回と同じ構図は続けない）。'' は元の構図
 // 網目のページでは「衣装@構図」で開く。絵は assets/characters/panyu_<衣装>_<構図>_reach.webp
-const PANYU_POSES = { bunny: ['', 'dressing', 'pool'], vintage: ['', 'dressing', 'pool'], pajama: ['', 'dressing', 'pool'], gothic: ['', 'dressing', 'pool'], jirai: ['', 'dressing', 'pool'], nurse: ['', 'dressing', 'pool'], santa: ['', 'dressing', 'pool'], bikini: ['', 'dressing'], halter: ['', 'dressing'], white: ['', 'dressing'], dress: ['', 'dressing'], gym: ['', 'cheek', 'wrists'], yshirt: ['', 'cheek', 'back'], inner: ['', 'peace'], tshirt: ['', 'stretch'], deisui: [''] };   // 楽屋×前開き6着は、開き方が不自然（襟のV字の先で左右がつながったまま）なので直すまで外す（11/07）   // 構図は胸が前へ張り出した形だけ（ベッド・卓は胸が押しつけられて揺れと合わないのでやめた 11/07）
+const PANYU_POSES = { bunny: ['', 'dressing', 'pool'], vintage: ['', 'dressing', 'pool'], pajama: ['', 'dressing', 'pool'], gothic: ['', 'dressing', 'pool'], jirai: ['', 'dressing', 'pool'], nurse: ['', 'dressing', 'pool'], santa: ['', 'dressing', 'pool'], bikini: ['', 'dressing'], halter: ['', 'dressing'], white: ['', 'dressing'], dress: ['', 'dressing'], gym: ['', 'cheek', 'wrists'], yshirt: ['', 'cheek', 'back'], inner: ['', 'peace'], tshirt: ['', 'stretch'], deisui: [''], rise: ['', 'stripe', 'hair'] };   // 楽屋×前開き6着は、開き方が不自然（襟のV字の先で左右がつながったまま）なので直すまで外す（11/07）   // 構図は胸が前へ張り出した形だけ（ベッド・卓は胸が押しつけられて揺れと合わないのでやめた 11/07）
 let panyuPoseNext = null, panyuPoseLast = {};
 function panyuPoseFor(id) {
   if (panyuPoseNext && panyuPoseNext.id === id) return panyuPoseNext.pose;
