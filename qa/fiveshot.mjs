@@ -21,8 +21,10 @@ await ev(`document.querySelector('[data-mp="deal"]')?.click()`); await sleep(600
 await page.screenshot(`${O}/${mode}_${tag}_2choose.png`);
 await ev(`document.querySelectorAll('.mp-card-player, .mp-player .mp-card').forEach((c,i)=>{ if(i<2) c.click(); })`); await sleep(800);
 await page.screenshot(`${O}/${mode}_${tag}_3held.png`);
+console.log("card", await q(`JSON.stringify([...document.querySelectorAll(".mp-player .mp-card")].map(c=>{const r=c.getBoundingClientRect();return [Math.round(r.x),Math.round(r.width)]}).concat([[innerWidth, document.documentElement.className.slice(0,80)]]))`));
 await ev(`document.querySelector('[data-mp="draw"]')?.click()`); await sleep(9000);
 await page.screenshot(`${O}/${mode}_${tag}_4result.png`);
+await ev(`document.querySelector(".mp-menu-btn")?.click()`); await sleep(600); await page.screenshot(`${O}/${mode}_${tag}_5menu.png`);
 console.log('phase', await q('document.querySelector(".mp-center")?.innerText.slice(0,200)'));
 console.log('err', JSON.stringify(session.exceptions).slice(0, 600));
 await session.close();

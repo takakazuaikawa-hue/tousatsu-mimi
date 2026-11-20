@@ -21289,3 +21289,39 @@ html.is-compact .shop-screen.v3 .sh3-card .sh3-who ~ .sh3-owned { top: calc(22px
   html.is-compact .shop-screen.v3 .sh3-model { z-index: 4; width: 400px; right: 456px; }
   html.is-compact .shop-screen.v3 .sh3-model.is-scene .sh3-frame { width: 392px; }
 }
+
+/* ===== 11/21 D18 ファイブポーカーの整理（ユーザー「ごちゃごちゃしすぎ」）：札を主役に、見出しの小ボタンは ≡ の中、配当表は細く ===== */
+.minipoker-overlay .mp-stats { position: relative; }
+.minipoker-overlay .mp-menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; display: flex; flex-direction: column; gap: 4px; padding: 6px; background: rgba(20,8,10,.96); border: 1px solid rgba(232,196,110,.6); border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.6); }
+.minipoker-overlay .mp-menu[hidden] { display: none; }
+.minipoker-overlay .mp-menu button { min-height: 44px; padding: 0 14px; text-align: left; white-space: nowrap; font-size: 15px; color: #f3ead6; background: rgba(255,255,255,.04); border: 1px solid rgba(232,196,110,.25); border-radius: 6px; cursor: pointer; }
+.minipoker-overlay .mp-menu-btn { font-size: 22px; }
+.minipoker-overlay .mp-pt-lucky { padding: 4px 6px; line-height: 1.3; }
+.minipoker-overlay .mp-actions .mp-btn-small { min-height: 36px; padding: 0 10px; font-size: 14px; opacity: .85; background: transparent; }
+html.is-compact .minipoker-overlay .mp-actions .mp-btn.mp-btn-small { min-height: 44px; font-size: 14px; }
+html.is-compact .minipoker-overlay .mp-actions .mp-btn-primary { min-width: 150px; font-size: 16px; }
+html.is-compact .minipoker-overlay .mp-play .mp-side { grid-template-columns: 56px minmax(0, 1fr) 96px; }
+html.is-compact .minipoker-overlay .mp-cpu .mp-card { width: 42px; height: 60px; }
+html.is-compact .minipoker-overlay .mp-player .mp-card { width: 66px; height: 94px; }
+html.is-compact .minipoker-overlay .mp-player .mp-card-suit-big { font-size: 34px; }
+html.is-compact .minipoker-overlay .mp-player .mp-card-corner { font-size: 16px; }
+html.is-compact .minipoker-overlay .mp-hand { gap: 6px; }
+html.is-compact .minipoker-overlay .mp-play .mp-side { grid-template-columns: 56px minmax(0, 1fr) 112px; }
+html.is-compact .minipoker-overlay .mp-actions-wager .mp-btn-deal { flex: 2 1 0; }
+html.is-compact .minipoker-overlay .mp-actions-wager .mp-btn-auto { flex: 1 1 0; font-size: 14px; opacity: .9; }
+html.is-compact.is-narrow-stage .minipoker-overlay .mp-player .mp-card { width: 50px; height: 74px; }
+html.is-compact.is-narrow-stage .minipoker-overlay .mp-player .mp-card-suit-big { font-size: 28px; }
+html.is-compact.is-narrow-stage .minipoker-overlay .mp-hand { gap: 4px; }
+html.is-compact .minipoker-overlay .mp-player .mp-card .mp-card-keep { white-space: nowrap; padding: 1px 4px; letter-spacing: 0; }
+@media (max-width: 720px) {
+  html.is-compact .minipoker-overlay .mp-player .mp-card { width: 50px; height: 74px; }
+  html.is-compact .minipoker-overlay .mp-player .mp-card-suit-big { font-size: 28px; }
+  html.is-compact .minipoker-overlay .mp-hand { gap: 4px; }
+}
+.minipoker-overlay .mp-card .mp-card-keep { z-index: 2; }
+html.is-compact .minipoker-overlay .mp-header .mp-stats { overflow: visible; }
+.minipoker-overlay .mp-card.mp-held .mp-card-br { visibility: hidden; }
+html:not(.is-compact) .minipoker-overlay .mp-player .mp-card { width: 86px; height: 124px; }
+html:not(.is-compact) .minipoker-overlay .mp-player .mp-card-suit-big { font-size: 46px; }
+html:not(.is-compact) .minipoker-overlay .mp-player .mp-card-corner { font-size: 18px; }
+html:not(.is-compact) .minipoker-overlay .mp-hand { gap: 10px; }

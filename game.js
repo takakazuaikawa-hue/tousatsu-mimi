@@ -13122,11 +13122,13 @@ function showMiniPokerGame() {
             <span class="mp-stat mp-stat-jp" title="ロイヤルストレートフラッシュで全額獲得">JP <span data-mpb="jackpot">${p.jackpot}</span></span>
             <span class="mp-stat mp-stat-session" data-mpb="sessionStat">±0</span>
             <span class="mp-stat">連勝 <span data-mpb="streak">0</span><span data-mpb="shields"></span></span>
-            <span class="mp-stat">最高連勝 ${p.bestStreak}</span>
-            <button class="mp-history-btn" data-mp="missions" title="今日のミッション">${UI_ICON.target}</button>
-            <button class="mp-history-btn" data-mp="history" title="履歴">${UI_ICON.scroll}</button>
-            <button class="mp-ach-btn" data-mp="achievements" title="達成">${UI_ICON.medal}</button>
-            <button class="mp-ach-btn" data-mp="mute" title="音">${save.minipoker.muted ? UI_ICON.mute : UI_ICON.sound}</button>
+            <button class="mp-history-btn mp-menu-btn" data-mp="menu" title="メニュー">≡</button>
+            <div class="mp-menu" hidden>
+              <button data-mp="missions">${UI_ICON.target} 今日のミッション</button>
+              <button data-mp="history">${UI_ICON.scroll} 履歴（最高連勝 ${p.bestStreak}）</button>
+              <button data-mp="achievements">${UI_ICON.medal} 達成</button>
+              <button data-mp="mute">${save.minipoker.muted ? UI_ICON.mute : UI_ICON.sound} 音</button>
+            </div>
           </div>
         </div>
 
@@ -13174,6 +13176,10 @@ function showMiniPokerGame() {
       const el = overlay.querySelector(sel);
       if (el) el.addEventListener('click', fn);
     };
+    // 11/21 D18：小ボタン4つを「≡」の中へ。押したら閉じる
+    const mpMenu = overlay.querySelector('.mp-menu');
+    headerAct('[data-mp="menu"]', (e) => { e.stopPropagation(); if (mpMenu) mpMenu.hidden = !mpMenu.hidden; });
+    if (mpMenu) { mpMenu.addEventListener('click', () => { mpMenu.hidden = true; }); overlay.addEventListener('click', (e) => { if (!e.target.closest('.mp-menu, .mp-menu-btn')) mpMenu.hidden = true; }); }
     headerAct('[data-mp="missions"]',     showMissionsPanel);
     headerAct('[data-mp="history"]',      showHistoryPanel);
     headerAct('[data-mp="achievements"]', showAchievementsPanel);
@@ -13191,7 +13197,7 @@ function showMiniPokerGame() {
     el.innerHTML = `
       <div class="mp-pt-title">配当表<small class="mp-pt-unit">（ベット${cur}で戻る額）</small></div>
       ${ups ? `<div class="mp-pt-ups">今は表の額に<wbr><b>${ups}</b></div>` : ''}
-      <div class="mp-pt-lucky">今日のラッキー役<br><b>${luckyName}</b> が<wbr><span class="mp-nowrap">×2倍！</span></div>
+      <div class="mp-pt-lucky">★今日は <b>${luckyName}</b> ×2</div>
       <table class="mp-pt">
         ${MP_PAYTABLE.slice().reverse().map(p => {
           if (p.mult === 0) return '';
@@ -13332,8 +13338,7 @@ function showMiniPokerGame() {
           ${showDailyBonus ? '<span class="mp-daily-bonus">今日の初戦ボーナス 配当 ×2</span>' : ''}${hot}
         </div>` : ''}
         <div class="mp-status mp-status-wager">
-          ベットを選んで「配る」<small class="mp-cap-note">（1回 最大 ${MP_BET_MAX}コイン）</small><br>
-          <small>相手に勝つと 役に応じて <b>ベット×倍率</b> が戻る（J以上のペアから）</small>
+          相手に勝つと <b>ベット×配当表の額</b> が戻る<small>（J以上のペアから）</small>
         </div>
         <div class="mp-bet-row">
           ${MP_BET_LEVELS.map(b => `
@@ -13341,7 +13346,7 @@ function showMiniPokerGame() {
           `).join('')}
           <button class="mp-bet-max ${!isLevel ? 'on' : ''}" data-mp-bet="${maxUnit}" ${maxUnit < 1 ? 'disabled' : ''}>最大（${tm > 1 ? `${maxUnit}×3` : maxUnit}）</button>
         </div>
-        <div class="mp-bet-display">現在のベット：<b>${ctx.bet}</b>コイン${tm > 1 ? `<small>（特別卓：×3 で ${stake}コイン）</small>` : ''}</div>
+        ${tm > 1 ? `<div class="mp-bet-display"><small>特別卓：ベット×3 で ${stake}コイン</small></div>` : ''}
         <div class="mp-actions mp-actions-wager">
           <button class="mp-btn mp-btn-deal" data-mp="deal" ${canDeal ? '' : 'disabled'}>
             配る（${tm > 1 ? stake : ctx.bet}コイン）
@@ -13372,18 +13377,15 @@ function showMiniPokerGame() {
       const isLastRound = (ctx.drawRound || 0) >= 1;  // 2回引き終わったら強制勝負
       return `
         <div class="mp-status">
-          <b>${round}回目の交換</b> ／ 残したい札をタップ（もう一度押すと戻る）<br>
-          <small>${drop > 0 ? `「残す」の印のない ${drop}枚を引き直す` : '全部残す＝そのまま勝負'}</small>
+          <b>交換 ${round}/2</b>　残す札をタップ → 残りを引き直す
         </div>
         ${reach ? `<div class="mp-reach">${reach}${reachProb ? ` <span class="mp-reach-prob">(${reachProb})</span>` : ''}</div>` : ''}
         <div class="mp-actions">
           <button class="mp-btn mp-btn-primary" data-mp="draw">
-            ${drop > 0 ? `${drop}枚を引く${isLastRound ? '（最終）' : ''}` : 'そのまま勝負'}
+            ${drop > 0 ? `${drop}枚を引く` : 'そのまま勝負'}
           </button>
-          <button class="mp-btn mp-btn-ghost" data-mp="hold-all">全部キープ<wbr>して勝負</button>
-          ${!isLastRound ? '' : ''}
-          <button class="mp-btn mp-btn-surrender" data-mp="surrender" title="負け確実なら半額返却で降りる">
-            サレンダー<wbr>（${surrenderReturn}コイン返却）
+          <button class="mp-btn mp-btn-surrender mp-btn-small" data-mp="surrender" title="負け確実なら半額返却で降りる">
+            サレンダー（${surrenderReturn}返却）
           </button>
         </div>
       `;
