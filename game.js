@@ -13249,6 +13249,7 @@ function showMiniPokerGame() {
 
   function renderPhase() {
     const ph = ctx.phase;
+    { const md = overlay.querySelector('.minipoker-modal'); if (md) md.dataset.phase = ph || ''; }   // 11/21 結果・ダブルアップの時だけ札を小さくするための印
     const cpuSide = overlay.querySelector('[data-mpb="cpuSide"]');
     const playerSide = overlay.querySelector('[data-mpb="playerSide"]');
     const center = overlay.querySelector('[data-mpb="center"]');
@@ -13520,8 +13521,8 @@ function showMiniPokerGame() {
           <div class="mp-card mp-card-back mp-card-next-hl">？</div>
         </div>
         <div class="mp-hilo-actions">
-          <button class="mp-btn mp-btn-double" data-mp-hilo="low" ${canLow ? '' : 'disabled'}>▼ 低い（${canLow ? `2〜${rl(r - 1)}` : 'なし'}）</button>
-          <button class="mp-btn mp-btn-double" data-mp-hilo="high" ${canHigh ? '' : 'disabled'}>▲ 高い（${canHigh ? `${rl(r + 1)}〜A` : 'なし'}）</button>
+          <button class="mp-btn mp-btn-double" data-mp-hilo="low" ${canLow ? '' : 'disabled'}>▼ 低い（${canLow ? (r - 1 <= 2 ? `${rl(2)}だけ` : `2〜${rl(r - 1)}`) : 'なし'}）</button>
+          <button class="mp-btn mp-btn-double" data-mp-hilo="high" ${canHigh ? '' : 'disabled'}>▲ 高い（${canHigh ? (r + 1 >= 14 ? `${rl(14)}だけ` : `${rl(r + 1)}〜A`) : 'なし'}）</button>
         </div>
         <div class="mp-double-hint">見せ札と同じ数字が出たら没収です</div>
       `;

@@ -21338,3 +21338,13 @@ html.is-compact .result-coin-goal { font-size: calc(14px / var(--game-scale, 1))
 html.is-compact .result-coin-goal img { width: calc(56px / var(--game-scale, 1)); height: calc(32px / var(--game-scale, 1)); }
 /* 11/21 検査：指で押すには小さかったボタン（今夜の演目の閉じる 34px・没入モード 36px・零時の卓の「わかった」40px）を 44px に */
 .mimi-confirm-actions [data-panel-close], .pv2-imm, .as-pg-ok { min-height: 44px !important; }
+/* 11/21 検査：スマホでエンディングの語り・台詞が画面で 13.6〜13.7px（約束の14px 未満）。画面の 15px・17px に */
+html.is-compact .ek-text { font-size: max(1em, calc(15px / var(--game-scale, 1))) !important; }
+html.is-compact .ending-narration { font-size: calc(17px / var(--game-scale, 1)) !important; }
+html.is-compact .ending-narration.small { font-size: calc(15px / var(--game-scale, 1)) !important; }
+/* 座り直しのボタン 39px → 44px */
+html.is-compact .rebuy-overlay .rb-go { min-height: calc(44px / var(--game-scale, 1)); }
+/* 11/21 検査：結果・ダブルアップの時は真ん中の札（勝利・配当・挑戦）が手札に挟まれて切れた。その時だけ手札を一回り小さく */
+html.is-compact .minipoker-modal:is([data-phase="result"], [data-phase="double"], [data-phase="hilo"]) .mp-player .mp-card { width: 46px; height: 66px; }
+html.is-compact .minipoker-modal:is([data-phase="result"], [data-phase="double"], [data-phase="hilo"]) .mp-cpu .mp-card { width: 36px; height: 50px; }
+html.is-compact .minipoker-modal:is([data-phase="result"], [data-phase="double"], [data-phase="hilo"]) .mp-player .mp-card-suit-big { font-size: 24px; }

@@ -531,3 +531,8 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 
 /* ミミの一言は読点のあとで折り返す（小さいスマホで1行のまま女神の絵の下にもぐっていた） */
 .bc-ask-hint { white-space: normal; }
+
+/* 11/21 検査：上の帯のボタン（お手本・解説・絞り・やめる）が 30px、絞りのボタンが 40px で、指で押すには小さかった。44px に */
+.bc-tools button { min-height: max(44px, calc(var(--u) * 44)); }
+.bc-top { min-height: max(44px, calc(var(--u) * 44)); }
+.bc-sq-btns button { min-height: max(44px, calc(var(--u) * 44)); }
