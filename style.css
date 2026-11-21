@@ -21328,3 +21328,13 @@ html:not(.is-compact) .minipoker-overlay .mp-hand { gap: 10px; }
 
 /* 11/21 ゲームパッド：選んでいる物に金の枠（マウス・指で触ると消える） */
 html.is-pad .pad-focus { outline: 4px solid #fff3b0 !important; outline-offset: 2px; box-shadow: 0 0 0 7px rgba(255, 200, 60, .55), 0 0 26px 6px rgba(255, 215, 106, .85) !important; z-index: 5; filter: brightness(1.15); }
+
+/* 11/21 研修のスキップ：研修の暗い膜より上・左下（右上の役の一覧・吹き出しと重ならない） */
+html body > .intro-skip-btn, html.is-compact body > .intro-skip-btn { position: fixed; right: auto; bottom: auto; left: max(8px, env(safe-area-inset-left, 0px)); top: max(6px, env(safe-area-inset-top, 0px)); z-index: 12600; min-height: 40px !important; padding: 0 12px !important; font-size: 14px !important; line-height: 1; opacity: .9; background: rgba(0,0,0,.72); }
+/* 11/21 検査：「ここを押そう」の札がボタンの上にはみ出し、上の段のボタンの文字（コール・賭ける）を隠していた。ボタンの左横に出す */
+.battle-screen.v2 .is-intro-go::before, .battle-screen.v2.t8 .is-intro-go::before { top: 50% !important; left: auto !important; right: calc(100% + 8px) !important; transform: translateY(-50%) !important; white-space: nowrap; z-index: 6; }
+/* 11/21 検査：スマホでは縮めて描く舞台の中なので 14px が画面で 6.8px になっていた。画面の 14px に戻す */
+html.is-compact .result-coin-goal { font-size: calc(14px / var(--game-scale, 1)) !important; padding: calc(6px / var(--game-scale, 1)) calc(12px / var(--game-scale, 1)); min-height: calc(40px / var(--game-scale, 1)); }
+html.is-compact .result-coin-goal img { width: calc(56px / var(--game-scale, 1)); height: calc(32px / var(--game-scale, 1)); }
+/* 11/21 検査：指で押すには小さかったボタン（今夜の演目の閉じる 34px・没入モード 36px・零時の卓の「わかった」40px）を 44px に */
+.mimi-confirm-actions [data-panel-close], .pv2-imm, .as-pg-ok { min-height: 44px !important; }

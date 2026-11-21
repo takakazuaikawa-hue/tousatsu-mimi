@@ -957,3 +957,6 @@ html.is-compact #stage > .as-host .as-tool[data-as="speed"] { width: 76px; }
   html.is-compact #stage > .as-host .as-tool.as-speed b { margin-left: 1px; }
 }
 @media (max-width: 760px) { html.is-compact #stage > .as-host .as-clock { left: calc(50% - 124px); } }
+/* 11/21 検査：「Lv.1」と「25／50」が 3px でくっつき「Lv.125／50」と読めた。区切りの点を入れて離す */
+#stage > .as-host .as-lv .as-lv-b::before, .as-lv .as-lv-b::before { content: '・'; margin: 0 2px 0 0; opacity: .7; }
+html.is-compact #stage > .as-host .as-lv { gap: 4px; }

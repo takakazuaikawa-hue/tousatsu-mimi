@@ -16581,14 +16581,17 @@ function applyIntroHandUI() {
   if (scr) scr.classList.add('intro-hand-mode');
   const backdoorBtn = document.querySelector('.backdoor-toggle');
   if (backdoorBtn) backdoorBtn.style.display = 'none';
-  if (scr && !scr.querySelector('.intro-skip-btn')) {
+  // 11/21 検査：卓の中に置くと研修の暗い膜（.coach-layer）の下になって押せず、右上の「役の一覧」とも重なっていた。
+  // 膜より上（body 直下）の左下に出し、研修の卓が無くなったら消す
+  if (scr && !document.querySelector('.intro-skip-btn')) {
     const skipBtn = document.createElement('button');
     skipBtn.type = 'button';
     skipBtn.className = 'intro-skip-btn';
     skipBtn.dataset.action = 'intro-skip';
     skipBtn.textContent = '研修をスキップ';
     skipBtn.addEventListener('click', onAction);
-    scr.appendChild(skipBtn);
+    document.body.appendChild(skipBtn);
+    const watch = setInterval(() => { if (!document.querySelector('.battle-screen.intro-hand-mode')) { skipBtn.remove(); clearInterval(watch); } }, 800);
   }
 }
 
@@ -21146,7 +21149,8 @@ function endBattle() {
     }
     statsBox.insertAdjacentElement('afterend', goalLine);
     const cg = shopCoinGoal();
-    if (cg) {
+    // 11/21 検査：勝った時は下の「新入荷」の札と同じ中身が二重に出ていた。新入荷がある時は出さない
+    if (cg && !(won && SHOP_ITEMS.some(i => isShopItemNew(i.id)))) {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'result-coin-goal' + (cg.ready ? ' is-ready' : ''); b.dataset.action = 'open-shop';
       b.innerHTML = shopCoinGoalHTML(cg);
