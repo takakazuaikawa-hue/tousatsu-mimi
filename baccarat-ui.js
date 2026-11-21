@@ -130,7 +130,7 @@
         </nav>
       </header>
       <button type="button" class="bc-roads" data-bc="roads" aria-label="罫線を大きく見る">
-        <span class="bc-roads-h"><b>罫線</b><small class="bc-hint">出た目の記録・押すと大きく</small><span class="bc-count"></span></span>
+        <span class="bc-roads-h"><b>罫線</b><small class="bc-hint">出た目</small><span class="bc-count"></span></span>
         <canvas class="bc-rd bc-rd-bead"></canvas>
         <canvas class="bc-rd bc-rd-big"></canvas>
         <span class="bc-rd3"><canvas class="bc-rd bc-rd-eye"></canvas><canvas class="bc-rd bc-rd-small"></canvas><canvas class="bc-rd bc-rd-roach"></canvas></span>
