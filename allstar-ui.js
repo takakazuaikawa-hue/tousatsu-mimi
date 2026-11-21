@@ -1565,7 +1565,7 @@
       <div class="as-rec-top"><span class="as-ef"><span class="as-ef-w"><img src="${idleFace(ch)}" alt=""></span><b>${ch === 'mimi' ? '王者' : '現王者'}　${esc(NAMES[ch])}</b></span>
         <dl><div><dt>優勝</dt><dd>${A.wins}回</dd></div><div><dt>最高順位</dt><dd>${A.bestPlace ? A.bestPlace + '位' : '—'}</dd></div><div><dt>参加</dt><dd>${A.entries}回</dd></div></dl></div>
       <div class="as-rec-cols">
-        <div class="as-rec-vs"><b class="as-prizes-h">決勝の相手別（勝ち－負け）</b><ol>${RIVALS.map(k => `<li${A.finalVs[k].w ? ' class="is-won"' : ''}><span>${esc(NAMES[k])}</span><b>${A.finalVs[k].w}－${A.finalVs[k].l}</b></li>`).join('')}</ol></div>
+        <div class="as-rec-vs"><b class="as-prizes-h">決勝の勝ち－負け</b><ol>${RIVALS.map(k => `<li${A.finalVs[k].w ? ' class="is-won"' : ''}><span>${esc(NAMES[k])}</span><b>${A.finalVs[k].w}－${A.finalVs[k].l}</b></li>`).join('')}</ol></div>
         <ol class="as-rec-hist">${hist}</ol>
       </div>
       <div class="as-ebtns"><button type="button" class="as-gold" data-action="allstar-open">入場案内へ</button></div>

@@ -72,12 +72,14 @@ async function tour(kind) {
   const Q = 'AllstarUI._qa';
   // ミミの手番を自動で進める（mode: auto=AI と同じ判断、passive=チェックか降りる、call=チェックかコール）
   let mimiMode = 'auto';
-  let levelShot = false, drawShot = false;
+  let levelShot = false, drawShot = false, reviewShot = false;
   async function playUntil(cond, ms, onTurn) {
     const t0 = Date.now();
     while (Date.now() - t0 < ms) {
       // 初回の「本編とちがう所」（席の札の説明）は「わかった」で閉じる（11/22：閉じずに撮り、遊んでいる場面が全部この窓で隠れていた）
       await ev(`document.querySelector('.as-pg-ok')?.click()`);
+      // 手の後の答え合わせは、最初の1回だけ撮って「次のハンドへ」で閉じる（閉じないと大会が進まず、決勝・結果まで届かなかった）
+      if (await val(`!!document.querySelector('.as-review.on')`)) { if (!reviewShot) { reviewShot = true; await snap('review', 300); } await ev(`document.querySelector('[data-as="review-next"]')?.click()`); await sleep(300); continue; }
       if (await val(cond)) return true;
       if (!levelShot && await val(`!!document.querySelector('.as-banner:not(.is-calc):not(.out)') && ${Q}.T().handNo > 1`)) { levelShot = true; await snap('level_up', 150); }
       if (!drawShot && await val(`!!document.querySelector('.as-card.is-high')`)) { drawShot = true; await snap('button_draw', 0); }
@@ -157,7 +159,6 @@ async function tour(kind) {
   await rigAtBoundary(`(() => { const T = ${Q}.T(); const s = T.players.map(p => p.place == null ? p.stack : 0); s[0] = T.totalChips - 50; s[5] = 50; return s; })()`);
   if (await playUntil(`!!document.querySelector('.as-crown.on')`, 240000)) await snap('champion', 700);
   // 優勝の手の答え合わせは撮ってから「次のハンドへ」で閉じる（閉じないと結果画面が出ず、結果の撮影が答え合わせの窓になっていた）
-  if (await until(`!!document.querySelector('.as-review.on')`, 8000)) { await snap('review', 300); await ev(`document.querySelector('[data-as="review-next"]')?.click()`); }
   for (let i = 0; i < 60 && !(await val(`!!document.querySelector('.as-result.on')`)); i++) { await ev(`document.querySelector('[data-as="review-next"]')?.click()`); await sleep(500); }
   await sleep(2600); await snap('result', 400);
   // 記録

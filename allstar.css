@@ -968,3 +968,7 @@ html.is-compact #stage > .as-host .as-lv { gap: 4px; }
 .as-rv-more[open] > summary em { transform: rotate(90deg); }
 .as-rv-more > summary .as-rv-mk { flex: none; }
 .as-rv-more[open] > .as-rv-list { margin-top: 4px; max-height: 40vh; }
+/* 11/22 記録の窓：「12ハンド」「決勝 ヴェルベット」が語の途中で折れていた → 1つずつは折らない */
+.as-rec-hist li > * { white-space: nowrap; }
+.as-rec-hist li, html.is-compact .home-dialog.as-dialog .as-rec-hist li { grid-template-columns: auto auto auto minmax(0, 1fr) auto; }
+.as-rec-hist li > span:nth-of-type(3) { overflow: hidden; text-overflow: ellipsis; }
