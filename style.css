@@ -21411,3 +21411,13 @@ html.is-compact .battle-screen.v2.t8 > .t8-read-pop .note-tell-hint .ntt-tag:nth
 html.is-compact .battle-screen.v2.t8 > .t8-read-pop > .t8-note-tells { display: flex; flex-wrap: wrap; gap: calc(4px / var(--game-scale, 1)); }
 html.is-compact .battle-screen.v2.t8 > .t8-read-pop > .t8-note-tells:empty { display: none; }
 html.is-compact .battle-screen.v2.t8 > .t8-read-pop > .t8-note-tells .v2-tag { position: static !important; transform: none !important; font-size: var(--fx-cap); }
+/* 11/22 小さいスマホ（667幅など）の前からの崩れ2つ（ユーザー「その2つも直して」）
+   1) 相手の台詞が2行で切れていた（幅 217px＝1行15字）→ 幅を 44% に広げる（右の「相手の読み」の札の手前まで。1行18字・2行36字）
+   2) 役の名前（ハイカード等）が場札の下の端に重なっていた → 場札を 6px 上げ、手札の欄を下へ 7px 寄せて、間に役の名前を入れる */
+@media (max-width: 719px) {
+  html.is-compact .battle-screen.v2.t8 .opponent-speech.v2-band-text { max-width: calc((var(--rb-w, 844px) - 2 * var(--pad-x, 47px)) * .44 / var(--game-scale, 1)) !important; }
+  html.is-compact .battle-screen.v2.t8 .community-cards { translate: 0 calc(-6px / var(--game-scale, 1)); }
+  html.is-compact .battle-screen.v2.t8 > .v2-myhand { bottom: calc(3px / var(--game-scale, 1)) !important; }
+  /* 「相手の読み」の札は台詞の右端にかかるので、台詞の下・押す所の上（224〜268px）へ */
+  html.is-compact .battle-screen.v2.t8 > .t8-read-chip:not([hidden]) { top: calc(224px / var(--game-scale, 1)); }
+}
