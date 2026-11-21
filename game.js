@@ -12431,7 +12431,8 @@ function mpAudioCtx() {
   return _mpAudioCtx;
 }
 // 2026-11-21 録った効果音（Stable Audio で作りユーザーが聞き比べで選んだ5つ）。読めるまでは今までの合成の音で鳴らす
-const MP_SAMPLES = { deal: ['deal_6', 0.75], bet: ['bet_7', 0.8], fold: ['fold_2', 0.8], pot: ['pot_2', 0.8], pour: ['pour_1', 0.6, 2.8] };   // [ファイル, 大きさ, 鳴らす長さの上限（秒）]
+// 大きさは qa/sfxloud.mjs で、同じ場面の合成の音（チェック・コールの平均 -29dB・山 -16dB）にそろえた（11/21 ユーザー「音量めちゃくちゃ大事」）
+const MP_SAMPLES = { deal: ['deal_6', 0.375], bet: ['bet_7', 0.32], fold: ['fold_2', 0.4], pot: ['pot_2', 0.48], pour: ['pour_1', 0.3, 2.8] };   // [ファイル, 大きさ, 鳴らす長さの上限（秒）]
 const _mpBuf = {}; let _mpSamplesAsked = false;
 function mpLoadSamples() {
   if (_mpSamplesAsked || !_mpAudioCtx || typeof fetch !== 'function') return;
@@ -12449,9 +12450,9 @@ function mpSample(k, delayMs = 0) {
   const t0 = ctx.currentTime + delayMs / 1000;
   const src = ctx.createBufferSource(); src.buffer = buf;
   const g = ctx.createGain(); g.gain.value = vol * sfxVolFloat() * 1.6;
-  if (maxLen && buf.duration > maxLen) { g.gain.setValueAtTime(g.gain.value, t0 + maxLen - 0.5); g.gain.linearRampToValueAtTime(0.0001, t0 + maxLen); src.stop(t0 + maxLen + 0.05); }
   src.connect(g).connect(ctx.destination);
-  src.start(t0);
+  src.start(t0);   // stop は start の後でないと例外になる（注ぐ音が鳴らなかった）
+  if (maxLen && buf.duration > maxLen) { g.gain.setValueAtTime(g.gain.value, t0 + maxLen - 0.5); g.gain.linearRampToValueAtTime(0.0001, t0 + maxLen); src.stop(t0 + maxLen + 0.05); }
   return true;
 }
 

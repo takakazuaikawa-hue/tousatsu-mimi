@@ -1,55 +1,24 @@
-// 効果音（mpSfx の合成音）の大きさを測る（2026-10-30「BGM と効果音、声の釣り合いは問題ないか」）。
-// 検査ブラウザの中で mpAudioCtx を OfflineAudioContext に差し替えて1つずつ書き出し、
-// 一番うるさい 0.4 秒の RMS（dBFS、K 特性なしの目安）と最大値を出す。音量は初期値（効果音50）。
-// 使い方: QA_BROWSER=... QA_NO_SANDBOX=1 node qa/sfxloud.mjs
+// 録った効果音（mpSample）と、同じ場面の合成の音を、ゲームと同じ音量の決まりで録って大きさを比べる。node qa/sfxloud.mjs
+import fs from 'node:fs';
 import { openSession, sleep } from './lib/session.mjs';
-const s = await openSession({ width: 1280, height: 800, speed: 1 });
-const { page } = s;
-for (let i = 0; i < 60 && !(await page.eval('typeof mpSfx === "function"').catch(() => false)); i++) await sleep(500);
-const KINDS = ['tap', 'milestone', 'bigwin', 'check', 'flip', 'reach', 'tie', 'deal', 'lose', 'battle-bet', 'win', 'hand-lose', 'fold', 'call', 'royal', 'hand-win', 'garapon', 'double-win', 'double-lose', 'bet', 'battle-allin'];
-const res = await page.eval(`(async () => {
-  save.sfxOn = true; save.sfxVolume = 50; if (save.minipoker) save.minipoker.muted = false;
-  const out = [];
-  for (const k of ${JSON.stringify(KINDS)}) {
-    const ctx = new OfflineAudioContext(1, 48000 * 4, 48000);
-    ctx.resume = () => Promise.resolve();
-    _mpAudioCtx = ctx;
-    try { mpSfx(k); } catch (e) { out.push({ k, err: String(e) }); continue; }
-    const buf = await ctx.startRendering();
-    const d = buf.getChannelData(0);
-    let peak = 0; for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
-    const W = 19200; let best = 0;
-    for (let i = 0; i + W <= d.length; i += 2400) { let e = 0; for (let j = i; j < i + W; j++) e += d[j] * d[j]; best = Math.max(best, e / W); }
-    out.push({ k, rms: best ? Math.round(10 * Math.log10(best) * 10) / 10 : -99, peak: peak ? Math.round(20 * Math.log10(peak) * 10) / 10 : -99 });
-  }
-  _mpAudioCtx = null;
-  return out;
-})()`);
-for (const r of res) console.log(String(r.rms).padStart(7), String(r.peak).padStart(7), r.k, r.err || '');
-await s.close();
-
-// 曲と声も同じ物差しで（ゲームの初期値の音量・曲ごとの gain を掛けた、実際に出る大きさ）
-const s2 = await openSession({ width: 1280, height: 800, speed: 1 });
-for (let i = 0; i < 60 && !(await s2.page.eval('typeof SCENE_BGM === "object"').catch(() => false)); i++) await sleep(500);
-const res2 = await s2.page.eval(`(async () => {
-  const meas = async (url, g) => {
-    const ab = await (await fetch(url)).arrayBuffer();
-    const ac = new OfflineAudioContext(1, 48000, 48000);
-    const buf = await ac.decodeAudioData(ab);
-    const d = buf.getChannelData(0); const W = Math.round(buf.sampleRate * 0.4);
-    let best = 0, sum = 0, n = 0;
-    for (let i = 0; i + W <= d.length; i += Math.round(W / 4)) { let e = 0; for (let j = i; j < i + W; j++) e += d[j] * d[j]; e /= W; best = Math.max(best, e); sum += e; n++; }
-    const db = (x) => Math.round(10 * Math.log10(x * g * g) * 10) / 10;
-    return { url: url.split('/').slice(-2).join('/'), max: db(best), avg: db(sum / n) };
-  };
-  const out = [];
-  const bgm = 0.35;
-  out.push(await meas('assets/bgm/title.mp3', bgm));   // ホーム（gain なし）
-  for (const [k, v] of Object.entries(SCENE_BGM)) out.push(Object.assign(await meas(v.file, bgm * v.gain), { k }));
-  const man = await (await fetch('assets/voice/manifest.json')).json();
-  const ids = Object.keys(man.clips || {}).filter((x, i) => i % 25 === 0).slice(0, 10);
-  for (const id of ids) { const c = man.clips[id]; const f = 'assets/voice/' + (c.f || (id + '.m4a')); try { out.push(await meas(f, 0.6)); } catch (e) { out.push({ url: f, err: String(e).slice(0, 60) }); } }
-  return out;
-})()`);
-for (const r of res2) console.log(String(r.max).padStart(7), String(r.avg).padStart(7), r.k || '', r.url, r.err || '');
-await s2.close();
+const O = 'qa/out/sfx/loud'; fs.mkdirSync(O, { recursive: true });
+const session = await openSession({ width: 844, height: 390, mobile: true, speed: 1 });
+const { page } = session;
+for (let i = 0; i < 60 && !(await page.eval('typeof mpSfx === "function" && typeof save === "object"').catch(() => false)); i++) await sleep(500);
+await page.eval(`(() => { save.sfxOn = true; save.sfxVolume = save.sfxVolume ?? 60; mpAudioCtx(); return 1; })()`); await sleep(3000);
+// 合成の「チップの着地音」は flyChips の中の mpTone。同じ式をここで鳴らす
+const CASES = [['deal', `mpSfx('deal')`], ['bet', `mpSfx('bet')`], ['fold', `mpSfx('fold')`], ['pour', `mpSfx('pour')`], ['chipsland', `for (let i = 0; i < 6; i++) mpTone(1800 + 300, 0.03, 'square', 0.02, 0.001, 0.02, 380 + i * 55)`], ['pot', `mpSample('pot')`], ['betfly', `mpSample('bet', 300)`], ['check', `mpSfx('check')`], ['call', `mpSfx('call')`]];
+for (const synth of [true, false]) for (const [k, code] of CASES) {
+  const b64 = await page.eval(`(async () => {
+    const keep = Object.assign({}, _mpBuf); if (${synth}) for (const x in _mpBuf) delete _mpBuf[x];
+    const real = _mpAudioCtx; const sr = 44100, ctx = new OfflineAudioContext(1, sr * 4, sr); _mpAudioCtx = ctx; _mpSfxScale = sfxVolFloat();
+    try { ${code}; } catch (e) {}
+    await new Promise(r => setTimeout(r, 300));
+    const buf = await ctx.startRendering(); _mpAudioCtx = real; Object.assign(_mpBuf, keep);
+    const d = buf.getChannelData(0); let pk = 0, ss = 0, n = 0; for (const v of d) { pk = Math.max(pk, Math.abs(v)); if (Math.abs(v) > 1e-4) { ss += v * v; n++; } }
+    let m=d.length; while (m>1 && Math.abs(d[m-1])<1e-4) m--; m=Math.min(d.length,m+2205); const v=new DataView(new ArrayBuffer(44+m*2)); const w=(o,t)=>[...t].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0))); w(0,'RIFF'); v.setUint32(4,36+m*2,true); w(8,'WAVEfmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,m*2,true); for(let i=0;i<m;i++) v.setInt16(44+i*2,Math.max(-1,Math.min(1,d[i]))*32767,true); let bs=''; const u=new Uint8Array(v.buffer); for(let i=0;i<u.length;i+=8192) bs+=String.fromCharCode(...u.subarray(i,i+8192)); window.__lastWav=btoa(bs);
+    return JSON.stringify({ peak: +(20 * Math.log10(pk || 1e-9)).toFixed(1), rms: +(10 * Math.log10((ss / Math.max(1, n)) || 1e-12)).toFixed(1), len: +(n / sr).toFixed(2) });
+  })()`);
+  console.log(synth ? '合成' : '録音', k.padEnd(10), b64); if (!b64.includes('-180')) fs.writeFileSync(`${O}/${synth ? 'now' : 'new'}_${k}.wav`, Buffer.from(await page.eval('window.__lastWav'), 'base64'));
+}
+await session.close();
