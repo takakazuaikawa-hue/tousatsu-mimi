@@ -131,17 +131,19 @@ export function install({ FLOWS, drive, startGame, warmBattle, stateLine, SAVE1,
   FLOWS.allstar = async (c) => {
     await c.ready(); await c.page.eval(`new Promise(r => { const t = setInterval(() => { if (window.AllstarUI) { clearInterval(t); r(true); } }, 200); })`);
     await step(c, '続きから', async () => { await startGame(c); return lobbyUp(c); }); await warmAll(c); await c.wait(2500);
-    await step(c, '零時の卓の入口', async () => { await c.act('allstar-open'); return waitFor(c, `!!document.querySelector('.as-entry')`, 15000); }); await c.wait(2000);
+    // エンディングの後は、零時の卓の入口がホームの札「今夜の演目」の中にある（11/22：古い入口のボタンを探して失敗していた）
+    const viaHub = async (id) => { await c.clickSel('.h15-ticket'); await waitFor(c, `!!document.querySelector('.enc-panel')`, 8000); await c.wait(600); await c.clickSel(`.enc-c[data-id="${id}"]`); };
+    await step(c, '零時の卓の入口', async () => { await viaHub('allstar'); return waitFor(c, `!!document.querySelector('.as-entry')`, 15000); }); await c.wait(2000);
     await step(c, '着席', async () => { await c.clickSel('.as-entry [data-action="allstar-seat"]'); return waitFor(c, `!!document.querySelector('.as-open.on')`, 20000); });
     await waitFor(c, `!document.querySelector('.as-open')`, 40000); await c.wait(2500);
     // 1ハンド：ミミの手番を待って、コール
-    await step(c, 'ミミの手番', () => waitFor(c, `AllstarUI._qa.waiting()`, 90000));
+    await step(c, 'ミミの手番', async () => { for (let i = 0; i < 180; i++) { await c.clickSel('.as-pg-ok'); if (await c.page.eval(`AllstarUI._qa.waiting()`).catch(() => false)) return true; await c.wait(500); } return false; });
     await c.wait(1500);
     await c.page.eval(`AllstarUI._qa.actMimi('call'); true`);
     for (let i = 0; i < 120; i++) { if (await c.page.eval(`!!AllstarUI._qa.T() && AllstarUI._qa.T().handNo >= 2`).catch(() => false)) break; if (await c.page.eval(`AllstarUI._qa.waiting()`).catch(() => false)) await c.page.eval(`AllstarUI._qa.actMimi('call'); true`); await c.wait(500); }
     await c.wait(2000);
     await step(c, '中断してホームへ', async () => { await c.clickSel('.as-tool[data-as="menu"]'); await c.wait(900); await c.clickSel('.as-menu [data-as="leave"]'); return lobbyUp(c, 40000); }); await c.wait(3500);
-    await step(c, '続きから（零時）', async () => { await c.act('allstar-resume'); return waitFor(c, `!!document.querySelector('.as-host')`, 20000); }); await c.wait(5000);
+    await step(c, '続きから（零時）', async () => { await viaHub('allstar'); await waitFor(c, `!!document.querySelector('.as-entry [data-action="allstar-resume"], .as-host')`, 15000); await c.clickSel('.as-entry [data-action="allstar-resume"]'); return waitFor(c, `!!document.querySelector('.as-host')`, 20000); }); await c.wait(5000);
     await step(c, 'もう一度ホームへ', async () => { await c.clickSel('.as-tool[data-as="menu"]'); await c.wait(900); await c.clickSel('.as-menu [data-as="leave"]'); return lobbyUp(c, 40000); }); await c.wait(3000);
   };
   FLOWS.allstar.sessionOpts = () => ({ save: ALLSAVE() });

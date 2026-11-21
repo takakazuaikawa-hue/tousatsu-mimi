@@ -1582,10 +1582,10 @@
     let close = () => { };
     try { close = showLoadingVeil(); } catch (e) { }
     try { if (MA) await MA.ready(setNow(), 6000, { set: 'allstar' }); } catch (e) { }
-    close();
+    // 幕（準備中）は卓を描いてから下ろす。先に下ろすと、入口の窓が消えてから卓が出るまでホームが一瞬見えた（11/22 qa/flashcheck.mjs allstar）
     let t;
     if (resume && A.run && A.run.t) {
-      try { t = AS.restore(A.run.t); } catch (e) { console.warn(e); try { toast('保存した大会が読めなかったので、記録なしで終わりにしました', 'big'); } catch (x) { } A.run = null; saveProgress(); return; }
+      try { t = AS.restore(A.run.t); } catch (e) { console.warn(e); try { toast('保存した大会が読めなかったので、記録なしで終わりにしました', 'big'); } catch (x) { } A.run = null; saveProgress(); close(); return; }
     } else {
       A.invitationUsed = true;
       A.entries++;
@@ -1594,6 +1594,7 @@
       saveProgress();
     }
     begin(t, !!resume);
+    close();
   }
   function begin(t, resumed) {
     teardownTable();

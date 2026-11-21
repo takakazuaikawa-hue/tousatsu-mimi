@@ -1346,10 +1346,11 @@
       if (!b) { if (e.target === hub) closeHub(); return; }
       if (b.dataset.enc === 'close') return closeHub();
       const act = b.dataset.act; if (!act) { sfx('tap'); return; }
+      // 遊びに入る時（零時の卓の続きから等）は、準備中の幕が下りてから窓を閉じる（先に閉じるとホームが一瞬見えた。11/22 qa/flashcheck.mjs allstar）
+      if (act.startsWith('game:')) { gameAction(act.slice(5)); if (window.__veilPending) window.addEventListener('mimi-veil-done', closeHub, { once: true }); else closeHub(); return; }
       closeHub();
       if (act === 'baccarat') open();
       else if (act.startsWith('night-')) nightSet(act.slice(6));
-      else if (act.startsWith('game:')) gameAction(act.slice(5));
     });
     document.getElementById('stage').appendChild(hub);
     sfx('flip');
