@@ -21325,3 +21325,6 @@ html:not(.is-compact) .minipoker-overlay .mp-player .mp-card { width: 86px; heig
 html:not(.is-compact) .minipoker-overlay .mp-player .mp-card-suit-big { font-size: 46px; }
 html:not(.is-compact) .minipoker-overlay .mp-player .mp-card-corner { font-size: 18px; }
 html:not(.is-compact) .minipoker-overlay .mp-hand { gap: 10px; }
+
+/* 11/21 ゲームパッド：選んでいる物に金の枠（マウス・指で触ると消える） */
+html.is-pad .pad-focus { outline: 4px solid #fff3b0 !important; outline-offset: 2px; box-shadow: 0 0 0 7px rgba(255, 200, 60, .55), 0 0 26px 6px rgba(255, 215, 106, .85) !important; z-index: 5; filter: brightness(1.15); }
