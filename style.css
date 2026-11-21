@@ -21351,3 +21351,5 @@ html.is-compact .minipoker-modal:is([data-phase="result"], [data-phase="double"]
 /* 11/21 検査：結果の SCORE・RANK が何か分からない。統計の上に一言 */
 .rz-score-note { font-size: 14px; color: #cbb98f; text-align: center; margin: 4px 0 2px; }
 html.is-compact .rz-score-note { font-size: calc(14px / var(--game-scale, 1)); }
+/* 11/21 ユーザー「相手キャラクターが中心からずれてない？」：left 340px は 1280 幅の舞台の真ん中。スマホは舞台が 1536 幅なので 63px 左に寄っていた。幅によらず真ん中へ */
+.battle-screen.v2.t8 > .v2-opp { left: calc(50% - 300px) !important; }
