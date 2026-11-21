@@ -960,3 +960,11 @@ html.is-compact #stage > .as-host .as-tool[data-as="speed"] { width: 76px; }
 /* 11/21 検査：「Lv.1」と「25／50」が 3px でくっつき「Lv.125／50」と読めた。区切りの点を入れて離す */
 #stage > .as-host .as-lv .as-lv-b::before, .as-lv .as-lv-b::before { content: '・'; margin: 0 2px 0 0; opacity: .7; }
 html.is-compact #stage > .as-host .as-lv { gap: 4px; }
+/* 11/22 答え合わせ：違った判断（△×）だけ開き、プロと同じ（○）は1行にたたんで押すと開く */
+.as-rv-more { flex: none; min-height: 0; display: flex; flex-direction: column; }
+.as-rv-more > summary { list-style: none; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border: 1px dashed rgba(216,181,108,.35); background: rgba(40,8,12,.4); color: #d8c79a; cursor: pointer; }
+.as-rv-more > summary::-webkit-details-marker { display: none; }
+.as-rv-more > summary em { margin-left: auto; font-style: normal; color: #d9b35a; }
+.as-rv-more[open] > summary em { transform: rotate(90deg); }
+.as-rv-more > summary .as-rv-mk { flex: none; }
+.as-rv-more[open] > .as-rv-list { margin-top: 4px; max-height: 40vh; }

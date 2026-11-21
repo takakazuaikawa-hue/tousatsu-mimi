@@ -76,6 +76,8 @@ async function tour(kind) {
   async function playUntil(cond, ms, onTurn) {
     const t0 = Date.now();
     while (Date.now() - t0 < ms) {
+      // 初回の「本編とちがう所」（席の札の説明）は「わかった」で閉じる（11/22：閉じずに撮り、遊んでいる場面が全部この窓で隠れていた）
+      await ev(`document.querySelector('.as-pg-ok')?.click()`);
       if (await val(cond)) return true;
       if (!levelShot && await val(`!!document.querySelector('.as-banner:not(.is-calc):not(.out)') && ${Q}.T().handNo > 1`)) { levelShot = true; await snap('level_up', 150); }
       if (!drawShot && await val(`!!document.querySelector('.as-card.is-high')`)) { drawShot = true; await snap('button_draw', 0); }
@@ -114,6 +116,7 @@ async function tour(kind) {
   await sleep(700); await snap('opening_seats', 100);
   await until('document.querySelector(".as-sub[data-on=\\"1\\"]")', 6000, 50); await snap('opening_line', 100);
   // 第1ハンド：ミミの手番
+  await snap('posguide');
   await playUntil(`${Q}.waiting()`, 40000);
   await snap('mimi_turn');
   await ev(`document.querySelector('.as-raise:not(:disabled)')?.click()`); await sleep(500);

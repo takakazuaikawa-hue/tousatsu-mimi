@@ -1182,15 +1182,22 @@
       el.remove();
       return;
     }
-    const list = graded.slice(-5).map(r => {
+    // 11/22 ユーザー「文字情報が多すぎる。情報系はボタンを押したら開くように」：違った判断（△×）だけを開いて見せ、
+    // プロと同じ（○）は「ほかの N 回はプロと同じ」の1行にたたみ、押すと開く
+    const rowHTML = (r) => {
       const tile = { stack: 'stack', position: 'pos', price: 'odds', hand: 'odds', prize: 'prize' }[r.pro.key];
       const [mk, word] = GRADE[r.grade];
       return `<li class="as-rv-row" data-g="${r.grade}"><i class="as-rv-mk" aria-label="${word}">${mk}</i>
         <div class="as-rv-b"><div class="as-rv-r"><b class="as-rv-st">${STREET_JA[r.street] || ''}</b><span class="as-rv-k">ミミ <b>${kindJA(r.mine, r.isBet)}</b></span><span class="as-rv-k">プロ <b data-k="${r.proLean}">${kindJA(r.proLean, r.isBet)}寄り</b></span></div>
         <p class="as-rv-t">${r.free && r.mine === 'fold' ? wb('チェックなら|払わずに残れた。|降りる必要はなかった') : wb(CK_LABEL[tile] + '：|' + coachReason(r.pro))}</p></div></li>`;
-    }).join('');
+    };
+    const shown = graded.slice(-5);
+    const bad = shown.filter(r => r.grade !== 'ok'), same = shown.filter(r => r.grade === 'ok');
+    const list = bad.map(rowHTML).join('');
+    const sameStreets = [...new Set(same.map(r => STREET_JA[r.street] || ''))].filter(Boolean).join('・');
+    const more = same.length ? `<details class="as-rv-more"><summary class="as-rv-t as-rv-sum"><i class="as-rv-mk" aria-hidden="true">○</i>ほかの ${same.length} 回はプロと同じ${sameStreets ? `（${sameStreets}）` : ''}<em>▸</em></summary><ol class="as-rv-list">${same.map(rowHTML).join('')}</ol></details>` : '';
     const el = layerEl('as-review', `<div class="as-rv-h"><b>答え合わせ</b><span>この大会でプロと同じ ${R.same}／${R.total}</span></div>
-      <ol class="as-rv-list">${list}</ol>
+      <ol class="as-rv-list">${list}</ol>${more}
       <div class="as-rv-btns"><button type="button" class="as-gold" data-as="review-next">次のハンドへ</button><button type="button" data-as="review-stop">もう出さない</button></div>`);
     requestAnimationFrame(() => el.classList.add('on'));
     await new Promise((res) => { reviewDone = () => { reviewDone = null; res(); }; });
