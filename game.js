@@ -9456,7 +9456,8 @@ function flyChips(fromSel, toSel, amount, opts = {}) {
     anim.onfinish = () => el.remove();
   }
   // チップの着地音（SFX ON時のみ、少量）
-  if (isSfxOn()) {
+  // 11/21 録った音：場から勝者へ＝チップを集める音、場へ＝チップを賭ける音。読めていない間は今までの細かい着地音
+  if (isSfxOn() && !mpSample(String(fromSel).includes('pot') ? 'pot' : 'bet', (opts.delay || 0) + (String(fromSel).includes('pot') ? 120 : 300))) {
     _mpSfxScale = sfxVolFloat();
     for (let i = 0; i < Math.min(n, 6); i++) mpTone(1800 + rand() * 700, 0.03, 'square', 0.02, 0.001, 0.02, (opts.delay || 0) + 380 + i * 55);
   }
@@ -12426,7 +12427,32 @@ function mpAudioCtx() {
     catch (e) { return null; }
   }
   if (_mpAudioCtx.state === 'suspended') _mpAudioCtx.resume();
+  mpLoadSamples();
   return _mpAudioCtx;
+}
+// 2026-11-21 録った効果音（Stable Audio で作りユーザーが聞き比べで選んだ5つ）。読めるまでは今までの合成の音で鳴らす
+const MP_SAMPLES = { deal: ['deal_6', 0.75], bet: ['bet_7', 0.8], fold: ['fold_2', 0.8], pot: ['pot_2', 0.8], pour: ['pour_1', 0.6, 2.8] };   // [ファイル, 大きさ, 鳴らす長さの上限（秒）]
+const _mpBuf = {}; let _mpSamplesAsked = false;
+function mpLoadSamples() {
+  if (_mpSamplesAsked || !_mpAudioCtx || typeof fetch !== 'function') return;
+  _mpSamplesAsked = true;
+  const ctx = _mpAudioCtx;
+  Object.entries(MP_SAMPLES).forEach(([k, [file]]) => {
+    fetch('assets/sfx/' + file + '.m4a').then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(b => new Promise((ok, ng) => ctx.decodeAudioData(b, ok, ng))).then(buf => { _mpBuf[k] = buf; }).catch(() => {});
+  });
+}
+// 鳴らせたら true（まだ読めていない・音が OFF なら false＝呼んだ側が合成の音で鳴らす）
+function mpSample(k, delayMs = 0) {
+  if (!isSfxOn()) return false;
+  const ctx = mpAudioCtx(); const buf = _mpBuf[k]; if (!ctx || !buf) return false;
+  const [, vol, maxLen] = MP_SAMPLES[k];
+  const t0 = ctx.currentTime + delayMs / 1000;
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const g = ctx.createGain(); g.gain.value = vol * sfxVolFloat() * 1.6;
+  if (maxLen && buf.duration > maxLen) { g.gain.setValueAtTime(g.gain.value, t0 + maxLen - 0.5); g.gain.linearRampToValueAtTime(0.0001, t0 + maxLen); src.stop(t0 + maxLen + 0.05); }
+  src.connect(g).connect(ctx.destination);
+  src.start(t0);
+  return true;
 }
 
 // ── iPhone の「消音スイッチ（サイレントモード）」対応（ドラゴンレースと同方式・二段構え）──
@@ -12574,6 +12600,7 @@ function mpSfx(kind) {
   if (save && save.minipoker && save.minipoker.muted) return;
   // SFX全体音量を gain にかけるため、_mpSfxScale をセット
   _mpSfxScale = sfxVolFloat();
+  if ((kind === 'deal' || kind === 'fold' || kind === 'pour' || kind === 'bet') && mpSample(kind)) { if (kind === 'deal') mpSample('deal', 130); return; }
   switch (kind) {
     case 'clink': case 'gulp': case 'guby': case 'pour': mpDrinkSfx(kind); break;
     case 'tap':       mpTone(720, 0.06, 'square', 0.03); break;
