@@ -44,6 +44,9 @@ html #stage .battle-screen.v2.t8 .rico-bubble.v2-com-text {
   font-size: calc(var(--r-speech) / var(--game-scale, 1)) !important;
 }
 
+/* リコ先輩の吹き出し（スマホ）は一段小さく注記の段（11/22 ユーザー「少し文字を小さくして、まとめないと」）。2行まで、続きは押して開く */
+html.is-compact #stage .battle-screen.v2.t8 .rico-bubble.v2-com-text { font-size: calc(var(--r-note) / var(--game-scale, 1)) !important; }
+
 /* ---------- 台詞・一言（読み合い）：縮めないのでそのまま ---------- */
 html #stage > .read-battle-host.mb-host .mb-speech,
 html #stage > .read-battle-host.mb-host .mb-speech > span,

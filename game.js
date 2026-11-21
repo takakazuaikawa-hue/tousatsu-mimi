@@ -1674,10 +1674,10 @@ function granoSpeech(action) {
 }
 function pickRicoOpeningAdvice(opponentId) {
   switch (opponentId) {
-    case 'polka':  return '「ポルカは弱い手ほど騒ぐタイプ。声と仕草をよく見な〜」';
-    case 'selina': return '「セリナは理屈派。ベットサイズに意味があるから、なぜ今その額なのか考えよ」';
-    case 'grano':  return '「グラーノは商人だからね。安いか高いかでコール判断する癖つけてー」';
-    case 'velvet': return '「ヴェルベットは口で揺さぶってくるタイプね。冷静を保てば隙は見えるよ」';
+    case 'polka':  return '「ポルカは弱い手ほど騒ぐよ。声と仕草を見な〜」';
+    case 'selina': return '「セリナは理屈派。賭けた額の意味を考えよ」';
+    case 'grano':  return '「グラーノは商人。安いか高いかでコールを決めよ」';
+    case 'velvet': return '「ヴェルベットは口で揺さぶるよ。冷静なら隙が見える」';
     default:       return '「ま、気楽にいこ〜」';
   }
 }
@@ -3309,7 +3309,7 @@ function render() {
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); applyTitleScene(); if (isBgmOn()) playSceneBgm('title'); break;
     case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); renderLobbyV3(); tryStartLobbyBgm(); break;
-    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyOpponentIdle(); applyBattleRicoOutfit(); applyNoteTellHint(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI(); if (state.lectureMode) applyLectureUI(); { const pl = document.querySelector('[data-pause-label]'); if (pl) pl.textContent = state.lectureMode ? '中断' : 'やめる'; }
+    case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyOpponentIdle(); applyBattleRicoOutfit(); applyNoteTellHint(); applyReadPop(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI(); if (state.lectureMode) applyLectureUI(); { const pl = document.querySelector('[data-pause-label]'); if (pl) pl.textContent = state.lectureMode ? '中断' : 'やめる'; }
       // v2 拍④「決断」：ミミの手番は卓と相手を落として札と選択肢に視線を集める
       { const scr = document.querySelector('.battle-screen.v2'); if (scr) { scr.classList.toggle('is-deciding', !!(state.isPlayerTurn && state.handPhase !== 'idle' && state.handPhase !== 'showdown' && !state.psychPending));
         const blur = !!(state.deisui && state.isPlayerTurn && state.__blurStreet && state.handPhase === state.__blurStreet);
@@ -3601,6 +3601,7 @@ function applyBindings() {
         else if (inner) { const ls = String(state.mimiThought || '').replace(/(本気の)?リコ先輩/g, '先輩').split('\n').filter(Boolean); const wide = document.documentElement.classList.contains('is-compact');   // PC の欄は狭く3行しか入らない：「→ どうするか」を優先
           el.textContent = ls.length > 1 && !wide ? ls[ls.length - 1] : ls.length > 2 ? ls[0] + '\n' + ls[ls.length - 1] : ls.join('\n'); }
         else el.innerHTML = state.ricoAdvice;
+        if (row) syncRicoMore(row, el);
         break;
       }
       case 'opponentSpeech': {
@@ -3753,8 +3754,8 @@ function applyBindings() {
       case 'anteInfo': el.innerHTML = renderAnteInfo(); break;
       case 'opponentNameLatin': el.textContent = opponentLatinName(); break;
       case 'potBlock': el.innerHTML = renderPotBlock(); break;
-      case 'tellTags': el.innerHTML = renderTellTags(); break;
-      case 'noteRangeBand': el.innerHTML = renderNoteRangeBand(); break;
+      case 'tellTags': el.innerHTML = renderTellTags(); queueMicrotask(applyReadPop); break;
+      case 'noteRangeBand': el.innerHTML = renderNoteRangeBand(); queueMicrotask(applyReadPop); break;
       case 'winrateSeal': el.innerHTML = renderWinrateSeal(); break;
       case 'oppStackGauge':  el.innerHTML = renderTugOfWar(el);  break;
       case 'mimiStackGauge': el.innerHTML = ''; break; // 綱引きの帯に一本化（2本のバーは互いに比べられなかった）
@@ -6329,6 +6330,50 @@ function pickLobbyRico() {
     state.lobbyRicoChangedAt = state.screen;
   }
   return RICO_OUTFITS[state.lobbyRicoIndex];
+}
+// 11/22 ユーザー「縦に四行は多すぎ。情報系はボタンを押したら開くように」
+// スマホの卓：相手の読み（レンジ帯・相手の傾向・読みの札）は「相手の読み」の札1つにまとめ、押すと開く。札には帯の一言（強め寄り／五分／弱め寄り）だけ色で出す
+function applyReadPop() {
+  const scr = document.querySelector('.battle-screen.v2.t8');
+  const chip = scr && scr.querySelector(':scope > .t8-read-chip');
+  if (!scr || !chip) return;
+  if (!document.documentElement.classList.contains('is-compact')) { chip.hidden = true; return; }
+  let pop = scr.querySelector(':scope > .t8-read-pop');
+  if (!pop) {
+    pop = document.createElement('div'); pop.className = 't8-read-pop';
+    pop.innerHTML = '<div class="trp-head">相手の読み<button type="button" class="trp-close" title="閉じる" aria-label="閉じる">✕</button></div>';
+    pop.querySelector('.trp-close').addEventListener('click', (e) => { e.stopPropagation(); state.readInfoOpen = false; applyReadPop(); });
+    scr.insertBefore(pop, chip);
+  }
+  ['.v2-range-band', '.opponent-info', '.t8-note-tells'].forEach(s => { const e = scr.querySelector(':scope > ' + s); if (e) pop.appendChild(e); });
+  const band = pop.querySelector('.rb-inner');
+  const has = [...pop.children].some(k => !k.classList.contains('trp-head') && k.textContent.trim() !== '');
+  const bandCls = band ? (band.className.match(/rb-(strong|even|weak)/) || [])[1] : '';
+  const word = band ? (band.querySelector('.rb-band') || {}).textContent : '';
+  chip.hidden = !has || !!scr.querySelector('.bet-chooser');
+  chip.className = 't8-read-chip' + (bandCls ? ' is-' + bandCls : '') + (state.readInfoOpen ? ' is-open' : '');
+  chip.innerHTML = `<span class="trc-k">相手の読み</span>${word ? `<b class="trc-v">${word}</b>` : ''}<i class="trc-arrow" aria-hidden="true">${state.readInfoOpen ? '▾' : '▸'}</i>`;
+  const open = has && !!state.readInfoOpen;
+  pop.classList.toggle('is-open', open);
+  scr.classList.toggle('read-open', open);
+  if (!applyReadPop._out) {   // 外を押したら閉じる
+    applyReadPop._out = (e) => { if (!state.readInfoOpen) return; if (e.target.closest('.t8-read-pop, .t8-read-chip')) return; state.readInfoOpen = false; applyReadPop(); };
+    document.addEventListener('pointerdown', applyReadPop._out, true);
+  }
+}
+// リコ先輩の吹き出し：スマホは2行まで（小さいスマホは3行）。入らない時は「▸」を出し、押すと全文を開く。文が変わったら閉じる
+function syncRicoMore(row, el) {
+  if (row.__ricoText !== el.innerHTML) { row.__ricoText = el.innerHTML; row.classList.remove('is-open'); }
+  if (!row.__ricoTap) {
+    row.__ricoTap = true;
+    row.addEventListener('click', () => { if (row.classList.contains('has-more') || row.classList.contains('is-open')) row.classList.toggle('is-open'); });
+  }
+  requestAnimationFrame(() => {
+    if (row.classList.contains('is-open')) return;
+    const more = el.scrollHeight > el.clientHeight + 2;
+    row.classList.toggle('has-more', more);
+    if (more) { row.setAttribute('role', 'button'); row.tabIndex = 0; } else { row.removeAttribute('role'); row.removeAttribute('tabindex'); }
+  });
 }
 // note_tell：対戦相手の傾向（攻撃的/受け身/ブラフ多）を事前表示。
 // 練習用「相手の手札を見る」の生の数値とは別物：定性的なタグのみ、購入者限定。
@@ -9492,6 +9537,7 @@ function showShowdownCallout(winner, pEv, oEv) {
 function resetHandJuice() {
   state.__dealSeen = { community: 0, player: 0, opp: 0 };
   state.tellTags = [];
+  state.readInfoOpen = false;
   state.winrateRevealed = false;
   state.pendingRevealFrom = -1;
   state.lastRevealTier = null;
@@ -9776,8 +9822,8 @@ function computeSuggestVerb(need) {
   return eq >= 0.68 ? 'bet' : 'call';
 }
 const SUGGEST_LINES = {
-  fold: '払う額のわりに手が弱いかも。ここは降りても損は小さいよ',
-  call: '払う額と手の強さ、釣り合ってる。付いていってみよ',
+  fold: '払う額のわりに手が弱いかも。降りても損は小さいよ',
+  call: '払う額と手の強さが釣り合ってる。付いていこ',
   check: '無理しないで、タダで次の札を見よう',
   bet: 'いい手！　賭けて相手から取りに行こ',
 };
@@ -10215,6 +10261,11 @@ function onAction(e) {
       playStaffRollReplay();
       break;
     case 'play-minipoker': showMiniPokerGame(); break;
+    case 'toggle-read-info': {
+      state.readInfoOpen = !state.readInfoOpen;
+      applyReadPop();
+      break;
+    }
     case 'toggle-v2-detail': {
       const panel = document.querySelector('.v2-detail');
       if (!panel) break;
@@ -15733,7 +15784,7 @@ function startBattleInternal(opponentId) {
 
   if (opp.isBoss) {
     state.mimiThought = '「ボス戦だ……気持ちで負けないようにしないと」';
-    state.ricoAdvice = '「ヴェルベットは強いし口でも揺さぶってくる。劣勢になったら集中力高めに、ね」';
+    state.ricoAdvice = '「ヴェルベットは口でも揺さぶるよ。劣勢でも集中ね」';
     render();
     // 開幕心理バトルは廃止（劣勢になった時の本気の読み合いに集中）
   }
@@ -16840,7 +16891,7 @@ function renderAnteInfo() {
   const next = ANTE_LEVELS[ANTE_LEVELS.indexOf(now) + 1];
   const nextAt = (Math.floor((h - 1) / ANTE_STEP) + 1) * ANTE_STEP + 1;
   const tail = next == null ? '' : nextAt === h + 1 ? `次のハンドから ${next}` : `${nextAt}ハンド目から ${next}`;
-  return `<span class="t8-ante-k">参加費</span><b class="t8-ante-v">${now}</b>${tail ? `<span class="t8-ante-next">${tail}</span>` : ''}`;
+  return `<span class="t8-ante-k">参加費</span><b class="t8-ante-v">${now}</b>${tail ? `<span class="t8-ante-next${nextAt === h + 1 ? ' is-soon' : ''}">${tail}</span>` : ''}`;
 }
 // 次のハンドで参加費が上がるなら { from, to, level }（結果の札で知らせる）
 function anteChangeAt(handNo) {
@@ -16914,7 +16965,7 @@ function startHand() {
     state.opponentSpeech = opponentReadyLine();
   }
   state.mimiThought = mimiThoughtPreflop(state.playerHand);
-  state.ricoAdvice = `「Hand ${state.handNo}、いっくよー。参加費は${ante}ずつ。まずは手札確認ね」`;
+  state.ricoAdvice = `「Hand ${state.handNo}、いっくよー。参加費は${ante}ずつ」`;
   log('actions', { phase: 'preflop_start', playerHand: state.playerHand.map(c => c.label + c.suit) });
   render();
 
@@ -17611,7 +17662,7 @@ function showRebuy() {
   el.querySelector('.rb-go').addEventListener('click', () => {
     state.playerChips = stack;
     state.mimiThought = '「……まだ終わってない。今度こそ読み切る」';
-    state.ricoAdvice = '「深呼吸。相手は調子に乗ってる。乗ってる時ほど、崩れる隙があるよ」';
+    state.ricoAdvice = '「深呼吸。調子に乗ってる時ほど隙が出るよ」';
     el.classList.add('out');
     setTimeout(() => { el.remove(); render(); }, 360);
   }, { once: true });
@@ -18296,7 +18347,7 @@ function startRd(group, gameId, next, extra) {
           // 外した異議：ミミの札が1枚「見せた」扱い（卓の自分の札に印）
           state.rdShown = { hand, idx: r.shown, game: gameId };
           state.mimiThought = '「異議が外れた……。ミミの札を1枚、見せてしまった」';
-          state.ricoAdvice = '「見せた札は、この手の間 相手に見えてるよ。そのつもりで決めて」';
+          state.ricoAdvice = '「見せた札は、この手の間 相手に見えてるよ」';
           log('psych', { qid: 'rd_' + gameId, success: false });
         } else if (r.pending) {
           state.pendingRead = { ...r.pending, kind: 'rd', gameId, group, oppKey, handNo: hand };
@@ -18469,7 +18520,7 @@ function finishReadBattle(group, gameId, r, gain) {
     if (gameId === 'sniper' && state.sniperBetHand === state.handNo) state.mimiThought = `「狙う額は ${state.sniperBet}。そのまま賭ける」`;
     // ご褒美の一言は、このハンドの間ずっと右の吹き出しに残す（決める時に読み返せるように。吹き出しは2行まで）
     const T = READ_TELLS.find(t => t.k === hint.k) || READ_TELLS[1];
-    state.ricoAdvice = `「読み：${(state.opponentName || '相手').replace(/（.*）/, '')}は${T.word}。${READ_ADVICE_SHORT[T.k]}」`;
+    state.ricoAdvice = `「読みは『${T.word}』。${READ_ADVICE_SHORT[T.k]}」`;   // 2行（27字）に入る長さ。相手の名前は卓で分かるので省く
   } else {
     state.mimiThought = '「読み違えた……。でも、手札はまだ生きてる」';
     state.ricoAdvice = '「外れても、ここからの判断は別の勝負。落ち着いて」';

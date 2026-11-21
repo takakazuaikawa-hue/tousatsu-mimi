@@ -59,6 +59,13 @@ try {
     await ev(`state.betChooserOpen = true; render();`); await sleep(600); await shot(opp, '2_bet');
     await ev(`state.betChooserOpen = false; while (state.community.length < 3) state.community.push(state.deck.pop()); state.handPhase = 'flop'; state.currentBetOpponent = (state.currentBetPlayer || 0) + 66; state.pot += 66; state.isPlayerTurn = true;
       state.opponentSpeech = 'おっと、ミミちゃん降りないの？ ボクはまだまだいけるよ〜！'; state.tellTags = ['相手は弱い', '相手は五分']; render();`); await sleep(1200); await shot(opp, '3_flop');
+    // 11/22 押して開く物：相手の読みの札と、リコ先輩の吹き出しの続き（QA_OPEN=1 の時だけ撮る）
+    if (process.env.QA_OPEN) {
+      await ev(`document.querySelector('.t8-read-chip:not([hidden])')?.click();`); await sleep(600); await shot(opp, '3a_readopen');
+      await ev(`state.readInfoOpen = false; applyReadPop(); state.ricoAdvice = '「相手から自分の札がどう見えるか。それもリーディングだよ。払う額も見てね」'; render();`); await sleep(800); await shot(opp, '3b_ricomore');
+      await ev(`document.querySelector('.v2-com-rico.has-more')?.click();`); await sleep(500); await shot(opp, '3c_ricoopen');
+      await ev(`document.querySelector('.v2-com-rico.is-open')?.click();`); await sleep(300);
+    }
     await ev(`while (state.community.length < 5) state.community.push(state.deck.pop()); state.handPhase = 'showdown'; state.opponentRevealed = true; state.isPlayerTurn = false; render();`); await sleep(1500); await shot(opp, '4_showdown');
   }
   fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(report, null, 1));
