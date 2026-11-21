@@ -1,0 +1,34 @@
+// 対戦画面の音の小窓を確かめる（台帳31）。使い方: node qa/soundpanel.mjs <outDir> [pc|phone]
+import fs from 'node:fs';
+import path from 'node:path';
+import { openSession, sleep } from './lib/session.mjs';
+const out = process.argv[2] || 'qa/out/soundpanel';
+const phone = process.argv[3] === 'phone';
+fs.mkdirSync(out, { recursive: true });
+const session = await openSession(phone ? { width: 844, height: 390, speed: 1 } : { width: 1280, height: 800, speed: 1 });
+const { page } = session;
+const ev = (s) => page.eval(`(() => { ${s} })()`);
+for (let i = 0; i < 60 && !(await page.eval('typeof render === "function" && typeof save === "object"').catch(() => false)); i++) await sleep(500);
+await ev(`save.clearedStages = ['rico_tutorial','polka','selina','grano','velvet']; save.firstClearRewardClaimed = save.clearedStages.slice(); save.rulesSeen = true; state.screen = 'lobby'; render(); return 1;`);
+await sleep(3000);
+await ev(`startBattle('polka'); return 1;`); await sleep(9000);
+// 最初の説明の窓があれば閉じる
+await ev(`document.querySelector('.mk-next') && document.querySelector('.mk-next').click(); return 1;`); await sleep(800);
+await ev(`document.querySelector('.mk-next') && document.querySelector('.mk-next').click(); return 1;`); await sleep(800);
+await ev(`document.querySelector('.mk-next') && document.querySelector('.mk-next').click(); return 1;`); await sleep(1200);
+const log = [];
+await ev(`document.querySelector('.sound-toggle').click(); return 1;`); await sleep(600);
+log.push(['開く', await page.eval(`!!document.querySelector('.sound-panel')`)]);
+const r = await page.eval(`(() => { const p = document.querySelector('.sound-panel').getBoundingClientRect(); const b = document.querySelector('.sound-toggle').getBoundingClientRect(); const rows = [...document.querySelectorAll('.sound-panel .sp-range')].map(x => Math.round(x.getBoundingClientRect().height)); return { panel: [Math.round(p.x), Math.round(p.y), Math.round(p.width), Math.round(p.height)], btn: [Math.round(b.x), Math.round(b.y)], rangeH: rows, vw: innerWidth, vh: innerHeight }; })()`);
+log.push(['位置', r]);
+await page.screenshot(path.join(out, `${phone ? 'phone' : 'pc'}_panel.png`));
+await ev(`const r = document.querySelector('[data-sp="voice"]'); r.value = 25; r.dispatchEvent(new Event('input', { bubbles: true })); r.dispatchEvent(new Event('change', { bubbles: true })); const b = document.querySelector('[data-sp="bgm"]'); b.value = 10; b.dispatchEvent(new Event('input', { bubbles: true })); return 1;`);
+log.push(['声25・曲10', await page.eval(`[save.voiceVolume, save.bgmVolume, save.sfxVolume]`)]);
+await ev(`document.querySelector('.sp-mute').click(); return 1;`); await sleep(300);
+log.push(['すべて消す', await page.eval(`[save.bgmOn, save.sfxOn, document.querySelector('.sp-mute').textContent]`)]);
+await ev(`const r = document.querySelector('[data-sp="sfx"]'); r.value = 40; r.dispatchEvent(new Event('input', { bubbles: true })); return 1;`);
+log.push(['消した後につまみ→戻る', await page.eval(`[save.bgmOn, save.sfxOn, save.sfxVolume]`)]);
+await ev(`document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); return 1;`); await sleep(300);
+log.push(['外を押す→閉じる', await page.eval(`!document.querySelector('.sound-panel')`)]);
+console.log(JSON.stringify(log));
+await session.close();

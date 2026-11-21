@@ -1,0 +1,12 @@
+import path from 'node:path';
+import { openSession, sleep } from './lib/session.mjs';
+const session = await openSession({ width: 1280, height: 800, speed: 1 });
+const { page } = session;
+for (let i = 0; i < 60 && !(await page.eval('typeof render === "function" && typeof save === "object"').catch(() => false)); i++) await sleep(500);
+await sleep(2500);
+await page.eval(`(() => { state.screen = 'title'; render(); return true; })()`);
+await sleep(1500);
+console.log(await page.eval(`JSON.stringify((() => { state.screen = 'shop'; render(); const w = document.querySelector('#stage > .scr-wipe'); w.style.pointerEvents='auto'; w.querySelectorAll('i').forEach(i=>i.style.pointerEvents='auto'); const t = document.elementFromPoint(640,400); const t2 = document.elementFromPoint(100,100); w.style.animationPlayState='paused'; w.querySelectorAll('i').forEach(i=>i.style.animationPlayState='paused'); return [t && (t.className||t.tagName), t2 && (t2.className||t2.tagName), document.getAnimations().filter(a=>a.effect&&a.effect.target&&a.effect.target.closest&&a.effect.target.closest('.scr-wipe')).map(a=>a.animationName+':'+Math.round(a.currentTime)+':'+a.playState).join(',')]; })())`));
+await sleep(500);
+await page.screenshot(path.resolve('qa/out/wipeshot/paused.png'));
+await session.close();

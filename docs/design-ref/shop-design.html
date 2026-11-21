@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Bebas+Neue&display=swap">
+  <style>
+    body { margin: 0; font-family: "Noto Sans JP", "Yu Gothic", "Hiragino Sans", sans-serif; color: #f7eecf; background: #0b0510; }
+    a { color: #f5d77a; } a:hover { color: #fff3c4; }
+    .disp { font-family: "Bebas Neue", "Noto Sans JP", Impact, sans-serif; letter-spacing: .06em; }
+    .tab { height: 46px; padding: 0 22px; border: 0; font-family: inherit; font-weight: 900; font-size: 15px; transform: skewX(-12deg); background: rgba(0,0,0,.5); color: #c4b89a; box-shadow: inset 0 0 0 1px rgba(217,179,90,.35); }
+    .tab > span { display: inline-block; transform: skewX(12deg); }
+    .tab.on { background: linear-gradient(90deg, #f5d77a, #d9b35a); color: #14081d; box-shadow: 0 0 22px rgba(245,215,122,.4); }
+    .item { position: relative; display: flex; align-items: center; gap: 14px; height: 84px; padding: 0 20px; background: rgba(20,8,29,.88); box-shadow: inset 0 0 0 1px rgba(245,215,122,.3), 0 10px 22px rgba(0,0,0,.5); transform: skewX(-6deg); }
+    .item > * { transform: skewX(6deg); }
+    .item-ic { width: 52px; height: 52px; flex: 0 0 auto; border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.25), rgba(255,255,255,0) 45%), #5a2a8a; box-shadow: inset 0 0 0 2px rgba(245,215,122,.5); display: flex; align-items: center; justify-content: center; }
+    .item-name { font-size: 17px; font-weight: 900; }
+    .item-desc { font-size: 12px; color: #c4b89a; font-weight: 600; line-height: 1.35; }
+    .item-price { margin-left: auto; text-align: right; }
+    .item-price .n { font-family: "Bebas Neue", Impact, sans-serif; font-size: 30px; color: #f5d77a; line-height: 1; }
+    .item-buy { height: 40px; padding: 0 18px; border: 0; background: linear-gradient(90deg, #f5d77a, #d9b35a); color: #14081d; font-weight: 900; font-family: inherit; font-size: 14px; }
+    .gen { position: absolute; z-index: 5; padding: 3px 8px; background: #ffc1d8; color: #3a0f2a; font-size: 10px; font-weight: 900; transform: rotate(4deg); }
+  </style>
+</helmet>
+<div style="position: relative; width: 1280px; height: 800px; overflow: hidden; background: #0b0510;">
+  <!-- 背景：グラーノの店（新規生成予定：ランプの灯る骨董バザール） -->
+  <div style="position: absolute; inset: 0; background: url(./shop.jpg) center 40% / cover no-repeat; filter: brightness(.6) saturate(.9);"></div>
+  <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,5,16,.2) 0%, rgba(11,5,16,.75) 44%, rgba(11,5,16,.9) 100%);"></div>
+  <div class="gen" style="left: 12px; top: 108px;">背景 新規生成：ランプの灯る骨董バザール</div>
+
+  <!-- グラーノ：店主として左に大きく（新規生成：商品を差し出す笑顔ポーズ） -->
+  <div style="position: absolute; left: -30px; bottom: -30px; width: 480px; height: 740px; display: flex; align-items: flex-end; justify-content: center;">
+    <img src="./grano_recommend.webp" alt="グラーノ" style="height: 100%; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(0,0,0,.85));">
+    <div class="gen" style="right: 30px; top: 60px;">新規生成：おすすめポーズ差分</div>
+  </div>
+  <div style="position: absolute; left: 60px; bottom: 40px; top: auto; max-width: 320px; padding: 12px 16px; background: rgba(255,253,243,.96); color: #14081d; font-size: 14px; font-weight: 700; border-radius: 14px; box-shadow: 0 8px 20px rgba(0,0,0,.5);">「おや、いらっしゃい。今日の掘り出し物は……ふふ、良い目をお持ちだ」</div>
+
+  <!-- 見出し -->
+  <div style="position: absolute; left: 36px; top: 14px;">
+    <div class="disp" style="font-size: 20px; color: #c4b89a; letter-spacing: .4em;">GRANO TRADING CO.</div>
+    <div style="font-size: 40px; font-weight: 900; letter-spacing: .1em; line-height: 1.1; text-shadow: 0 4px 0 rgba(0,0,0,.5);">交換所</div>
+  </div>
+  <div style="position: absolute; right: 40px; top: 14px; text-align: right;">
+    <div class="disp" style="font-size: 16px; color: #c4b89a; letter-spacing: .3em;">COINS</div>
+    <div class="disp" style="font-size: 64px; line-height: .9; color: #f5d77a; text-shadow: 0 0 30px rgba(245,215,122,.5);">1,250</div>
+  </div>
+
+  <!-- カテゴリタブ -->
+  <div style="position: absolute; left: 480px; top: 150px; display: flex; gap: 10px;">
+    <button class="tab on"><span>ぱにゅ強化</span></button>
+    <button class="tab"><span>戦術ノート</span></button>
+    <button class="tab"><span>見た目 <em style="font-style:normal; color:#ff8fb8;">N</em></span></button>
+    <button class="tab"><span>メモリ</span></button>
+  </div>
+
+  <!-- 商品：斜めスラブの縦リスト -->
+  <div style="position: absolute; left: 480px; right: 48px; top: 216px; display: flex; flex-direction: column; gap: 12px;">
+    <div class="item" style="box-shadow: inset 0 0 0 2px #f5d77a, 0 0 24px rgba(245,215,122,.35), 0 10px 22px rgba(0,0,0,.5);">
+      <div class="item-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffc1d8" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="10" r="4"></circle><circle cx="15" cy="10" r="4"></circle><path d="M7 16c2 2 8 2 10 0"></path></svg></div>
+      <div><div class="item-name">ぱにゅぱにゅLv2 <span style="font-size:11px; color:#ff8fb8;">おすすめ</span></div><div class="item-desc">心理バトルのハズレ選択肢を1つ消せる。読み合いの保険</div></div>
+      <div class="item-price"><div class="n">300</div></div>
+      <button class="item-buy">交換</button>
+    </div>
+    <div class="item">
+      <div class="item-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f5d77a" stroke-width="2" stroke-linecap="round"><path d="M4 19V5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z"></path><path d="M9 7h7M9 11h7"></path></svg></div>
+      <div><div class="item-name">ポットオッズ入門</div><div class="item-desc">コール判断時に「割に合う / 合わない」の目安を表示</div></div>
+      <div class="item-price"><div class="n">350</div></div>
+      <button class="item-buy">交換</button>
+    </div>
+    <div class="item">
+      <div class="item-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8a4cc4" stroke-width="2" stroke-linecap="round"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"></path></svg></div>
+      <div><div class="item-name">ぱにゅゲージ上限 +20</div><div class="item-desc">ぱにゅゲージ最大値 100 → 120。切り札を撃てる回数が増える</div></div>
+      <div class="item-price"><div class="n">900</div></div>
+      <button class="item-buy">交換</button>
+    </div>
+    <div class="item" style="opacity: .55;">
+      <div class="item-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#c4b89a" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></div>
+      <div><div class="item-name">ぱにゅぱにゅLv3</div><div class="item-desc">ハズレを2つ消せる（Lv2 が必要）</div></div>
+      <div class="item-price"><div class="n" style="color:#c4b89a;">1200</div></div>
+      <button class="item-buy" style="background: rgba(0,0,0,.5); color: #c4b89a; box-shadow: inset 0 0 0 1px rgba(217,179,90,.4);">条件未達</button>
+    </div>
+  </div>
+
+  <!-- 購入演出の指定：ここが「射幸性」の入口 -->
+  <div style="position: absolute; left: 480px; right: 48px; bottom: 30px; padding: 12px 16px; background: rgba(245,215,122,.1); box-shadow: inset 0 0 0 1px rgba(245,215,122,.35); font-size: 12.5px; color: #f5d77a; font-weight: 700; line-height: 1.5;">
+    購入演出：交換ボタン → コインが商品へ吸い込まれる → 商品スラブが金色に発光して一回転 → グラーノ「良いお買い物だ」カットイン。ガチャは無いが「開封の快感」をここで出す
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+/* ===== ねらい撃ち（sniper） =====
+   一番中身が多い状態は2つ。
+   (a) 撃つ前：左に金の格子のグラフ（高さ370）、右に「賭け額×確率＝見込み」の札・問い・スライダー・「撃つ」。
+   (b) 答え合わせ：右の列に結果（付いてくるか・セリナの手札・3つの比べ・判定と補足）が全部出た所（ボタンと問いは消える）。
+   並べ方：手順・ミミの手札と POT（全幅）／左の段＝グラフ、右の段＝(a) 札・問い・スライダー・撃つ、(b) 結果。
+     2段は CSS の格子（左 1fr・右 380px）。DOM の順は変えない（スマホ横の格子がこの順を使っている）。
+     答え合わせでは「賭け額×確率＝見込み」の札を隠す（結果の行と比べの札に同じ数字が出るため。スマホ横も同じ扱い）。
+   高さの見積もり（遊び本体の予算 約605px）：
+     手順 28 ＋ 行間 8 ＋ ミミの手札・POT 53 ＋ 行間 8 ＋ グラフ（上の余白 26 ＋ 370 ＋ 下の余白 34 ＝ 430）＝ 約527px。
+     右の段の中身：(a) 札 199 ＋ 問い 84 ＋ スライダー 44 ＋ 撃つ 60 ＋ 行間 24 ＝ 約411（グラフより低い）。
+                  (b) 結果の行 56 ＋ 手札 56 ＋ 比べ 3つ 147 ＋ 判定 98 ＋ 行間 30 ＝ 約387（グラフより低い）。
+     ＝ 全体は (a)(b) とも約527px。残りの約78pxは下の空き（論理の床の絵が下に敷いてある）。
+     以前は答え合わせで34px はみ出して相手の行が潰れていたが、結果を右の列へ移したので縦に積まない。
+   文字：問い 20px・札の数字 38px・ラベル 13px・グラフの軸と最低額 12px・結果の行 16px・判定 19px・補足 13px。
+   押す所：撃つ 56px 以上・スライダー 44px。
+   グラフの座標は割合（%）で置いてあるので、高さ・幅を変えても照準の位置は合う（js は触っていない）。 */
+
+/* ---------- 格子 ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) { display: grid; grid-template-columns: minmax(0, 1fr) 380px; grid-template-rows: repeat(6, auto); gap: 8px 28px; align-content: start; padding-top: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > #mb-sn-steps { grid-column: 1 / -1; grid-row: 1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .sn-me { grid-column: 1 / -1; grid-row: 2; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .sn-wrap { grid-column: 1; grid-row: 3 / 7; align-self: start; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .sn-read { grid-column: 2; grid-row: 3; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .prompt { grid-column: 2; grid-row: 4; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .sn-rangebox { grid-column: 2; grid-row: 5; align-self: center; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .actions { grid-column: 2; grid-row: 6; align-self: end; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .sn-out { grid-column: 2; grid-row: 3 / 7; align-self: start; }
+/* 答え合わせ（スライダーが隠れた後）：「賭け額×確率＝見込み」の札は隠し、結果を右の列いっぱいに出す */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-rangebox[hidden]) > .sn-read { display: none; }
+
+/* ---------- ミミの手札と POT ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-me { gap: 6px 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-me-name { font-size: 15px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-me-name small { font-size: 13px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-pot { font-size: 13px; letter-spacing: .12em; }
+
+/* ---------- 右の段：賭け額×確率＝見込み の札（縦に積む） ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read { flex-direction: column; flex-wrap: nowrap; align-items: stretch; justify-content: flex-start; gap: 0; padding: 10px 16px 12px; background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 12px; text-align: left; line-height: 1.15; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read small { margin: 0; font-size: 13px; line-height: 1.3; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read b { font-size: 38px; text-align: right; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read .op { display: block; height: 20px; padding: 0; font-size: 24px; line-height: 20px; text-align: left; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read em { font-size: 13px; padding: 5px 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-read .sn-meter { grid-column: 1 / -1; width: 100%; height: 6px; margin: 6px 0 0; }
+
+/* ---------- 右の段：問い・スライダー・撃つ ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .prompt { font-size: 20px; line-height: 1.4; text-align: left; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-rangebox { padding: 0; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-range { height: 44px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .actions { justify-content: stretch; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .sn-wrap) > .actions .btn { width: 100%; min-height: 56px; }
+
+/* ---------- 左の段：グラフ ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-wrap { padding: 26px 14px 34px 52px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-chart { height: 370px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-axis-y { top: -21px; font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-ylab,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-xlab { font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-xlab { bottom: -22px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-floor { font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-area { font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-hint { top: 22px; font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-ret .num small { font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-best .lab { font-size: 18px; }
+
+/* ---------- 右の段：答え合わせの結果 ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-out:empty { display: none; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-out { gap: 10px; text-align: left; justify-items: stretch; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-out .roll { font-size: 16px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-out .roll b { font-size: 24px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-out .her { justify-content: flex-start; flex-wrap: wrap; font-size: 13px; line-height: 1.45; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-cmp { display: grid; gap: 6px; justify-content: stretch; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-cmp > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 14px; text-align: left; line-height: 1.15; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-cmp small { display: block; font-size: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-cmp b { font-size: 26px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-verdict { font-size: 19px; line-height: 1.45; text-align: left; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .sn-verdict small { margin-top: 4px; font-size: 13px; line-height: 1.5; }

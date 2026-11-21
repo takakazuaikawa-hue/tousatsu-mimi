@@ -1,0 +1,7 @@
+/* 案B（見比べ用・本体には入れていない）：顔の小窓の札をやめて、5枚とも紋章付きの札に。顔は左の六角の窓に入れる
+   六角の窓（plate.webp の赤い面）：横 7.9〜18.4%、縦は絵の 25.5〜70.2%（上下がとがった六角） */
+.home-stage .h15-places .h15-pl.h15-pic img.h15-f { content: url('assets/ui/home/plate.webp'); }
+.home-stage .h15-places .h15-pl.h15-pic { --pl-ls: .1em; }
+.home-stage .h15-places .h15-pl.h15-pic .h15-lbl { left: 21% !important; right: 13% !important; }
+.home-stage .h15-places .h15-pl.h15-pic .h15-win { left: 7.9% !important; width: 10.5% !important; top: calc(50% - 7.29cqw) !important; height: 13.3cqw !important;
+  object-fit: cover; object-position: 50% 18%; clip-path: polygon(50% 0, 100% 21%, 100% 79%, 50% 100%, 0 79%, 0 21%); }

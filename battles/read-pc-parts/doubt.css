@@ -1,0 +1,60 @@
+/* ===== ダウト！（doubt） =====
+   PC だけ（html:not(.is-compact)）。色・形・書体は battles/games/doubt.js の CSS と core.css の部品（.mb-ebony .mb-frame）が持つ。ここは並べ方と大きさ。
+   一番中身が多い状態＝答え合わせ：「はじめる」→ 5問に答える → 自信を賭ける → 答え合わせで 5行（1行は「例外！」の札つき）が出て、
+   相手の手札が表向きになり、手札の役の文字（「役なし（あと1枚でフラッシュ）」など）が出た時。
+   高さの見積もり（遊び本体の予算 約605px）：
+     答え合わせ：手順 28 ＋ 場札と手札の段 64 ＋ 顔の帯 116 ＋ 5行 309（1行 57×5 ＋ 行間 6×4）＋ 行間 12×3 ＝ 約553px。
+     出題中（一番高い時）：手順 28 ＋ 段 64 ＋ 顔の舞台 340 ＋ 本音／ウソのボタン 76 ＋ 行間 12×3 ＝ 約544px。
+     2つの状態の高さがほぼ同じなので、答え合わせへ移っても顔の舞台の上端は動かない。残り約50〜60pxは下の余白。
+   顔の舞台は 300 → 340px に広げた（ウソの時ほど焦り顔が出る＝顔が一番の手がかりなので、顔を大きく見せる）。
+   READY / GO! はカウントダウンの叫び（Bebas 96px）なので英語のまま残す。
+   ○×の判子は assets/ui/stamp_correct.webp・stamp_wrong.webp（確認済み・256x256 の透過 webp。元の色は赤と紺なので、型抜きにして金・灰で塗る＝js 側）。 */
+
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(#mb-doubt-area) { gap: 12px; }
+
+/* 場札と手札の段：札を 46px に（高さ 64px）。名札は 13px の金の明朝 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-sit { gap: 6px 32px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-sit .card.small { --w: 46px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-tag { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-hand { font-size: 14px; }
+
+/* 顔の舞台：340px（答え合わせの間は 116px の帯に縮む）。小窓と同じ二重の金線 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-area { height: 340px; border-width: 2px; box-shadow: inset 0 0 0 5px #190608, inset 0 0 0 6px var(--gild); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-area.is-sum { height: 116px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-win { top: 18px; bottom: 24px; right: 8%; width: min(26%, 300px); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-area.is-sum .doubt-win { top: 12px; bottom: 12px; right: 6%; width: min(22%, 160px); }
+/* 二重の金線の内側に収める（タイマーの帯・数え・当てた数） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-timer { left: 12px; right: 12px; bottom: 12px; height: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-count { left: 30px; top: 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-count b { font-size: 34px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-count span { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-tally { left: 30px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-tally small { font-size: 15px; }
+
+/* 台詞（黒檀の札）：24px・幅 660px。判断材料なので大きさを保つ */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-bubble { left: 48px; width: min(54%, 660px); padding: 18px 24px; font-size: 24px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-last { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-stamp { right: -8px; top: -22px; font-size: 26px; }
+
+/* ルールの札（小窓の枠）：説明は 13〜14px */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule { left: 48px; width: min(56%, 700px); padding: 18px 24px 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule > small { font-size: 15px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule-main { font-size: 28px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule-ex { margin-top: 10px; gap: 6px; font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule-ex span { padding: 4px 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-rule-note { font-size: 13px; }
+
+/* 本音／ウソ／はじめる：76px。答え合わせの間は空になる（場所を取らない） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-pad { width: min(720px, 100%); gap: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-pad:empty { display: none; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-btn { min-height: 76px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-btn .w small { font-size: 13px; }
+
+/* 答え合わせの5行：横 960px で中央。1行 57px（台詞 16px・あなた／正解 14px・例外の札 12px）。○×の判子は 34px の文字の 1.25倍（約42px） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-list { width: min(960px, 100%); margin: 0 auto; gap: 6px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row { min-height: 57px; padding: 6px 14px; grid-template-columns: 32px minmax(0, 1fr) 56px; gap: 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row .n { font-size: 26px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row .q { font-size: 16px; line-height: 1.45; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row .sub { font-size: 14px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row .sub .trap { font-size: 12px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .doubt-row .mark { font-size: 34px; }
