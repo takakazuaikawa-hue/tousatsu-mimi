@@ -3308,7 +3308,7 @@ function render() {
   document.body.classList.toggle('home-active', state.screen === 'lobby');
   switch (state.screen) {
     case 'title':       renderTemplate('tpl-title'); applyTitleButtons(); applyTitleScene(); if (isBgmOn()) playSceneBgm('title'); break;
-    case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); renderLobbyV3(); tryStartLobbyBgm(); break;
+    case 'lobby':       renderTemplate('tpl-lobby'); applyBindings(); renderLobbyV3(); syncFsCornerButtons(); tryStartLobbyBgm(); break;
     case 'battle':      renderTemplate('tpl-battle'); applyBindings(); applyOpponentIdle(); applyBattleRicoOutfit(); applyNoteTellHint(); applyReadPop(); setMimiExpression(state.mimiExpr || 'default'); if (state.introHandMode) applyIntroHandUI(); if (state.lectureMode) applyLectureUI(); { const pl = document.querySelector('[data-pause-label]'); if (pl) pl.textContent = state.lectureMode ? '中断' : 'やめる'; }
       // v2 拍④「決断」：ミミの手番は卓と相手を落として札と選択肢に視線を集める
       { const scr = document.querySelector('.battle-screen.v2'); if (scr) { scr.classList.toggle('is-deciding', !!(state.isPlayerTurn && state.handPhase !== 'idle' && state.handPhase !== 'showdown' && !state.psychPending));
@@ -3444,6 +3444,7 @@ let __titleIntroDone = false;
 function applyTitleScene() {
   const scr = document.querySelector('.title-screen.t3');
   if (!scr) return;
+  syncFsCornerButtons(); maybeAutoA2hsHelp();
   if (!__titleIntroDone) { __titleIntroDone = true; scr.classList.add('t3-intro'); }
 }
 
@@ -10236,7 +10237,7 @@ function onAction(e) {
     case 'toggle-reading': save.readingEnabled = !(save.readingEnabled !== false); saveProgress(); applyBindings(); break;
     case 'home-ledger': showHomeLedger(); break;
     case 'home-settings': showSettingsModal(); break; // 設定は1枚の窓にまとめた（音・遊び方・ひらく）
-    case 'home-fullscreen': requestGameFullscreen(); break;
+    case 'home-fullscreen': requestGameFullscreen(); break;   // iPhone は requestGameFullscreen の中で案内を開く
     case 'home-gift': {
       const today = mpTodayKey(), lb = save.loginBonus || {};
       const plan = loginBonusCompute(lb.lastDate || '', lb.streak || 0, today);
@@ -22841,7 +22842,8 @@ const UA = navigator.userAgent;
 const IS_IOS = /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const IS_IPHONE = /iPhone|iPod/.test(UA);
 const IS_ANDROID = /Android/i.test(UA);
-const IS_STANDALONE = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+// manifest は display:fullscreen なので、Android でホーム画面から開くと display-mode は fullscreen になる（standalone だけ見ると、全画面なのにボタンが出ていた）
+const IS_STANDALONE = ['standalone', 'fullscreen'].some(m => window.matchMedia(`(display-mode: ${m})`).matches) || window.navigator.standalone === true;
 
 function isMobile() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(UA)
@@ -22882,28 +22884,57 @@ async function requestGameFullscreen() {
 }
 
 
-function showIosFullscreenHelp() {
-  // 既存があれば再表示しない
+// iPhone の Safari は Web ページを全画面にできない（Apple の決まり）。ホーム画面に追加して開くと、アドレスバーの無い全画面で遊べる。
+// 11/22 ユーザー「スマホで全画面にならないと相当やりにくいので不安」→ 文字だけの案内をやめ、押す所の絵を並べた3段の案内に。
+// 起動して最初のタイトルで1回出す（「今後は出さない」を押すまで、開くたびに1回）。タイトル右上と設定の「全画面で遊ぶ」からいつでも開ける
+const SHARE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7.5 7.5L12 3l4.5 4.5"/><path d="M8 10H5.5v10.5h13V10H16"/></svg>';
+const ADD_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M12 8.5v7M8.5 12h7"/></svg>';
+function showIosFullscreenHelp(auto) {
   if (document.querySelector('.ios-help-modal')) return;
   const modal = document.createElement('div');
-  modal.className = 'ios-help-modal';
+  modal.className = 'ios-help-modal a2hs';
   modal.innerHTML = `
-    <div class="ios-help-inner">
-      <h3>iPhone でフル画面にするには</h3>
-      <p>iPhone の Safari は、Web ページの全画面表示に対応していません。<br>
-      ホーム画面に追加すると、アドレスバーの無い広い画面で遊べます：</p>
-      <ol class="ios-help-steps">
-        <li>Safari の <b>共有ボタン</b> → <b>「ホーム画面に追加」</b></li>
-        <li>ホーム画面にできたアイコンから起動する<br>
-            <small>※ホームから起動するとアドレスバーが消えます</small></li>
+    <div class="ios-help-inner a2hs-inner" role="dialog" aria-labelledby="a2hs-t">
+      <h3 id="a2hs-t">ホーム画面に追加して、全画面で遊ぼう</h3>
+      <p class="a2hs-lead">iPhone の Safari のままだと、画面の上下が欠けて遊びにくくなります。</p>
+      <ol class="a2hs-steps">
+        <li><i class="a2hs-n">1</i><span class="a2hs-ico">${SHARE_SVG}</span><span>Safari の<b>共有ボタン</b>を押す<small>見当たらない時は「…」の中</small></span></li>
+        <li><i class="a2hs-n">2</i><span class="a2hs-ico">${ADD_SVG}</span><span><b>「ホーム画面に追加」</b>を選ぶ<small>「Webアプリとして開く」はオンのまま</small></span></li>
+        <li><i class="a2hs-n">3</i><span class="a2hs-ico a2hs-app"><img src="assets/ui/icon-192.png" alt=""></span><span>ホーム画面の<b>ミミのポーカー</b>から開く<small>セーブはそのまま引き継がれます</small></span></li>
       </ol>
-      <button type="button" class="ios-help-close">わかりました</button>
-    </div>
-  `;
+      <div class="a2hs-acts">
+        <button type="button" class="ios-help-close">このまま遊ぶ</button>
+        ${auto ? '<button type="button" class="a2hs-never">今後は出さない</button>' : ''}
+      </div>
+    </div>`;
   document.body.appendChild(modal);
-  modal.querySelector('.ios-help-close').addEventListener('click', () => modal.remove());
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  const close = () => modal.remove();
+  modal.querySelector('.ios-help-close').addEventListener('click', close);
+  const nv = modal.querySelector('.a2hs-never');
+  if (nv) nv.addEventListener('click', () => { try { localStorage.setItem('mimi-a2hs-never', '1'); } catch (_) {} close(); });
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
 }
+// iPhone の Safari で開いている時だけ、最初のタイトルで1回出す
+function maybeAutoA2hsHelp() {
+  if (!IS_IPHONE || IS_STANDALONE || maybeAutoA2hsHelp.done) return;
+  try { if (localStorage.getItem('mimi-a2hs-never') === '1') return; } catch (_) {}
+  maybeAutoA2hsHelp.done = true;
+  setTimeout(() => { if (document.querySelector('.title-screen')) showIosFullscreenHelp(true); }, 1800);   // ロゴとボタンが出てから
+}
+// 全画面にできる端末（Android・iPad）は、タイトルの「はじめる／続きから」とホームの「今夜の卓へ」を押した時に、そのまま全画面にする（押した瞬間でないと許されない）
+function wantsFullscreenNudge() { return isMobile() && !IS_STANDALONE && !isFullscreen() && fullscreenSupported() && !window.MIMI_LOCAL; }
+document.addEventListener('click', (e) => {
+  if (!wantsFullscreenNudge()) return;
+  if (!e.target.closest || !e.target.closest('[data-action="start"], [data-action="new-game"], [data-action="battle-start"]')) return;
+  requestGameFullscreen();
+}, true);
+// タイトル右上・ホームの上の列の「全画面」ボタン（全画面でない時だけ出す。iPhone は案内を開く）
+function syncFsCornerButtons() {
+  const show = isMobile() && !IS_STANDALONE && !isFullscreen() && !window.MIMI_LOCAL;
+  document.querySelectorAll('[data-action="home-fullscreen"].fs-corner').forEach(b => { b.hidden = !show; });
+}
+document.addEventListener('fullscreenchange', syncFsCornerButtons);
+document.addEventListener('webkitfullscreenchange', syncFsCornerButtons);
 
 function updateFullscreenBtn() {
   const group = document.getElementById('fullscreen-btn-group');

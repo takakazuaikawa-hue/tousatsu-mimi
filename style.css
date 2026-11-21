@@ -21421,3 +21421,28 @@ html.is-compact .battle-screen.v2.t8 > .t8-read-pop > .t8-note-tells .v2-tag { p
   /* 「相手の読み」の札は台詞の右端にかかるので、台詞の下・押す所の上（224〜268px）へ */
   html.is-compact .battle-screen.v2.t8 > .t8-read-chip:not([hidden]) { top: calc(224px / var(--game-scale, 1)); }
 }
+
+/* ===== 11/22 全画面の案内（ユーザー「スマホで全画面にならないと相当やりにくいので不安」）
+   iPhone：押す所の絵を3つ横に並べた案内（横画面 844×390 に1画面で収まる）。Android・iPad はタイトルとホームの主ボタンで自動で全画面 */
+.ios-help-modal.a2hs { padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+.a2hs-inner { max-width: 760px !important; width: 100%; padding: 18px 22px !important; border-radius: 4px !important; border: 1px solid rgba(245,215,122,.7) !important; background: linear-gradient(180deg, #2a0d14, #12060a) !important; }
+.a2hs-inner h3 { font-size: var(--ty-t1, 18px) !important; margin: 0 0 4px !important; letter-spacing: .06em !important; text-align: center; }
+.a2hs-inner .a2hs-lead { font-size: var(--ty-note, 14px) !important; line-height: 1.5 !important; margin: 0 0 12px !important; text-align: center; color: #e9dfcb; }
+.a2hs-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.a2hs-steps li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 12px 8px 10px; background: rgba(255,255,255,.04); border: 1px solid rgba(217,179,90,.3); border-radius: 4px; font-size: var(--ty-body, 15px); line-height: 1.4; color: #f3ece0; }
+.a2hs-steps li + li::before { content: '▸'; position: absolute; left: -10px; top: 34px; transform: translateX(-50%); color: #f5d77a; font-size: var(--ty-note, 14px); }
+.a2hs-steps b { color: #f5d77a; }
+.a2hs-steps small { display: block; margin-top: 2px; font-size: var(--ty-note, 14px); color: #cdbf9f; }
+.a2hs-n { position: absolute; left: 8px; top: 6px; font-style: normal; font-size: var(--ty-note, 14px); color: #d9b35a; }
+.a2hs-ico { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 10px; background: #f3ece0; color: #0a74ff; flex: none; }
+.a2hs-ico svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.a2hs-ico.a2hs-app { background: none; overflow: hidden; }
+.a2hs-ico.a2hs-app img { width: 48px; height: 48px; border-radius: 11px; }
+.a2hs-acts { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 14px; }
+.a2hs-acts .ios-help-close { min-height: 44px; padding: 0 28px; font-size: var(--ty-btn2, 15px); }
+.a2hs-never { min-height: 44px; padding: 0 12px; background: none; border: 0; color: #bcae8f; font-size: var(--ty-note, 14px); text-decoration: underline; cursor: pointer; }
+/* タイトル右上とホームの上の列の「全画面」ボタン */
+.home-stage .h15-oct .h15-oico-svg { display: grid; place-items: center; color: #f5d77a; }
+.home-stage .h15-oct .h15-oico-svg svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; padding: 3px; }
+.title-screen.t3 .t3-icon.fs-corner svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.fs-corner[hidden] { display: none !important; }
