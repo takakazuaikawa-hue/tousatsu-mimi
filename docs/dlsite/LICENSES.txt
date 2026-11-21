@@ -1,12 +1,13 @@
 ミミのテキサスホールデムポーカー　権利とライセンス
 
-© 2026 POMERASHIBA Studio　本作の絵・動画・音楽・声・文章・プログラムの無断転載・再配布を禁じます。
+© 2026 POMERASHIBA-Studio　本作の絵・動画・音楽・効果音・声・文章・プログラムの無断転載・再配布を禁じます。
 
 
 ■ 制作に使った生成AI・道具
 ・イラスト・シナリオ：ChatGPT（OpenAI）
 ・ムービー（動く一枚絵）：Higgsfield
 ・音楽：Suno
+・効果音：Stable Audio（Stability AI）
 ・キャラクターボイス：Irodori-TTS（Aratako）で合成
 ・プログラム：Claude Code（Anthropic）
 

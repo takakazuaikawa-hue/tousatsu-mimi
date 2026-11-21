@@ -27,7 +27,7 @@ function goldMark(ch) {
 }
 // 製品の表記（タイトル・設定・スタッフロールはここを読む。権利表記は筆名）
 const GAME_VERSION = '1.0';
-const COPYRIGHT_TEXT = '© 2026 POMERASHIBA Studio';
+const COPYRIGHT_TEXT = '© 2026 POMERASHIBA-Studio';
 // 未解放の錠（assets/ui/home/lock.webp。CSS は .gold-lock）
 const GOLD_LOCK = '<img class="gold-lock" src="assets/ui/home/lock.webp" alt="未解放">';
 // 文字列の最初の漢字（なければ最初の1字）
@@ -10731,6 +10731,7 @@ const CREDITS = [
   { type: 'line', role: 'イラスト・シナリオ', text: 'ChatGPT' },
   { type: 'line', role: 'ムービー', text: 'Higgsfield' },
   { type: 'line', role: '音楽', text: 'Suno' },
+  { type: 'line', role: '効果音', text: 'Stable Audio（Stability AI）' },
   { type: 'line', role: 'キャラクターボイス', text: 'Irodori-TTS（Aratako）' },
   { type: 'line', role: 'プログラム', text: 'Claude Code' },
   { type: 'gap' },
@@ -10745,7 +10746,7 @@ const CREDITS = [
   { type: 'gap' },
 
   { type: 'section', text: '制作・著作' },
-  { type: 'line', text: 'ポメラシバスタジオ', cls: 'is-person' },
+  { type: 'line', text: 'POMERASHIBA-Studio', cls: 'is-person' },
   { type: 'gap' },
   { type: 'line', text: COPYRIGHT_TEXT, cls: 'is-legal' },
   { type: 'line', text: 'Ver ' + GAME_VERSION, cls: 'is-legal' },

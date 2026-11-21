@@ -11,6 +11,7 @@
 | イラスト・シナリオ | ChatGPT | 「イラスト・シナリオ：ChatGPT」 |
 | ムービー（動く一枚絵） | Higgsfield | 「ムービー：Higgsfield」 |
 | 音楽 | Suno | 「音楽：Suno」 |
+| 効果音 | Stable Audio（Stability AI、stableaudio.com） | 「効果音：Stable Audio（Stability AI）」 |
 | キャラクターボイス | Irodori-TTS（Aratako） | 「キャラクターボイス：Irodori-TTS（Aratako）」＋権利表記 |
 | プログラム | Claude Code | 「プログラム：Claude Code」 |
 | 書体 | Shippori Mincho B1・Noto Sans JP・Bebas Neue・Barlow Condensed | 「SIL Open Font License 1.1」（Google Fonts） |
@@ -39,6 +40,10 @@
 
 同梱の文の案：
 > 本作のムービー（動く一枚絵）の制作に、Higgsfield を使用しています。
+
+### 効果音（Stable Audio／Stability AI）
+- [ ] 2026-11-21 に stableaudio.com の無料プランで作った効果音（卓の音5つ）。無料プランでも商用可と理解している＝生成した時点と今の利用規約の画面の写しを残す。
+- [ ] クレジットに「効果音：Stable Audio（Stability AI）」と書いた（ゲーム内・LICENSES.txt）。規約が求める表記があれば合わせる。
 
 ### 音楽（Suno）
 - [ ] **曲を生成した時点のプランで商用利用が認められているか**（無料プランで作った曲は商用に使えない、という条件が一般にある。Suno の規約で、生成日・プランごとの扱いを確認）。曲ごとに「いつ・どのプランで作ったか」を一覧にする。
@@ -98,7 +103,7 @@
 
 この作品に当てはめた考え（**判断は作者**）：
 - イラスト・動画・音楽・声・シナリオ・プログラムのほぼ全部が AI の生成物なので、「一部」と言うのは難しく、**「AI生成作品」を選ぶのが妥当**と考えられる。
-- 紹介文に載せる案：「本作は、イラスト・シナリオ（ChatGPT）、ムービー（Higgsfield）、音楽（Suno）、キャラクターボイス（Irodori-TTS）、プログラム（Claude Code）に生成 AI を使用しています。ゲームの設計と演出の指示、取捨選択、最終の調整は作者が行いました。」（最後の1文は事実と合うか作者が確認する）
+- 紹介文に載せる案：「本作は、イラスト・シナリオ（ChatGPT）、ムービー（Higgsfield）、音楽（Suno）、効果音（Stable Audio）、キャラクターボイス（Irodori-TTS）、プログラム（Claude Code）に生成 AI を使用しています。ゲームの設計と演出の指示、取捨選択、最終の調整は作者が行いました。」（最後の1文は事実と合うか作者が確認する）
 - 確認すること：
   - [ ] 最新の公式案内（ページが更新されていないか）。
   - [ ] 区分は申告で決まるのか、審査で変わるのか。
@@ -111,12 +116,13 @@
 
 ```
 ミミのテキサスホールデムポーカー
-© 2026 POMERASHIBA Studio
+© 2026 POMERASHIBA-Studio
 
 制作協力（生成 AI の利用）
 イラスト・シナリオ：ChatGPT（OpenAI）
 ムービー：Higgsfield
 音楽：Suno
+効果音：Stable Audio（Stability AI）
 キャラクターボイス：Irodori-TTS（Aratako）
 プログラム：Claude Code（Anthropic）
 （要確認：各社の利用規約に沿った表記に直す）
@@ -130,7 +136,7 @@ Irodori-TTS / Semantic-DACVAE © Aratako, SilentCipher © Sony Research — MIT 
 
 ## 6. 記録しておくこと
 - 各サービスの規約の画面の写し（日付つき）
-- 生成日・プラン（Suno・Higgsfield・ChatGPT）の一覧
+- 生成日・プラン（Suno・Stable Audio・Higgsfield・ChatGPT）の一覧
 - 声の手本の出所
 - 他者の素材が無いことの確認の記録
 
