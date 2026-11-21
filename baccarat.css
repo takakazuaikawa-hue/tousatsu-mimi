@@ -536,3 +536,6 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 .bc-tools button { min-height: max(44px, calc(var(--u) * 44)); }
 .bc-top { min-height: max(44px, calc(var(--u) * 44)); }
 .bc-sq-btns button { min-height: max(44px, calc(var(--u) * 44)); }
+/* 11/21 検査：初見の言葉に添える一言 */
+.bc-hint { font-size: max(14px, calc(var(--u) * 14)); font-weight: 400; color: #cbb98f; margin-left: .5em; white-space: nowrap; }
+.bc-favor .bc-hint { margin-left: .4em; }

@@ -21348,3 +21348,6 @@ html.is-compact .rebuy-overlay .rb-go { min-height: calc(44px / var(--game-scale
 html.is-compact .minipoker-modal:is([data-phase="result"], [data-phase="double"], [data-phase="hilo"]) .mp-player .mp-card { width: 46px; height: 66px; }
 html.is-compact .minipoker-modal:is([data-phase="result"], [data-phase="double"], [data-phase="hilo"]) .mp-cpu .mp-card { width: 36px; height: 50px; }
 html.is-compact .minipoker-modal:is([data-phase="result"], [data-phase="double"], [data-phase="hilo"]) .mp-player .mp-card-suit-big { font-size: 24px; }
+/* 11/21 検査：結果の SCORE・RANK が何か分からない。統計の上に一言 */
+.rz-score-note { font-size: 14px; color: #cbb98f; text-align: center; margin: 4px 0 2px; }
+html.is-compact .rz-score-note { font-size: calc(14px / var(--game-scale, 1)); }

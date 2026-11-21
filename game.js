@@ -9755,7 +9755,7 @@ function renderVerbActions(slots, need) {
   const onlyAllin = betS.length === 1 && betS[0].kind === 'allin';
   const betSub = !betS.length ? 'チップが足りない' : onlyAllin ? `残り全部（${betS[0].chipAmount}）だけ` : (raising ? 'レイズ：額を選ぶ' : 'ベット：額を選ぶ');
   const furi = rdFuriAvailable();
-  const furiBtn = furi ? `<button class="btn verb-btn verb-furi is-furi" data-action="rd-furi"><span class="verb-label">ふり（のこり${3 - ((state.rdCount || {}).furi || 0)}）</span></button>` : '';
+  const furiBtn = furi ? `<button class="btn verb-btn verb-furi is-furi" data-action="rd-furi"><span class="verb-label">ふり（のこり${3 - ((state.rdCount || {}).furi || 0)}）</span><small class="verb-sub">強く見せて降ろす</small></button>` : '';
   return `<div class="verb-grid${furi ? ' has-furi' : ''}">
     <button class="btn verb-btn verb-cc${tag('call')}" ${attrs(ccS)}><span class="verb-label">${ccLabel}</span><small class="verb-sub">${ccSub}</small>${num(raising ? pay : 0)}</button>
     <button class="btn verb-btn verb-fold${tag('fold')}" ${foldEnabled ? attrs(foldS) : 'disabled'}><span class="verb-label">降りる</span><small class="verb-sub">${foldEnabled ? 'このハンドをあきらめる' : '今は降りなくていい'}</small></button>

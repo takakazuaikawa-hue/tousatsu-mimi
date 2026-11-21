@@ -130,7 +130,7 @@
         </nav>
       </header>
       <button type="button" class="bc-roads" data-bc="roads" aria-label="罫線を大きく見る">
-        <span class="bc-roads-h"><b>罫線</b><span class="bc-count"></span></span>
+        <span class="bc-roads-h"><b>罫線</b><small class="bc-hint">出た目の記録・押すと大きく</small><span class="bc-count"></span></span>
         <canvas class="bc-rd bc-rd-bead"></canvas>
         <canvas class="bc-rd bc-rd-big"></canvas>
         <span class="bc-rd3"><canvas class="bc-rd bc-rd-eye"></canvas><canvas class="bc-rd bc-rd-small"></canvas><canvas class="bc-rd bc-rd-roach"></canvas></span>
@@ -145,7 +145,7 @@
       <aside class="bc-god">
         <div class="bc-god-pic${ART.goddess ? ' has-art' : ''}">${ART.goddess ? `<img src="${ART.goddess}" alt="運命の女神ウンメ"><img class="bc-god-face" src="${ART.goddess}" alt="">` : wheelSVG()}</div>
         <b class="bc-god-n">運命の女神 ウンメ</b>
-        <div class="bc-favor" aria-label="女神のご機嫌"><span>ご機嫌</span><i></i><i></i><i></i></div>
+        <div class="bc-favor" aria-label="女神のご機嫌（3つたまると神託）"><span>ご機嫌</span><i></i><i></i><i></i><small class="bc-hint">3つで神託</small></div>
         <span class="bc-fnote" hidden></span>
       </aside>
       <div class="bc-pins"></div>
@@ -264,7 +264,7 @@
     paintRoad(host.querySelector('.bc-rd-roach'), 'roach', rd.roach);
     ui.count.innerHTML = `<i class="is-B"></i>${st.B}<i class="is-P"></i>${st.P}<i class="is-T"></i>${st.T}`;
     ui.next.innerHTML = ['B', 'P'].map(w => `<span class="bc-nx is-${w}"><b>次が${w === 'B' ? 'バンカー' : 'プレイヤー'}</b>${markHTML('eye', rd.ask[w][0])}${markHTML('small', rd.ask[w][1])}${markHTML('roach', rd.ask[w][2])}</span>`).join('');
-    ui.shoe.textContent = `シュー 残り${BC.shoeLeft(S.shoe)}枚・${S.res.length}手目まで`;
+    ui.shoe.textContent = `札の山（シュー） 残り${BC.shoeLeft(S.shoe)}枚・${S.res.length}手目まで`;
     const big = ui.layer.querySelector('.bc-bigroads');
     if (big) paintBigRoads(big);
   }
