@@ -21353,3 +21353,13 @@ html.is-compact .minipoker-modal:is([data-phase="result"], [data-phase="double"]
 html.is-compact .rz-score-note { font-size: calc(14px / var(--game-scale, 1)); }
 /* 11/21 ユーザー「相手キャラクターが中心からずれてない？」：left 340px は 1280 幅の舞台の真ん中。スマホは舞台が 1536 幅なので 63px 左に寄っていた。幅によらず真ん中へ */
 .battle-screen.v2.t8 > .v2-opp { left: calc(50% - 300px) !important; }
+/* 11/21 相手を真ん中に寄せたら、手を伸ばした絵（ベルベット・リコ）の指先がリコ先輩の吹き出しにかかった（スマホだけ。PC は 55px 以上あいている）。
+   吹き出しの右端はそのままに幅を 38%→35% にして、左端を絵の右端から 10px 以上離す。qa/_tmp_bubble.mjs で測る */
+html.is-compact .battle-screen.v2.t8 > .v2-comments.left-panel { width: calc((var(--rb-w, 844px) - 2 * var(--pad-x, 47px)) * .35 / var(--game-scale, 1)) !important; }
+/* 小さいスマホ（667幅など）：卓が狭く、35% でも指先にかかり文も切れていた。幅を 32% にして顔の窓を 52px にし、行を6行まで */
+@media (max-width: 700px) {
+  html.is-compact .battle-screen.v2.t8 > .v2-comments.left-panel { width: calc((var(--rb-w, 844px) - 2 * var(--pad-x, 47px)) * .32 / var(--game-scale, 1)) !important; }
+  html.is-compact .battle-screen.v2.t8 .v2-com-rico { grid-template-columns: calc(52px / var(--game-scale, 1)) minmax(0, 1fr) !important; }
+  html.is-compact .battle-screen.v2.t8 .v2-com-face { width: calc(52px / var(--game-scale, 1)) !important; height: calc(52px / var(--game-scale, 1)) !important; }
+  html.is-compact .battle-screen.v2.t8 .rico-bubble.v2-com-text { -webkit-line-clamp: 6 !important; max-height: 7.9em !important; }
+}
