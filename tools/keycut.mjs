@@ -3,7 +3,7 @@
 //   node tools/keycut.mjs cut   <in.png> <out.webp> [幅x高さ]        … 抜いて余白を詰め、指定の枠に収める（省略時は詰めただけ）
 //   node tools/keycut.mjs split <in.png> <出力の頭> <名1,名2,...> [高さ]  … 横一列の絵を体ごとに切り分け、<頭><名>.webp を書く
 //   node tools/keycut.mjs mini  <in.png> <番号> <out.webp>               … 切り分けた番号の体を 1000x1000 の真ん中に置く（会話の丸のミニキャラ）
-//   node tools/keycut.mjs bg    <in.png> <out.webp>                      … 背景の絵を 1600x900 に（抜かない）
+//   node tools/keycut.mjs bg    <in.png> <out.webp> [幅x高さ]            … 背景の絵を指定の大きさに切り詰め（既定 1600x900、抜かない）
 // 抜き方：緑の強さ d=G-max(R,B) から不透明度を出し、縁は緑を割り戻す（逆プリマルチプライ）＋緑かぶりを消す（デスピル）。
 import fs from 'node:fs';
 import path from 'node:path';
@@ -54,7 +54,7 @@ if (mode === 'cut') {
   const [IDX, OUT] = rest;
   save(OUT, await run(`const im=key(await load(${JSON.stringify(rel)}));const sg=cols(im,5);const g=sg[${+IDX}];const b=bbox(im,g[0],g[1]+1);const c=fit(crop(im,b,6),1000,1000,'center');const d=document.createElement('canvas');d.width=d.height=1000;const x=d.getContext('2d');x.drawImage(c,60,60,880,880);return d.toDataURL('image/webp',0.92);`));
 } else if (mode === 'bg') {
-  const [OUT] = rest;
-  save(OUT, await run(`const im=await load(${JSON.stringify(rel)});const c=document.createElement('canvas');c.width=1600;c.height=900;const x=c.getContext('2d');const s=Math.max(1600/im.w,900/im.h);x.imageSmoothingQuality='high';x.drawImage(im.c,(1600-im.w*s)/2,(900-im.h*s)/2,im.w*s,im.h*s);return c.toDataURL('image/webp',0.9);`));
+  const [OUT, SIZE] = rest; const [BW, BH] = (SIZE || '1600x900').split('x').map(Number);
+  save(OUT, await run(`const im=await load(${JSON.stringify(rel)});const c=document.createElement('canvas');c.width=${BW};c.height=${BH};const x=c.getContext('2d');const s=Math.max(${BW}/im.w,${BH}/im.h);x.imageSmoothingQuality='high';x.drawImage(im.c,(${BW}-im.w*s)/2,(${BH}-im.h*s)/2,im.w*s,im.h*s);return c.toDataURL('image/webp',0.9);`));
 }
 await br.close(); await server.close(); process.exit(0);

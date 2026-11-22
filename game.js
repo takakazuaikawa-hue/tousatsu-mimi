@@ -1421,8 +1421,10 @@ const ANTE_STEP = 4;
 const ANTE_LEVELS = [50, 100, 150, 200, 300, 400];
 function anteForHand(handNo) {
   // 勝ち抜き戦：周を重ねるごとに参加費の段が1つずつ上から始まる（最大3段）
-  const knOff = (typeof state !== 'undefined' && state && state.kachinuki) ? Math.min(3, Math.max(0, (state.kachinuki.lap || 1) - 1)) : 0;
-  return ANTE_LEVELS[Math.min(ANTE_LEVELS.length - 1, Math.floor(Math.max(0, handNo - 1) / ANTE_STEP) + knOff)];
+  const base = ANTE_LEVELS[Math.min(ANTE_LEVELS.length - 1, Math.floor(Math.max(0, handNo - 1) / ANTE_STEP))];
+  // 勝ち抜き戦：本編と同じ上がり方を、その卓で出した額（1000が本編と同じ）に合わせて大きくする
+  if (typeof state !== 'undefined' && state && state.kachinuki) return Math.max(10, Math.round(base * knStake(state.kachinuki.lap || 1, state.kachinuki.idx || 0) / 1000 / 10) * 10);
+  return base;
 }
 
 // ベットサイズ → チップ数
@@ -9935,7 +9937,8 @@ function onAction(e) {
   // 零時の卓の入口（入場案内・着席・続きから・記録）は allstar-ui.js が受け取る
   if (IS_TRIAL && trialBlocksAction(action, data)) { showTrialEnd(true); return; }
   if (/^allstar-/.test(action || '')) { if (window.AllstarUI) AllstarUI.onAction(action, data, e); return; }
-  if (/^baccarat-/.test(action || '')) { if (window.BaccaratUI) BaccaratUI.onAction(action, data, e); return; }   // クリア後のおまけ「バカラ」
+  if (/^baccarat-/.test(action || '')) { if (window.BaccaratUI) BaccaratUI.onAction(action, data, e); return; }
+  if (state && state.kachinuki && /^player-/.test(action || '') && state.isPlayerTurn) knStatAct(action);   // 勝ち抜き戦の記録画面の回数   // クリア後のおまけ「バカラ」
   switch (action) {
     case 'start':
       if (a2hsBeforeStart(() => { if (save.clearedStages.length === 0 && !save.introPlayed) startIntroHand(); else goLobby(); })) break;
@@ -23346,6 +23349,11 @@ const KN_ORDER = [
   { id: 'unme',    name: 'ウンメ',                chips: 2000, bg: 'rico_serious', boss: true,  blurb: '運命の女神。周の締めのボス。気まぐれで強い' },
 ];
 const KN_START_CHIPS = 1000;
+// 11/22 決まりの見直し（ユーザー「チップを持ち越すと終わらない」「ハンド数で区切ると運試し」「負けても進めるのは勝ち抜き戦じゃない」）。
+// 1対1を全部取って決める以上、持ち越せば勝つたびに必ず増えて雪だるまになる＝持ち越しと勝ち抜き戦は両立しない。
+// → 毎卓、ミミも相手も同じ額で座り、どちらかが全部取られるまで戦う。負けたらそこで終わり。強さは周ごとの打ち方の鋭さで上げる
+const KN_TABLE_CHIPS = 1000;
+const knStake = () => KN_TABLE_CHIPS;   // その卓で両者が持つ額（同じ）
 const knImgKey = (slot) => slot.face || (OPPONENTS[slot.id] || {}).imgKey || slot.id;
 const knArt = (slot) => `assets/characters/${knImgKey(slot)}_default.webp`;
 
@@ -23518,7 +23526,7 @@ function knInfo() {
 function knStart(fresh) {
   const S = knSave();
   if (fresh || !S.run) {
-    S.run = { lap: 1, idx: 0, chips: KN_START_CHIPS, wins: 0, coins: 0, tableMimi: KN_START_CHIPS, tableOpp: null, at: Date.now() };
+    S.run = { lap: 1, idx: 0, chips: KN_TABLE_CHIPS, wins: 0, coins: 0, tableMimi: null, tableOpp: null, at: Date.now() };
     S.runs = (S.runs || 0) + 1;
   }
   // ほろ酔い・泥酔の夜の最中なら、昼にして始める（終わったら元の夜に戻す）。夜の酔いの決まりは使わない
@@ -23530,10 +23538,9 @@ function knStart(fresh) {
 function knStartTable() {
   const S = knSave(), run = S.run; if (!run) return;
   const slot = KN_ORDER[run.idx];
-  const mimi0 = run.tableMimi != null ? run.tableMimi : run.chips;
-  if (mimi0 <= 0) return knFinishRun('lose');
-  const mult = 1 + 0.25 * (run.lap - 1);
-  const oppFull = Math.round(slot.chips * mult / 10) * 10;
+  const stake = knStake(run.lap, run.idx);
+  const mimi0 = run.tableMimi != null ? run.tableMimi : stake;
+  const oppFull = stake;
   const profile = slot.serious
     ? { style: 'rico_serious', bluffTendency: seriousRicoBluff(), aggression: 0.85, foldDiscipline: 0.7, valueBetTendency: 0.8, drawAggression: 0.85, trapTendency: 0.6 }
     : OPPONENTS[slot.id].profile;
@@ -23564,6 +23571,7 @@ function knAnnounceTable() {
 function knOnHandStart() {
   const K = state.kachinuki, run = knSave().run;
   if (run) { run.tableMimi = state.playerChips; run.tableOpp = state.opponentChips; saveProgress(); }
+  K.minRatio = Math.min(K.minRatio == null ? 1 : K.minRatio, state.playerChips / KN_TABLE_CHIPS);
   if (K.id === 'twins') {
     K.side = (state.handNo % 2 === 1) ? 'P' : 'B';
     state.opponentName = K.side === 'P' ? 'プント（青）' : 'バンコ（赤）';
@@ -23577,7 +23585,9 @@ function knEndTable() {
   const won = state.playerChips > state.opponentChips;
   const bonus = Math.max(0, state.readBattleBonus || 0);
   if (!run) { goLobby(); return; }
-  if (!won) {
+  knTallyTable(run, S, won);
+  run.tableMimi = null; run.tableOpp = null;
+  if (!won) {   // 負けたらそこで終わり（記録は残る）
     if (bonus) { save.coins += bonus; run.coins = (run.coins || 0) + bonus; }
     return knFinishRun('lose', { slot, bonus });
   }
@@ -23585,7 +23595,6 @@ function knEndTable() {
   run.wins++; S.totalWins = (S.totalWins || 0) + 1;
   let lapClear = false, lapCoin = 0;
   const clearedLap = run.lap;
-  run.chips = state.playerChips; run.tableMimi = run.chips; run.tableOpp = null;
   if (run.idx >= KN_ORDER.length - 1) { lapClear = true; lapCoin = 1000 * run.lap; run.lap++; run.idx = 0; S.laps = (S.laps || 0) + 1; }
   else run.idx++;
   save.coins += coin + lapCoin; run.coins = (run.coins || 0) + coin + lapCoin;
@@ -23595,12 +23604,12 @@ function knEndTable() {
   knShowInterlude({ slot, coin, bonus, lapClear, lapCoin, clearedLap, newRec });
 }
 const knStageEl = () => document.getElementById('stage') || document.body;
+const knPortrait = (slot) => slot.serious ? 'assets/characters/rico_serious.webp' : `assets/characters/${knImgKey(slot)}_cutin_smug.webp`;
 const knThumb = (slot, cur) => `<i class="kn-th${cur ? ' is-cur' : ''}" style="background-image:url('${knArt(slot)}')" title="${slot.name}"></i>`;
 // 勝った後：次の卓の案内
 function knShowInterlude(r) {
   const S = knSave(), run = S.run, next = KN_ORDER[run.idx];
-  const mult = 1 + 0.25 * (run.lap - 1), oppChips = Math.round(next.chips * mult / 10) * 10;
-  const ante = ANTE_LEVELS[Math.min(ANTE_LEVELS.length - 1, Math.min(3, run.lap - 1))];
+  const nextStake = knStake(run.lap, run.idx);
   if (isSfxOn()) { try { mpSfx(r.lapClear ? 'bigwin' : 'milestone'); } catch (e) { } }
   const say = knResultSay(r.slot, true);
   const ov = document.createElement('div');
@@ -23613,10 +23622,9 @@ function knShowInterlude(r) {
       ${say ? `<p class="kn-say"><i>${r.slot.name}</i>「${say}」</p>` : ''}
       <ul class="kn-rows">
         <li>獲得 <b>＋${r.coin + r.lapCoin}</b> コイン${r.lapClear ? `（1周ボーナス＋${r.lapCoin}）` : ''}${r.bonus ? `（リーディング＋${r.bonus}を含む）` : ''}</li>
-        <li>ミミのチップ <b>${run.chips}</b>（このまま持ち越し）</li>
-        <li>連勝 <b>${run.wins}</b> 人${r.newRec ? '　<em>最高記録！</em>' : ''}</li>
+        <li>今回の勝ち <b>${run.wins}</b> 人${r.newRec ? '　<em>最高記録！</em>' : ''}</li>
       </ul>
-      <div class="kn-next"><i>次の相手 ${run.idx + 1}/${KN_ORDER.length}</i><b>${next.name}</b><span>${next.blurb}</span><span>相手の手持ち ${oppChips}・参加費 ${ante}から</span></div>
+      <div class="kn-next"><i>次の相手 ${run.idx + 1}/${KN_ORDER.length}</i><b>${next.name}</b><span>${next.blurb}</span><span>どちらも ${nextStake} から。負けたらそこで終わり</span></div>
       <div class="kn-btns"><button type="button" class="btn btn-primary" data-kn="next">次の卓へ ›</button><button type="button" class="btn btn-secondary" data-kn="quit">ここでやめる</button></div>
     </div></section>`;
   ov.addEventListener('click', (e) => {
@@ -23626,6 +23634,68 @@ function knShowInterlude(r) {
   });
   knStageEl().appendChild(ov);
 }
+// ── 記録画面（11/22 ユーザー「記録画面を充実。それぞれの回数と、プレイスタイルを6種類くらい判定して、それに応じたミミの絵。SNSで自慢できるように」）──
+const KN_ST_KEYS = ['hands', 'fold', 'call', 'check', 'bet', 'raise', 'allin', 'sd', 'sdWin', 'foldWin', 'bluff', 'bigPot', 'maxPot', 'comeback', 'fastest'];
+const knNewStats = () => ({ hands: 0, fold: 0, call: 0, check: 0, bet: 0, raise: 0, allin: 0, sd: 0, sdWin: 0, foldWin: 0, bluff: 0, bigPot: 0, maxPot: 0, comeback: 0, fastest: 0 });
+function knRunStats() { const run = knSave().run; if (!run) return null; if (!run.st) run.st = knNewStats(); return run.st; }
+function knStatAct(action) {
+  const st = knRunStats(); if (!st) return;
+  const need = Math.max(0, (state.currentBetOpponent || 0) - (state.currentBetPlayer || 0));
+  const k = { 'player-fold': 'fold', 'player-call': 'call', 'player-checkcall': need > 0 ? 'call' : 'check', 'player-bet': 'bet', 'player-raise': 'raise', 'player-allin': 'allin' }[action];
+  if (k) st[k]++;
+}
+// 1卓ぶんのハンドを数える（勝った大きなポット・見せ合い・はったり勝ち・逆転・最速）
+function knTallyTable(run, S, won) {
+  if (!run.st) run.st = knNewStats();
+  const st = run.st, K = state.kachinuki;
+  for (const r of state.handResults || []) {
+    st.hands++;
+    if (r.reason === 'showdown') { st.sd++; if (r.winner === 'player') st.sdWin++; }
+    if (r.reason === 'opponentFold') { st.foldWin++; if (r.pEv && r.pEv.name !== '-' && r.pEv.rank === 0) st.bluff++; }
+    if (r.winner === 'player') { if (r.pot >= KN_TABLE_CHIPS) st.bigPot++; st.maxPot = Math.max(st.maxPot, r.pot || 0); }
+  }
+  if (won) {
+    if (K && K.minRatio != null && K.minRatio <= 0.3) st.comeback++;
+    if (!st.fastest || state.handNo < st.fastest) st.fastest = state.handNo;
+  }
+}
+// プレイスタイル6種：回数の割合から点を出し、一番高い物（どの型も自慢できる名前と絵）
+const KN_STYLES = {
+  clever:  { name: 'クレバー',       en: 'CLEVER',     line: '勝てる時だけ、静かに勝つ',     note: '見せ合いに強く、引き際がうまい' },
+  crazy:   { name: 'クレイジー',     en: 'CRAZY',      line: '全部いく。それが私の流儀',     note: 'オールインと大きな賭けで押し切る' },
+  trick:   { name: 'トリックスター', short: 'トリック', en: 'TRICKSTER',  line: 'その札、本当に強いと思った？', note: '弱い札でも相手を降ろして取る' },
+  iron:    { name: '鉄壁',           en: 'IRON WALL',  line: '負けない。それが一番強い',     note: '無理をせず降りて、守り抜く' },
+  hunter:  { name: 'ハンター',       en: 'HUNTER',     line: '大物だけ、確実に仕留める',     note: '大きなポットを何度も取る' },
+  lucky:   { name: '強運',           en: 'LUCKY',      line: '最後に笑うのは、運のいい子',   note: '追い込まれてからの逆転勝ち' },
+};
+function knStyleOf(st) {
+  if (!st) return 'clever';
+  const h = Math.max(1, st.hands), acts = Math.max(1, st.fold + st.call + st.check + st.bet + st.raise + st.allin), wins = Math.max(1, st.sdWin + st.foldWin);
+  const sc = {
+    crazy: st.allin / h * 4 + (st.bet + st.raise) / acts * 0.8,
+    trick: st.bluff / wins * 2.2 + st.foldWin / h * 0.6,
+    clever: (st.sd ? st.sdWin / st.sd : 0) * 1.1 + ((st.fold / h > 0.2 && st.fold / h < 0.5) ? 0.25 : 0) - st.allin / h * 1.5,
+    iron: st.fold / h * 1.6 - st.allin / h * 2,
+    hunter: st.bigPot / wins * 1.6 + Math.min(1, st.maxPot / 6000) * 0.4,
+    lucky: st.comeback * 0.7 + ((st.fastest && st.fastest <= 4) ? 0.4 : 0),
+  };
+  return Object.keys(sc).sort((a, b) => sc[b] - sc[a])[0];
+}
+const knStyleArt = (k) => `assets/ui/kn_style_${k}.webp`;
+const knPct = (a, b) => b ? Math.round(a * 100 / b) + '%' : '—';
+function knStatGrid(st, wins) {
+  const cell = (label, v, sub) => `<li><small>${label}</small><b>${v}</b>${sub ? `<i>${sub}</i>` : ''}</li>`;
+  return `<ul class="knr-grid">${[
+    cell('倒した相手', wins + '人'),
+    cell('ハンド', st.hands),
+    cell('オールイン', st.allin + '回'),
+    cell('降りた', st.fold + '回', knPct(st.fold, st.hands)),
+    cell('見せ合い', st.sdWin + '勝', st.sd ? '勝率' + knPct(st.sdWin, st.sd) : ''),
+    cell('はったり成功', st.bluff + '回'),
+    cell('最大ポット', st.maxPot),
+    cell('逆転勝ち', st.comeback + '回'),
+  ].join('')}</ul>`;
+}
 // 終わり（負け・やめる）。記録に残してから、結果の画面を出す
 function knFinishRun(reason, extra) {
   const S = knSave(), run = S.run;
@@ -23633,36 +23703,51 @@ function knFinishRun(reason, extra) {
   const lap = run ? run.lap : 1, idx = run ? run.idx + 1 : 1, wins = run ? run.wins : 0, coins = run ? (run.coins || 0) : 0, chips = run ? run.chips : 0;
   if (run) knRecordReach(S, lap, idx, wins);
   const newRec = !!(run && run.rec);
+  const st = (run && run.st) || knNewStats();
+  const style = knStyleOf(st);
+  if (run) {
+    S.styles = S.styles || {}; S.styles[style] = (S.styles[style] || 0) + 1;
+    S.stats = S.stats || knNewStats();
+    for (const k of KN_ST_KEYS) S.stats[k] = k === 'maxPot' ? Math.max(S.stats.maxPot || 0, st.maxPot) : k === 'fastest' ? (st.fastest && (!S.stats.fastest || st.fastest < S.stats.fastest) ? st.fastest : S.stats.fastest || 0) : (S.stats[k] || 0) + (st[k] || 0);
+    S.last = { lap, idx, wins, style, st, at: Date.now() };
+  }
   S.run = null;
   if (S.prevNight) { save.horoyoiMode = true; save.deisuiMode = !!S.prevNight.d; S.prevNight = null; }   // 夜の最中に入った人は、元の夜へ戻す
   saveProgress();
-  knShowEnd({ reason, slot, lap, idx, wins, coins, chips, newRec });
+  knShowEnd({ reason, slot, lap, idx, wins, coins, chips, newRec, style, st });
 }
 function knShowEnd(r) {
   const S = knSave();
+  const ty = KN_STYLES[r.style] || KN_STYLES.clever;
   const say = r.reason === 'lose' ? knResultSay(r.slot, false) : '';
   const ov = document.createElement('div');
   ov.className = 'bc-host kn-ov kn-end';
-  ov.innerHTML = `<section class="kn-card" role="dialog" aria-modal="true" aria-label="勝ち抜き戦の結果">
-    <div class="kn-fig" style="background-image:url('${knArt(r.slot)}')"></div>
-    <div class="kn-body">
-      <small class="kn-k">勝ち抜き戦　${r.reason === 'lose' ? 'チップが尽きた' : 'ここでやめた'}</small>
-      <b class="kn-h">${knLabel(r.lap, r.idx)}で終わり</b>
-      ${say ? `<p class="kn-say"><i>${r.slot.name}</i>「${say}」</p>` : ''}
-      <ul class="kn-rows">
-        <li>今回 <b>${r.wins}</b> 人に勝った　コイン <b>＋${r.coins}</b></li>
-        <li>最高記録 <b>${S.best ? knLabel(S.best.lap, S.best.idx) : '—'}</b>${r.newRec ? '　<em>記録更新！</em>' : ''}</li>
-        <li>通算 <b>${S.totalWins || 0}</b> 人撃破・挑戦 <b>${S.runs || 0}</b> 回</li>
-      </ul>
-      <div class="kn-btns"><button type="button" class="btn btn-primary" data-kn="again">もう一度挑戦</button><button type="button" class="btn btn-secondary" data-kn="home">ホームへ</button></div>
+  ov.innerHTML = `<section class="kn-card knr" role="dialog" aria-modal="true" aria-label="勝ち抜き戦の記録">
+    <div class="knr-art knr-${r.style}"><img src="${knStyleArt(r.style)}" alt="ミミ（${ty.name}）" onerror="this.onerror=null;this.src='assets/characters/mimi_default.webp'"><div class="knr-type"><small>PLAY STYLE</small><b class="${ty.name.length > 5 ? 'is-long' : ''}">${ty.name}</b><i>${ty.en}</i></div></div>
+    <div class="knr-body">
+      <p class="knr-k"><span>勝ち抜き戦　RESULT</span><span>ミミのテキサスホールデムポーカー</span></p>
+      <div class="knr-head"><b>${knLabel(r.lap, r.idx)}</b><span>${r.reason === 'lose' ? r.slot.name + 'に負けて終わり' : 'ここでやめた'}${r.newRec ? '<em>記録更新！</em>' : ''}</span></div>
+      <p class="knr-line">「${ty.line}」<small>${ty.note}</small></p>
+      ${knStatGrid(r.st || knNewStats(), r.wins)}
+      <p class="knr-foot">最高 <b>${S.best ? knLabel(S.best.lap, S.best.idx) : '—'}</b>　通算 <b>${S.totalWins || 0}</b>人撃破・挑戦 <b>${S.runs || 0}</b>回　コイン <b>＋${r.coins}</b></p>
+      <div class="knr-btns"><button type="button" class="btn btn-primary" data-kn="again">もう一度挑戦</button><button type="button" class="btn btn-secondary" data-kn="share">共有する</button><button type="button" class="btn btn-secondary" data-kn="home">ホームへ</button></div>
     </div></section>`;
   ov.addEventListener('click', (e) => {
     const b = e.target.closest('[data-kn]'); if (!b) return;
     if (b.dataset.kn === 'again') { b.disabled = true; knStart(true); }
     else if (b.dataset.kn === 'home') { ov.remove(); if (state.screen !== 'lobby') goLobby(); else render(); }
+    else if (b.dataset.kn === 'share') knShare(r, ty);
   });
   knStageEl().appendChild(ov);
   if (isSfxOn()) { try { mpSfx(r.newRec ? 'bigwin' : 'lose'); } catch (e) { } }
+}
+// 共有：使える端末は共有の窓（文＋この画面の写し）、無ければ文を写して案内
+function knShare(r, ty) {
+  const text = `ミミのテキサスホールデムポーカー 勝ち抜き戦で【${knLabel(r.lap, r.idx)}】まで到達！ プレイスタイルは「${ty.name}（${ty.en}）」 #ミミのポーカー`;
+  const url = location.origin + location.pathname;
+  if (navigator.share) { navigator.share({ text, url }).catch(() => { }); return; }
+  try { navigator.clipboard.writeText(text + ' ' + url).then(() => toast('共有の文を写しました。画面を撮って一緒に貼ってね')); }
+  catch (e) { toast('画面を撮って自慢しよう！'); }
 }
 // 卓から「やめる」（対戦をやめる確認の窓）。やめたら今回は終わり、記録は残る
 function knQuitConfirm() {
@@ -23678,34 +23763,73 @@ function knQuitNow() {
   knFinishRun('quit', { slot });
 }
 // 今夜の演目から開く窓：最高記録・続きから・最初から
+// 記録の札の絵（型6枚）は先に読んでおく（終わった瞬間に絵が遅れて出ると興ざめ）
+function knWarmStyleArt() { if (knWarmStyleArt.done) return; knWarmStyleArt.done = true; Object.keys(KN_STYLES).forEach(k => { const i = new Image(); i.src = knStyleArt(k); }); }
 function knOpenWindow() {
+  knWarmStyleArt();
   document.querySelectorAll('.kn-ov').forEach(e => e.remove());
   const S = knSave(), run = S.run, best = S.best;
   const cur = run ? KN_ORDER[run.idx] : null;
   const ov = document.createElement('div');
   ov.className = 'bc-host kn-ov kn-win';
-  ov.innerHTML = `<section class="kn-card kn-card-w" role="dialog" aria-modal="true" aria-label="勝ち抜き戦">
-    <header><b>勝ち抜き戦</b><button type="button" data-kn="close">閉じる</button></header>
-    <p class="kn-lead">今までの全員と、1対1で連戦。チップは持ち越し。尽きるまで何周できるか。</p>
-    <div class="kn-roster">${KN_ORDER.map((s, i) => knThumb(s, run && i === run.idx)).join('')}</div>
-    <div class="kn-rec"><span>最高記録 <b>${best ? knLabel(best.lap, best.idx) : 'まだ無い'}</b></span><span>通算 <b>${S.totalWins || 0}</b> 人撃破</span><span>挑戦 <b>${S.runs || 0}</b> 回</span></div>
-    <ul class="kn-rules"><li>最初のチップは${KN_START_CHIPS}。勝ったら、残りのまま次の卓へ</li><li>11人で1周。周を重ねるごとに、相手の手持ちと参加費が上がる</li><li>1人に勝つごとにコイン（100×周）、1周ごとにボーナス（1000×周）</li></ul>
-    ${run ? `<p class="kn-resume">続きがあります：<b>${knLabel(run.lap, run.idx + 1)}　${cur.name}</b>　チップ <b>${Math.round(run.tableMimi != null ? run.tableMimi : run.chips)}</b></p>` : ''}
-    <div class="kn-btns">${run
-      ? '<button type="button" class="btn btn-primary" data-kn="resume">続きから</button><button type="button" class="btn btn-secondary" data-kn="fresh">最初から</button>'
-      : '<button type="button" class="btn btn-primary" data-kn="fresh">始める</button>'}</div>
+  // 11/22 ユーザー「説明画面が退屈。ちゃんとデザインして絵も入れて」→ 看板の絵＋11人の道のり＋決まりは印4つ＋記録の札
+  const doneTo = run ? run.idx : -1;
+  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+  const slab = (slot, i) => {
+    const cls = ['knp-slab', slot.serious ? 'is-serious' : '', slot.boss ? 'is-boss' : '', i === KN_ORDER.length - 1 ? 'is-final' : '', run && i === doneTo ? 'is-cur' : '', run && i < doneTo ? 'is-done' : ''].filter(Boolean).join(' ');
+    return `<li class="${cls}" title="${slot.name}：${slot.blurb}"><span class="knp-pic"><img src="${knPortrait(slot)}" alt="" onerror="this.onerror=null;this.src='${knArt(slot)}'"></span><i class="knp-no">${ROMAN[i]}</i><em class="knp-nm">${slot.name.replace('本気のリコ先輩', '本気リコ').replace('プントとバンコ', '双子').replace('ヴェルベット', 'ヴェル').replace('リコ先輩', 'リコ')}</em>${run && i === doneTo ? '<b class="knp-tag">次</b>' : ''}</li>`;
+  };
+  const ICON = {
+    carry: '<svg viewBox="0 0 32 32"><ellipse cx="11" cy="22" rx="8" ry="3.2"/><path d="M3 22v-4c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2v4"/><ellipse cx="11" cy="15" rx="8" ry="3.2"/><path d="M20 10h8M24.5 6.5 28 10l-3.5 3.5"/></svg>',
+    loop: '<svg viewBox="0 0 32 32"><path d="M8 11a10 10 0 0 1 17 2"/><path d="M26 8v5h-5"/><path d="M24 21a10 10 0 0 1-17-2"/><path d="M6 24v-5h5"/></svg>',
+    up: '<svg viewBox="0 0 32 32"><path d="M5 26h22"/><path d="M8 26V18M14 26V13M20 26V9M26 26V5"/></svg>',
+    coin: '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11"/><circle cx="16" cy="16" r="7"/><path d="M16 11.5v9M13.5 14h5"/></svg>',
+  };
+  const rule = (k, t, sub) => `<li><span class="knp-ico">${ICON[k]}</span><span><b>${t}</b><small>${sub}</small></span></li>`;
+  ov.innerHTML = `<section class="kn-card knp" role="dialog" aria-modal="true" aria-label="勝ち抜き戦">
+    <div class="knp-hero">
+      <div class="knp-title"><small>THE GAUNTLET</small><b>勝ち抜き戦</b><span>全員と1対1で連戦。負けたらそこで終わり</span></div>
+      <button type="button" class="knp-x" data-kn="close" aria-label="閉じる">閉じる</button>
+    </div>
+    <div class="knp-road-wrap"><p class="knp-road-h"><span>1周 ＝ 11人</span><small>最後に待つのは 女神ウンメ</small></p><ol class="knp-road">${KN_ORDER.map(slab).join('')}</ol></div>
+    <div class="knp-foot">
+      <ul class="knp-rules">${rule('carry', '毎卓 ' + KN_TABLE_CHIPS + ' どうし', '全部取ったら次へ')}${rule('loop', '負けたら終わり', '何周 何人目まで')}${rule('up', '周ごとに強く', '相手の打ち方が鋭く')}${rule('coin', '勝つたびコイン', '1周でボーナス')}</ul>
+      <button type="button" class="knp-rec" data-kn="record"><small>最高記録</small><b>${best ? knLabel(best.lap, best.idx) : 'まだ無い'}</b><span>${S.last ? 'これまでの記録 ▸' : '通算 ' + (S.totalWins || 0) + '人撃破'}</span></button>
+      <div class="knp-btns">${run
+        ? `<button type="button" class="btn btn-primary knp-go" data-kn="resume"><b>続きから</b><small>${knLabel(run.lap, run.idx + 1)}・${KN_ORDER[run.idx].name.replace('本気のリコ先輩', '本気のリコ')}</small></button><button type="button" class="btn btn-secondary knp-sub" data-kn="fresh">最初から</button>`
+        : '<button type="button" class="btn btn-primary knp-go" data-kn="fresh"><b>挑戦する</b><small>1人目 リコ先輩から</small></button>'}</div>
+    </div>
   </section>`;
   ov.addEventListener('click', async (e) => {
     if (e.target === ov) { ov.remove(); return; }
     const b = e.target.closest('[data-kn]'); if (!b) return;
     const k = b.dataset.kn;
     if (k === 'close') ov.remove();
+    else if (k === 'record') knShowRecord();
     else if (k === 'resume') knStart(false);
     else if (k === 'fresh') {
       if (run && !(await showConfirm({ title: '最初からやり直す？', body: '今の続き（' + knLabel(run.lap, run.idx + 1) + '）は消えて、1周目のリコ先輩から始まるよ。\n記録は残る。', ok: '最初から', cancel: 'やめる', danger: true }))) return;
       knStart(true);
     }
   });
+  knStageEl().appendChild(ov);
+}
+
+// これまでの記録：型ごとの回数と通算の回数、前回の札
+function knShowRecord() {
+  const S = knSave(); if (!S.last) return;
+  const st = S.stats || knNewStats(), last = S.last, ty = KN_STYLES[last.style] || KN_STYLES.clever;
+  const ov = document.createElement('div');
+  ov.className = 'bc-host kn-ov kn-record';
+  ov.innerHTML = `<section class="kn-card knr" role="dialog" aria-modal="true" aria-label="これまでの記録">
+    <div class="knr-art knr-${last.style}"><img src="${knStyleArt(last.style)}" alt="" onerror="this.onerror=null;this.src='assets/characters/mimi_default.webp'"><div class="knr-type"><small>前回のスタイル</small><b class="${ty.name.length > 5 ? 'is-long' : ''}">${ty.name}</b><i>${ty.en}</i></div></div>
+    <div class="knr-body">
+      <p class="knr-k"><span>勝ち抜き戦　これまでの記録</span><button type="button" class="knr-x" data-kn="close">閉じる</button></p>
+      <div class="knr-head"><b>${S.best ? knLabel(S.best.lap, S.best.idx) : '—'}</b><span>最高記録・挑戦 ${S.runs || 0}回</span></div>
+      <ul class="knr-styles">${Object.keys(KN_STYLES).map(k => `<li class="${(S.styles || {})[k] ? '' : 'is-none'}"><img src="${knStyleArt(k)}" alt="" onerror="this.style.visibility='hidden'"><b>${KN_STYLES[k].short || KN_STYLES[k].name}</b><span>${(S.styles || {})[k] || 0}回</span></li>`).join('')}</ul>
+      ${knStatGrid(st, S.totalWins || 0)}
+    </div></section>`;
+  ov.addEventListener('click', (e) => { if (e.target === ov || e.target.closest('[data-kn="close"]')) ov.remove(); });
   knStageEl().appendChild(ov);
 }
 
@@ -23744,6 +23868,94 @@ function knOpenWindow() {
 .kn-next i { font-style: normal; color: #d9b269; }
 .kn-next b { font-size: var(--r-body, 15px); color: #fff; }
 @media (max-height: 420px) { .kn-card { gap: 10px; padding: 8px 12px; } .kn-fig { min-height: 120px; } .kn-th { max-height: 44px; } .kn-btns .btn { min-height: 40px; } }
+/* ---- 勝ち抜き戦の説明画面（11/22 作り直し：看板の絵・11人の道のり・決まりの印4つ・記録の札） ---- */
+.kn-card.knp { flex-direction: column; gap: 0; width: min(100%, 860px); padding: 0; background: linear-gradient(180deg, #2a0a0e, #150406); border: 1px solid #c9a24e; outline: 1px solid rgba(217,178,105,.35); outline-offset: -6px; box-shadow: 0 18px 60px rgba(0,0,0,.7); }
+.knp-hero { position: relative; flex: 0 0 auto; height: clamp(104px, 30vh, 190px); background: #1a0508 url('assets/ui/kachinuki_banner.webp') 50% 38% / cover no-repeat; border-bottom: 1px solid #c9a24e; }
+.knp-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(14,3,5,0) 0%, rgba(14,3,5,.15) 26%, rgba(14,3,5,.66) 42%, rgba(14,3,5,.66) 60%, rgba(14,3,5,.1) 76%, rgba(14,3,5,0) 100%), linear-gradient(0deg, rgba(14,3,5,.8), rgba(14,3,5,0) 38%); }
+.knp-title { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -54%); display: grid; justify-items: center; gap: 2px; text-align: center; white-space: nowrap; text-shadow: 0 2px 8px #000, 0 0 2px #000; }
+.knp-title small { font-family: "Bebas Neue", "Barlow Condensed", sans-serif; font-size: var(--r-label, 14px); letter-spacing: .5em; padding-left: .5em; color: #e9c27a; }
+.knp-title b { font-family: "Shippori Mincho B1", "Yu Mincho", serif; font-weight: 800; font-size: clamp(30px, 8.4vh, 52px); line-height: 1.08; letter-spacing: .14em; padding-left: .14em; color: #f8d98a; text-shadow: 0 1px 0 #fff3cf, 0 2px 0 #9a6a22, 0 3px 10px rgba(0,0,0,.95), 0 0 18px rgba(240,190,90,.45); }
+.knp-title span { font-size: var(--r-body, 15px); color: #f6ecd2; }
+.knp-x { position: absolute; top: 8px; right: 8px; min-height: 44px; padding: 0 14px; font-size: var(--r-btn2, 15px); color: #f6ecd2; background: rgba(20,5,7,.82); border: 1px solid #b8923f; border-radius: 2px; }
+.knp-road-wrap { padding: 8px 14px 4px; background: radial-gradient(ellipse at 50% 100%, rgba(201,162,78,.16), rgba(0,0,0,0) 70%); }
+.knp-road-h { display: flex; align-items: baseline; justify-content: center; gap: 12px; margin: 0 0 5px; }
+.knp-road-h span { font-family: "Shippori Mincho B1", serif; font-weight: 800; font-size: var(--r-body, 15px); color: #efcd82; letter-spacing: .1em; }
+.knp-road-h small { font-size: var(--r-note, 14px); color: #d8c39a; }
+.knp-road { position: relative; display: flex; align-items: flex-end; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.knp-slab { position: relative; flex: 1 1 0; min-width: 0; display: grid; justify-items: center; gap: 2px; }
+.knp-pic { display: block; width: 100%; aspect-ratio: 3 / 4; max-height: clamp(44px, 15vh, 92px); overflow: hidden; background: #1a0508; transform: skewX(-8deg); border: 1px solid rgba(217,178,105,.7); box-shadow: 0 3px 8px rgba(0,0,0,.6); }
+.knp-pic img { width: 130%; height: 100%; margin-left: -15%; object-fit: cover; object-position: 58% 18%; transform: skewX(8deg); display: block; }
+.knp-slab.is-serious .knp-pic img { width: 230%; margin-left: -65%; height: 175%; object-position: 50% 0; }
+.knp-slab.is-boss .knp-pic { border-color: #f0c86e; box-shadow: 0 0 0 1px rgba(240,200,110,.45), 0 3px 10px rgba(0,0,0,.7); }
+.knp-slab.is-final { flex-grow: 1.4; }
+.knp-slab.is-final .knp-pic { max-height: clamp(52px, 18vh, 112px); border: 2px solid #ffe2a0; box-shadow: 0 0 14px rgba(255,214,140,.65), 0 3px 10px rgba(0,0,0,.7); }
+.knp-slab.is-done .knp-pic { filter: grayscale(.85) brightness(.55); }
+.knp-slab.is-done::after { content: '済'; position: absolute; top: 16%; left: 50%; transform: translateX(-50%) rotate(-14deg); font-family: "Shippori Mincho B1", serif; font-weight: 800; font-size: var(--r-label, 14px); color: #ffd6a0; border: 2px solid #c9603e; background: rgba(60,8,10,.78); padding: 0 4px; border-radius: 2px; }
+.knp-slab.is-cur .knp-pic { border: 2px solid #fff3cf; box-shadow: 0 0 16px rgba(255,236,180,.9); animation: knpCur 1.8s ease-in-out infinite; }
+@keyframes knpCur { 50% { box-shadow: 0 0 6px rgba(255,236,180,.4); } }
+.knp-tag { position: absolute; top: -7px; right: -3px; z-index: 2; font-size: var(--r-label, 14px); line-height: 1; padding: 3px 5px; color: #2a1608; background: #f6dc98; border-radius: 2px; }
+.knp-no { position: relative; z-index: 1; font-style: normal; font-family: "Bebas Neue", "Barlow Condensed", sans-serif; font-size: var(--r-label, 14px); line-height: 1; padding: 2px 5px 1px; color: #2a1608; background: linear-gradient(180deg, #f6dc98, #c9a24e); border-radius: 2px; }
+.knp-nm { max-width: 100%; overflow: hidden; white-space: nowrap; font-style: normal; font-size: var(--r-label, 14px); line-height: 1.2; color: #f1e2c0; letter-spacing: -.03em; }
+.knp-foot { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px 14px; padding: 6px 14px 12px; }
+.knp-rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 12px; margin: 0; padding: 0; list-style: none; }
+.knp-rules li { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.knp-ico { flex: 0 0 auto; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid rgba(217,178,105,.65); background: radial-gradient(circle, rgba(201,162,78,.28), rgba(0,0,0,.3)); transform: rotate(45deg); margin: 0 2px; }
+.knp-ico svg { width: 20px; height: 20px; transform: rotate(-45deg); fill: none; stroke: #f0c86e; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.knp-rules li > span:last-child { display: grid; min-width: 0; line-height: 1.2; }
+.knp-rules b { font-size: var(--r-note, 14px); color: #f6ecd2; white-space: nowrap; }
+.knp-rules small { font-size: var(--r-note, 14px); color: #bfa77a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.knp-rec { display: grid; justify-items: center; padding: 4px 14px; border: 1px solid rgba(217,178,105,.5); background: linear-gradient(180deg, rgba(201,162,78,.14), rgba(0,0,0,.25)); text-align: center; }
+.knp-rec small { font-size: var(--r-note, 14px); color: #d8c39a; letter-spacing: .1em; }
+.knp-rec b { font-family: "Shippori Mincho B1", serif; font-weight: 800; font-size: var(--r-mission, 18px); color: #f6dc98; white-space: nowrap; }
+.knp-rec span { font-size: var(--r-note, 14px); color: #bfa77a; white-space: nowrap; }
+.knp-btns { display: grid; gap: 6px; justify-items: stretch; }
+.knp-go { display: grid; place-items: center; gap: 0; min-height: 56px; padding: 4px 22px; }
+.knp-go b { font-size: var(--r-btn, 17px); letter-spacing: .12em; }
+.knp-go small { font-size: var(--r-note, 14px); opacity: .9; white-space: nowrap; }
+.knp-sub { min-height: 44px; font-size: var(--r-btn2, 15px); }
+@media (max-width: 719px) { .knp-foot { grid-template-columns: minmax(0, 1fr) auto; } .knp-rec { display: none; } .knp-nm { display: none; } }
+@media (max-height: 420px) { .knp-road-wrap { padding: 4px 12px 2px; } .knp-foot { padding: 4px 12px 8px; } .knp-go { min-height: 48px; } }
+/* ---- 勝ち抜き戦の記録の札（11/22：型のミミの絵＋到達＋回数。撮って共有できる見た目） ---- */
+.kn-card.knr { flex-direction: row; gap: 0; width: min(100%, 880px); padding: 0; background: linear-gradient(135deg, #2c0a10, #120305 70%); border: 1px solid #c9a24e; outline: 1px solid rgba(217,178,105,.35); outline-offset: -6px; box-shadow: 0 18px 60px rgba(0,0,0,.7); overflow: hidden; }
+.knr-art { position: relative; flex: 0 0 34%; min-height: 0; background: #1a0508; border-right: 1px solid #c9a24e; }
+.knr-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 12%; }
+.knr-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(10,2,4,.92) 0%, rgba(10,2,4,.2) 34%, rgba(10,2,4,0) 50%); pointer-events: none; }
+.knr-type { position: absolute; left: 0; right: 0; bottom: 8px; z-index: 1; display: grid; justify-items: center; text-align: center; text-shadow: 0 2px 6px #000; }
+.knr-type small { font-family: "Bebas Neue", "Barlow Condensed", sans-serif; font-size: var(--r-label, 14px); letter-spacing: .35em; color: #e9c27a; }
+.knr-type b { font-family: "Shippori Mincho B1", serif; font-weight: 800; font-size: clamp(24px, 7vh, 40px); line-height: 1.1; color: #f8d98a; text-shadow: 0 2px 0 #7a4d14, 0 3px 10px #000; }
+.knr-type b { white-space: nowrap; } .knr-type b.is-long { font-size: clamp(18px, 5.2vh, 30px); }
+.knr-type i { font-style: normal; font-family: "Bebas Neue", "Barlow Condensed", sans-serif; font-size: var(--r-body, 15px); letter-spacing: .3em; color: #fff3cf; }
+.knr-clever .knr-type b { color: #bfe3ff; } .knr-crazy .knr-type b { color: #ff9f8a; } .knr-trick .knr-type b { color: #e3b8ff; }
+.knr-iron .knr-type b { color: #d6e2f0; } .knr-hunter .knr-type b { color: #ffd27a; } .knr-lucky .knr-type b { color: #ffe9a0; }
+.knr-body { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 10px 14px 12px; }
+.knr-k { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; font-size: var(--r-note, 14px); color: #d8c39a; letter-spacing: .06em; }
+.knr-k span:last-child { color: #a98f63; }
+.knr-x { min-height: 44px; padding: 0 12px; font-size: var(--r-btn2, 15px); color: #f6ecd2; background: rgba(20,5,7,.85); border: 1px solid #b8923f; border-radius: 2px; }
+.knr-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.knr-head b { font-family: "Shippori Mincho B1", serif; font-weight: 800; font-size: clamp(26px, 8vh, 44px); line-height: 1.05; color: #f8d98a; text-shadow: 0 2px 0 #7a4d14, 0 3px 10px rgba(0,0,0,.8); }
+.knr-head span { font-size: var(--r-body, 15px); color: #f1e2c0; }
+.knr-head em { font-style: normal; font-weight: 800; margin-left: 8px; padding: 1px 6px; color: #2a1608; background: #f6dc98; }
+.knr-line { margin: 0; font-family: "Shippori Mincho B1", serif; font-weight: 800; font-size: var(--r-speech, 15px); color: #fff3cf; }
+.knr-line small { margin-left: 10px; font-family: "Noto Sans JP", sans-serif; font-weight: 400; font-size: var(--r-note, 14px); color: #bfa77a; }
+.knr-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.knr-grid li { display: grid; align-content: center; justify-items: center; gap: 0; min-width: 0; padding: 4px 2px; background: linear-gradient(180deg, rgba(201,162,78,.12), rgba(0,0,0,.28)); border: 1px solid rgba(217,178,105,.35); text-align: center; }
+.knr-grid small { font-size: var(--r-note, 14px); color: #d8c39a; white-space: nowrap; }
+.knr-grid b { font-family: "Barlow Condensed", "Noto Sans JP", sans-serif; font-weight: 800; font-size: var(--r-mission, 18px); line-height: 1.15; color: #fff3cf; white-space: nowrap; }
+.knr-grid i { font-style: normal; font-size: var(--r-note, 14px); color: #bfa77a; white-space: nowrap; }
+.knr-foot { margin: 0; font-size: var(--r-note, 14px); color: #d8c39a; }
+.knr-foot b { color: #f6dc98; }
+.knr-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+.knr-btns .btn { min-height: 44px; padding: 0 16px; font-size: var(--r-btn2, 15px); }
+.knr-btns .btn-primary { flex: 1 1 auto; }
+.knr-styles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.knr-styles li { display: grid; justify-items: center; gap: 1px; min-width: 0; padding: 2px; border: 1px solid rgba(217,178,105,.35); background: rgba(0,0,0,.25); }
+.knr-styles img { width: 100%; aspect-ratio: 1; object-fit: cover; object-position: 50% 14%; }
+.knr-styles li.is-none img { filter: grayscale(1) brightness(.4); }
+.knr-styles b { font-size: var(--r-note, 14px); color: #f1e2c0; white-space: nowrap; overflow: hidden; max-width: 100%; }
+.knr-styles span { font-size: var(--r-note, 14px); color: #f6dc98; }
+button.knp-rec { color: inherit; font: inherit; cursor: pointer; }
+@media (max-width: 719px) { .knr-art { flex-basis: 30%; } .knr-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .knr-line small { display: none; } .knr-k span:last-child { display: none; } }
+@media (max-height: 420px) { .knr-body { gap: 4px; padding: 6px 12px 8px; } .knr-grid li { padding: 2px; } }
 `;
   document.head.appendChild(st);
 })();
