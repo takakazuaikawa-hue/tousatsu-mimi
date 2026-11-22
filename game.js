@@ -13204,11 +13204,11 @@ function showMiniPokerGame() {
           <div class="mp-title">ファイブポーカー</div>
           <div class="mp-stats">
             <span class="mp-stat">${UI_ICON.coin} <span data-mpb="coins">${save.coins}</span></span>
-            <span class="mp-stat mp-stat-jp" title="ロイヤルストレートフラッシュで全額獲得">JP <span data-mpb="jackpot">${p.jackpot}</span></span>
-            <span class="mp-stat mp-stat-session" data-mpb="sessionStat">±0</span>
-            <span class="mp-stat">連勝 <span data-mpb="streak">0</span><span data-mpb="shields"></span></span>
+            <span class="mp-stat mp-stat-streak" hidden>連勝 <span data-mpb="streak">0</span><span data-mpb="shields"></span></span>
+            <button class="mp-pt-btn" data-mp="paytable">配当表</button>
             <button class="mp-history-btn mp-menu-btn" data-mp="menu" title="メニュー">≡</button>
             <div class="mp-menu" hidden>
+              <div class="mp-menu-stat">今回の増減 <span class="mp-stat mp-stat-session" data-mpb="sessionStat">±0</span></div>
               <button data-mp="missions">${UI_ICON.target} 今日のミッション</button>
               <button data-mp="history">${UI_ICON.scroll} 履歴（最高連勝 ${p.bestStreak}）</button>
               <button data-mp="achievements">${UI_ICON.medal} 達成</button>
@@ -13265,6 +13265,10 @@ function showMiniPokerGame() {
     const mpMenu = overlay.querySelector('.mp-menu');
     headerAct('[data-mp="menu"]', (e) => { e.stopPropagation(); if (mpMenu) mpMenu.hidden = !mpMenu.hidden; });
     if (mpMenu) { mpMenu.addEventListener('click', () => { mpMenu.hidden = true; }); overlay.addEventListener('click', (e) => { if (!e.target.closest('.mp-menu, .mp-menu-btn')) mpMenu.hidden = true; }); }
+    // 11/22 配当表（スマホ）は「配当表」を押すと開く。表の外か「閉じる」を押すと閉じる
+    const mpModal = overlay.querySelector('.minipoker-modal');
+    headerAct('[data-mp="paytable"]', (e) => { e.stopPropagation(); if (mpMenu) mpMenu.hidden = true; mpModal.dataset.pt = mpModal.dataset.pt === '1' ? '' : '1'; });
+    overlay.addEventListener('click', (e) => { if (mpModal.dataset.pt === '1' && (e.target.closest('.mp-pt-x') || !e.target.closest('.mp-paytable, .mp-pt-btn'))) mpModal.dataset.pt = ''; });
     headerAct('[data-mp="missions"]',     showMissionsPanel);
     headerAct('[data-mp="history"]',      showHistoryPanel);
     headerAct('[data-mp="achievements"]', showAchievementsPanel);
@@ -13280,7 +13284,7 @@ function showMiniPokerGame() {
     // 今の勝負で表の額に掛かる上乗せ（judge の計算と同じ。2026-11-02 14回目の批評：表の額と実際の配当が食い違って見えた）
     const ups = [[!ctx.dailyBonusUsed ? 2 : 1, '初戦'], [ctx.bossNight ? 3 : 1, '特別卓'], [ctx.streak >= 5 ? 2 : ctx.streak >= 3 ? 1.5 : 1, '連勝']].filter(([m]) => m > 1).map(([m, n]) => `×${n}${m}`).join('・');
     el.innerHTML = `
-      <div class="mp-pt-title">配当表<small class="mp-pt-unit">（ベット${cur}で戻る額）</small></div>
+      <div class="mp-pt-title">配当表<small class="mp-pt-unit">（ベット${cur}で戻る額）</small><button type="button" class="mp-pt-x">閉じる</button></div>
       ${ups ? `<div class="mp-pt-ups">今は表の額に<wbr><b>${ups}</b></div>` : ''}
       <div class="mp-pt-lucky">★今日は <b>${luckyName}</b> ×2</div>
       <table class="mp-pt">
@@ -13297,7 +13301,9 @@ function showMiniPokerGame() {
           `;
         }).join('')}
       </table>
-      <div class="mp-pt-note">相手に勝つと、役に応じて ベット×倍率 が戻ります。×1 は賭けた分が戻るだけ（差し引き0）。役なし・Jより下のペアは勝っても配当なし。★ はその日限定 ×2。</div>
+      <div class="mp-pt-jp">ロイヤルは <b>JP <span data-mpb="jackpot">${save.minipoker.jackpot || 5000}</span></b> も獲得</div>
+      <details class="mp-pt-more"><summary>配当のしくみ</summary>
+      <div class="mp-pt-note">相手に勝つと、役に応じて ベット×倍率 が戻ります。×1 は賭けた分が戻るだけ（差し引き0）。役なし・Jより下のペアは勝っても配当なし。★ はその日限定 ×2。</div></details>
     `;
   }
 
@@ -13367,6 +13373,13 @@ function showMiniPokerGame() {
       const moodLabel = pe.rank >= 5 ? '期待大！' : pe.rank >= 2 ? '強気' : pe.rank === 1 ? '普通' : '困惑…';
       moodBadge = `<div class="mp-mood-badge" title="${moodLabel}">${mood}</div>`;
     }
+    // 交換を選ぶ間：いまの役で勝った時に戻る額（配当表と同じ額。J より下のペア・役なしは配当なし）
+    let payTag = '';
+    if (isPlayer && ev && ctx.phase === 'choose') {
+      const jp = ev.rank === 1 && ev.bestFive && ev.bestFive.some(c => c.rank >= 11 && ev.bestFive.filter(x => x.rank === c.rank).length === 2);
+      const m = (ev.rank === 1 ? (jp ? 1 : 0) : MP_PAYTABLE[ev.rank].mult) * (ev.rank === ctx.luckyRank ? 2 : 1);
+      payTag = m > 0 ? `<small class="mp-hn-pay">勝てば <b>${m * ctx.bet}</b></small>` : '<small class="mp-hn-pay is-none">配当なし</small>';
+    }
     return `
       <div class="mp-char ${rotateClass}">
         ${moodBadge}
@@ -13376,7 +13389,7 @@ function showMiniPokerGame() {
       </div>
       ${cardsHtml}
       <div class="mp-handname ${ev && ev.rank >= 4 ? 'mp-handname-big' : ''}">
-        ${showHandName ? ev.name : (!isPlayer && charInfo.styleTag ? `<span class="mp-char-style">${charInfo.styleTag.replace('・', '<br>')}</span>` : (cards.length === 5 ? '？？？' : ''))}
+        ${showHandName ? ev.name : (!isPlayer && charInfo.styleTag ? `<span class="mp-char-style">${charInfo.styleTag.replace('・', '<br>')}</span>` : (cards.length === 5 ? '？？？' : ''))}${payTag}
       </div>
     `;
   }
@@ -13387,6 +13400,8 @@ function showMiniPokerGame() {
     // KEEP 印は交換を選ぶ間だけ（勝負が終わった後まで残っていた）
     const held = isPlayer && ctx.held[i] && ctx.phase === 'choose';
     const tapClass = (isPlayer && ctx.phase === 'choose') ? 'mp-tap' : '';
+    const rk0 = (isPlayer && ctx.phase === 'choose') ? reachCards(ctx.player) : null;
+    const reachClass = rk0 && rk0.idx.includes(i) ? 'mp-card-reach' : '';
     // 役構成カードのハイライト（result/reveal フェーズのみ）
     let winnerClass = '';
     if ((ctx.phase === 'result' || ctx.phase === 'reveal') && faceUp) {
@@ -13397,7 +13412,7 @@ function showMiniPokerGame() {
         if (matches && ev.rank >= 1) winnerClass = 'mp-card-winner';
       }
     }
-    return `<div class="mp-card ${red ? 'mp-red' : 'mp-black'} ${held ? 'mp-held' : ''} ${tapClass} ${ctx.noDealAnim ? '' : 'mp-card-dealt'} ${winnerClass}"
+    return `<div class="mp-card ${red ? 'mp-red' : 'mp-black'} ${held ? 'mp-held' : ''} ${tapClass} ${ctx.noDealAnim ? '' : 'mp-card-dealt'} ${winnerClass} ${reachClass}"
                  style="animation-delay:${i * 0.08}s"
                  data-i="${i}" ${isPlayer && ctx.phase === 'choose' ? 'data-mp-tap="1"' : ''}>
       <div class="mp-card-corner mp-card-tl">${c.label}<br>${c.suit}</div>
@@ -13423,9 +13438,7 @@ function showMiniPokerGame() {
         ${(showDailyBonus || hot) ? `<div class="mp-wager-tags">
           ${showDailyBonus ? '<span class="mp-daily-bonus">今日の初戦ボーナス 配当 ×2</span>' : ''}${hot}
         </div>` : ''}
-        <div class="mp-status mp-status-wager">
-          相手に勝つと <b>ベット×配当表の額</b> が戻る<small>（J以上のペアから）</small>
-        </div>
+        <div class="mp-status mp-status-wager">賭ける額を選んで「配る」</div>
         <div class="mp-bet-row">
           ${MP_BET_LEVELS.map(b => `
             <button class="mp-bet-chip ${b === ctx.bet ? 'on' : ''}" data-mp-bet="${b}" ${(b > cap || b * tm > save.coins) ? 'disabled' : ''}>${b}</button>
@@ -13463,9 +13476,9 @@ function showMiniPokerGame() {
       const isLastRound = (ctx.drawRound || 0) >= 1;  // 2回引き終わったら強制勝負
       return `
         <div class="mp-status">
-          <b>交換 ${round}/2</b>　残す札をタップ → 残りを引き直す
+          残す札を押す<span class="mp-round">交換 ${round}/2</span>
         </div>
-        ${reach ? `<div class="mp-reach">${reach}${reachProb ? ` <span class="mp-reach-prob">(${reachProb})</span>` : ''}</div>` : ''}
+        ${reach ? `<div class="mp-reach">${reach}${reachProb ? ` <span class="mp-reach-prob">${reachProb}</span>` : ''}</div>` : ''}
         <div class="mp-actions">
           <button class="mp-btn mp-btn-primary" data-mp="draw">
             ${drop > 0 ? `${drop}枚を引く` : 'そのまま勝負'}
@@ -13488,7 +13501,7 @@ function showMiniPokerGame() {
       const net = ctx.reward - stake;
       let cls = r, head, amount, sub = '';
       if (ctx.doubleLost) {
-        cls = 'lose'; head = 'ダブルアップ失敗'; amount = `獲得分は没収（${signedCoins(net)}コイン）`; sub = `配当 0（賭け ${stake}）`;
+        cls = 'lose'; head = 'ダブルアップ失敗'; amount = `獲得分は没収（${signedCoins(net)}コイン）`;
       } else if (r === 'win') {
         head = '勝利！'; amount = `${signedCoins(net)}コイン`; sub = ctx.payCalc ? `配当 ${ctx.payCalc}（賭け ${stake}）` : `配当 ${ctx.reward}（賭け ${stake}）`;
       } else if (r === 'push') {
@@ -13497,11 +13510,11 @@ function showMiniPokerGame() {
       } else if (r === 'tie') {
         head = '引き分け'; amount = `賭けた ${stake}コインを返金（±0）`;
       } else if (r === 'nopay') {
-        cls = 'lose'; head = '勝ったけど配当なし'; amount = `${signedCoins(net)}コイン`; sub = `配当 0（賭け ${stake}）`;
+        cls = 'lose'; head = '勝ったけど配当なし'; amount = `${signedCoins(net)}コイン`;
       } else if (r === 'surrender') {
         cls = 'lose'; head = 'サレンダー'; amount = `半額 ${ctx.reward}コインが戻った（${signedCoins(net)}コイン）`;
       } else {
-        head = `${ctx.opp.name} の勝ち`; amount = `${signedCoins(net)}コイン`; sub = `配当 0（賭け ${stake}）`;
+        head = `${ctx.opp.name} の勝ち`; amount = `${signedCoins(net)}コイン`;
       }
       // フォーカード以上のボーナス抽選が控えている間は、次へ進むボタンを出さない
       if (ctx.garaponPending) {
@@ -13521,7 +13534,7 @@ function showMiniPokerGame() {
         ${(r === 'win' && ctx.canDouble && ctx.doubleStack < 3) ? `
           <div class="mp-double-pitch">
             <b>ダブルアップに挑戦？</b>
-            <small>次の1枚が見せ札より「高い」か「低い」か。当てたら <b>×2</b>（3回まで）</small>
+            <small>次の札の高い・低いを当てたら <b>×2</b></small>
           </div>
           <div class="mp-actions">
             <button class="mp-btn mp-btn-double" data-mp="double">▶ 挑戦</button>
@@ -13530,7 +13543,7 @@ function showMiniPokerGame() {
         ` : `
           <div class="mp-actions">
             <button class="mp-btn mp-btn-primary" data-mp="next">${next}</button>
-            ${canRepeat ? `<button class="mp-btn mp-btn-repeat" data-mp="repeat">▶▶ 同ベットで連戦（${ctx.lastBetUsed}コイン）</button>` : ''}
+            ${canRepeat ? `<button class="mp-btn mp-btn-repeat" data-mp="repeat">▶▶ 同じ${ctx.lastBetUsed}で連戦</button>` : ''}
             <button class="mp-btn mp-btn-ghost" data-mp="quit">やめる</button>
           </div>
         `}
@@ -13665,12 +13678,12 @@ function showMiniPokerGame() {
     // フラッシュリーチ：同スートが4枚
     const suitCount = {};
     suits.forEach(s => suitCount[s] = (suitCount[s] || 0) + 1);
-    if (Object.values(suitCount).some(v => v === 4)) return 'フラッシュ リーチ！（あと1枚で完成）';
+    if (Object.values(suitCount).some(v => v === 4)) return 'フラッシュ リーチ！';
     // ストレートリーチ：5枚中4枚が連続してる組み合わせ
     const uniq = [...new Set(ranks)].sort((a, b) => a - b);
     if (uniq.length >= 4) {
       for (let i = 0; i <= uniq.length - 4; i++) {
-        if (uniq[i + 3] - uniq[i] === 3) return 'ストレート リーチ！（あと1枚で完成）';
+        if (uniq[i + 3] - uniq[i] === 3) return 'ストレート リーチ！';
       }
       // A-2-3-4 や 10-J-Q-K の wheel/high
       if (uniq.includes(14)) {
@@ -13681,7 +13694,7 @@ function showMiniPokerGame() {
     // フォーリーチ：3 of a kind
     const rc = {};
     ranks.forEach(r => rc[r] = (rc[r] || 0) + 1);
-    if (Object.values(rc).some(v => v === 3)) return 'フォーカード リーチ！（あと1枚）';
+    if (Object.values(rc).some(v => v === 3)) return 'フォーカード リーチ！';
     return null;
   }
 
@@ -14580,6 +14593,7 @@ function showMiniPokerGame() {
     if (c) animateNumber(c, save.coins);
     if (s) s.textContent = ctx.streak;
     if (sh) sh.textContent = ctx.shields > 0 ? ' シールド×' + ctx.shields : '';
+    { const sw = overlay.querySelector('.mp-stat-streak'); if (sw) sw.hidden = !(ctx.streak >= 2 || ctx.shields > 0); }
     if (jp) animateNumber(jp, save.minipoker.jackpot || 5000);
     if (sess) {
       const delta = save.coins - ctx.sessionStartCoins;

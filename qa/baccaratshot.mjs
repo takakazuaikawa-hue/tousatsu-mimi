@@ -5,8 +5,8 @@ import path from 'node:path';
 import { openSession, sleep, REPO } from './lib/session.mjs';
 
 const kind = process.argv[2] || 'phone';
-const [W, H] = kind === 'pc' ? [1280, 800] : kind === 'small' ? [667, 375] : [844, 390];
-const OUT = path.join(REPO, 'qa', 'out', 'baccarat', kind);
+const [W, H] = ({ pc: [1280, 720], pc800: [1280, 800], small: [667, 375], wide: [932, 430] })[kind] || [844, 390];
+const OUT = process.env.QA_TAG ? path.join(REPO, 'qa', 'out', 'baccarat-tidy', process.env.QA_TAG, kind) : path.join(REPO, 'qa', 'out', 'baccarat', kind);
 fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive: true });
 const ALL = ['rico_tutorial', 'polka', 'selina', 'grano', 'velvet'];
 
@@ -18,19 +18,29 @@ const CHECK = `(() => {
   const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
   for (let n; (n = walker.nextNode());) {
     const t = n.textContent.trim(); if (!t) continue;
-    const el = n.parentElement; if (!vis(el)) continue;
+    const el = n.parentElement; if (!vis(el) || el.classList.contains('bc-sub-n')) continue;
     const rg = document.createRange(); rg.selectNodeContents(n); const r = rg.getBoundingClientRect(); if (!r.width || !r.height) continue;
     const k = el.getBoundingClientRect().height / (el.offsetHeight || 1) || 1;
     const fs = parseFloat(getComputedStyle(el).fontSize) * (Number.isFinite(k) && k > 0 ? k : 1);
     if (fs < 13.6) small.push(t.slice(0, 14) + ' ' + fs.toFixed(1));
     if (r.left < -1 || r.top < -1 || r.right > VW + 1 || r.bottom > VH + 1) off.push(t.slice(0, 14));
-    const box = el.closest('button, .bc-sub, .bc-pins > span, .bc-cd, .bc-side-head, .bc-panel, .bc-ask, .bc-wallet, .bc-roads, .bc-sq-side, .bc-sc, .bc-brief, .bc-verdict, .bc-fnote');
+    const box = el.closest('.bc-favor-in, .bc-gpop, button, .bc-sub, .bc-pins > span, .bc-cd, .bc-side-head, .bc-panel, .bc-ask, .bc-wallet, .bc-roads, .bc-sq-side, .bc-sc, .bc-brief, .bc-verdict, .bc-fnote');
     if (box) { const b = box.getBoundingClientRect(); if (r.left < b.left - 1.5 || r.right > b.right + 1.5 || r.top < b.top - 1.5 || r.bottom > b.bottom + 1.5) clip.push(t.slice(0, 14) + ' @' + (box.className || box.tagName).toString().split(' ')[0]); }
   }
-  return { small: [...new Set(small)], off: [...new Set(off)], clip: [...new Set(clip)], scrollX: document.documentElement.scrollWidth > VW };
+  // 女神のご機嫌の札・上がり下がりの知らせが、台詞の帯・問いの札の中身・卓の文字・賭ける所と重なっていないか／画面の外へ出ていないか
+  const ov = [], rc = (el) => el.getBoundingClientRect(), hit = (a, b) => a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1;
+  const gods = [...host.querySelectorAll('.bc-favor-in, .bc-fnote, .bc-god .bc-favor')].filter(e => vis(e) && rc(e).width);
+  const others = [...host.querySelectorAll('.bc-sub[data-on="1"], .bc-ask-q, .bc-ask-o button, .bc-ask-h > *, .bc-pins > *, .bc-side-n, .bc-tot, .bc-spot, .bc-rack > *, .bc-table .bc-card')].filter(e => !e.closest('.bc-god') && vis(e) && rc(e).width);
+  for (const g of gods) { const a = rc(g); if (a.left < -1 || a.right > VW + 1 || a.bottom > VH + 1 || a.top < -1) ov.push('off:' + g.className.split(' ')[0]); for (const o of others) if (hit(a, rc(o))) ov.push(g.className.split(' ')[0] + ' x ' + o.className.split(' ')[0]); }
+  // 台詞の帯の行数（2行まで）
+  const st = host.querySelector('.bc-sub[data-on="1"] .bc-sub-t'); let lines = 0;
+  if (st && vis(st)) { const rg = document.createRange(); rg.selectNodeContents(st); lines = new Set([...rg.getClientRects()].map(r => Math.round(r.top))).size; }
+  // 押す所の大きさ（44px 未満）
+  const tiny = [...host.querySelectorAll('button')].filter(b => vis(b) && !b.disabled && rc(b).width && (rc(b).height < 43.5 || rc(b).width < 43.5) && !b.closest('.bc-chipsel')).map(b => (b.dataset.bc || b.className) + ' ' + Math.round(rc(b).width) + 'x' + Math.round(rc(b).height));
+  return { small: [...new Set(small)], off: [...new Set(off)], clip: [...new Set(clip)], ov: [...new Set(ov)], lines3: lines > 2 ? lines : 0, tiny: [...new Set(tiny)], scrollX: document.documentElement.scrollWidth > VW };
 })()`;
 
-const session = await openSession({ width: W, height: H, mobile: kind !== 'pc', speed: 1 });
+const session = await openSession({ width: W, height: H, mobile: !kind.startsWith('pc'), speed: 1 });
 const { page } = session;
 const ev = (js) => page.eval(`(() => { ${js}; return true; })()`).catch(e => console.log('ERR', js.slice(0, 60), e.message.slice(0, 200)));
 const val = (js) => page.eval(js).catch(() => null);
@@ -66,9 +76,28 @@ if (await until(`${Q}.picking()`, 6000)) { await snap('pick', 400); await ev(`${
 await ev(`${Q}.feed('BBBPBBPPPBTBBBBBBBPPBPBPPBBTPPPPBB')`); await sleep(300);
 await snap('bet_empty');
 await ev(`${Q}.bet('B', 3); ${Q}.bet('T', 1); ${Q}.bet('BP', 1)`); await snap('bet_placed');
+// ご機嫌の上がり下がりの知らせ（女神の評価）
+const AFTER = process.env.QA_TAG !== 'before';
+await ev(`${Q}.setFavor(1, '${AFTER ? 'いい返事' : '気分に合う返事'}')`); await snap('favor_note', 250); await sleep(3200);
+if (AFTER) {
+  // 押して開く物：メニュー／ご機嫌の小窓
+  await ev(`${Q}.menu()`); await snap('menu', 300); await ev(`document.querySelector('.bc-over [data-bc="close"]').click()`);
+  await ev(`${Q}.godPop()`); await snap('god_pop', 300); await ev(`${Q}.godPop()`);
+  // 台詞の帯：文の元から長い物を全部流して、2行に収まるかを数える（3行以上になった文を挙げる）
+  const src = fs.readFileSync(path.join(REPO, 'baccarat-ui.js'), 'utf8');
+  const lits = new Set();
+  for (const m of src.matchAll(/'((?:[^'\\\n]|\\.)*)'/g)) lits.add(m[1]);
+  for (const m of src.matchAll(/`((?:[^`\\\n]|\\.)*)`/g)) lits.add(m[1].replace(/\$\{SIDE_JA[^}]*\}/g, 'プレイヤー').replace(/\$\{[^}]*\}/g, '9'));
+  const cand = [...lits].filter(t => /[ぁ-んァ-ヶ]/.test(t) && !/[<>{}=$]|class|data-/.test(t) && t.replace(/\|/g, '').length >= 16 && t.length <= 70);
+  const long = await val(`(() => { const out = []; const Qa = ${Q}; for (const t of ${JSON.stringify(cand)}) { Qa.hush(); Qa.say('rico', t, 500); const st = document.querySelector('.bc-sub-t'); const rg = document.createRange(); rg.selectNodeContents(st); const n = new Set([...rg.getClientRects()].map(r => Math.round(r.top))).size; if (n > 2) out.push(n + ':' + t); } Qa.hush(); return out; })()`);
+  console.log(kind, 'speech>2lines', cand.length, JSON.stringify(long));
+  report.push({ name: 'speech_lines', tested: cand.length, over2: long });
+  await ev(`${Q}.say('rico', 'ウンメさまの神託は|ウソをつかない。|ただし、ぜんぶは|教えてくれないよ', 4000)`); await snap('speech_long', 300); await ev(`${Q}.hush()`);
+}
 // 女神の問いかけ → 返事 → 神託
 await ev(`${Q}.ask()`); await snap('ask', 500);
 await ev(`${Q}.setFavor(2); ${Q}.answer(1)`); await sleep(400); await snap('answered', 300);
+if (AFTER) { await ev(`${Q}.godPop()`); await snap('god_pop_pledge', 300); await ev(`${Q}.godPop()`); }
 await ev(`${Q}.oracle(true)`); await sleep(500); await snap('oracle', 200);
 // 配る → 絞り
 await ev(`${Q}.deal()`);

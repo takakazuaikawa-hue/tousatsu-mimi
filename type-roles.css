@@ -212,3 +212,7 @@ html #stage .personality-reveal-banner .prb-traits li::before { top: calc(8px / 
 .hand-result-overlay .hr-read-m { font-size: var(--fx-body, 16px) !important; color: #fff3cf; font-weight: 800; }
 .hand-result-overlay .hr-read-real, .hand-result-overlay .hr-read-why { font-size: var(--fx-body, 16px) !important; color: #f4ecdc; line-height: 1.35; }
 .hand-result-overlay .hr-read-gain { font-size: var(--fx-cap, 14px) !important; color: #ffe08a; }
+
+/* ---------- 2026-11-22 ファイブポーカーの整理で足した部品：見出しの「配当表」＝押す所（小）、役の下の「勝てば」・交換の回数・JP・配当のしくみ・今回の増減＝補足 ---------- */
+html body .minipoker-overlay :is(.mp-pt-btn, .mp-pt-x) { font-size: var(--r-btn2) !important; }
+html body .minipoker-overlay :is(.mp-hn-pay, .mp-round, .mp-pt-jp, .mp-pt-more summary, .mp-menu-stat) { font-size: var(--r-note) !important; }

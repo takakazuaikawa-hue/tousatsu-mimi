@@ -124,20 +124,14 @@
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%), linear-gradient(#000 86%, transparent); -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent 0, #000 16%), linear-gradient(#000 86%, transparent); mask-composite: intersect; }
 .bc-god-pic.has-art img { width: 100%; height: 100%; object-fit: cover; object-position: 62% 0; display: block; filter: drop-shadow(0 0 calc(var(--u) * 10) rgba(0,0,0,.6)); }
 .bc-god:has(.has-art) .bc-god-n { display: none; }
-.bc-god:has(.has-art) .bc-favor { position: absolute; right: calc(-1 * max(var(--safe-x, 0px), var(--u) * 12) + max(var(--safe-x, 0px), var(--u) * 4)); bottom: calc(var(--u) * 4); padding: 1px 8px; background: rgba(10,3,4,.9); border: 1px solid var(--bc-gold-d); z-index: 2; }
-.bc-host[data-ask] .bc-god .bc-favor { visibility: hidden; }
-.bc-fnote { position: absolute; right: 0; bottom: calc(var(--u) * 30); z-index: 3; padding: 2px 9px; white-space: nowrap; font-size: var(--r-label, 15px); line-height: 1.35; background: rgba(8,3,4,.95); border: 1px solid var(--k); color: var(--bc-ivory); animation: bc-pop .45s ease-out 1; }
 .bc-fnote b { font: 700 1.25em/1 var(--bc-num); color: var(--k); margin-left: .2em; } .bc-fnote small { display: block; font-size: var(--r-note, 14px); color: var(--bc-muted); text-align: right; }
 .bc-fnote[data-s="up"] { --k: var(--bc-gold-hi); box-shadow: 0 0 calc(var(--u) * 12) rgba(239,205,130,.5); } .bc-fnote[data-s="dn"] { --k: #e0525c; }
-.bc-sub, .bc-ask { --god-w: calc((100% - var(--u) * 8) * 17 / 63); }
-.bc-host:not([data-sq]) .bc-sub { padding-right: calc(var(--god-w) * 1.24 + var(--u) * 2); }
 .bc-ask { padding-right: calc(var(--god-w) * 1.24 + var(--u) * 8) !important; }
 .bc-table { padding-right: calc(8.5% + var(--u) * 6) !important; }
 .bc-cards:has(.is-side) .bc-card + .bc-card { margin-left: calc(var(--u) * -5); }
 .bc-cards .bc-card.is-side { margin-left: calc(var(--w) * .12); }
 @keyframes bc-lean { 30% { transform: translateX(calc(var(--u) * -9)) rotate(-4deg); } }
 .bc-god-n { font: 700 var(--r-note, 14px)/1.3 var(--bc-min); letter-spacing: .06em; color: var(--bc-gold); white-space: nowrap; }
-.bc-favor { display: flex; align-items: center; gap: 5px; font-size: var(--r-note, 14px); color: var(--bc-muted); white-space: nowrap; }
 .bc-favor i { width: .8em; height: .8em; transform: rotate(45deg); border: 1.5px solid var(--bc-gold-d); background: transparent; transition: background .3s, box-shadow .3s; }
 .bc-favor[data-n="1"] i:nth-of-type(-n+1), .bc-favor[data-n="2"] i:nth-of-type(-n+2), .bc-favor[data-n="3"] i { background: var(--bc-gold-hi); border-color: var(--bc-gold-hi); box-shadow: 0 0 8px rgba(239,205,130,.7); }
 .bc-favor.is-up { animation: bc-pop .5s ease-out 1; } .bc-favor.is-down { animation: bc-shake .4s linear 1; }
@@ -145,11 +139,11 @@
 @keyframes bc-shake { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
 
 /* ---- 神託・約束の札 ---- */
-.bc-pins { grid-column: 2; grid-row: 2; align-self: start; z-index: 2 !important; margin: calc(var(--u) * 92) calc(8.5% + var(--u) * 14) 0 calc(var(--u) * 14); display: flex; flex-flow: row wrap; align-content: flex-start; gap: calc(var(--u) * 4); pointer-events: none; }
+.bc-pins { grid-column: 1 / 4; grid-row: 2; place-self: center; position: relative; z-index: 2; max-width: 100%; display: flex; flex-flow: row wrap; align-content: flex-start; gap: calc(var(--u) * 4); pointer-events: none; }
 .bc-pins > span { white-space: nowrap; }
 .bc-dot { display: inline-block; width: .82em; height: .82em; border-radius: 50%; border: 2.5px solid var(--c); vertical-align: -.08em; margin: 0 .15em; }
 .bc-dot.is-P { --c: #6f9dff; } .bc-dot.is-B { --c: #ff6b74; } .bc-dot.is-T { --c: #5fd08f; }
-.bc-host:not([data-phase="bet"]) .bc-pins { align-self: end; justify-self: start; flex-direction: row; margin: 0 0 calc(var(--u) * 58) calc(var(--u) * 10); }
+.bc-host:not([data-phase="bet"]) .bc-pins { place-self: end start; flex-direction: row; margin: 0 0 calc(var(--u) * 2) calc(var(--u) * 4); }
 .bc-host:not([data-phase="bet"]) .bc-pins > span:not([data-judge]) { display: none; }
 .bc-pledge[data-judge] { animation: bc-pop .5s ease-out 1; text-align: center; border-left-width: 1px !important; font-weight: 700; }
 .bc-pledge[data-judge] b { display: none; }
@@ -175,7 +169,6 @@
   background: linear-gradient(180deg, rgba(46,9,13,.98), rgba(18,4,6,.98)); border: 1px solid var(--bc-gold); outline: 1px solid rgba(217,178,105,.4); outline-offset: -5px; animation: bc-in .22s ease-out; justify-content: center; }
 @keyframes bc-in { from { opacity: 0; transform: translateX(calc(var(--u) * 20)); } }
 .bc-ask-h { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 10px; }
-.bc-ask-h .bc-favor { order: 1; }
 .bc-ask-h .bc-mood { order: 2; white-space: nowrap; }
 .bc-ask-hint { order: 3; font-size: var(--r-note, 14px); color: #f0c4d4; white-space: nowrap; }
 .bc-mood.is-talk { color: #f4e3a6; } .bc-mood.is-wish { color: #ff9ac0; }
@@ -190,7 +183,6 @@
 .bc-ask-n { font-size: var(--r-note, 14px); color: var(--bc-muted); }
 .bc-host[data-ask] .bc-sub { display: none; }
 .bc-host[data-ask] .bc-pins { display: none; }
-.bc-ask-h .bc-favor { margin-left: auto; position: static !important; visibility: visible !important; padding: 0 !important; border: 0 !important; background: none !important; }
 
 /* ---- 賭ける所 ---- */
 .bc-bets { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: 1fr 1.7fr 1fr 1.7fr 1fr; gap: calc(var(--u) * 6); }
@@ -369,7 +361,6 @@
 
 /* ---- 幅の狭い横画面（667 など） ---- */
 @media (max-width: 720px) {
-  .bc-shoe { display: none; }
   .bc-look span, .bc-go-s { display: none; }
   .bc-wallet { min-width: calc(var(--u) * 80); }
 }
@@ -383,8 +374,6 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
   .bc-table .bc-card { --w: calc(var(--u) * 62); transition: width .3s ease-out, height .3s ease-out; }
   /* 3枚目（横向き）が来たら、欄からはみ出さない大きさへ縮める（62 のままだと右の線を越えていた） */
   .bc-table .bc-cards:has(.is-side) .bc-card { --w: calc(var(--u) * 48); }
-  /* 今やることの1行は札の欄のまん中へ（スマホと同じ余白だと、ディーラーの絵の腰に重なっていた） */
-  .bc-host.bc-host[data-phase="bet"] .bc-pins { align-self: center; margin-top: calc(var(--u) * 60); }
 }
 
 /* 縦の狭い画面（スマホ横）：絞りの右の欄は、色の凡例と一言を出さない（めくる前の札が同じことを言う）。「開く」が画面の外へ落ちていた */
@@ -418,7 +407,6 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 .bc-host[data-phase="bet"] .bc-spot:hover { filter: brightness(1.18); }
 
 /* 自分で操作して直した所：今やることの1行は札の欄のまん中へ（欄の線に重なっていた）。チップの絵は枠いっぱいに（絵の余白で小さく見えていた） */
-.bc-host[data-phase="bet"] .bc-pins { margin-top: calc(var(--u) * 106); }
 .bc-chip { background-size: 132% !important; }
 /* 神託がある時は、今やることの1行をゆずる（札の欄に収める）。台詞の帯は札より手前 */
 .bc-pins:has(.bc-oracle) .bc-mission { display: none; }
@@ -433,8 +421,6 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 .bc-cd.is-win small { color: #2a1608; }
 .bc-cd.is-next .bc-cd-f { filter: brightness(.82); }
 
-/* 口止めの残り（大きな神託の直後）：ご機嫌の横に「内緒 あと n手」 */
-.bc-favor[data-cool]:not([data-cool=""])::after { content: attr(data-cool); margin-left: 4px; padding: 0 6px; font-weight: 700; color: #2a1608; background: #ff9ac0; }
 .bc-favor[data-cool]:not([data-cool=""]) i { opacity: .45; }
 
 /* 罫線の大きな窓の下：この山の検算（一致なら金、不一致なら赤） */
@@ -536,6 +522,115 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 .bc-tools button { min-height: max(44px, calc(var(--u) * 44)); }
 .bc-top { min-height: max(44px, calc(var(--u) * 44)); }
 .bc-sq-btns button { min-height: max(44px, calc(var(--u) * 44)); }
-/* 11/21 検査：初見の言葉に添える一言 */
-.bc-hint { font-size: max(14px, calc(var(--u) * 14)); font-weight: 400; color: #cbb98f; margin-left: .5em; white-space: nowrap; }
-.bc-favor .bc-hint { margin-left: .4em; }
+
+/* =====================================================================
+   2026-11-22 整理（ユーザー「女神の評価が位置ずれしてない？　レイアウトが窮屈すぎる。押して開く物・常に表示してなくていい物を整理」）
+   いつも見せる物：卓（札・合計）／賭ける所5つ／チップ・手持ち・見・配る／女神とご機嫌（菱形3つ）／今やることの1行／台詞の帯（2行まで）／罫線は大路だけ。
+   押して開く物：メニュー（解説・お手本・絞りの出し方・札の山の残り）／罫線の大きな窓（結果の順・下の3つ・次の印・検算）／ご機嫌の札（意味・上がり下がり・内緒の残り・約束の一覧）。
+   上の帯をやめて左の列の頭に寄せ、卓と女神を画面の上まで伸ばす（札を大きく）。文字は type-roles.css の役目の段（--r-*）だけ。
+   ===================================================================== */
+.bc-view { grid-template-columns: minmax(0, 24fr) minmax(0, 52fr) minmax(0, 17fr); }
+.bc-top { grid-column: 1; grid-row: 1; z-index: 6 !important; gap: calc(var(--u) * 6); }
+.bc-tools { margin-left: 0; flex: 1 1 auto; }
+.bc-tools button { flex: 1 1 0; padding: 0 4px; font-size: var(--r-btn2, 16px); }
+.bc-table, .bc-god { grid-row: 1 / 3; }
+.bc-ask { grid-row: 1 / 3; --god-w: calc((100% - var(--u) * 8) * 17 / 69); }
+.bc-sq { grid-row: 1 / 5; }
+/* 台詞の帯は卓の列の中だけ（女神の列へ伸ばさない＝ご機嫌の札と重ならない）。右は女神の体が掛かる分を空ける */
+.bc-sub { grid-column: 2; grid-row: 1 / 3; }
+.bc-host:not([data-sq]) .bc-sub { padding-right: calc(8.5% + var(--u) * 8); }
+.bc-host[data-sq] .bc-sub { grid-row: 1 / 5; }
+/* 話している人の名前は帯の左上の札に（文に幅をゆずる。2行に収める） */
+.bc-sub { padding-top: calc(var(--u) * 7); }
+.bc-sub-n { position: absolute; left: calc(var(--u) * 8); top: 0; transform: translateY(-58%); line-height: 1.3; }
+.bc-sub-t { min-width: 0; line-height: 1.38; }
+
+/* ---- 罫線：大路と出た数だけ。押すと大きな窓 ---- */
+.bc-roads-h { justify-content: flex-start; align-items: center; }
+.bc-roads-h .bc-count { margin-left: auto; }
+.bc-more { margin-left: calc(var(--u) * 4); font: 700 var(--r-label, 15px)/1 var(--bc-num); font-style: normal; color: var(--bc-gold-hi); }
+.bc-rd-big { height: calc(var(--u) * 114); }
+.bc-rd3 { display: none; }
+@media (min-height: 620px) { .bc-rd3 { display: grid; } }
+.bc-br-grid .bc-next { gap: 2px calc(var(--u) * 16); }
+.bc-shoe-n { margin: 0; color: var(--bc-muted); }
+
+/* ---- 卓：札を大きく（スマホ横。PC は上の min-height:620px の決まりのまま） ---- */
+@media (max-height: 619px) {
+  .bc-table .bc-card { --w: calc(var(--u) * 58); }
+  .bc-table .bc-cards:has(.is-side) .bc-card { --w: calc(var(--u) * 44); }
+}
+.bc-go span:empty { display: none; }
+
+/* ---- 女神のご機嫌：女神の列の下の端に、押せる札1つ。上がり下がりの知らせはその真上に積む（台詞の帯・卓の文字に重ねない） ---- */
+.bc-god-ui { position: absolute; left: 0; right: calc(-1 * max(var(--safe-x, 0px), var(--u) * 12) + max(var(--safe-x, 0px), var(--u) * 4)); bottom: calc(var(--u) * 5); z-index: 2; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; pointer-events: none; }
+.bc-favor { pointer-events: auto; display: flex; align-items: flex-end; justify-content: flex-end; min-width: 44px; min-height: 44px; max-width: 100%; }
+.bc-favor-in { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 2px 5px; padding: 3px 8px; font-size: var(--r-note, 14px); line-height: 1.3; color: var(--bc-ivory); white-space: nowrap; background: rgba(10,3,4,.92); border: 1px solid var(--bc-gold-d); }
+.bc-favor:active .bc-favor-in { filter: brightness(1.4); }
+.bc-favor-x { flex-basis: 100%; display: flex; justify-content: flex-end; gap: 4px; }
+.bc-favor-x:empty { display: none; }
+.bc-favor-x em { font-style: normal; font-weight: 700; padding: 0 5px; color: #2a1608; background: var(--bc-gold-hi); }
+.bc-favor-x em.is-cool { background: #ff9ac0; }
+.bc-favor[data-cool="1"] i { opacity: .45; }
+.bc-fnote { max-width: 100%; padding: 2px 8px; text-align: right; font-size: var(--r-label, 15px); line-height: 1.3; background: rgba(8,3,4,.95); border: 1px solid var(--k); color: var(--bc-ivory); animation: bc-pop .45s ease-out 1; }
+/* 押して開く小窓：ご機嫌の意味・上がり下がり・内緒の残り・神託・約束の一覧 */
+.bc-gpop { position: absolute; right: 0; bottom: calc(100% + 4px); z-index: 5; width: max-content; max-width: min(calc(var(--u) * 330), calc(var(--rb-w, 1280px) * .62)); display: flex; flex-direction: column; gap: calc(var(--u) * 3); padding: calc(var(--u) * 7) calc(var(--u) * 10);
+  text-align: left; font-size: var(--r-note, 14px); line-height: 1.4; color: var(--bc-ivory); background: rgba(10,3,4,.97); border: 1px solid var(--bc-gold); outline: 1px solid rgba(217,178,105,.4); outline-offset: -4px; pointer-events: auto; animation: bc-fade .16s ease-out; }
+.bc-gpop-h { font: 700 var(--r-label, 15px)/1.35 var(--bc-min); color: var(--bc-gold-hi); }
+.bc-gpop-h small { margin-left: .7em; font: 400 var(--r-note, 14px)/1.3 "Noto Sans JP", sans-serif; color: var(--bc-muted); white-space: nowrap; }
+.bc-gpop-r i { display: inline-block; margin-right: .5em; font-style: normal; font-weight: 700; color: var(--k); }
+.bc-gpop-r.is-up { --k: var(--bc-gold-hi); } .bc-gpop-r.is-dn { --k: #ff8a93; } .bc-gpop-r.is-cool { --k: #ff9ac0; }
+.bc-gpop-p { padding: 2px 8px; border: 1px solid var(--bc-gold-d); border-left: 4px solid var(--bc-gold); background: rgba(30,8,11,.9); white-space: nowrap; }
+.bc-gpop-p b { margin-right: .6em; font: 700 1em/1 var(--bc-min); letter-spacing: .1em; color: var(--bc-gold-hi); }
+.bc-gpop-p.is-oracle, .bc-gpop-p[data-st="armed"] { border-color: var(--bc-gold-hi); color: #fff6dd; }
+
+/* ---- 女神の問いかけ：頭は「気分の札＋ミミの見立て」の1行だけ。返事は44px以上 ---- */
+.bc-ask-h { gap: 2px 8px; }
+.bc-ask-hint { order: 3; white-space: nowrap; }
+.bc-ask-o button { min-height: max(44px, calc(var(--u) * 40)); }
+
+/* ---- メニュー（左上）---- */
+.bc-menu .bc-panel { width: min(100%, calc(var(--u) * 520)); gap: calc(var(--u) * 8); }
+.bc-menu-g { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 8); }
+.bc-menu-g button { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; min-height: max(56px, calc(var(--u) * 56)); padding: calc(var(--u) * 6) calc(var(--u) * 12); text-align: left;
+  background: linear-gradient(180deg, #5a1218, #2a0709); border: 1px solid var(--bc-gold-d); outline: 1px solid rgba(217,178,105,.3); outline-offset: -4px; border-radius: 2px; }
+.bc-menu-g button:active, .bc-seg button:active { filter: brightness(1.35); }
+.bc-menu-g b { font: 700 var(--r-btn2, 16px)/1.25 var(--bc-min); color: var(--bc-gold-hi); letter-spacing: .04em; }
+.bc-menu-g span, .bc-menu-n { font-size: var(--r-note, 14px); line-height: 1.35; color: var(--bc-muted); }
+.bc-menu-sq { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: calc(var(--u) * 4) calc(var(--u) * 12); }
+.bc-menu-sq > b { font: 700 var(--r-label, 15px)/1.25 var(--bc-min); color: var(--bc-gold); letter-spacing: .08em; }
+.bc-menu-sq > b small { display: block; font: 400 var(--r-note, 14px)/1.3 "Noto Sans JP", sans-serif; letter-spacing: 0; color: var(--bc-muted); }
+.bc-seg { display: flex; }
+.bc-seg button { flex: 1 1 0; min-height: max(44px, calc(var(--u) * 40)); font-size: var(--r-btn2, 16px); border: 1px solid var(--bc-gold-d); background: rgba(20,5,7,.9); }
+.bc-seg button + button { border-left: 0; }
+.bc-seg button[aria-pressed="true"] { font-weight: 700; color: #2a1608; background: linear-gradient(180deg, #f1d590, #c79a4c); border-color: #f6e2ab; }
+.bc-menu-n { grid-column: 1 / -1; }
+/* 押す所は44px以上（倍・窓の閉じる／前へ／次へ） */
+.bc-btn2 { min-width: 44px; }
+.bc-panel header button, .bc-panel footer button:not(.bc-go), .bc-panel footer .bc-go { min-height: max(44px, calc(var(--u) * 36)); }
+/* 問いの札は下の卓を透かさない */
+.bc-ask { background: linear-gradient(180deg, #2e090d, #120406); }
+/* 罫線の大きな窓：次の印と札の山の残りを1行に。縦の狭い画面では表を少し低くして、検算の行まで窓に収める */
+.bc-br-grid .bc-next { align-items: center; }
+.bc-br-grid .bc-next .bc-shoe-n { margin-left: auto; font-size: var(--r-note, 14px); white-space: nowrap; }
+@media (max-height: 520px) { .bc-br-grid .r-bead { height: calc(var(--u) * 62); } .bc-br-grid .r-big { height: calc(var(--u) * 80); } .bc-br-3 .bc-rd { height: calc(var(--u) * 44); } .bc-bigroads .bc-panel { gap: calc(var(--u) * 4); padding-top: calc(var(--u) * 6); padding-bottom: calc(var(--u) * 6); } .bc-verify { margin-top: 0; line-height: 1.4; } }
+/* 実機の安全域（左右47px）を引くと女神の列は約100px（667x375）。ご機嫌の札は列の間の溝まで使い、1段目は折らない */
+.bc-god-ui { left: calc(var(--u) * -8); }
+.bc-favor-in { flex-direction: column; flex-wrap: nowrap; align-items: flex-end; padding: 3px 6px; }
+.bc-favor-m { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.bc-favor-x { flex-basis: auto; flex-wrap: wrap; }
+.bc-fnote { white-space: nowrap; max-width: none; }
+/* 罫線の頭は1行のまま（狭い画面で「罫／線」「1／9」と折れていた） */
+.bc-roads-h { flex-wrap: nowrap; gap: calc(var(--u) * 5); min-width: 0; }
+.bc-roads-h > * { white-space: nowrap; flex: none; }
+.bc-roads-h .bc-count { gap: 3px; } .bc-roads-h .bc-count i { margin-left: 3px; }
+/* 下の段のボタンは44px以上（667x375 で 40px だった） */
+.bc-rack { min-height: max(44px, calc(var(--u) * 44)); }
+@media (max-width: 720px) {
+  .bc-view { grid-template-columns: minmax(0, 26fr) minmax(0, 50fr) minmax(0, 17fr); }
+  .bc-ask { --god-w: calc((100% - var(--u) * 8) * 17 / 67); }
+  .bc-sub-face { display: none; }
+  .bc-roads-h b { letter-spacing: .04em; }
+}
+/* お手本をとばす：44px 以上（30px だった） */
+.bc-demo-skip { min-height: max(44px, calc(var(--u) * 36)); }

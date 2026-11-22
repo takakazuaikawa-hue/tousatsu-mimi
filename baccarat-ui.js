@@ -121,34 +121,31 @@
     host.innerHTML = `<div class="bc-view">
       <canvas class="bc-room" width="320" height="180" aria-hidden="true"></canvas>
       <header class="bc-top">
-        <b class="bc-title">バカラ</b><span class="bc-shoe"></span>
         <nav class="bc-tools">
-          <button type="button" data-bc="demo">お手本</button>
-          <button type="button" data-bc="guide">リコ先輩の解説</button>
-          <button type="button" data-bc="sqmode" class="bc-sqmode"></button>
+          <button type="button" data-bc="menu">メニュー</button>
           <button type="button" data-bc="quit">やめる</button>
         </nav>
       </header>
       <button type="button" class="bc-roads" data-bc="roads" aria-label="罫線を大きく見る">
-        <span class="bc-roads-h"><b>罫線</b><small class="bc-hint">出た目</small><span class="bc-count"></span></span>
-        <canvas class="bc-rd bc-rd-bead"></canvas>
+        <span class="bc-roads-h"><b>罫線</b><span class="bc-count"></span><i class="bc-more" aria-hidden="true">▸</i></span>
         <canvas class="bc-rd bc-rd-big"></canvas>
         <span class="bc-rd3"><canvas class="bc-rd bc-rd-eye"></canvas><canvas class="bc-rd bc-rd-small"></canvas><canvas class="bc-rd bc-rd-roach"></canvas></span>
-        <span class="bc-next"></span>
       </button>
       <section class="bc-table">
         <div class="bc-dealer"><span class="bc-dealer-pic"></span><b class="bc-dealer-n"></b></div>
         <div class="bc-side bc-p" data-side="P"><div class="bc-side-head"><span class="bc-side-n">プレイヤー</span><b class="bc-tot"></b></div><div class="bc-cards"></div></div>
         <div class="bc-side bc-b" data-side="B"><div class="bc-side-head"><span class="bc-side-n">バンカー</span><b class="bc-tot"></b></div><div class="bc-cards"></div></div>
         <div class="bc-banner" aria-live="polite"></div>
+        <div class="bc-pins"></div>
       </section>
       <aside class="bc-god">
         <div class="bc-god-pic${ART.goddess ? ' has-art' : ''}">${ART.goddess ? `<img src="${ART.goddess}" alt="運命の女神ウンメ"><img class="bc-god-face" src="${ART.goddess}" alt="">` : wheelSVG()}</div>
         <b class="bc-god-n">運命の女神 ウンメ</b>
-        <div class="bc-favor" aria-label="女神のご機嫌（3つたまると神託）"><span>ご機嫌</span><i></i><i></i><i></i><small class="bc-hint">3つで神託</small></div>
-        <span class="bc-fnote" hidden></span>
+        <div class="bc-god-ui">
+          <span class="bc-fnote" hidden></span>
+          <button type="button" class="bc-favor" data-bc="favor" aria-label="女神のご機嫌（3つたまると神託。押すと説明）"><span class="bc-favor-in"><span class="bc-favor-m"><span>ご機嫌</span><i></i><i></i><i></i></span><span class="bc-favor-x"></span></span></button>
+        </div>
       </aside>
-      <div class="bc-pins"></div>
       <div class="bc-sub" aria-live="polite"><span class="bc-sub-face"></span><b class="bc-sub-n"></b><span class="bc-sub-t"></span></div>
       <div class="bc-ask" hidden></div>
       <section class="bc-bets">${SPOTS.map(([k, n, p]) => `<button type="button" class="bc-spot bc-spot-${k}" data-bc="spot" data-k="${k}"><span class="bc-spot-n">${k === 'PP' || k === 'BP' ? `<small>${k === 'PP' ? 'プレイヤーの' : 'バンカーの'}</small>ペア` : n}</span><span class="bc-spot-p">${p}</span><i class="bc-spot-chips"></i><b class="bc-spot-a"></b></button>`).join('')}</section>
@@ -178,7 +175,7 @@
       <div class="bc-layer"></div>
     </div>`;
     document.getElementById('stage').appendChild(host);
-    ['shoe', 'count', 'next', 'table', 'banner', 'god', 'favor', 'pins', 'sub', 'sub-face', 'sub-n', 'sub-t', 'ask', 'bets', 'rack', 'coins', 'delta', 'sq', 'sq-score', 'sq-cv', 'sq-m', 'cands', 'brief', 'verdict', 'odds', 'fnote', 'layer', 'sqmode', 'roads'].forEach(n => { ui[n] = host.querySelector('.bc-' + n); });
+    ['count', 'table', 'banner', 'god', 'favor', 'pins', 'sub', 'sub-face', 'sub-n', 'sub-t', 'ask', 'bets', 'rack', 'coins', 'delta', 'sq', 'sq-score', 'sq-cv', 'sq-m', 'cands', 'brief', 'verdict', 'odds', 'fnote', 'layer', 'roads', 'favor-x', 'god-ui'].forEach(n => { ui[n] = host.querySelector('.bc-' + n); });
     ui.go = host.querySelector('.bc-rack .bc-go'); ui.goS = host.querySelector('.bc-go-s');
     ui.sides = { P: host.querySelector('.bc-p'), B: host.querySelector('.bc-b') };
     host.addEventListener('click', onClick);
@@ -219,6 +216,7 @@
   const COL = { B: '#c5232f', P: '#2456b8', T: '#1f8a4c', R: '#c5232f' };
   function paintRoad(cv, kind, items, rows) {
     rows = rows || 6;
+    if (!cv) return;
     const w = cv.clientWidth, h = cv.clientHeight;
     if (!w || !h) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -253,18 +251,18 @@
     });
   }
   const markHTML = (kind, m) => m ? `<i class="bc-mk bc-mk-${kind} is-${m}"></i>` : '<i class="bc-mk is-none"></i>';
+  // 「次がバンカー／プレイヤーなら付く印」と札の山の残り：いつもは見せず、罫線の大きな窓・メニューで見せる
+  const nextHTML = () => { const rd = S.road; return rd ? ['B', 'P'].map(w => `<span class="bc-nx is-${w}"><b>次が${w === 'B' ? 'バンカー' : 'プレイヤー'}なら</b>${markHTML('eye', rd.ask[w][0])}${markHTML('small', rd.ask[w][1])}${markHTML('roach', rd.ask[w][2])}</span>`).join('') : ''; };
+  const shoeText = () => `札の山 残り${BC.shoeLeft(S.shoe)}枚・${S.res.length}手目`;
   function paintRoads() {
     if (!live() || !S) return;
     const rd = BC.roads(S.res), st = rd.stats;
     S.road = rd;
-    paintRoad(host.querySelector('.bc-rd-bead'), 'bead', rd.bead);
     paintRoad(host.querySelector('.bc-rd-big'), 'big', rd.big);
     paintRoad(host.querySelector('.bc-rd-eye'), 'eye', rd.eye);
     paintRoad(host.querySelector('.bc-rd-small'), 'small', rd.small);
     paintRoad(host.querySelector('.bc-rd-roach'), 'roach', rd.roach);
     ui.count.innerHTML = `<i class="is-B"></i>${st.B}<i class="is-P"></i>${st.P}<i class="is-T"></i>${st.T}`;
-    ui.next.innerHTML = ['B', 'P'].map(w => `<span class="bc-nx is-${w}"><b>次が${w === 'B' ? 'バンカー' : 'プレイヤー'}</b>${markHTML('eye', rd.ask[w][0])}${markHTML('small', rd.ask[w][1])}${markHTML('roach', rd.ask[w][2])}</span>`).join('');
-    ui.shoe.textContent = `札の山（シュー） 残り${BC.shoeLeft(S.shoe)}枚・${S.res.length}手目まで`;
     const big = ui.layer.querySelector('.bc-bigroads');
     if (big) paintBigRoads(big);
   }
@@ -286,7 +284,20 @@
     ui.sub.dataset.on = '1'; ui.sub.dataset.who = s.who;
     ui['sub-face'].innerHTML = ART[s.who] && s.who !== 'goddess' ? `<img src="${ART[s.who]}" alt="">` : '';
     ui['sub-n'].textContent = s.name || WHO[s.who];
-    ui['sub-t'].innerHTML = esc(s.text).replace(/\|/g, '<wbr>');
+    const put = (t) => { ui['sub-t'].innerHTML = esc(t).replace(/\|/g, '<wbr>'); };
+    const fits = () => { const rg = document.createRange(); rg.selectNodeContents(ui['sub-t']); const tops = []; for (const r of rg.getClientRects()) { if (r.height && !tops.some(y => Math.abs(y - r.top) < 3)) tops.push(r.top); } return tops.length <= 2; };
+    put(s.text);
+    if (!fits()) {
+      const parts = s.text.replace(/([。！？])(?!\||[。！？）」]|$)/g, '$1|').split('|').filter(Boolean);
+      let k = parts.length - 1;
+      for (; k > 1; k--) { put(parts.slice(0, k).join('|')); if (fits()) break; }
+      if (k >= 1 && k < parts.length) {
+        const head = parts.slice(0, k).join('|'), rest = parts.slice(k).join('|'), all = Math.max(1, s.text.length);
+        put(head);
+        subQueue.unshift({ who: s.who, name: s.name, text: rest, ms: Math.max(1300, Math.round(s.ms * rest.length / all)) });
+        s.ms = Math.max(1300, Math.round(s.ms * head.length / all));
+      }
+    }
     if (s.who === 'goddess') { ui.god.classList.remove('is-talk'); void ui.god.offsetWidth; ui.god.classList.add('is-talk'); }
     if (s.who === 'dealer') { const d = host.querySelector('.bc-dealer'); d.classList.remove('is-talk'); void d.offsetWidth; d.classList.add('is-talk'); }
     subTimer = setTimeout(nextSub, s.ms);
@@ -375,8 +386,7 @@
     ui.go.disabled = S.phase !== 'bet' || st < C.minBet;
     host.dataset.staked = st ? '1' : '0';
     if (S.pledges) paintPins();
-    ui.goS.textContent = st ? `賭け ${fmt(st)}` : '賭ける所を押す';
-    ui.sqmode.textContent = '絞り：' + ({ auto: '自動', manual: '自分で', off: 'なし' }[S.A.sqMode] || '自動');
+    ui.goS.textContent = st ? `賭け ${fmt(st)}` : '';   // 賭ける前の案内は卓のまん中の1行（今やること）だけ
   }
   function addBet(k) {
     if (S.phase !== 'bet') return;
@@ -433,10 +443,27 @@
   //   askInCool＝口止めの間も問いかけは続ける（大きな神託だけ待たせる）
   const TUNE = { lookQuiet: Infinity, cool: 30, askInCool: true };
   // 口止めの残り：ご機嫌の横に「内緒 あと n手」（神託をもらった直後、なぜ神託が来ないかが分かるように）
+  const coolLeft = () => Math.max(0, (S.A.coolTo || 0) - S.A.hands);
   function paintCool() {
     if (!host || !S) return;
-    const left = Math.max(0, (S.A.coolTo || 0) - S.A.hands);
-    ui.favor.dataset.cool = left ? `内緒 あと${left}手` : '';
+    const left = coolLeft(), wait = (S.pledges || []).filter(p => !p.armed).length;
+    ui['favor-x'].innerHTML = (wait ? `<em>約束${wait}</em>` : '') + (left ? `<em class="is-cool">内緒${left}手</em>` : '');
+    ui.favor.dataset.cool = left ? '1' : '';
+    const pop = host.querySelector('.bc-gpop'); if (pop) pop.innerHTML = godPopHTML();
+  }
+  // ご機嫌の札を押すと開く小窓：ご機嫌の意味・上がり下がり・口止めの残り・いまの神託・約束の一覧
+  function godPopHTML() {
+    const left = coolLeft(), o = S.oracle;
+    return `<b class="bc-gpop-h">ご機嫌3つで<wbr>「神託」<small>次の結果のヒント</small></b>
+      <span class="bc-gpop-r is-up"><i>▲</i>気分に合う返事・<wbr>約束を守る</span><span class="bc-gpop-r is-dn"><i>▼</i>約束を破る</span>`
+      + (left ? `<span class="bc-gpop-r is-cool"><i>内緒</i>次の神託まで あと${left}手</span>` : '')
+      + (o ? `<span class="bc-gpop-p is-oracle"><b>神託</b>${esc(o.text)}</span>` : '')
+      + S.pledges.map(p => `<span class="bc-gpop-p" data-st="${p.armed ? 'armed' : 'wait'}"><b>約束</b>${p.html || esc(p.tag)}</span>`).join('');
+  }
+  function godPop() {
+    const old = host.querySelector('.bc-gpop'); if (old) { old.remove(); return; }
+    const el = document.createElement('div'); el.className = 'bc-gpop'; el.innerHTML = godPopHTML();
+    ui['god-ui'].insertBefore(el, ui['god-ui'].firstChild); sfx('tap');
   }
   let favorT = 0;
   const cooling = () => (S.A.coolTo || 0) > S.A.hands;
@@ -452,7 +479,7 @@
     if (d < 0) { ui.favor.classList.remove('is-down'); void ui.favor.offsetWidth; ui.favor.classList.add('is-down'); }
     if (why && d) {
       const left = 3 - A.favor;
-      ui.fnote.innerHTML = `${esc(why)} <b>${d > 0 ? '＋' : '−'}${Math.abs(d)}</b>${d > 0 && left > 0 ? `<small>あと${left}で神託</small>` : d > 0 && cooling() ? '<small>内緒が明けたら神託</small>' : ''}`;
+      ui.fnote.innerHTML = `${esc(why)} <b>${d > 0 ? '＋' : '−'}${Math.abs(d)}</b>${d > 0 && left > 0 ? `<small>あと${left}で神託</small>` : d > 0 && cooling() ? '<small>内緒明け待ち</small>' : ''}`;
       ui.fnote.dataset.s = d > 0 ? 'up' : 'dn'; ui.fnote.hidden = false;
       clearTimeout(favorT); favorT = setTimeout(() => { if (live()) ui.fnote.hidden = true; }, 3200);
     }
@@ -489,8 +516,9 @@
     const mission = S.phase !== 'bet' ? '' : coins() < C.minBet && !st0 ? 'コインが足りない。「見（ケン）」で流れを見る'
       : !st0 ? 'どちらが勝つ？　賭ける所を押す' : '「配る」で勝負！';
     ui.pins.innerHTML = (mission ? `<b class="bc-mission">${mission}</b>` : '') + (o ? `<span class="bc-oracle"><b>神託</b>${esc(o.text)}</span>` : '')
-      + S.pledges.map(p => `<span class="bc-pledge" data-st="${p.armed ? 'armed' : 'wait'}"><b>約束</b>${p.html || esc(p.tag)}</span>`).join('')
+      + S.pledges.filter(p => p.armed).map(p => `<span class="bc-pledge" data-st="armed"><b>約束</b>${p.html || esc(p.tag)}</span>`).join('')
       + (S.judged || []).map(j => `<span class="bc-pledge" data-judge="${j}">${j === 'kept' ? '有言実行' : '裏切り'}</span>`).join('');
+    paintCool();
   }
   // 問いかけを作る。{ q, opts:[{ t, kind, make? }], chip?, hint? }。kind＝bold/ride/careful/wish/none。同じ中身の約束がもうある問いは出さない
   function makeQuestion() {
@@ -581,18 +609,17 @@
     showAsk(q);
   }
   function showAsk(q) {
-    const A = S.A, favor = `<span class="bc-favor" data-n="${A.favor}"><span>ご機嫌</span><i></i><i></i><i></i></span>`;
     hush();
     ui.ask.hidden = false; host.dataset.ask = '1';
     let chip, hint, text, opts;
     if (q.talk) { chip = '<span class="bc-mood is-talk">おしゃべり</span>'; hint = '喜ぶ返事でご機嫌アップ'; text = q.talk.q; opts = q.talk.o.map(o => o[0]); }
     else {
       const M = MOODS[q.mood];
-      chip = q.wish ? '<span class="bc-mood is-wish">お願い（神託ではない）</span>' : `<span class="bc-mood is-${q.mood}">気分：${M.tag}</span>`;
-      hint = q.wish ? '聞いてあげると喜びそう' : M.hint; text = q.q; opts = q.opts.map(o => o.t);
+      chip = q.wish ? '<span class="bc-mood is-wish">お願い</span>' : `<span class="bc-mood is-${q.mood}">気分：${M.tag}</span>`;
+      hint = q.wish ? '神託ではない。聞くと喜びそう' : M.hint; text = q.q; opts = q.opts.map(o => o.t);
       if (!q.wish) say('goddess', pick(M.open), 2200);
     }
-    ui.ask.innerHTML = `<div class="bc-ask-h"><b>運命の女神 ウンメ</b>${favor}${chip}<span class="bc-ask-hint">ミミ「${esc(hint).replace(/、/g, '、<wbr>')}」</span></div>
+    ui.ask.innerHTML = `<div class="bc-ask-h">${chip}<span class="bc-ask-hint">（${esc(hint)}）</span></div>
       <p class="bc-ask-q">${esc(text).replace(/\|/g, '<br>')}</p>
       <div class="bc-ask-o" data-n="${opts.length}">${opts.map((t, i) => `<button type="button" data-bc="answer" data-i="${i}">${esc(t).replace(/\|/g, '<wbr>')}</button>`).join('')}</div>`;
     S.q = q; sfx('tap');
@@ -605,7 +632,7 @@
       const o = q.talk.o[i];
       say('goddess', o[2], 2800); if (o[1]) godFace('doya', 2600);
       // おしゃべりで上がるのは6手に1回まで（約束なしで神託を量産させない）
-      if (o[1] && A.hands - (A.talkAt == null ? -99 : A.talkAt) >= 6) { A.talkAt = A.hands; setFavor(A.favor + 1, '気に入られた'); tryBig(); }
+      if (o[1] && A.hands - (A.talkAt == null ? -99 : A.talkAt) >= 6) { A.talkAt = A.hands; setFavor(A.favor + 1, '気に入り'); tryBig(); }
       keep(); return;
     }
     const o = q.opts[i], M = MOODS[q.mood];
@@ -615,7 +642,7 @@
     const liked = o.kind === 'wish' || (!q.wish && o.kind === M.like);
     if (liked) {
       say('goddess', o.kind === 'wish' ? pick(['やったぁ！　話がわかるぅ！', 'えへへ、ありがとー！|約束だよぉ？']) : pick(['それそれ！|そういうの大好きでーす！', 'わかってるぅ！|ウンメちゃん感激！', 'いい返事！|運命の糸がピンって鳴った！', 'そう来なくっちゃ！']));
-      setFavor(A.favor + 1, o.kind === 'wish' ? 'お願いを聞いた' : '気分に合う返事'); godFace('doya', 2600);
+      setFavor(A.favor + 1, o.kind === 'wish' ? 'お願い' : 'いい返事'); godFace('doya', 2600);
       if (!tryBig() && Math.random() < .3) giveOracle(false);
     } else say('goddess', q.wish ? pick(['えー、けちー！|まあ、好きにすればー？', 'ふーんだ。じゃあ、それで']) : pick(['へぇ〜、そうするんだ。|覚えときまーす！', 'ふうん。約束だよぉ？', 'はーい、女神が聞いたからね！', 'なるほどぉ。……守ってよね？']));
     keep();
@@ -1002,7 +1029,7 @@
     paintBets();
     // ウンメの反応：約束を守ったか × 当たったか（約束が重なった時は、破った方が勝つ）
     if (judged.kept || judged.broken) {
-      setFavor(A.favor + judged.kept - 2 * judged.broken, judged.broken ? '約束を破った' : '約束を守った');
+      setFavor(A.favor + judged.kept - 2 * judged.broken, judged.broken ? '裏切り' : '有言実行');
       if (judged.kept && !judged.broken && !A.keepSeen) { A.keepSeen = true; say('rico', '約束を守ると、ウンメさまのご機嫌が上がる。|3つ満ちると神託だよ', 4000); }
       if (judged.broken) {
         const bl = pay.net > 0 ? pick(['あーっ、裏切ったー！|……なのに当ててる。ずるーい！', '言ったことと違うー！|勝ったからって許しませーん！']) : pick(['裏切って、外した！|あーあ、言わんこっちゃない！', '約束やぶったよね？|バチが当たったんだよぉ']);
@@ -1082,7 +1109,7 @@
       ui.banner.innerHTML = '<b class="is-P">プレイヤーの勝ち　9 対 7</b><span class="bc-pay is-up">＋50<small>コイン</small></span>'; ui.banner.dataset.on = '1';
       ui.sides.P.dataset.res = 'win'; ui.sides.B.dataset.res = 'lose';
       await cap('9対7、プレイヤーの勝ち。50が倍で戻る。|結果は左の罫線に並ぶよ', 3600);
-      await cap('横から|話しかけてくるのは、|運命の女神の|ウンメさま。|決まりや確率の話は|アタシに聞きな', 3800);
+      await cap('横から|話しかけてくるのは、|運命の女神の|ウンメさま。|決まりや確率の話は|「メニュー」で|アタシに聞きな', 3800);
     } catch (e) { if (e !== STOP || !live() || !host.dataset.demo) throw e; }
     endDemo();
     A.demoSeen = true; keep();
@@ -1109,7 +1136,7 @@
     ['罫線の読み方', () => `<div class="bc-g-row"><span class="bc-g-lg"><i class="bc-mk bc-mk-eye is-R"></i>バンカー</span><span class="bc-g-lg"><i class="bc-mk bc-mk-eye is-B"></i>プレイヤー</span><span class="bc-g-lg"><i class="bc-mk bc-mk-roach is-T"></i>引き分け</span></div>
       <p>上の大きな表（大路）は、同じ側が続くと<b>下へ</b>、替わると<b>右の列へ</b>。下の3つの小さな表は、並びが<b>そろっていれば赤、乱れていれば青</b>。</p><p>罫線は「これまでの記録」。次の1回の確率は、どんな並びでも変わらない。</p>`],
     ['絞り（札のめくり方）', () => `<div class="bc-g-sq"><span><b>短い辺から＝足</b>マークなし → A／1つ → 2・3／2つ → 4〜10</span><span><b>長い辺から＝横の数</b>なし → A・2・3／2つ → 4・5／3つ → 6・7・8／4つ → 9・10</span><span><b>枠の線</b>が見えたら絵札（0）</span></div>
-      <p>札の端を指で引くとめくれる。離すと戻る。右の候補は、見えた分だけ消えていく。右上の「絞り」でおまかせにもできる。</p>`],
+      <p>札の端を指で引くとめくれる。離すと戻る。右の候補は、見えた分だけ消えていく。「メニュー」でおまかせにもできる。</p>`],
     ['運命の女神 ウンメ', () => `<div class="bc-g-sq"><span><b>気分：退屈</b>大胆な返事（逆に賭ける・上げる）が好き</span><span><b>気分：ごきげん</b>流れに乗る返事（続きに賭ける・同じ額）が好き</span><span><b>気分：胸さわぎ</b>慎重な返事（見・下げる）が好き</span></div>
       <p>気分に合う返事で<b>ご機嫌＋1</b>、言ったとおりに賭けると<b>＋1</b>、裏切ると<b>−2</b>。3つ満ちると、次の結果にかかわる<b>神託</b>をくれる。神託はウソをつかない。</p>`],
   ];
@@ -1132,13 +1159,30 @@
     paintRoad(el.querySelector('.r-eye'), 'eye', rd.eye);
     paintRoad(el.querySelector('.r-small'), 'small', rd.small);
     paintRoad(el.querySelector('.r-roach'), 'roach', rd.roach);
+    const nx = el.querySelector('.bc-next'); if (nx) nx.innerHTML = nextHTML() + `<span class="bc-shoe-n">${shoeText()}</span>`;
+  }
+  // メニュー（左上）：解説・お手本・絞りの出し方。いつもは見せない物をここにまとめる
+  const SQ_MODES = [['auto', '自動', '勝負が決まりそうな札だけ、自動でめくって見せる'], ['manual', '自分で', '賭けた側の札は、ぜんぶ自分でめくる'], ['off', 'なし', '札はディーラーがすぐ開く']];
+  function openMenu() {
+    closeLayer();
+    const el = document.createElement('div'); el.className = 'bc-over bc-menu';
+    el._paint = () => {
+      const cur = S.A.sqMode || 'auto';
+      el.innerHTML = `<section class="bc-panel"><header><b>女神バカラ</b><span class="bc-g-pg">${shoeText()}</span><button type="button" data-bc="close">閉じる</button></header>
+        <div class="bc-menu-g"><button type="button" data-bc="guide"><b>リコ先輩の解説</b><span>決まり・配当・罫線・女神</span></button>
+        <button type="button" data-bc="demo"><b>お手本を見る</b><span>1手を通して見せる</span></button></div>
+        <div class="bc-menu-sq"><b>絞り<small>札のめくり方</small></b><div class="bc-seg">${SQ_MODES.map(([m, n]) => `<button type="button" data-bc="sqset" data-m="${m}" aria-pressed="${m === cur}">${n}</button>`).join('')}</div>
+        <span class="bc-menu-n">${(SQ_MODES.find(x => x[0] === cur) || SQ_MODES[0])[2]}</span></div></section>`;
+    };
+    el._paint(); ui.layer.appendChild(el); sfx('tap');
   }
   function openRoads() {
     closeLayer();
     const st = S.road.stats, el = document.createElement('div'); el.className = 'bc-over bc-bigroads';
     el.innerHTML = `<section class="bc-panel"><header><b>罫線</b><span class="bc-count"><i class="is-B"></i>バンカー ${st.B}<i class="is-P"></i>プレイヤー ${st.P}<i class="is-T"></i>引き分け ${st.T}</span><button type="button" data-bc="guide4">読み方</button><button type="button" data-bc="close">閉じる</button></header>
       <div class="bc-br-grid"><span class="bc-br-l">結果の順</span><canvas class="bc-rd r-bead"></canvas><span class="bc-br-l">大路</span><canvas class="bc-rd r-big"></canvas>
-      <span class="bc-br-l">下の3つ</span><span class="bc-br-3"><canvas class="bc-rd r-eye"></canvas><canvas class="bc-rd r-small"></canvas><canvas class="bc-rd r-roach"></canvas></span></div>${verifyHTML()}</section>`;
+      <span class="bc-br-l">下の3つ</span><span class="bc-br-3"><canvas class="bc-rd r-eye"></canvas><canvas class="bc-rd r-small"></canvas><canvas class="bc-rd r-roach"></canvas></span>
+      <span class="bc-br-l">次の印</span><span class="bc-next"></span></div>${verifyHTML()}</section>`;
     ui.layer.appendChild(el);
     requestAnimationFrame(() => paintBigRoads(el));
   }
@@ -1203,6 +1247,7 @@
   // =============================================================
   function onClick(e) {
     const b = e.target.closest('[data-bc]');
+    { const gp = host.querySelector('.bc-gpop'); if (gp && !(b && b.dataset.bc === 'favor')) gp.remove(); }   // ご機嫌の小窓は、ほかを押したら閉じる
     if (!b) { if (tapResolve && S.phase === 'settle') tapResolve(); return; }
     const k = b.dataset.bc;
     if (host.dataset.demo && !['demoskip'].includes(k)) return;
@@ -1239,18 +1284,16 @@
       case 'sqopen': if (sq) sq.open(); break;
       case 'sqgo': if (briefResolve) briefResolve(); break;
       case 'sqtake': if (sq && sq.takeover) { sq.takeover(); ui.sq.dataset.auto = '0'; hush(); say('rico', '札の端を引いて、自分でめくりな', 2200); } break;
-      case 'sqmode': {
-        const order = ['auto', 'manual', 'off'], m = order[(order.indexOf(S.A.sqMode || 'auto') + 1) % 3];
-        S.A.sqMode = m; keep(); paintBets(); hush();
-        say('rico', m === 'auto' ? '勝負が決まりそうな札だけ、|自動でめくって見せるよ' : m === 'manual' ? '賭けた側の札は、ぜんぶ自分でめくるよ' : '札はディーラーがすぐ開くよ', 2800); break;
-      }
       case 'roads': openRoads(); break;
+      case 'menu': openMenu(); break;
+      case 'favor': godPop(); break;
+      case 'sqset': { S.A.sqMode = b.dataset.m; keep(); const ov = b.closest('.bc-over'); if (ov && ov._paint) ov._paint(); sfx('tap'); break; }
       case 'guide': openGuide(0); break;
       case 'guide4': openGuide(3); break;
       case 'gprev': b.closest('.bc-over')._nav(-1); break;
       case 'gnext': b.closest('.bc-over')._nav(1); break;
       case 'close': closeLayer(); break;
-      case 'demo': if (S.phase === 'bet') replayDemo(); else say('rico', 'お手本は、賭ける前に押してね', 1800); break;
+      case 'demo': if (S.phase === 'bet') replayDemo(); else { closeLayer(); say('rico', 'お手本は、賭ける前に押してね', 1800); } break;
       case 'demoskip': G++; endDemo(); S.A.demoSeen = true; keep(); restart(); break;
       case 'quit': quit(); break;
     }
@@ -1392,7 +1435,7 @@
     S: () => S, host: () => host, sq: () => sq, tune: TUNE, cutin, umme: UMME, face: godFace, talk(i) { showAsk({ talk: SMALLTALK[i] }); }, smalltalk: () => SMALLTALK,
     bet(k, n) { for (let i = 0; i < (n || 1); i++) addBet(k); },
     deal() { if (betResolve) betResolve({ look: false }); }, look() { if (betResolve) betResolve({ look: true }); },
-    ask: askQuestion, oracle: giveOracle, answer, setFavor, guide: openGuide, roads: openRoads,
+    ask: askQuestion, oracle: giveOracle, answer, setFavor, guide: openGuide, roads: openRoads, menu: openMenu, godPop, say, hush, showAsk,
     pick(id) { if (pickResolve) pickResolve(id); }, picking: () => !!pickResolve, dealers: DEALERS,
     feed(str) { S.res = S.A.res = str.split('').map(w => ({ w, pp: false, bp: false, nat: false })); paintRoads(); },
   };

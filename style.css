@@ -21446,3 +21446,73 @@ html.is-compact .battle-screen.v2.t8 > .t8-read-pop > .t8-note-tells .v2-tag { p
 .home-stage .h15-oct .h15-oico-svg svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; padding: 3px; }
 .title-screen.t3 .t3-icon.fs-corner svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .fs-corner[hidden] { display: none !important; }
+
+/* =====================================================================
+   2026-11-22 ファイブポーカーの整理（ユーザー「窮屈すぎる。押して開く物・常に表示してなくていい物を整理」「5ポーカーも」）
+   いつも見せる物：両方の手札（大きく）・役の名前と「勝てば いくら」・今やることの1行・賭ける額／引くボタン・手持ち・結果。
+   押して開く物：配当表（スマホは見出しの「配当表」。JP と配当のしくみもその中）／≡（今回の増減・ミッション・履歴・達成・音）。
+   連勝は2連勝から見出しに出す。リーチは札を光らせる。文字の大きさは type-roles.css の役目の段だけ（ここに px で書かない）。
+   ===================================================================== */
+.minipoker-overlay .mp-pt-btn { min-height: 44px; padding: 0 12px; white-space: nowrap; font-weight: 700; color: #f3ead6; background: rgba(90,28,42,.5); border: 1px solid rgba(232,196,110,.6); border-radius: 6px; cursor: pointer; flex: none; }
+.minipoker-overlay .mp-pt-btn:active { filter: brightness(1.35); }
+.minipoker-overlay .mp-pt-x { display: none; }
+.minipoker-overlay .mp-stat-streak[hidden] { display: none; }
+.minipoker-overlay .mp-menu-stat { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 6px 4px; color: #cbb98f; white-space: nowrap; }
+.minipoker-overlay .mp-pt-jp { margin-top: 6px; padding: 3px 6px; text-align: center; color: #f3ead6; border: 1px solid rgba(232,196,110,.35); border-radius: 6px; background: rgba(245,215,122,.08); }
+.minipoker-overlay .mp-pt-jp b { color: var(--c-gold-bright, #efcd82); }
+.minipoker-overlay .mp-pt-more { margin-top: 6px; }
+.minipoker-overlay .mp-pt-more summary { min-height: 32px; display: flex; align-items: center; gap: 6px; color: #cbb98f; cursor: pointer; list-style: none; }
+.minipoker-overlay .mp-pt-more summary::-webkit-details-marker { display: none; }
+.minipoker-overlay .mp-pt-more summary::after { content: "▸"; color: var(--c-gold-bright, #efcd82); }
+.minipoker-overlay .mp-pt-more[open] summary::after { content: "▾"; }
+.minipoker-overlay .mp-pt-more .mp-pt-note { margin-top: 2px; color: rgba(255,255,255,.62); }
+/* 役の名前の下：いまの役で勝った時に戻る額 */
+.minipoker-overlay .mp-hn-pay { display: block; margin-top: 3px; font-weight: 700; line-height: 1.3; letter-spacing: 0; white-space: nowrap; color: #f3ead6; }
+.minipoker-overlay .mp-hn-pay b { margin-left: .2em; font-size: 1.25em; color: var(--c-gold-bright, #efcd82); }
+.minipoker-overlay .mp-hn-pay.is-none { font-weight: 500; color: #b9ab93; }
+/* 今やることの1行の右：何回目の交換か */
+.minipoker-overlay .mp-round { display: inline-block; margin-left: .9em; padding: 0 .6em; font-weight: 700; color: #2a1608; background: var(--c-gold-bright, #efcd82); border-radius: 3px; white-space: nowrap; }
+/* リーチの札は光らせる（残していない間。残すを押すと「残す」の印に替わる） */
+.minipoker-overlay .mp-card.mp-card-reach:not(.mp-held) { box-shadow: 0 0 0 2px #7fe0ff, 0 0 12px rgba(127,224,255,.75); }
+/* PC：配当表は左の列のまま（押して開く物ではない）。見出しのボタンは出さない */
+html:not(.is-compact) .minipoker-overlay .mp-pt-btn { display: none; }
+
+/* ---- スマホ横：配当表の列をやめて、札の場を幅いっぱいに ---- */
+html.is-compact .minipoker-overlay .mp-paytable { display: none; }
+html.is-compact .minipoker-overlay .minipoker-modal[data-pt="1"] .mp-paytable { display: block; position: absolute; z-index: 40; left: 50%; top: 52px; transform: translateX(-50%); width: min(94%, 430px); max-height: calc(100% - 60px); overflow-y: auto; padding: 8px 12px;
+  background: linear-gradient(180deg, #3a0f18, #170609); border: 1px solid rgba(232,196,110,.75); box-shadow: 0 8px 26px rgba(0,0,0,.75), 0 0 0 200vmax rgba(4,1,2,.55); }
+html.is-compact .minipoker-overlay .mp-pt-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; }
+html.is-compact .minipoker-overlay .mp-pt-x { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: #f3ead6; background: rgba(20,5,7,.9); border: 1px solid rgba(232,196,110,.5); border-radius: 6px; cursor: pointer; letter-spacing: 0; }
+html.is-compact .minipoker-overlay .mp-pt { margin-top: 4px; }
+html.is-compact .minipoker-overlay .mp-header { justify-content: flex-start; }
+html.is-compact .minipoker-overlay .mp-header .mp-stats { margin-left: auto; gap: 6px; }
+html.is-compact .minipoker-overlay .mp-play .mp-side { grid-template-columns: 88px minmax(0, 1fr) 124px; }
+html.is-compact.is-compact .minipoker-overlay .minipoker-modal:not([data-phase="result"], [data-phase="double"], [data-phase="hilo"], [data-phase="garapon"]) .mp-player .mp-card { --mp-cw: 76px; width: 76px; height: 108px; }
+html.is-compact.is-compact .minipoker-overlay .minipoker-modal:not([data-phase="result"], [data-phase="double"], [data-phase="hilo"], [data-phase="garapon"]) .mp-player .mp-card-suit-big { font-size: calc(var(--mp-cw, 76px) * .53); }
+html.is-compact.is-compact .minipoker-overlay .minipoker-modal:not([data-phase="result"], [data-phase="double"], [data-phase="hilo"], [data-phase="garapon"]) .mp-player .mp-card-corner { font-size: calc(var(--mp-cw, 76px) * .24); }
+html.is-compact.is-compact .minipoker-overlay .minipoker-modal:not([data-phase="result"], [data-phase="double"], [data-phase="hilo"], [data-phase="garapon"]) .mp-hand { gap: 8px; }
+html.is-compact.is-compact .minipoker-overlay .minipoker-modal:not([data-phase="result"], [data-phase="double"], [data-phase="hilo"], [data-phase="garapon"]) .mp-cpu .mp-card { width: 46px; height: 66px; }
+@media (max-width: 720px) {
+  html.is-compact.is-compact .minipoker-overlay .minipoker-modal:not([data-phase="result"], [data-phase="double"], [data-phase="hilo"], [data-phase="garapon"]) .mp-player .mp-card { --mp-cw: 62px; width: 62px; height: 89px; }
+  html.is-compact.is-compact .minipoker-overlay .minipoker-modal:not([data-phase="result"], [data-phase="double"], [data-phase="hilo"], [data-phase="garapon"]) .mp-player .mp-card-suit-big { font-size: calc(var(--mp-cw, 62px) * .53); }
+  html.is-compact.is-compact .minipoker-overlay .minipoker-modal:not([data-phase="result"], [data-phase="double"], [data-phase="hilo"], [data-phase="garapon"]) .mp-hand { gap: 4px; }
+  html.is-compact .minipoker-overlay .mp-play .mp-side { grid-template-columns: 80px minmax(0, 1fr) 104px; }
+  html.is-compact .minipoker-overlay .mp-char-style { padding: 3px 4px; letter-spacing: 0; }
+}
+/* 配当表の小窓（スマホ横）：9つの役を2列に並べ、巻き取らずに全部見える高さに。上乗せ・今日の役は1行、JP と配当のしくみも1行 */
+html.is-compact .minipoker-overlay .minipoker-modal[data-pt="1"] .mp-paytable { display: flex; flex-wrap: wrap; align-items: center; align-content: flex-start; gap: 4px 10px; width: min(96%, 640px); }
+html.is-compact .minipoker-overlay .mp-paytable > .mp-pt-title { flex: 1 1 100%; margin-bottom: 0; }
+html.is-compact .minipoker-overlay .mp-paytable > .mp-pt-ups { flex: 0 1 auto; margin: 0; }
+html.is-compact .minipoker-overlay .mp-paytable > .mp-pt-lucky { flex: 1 1 auto; margin: 0; }
+html.is-compact .minipoker-overlay .mp-paytable > .mp-pt { flex: 1 1 100%; display: block; }
+html.is-compact .minipoker-overlay .mp-paytable > .mp-pt tbody { display: grid; grid-template-rows: repeat(5, auto); grid-auto-flow: column; grid-auto-columns: 1fr; column-gap: 22px; }
+html.is-compact .minipoker-overlay .mp-paytable > .mp-pt tr { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 0 4px; }
+html.is-compact .minipoker-overlay .mp-paytable > .mp-pt-jp { flex: 1 1 40%; margin-top: 0; }
+html.is-compact .minipoker-overlay .mp-paytable > .mp-pt-more { flex: 1 1 40%; margin-top: 0; }
+html.is-compact .minipoker-overlay .mp-paytable > .mp-pt-more[open] { flex-basis: 100%; }
+html.is-compact .minipoker-overlay .mp-pt-more summary { min-height: 44px; justify-content: center; }
+/* 配当表の小窓：行を詰めて、小さいスマホ（667x375）でも JP・配当のしくみの行まで巻き取らずに入れる */
+html.is-compact .minipoker-overlay .minipoker-modal[data-pt="1"] .mp-paytable { top: 48px; max-height: calc(100% - 52px); padding: 4px 12px 6px; gap: 3px 10px; }
+html.is-compact .minipoker-overlay .mp-paytable > .mp-pt tr { line-height: 1.3; }
+html.is-compact .minipoker-overlay .mp-paytable > .mp-pt-title { padding-bottom: 2px; }
+html.is-compact .minipoker-overlay .mp-char-name { letter-spacing: 0; }
