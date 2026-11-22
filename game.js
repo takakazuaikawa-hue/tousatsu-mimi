@@ -4053,6 +4053,7 @@ const STORY_WHO = {
 };
 // 場面ごとの背景（無ければ assets/episodes/<場面>.webp）。行に art があれば、その行で絵を切り替える
 const STORY_ART = {
+  deisui_dawn: 'assets/backgrounds/ending_room.webp',   // 泥酔の夜の締め（夜明け）。夜明けの一枚絵が決まったら差し替える
   // 泥酔の夜の途中の場面：一枚絵がそろうまでは、ほろ酔いの途中の絵を仮に使う
   dmid1_rico_tutorial: 'assets/backgrounds/deisui/rico_1.jpg', dmid2_rico_tutorial: 'assets/backgrounds/deisui/rico_2.jpg', dmid1_polka: 'assets/backgrounds/deisui/polka_1.jpg', dmid2_polka: 'assets/backgrounds/deisui/polka_2.jpg', dmid1_selina: 'assets/backgrounds/deisui/selina_1.jpg', dmid2_selina: 'assets/backgrounds/deisui/selina_2.jpg', dmid1_grano: 'assets/backgrounds/deisui/grano_1.jpg', dmid2_grano: 'assets/backgrounds/deisui/grano_2.jpg', dmid1_velvet: 'assets/backgrounds/deisui/velvet_1.jpg', dmid2_velvet: 'assets/backgrounds/deisui/velvet_2.jpg', struggle_velvet: 'assets/episodes/struggle_velvet_a.webp', hmid_velvet: 'assets/backgrounds/horoyoi/velvet_7.jpg',
   // 11/09 Codex 17回目「全員に途中の事件を」：夜の一枚絵6枚から1枚を途中に回す（幕間の後には出さない・コレクションには残る）
@@ -4553,6 +4554,13 @@ function struggleSceneDue() {
   return id;
 }
 const PROLOGUES = {
+  // 11/22 ユーザー「泥酔の夜が終わった後、また泥酔につながる感じで区切りがない」→ 5人に勝った後の締め（夜明け）。終わったら昼に戻す
+  deisui_dawn: [
+    { k: 'say', who: 'rico', t: '……あさ。あたま、いた〜い' },
+    { k: 'think', who: 'mimi', t: '五人ぜんぶに勝った……はず。記憶が、ところどころ無い……' },
+    { k: 'say', who: 'rico', t: '泥酔の夜、ぜーんぶ制覇。おめでと。……写真は、見なかったことにしてあげる' },
+    { k: 'say', who: 'mimi', t: '消してくださいぃ！' },
+  ],
   ...Object.fromEntries(Object.entries(DEISUI_MID_SCENES).flatMap(([id, sc]) => [['dmid1_' + id, sc[0]], ['dmid2_' + id, sc[1]]])),
   hmid_velvet: HOROYOI_MID_SCENES.velvet, hmid_rico_tutorial: HOROYOI_MID_SCENES.rico_tutorial, hmid_polka: HOROYOI_MID_SCENES.polka, hmid_selina: HOROYOI_MID_SCENES.selina, hmid_grano: HOROYOI_MID_SCENES.grano,
   struggle_polka: STRUGGLE_SCENES.polka, struggle_selina: STRUGGLE_SCENES.selina, struggle_grano: STRUGGLE_SCENES.grano, struggle_velvet: STRUGGLE_SCENES.velvet,
@@ -10163,6 +10171,7 @@ function onAction(e) {
       if (goH || goD) nightAgeGate(goD).then(ok => { if (ok) doToggle(); }); else doToggle();
       break;
     }
+    case 'deisui-dawn': playDeisuiDawn(); break;
     case 'go-intermission': {
       // リザルトの主ボタン「幕間へ」→会話→ご褒美CG開放。終わったら通常の勝利ボタン群を組み立て直す。
       // ヴェルベットだけは幕間の流れ（「このあとはご褒美の時間」）のままエンディングへ直行する
@@ -21331,6 +21340,28 @@ function endBattle() {
 
 // 勝利リザルトの主ボタン群（次ステージ／再戦／ロビー）のHTMLを組み立てる。
 // 幕間から戻った直後にも使うため、endBattle() 本体から独立させてある（ロジックは元のまま）。
+// 泥酔の夜の締め：夜明けの会話 → 題字「泥酔の夜 おしまい」→ 昼のホームへ（11/22）
+function playDeisuiDawn() {
+  if (document.querySelector('.deisui-fin')) return;
+  if (isBgmOn()) playSceneBgm('victory');
+  showStoryScene('deisui_dawn', () => {
+    const ov = document.createElement('div');
+    ov.className = 'deisui-fin';
+    ov.innerHTML = `<div class="deisui-fin-in"><small>全ての夜を制覇</small><b>泥酔の夜</b><span>おしまい</span><p>夜は、月のボタンの「今夜の演目」から<wbr>いつでもまた遊べます</p><i>タップして昼のホームへ</i></div>`;
+    (document.getElementById('stage') || document.body).appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add('show'));
+    const shownAt = Date.now();
+    ov.addEventListener('click', () => {
+      if (Date.now() - shownAt < 1200 || ov.classList.contains('out')) return;
+      ov.classList.add('out');
+      save.deisuiDawnSeen = true; save.deisuiMode = false; save.horoyoiMode = false;
+      saveProgress();
+      if (state) state.horoyoi = false;
+      goLobby();
+      setTimeout(() => ov.remove(), 600);
+    });
+  });
+}
 function wonResultButtonsHtml(opponentId) {
   // 体験版：最後の卓（ポルカ）に勝ったら、次の相手のかわりに「続きは製品版で」
   if (IS_TRIAL && opponentId === TRIAL_LAST_STAGE) {
@@ -21341,6 +21372,9 @@ function wonResultButtonsHtml(opponentId) {
         <button class="btn btn-secondary" data-action="back-lobby">ロビーへ</button>
       </div>
     `;
+  }
+  if (state.deisui && save.deisuiAllCleared && !save.deisuiDawnSeen) {
+    return `<button class="btn btn-primary result-main-btn" data-action="deisui-dawn"><span>夜明けへ</span><span>→</span></button>`;
   }
   const curIdx = STAGE_ORDER.indexOf(opponentId);
   const after = STAGE_ORDER.slice(curIdx + 1);

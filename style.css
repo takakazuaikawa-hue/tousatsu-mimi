@@ -21516,3 +21516,16 @@ html.is-compact .minipoker-overlay .minipoker-modal[data-pt="1"] .mp-paytable { 
 html.is-compact .minipoker-overlay .mp-paytable > .mp-pt tr { line-height: 1.3; }
 html.is-compact .minipoker-overlay .mp-paytable > .mp-pt-title { padding-bottom: 2px; }
 html.is-compact .minipoker-overlay .mp-char-name { letter-spacing: 0; }
+
+/* ---- 泥酔の夜の締め：題字「泥酔の夜 おしまい」（11/22 区切りが無いと言われた）。夜明けの会話の後に出し、押すと昼のホームへ ---- */
+.deisui-fin { position: absolute; inset: 0; z-index: 95; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 60%, rgba(255,190,120,.28), rgba(20,8,10,.92) 70%), #140a0c; opacity: 0; transition: opacity .9s ease; cursor: pointer; }
+.deisui-fin.show { opacity: 1; }
+.deisui-fin.out { opacity: 0; transition-duration: .5s; }
+.deisui-fin-in { display: grid; justify-items: center; gap: 14px; text-align: center; font-family: "Shippori Mincho B1", "Yu Mincho", serif; color: #f3d48a; text-shadow: 0 2px 10px #000; }
+.deisui-fin-in small { font-size: calc(var(--r-label) / var(--game-scale, 1)); letter-spacing: .4em; color: #e9c9a0; opacity: 0; transition: opacity .8s ease .4s; }
+.deisui-fin-in b { font-size: 112px; font-weight: 800; letter-spacing: .3em; padding-left: .3em; line-height: 1.1; opacity: 0; transform: translateY(10px); transition: opacity 1s ease .7s, transform 1.2s ease .7s; }
+.deisui-fin-in span { font-size: 56px; letter-spacing: .6em; padding-left: .6em; color: #fff1d6; opacity: 0; transition: opacity 1s ease 1.4s; }
+.deisui-fin-in p { margin: 18px 0 0; font-family: "Noto Sans JP", sans-serif; font-size: calc(var(--r-body) / var(--game-scale, 1)); color: #f3e6d0; word-break: keep-all; opacity: 0; transition: opacity .8s ease 2s; }
+.deisui-fin-in i { font-style: normal; font-family: "Noto Sans JP", sans-serif; font-size: calc(var(--r-note) / var(--game-scale, 1)); color: #c9a97a; opacity: 0; transition: opacity .8s ease 2.4s; animation: deisuiFinBlink 2.4s ease-in-out 3s infinite; }
+.deisui-fin.show .deisui-fin-in > * { opacity: 1; transform: none; }
+@keyframes deisuiFinBlink { 50% { opacity: .45; } }
