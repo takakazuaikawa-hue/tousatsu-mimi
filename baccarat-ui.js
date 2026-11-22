@@ -1369,6 +1369,15 @@
         st: A.hands ? `${A.hands}手・通算 ${A.net >= 0 ? '＋' : '−'}${fmt(Math.abs(A.net || 0))}` : '卓は4つ', act: 'baccarat', fresh: !A.hands },
     ];
   }
+  // 勝ち抜き戦（11/22）：5つの札の下に横長の札を1枚。最高記録か続きを出す（中身は game.js の knInfo）
+  function knBanner() {
+    let I = null; try { I = typeof knInfo === 'function' ? knInfo() : null; } catch (e) { }
+    if (!I) return '';
+    const st = I.run ? `続きから　${I.run.lap}周 ${I.run.idx + 1}人目` : I.best ? `最高 ${I.best.lap}周 ${I.best.idx}人目` : '11人と連戦';
+    return `<button type="button" class="enc-wide${I.run ? ' is-cur' : ''}" data-enc="go" data-act="game:kachinuki-open" data-id="kachinuki">
+        <span class="enc-wpic"></span><b>勝ち抜き戦</b><span class="enc-wd">今までの全員と連戦。チップは持ち越し</span>
+        <span class="enc-s${I.best || I.run ? '' : ' is-need'}">${st}</span>${I.best || I.run ? '' : '<i class="enc-new">NEW</i>'}</button>`;
+  }
   function closeHub() { if (hub) { hub.remove(); hub = null; } document.querySelectorAll('#stage > .enc-host').forEach(e => e.remove()); }
   function openHub() {
     if (!isUnlocked()) { try { toast('今夜の演目は、エンディングの後に開きます'); } catch (e) { } return; }
@@ -1383,6 +1392,7 @@
         ${c.fresh ? '<i class="enc-new">NEW</i>' : ''}
         <b>${c.title}</b><span class="enc-d">${c.desc.replace(/\|/g, '<br>')}</span>
         <span class="enc-s${c.lock ? ' is-lock' : c.need ? ' is-need' : ''}">${(c.lock || c.st).replace(/\|/g, '<br>')}</span></button>`).join('')}</div>
+      ${knBanner()}
       ${night ? '<footer><button type="button" data-enc="go" data-act="night-off">一周目（昼）に戻る</button></footer>' : ''}</section>`;
     hub.addEventListener('click', (e) => {
       const b = e.target.closest('[data-enc]');

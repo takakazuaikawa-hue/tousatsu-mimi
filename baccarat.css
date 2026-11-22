@@ -634,3 +634,14 @@ body:has(.bc-host) #fullscreen-btn-group { display: none !important; }
 }
 /* お手本をとばす：44px 以上（30px だった） */
 .bc-demo-skip { min-height: max(44px, calc(var(--u) * 36)); }
+
+/* 勝ち抜き戦の横長の札（今夜の演目の窓の下。11/22） */
+.enc-wide { position: relative; display: flex; align-items: center; gap: calc(var(--u) * 10); width: 100%; margin-top: calc(var(--u) * 7); padding: calc(var(--u) * 4) calc(var(--u) * 10) calc(var(--u) * 4) 0; text-align: left; overflow: hidden;
+  background: linear-gradient(90deg, #4d0f15, #22060a); border: 1px solid var(--bc-gold-d); outline: 1px solid rgba(217,178,105,.3); outline-offset: -4px; border-radius: 2px; word-break: keep-all; transition: filter .15s, box-shadow .15s; }
+.enc-wide:hover { filter: brightness(1.15); box-shadow: 0 0 0 2px var(--bc-gold-hi); }
+.enc-wide.is-cur { box-shadow: 0 0 0 2px var(--bc-gold-hi), 0 0 calc(var(--u) * 14) rgba(239,205,130,.4); }
+.enc-wpic { flex: 0 0 calc(var(--u) * 96); align-self: stretch; min-height: calc(var(--u) * 36); background: #1a0508 url('assets/characters/rico_serious.webp') 50% 8% / 100% auto no-repeat; -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent); mask-image: linear-gradient(90deg, #000 70%, transparent); }
+.enc-wide > b { font: 800 var(--r-btn2, 16px)/1.25 var(--bc-min); color: var(--bc-gold-hi); white-space: nowrap; }
+.enc-wd { flex: 1 1 auto; min-width: 0; font-size: var(--r-note, 14px); line-height: 1.4; color: var(--bc-ivory); }
+.enc-wide > .enc-s { flex: 0 0 auto; margin: 0; white-space: nowrap; }
+.enc-wide > .enc-new { left: calc(var(--u) * 6); right: auto; top: calc(var(--u) * 4); }

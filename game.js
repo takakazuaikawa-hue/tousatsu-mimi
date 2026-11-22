@@ -1313,6 +1313,11 @@ function drunkTier() {
   return (state.handNo || 0) >= (state.__hmidHand || 0) + 4 ? 3 : 2;
 }
 function aiStyleOf(profile) {
+  // 勝ち抜き戦：周ごとの鋭さ・双子の交代・女神の気まぐれ（kachinukiStyle は末尾の勝ち抜き戦の節）
+  if (typeof state !== 'undefined' && state && state.kachinuki && profile && profile.style && typeof kachinukiStyle === 'function') {
+    const k = kachinukiStyle(profile.style);
+    if (k) return k;
+  }
   if (profile && profile.style && AI_STYLES[profile.style]) {
     const base = AI_STYLES[profile.style];
     const mods = DRUNK_TIER_MOD[profile.style];
@@ -1415,7 +1420,9 @@ function decideOpponentAction(profile, ctx, opts = {}) {
 const ANTE_STEP = 4;
 const ANTE_LEVELS = [50, 100, 150, 200, 300, 400];
 function anteForHand(handNo) {
-  return ANTE_LEVELS[Math.min(ANTE_LEVELS.length - 1, Math.floor(Math.max(0, handNo - 1) / ANTE_STEP))];
+  // 勝ち抜き戦：周を重ねるごとに参加費の段が1つずつ上から始まる（最大3段）
+  const knOff = (typeof state !== 'undefined' && state && state.kachinuki) ? Math.min(3, Math.max(0, (state.kachinuki.lap || 1) - 1)) : 0;
+  return ANTE_LEVELS[Math.min(ANTE_LEVELS.length - 1, Math.floor(Math.max(0, handNo - 1) / ANTE_STEP) + knOff)];
 }
 
 // ベットサイズ → チップ数
@@ -1436,6 +1443,8 @@ function betSizeToChips(size, pot, allInMax) {
 
 // ポルカのセリフ生成
 function opponentSpeech(action) {
+  // 勝ち抜き戦の新しい相手（ティカ・お蝶・双子・ピコ・ウンメ）の台詞
+  if (state.kachinuki && KN_SAY[state.opponentId]) return knSpeech(action);
   // ほろ酔いの夜（二周目）は酔った台詞。癖（手がかり）は酔い方に合わせて作り直してある
   if (state.horoyoi) return drunkSpeech(state.opponentId, action);
   // 対戦相手別に分岐
@@ -1682,6 +1691,7 @@ function pickRicoOpeningAdvice(opponentId) {
   }
 }
 function opponentReadyLine() {
+  if (state.kachinuki && KN_SAY[state.opponentId]) return knReadyLine();
   // ほろ酔いの夜：配る前の一言も酔っている
   if (state.horoyoi) return pick(({
     rico_tutorial: ['ミミ〜、もう一杯飲んでからね〜', 'えへへ、配るよ〜……あれ、何枚だっけ', '今夜は先生お休み〜'],
@@ -1744,6 +1754,7 @@ function opponentReadyLine() {
   }
 }
 function opponentReactToPlayerFold() {
+  if (state.kachinuki && KN_SAY[state.opponentId]) return knPick('playerFold');
   if (state.seriousRicoMode) return pick([
     'いい判断。ちゃんと教えた甲斐があった',
     '降りる勇気、それも実力よ',
@@ -1804,6 +1815,7 @@ function opponentReactToPlayerFold() {
 // プレイヤー（ミミ）の攻め（ベット/レイズ/オールイン）への即時反応セリフ
 // kind: 'bet_small'（pot 1/2以下）| 'bet_big'（2/3〜pot）| 'raise' | 'allin'
 function opponentReactToPlayerAggression(kind, amount) {
+  if (state.kachinuki && KN_SAY[state.opponentId]) return knPick('react_' + kind);
   if (state.opponentId === 'rico_tutorial' && state.seriousRicoMode) {
     switch (kind) {
       case 'bet_small': return pick([
@@ -3779,7 +3791,7 @@ function applyBindings() {
 // 双方共通の絶対基準でチップバー割合を計算
 // 初期チップの2倍を100%とする → ハンド進行で増えても変わらない統一基準
 function chipBarPct(chips) {
-  const base = (OPPONENTS[state.opponentId]?.chips || 1000) * 2;
+  const base = state.kachinuki ? Math.max(state.__initialChips || 1000, state.__oppInitialChips || 1000) * 1.5 : (OPPONENTS[state.opponentId]?.chips || 1000) * 2;
   return Math.max(0, Math.min(100, (chips / base) * 100));
 }
 
@@ -4544,7 +4556,7 @@ const STRUGGLE_SCENES = {
 // 2026-11-16 勝った後の再戦でも見られるようにした（以前は勝った相手では二度と出ず、強い人ほど取り逃した。ユーザー決定）。
 // 二周目（ほろ酔い）・泥酔の夜は場面の空気が違うので出さない
 function struggleSceneDue() {
-  if (state.tutorialMode || state.introHandMode || state.lectureMode || state.seriousRicoMode || state.horoyoi || state.deisui) return null;
+  if (state.tutorialMode || state.introHandMode || state.lectureMode || state.seriousRicoMode || state.horoyoi || state.deisui || state.kachinuki) return null;
   const id = state.opponentId;
   if (!STRUGGLE_SCENES[id]) return null;
   if (!save.struggleSeen) save.struggleSeen = [];
@@ -8687,7 +8699,7 @@ function opponentLatinName() { return OPP_LATIN[state.opponentId] || (state.oppo
 function renderStackGauge(side) {
   const opp = OPPONENTS[state.opponentId] || {};
   const base = battleInitialChips();
-  const oppBase = opp.chips || base;
+  const oppBase = state.kachinuki ? (state.__oppInitialChips || opp.chips || base) : (opp.chips || base);
   const cur = side === "mimi" ? state.playerChips : state.opponentChips;
   const max = side === "mimi" ? base : oppBase;
   if (typeof cur !== "number" || !max) return "";
@@ -9982,10 +9994,12 @@ function onAction(e) {
       break;
     }
     case 'skip-stage': skipStageWithCoins(data.opponent); break;
+    case 'kachinuki-open': knOpenWindow(); break;
     case 'trial-end': showTrialEnd(false); break;
     case 'back-title':    stopEndingBgm(); state = defaultState(); render(); break;
     case 'back-lobby': {
       // 対戦・講義の途中で抜ける時だけ、失うものを書いた確認を挟む（誤タップ1回で対戦が消えていた）
+      if (state.screen === 'battle' && state.kachinuki) { knQuitConfirm(); break; }
       if (state.screen === 'battle' && !state.introHandMode) {
         const inLecture = !!state.lectureMode;
         showConfirm(inLecture
@@ -15745,13 +15759,13 @@ function startBattle(opponentId) {
   startBattleInternal(opponentId);
 }
 
-function startBattleInternal(opponentId) {
+function startBattleInternal(opponentId, kn) {   // kn＝勝ち抜き戦の卓の指定（knStartTable が渡す）。通常の卓では未指定
   battleGen++;
   const opp0 = OPPONENTS[opponentId];
-  const horoyoi = isHoroyoi();
-  const seriousRico = !horoyoi && (opponentId === 'rico_tutorial' && window.__ricoSeriousMode === true);
+  const horoyoi = !kn && isHoroyoi();
+  const seriousRico = kn ? !!kn.serious : (!horoyoi && (opponentId === 'rico_tutorial' && window.__ricoSeriousMode === true));
   window.__ricoSeriousMode = false; // 一回限り
-  if (opp0 && opp0.isLecture && !seriousRico && !horoyoi) {
+  if (!kn && opp0 && opp0.isLecture && !seriousRico && !horoyoi) {
     return startLecture(opponentId);
   }
   state = defaultState();
@@ -15760,12 +15774,12 @@ function startBattleInternal(opponentId) {
   state.opponentName = seriousRico ? '本気のリコ先輩' : opp.name;
   preloadBattleVoice(opp.id, seriousRico);   // ロビーで読めていれば何もしない。直接入った時の保険
   // 真剣モードのリコ先輩は全パラメータ最強
-  state.opponentProfile = seriousRico
+  state.opponentProfile = (kn && kn.profile) ? kn.profile : seriousRico
     // ブラフの多さはミミの癖から（卒業試験）：大きな賭けに降りがちな子にはブラフで、付いてきがちな子には本物で来る
     ? { style: 'rico_serious', bluffTendency: seriousRicoBluff(), aggression: 0.85, foldDiscipline: 0.7, valueBetTendency: 0.8, drawAggression: 0.85, trapTendency: 0.6 }
     : opp.profile;
   state.opponentImgKey = opp.imgKey;
-  state.maxHands = (seriousRico || horoyoi) ? 999 : opp.maxHands;
+  state.maxHands = (seriousRico || horoyoi || kn) ? 999 : opp.maxHands;
   // ほろ酔いの夜：同じ相手の酔った打ち方（AI_STYLES の <性格>_drunk）
   state.horoyoi = horoyoi;
   state.deisui = horoyoi && isDeisui(); state.__closeVoiced = false;
@@ -15773,37 +15787,38 @@ function startBattleInternal(opponentId) {
   if (horoyoi) state.opponentProfile = { ...opp.profile, style: (opp.id === 'rico_tutorial' ? 'rico' : opp.id) + '_drunk' };
   // 開始チップ：卓の基本値（本気リコは2000）＋持ち込みチップ（交換所のチップ拡張。所持の1つだけ）
   const baseChips = horoyoi && HOROYOI_BASE_CHIPS[opp.id] ? HOROYOI_BASE_CHIPS[opp.id] : startingBaseChips(opp.id, seriousRico);
-  state.tutorialMode = (seriousRico || horoyoi) ? false : opp.tutorial;
-  const carry = state.tutorialMode ? 0 : carryInChips();
-  state.playerChips   = baseChips + carry;
-  state.opponentChips = baseChips;
+  state.tutorialMode = (seriousRico || horoyoi || kn) ? false : opp.tutorial;
+  const carry = (state.tutorialMode || kn) ? 0 : carryInChips();   // 勝ち抜き戦は持ち込みチップを使わない（持ち越しの数字だけで戦う）
+  state.playerChips   = kn ? kn.mimi : baseChips + carry;
+  state.opponentChips = kn ? kn.opp : baseChips;
+  if (kn) state.kachinuki = { lap: kn.lap, idx: kn.idx, id: kn.id, side: 'P', whim: 0 };
   // ★新人が格上の卓に着く：相手はミミの2倍のチップを積んでいる。
   //   同額スタートだと、1ハンド目にオールインを押すだけで約96%がその場で決着し、
   //   コイン投げ2回分でステージを抜けられてしまっていた（実測）。
   //   2倍なら一発では構造的に終わらず、その相手のテーマ（ブラフ・危険度・オッズ）を
   //   何度も踏むことになる。代わりにミミは、読み（心理・論理バトル）か降りるを使っていれば1回だけ座り直せる（usedReads）。
   //   相手の2倍は「基本値」基準。持ち込みチップで相手まで増えると、買った意味が消えるため
-  if (!state.tutorialMode) state.opponentChips = baseChips * 2;
+  if (!state.tutorialMode && !kn) state.opponentChips = baseChips * 2;
   // 持ち込みは卓についた時に短く知らせる（効いていることが見えないと、買った品が無いのと同じ）
   if (carry > 0) {
     const gen = battleGen;
     setTimeout(() => { if (gen === battleGen && state && state.screen === 'battle') toast(`チップ拡張 +${carry}`); }, 700);
   }
-  state.rebuysLeft = state.tutorialMode ? 0 : 1;
+  state.rebuysLeft = (state.tutorialMode || kn) ? 0 : 1;   // 勝ち抜き戦に座り直しは無い（飛んだら終わり）
   state.__rebuyEarnedShown = false;
   state.gradLastHand = null;
   state.__initialChips = state.playerChips; // ピンチ演出：対戦開始時のチップ量を記録
   state.__oppInitialChips = state.opponentChips;
   state.tauntLevel = 0; applyTauntAura();
-  state.fullHand = (seriousRico || horoyoi) ? true : !!opp.fullHand;
-  state.isBoss = seriousRico ? true : !!opp.isBoss; // 心理バトル全ストリート発動
+  state.fullHand = (seriousRico || horoyoi || kn) ? true : !!opp.fullHand;
+  state.isBoss = kn ? !!kn.boss : seriousRico ? true : !!opp.isBoss; // 心理バトル全ストリート発動
   state.seriousRicoMode = seriousRico;
   state.screen = 'battle';
   // 練習用「相手の手札を見る」をONのまま始めた対戦は、最初から練習扱い（途中でONにした場合は notePeekUse が立てる）
   state.peekUsed = isPeekActive();
   if (typeof startBattleBgmSkin === 'function') startBattleBgmSkin();
   // 相手別テーブル背景（CODEX納品画像）を適用
-  document.body.dataset.oppBg = seriousRico ? 'rico_serious' : ['polka','selina','grano','velvet'].includes(opp.id) ? opp.id : '';   // 本気のリコ＝時計台の大文字盤の裏（2026-10-26 候補2）
+  document.body.dataset.oppBg = kn ? (kn.bg || '') : seriousRico ? 'rico_serious' : ['polka','selina','grano','velvet'].includes(opp.id) ? opp.id : '';   // 本気のリコ＝時計台の大文字盤の裏（2026-10-26 候補2）
   state.handPhase = 'idle';
   state.panyuMax = save.panyuGaugeMax || 100;
   state.panyuSenseFreeUsed = save.panyuSenseFreeUsed;
@@ -15850,9 +15865,9 @@ function startBattleInternal(opponentId) {
       ? '「チップは私の方が多い……！ でも油断は禁物。まずは相手をよく見よう」'
       : P0 * 2 <= O0 ? '「相手のチップは私の倍……一発勝負じゃ勝てない。まずは相手をよく見よう」'
       : '「相手の方がチップは多い……一発勝負は避けたい。まずは相手をよく見よう」';
-    state.ricoAdvice = pickRicoOpeningAdvice(state.opponentId);
+    state.ricoAdvice = (kn && kn.advice) || pickRicoOpeningAdvice(state.opponentId);
     render();
-    offerBattleResume(() => maybeShowHouseRules());
+    if (kn) { maybeShowHouseRules(); knAnnounceTable(); } else offerBattleResume(() => maybeShowHouseRules());
   }
 }
 
@@ -16940,7 +16955,7 @@ function startHand() {
   if (state.playerChips <= 0 || state.opponentChips <= 0) { return endBattle(); }
   state.handNo++;
   if (state.handNo > state.maxHands) { return endBattle(); }
-  saveBattleResume();
+  if (state.kachinuki) knOnHandStart(); else saveBattleResume();
   setOpponentExpression('default'); // 新ハンドは平常表情から
   setMimiExpression('default');
   resetHandJuice();
@@ -20793,7 +20808,7 @@ function announceDrunkTier() {
 // 圧倒モード判定：プレイヤー優勢 + 連勝5以上で発動（1戦1回まで）
 // ポーカーは累積差で勝つゲームのため、いわゆる「大逆転」は採用しない
 function isDominanceMode() {
-  if (state.dominanceUsed) return false;
+  if (state.dominanceUsed || state.kachinuki) return false;   // 勝ち抜き戦に圧倒モード（降参の受け取り）は無い
   if (state.tutorialMode || state.introHandMode || state.lectureMode) return false;
   const initial = OPPONENTS[state.opponentId]?.chips || 1000;
   const wins = state.showdownStreak || 0;
@@ -20990,6 +21005,8 @@ function endBattle() {
   document.querySelectorAll('.clutch-cutin').forEach(e => e.remove()); // 勝負帯も画面離脱で必ず解除
   // セーブ反映：ぱにゅぱにゅ初回無料を消費したか
   if (state.panyuSenseFreeUsed) save.panyuSenseFreeUsed = true;
+  // 勝ち抜き戦：結果の画面は出さず、勝てば次の卓の案内・負ければ記録の画面へ（通常の報酬・ランク・クリア記録には触れない）
+  if (state.kachinuki) return knEndTable();
 
   if (state.tutorialMode) {
     // チュートリアル：初回のみ200コイン、再戦は0（タダ稼ぎ防止）
@@ -22333,6 +22350,7 @@ function emoteFaceSrc(who, expr, useMax) {
   }
   const key = state && state.opponentImgKey;
   if (!key) return null;
+  if (KN_ART_KEYS.has(key)) return knCutinList(key, expr);   // 勝ち抜き戦の専用の絵：あるカットインだけ使い、無ければ立ち絵
   // ほろ酔いの夜：崩れる時（バレた・負け・泣き）以外は、酔い顔（2枚のどちらか）を見せる（11/08 ユーザー「全部採用」）
   if (state.horoyoi && !['busted', 'panic', 'bawl', 'grovel', 'bitter'].includes(expr)) {
     return [`assets/characters/${key}_cutin_drunk${rand() < 0.5 ? '' : '2'}.webp`, `assets/characters/${key}_cutin_drunk.webp`, `assets/characters/${key}_cutin_${expr}.webp`, `assets/characters/${key}_default.webp`];
@@ -22562,7 +22580,7 @@ function showOpponentCutIn(text, betSize) {
     cut.innerHTML = `
       <div class="v2c-dim"></div>
       <div class="v2c-slash"></div>
-      <div class="v2c-art"><img src="assets/characters/${imgKey}_cutin_${betSize === 'defeat' ? 'panic' : 'smug'}.webp" alt="${oppName}" onerror="this.onerror=null;this.src='assets/characters/${imgKey}_default.webp';this.classList.add('v2c-fallback')"></div>
+      <div class="v2c-art"><img src="${KN_ART_KEYS.has(imgKey) ? knCutinList(imgKey, betSize === 'defeat' ? 'panic' : 'smug')[0] : 'assets/characters/' + imgKey + '_cutin_' + (betSize === 'defeat' ? 'panic' : 'smug') + '.webp'}" alt="${oppName}" onerror="this.onerror=null;this.src='assets/characters/${imgKey}_default.webp';this.classList.add('v2c-fallback')"></div>
       <div class="v2c-band"><div class="v2c-name v2-disp">${latin}</div><div class="v2c-line">「${text}」</div></div>
       ${betSize === 'defeat' ? '' : `<div class="v2c-amount"><div class="v2-disp v2c-amount-num">${sizeTag} +${amt}</div><div class="v2c-amount-sub">タップで閉じる</div></div>`}
     `;
@@ -23242,6 +23260,493 @@ async function startPreload() {
     setTimeout(() => { if (kvMotion) { try { kvMotion.pause(); kvMotion.removeAttribute('src'); kvMotion.load(); } catch (e) {} } if (overlay) overlay.remove(); }, 600);
   }
 }
+
+//=============================================================
+// 勝ち抜き戦（エンドコンテンツ、2026-11-22 ユーザー承認。決まりは docs/design-ref/kachinuki-plan.md）
+//  今までの相手全員（本編の6人＋バカラのディーラー4組＋女神ウンメ）と1対1の卓で連戦。11戦で1周、勝ち抜くたびチップは持ち越し。
+//  周を重ねると相手の手持ち・参加費が上がり、打ち方が少し鋭くなる。尽きる・やめるで終わり、最高の周と人数を記録に残す。
+//  卓そのものは本編の卓（startBattleInternal に kn を渡して始める）。結果の画面は出さず、勝てば次の卓の案内・負ければ記録の画面へ。
+//  セーブ：save.kachinuki = { best:{lap,idx,wins}, totalWins, runs, laps, run:{lap,idx,chips,wins,coins,tableMimi,tableOpp}|null, prevNight }
+//=============================================================
+// 専用の絵の決まりは本編の相手と同じ（<id> は kachi_tika / kachi_ocho / kachi_twins / kachi_pico / kachi_unme）:
+//   assets/characters/<id>_default.webp（立ち絵）・<id>_mini.webp・<id>_blush / _panic / _smile ほか（表情）・<id>_cutin_<表情>.webp
+//   assets/battle/face/<id>_*.webp・assets/battle/chibi/<id>_*.webp・assets/backgrounds/table_<id>.webp
+// 実在する物だけ（assets/manifest.js にある物だけ）を使い、無い物は代わりの絵に落ちる。絵を足したら qa/genmanifest.mjs を流す。
+// _default だけは仮の絵（dealer_*.webp・goddess_lean.webp の複製）を置いてあるので、専用の絵ができたら同じ名前で上書きする
+const KN_ART_KEYS = new Set(['kachi_tika', 'kachi_ocho', 'kachi_twins', 'kachi_pico', 'kachi_unme']);
+const knHas = (p) => !!(window.ASSET_MANIFEST && window.ASSET_MANIFEST[p]);
+function knCutinList(key, expr) {
+  const c = (e) => `assets/characters/${key}_cutin_${e}.webp`;
+  return [c(expr), c(OPP_CUTIN_FALLBACK[expr] || 'panic')].filter(knHas).concat(`assets/characters/${key}_default.webp`);
+}
+// 新しい相手。絵は dealer_*.webp・goddess_lean.webp をそのまま <キー>_default.webp の名前で置いてある
+(function knDefineOpponents() {
+  const mk = (id, name, style, chips, theme, desc, extra) => ({
+    id, name, profile: Object.assign({ style }, extra || {}), maxHands: 999, chips, tutorial: false, imgKey: 'kachi_' + id,
+    theme, desc, rewardFirst: 0, rewardRematch: 0, rewardSBonus: 0, unlockNoteOnClear: null, fullHand: true, kachinukiOnly: true,
+  });
+  Object.assign(OPPONENTS, {
+    tika:  mk('tika', 'ティカ', 'kn_tika', 1400, '正確無比のぜんまい人形', 'ブラフ少なめ。計算どおりに賭けてくる', { bluffTendency: 0.08, aggression: 0.5, foldDiscipline: 0.75, valueBetTendency: 0.7, drawAggression: 0.6 }),
+    ocho:  mk('ocho', 'お蝶', 'kn_ocho', 1600, '賭場の姐さん', '大きく張る勝負師。「勝負」の一声で押してくる', { bluffTendency: 0.26, aggression: 0.85, foldDiscipline: 0.55, valueBetTendency: 0.8, drawAggression: 0.7 }),
+    twins: mk('twins', 'プントとバンコ', 'kn_twins', 1800, '手ごとに交代する双子', '青のプントは慎重、赤のバンコは強気。手ごとに交代する', { bluffTendency: 0.2, aggression: 0.6, foldDiscipline: 0.6, valueBetTendency: 0.7, drawAggression: 0.6 }),
+    pico:  mk('pico', 'ピコ', 'kn_pico', 1300, '降りずに付いてくる見習い天使', 'おどおどしながら、なかなか降りない', { bluffTendency: 0.02, aggression: 0.2, foldDiscipline: 0.2, valueBetTendency: 0.4, drawAggression: 0.3 }),
+    unme:  mk('unme', 'ウンメ', 'kn_unme', 2000, '気まぐれな運命の女神', '本気のリコより強い。しかも気まぐれ', { bluffTendency: 0.34, aggression: 0.85, foldDiscipline: 0.65, valueBetTendency: 0.85, drawAggression: 0.8, trapTendency: 0.5 }),
+  });
+  Object.assign(AI_STYLES, {
+    // ティカ＝セリナ寄りのきっちりした型。ブラフ少・計算どおり（賭け額＝強さ）
+    kn_tika:  { loose: 0.86, respect: 0.18, valueEq: 0.66, valueFreq: 0.7,  bluffFreq: 0.05, raiseEq: 0.88, trap: 0.1,  sizing: 'honest', shoveCall: 0.5 },
+    // お蝶＝大きく張る勝負師。ヴェルベット寄りを少し弱く（弱い手でも大きく張る・たまにオールイン）
+    kn_ocho:  { loose: 0.9,  respect: 0.08, valueEq: 0.66, valueFreq: 0.8,  bluffFreq: 0.26, raiseEq: 0.82, trap: 0.1,  sizing: 'polar',  shoveCall: 0.45, allinFreq: 0.05 },
+    // 双子＝ハンドごとに交代。青のプント＝慎重／赤のバンコ＝強気
+    kn_punt:  { loose: 0.88, respect: 0.22, valueEq: 0.68, valueFreq: 0.6,  bluffFreq: 0.06, raiseEq: 0.9,  trap: 0.15, sizing: 'honest', shoveCall: 0.52 },
+    kn_banco: { loose: 0.78, respect: 0.04, valueEq: 0.6,  valueFreq: 0.9,  bluffFreq: 0.34, raiseEq: 0.78, trap: 0,    sizing: 'mixed',  shoveCall: 0.42, allinFreq: 0.04 },
+    // ピコ＝降りずに付いてくる受け身（コール多め・ブラフほぼ無し・賭けるのは強い時だけ）
+    kn_pico:  { loose: 0.55, respect: 0,    valueEq: 0.74, valueFreq: 0.45, bluffFreq: 0.02, raiseEq: 0.95, trap: 0,    sizing: 'honest', shoveCall: 0.36, station: true },
+    // ウンメ＝本気のリコより一段強い型。気まぐれ（kachinukiStyle の whim で手ごとに揺れる）
+    kn_unme:  { loose: 0.95, respect: 0.1,  valueEq: 0.6,  valueFreq: 0.9,  bluffFreq: 0.34, raiseEq: 0.78, trap: 0.2,  sizing: 'mixed',  shoveCall: 0.44 },
+  });
+  // 表情差分（<id>_blush / _panic ほか）は、ファイルがある物だけ結線する
+  const MOODS = { pressure: 'panic', rattled: 'panic', pleased: 'blush', defeat: 'blush' };
+  ['tika', 'ocho', 'twins', 'pico', 'unme'].forEach((id) => {
+    const key = 'kachi_' + id, m = {};
+    Object.keys(MOODS).forEach(k => { if (knHas(`assets/characters/${key}_${MOODS[k]}.webp`)) m[k] = MOODS[k]; });
+    OPPONENT_EXPRESSIONS[key] = m;
+  });
+  // 卓の「見た目・性格」の読み物（表の無い相手は「？？？」になるので足す）
+  Object.assign(OPPONENT_APPEARANCE, {
+    tika: '銀の歯車の髪飾り／黒のレオタードに歯車の腰飾り／瞬きが少なく、動きが正確',
+    ocho: '着崩した和装にバニーの耳／煙管を手に落ち着いた笑み／賭場を仕切る姐さんの目',
+    twins: '青の子と赤の子の双子／おそろいのバニー服／手ごとに交代して配る',
+    pico: '小さな翼と光の輪／うさ耳の見習い天使／いつもおどおどして手が震える',
+    unme: 'ピンクのツインテールと十字の飾りの輪／身を乗り出す女神／気まぐれな笑み',
+  });
+  Object.assign(OPPONENT_PERSONALITY, {
+    tika:  { icon: '歯', title: '正確無比のぜんまい人形', traits: ['ブラフはほとんどしない', '賭け額が強さに比例する', '大きな賭けには付いてこない'], exploit: '賭けてきたら本物。小さく賭けて降ろし、大きく賭けられたら降りよう' },
+    ocho:  { icon: '勝', title: '賭場の姐さん', traits: ['弱くても大きく張る勝負師', '「勝負」の一声で全部押してくることも', '降りるのが早い'], exploit: '大きな賭けにビビらず、中くらいの手で受けて立とう' },
+    twins: { icon: '双', title: '手ごとに交代する双子', traits: ['青のプントは慎重（賭けたら本物）', '赤のバンコは強気（ブラフ多め）', '手ごとに交代する'], exploit: '誰の手番かを見る。青の賭けは降り、赤の賭けは受けて立とう' },
+    pico:  { icon: '天', title: '降りない見習い天使', traits: ['なかなか降りない', 'ブラフはほぼ無い', '賭けるのは本当に強い時だけ'], exploit: '強い手で大きく賭けて稼ぐ。ブラフは通らない。賭けてきたら降りよう' },
+    unme:  { icon: '運', title: '気まぐれな運命の女神', traits: ['本気のリコより強い', '手ごとに急に全部押してくる', '急にのんびり付いてくる'], exploit: '気まぐれに惑わされず、手札と払う額で決めよう' },
+  });
+})();
+
+// 1周の順（11戦）。slot.id＝卓の相手の ID（本編の相手は本編の ID のまま。本気のリコは serious）。
+//  chips＝1周目の相手の手持ち（周ごとに ×(1＋0.25×(周−1))）。bg＝卓の背景（既存の物を当てる）。blurb＝次の相手の紹介
+const KN_ORDER = [
+  { id: 'rico_tutorial', name: 'リコ先輩',        chips: 1000, bg: '',             boss: false, blurb: 'ミミの先輩。ふつうの卓でお相手',
+    face: 'rico' },
+  { id: 'polka',   name: 'ポルカ',                chips: 1000, bg: 'polka',        boss: false, blurb: '弱い時ほど声が大きい。ブラフ多発' },
+  { id: 'selina',  name: 'セリナ',                chips: 1200, bg: 'selina',       boss: false, blurb: '落ち着いた常連。賭け額に意味がある' },
+  { id: 'grano',   name: 'グラーノ',              chips: 1300, bg: 'grano',        boss: false, blurb: '商人。割に合わなければ降りる。罠に注意' },
+  { id: 'velvet',  name: 'ヴェルベット',          chips: 1500, bg: 'velvet',       boss: true,  blurb: 'VIPのボスディーラー。大きく賭けて圧をかける' },
+  { id: 'rico_tutorial', serious: true, name: '本気のリコ先輩', chips: 2000, bg: 'rico_serious', boss: true, blurb: '手加減なしの最強戦。ブラフもバリューも完璧', face: 'rico' },
+  { id: 'tika',    name: 'ティカ',                chips: 1400, bg: 'selina',       boss: false, blurb: 'ぜんまい人形のディーラー。正確無比、ブラフ少なめ' },
+  { id: 'ocho',    name: 'お蝶',                  chips: 1600, bg: 'velvet',       boss: false, blurb: '賭場の姐さん。大きく張る勝負師' },
+  { id: 'twins',   name: 'プントとバンコ',        chips: 1800, bg: 'grano',        boss: false, blurb: '双子のディーラー。手ごとに交代、青は慎重・赤は強気' },
+  { id: 'pico',    name: 'ピコ',                  chips: 1300, bg: 'polka',        boss: false, blurb: '見習い天使。おどおどして、降りずに付いてくる' },
+  { id: 'unme',    name: 'ウンメ',                chips: 2000, bg: 'rico_serious', boss: true,  blurb: '運命の女神。周の締めのボス。気まぐれで強い' },
+];
+const KN_START_CHIPS = 1000;
+const knImgKey = (slot) => slot.face || (OPPONENTS[slot.id] || {}).imgKey || slot.id;
+const knArt = (slot) => `assets/characters/${knImgKey(slot)}_default.webp`;
+
+// 新しい相手の台詞（2行・27字以内。口調は plan どおり。ウンメは敬語ほぼ無しの「〜でーす」「〜だよぉ」）
+const KN_SAY = {
+  tika: {
+    intro: ['お待ちしておりました。カチ', '当機がお相手いたします'],
+    ready: ['カチ。お配りいたします', '歯車は正常でございます', '計算を開始いたします。カチ', '手札をどうぞ。カチカチ', '当機がお相手いたします'],
+    value: ['期待値は当機に有利でございます', 'ベット。確率に従います。カチ', 'この額が最適でございます'],
+    bluff: ['……演算の結果、ベットでございます', 'ベット。理由は申し上げられません'],
+    call: ['コール。割に合います。カチ', '計算上、付いてまいります'],
+    check: ['チェックでございます。カチ', '様子を見ます。歯車が回ります'],
+    fold: ['降りでございます。損失を最小に', 'この手は分が悪うございます。カチ'],
+    playerFold: ['賢明な判断でございます。カチ', 'ポットは当機がお預かりします'],
+    react_bet_small: ['許容範囲でございます。カチ'], react_bet_big: ['歯車が……少し速くなりました'],
+    react_raise: ['再計算いたします。カチカチ'], react_allin: ['全額……演算に時間をいただきます'],
+    win: '確率どおりの結果でございます。カチ', lose: '想定外……歯車が止まりました',
+  },
+  ocho: {
+    intro: ['一勝負、付き合っておくれ', 'よござんすか。……勝負'],
+    ready: ['さ、張った張った！', 'よござんすか。……勝負', '兎さん、いい目をしてるね', '壺は振った。さあどうする', '博打はね、度胸さ'],
+    value: ['勝負！　ここは張るよ', 'いい札だ。遠慮なくいくよ', 'さあ、勝負しな'],
+    bluff: ['度胸比べだよ、兎さん', 'ハッタリかどうか、読んでごらん', '張るのは度胸、見せるのも度胸'],
+    call: ['よござんす、受けるよ', '付き合ってやろうじゃないか'],
+    check: ['ここは様子見だよ', '静かに行こうかね'],
+    fold: ['ここは引くよ。博打は引き際さ', '今回はくれてやる。次は取るよ'],
+    playerFold: ['引き際を知ってるね、いい兎だ', 'おや、逃げるのかい。まあいいさ'],
+    react_bet_small: ['ちびちび張るね。お行儀がいい'], react_bet_big: ['おっと、いい張りっぷりだ'],
+    react_raise: ['上乗せかい。面白くなってきた'], react_allin: ['全部かい！　その度胸、買うよ'],
+    win: '博打は負けて覚えるもんさ。また張りな', lose: '見事な張りだ。持っていきな',
+  },
+  twins: {
+    punt: {
+      intro: ['青のプントが相手だよ！', '二人で交代しながら相手するね'],
+      ready: ['いくよー！　ボクが配るね', '慎重にいこうね、ミミ', '青のプントの番だよ'],
+      value: ['ちゃんと手があるよ。ベット', 'これは自信あり、だよ'],
+      bluff: ['う、うん、ベットするよ！', 'なんとなく……ベット'],
+      call: ['ん、付いていくね', '払うよ。念のため'],
+      check: ['チェック。様子見だよ', 'まず見てからね'],
+      fold: ['降りるよ、無理しない', 'ここはバンコに怒られても降りる'],
+      playerFold: ['えらい！　引くのも大事だよ', 'ありがと。もらうね'],
+      react_bet_small: ['ふんふん、小さいね'], react_bet_big: ['わ、大きい……考えるね'],
+      react_raise: ['レイズ？　ちょっと待って'], react_allin: ['全部！？　バンコ助けて！'],
+    },
+    banco: {
+      intro: ['赤のバンコよ。覚悟しなさい', '交代で相手するからね'],
+      ready: ['さ、次はアタシの番よ', '赤のバンコが相手よ。覚悟', 'どんどん行くわよ！'],
+      value: ['強いわよ。ベット！', 'アタシの手、見せたいくらいよ'],
+      bluff: ['ハッタリ？　さあね！', '強気でいくわよ！'],
+      call: ['受けて立つわ', '付き合ってあげる'],
+      check: ['まだ様子見よ', 'チェック。すぐ噛みつくから'],
+      fold: ['降りてあげる。次は取るわ', '今回だけよ'],
+      playerFold: ['逃げるの？　つまんない', 'プントなら止めてたわね'],
+      react_bet_small: ['その程度？　ぬるいわね'], react_bet_big: ['いい度胸じゃない'],
+      react_raise: ['上等よ。受けて立つわ'], react_allin: ['全部！？　最高じゃない！'],
+    },
+    win: '交代で戦うのが、双子の強みなの', lose: 'うわーん、負けたー！',
+  },
+  pico: {
+    intro: ['見習い天使のピコですっ', 'お、お手柔らかにお願いしますっ'],
+    ready: ['い、いきますっ！　配ります', 'ひゃっ、手が震えます……', 'お、お願いしますっ', '頑張りますです！'],
+    value: ['こ、これは強い……かもです', 'ベ、ベットしますっ！'],
+    bluff: ['ええと、ベット……ですっ'],
+    call: ['つ、付いていきますっ', '降りません！　がんばりますっ', 'コール、です……！'],
+    check: ['チェック、です……', 'ええと、まだ見ます'],
+    fold: ['ひゃあ、降ります……', 'これは無理ですぅ'],
+    playerFold: ['えっ、降りちゃうんですか！？', 'わ、わたしの勝ち……ですか？'],
+    react_bet_small: ['ひゃっ、でも付いていきます'], react_bet_big: ['お、大きいですぅ……でも！'],
+    react_raise: ['れ、レイズ！？　ひえぇ'], react_allin: ['ぜ、全部！？　ど、どうしましょう'],
+    win: 'か、勝っちゃいました……！', lose: 'うぅ……負けましたぁ。次は女神さまですぅ',
+  },
+  unme: {
+    intro: ['ここまで来たご褒美に遊んであげるでーす', 'ミミちゃん、ついに来たんだぁ'],
+    ready: ['はーい、女神さまのお出ましでーす', 'ミミちゃん、ここまで来たんだぁ', '運命、見せてあげるよぉ', 'ふふーん、いくよぉ', 'ちゃんと付いてきてねぇ'],
+    value: ['これは勝ったも同然でーす', '運命、こっちに傾いてまーす', 'はい、ベットでーす'],
+    bluff: ['ふふ、ブラフかもよぉ？', '当たるも八卦でーす', '全部気分だよぉ？'],
+    call: ['いいよぉ、付き合うでーす', '見てあげるよぉ'],
+    check: ['チェックでーす、ひま〜', 'まだ本気出さないよぉ'],
+    fold: ['ちぇー、今回はあげるでーす', '気分が乗らないから降りるよぉ'],
+    playerFold: ['あはは、逃げた逃げたぁ', 'もらっちゃうよぉ、ありがとでーす'],
+    whim1: ['あ、気分変わったでーす！', 'やっぱり全部いっちゃうよぉ'],
+    whim2: ['今日はのんびりでーす', 'なんかねむいなぁ、付き合うよぉ'],
+    react_bet_small: ['ちっちゃいなぁ、あくびでーす'], react_bet_big: ['おっ、ちょっとやるじゃーん'],
+    react_raise: ['へぇ、レイズ？　生意気でーす'], react_allin: ['全部ぅ！？　おもしろーい！'],
+    win: 'はい、運命でーす。また来てねぇ', lose: 'えぇ〜、負けちゃったでーす……',
+  },
+};
+function knLines() {
+  const K = state.kachinuki, t = KN_SAY[state.opponentId];
+  if (!K || !t) return null;
+  return state.opponentId === 'twins' ? t[K.side === 'B' ? 'banco' : 'punt'] : t;
+}
+function knPick(key) { const L = knLines(); return pick((L && L[key]) || ['……']); }
+function knReadyLine() {
+  const L = knLines(), K = state.kachinuki;
+  if (!L) return '……';
+  if (K.id === 'unme' && K.whim) return pick(K.whim === 1 ? L.whim1 : L.whim2);
+  if (state.handNo === 1 && L.intro) return pick(L.intro);
+  return pick(L.ready);
+}
+function knSpeech(action) {
+  const L = knLines(), K = state.kachinuki;
+  if (!L) return '……';
+  if (action.type === 'fold') return pick(L.fold);
+  if (action.type === 'bet') {
+    if (K.id === 'unme' && K.whim === 1 && rand() < 0.5) return pick(L.whim1);
+    return pick(action.intent === 'bluff' || action.intent === 'forced_bluff' ? L.bluff : L.value);
+  }
+  if (K.id === 'unme' && K.whim === 2 && rand() < 0.5) return pick(L.whim2);
+  return pick(action.intent === 'check' || action.intent === 'trap' ? L.check : L.call);
+}
+// 勝敗の台詞（結果の画面に出す）：相手が勝った時／負けた時。本編の相手の分は本編の台詞に合わせた一言
+const KN_RESULT_SAY = {
+  rico_tutorial: { win: 'まだまだ先輩の勝ちだね〜', lose: 'お、やるじゃん。成長したね' },
+  rico_serious:  { win: '練習は終わり。まだ足りないわ', lose: '……見事よ。弟子に抜かれたわ' },
+  polka:   { win: 'やったー！ボクの勝ち〜！', lose: 'うわぁぁん、負けたぁ……ぐすっ' },
+  selina:  { win: '想定どおりの結果です。', lose: '……お見事です。私の負けです。' },
+  grano:   { win: 'ふむ、良い取引でしたな。', lose: 'これは大赤字ですなぁ……' },
+  velvet:  { win: 'ふふ、あたしの勝ちなのよ♡', lose: '……やるじゃないの。覚えておくの' },
+};
+function knResultSay(slot, won) {   // won＝ミミが勝ったか
+  const t = KN_SAY[slot.id], key = slot.serious ? 'rico_serious' : slot.id;
+  if (t) { const o = slot.id === 'twins' ? t : t; return won ? o.lose : o.win; }
+  const r = KN_RESULT_SAY[key];
+  return r ? (won ? r.lose : r.win) : '';
+}
+
+// ── 打ち方：周ごとの鋭さ・双子の交代・女神の気まぐれ ──
+function kachinukiStyle(key) {
+  const K = state && state.kachinuki; if (!K) return null;
+  let id = key;
+  if (key === 'kn_twins') id = K.side === 'B' ? 'kn_banco' : 'kn_punt';
+  const base = AI_STYLES[id]; if (!base) return null;
+  const out = { ...base };
+  if (id === 'kn_unme') {
+    if (K.whim === 1) Object.assign(out, { allinFreq: 0.3, bluffFreq: 0.55, loose: 0.8, sizing: 'polar' });         // ぶん投げ：全部押す・ブラフが増える
+    else if (K.whim === 2) Object.assign(out, { loose: 0.55, station: true, valueFreq: 0.5, bluffFreq: 0.05 });       // のんびり：降りずに付いてくる
+  }
+  // 周ごとに少し鋭く：ミミの大きな賭けを割り引かない（ブラフを見破る）・割に合わなくても付いてくる（降りない）・オールインにも付いてくる
+  const n = Math.max(0, (K.lap || 1) - 1);
+  if (n) {
+    out.respect = Math.max(0, out.respect - 0.03 * n);
+    out.loose = Math.max(0.45, out.loose - 0.03 * n);
+    out.shoveCall = Math.max(0.3, (out.shoveCall || 0.47) - 0.02 * n);
+    out.valueEq = Math.max(0.5, out.valueEq - 0.01 * n);
+  }
+  return out;
+}
+
+// ── セーブ ──
+function knSave() {
+  if (!save.kachinuki || typeof save.kachinuki !== 'object') save.kachinuki = { best: null, totalWins: 0, runs: 0, laps: 0, run: null, prevNight: null };
+  return save.kachinuki;
+}
+const knReachScore = (b) => b ? b.lap * 100 + b.idx : 0;
+const knLabel = (lap, idx) => `${lap}周 ${idx}人目`;
+function knRecordReach(S, lap, idx, wins) {
+  const cur = { lap, idx, wins };
+  if (!S.best || knReachScore(cur) > knReachScore(S.best)) { S.best = { lap, idx, wins }; return true; }
+  if (wins > (S.best.wins || 0)) S.best.wins = wins;
+  return false;
+}
+// 今夜の演目の札・窓に出す要約
+function knInfo() {
+  const S = knSave();
+  return { best: S.best, run: S.run, totalWins: S.totalWins || 0, runs: S.runs || 0, laps: S.laps || 0 };
+}
+
+// ── 卓の始まり・各ハンド・終わり ──
+function knStart(fresh) {
+  const S = knSave();
+  if (fresh || !S.run) {
+    S.run = { lap: 1, idx: 0, chips: KN_START_CHIPS, wins: 0, coins: 0, tableMimi: KN_START_CHIPS, tableOpp: null, at: Date.now() };
+    S.runs = (S.runs || 0) + 1;
+  }
+  // ほろ酔い・泥酔の夜の最中なら、昼にして始める（終わったら元の夜に戻す）。夜の酔いの決まりは使わない
+  if (save.horoyoiMode) { S.prevNight = { d: !!save.deisuiMode }; save.horoyoiMode = false; save.deisuiMode = false; }
+  saveProgress();
+  document.querySelectorAll('.kn-ov').forEach(e => e.remove());
+  knStartTable();
+}
+function knStartTable() {
+  const S = knSave(), run = S.run; if (!run) return;
+  const slot = KN_ORDER[run.idx];
+  const mimi0 = run.tableMimi != null ? run.tableMimi : run.chips;
+  if (mimi0 <= 0) return knFinishRun('lose');
+  const mult = 1 + 0.25 * (run.lap - 1);
+  const oppFull = Math.round(slot.chips * mult / 10) * 10;
+  const profile = slot.serious
+    ? { style: 'rico_serious', bluffTendency: seriousRicoBluff(), aggression: 0.85, foldDiscipline: 0.7, valueBetTendency: 0.8, drawAggression: 0.85, trapTendency: 0.6 }
+    : OPPONENTS[slot.id].profile;
+  const advice = {
+    tika: '「ティカはブラフ少なめ。賭けてきたら本物だよ」', ocho: '「お蝶は大きく張る人。大きい賭けにビビらないで」',
+    twins: '「双子は手ごとに交代。青は慎重、赤は強気だよ」', pico: '「ピコは降りない子。強い手で大きく取っていこ」',
+    unme: '「女神は気まぐれ。急に全部押してきても気にしないで」',
+  }[slot.id];
+  const kn = { lap: run.lap, idx: run.idx, id: slot.id, serious: !!slot.serious, boss: !!slot.boss, bg: knHas(`assets/backgrounds/table_${knImgKey(slot)}.webp`) ? knImgKey(slot) : slot.bg, profile, advice,
+    mimi: Math.max(10, Math.round(mimi0)), opp: run.tableOpp != null ? run.tableOpp : oppFull };
+  run.tableMimi = kn.mimi; run.tableOpp = kn.opp;
+  if (knRecordReach(S, run.lap, run.idx + 1, run.wins)) run.rec = true;
+  saveProgress();
+  if (!battleAssetsGate(slot.id, () => knStartTable())) return;
+  document.querySelectorAll('.kn-ov').forEach(e => e.remove());
+  // 前の卓の窓・読み合いの残りを片付ける（goLobby と同じ物。前の卓の途中から入り直した時に残っていた）
+  if (state && state.readBattle) { try { state.readBattle.inst && state.readBattle.inst.destroy(); } catch (e) { } state.readBattle = null; }
+  document.querySelectorAll('.read-battle-host, .hand-result-overlay, .rebuy-overlay, .dominance-overlay, .dominance-choice-overlay, .tutorial-overlay, .chapter-banner, .personality-reveal-banner, .emote-cutin, .clutch-cutin, .bluff-break-charge, .psych-modal, .rico-cutin, .allin-cutin, .mk-layer').forEach(el => el.remove());
+  if (state && state.psychRoot) { state.psychRoot.remove(); state.psychRoot = null; }
+  if (typeof dismissCutIn === 'function') dismissCutIn();
+  startBattleInternal(slot.id, kn);
+}
+function knAnnounceTable() {
+  const K = state.kachinuki; if (!K) return;
+  const slot = KN_ORDER[K.idx], g = battleGen;
+  setTimeout(() => { if (g === battleGen && state.screen === 'battle') toast(`勝ち抜き戦　${K.lap}周目・${K.idx + 1}人目　${slot.name}`, 'big'); }, 500);
+}
+function knOnHandStart() {
+  const K = state.kachinuki, run = knSave().run;
+  if (run) { run.tableMimi = state.playerChips; run.tableOpp = state.opponentChips; saveProgress(); }
+  if (K.id === 'twins') {
+    K.side = (state.handNo % 2 === 1) ? 'P' : 'B';
+    state.opponentName = K.side === 'P' ? 'プント（青）' : 'バンコ（赤）';
+  }
+  if (K.id === 'unme') { const r = rand(); K.whim = state.handNo === 1 ? 0 : r < 0.12 ? 1 : r < 0.25 ? 2 : 0; }
+}
+// 1戦が終わった（本編の endBattle から）
+function knEndTable() {
+  const K = state.kachinuki, S = knSave(), run = S.run;
+  const slot = KN_ORDER[K.idx];
+  const won = state.playerChips > state.opponentChips;
+  const bonus = Math.max(0, state.readBattleBonus || 0);
+  if (!run) { goLobby(); return; }
+  if (!won) {
+    if (bonus) { save.coins += bonus; run.coins = (run.coins || 0) + bonus; }
+    return knFinishRun('lose', { slot, bonus });
+  }
+  const coin = 100 * K.lap + bonus;
+  run.wins++; S.totalWins = (S.totalWins || 0) + 1;
+  let lapClear = false, lapCoin = 0;
+  const clearedLap = run.lap;
+  run.chips = state.playerChips; run.tableMimi = run.chips; run.tableOpp = null;
+  if (run.idx >= KN_ORDER.length - 1) { lapClear = true; lapCoin = 1000 * run.lap; run.lap++; run.idx = 0; S.laps = (S.laps || 0) + 1; }
+  else run.idx++;
+  save.coins += coin + lapCoin; run.coins = (run.coins || 0) + coin + lapCoin;
+  const newRec = knRecordReach(S, run.lap, run.idx + 1, run.wins);
+  if (newRec) run.rec = true;
+  saveProgress();
+  knShowInterlude({ slot, coin, bonus, lapClear, lapCoin, clearedLap, newRec });
+}
+const knStageEl = () => document.getElementById('stage') || document.body;
+const knThumb = (slot, cur) => `<i class="kn-th${cur ? ' is-cur' : ''}" style="background-image:url('${knArt(slot)}')" title="${slot.name}"></i>`;
+// 勝った後：次の卓の案内
+function knShowInterlude(r) {
+  const S = knSave(), run = S.run, next = KN_ORDER[run.idx];
+  const mult = 1 + 0.25 * (run.lap - 1), oppChips = Math.round(next.chips * mult / 10) * 10;
+  const ante = ANTE_LEVELS[Math.min(ANTE_LEVELS.length - 1, Math.min(3, run.lap - 1))];
+  if (isSfxOn()) { try { mpSfx(r.lapClear ? 'bigwin' : 'milestone'); } catch (e) { } }
+  const say = knResultSay(r.slot, true);
+  const ov = document.createElement('div');
+  ov.className = 'bc-host kn-ov kn-inter';
+  ov.innerHTML = `<section class="kn-card" role="dialog" aria-modal="true" aria-label="勝ち抜き戦">
+    <div class="kn-fig" style="background-image:url('${knArt(next)}')"></div>
+    <div class="kn-body">
+      <small class="kn-k">勝ち抜き戦　${run.lap}周目${r.lapClear ? '（1周クリアで相手が強くなった）' : ''}</small>
+      <b class="kn-h">${r.lapClear ? `${r.clearedLap}周目クリア！` : `${r.slot.name}に勝った！`}</b>
+      ${say ? `<p class="kn-say"><i>${r.slot.name}</i>「${say}」</p>` : ''}
+      <ul class="kn-rows">
+        <li>獲得 <b>＋${r.coin + r.lapCoin}</b> コイン${r.lapClear ? `（1周ボーナス＋${r.lapCoin}）` : ''}${r.bonus ? `（リーディング＋${r.bonus}を含む）` : ''}</li>
+        <li>ミミのチップ <b>${run.chips}</b>（このまま持ち越し）</li>
+        <li>連勝 <b>${run.wins}</b> 人${r.newRec ? '　<em>最高記録！</em>' : ''}</li>
+      </ul>
+      <div class="kn-next"><i>次の相手 ${run.idx + 1}/${KN_ORDER.length}</i><b>${next.name}</b><span>${next.blurb}</span><span>相手の手持ち ${oppChips}・参加費 ${ante}から</span></div>
+      <div class="kn-btns"><button type="button" class="btn btn-primary" data-kn="next">次の卓へ ›</button><button type="button" class="btn btn-secondary" data-kn="quit">ここでやめる</button></div>
+    </div></section>`;
+  ov.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-kn]'); if (!b) return;
+    if (b.dataset.kn === 'next') { b.disabled = true; knStartTable(); }
+    else if (b.dataset.kn === 'quit') knQuitNow();
+  });
+  knStageEl().appendChild(ov);
+}
+// 終わり（負け・やめる）。記録に残してから、結果の画面を出す
+function knFinishRun(reason, extra) {
+  const S = knSave(), run = S.run;
+  const slot = (extra && extra.slot) || (run ? KN_ORDER[run.idx] : KN_ORDER[0]);
+  const lap = run ? run.lap : 1, idx = run ? run.idx + 1 : 1, wins = run ? run.wins : 0, coins = run ? (run.coins || 0) : 0, chips = run ? run.chips : 0;
+  if (run) knRecordReach(S, lap, idx, wins);
+  const newRec = !!(run && run.rec);
+  S.run = null;
+  if (S.prevNight) { save.horoyoiMode = true; save.deisuiMode = !!S.prevNight.d; S.prevNight = null; }   // 夜の最中に入った人は、元の夜へ戻す
+  saveProgress();
+  knShowEnd({ reason, slot, lap, idx, wins, coins, chips, newRec });
+}
+function knShowEnd(r) {
+  const S = knSave();
+  const say = r.reason === 'lose' ? knResultSay(r.slot, false) : '';
+  const ov = document.createElement('div');
+  ov.className = 'bc-host kn-ov kn-end';
+  ov.innerHTML = `<section class="kn-card" role="dialog" aria-modal="true" aria-label="勝ち抜き戦の結果">
+    <div class="kn-fig" style="background-image:url('${knArt(r.slot)}')"></div>
+    <div class="kn-body">
+      <small class="kn-k">勝ち抜き戦　${r.reason === 'lose' ? 'チップが尽きた' : 'ここでやめた'}</small>
+      <b class="kn-h">${knLabel(r.lap, r.idx)}で終わり</b>
+      ${say ? `<p class="kn-say"><i>${r.slot.name}</i>「${say}」</p>` : ''}
+      <ul class="kn-rows">
+        <li>今回 <b>${r.wins}</b> 人に勝った　コイン <b>＋${r.coins}</b></li>
+        <li>最高記録 <b>${S.best ? knLabel(S.best.lap, S.best.idx) : '—'}</b>${r.newRec ? '　<em>記録更新！</em>' : ''}</li>
+        <li>通算 <b>${S.totalWins || 0}</b> 人撃破・挑戦 <b>${S.runs || 0}</b> 回</li>
+      </ul>
+      <div class="kn-btns"><button type="button" class="btn btn-primary" data-kn="again">もう一度挑戦</button><button type="button" class="btn btn-secondary" data-kn="home">ホームへ</button></div>
+    </div></section>`;
+  ov.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-kn]'); if (!b) return;
+    if (b.dataset.kn === 'again') { b.disabled = true; knStart(true); }
+    else if (b.dataset.kn === 'home') { ov.remove(); if (state.screen !== 'lobby') goLobby(); else render(); }
+  });
+  knStageEl().appendChild(ov);
+  if (isSfxOn()) { try { mpSfx(r.newRec ? 'bigwin' : 'lose'); } catch (e) { } }
+}
+// 卓から「やめる」（対戦をやめる確認の窓）。やめたら今回は終わり、記録は残る
+function knQuitConfirm() {
+  const K = state.kachinuki, run = knSave().run;
+  showConfirm({ title: '勝ち抜き戦をやめる？', body: `いまの卓（${K.lap}周 ${K.idx + 1}人目）はここで終わり。\n今回の記録（${run ? run.wins : 0}人に勝った）は残るよ。続きからはできない。\n（ブラウザを閉じただけなら、続きから遊べる）`, ok: 'やめて記録へ', cancel: '続ける', danger: true })
+    .then(yes => { if (yes) knQuitNow(); });
+}
+function knQuitNow() {
+  document.querySelectorAll('.kn-ov').forEach(e => e.remove());
+  const S = knSave(), run = S.run;
+  const slot = run ? KN_ORDER[run.idx] : KN_ORDER[0];
+  if (state.screen !== 'lobby') goLobby();
+  knFinishRun('quit', { slot });
+}
+// 今夜の演目から開く窓：最高記録・続きから・最初から
+function knOpenWindow() {
+  document.querySelectorAll('.kn-ov').forEach(e => e.remove());
+  const S = knSave(), run = S.run, best = S.best;
+  const cur = run ? KN_ORDER[run.idx] : null;
+  const ov = document.createElement('div');
+  ov.className = 'bc-host kn-ov kn-win';
+  ov.innerHTML = `<section class="kn-card kn-card-w" role="dialog" aria-modal="true" aria-label="勝ち抜き戦">
+    <header><b>勝ち抜き戦</b><button type="button" data-kn="close">閉じる</button></header>
+    <p class="kn-lead">今までの全員と、1対1で連戦。チップは持ち越し。尽きるまで何周できるか。</p>
+    <div class="kn-roster">${KN_ORDER.map((s, i) => knThumb(s, run && i === run.idx)).join('')}</div>
+    <div class="kn-rec"><span>最高記録 <b>${best ? knLabel(best.lap, best.idx) : 'まだ無い'}</b></span><span>通算 <b>${S.totalWins || 0}</b> 人撃破</span><span>挑戦 <b>${S.runs || 0}</b> 回</span></div>
+    <ul class="kn-rules"><li>最初のチップは${KN_START_CHIPS}。勝ったら、残りのまま次の卓へ</li><li>11人で1周。周を重ねるごとに、相手の手持ちと参加費が上がる</li><li>1人に勝つごとにコイン（100×周）、1周ごとにボーナス（1000×周）</li></ul>
+    ${run ? `<p class="kn-resume">続きがあります：<b>${knLabel(run.lap, run.idx + 1)}　${cur.name}</b>　チップ <b>${Math.round(run.tableMimi != null ? run.tableMimi : run.chips)}</b></p>` : ''}
+    <div class="kn-btns">${run
+      ? '<button type="button" class="btn btn-primary" data-kn="resume">続きから</button><button type="button" class="btn btn-secondary" data-kn="fresh">最初から</button>'
+      : '<button type="button" class="btn btn-primary" data-kn="fresh">始める</button>'}</div>
+  </section>`;
+  ov.addEventListener('click', async (e) => {
+    if (e.target === ov) { ov.remove(); return; }
+    const b = e.target.closest('[data-kn]'); if (!b) return;
+    const k = b.dataset.kn;
+    if (k === 'close') ov.remove();
+    else if (k === 'resume') knStart(false);
+    else if (k === 'fresh') {
+      if (run && !(await showConfirm({ title: '最初からやり直す？', body: '今の続き（' + knLabel(run.lap, run.idx + 1) + '）は消えて、1周目のリコ先輩から始まるよ。\n記録は残る。', ok: '最初から', cancel: 'やめる', danger: true }))) return;
+      knStart(true);
+    }
+  });
+  knStageEl().appendChild(ov);
+}
+
+// 見た目（この節だけで完結。文字の大きさは type-roles.css の役目の変数）
+(function knInjectStyle() {
+  const st = document.createElement('style');
+  st.id = 'kn-style';
+  // 専用の卓の背景（assets/backgrounds/table_<id>.webp）がある相手だけ、本編の相手別の背景と同じ重ね方で結線する
+  const tableCss = [...KN_ART_KEYS].filter(k => knHas(`assets/backgrounds/table_${k}.webp`)).map(k => `body[data-opp-bg="${k}"] .bg-poker { background-size: cover, cover, cover; background-position: center, center, center; background-repeat: no-repeat, no-repeat, no-repeat; background-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 0%, rgba(29, 8, 14,0.45) 80%), url('assets/backgrounds/table_${k}.webp'), url('assets/backgrounds/poker_table_bg.webp'); }`).join(' ');
+  st.textContent = tableCss + `
+#stage > .kn-ov { display: grid; place-items: center; padding: calc(var(--u) * 8) max(var(--safe-x, 0px), calc(var(--u) * 12)); z-index: 9800; background: rgba(4,1,2,.9); }
+.kn-card { position: relative; display: flex; gap: 14px; width: min(100%, 720px); max-height: 100%; overflow: hidden auto; padding: 12px 16px; color: #f6ecd2; background: linear-gradient(180deg, #4d0f15, #22060a); border: 1px solid #b8923f; outline: 1px solid rgba(217,178,105,.3); outline-offset: -5px; border-radius: 2px; box-shadow: 0 8px 40px rgba(0,0,0,.7); box-sizing: border-box; }
+.kn-card-w { flex-direction: column; gap: 8px; width: min(100%, 640px); }
+.kn-card header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.kn-card header b { font-size: var(--r-mission, 18px); color: #efcd82; letter-spacing: .06em; }
+.kn-card header button { min-height: 36px; padding: 0 12px; font-size: var(--r-btn2, 15px); color: #f6ecd2; background: rgba(20,5,7,.9); border: 1px solid #b8923f; border-radius: 2px; }
+.kn-lead { margin: 0; font-size: var(--r-body, 15px); line-height: 1.45; }
+.kn-roster { display: flex; gap: 4px; }
+.kn-th { flex: 1 1 0; min-width: 0; aspect-ratio: 3 / 4; max-height: 64px; background: #1a0508 50% 0 / cover no-repeat; border: 1px solid rgba(217,178,105,.5); -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
+.kn-th.is-cur { border-color: #efcd82; box-shadow: 0 0 10px rgba(239,205,130,.8); }
+.kn-rec { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: var(--r-body, 15px); }
+.kn-rec b, .kn-rows b, .kn-resume b { color: #efcd82; font-weight: 800; }
+.kn-rules { margin: 0; padding-left: 1.2em; font-size: var(--r-note, 14px); line-height: 1.45; color: #e8dcc0; }
+.kn-resume { margin: 0; font-size: var(--r-body, 15px); }
+.kn-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.kn-btns .btn { min-height: 44px; padding: 0 18px; font-size: var(--r-btn2, 15px); }
+.kn-fig { flex: 0 0 34%; min-height: 200px; background: #1a0508 50% 0 / cover no-repeat; -webkit-mask-image: linear-gradient(90deg, #000 78%, transparent); mask-image: linear-gradient(90deg, #000 78%, transparent); }
+.kn-body { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.kn-k { font-size: var(--r-note, 14px); color: #d9b269; letter-spacing: .05em; }
+.kn-h { font-size: var(--r-mission, 18px); line-height: 1.25; color: #efcd82; }
+.kn-say { margin: 0; font-size: var(--r-speech, 15px); line-height: 1.4; }
+.kn-say i { font-style: normal; font-weight: 800; color: #efcd82; margin-right: .4em; }
+.kn-rows { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; font-size: var(--r-body, 15px); line-height: 1.4; }
+.kn-rows em { font-style: normal; font-weight: 800; color: #2a1608; background: #efcd82; padding: 0 6px; }
+.kn-next { display: flex; flex-direction: column; gap: 1px; padding: 6px 10px; background: rgba(0,0,0,.35); border-left: 3px solid #efcd82; font-size: var(--r-note, 14px); line-height: 1.4; }
+.kn-next i { font-style: normal; color: #d9b269; }
+.kn-next b { font-size: var(--r-body, 15px); color: #fff; }
+@media (max-height: 420px) { .kn-card { gap: 10px; padding: 8px 12px; } .kn-fig { min-height: 120px; } .kn-th { max-height: 44px; } .kn-btns .btn { min-height: 40px; } }
+`;
+  document.head.appendChild(st);
+})();
 
 save = loadProgress();
 state = defaultState();
