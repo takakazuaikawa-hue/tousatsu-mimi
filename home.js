@@ -313,7 +313,7 @@ function openHomeDialog(overlay, audio = false) {
   overlay.addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.preventDefault(); close(); }
     if (e.key !== 'Tab') return;
-    const list = [...overlay.querySelectorAll('button,input')], first = list[0], last = list.at(-1);
+    const list = [...overlay.querySelectorAll('button,input')], first = list[0], last = list[list.length - 1];
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });

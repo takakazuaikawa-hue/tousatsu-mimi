@@ -9918,6 +9918,7 @@ function onAction(e) {
   if (/^baccarat-/.test(action || '')) { if (window.BaccaratUI) BaccaratUI.onAction(action, data, e); return; }   // クリア後のおまけ「バカラ」
   switch (action) {
     case 'start':
+      if (a2hsBeforeStart(() => { if (save.clearedStages.length === 0 && !save.introPlayed) startIntroHand(); else goLobby(); })) break;
       // P2: 初回起動（未クリア＆体験ハンド未消化）はロビーではなく体験ハンドへ直行
       if (save.clearedStages.length === 0 && !save.introPlayed) { startIntroHand(); }
       else { goLobby(); }
@@ -15365,9 +15366,15 @@ function linkifyGlossary(body, selfTerm) {
   let result = body;
   for (const { alias, idx } of allAliases) {
     // 既にリンク化された箇所は再リンクしない（簡易：data-target属性を含むタグ内は触らない）
-    const re = new RegExp('(?<!<[^>]*?)(?:' + alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![^<]*?>)', '');
-    if (re.test(result)) {
-      result = result.replace(re, `<a class="gl-link" data-glossary-target="${glossaryId('', idx)}">${alias}</a>`);
+    // タグの外の文字だけで最初の1つを置き換える（後ろ読みの正規表現は iOS 16.3 以前で動かず、用語集が開けなかった）
+    const parts = result.split(/(<[^>]*>)/);
+    for (let k = 0; k < parts.length; k++) {
+      if (k % 2 === 1) continue;
+      const at = parts[k].indexOf(alias);
+      if (at < 0) continue;
+      parts[k] = parts[k].slice(0, at) + `<a class="gl-link" data-glossary-target="${glossaryId('', idx)}">${alias}</a>` + parts[k].slice(at + alias.length);
+      result = parts.join('');
+      break;
     }
   }
   return result;
@@ -16336,15 +16343,14 @@ async function introShowdown(gen) {
   state.opponentSpeech = '「……見せ合い。いくよ」';
   render();
   await introWait(600); if (!introAlive(gen)) return null;
-  state.opponentRevealed = true;
-  if (state.__dealSeen) state.__dealSeen.opp = 0;
-  mpSfx('flip');
   const pEv = evaluateHand([...state.playerHand, ...state.community]);
   const oEv = evaluateHand([...state.opponentHand, ...state.community]);
   if (oEv.score >= pEv.score) console.error('[研修] 台本では勝つはずのハンドで勝っていない', state.introHandNo);
+  // めくるのは勝敗と同時（11/22 勝ち負けより先に相手の札と役が見えていた）
+  state.opponentRevealed = true;
+  if (state.__dealSeen) state.__dealSeen.opp = 0;
+  mpSfx('flip');
   state.opponentSpeech = `相手の役：${oEv.name}`;
-  render();
-  await introWait(900); if (!introAlive(gen)) return null;
   state.sdHighlight = new Set((pEv.bestFive || []).map(cardKey));
   setMimiExpression('win');
   setOpponentExpression('defeat');
@@ -20177,10 +20183,8 @@ function showdown() {
 
   battleTimeout(() => {
     if (!alive()) return;
-    state.opponentRevealed = true;
-    state.__dealSeen.opp = 0;
-    state.opponentSpeech = `相手の役：${oEv.name}`;
-    mpSfx('flip');
+    // 11/22 ユーザー「勝ち負けの表示より前に相手の手札と役が見えてしまっている」→ ここでは伏せたまま溜め、めくるのは勝敗と同時
+    state.opponentSpeech = pick(['「……せーの」', '「いくよ……」', '「……どうかな」']);
     render();
     if (T.tense) { document.body.classList.add('is-tease-reach'); startTeaseHeartbeat('reach'); }
     // 接戦 or オールイン：息をのむ顔で固定し、専用の勝負カットインを差し込む
@@ -20195,6 +20199,10 @@ function showdown() {
     if (!alive()) return;
     stopTeaseHeartbeat();
     document.body.classList.remove('is-tease-reach');
+    state.opponentRevealed = true;
+    state.__dealSeen.opp = 0;
+    state.opponentSpeech = `相手の役：${oEv.name}`;
+    mpSfx('flip');
     const win5 = winner === 'player' ? pEv.bestFive : winner === 'opponent' ? oEv.bestFive : [...pEv.bestFive, ...oEv.bestFive];
     state.sdHighlight = new Set((win5 || []).map(cardKey));
     if (winner === 'player') state.mimiThought = `「${pEv.name}……勝った！」`;
@@ -22890,7 +22898,7 @@ async function requestGameFullscreen() {
 // 起動して最初のタイトルで1回出す（「今後は出さない」を押すまで、開くたびに1回）。タイトル右上と設定の「全画面で遊ぶ」からいつでも開ける
 const SHARE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7.5 7.5L12 3l4.5 4.5"/><path d="M8 10H5.5v10.5h13V10H16"/></svg>';
 const ADD_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M12 8.5v7M8.5 12h7"/></svg>';
-function showIosFullscreenHelp(auto) {
+function showIosFullscreenHelp(auto, onClose) {
   if (document.querySelector('.ios-help-modal')) return;
   const modal = document.createElement('div');
   modal.className = 'ios-help-modal a2hs';
@@ -22909,18 +22917,24 @@ function showIosFullscreenHelp(auto) {
       </div>
     </div>`;
   document.body.appendChild(modal);
-  const close = () => modal.remove();
+  let closed = false;
+  const close = () => { if (closed) return; closed = true; modal.remove(); if (onClose) setTimeout(onClose, 0); };
   modal.querySelector('.ios-help-close').addEventListener('click', close);
   const nv = modal.querySelector('.a2hs-never');
   if (nv) nv.addEventListener('click', () => { try { localStorage.setItem('mimi-a2hs-never', '1'); } catch (_) {} close(); });
   modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
 }
 // iPhone の Safari で開いている時だけ、最初のタイトルで1回出す
-function maybeAutoA2hsHelp() {
-  if (!IS_IPHONE || IS_STANDALONE || maybeAutoA2hsHelp.done) return;
-  try { if (localStorage.getItem('mimi-a2hs-never') === '1') return; } catch (_) {}
-  maybeAutoA2hsHelp.done = true;
-  setTimeout(() => { if (document.querySelector('.title-screen')) showIosFullscreenHelp(true); }, 1800);   // ロゴとボタンが出てから
+// 11/22 不具合の報告：「はじめるを何回押しても起動しない」「すぐ閉じてしまう」。タイトルの表示から1.8秒で自動に出していた案内が、
+// 読み込み中や押した直後にかぶさり、はじめるの位置が案内の何もない所になって押しても進まず、外を押すと閉じていた。
+// → 自動では出さない。iPhone の Safari では「はじめる／続きから」を押した時に1回だけ挟み、「このまま遊ぶ」で本当に始める
+function maybeAutoA2hsHelp() {}
+function a2hsBeforeStart(go) {
+  let never = false; try { never = localStorage.getItem('mimi-a2hs-never') === '1'; } catch (_) {}
+  if (!IS_IPHONE || IS_STANDALONE || never || a2hsBeforeStart.done) return false;
+  a2hsBeforeStart.done = true;
+  showIosFullscreenHelp(true, go);
+  return true;
 }
 // 全画面にできる端末（Android・iPad）は、タイトルの「はじめる／続きから」とホームの「今夜の卓へ」を押した時に、そのまま全画面にする（押した瞬間でないと許されない）
 function wantsFullscreenNudge() { return isMobile() && !IS_STANDALONE && !isFullscreen() && fullscreenSupported() && !window.MIMI_LOCAL; }
