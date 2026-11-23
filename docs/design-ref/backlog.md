@@ -199,6 +199,6 @@
 
 - 11/22 済（20261122i〜k）：初回にはじめるが効かない（iPhone の全画面の案内のかぶさり）・古い iOS の書き方・見せ合いで札が勝敗より先に見える・セリナの途中の場面2の脚（写真集の直した版へ）・女神バカラとファイブポーカーの整理（ユーザー承認）。残り：iPhone の実機確認。セリナの幕間（毛布の絵）のミミの脚は直さない（ユーザー決定）。
 
-- 11/22 夜明けの一枚絵の候補：assets/_source_png/kachinuki/kn_dawn2.png・kn_dawn4.png（3回は断られた）。選んでもらったら tools/keycut.mjs bg で assets/backgrounds/deisui/dawn.jpg 相当にし、game.js の STORY_ART.deisui_dawn を差し替える。勝ち抜き戦は配信済み（20261122m・専用の絵 20261122n）。勝った後の窓の絵が次の相手になっている件は未対応。
+- 夜明けの一枚絵：済（11/24 配信 20261124a）。窓辺で朝日の後光・衣装なしで胸元は光の版（元 assets/_source_png/kachinuki/dawn6/kn_dawnD6A2.png）を assets/backgrounds/deisui/dawn.webp に。ほかの候補（開いた版・シーツ版・光の版 C/E）は _source_png/kachinuki/dawn3・dawn4・dawn6。勝ち抜き戦は配信済み（20261122m・専用の絵 20261122n）。勝った後の窓の絵は 20261123e で倒した相手の絵に直し済み。
 
 - 11/23 動作環境を決めた（docs/design-ref/spec-requirements.md、販売ページ文案に反映）。残り：iPhone の実機（XS/XR 級と13）で遊び→ホームの出入りを確かめる。
