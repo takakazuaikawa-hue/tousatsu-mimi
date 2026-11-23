@@ -23621,6 +23621,7 @@ const knStageEl = () => document.getElementById('stage') || document.body;
 const knPortrait = (slot) => slot.serious ? 'assets/characters/rico_serious.webp' : `assets/characters/${knImgKey(slot)}_cutin_smug.webp`;
 const knThumb = (slot, cur) => `<i class="kn-th${cur ? ' is-cur' : ''}" style="background-image:url('${knArt(slot)}')" title="${slot.name}"></i>`;
 // 勝った後：次の卓の案内
+// 11/23 「〇〇に勝った！」の窓なのに次の相手の絵が出ていた → 絵は倒した相手。次の相手は下の札で名前と説明を出す
 function knShowInterlude(r) {
   const S = knSave(), run = S.run, next = KN_ORDER[run.idx];
   const nextStake = knStake(run.lap, run.idx);
@@ -23629,7 +23630,7 @@ function knShowInterlude(r) {
   const ov = document.createElement('div');
   ov.className = 'bc-host kn-ov kn-inter';
   ov.innerHTML = `<section class="kn-card" role="dialog" aria-modal="true" aria-label="勝ち抜き戦">
-    <div class="kn-fig" style="background-image:url('${knArt(next)}')"></div>
+    <div class="kn-fig" style="background-image:url('${knArt(r.slot)}')"></div>
     <div class="kn-body">
       <small class="kn-k">勝ち抜き戦　${run.lap}周目${r.lapClear ? '（1周クリアで相手が強くなった）' : ''}</small>
       <b class="kn-h">${r.lapClear ? `${r.clearedLap}周目クリア！` : `${r.slot.name}に勝った！`}</b>
