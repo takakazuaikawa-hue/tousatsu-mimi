@@ -108,6 +108,9 @@
     pick(re) { return ALL.filter(u => re.test(u)); },
     size(urls) { return (urls || []).reduce((a, u) => a + (MAN[u] || 0), 0); },
     stats() { const s = { queued: 0, loading: 0, ready: 0, error: 0 }; for (const e of entries.values()) s[e.state]++; return s; },
+    // 検査用：展開して手元に持っている絵の量（幅×高さ×4 バイトの合計）と、手元の動画の本数（iPhone のメモリの見積もり 11/23）
+    held() { let px = 0, n = 0, v = 0; for (const e of entries.values()) { if (e.img && e.img.naturalWidth) { px += e.img.naturalWidth * e.img.naturalHeight; n++; } if (e.blobUrl) v++; } return { imgs: n, mb: Math.round(px * 4 / 1048576), videos: v, entries: entries.size }; },
+    heldList() { return [...entries.values()].filter(e => e.img && e.img.naturalWidth).map(e => [e.url.replace('assets/', ''), e.img.naturalWidth + 'x' + e.img.naturalHeight, Math.round(e.img.naturalWidth * e.img.naturalHeight * 4 / 1048576 * 10) / 10]).sort((a, b) => b[2] - a[2]); },
   };
 
   // ---------- 場面ごとの組 ----------

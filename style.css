@@ -21529,3 +21529,15 @@ html.is-compact .minipoker-overlay .mp-char-name { letter-spacing: 0; }
 .deisui-fin-in i { font-style: normal; font-family: "Noto Sans JP", sans-serif; font-size: calc(var(--r-note) / var(--game-scale, 1)); color: #c9a97a; opacity: 0; transition: opacity .8s ease 2.4s; animation: deisuiFinBlink 2.4s ease-in-out 3s infinite; }
 .deisui-fin.show .deisui-fin-in > * { opacity: 1; transform: none; }
 @keyframes deisuiFinBlink { 50% { opacity: .45; } }
+
+/* 11/23 メモリ（iPhone で落ちる件）：ホームの漂う光の粒は、タッチの端末では出さない。画面の 2 倍の高さの層を動かし続け、重ねの合成（screen）で周りの部品まで別の面に押し上げていた */
+@media (pointer: coarse) { .h15-dust { display: none !important; } }
+
+/* 11/23 メモリ：交換所の動きが終わった後も「動いている途中」として GPU の面を持ち続け、重なる札や列まで別の面に押し上げていた（97 面）。入りの動きは終わったら面を手放す・スマホは呼吸を止める */
+.shop-screen.v3 .sh3-model-in { animation-fill-mode: backwards; }
+@media (pointer: coarse) { .shop-screen.v3 .sh3-grano { animation: none; } }
+
+/* 11/23 メモリ：札の中の絵・名前・飾りがそれぞれ別の面になっていた（札28枚×3）。札の中で描き切らせて1枚の面にまとめる */
+.shop-screen.v3 .sh3-card { contain: paint; isolation: isolate; }
+/* 11/23 メモリ：ホームの部品の入りの動き（13個）が終わった後も、動いている途中として GPU の面を持ち続けていた。終わったら面を手放す */
+.h15-en { animation-fill-mode: backwards; }

@@ -7481,9 +7481,11 @@ function shop3UnlockWho(item) {
   if (st.startsWith('h:')) return 'ほろ酔いの' + ((OPPONENTS[st.slice(2)] || {}).name || '');
   return st === 'rico_tutorial' ? 'リコ先輩' : ((OPPONENTS[st] && OPPONENTS[st].name) || '');
 }
+// 札の絵は小さい版（assets/characters/thumb/）を使う（11/23 メモリ：札は 80px ほどなのに 1400px の絵を十数枚展開していた）。大きく見せる所は原寸
+const shop3Thumb = (src) => { const t = src && src.replace(/\/([^/]+)$/, '/thumb/$1'); return t && window.ASSET_MANIFEST && window.ASSET_MANIFEST[t] ? t : src; };
 function shop3Face(item, art) {
-  if (art.type === 'figure') return `<span class="sh3-face is-figure" style="background-image:url('${art.src}')"></span>`;
-  if (art.type === 'scene')  return `<span class="sh3-face is-scene" style="background-image:url('${art.src}')">${art.big ? `<em class="sh3-count">${art.big}</em>` : ''}</span>`;
+  if (art.type === 'figure') return `<span class="sh3-face is-figure" style="background-image:url('${shop3Thumb(art.src)}')"></span>`;
+  if (art.type === 'scene')  return `<span class="sh3-face is-scene" style="background-image:url('${shop3Thumb(art.src)}')">${art.big ? `<em class="sh3-count">${art.big}</em>` : ''}</span>`;
   if (art.type === 'stack') {
     const chips = ['chip_red', 'chip_gold', 'chip_white', 'chip_blue', 'chip_gold'];
     const piles = Array.from({ length: art.piles }, (_, p) => `<i class="sh3-pile" style="--p:${p};--h:${4 + ((p * 3) % 4)}">${Array.from({ length: 4 + ((p * 3) % 4) }, (_, k) => `<b style="--k:${k};background-image:url('assets/ui/${chips[p]}.webp')"></b>`).join('')}</i>`).join('');
@@ -7600,7 +7602,12 @@ function shop3RenderRow(deal) {
     shop3.sel = first ? first.id : null;
   }
   row.innerHTML = sorted.map((it, k) => shop3CardHTML(it, k)).join('');
-  if (deal) { row.scrollLeft = 0; row.classList.remove('is-deal'); void row.offsetWidth; row.classList.add('is-deal'); }
+  if (deal) {
+    row.scrollLeft = 0; row.classList.remove('is-deal'); void row.offsetWidth; row.classList.add('is-deal');
+    // 11/23 メモリ：配り終えたら印を外す（付けたままだと幅 5000px の札の列全体と札1枚ずつが GPU の別の面になり、交換所だけで 170MB 増えていた）
+    const n = row.querySelectorAll('.sh3-card').length; clearTimeout(row.__dealT);
+    row.__dealT = setTimeout(() => row.classList.remove('is-deal'), 1400 + n * 60);
+  }
   row.querySelectorAll('.sh3-card').forEach(shop3BindCard);
   shop3Select(shop3.sel, false);
   // 2026-11-01 選んでいる品を棚の真ん中に見せる（外部の批評：棚は先頭に戻り、選ばれている品が画面の外にあって、何を買う欄か分からなかった）
@@ -7689,7 +7696,7 @@ function shop3GroupUrls(gid) {
   shop3Items(gid).forEach(it => {
     if (!shop3Visible(it.id)) return;
     const a = shop3Art(it);
-    if (a.src) out.add(a.src);
+    if (a.src) out.add(shop3Thumb(a.src));
     if (a.type === 'stack') ['chip_red', 'chip_gold', 'chip_white', 'chip_blue'].forEach(c => out.add(`assets/ui/${c}.webp`));
   });
   return [...out];
@@ -7713,7 +7720,9 @@ function shop3AssetsGate(again) {
 // ロビーにいる間に、交換所の土台と最初の棚を裏で読んでおく（残りの棚はダウンロードだけ）
 function warmShop() {
   const MA = window.MimiAssets; if (!MA || !save) return;
-  MA.warm([...shop3BaseUrls(), ...shop3GroupUrls(shop3OpeningGroup())], { set: 'shop' });
+  // 11/23 メモリの見直し（iPhone 13 で落ちないか）：ホームにいる間はダウンロードだけにして、展開して抱えない。
+  // 以前は土台と最初の棚（衣装の絵 1400px×16 枚など）を展開したまま持ち、ホームだけで約 90MB を使っていた。入る時は shop3AssetsGate がそろえる
+  MA.warm([...shop3BaseUrls(), ...shop3GroupUrls(shop3OpeningGroup())], { set: 'shop', light: true });
   MA.warm(SHOP3_GROUPS.flatMap(g => shop3GroupUrls(g.id)), { set: 'shop', light: true });
 }
 function bindShop() {
@@ -11276,7 +11285,10 @@ function goLobby() {
   document.body.dataset.oppBg = ''; // 相手別テーブル背景を解除
   document.body.classList.remove('is-danger'); stopDangerHeartbeat(); // ピンチ演出も画面離脱で必ず解除
   state.screen = 'lobby';
-  warmNextBattle();
+  // 11/23 メモリ（ホームへ戻る時に落ちる）：前の卓・交換所の絵を手放してからホームを描き、次の卓の先読みはホームが描き終わってから。
+  //   以前は卓の絵を持ったままホームを描き直し、同時に次の卓の絵も展開して、戻る瞬間に山ができていた
+  { const MA = window.MimiAssets; if (MA) { if (__battleAssetsOpp) { MA.release('battle:' + __battleAssetsOpp); __battleAssetsOpp = null; } MA.release('shop'); MA.release('allstar'); } }
+  { const g = battleGen; setTimeout(() => { if (g === battleGen && state.screen === 'lobby') warmNextBattle(); }, 2500); }
   // 入室時にリコの衣装を抽選し直す
   state.lobbyRicoIndex = Math.floor(rand() * RICO_OUTFITS.length);
   state.lobbyRicoChangedAt = 'lobby';
@@ -19020,6 +19032,8 @@ const PANYU_OUTFITS = [
   { id: 'bikini', name: '水着' }, { id: 'halter', name: 'ホルター' }, { id: 'white', name: '白サテン' }, { id: 'dress', name: 'ドレス' },
   { id: 'gym', name: 'ジムウェア' }, { id: 'yshirt', name: 'Yシャツ' }, { id: 'tshirt', name: 'Tシャツ' }, { id: 'inner', name: '肌着' }, { id: 'deisui', name: '泥酔' }, { id: 'rise', name: 'ずり上がり水着' },   // 11/07：押すたびに胸の先が布越しにとがる衣装
 ];
+// 11/23 メモリ：網目の iframe（WebGL）は、窓を消す前に中身を空にして、すぐ手放す（消しただけでは後片付けが遅れ、ホームへ戻った直後に山が残った）
+function panyuDrop(el) { if (!el) return; el.querySelectorAll('iframe').forEach(f => { try { f.src = 'about:blank'; } catch (e) { } f.remove(); }); el.remove(); }
 const PANYU_OUTFIT_IMG = { bunny: 'panyu_reach', pajama: 'panyu_pajama_reach', pajama2: 'panyu_pajama2_reach', gothic: 'panyu_gothic_reach', jirai: 'panyu_jirai_reach', vintage: 'panyu_vintage_reach', nurse: 'panyu_nurse_reach', santa: 'panyu_santa_reach', bikini: 'panyu_bikini_reach', halter: 'panyu_halter_reach', white: 'panyu_white_reach', dress: 'panyu_dress_reach', gym: 'panyu_gym_reach', yshirt: 'panyu_yshirt_reach', tshirt: 'panyu_tshirt_reach', inner: 'panyu_inner_reach', deisui: 'panyu_deisui_reach', rise: 'panyu_rise_reach' };
 // 構図違い（2026-11-07）：同じ衣装の別のポーズ。開くたびにどれか1つ（前回と同じ構図は続けない）。'' は元の構図
 // 網目のページでは「衣装@構図」で開く。絵は assets/characters/panyu_<衣装>_<構図>_reach.webp
@@ -19142,7 +19156,7 @@ function showPanyuImmersive() {
   function close() {
     if (closed) return; closed = true;
     window.removeEventListener('message', onMsg); window.removeEventListener('keydown', onKey); clearTimeout(hintT);
-    ov.classList.add('is-out'); setTimeout(() => ov.remove(), 300);
+    ov.classList.add('is-out'); setTimeout(() => panyuDrop(ov), 300);
     if (typeof panyuFreeRefreshLobby === 'function') try { panyuFreeRefreshLobby(); } catch (_) {}
   }
   ov.querySelector('.pzi-x').addEventListener('click', (e) => { e.stopPropagation(); close(); });
@@ -19558,7 +19572,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
       overlay.classList.add('is-done');
       // 卓の中（本気リコ戦の心理バトル）では、以前どおり閉じてから続きへ
       if (!cfg.lobby) {
-        setTimeout(() => { window.removeEventListener('resize', onPanyuResize); overlay.remove(); if (onComplete) onComplete(); }, panyuFaceOk.finish ? 1400 : 900);
+        setTimeout(() => { window.removeEventListener('resize', onPanyuResize); panyuDrop(overlay); if (onComplete) onComplete(); }, panyuFaceOk.finish ? 1400 : 900);
         return;
       }
       // ぱにゅ判定 → ごほうび（倍率つき）→ 当たりの札。以前は画面を閉じてから小さな知らせだけ
@@ -19567,7 +19581,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
       const res = (onComplete && onComplete(roll)) || null;
       const tierClass = 'is-' + roll.id.toLowerCase();
       const hint = roll.id === 'LEG' || roll.id === 'SSR' ? 'is-rainbow' : roll.id === 'SR' ? 'is-gold' : (rand() < 0.25 ? 'is-gold' : 'is-pink'); // 金の光は「もしかして」の予感（外れることもある）
-      const closeAll = () => { window.removeEventListener('resize', onPanyuResize); if (window.stopVoice) stopVoice(); overlay.classList.add('is-out'); setTimeout(() => overlay.remove(), 260); };
+      const closeAll = () => { window.removeEventListener('resize', onPanyuResize); if (window.stopVoice) stopVoice(); overlay.classList.add('is-out'); setTimeout(() => panyuDrop(overlay), 260); };
       const showResult = () => {
         overlay.classList.add('is-revealed', tierClass);
         const dexN = Object.keys(save.panyuDex || {}).length;
@@ -19657,7 +19671,7 @@ function showPanyuClicker(totalTaps, onComplete, cfg = {}) {
     completed = true; physRunning = false;
     window.removeEventListener('resize', onPanyuResize);
     overlay.classList.add('is-out');
-    setTimeout(() => overlay.remove(), 260);
+    setTimeout(() => panyuDrop(overlay), 260);
   });
   // D15：没入モードへ（今回の回はやめて、回数なし・文字なしの画面へ）
   { const ib = overlay.querySelector('.pv2-imm'); if (ib) ib.addEventListener('click', (e) => { e.stopPropagation(); if (completed) return; completed = true; physRunning = false; window.removeEventListener('resize', onPanyuResize); overlay.classList.add('is-out'); setTimeout(() => { overlay.remove(); showPanyuImmersive(); }, 260); }); }
@@ -23666,20 +23680,23 @@ const KN_STYLES = {
   trick:   { name: 'トリックスター', short: 'トリック', en: 'TRICKSTER',  line: 'その札、本当に強いと思った？', note: '弱い札でも相手を降ろして取る' },
   iron:    { name: '鉄壁',           en: 'IRON WALL',  line: '負けない。それが一番強い',     note: '無理をせず降りて、守り抜く' },
   hunter:  { name: 'ハンター',       en: 'HUNTER',     line: '大物だけ、確実に仕留める',     note: '大きなポットを何度も取る' },
-  lucky:   { name: '強運',           en: 'LUCKY',      line: '最後に笑うのは、運のいい子',   note: '追い込まれてからの逆転勝ち' },
+  lucky:   { name: '強運',           en: 'LUCKY',      line: '最後に笑うのは、運のいい子',   note: '降りずに付いていき、見せ合いで勝つ' },
 };
 function knStyleOf(st) {
+  // 11/23 判定の作り直し：遊び方の違う6人の打ち手に本当に遊ばせ（qa/knstylesim.mjs）、打ち手ごとに狙った型が出るように線を決めた
+  //   何でもオールイン→クレイジー／強い時だけ→鉄壁・クレバー／何でも付いていく→強運／はったり好き→トリックスター／堅実→クレバー・ハンター
   if (!st) return 'clever';
   const h = Math.max(1, st.hands), acts = Math.max(1, st.fold + st.call + st.check + st.bet + st.raise + st.allin), wins = Math.max(1, st.sdWin + st.foldWin);
+  const a = st.allin / h, f = st.fold / h, b = (st.bet + st.raise) / acts, c = st.call / acts, sdw = st.sd ? st.sdWin / st.sd : 0.5, bl = st.bluff / wins, big = st.bigPot / wins;
   const sc = {
-    crazy: st.allin / h * 4 + (st.bet + st.raise) / acts * 0.8,
-    trick: st.bluff / wins * 2.2 + st.foldWin / h * 0.6,
-    clever: (st.sd ? st.sdWin / st.sd : 0) * 1.1 + ((st.fold / h > 0.2 && st.fold / h < 0.5) ? 0.25 : 0) - st.allin / h * 1.5,
-    iron: st.fold / h * 1.6 - st.allin / h * 2,
-    hunter: st.bigPot / wins * 1.6 + Math.min(1, st.maxPot / 6000) * 0.4,
-    lucky: st.comeback * 0.7 + ((st.fastest && st.fastest <= 4) ? 0.4 : 0),
+    crazy: (a - 0.12) / 0.1 + (b - 0.3) / 0.3 * (st.allin ? 1 : 0.3),
+    iron: (f - 0.3) / 0.12 - a / 0.06,
+    trick: (bl - 0.12) / 0.1 + (st.foldWin / h - 0.2) / 0.15,
+    hunter: (big - 0.25) / 0.15 + (b - 0.25) / 0.3,
+    clever: (sdw - 0.55) / 0.15 + (f >= 0.12 && f <= 0.45 ? 0.8 : -0.8) - a / 0.08,
+    lucky: (c - 0.25) / 0.15 + (0.1 - f) / 0.1 + st.comeback * 1.5 - b / 0.3,
   };
-  return Object.keys(sc).sort((a, b) => sc[b] - sc[a])[0];
+  return Object.keys(sc).sort((x, y) => sc[y] - sc[x])[0];
 }
 const knStyleArt = (k) => `assets/ui/kn_style_${k}.webp`;
 const knPct = (a, b) => b ? Math.round(a * 100 / b) + '%' : '—';
