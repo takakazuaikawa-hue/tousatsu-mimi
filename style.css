@@ -21541,3 +21541,6 @@ html.is-compact .minipoker-overlay .mp-char-name { letter-spacing: 0; }
 .shop-screen.v3 .sh3-card { contain: paint; isolation: isolate; }
 /* 11/23 メモリ：ホームの部品の入りの動き（13個）が終わった後も、動いている途中として GPU の面を持ち続けていた。終わったら面を手放す */
 .h15-en { animation-fill-mode: backwards; }
+/* 11/23 メモリ：交換所の背景2枚（1672px）にかけていた色の効果（filter）は、GPU に別の描き先を作らせていた。色は絵そのものに焼き込んだ（shop_counter*.webp）。入りの動きのぼかし（blur）もやめて、透明度と位置だけで */
+.shop-screen.v3 .sh3-bg, .shop-screen.v3 .sh3-fg { filter: none; }
+@keyframes sh3ModelIn { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }

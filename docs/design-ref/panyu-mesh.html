@@ -251,7 +251,8 @@
   const sagOf = (i) => STRAP ? (popped[i] ? 1.12 : 0.9) + (popped[2] ? 0.03 : 0) : lvNow().sag;
   const FOCUS = PZ.focus;          // 寄せる時の注目点（胸の少し上）
   const cv = document.getElementById('gl');
-  const gl = cv.getContext('webgl', { antialias: true, alpha: false, premultipliedAlpha: false });
+  // 11/23 メモリ：スマホはふちのなめらかさ（antialias）を切る。全画面の描き先が約4倍になり、iPhone で落ちる原因になりうる
+  const gl = cv.getContext('webgl', { antialias: !(window.matchMedia && matchMedia('(pointer: coarse)').matches), alpha: false, premultipliedAlpha: false });
   if (!gl) { if (EMBED) tell({ t: 'nogl' }); else document.getElementById('err').style.display = 'grid'; return; }
   if (gl) { gl.__texs = []; const mk = gl.createTexture.bind(gl); gl.createTexture = () => { const t = mk(); gl.__texs.push(t); return t; }; }
   // 窓を閉じた時（iframe が外れた時）に GPU の絵と描画の部品を手放す（2026-11-07 メモリの調査）

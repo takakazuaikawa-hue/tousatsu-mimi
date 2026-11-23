@@ -179,7 +179,8 @@
     function resize() {
       const r = host.getBoundingClientRect();                       // 画面上の実寸（舞台の縮みを含む）
       const cssW = host.offsetWidth || 1, cssH = host.offsetHeight || 1;
-      const dpr = Math.min(2.5, window.devicePixelRatio || 1);
+      // 11/23 メモリ：スマホ（画素の細かい iPhone）は描き先を 2 倍までに（2.5 倍だと全画面の描き先だけで約 30MB）
+      const dpr = Math.min(matchMedia('(pointer: coarse)').matches ? 2 : 2.5, window.devicePixelRatio || 1);
       canvas.width = Math.max(1, Math.round(r.width * dpr)); canvas.height = Math.max(1, Math.round(r.height * dpr));
       canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
       gl.viewport(0, 0, canvas.width, canvas.height);
