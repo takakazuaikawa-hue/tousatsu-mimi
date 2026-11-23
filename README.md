@@ -45,6 +45,12 @@ python -m http.server 8000
 - **闘札大逆転**：ボス戦の必殺演出
 - **エピソード演出**：各話開始に長文ラノベ風タイトルカード
 
+## 動作環境
+
+- スマホ（横画面専用）：iPhone は iOS 16 以降・iPhone XS / XR 以降（11 以降推奨）、Android 10 以降・メモリ 4GB 以上・Chrome 105 以降、iPadOS 16 以降
+- パソコンのブラウザ：Chrome / Edge 105 以降、Safari 16 以降、Firefox 121 以降、メモリ 4GB 以上（8GB 推奨）
+- 決め方・測った値・測り直し方：docs/design-ref/spec-requirements.md
+
 ## 技術構成
 
 - HTML / CSS / JavaScript（バニラ、フレームワーク不使用）

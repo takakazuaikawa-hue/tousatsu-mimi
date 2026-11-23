@@ -18805,7 +18805,7 @@ body.home-active #fullscreen-btn-group { display: none !important; }
 .home-stage.h15-sm .h15-frame .h15-sub { font-size: 24px; top: -16px; }
 .home-stage.h15-sm .h15-frame.has-long-name .h15-lbl { font-size: 25px; letter-spacing: .04em; }
 .home-stage .h15-prize span + span::before { content: ' '; }
-.home-stage.h15-sm .h15-ticket .h15-lbl { top: 50%; }
+.home-stage.h15-sm .h15-ticket .h15-lbl { top: 48.5%; }
 .home-stage.h15-sm .h15-ticket .h15-prize { left: 10%; right: 10%; top: 64%; line-height: 1.12; letter-spacing: 0; }
 .home-stage.h15-sm .h15-prize span { display: block; }
 .home-stage.h15-sm .h15-prize span + span::before { content: none; }
@@ -21544,3 +21544,18 @@ html.is-compact .minipoker-overlay .mp-char-name { letter-spacing: 0; }
 /* 11/23 メモリ：交換所の背景2枚（1672px）にかけていた色の効果（filter）は、GPU に別の描き先を作らせていた。色は絵そのものに焼き込んだ（shop_counter*.webp）。入りの動きのぼかし（blur）もやめて、透明度と位置だけで */
 .shop-screen.v3 .sh3-bg, .shop-screen.v3 .sh3-fg { filter: none; }
 @keyframes sh3ModelIn { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+
+/* 11/23 ユーザー「今夜の演目の文字が上にずれてない？」「ヴェルベットの文字も入りきってない」：
+   札の文字は、冠の飾りを除いた内側の板の真ん中に下げる。額の名前は長い名前（6字）で字間を詰め、欄を広げて収める */
+.home-stage.h15-sm .h15-ticket .h15-lbl { top: 50%; }
+.home-stage.h15-sm .h15-ticket .h15-prize { top: 60%; }
+.home-stage.h15-sm .h15-frame.has-long-name .h15-lbl { left: 13%; right: 13%; letter-spacing: 0; white-space: nowrap; }
+html.is-compact .home-stage.h15-sm .h15-frame.has-long-name .h15-lbl { font-size: calc(15px / var(--game-scale, 1)); }
+/* 11/23 小さいスマホ（667幅）で、ホームの台詞が欄より広くなり、台帳と札に重なっていた。欄に合う大きさ（15px）に */
+@media (max-width: 719px) {
+  html.is-compact .home-stage.h15-sm .h15-ledger { scale: .74; transform-origin: 0 100%; }
+  html.is-compact .home-stage.h15-sm .h15-ticket { scale: .84; transform-origin: 100% 100%; }
+  html.is-compact .home-stage.h15-sm .h15-dialogue { left: 31.5%; right: 37%; font-size: calc(14px / var(--game-scale, 1)); letter-spacing: -.05em; padding-left: 2px; padding-right: 2px; }
+}
+/* 額の長い名前（ヴェルベット）は額の板の内側に収まる大きさに */
+html.is-compact .home-stage.h15-sm .h15-frame.has-long-name .h15-lbl { font-size: calc(14px / var(--game-scale, 1)) !important; letter-spacing: -.06em; transform: translateY(-50%) scaleX(.84); }
