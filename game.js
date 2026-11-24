@@ -4067,7 +4067,7 @@ const STORY_WHO = {
 };
 // 場面ごとの背景（無ければ assets/episodes/<場面>.webp）。行に art があれば、その行で絵を切り替える
 const STORY_ART = {
-  deisui_dawn: 'assets/backgrounds/deisui/dawn.webp',   // 泥酔の夜の締め（夜明け）。11/24 ユーザーが選んだ S-寝1：天蓋のベッドでうつ伏せのリコの肩にミミが寄りかかって二人とも眠る
+  deisui_dawn: 'assets/backgrounds/deisui/dawn.webp',   // 泥酔の夜の締め（夜明け）。11/25 ユーザーが選んだ W-起1：台詞に合わせた目覚め。リコがこめかみを押さえてにやにや、ミミが真っ赤でシーツで口元を隠す
   // 泥酔の夜の途中の場面：一枚絵がそろうまでは、ほろ酔いの途中の絵を仮に使う
   dmid1_rico_tutorial: 'assets/backgrounds/deisui/rico_1.jpg', dmid2_rico_tutorial: 'assets/backgrounds/deisui/rico_2.jpg', dmid1_polka: 'assets/backgrounds/deisui/polka_1.jpg', dmid2_polka: 'assets/backgrounds/deisui/polka_2.jpg', dmid1_selina: 'assets/backgrounds/deisui/selina_1.jpg', dmid2_selina: 'assets/backgrounds/deisui/selina_2.jpg', dmid1_grano: 'assets/backgrounds/deisui/grano_1.jpg', dmid2_grano: 'assets/backgrounds/deisui/grano_2.jpg', dmid1_velvet: 'assets/backgrounds/deisui/velvet_1.jpg', dmid2_velvet: 'assets/backgrounds/deisui/velvet_2.jpg', struggle_velvet: 'assets/episodes/struggle_velvet_a.webp', hmid_velvet: 'assets/backgrounds/horoyoi/velvet_7.jpg',
   // 11/09 Codex 17回目「全員に途中の事件を」：夜の一枚絵6枚から1枚を途中に回す（幕間の後には出さない・コレクションには残る）
