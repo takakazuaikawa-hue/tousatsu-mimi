@@ -202,4 +202,4 @@
 - 泥酔の夜の締め（おしまいの画面）：済（11/26 配信 20261126a）。ユーザー「ちゃんとデザインした方がいい」→寄せ集め・AIの額・台帳の流用はどれも不評→「このゲームの外側を想像して」→ユーザー決定「鐘とカードを合わせる」：泥酔の夜のホームの部屋で五夜の灯りⅠ〜Ⅴ→針がⅥ（朝六時）で鐘→同じ部屋の朝の絵（assets/ui/home/stage-dawn_deisui.webp）→元社畜ミミのタイムカードに「6:00 退勤」とリコの承認印。音は手元の Stable Audio Open Small（鐘B・打刻3、assets/sfx/dawnbell_3・punch_7）。設計 docs/design-ref/deisui-fin-design.md
 - 夜明けの一枚絵：済（11/25 ユーザーが W-起1 を選択・配信 20261125a）。台詞（あたまいた〜い／写真は見なかったことに／消してくださいぃ）に合わせた目覚め版（元 assets/_source_png/kachinuki/dawn15/kn_wakeX3a.png）を。その前の S-寝1（眠る版、dawn14/kn_bedM1a.png）は台詞と合わないので替えた。先に自分で選んで入れた D-光（dawn6/kn_dawnD6A2.png）は外した。 assets/backgrounds/deisui/dawn.webp に。ほかの候補（開いた版・シーツ版・光の版 C/E）は _source_png/kachinuki/dawn3・dawn4・dawn6。勝ち抜き戦は配信済み（20261122m・専用の絵 20261122n）。勝った後の窓の絵は 20261123e で倒した相手の絵に直し済み。
 
-- 11/23 動作環境を決めた（docs/design-ref/spec-requirements.md、販売ページ文案に反映）。残り：iPhone の実機（XS/XR 級と13）で遊び→ホームの出入りを確かめる。
+- 11/23 動作環境を決めた（docs/design-ref/spec-requirements.md、販売ページ文案に反映）。iPhone の実機での確認は、実機が無いので行わない（11/26 ユーザー「iPhoneの実機はないのでその工程はいりません」）。検査ブラウザの iPhone の大きさと、CPU を遅くした測り方（qa/perfprobe.mjs・qa/memwatch.mjs）で代える。
