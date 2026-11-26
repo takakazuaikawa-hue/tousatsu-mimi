@@ -7,7 +7,7 @@
 ・イラスト・シナリオ：ChatGPT（OpenAI）
 ・ムービー（動く一枚絵）：Higgsfield
 ・音楽：Suno
-・効果音：Stable Audio（Stability AI）
+・効果音：Stable Audio、Stable Audio Open Small（Stability AI。Stable Audio Open Small は Stability AI Community License）
 ・キャラクターボイス：Irodori-TTS（Aratako）で合成
 ・プログラム：Claude Code（Anthropic）
 

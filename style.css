@@ -21517,18 +21517,61 @@ html.is-compact .minipoker-overlay .mp-paytable > .mp-pt tr { line-height: 1.3; 
 html.is-compact .minipoker-overlay .mp-paytable > .mp-pt-title { padding-bottom: 2px; }
 html.is-compact .minipoker-overlay .mp-char-name { letter-spacing: 0; }
 
-/* ---- 泥酔の夜の締め：題字「泥酔の夜 おしまい」（11/22 区切りが無いと言われた）。夜明けの会話の後に出し、押すと昼のホームへ ---- */
-.deisui-fin { position: absolute; inset: 0; z-index: 95; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 60%, rgba(255,190,120,.28), rgba(20,8,10,.92) 70%), #140a0c; opacity: 0; transition: opacity .9s ease; cursor: pointer; }
+/* ---- 泥酔の夜の締め：六時の鐘と退勤のタイムカード（11/26 ユーザー決定「鐘とカードを合わせる」。docs/design-ref/deisui-fin-design.md の 5） ----
+   ① 夜明けの一枚絵 → 泥酔の夜のホームの部屋（大時計）。文字盤の Ⅰ〜Ⅴ に五夜の灯りが順に入る
+   ② 針が Ⅵ＝朝六時に届いて鐘、同じ部屋の朝の絵へ ③ ミミのタイムカードが置かれる ④「6:00 退勤」の打刻とリコ先輩の承認印
+   動きは終わったら素の指定（終わりの形）に戻る作り（fill を持たない／backwards）。舞台の絵は会話の間に先読み */
+.deisui-fin { position: absolute; top: 0; bottom: 0; left: calc(-1 * max(var(--bleed, 0px), 480px)); right: calc(-1 * max(var(--bleed, 0px), 480px)); z-index: 95; overflow: hidden; background: #0d0608; cursor: pointer; opacity: 0; transition: opacity .5s ease; }
 .deisui-fin.show { opacity: 1; }
 .deisui-fin.out { opacity: 0; transition-duration: .5s; }
-.deisui-fin-in { display: grid; justify-items: center; gap: 14px; text-align: center; font-family: "Shippori Mincho B1", "Yu Mincho", serif; color: #f3d48a; text-shadow: 0 2px 10px #000; }
-.deisui-fin-in small { font-size: calc(var(--r-label) / var(--game-scale, 1)); letter-spacing: .4em; color: #e9c9a0; opacity: 0; transition: opacity .8s ease .4s; }
-.deisui-fin-in b { font-size: 112px; font-weight: 800; letter-spacing: .3em; padding-left: .3em; line-height: 1.1; opacity: 0; transform: translateY(10px); transition: opacity 1s ease .7s, transform 1.2s ease .7s; }
-.deisui-fin-in span { font-size: 56px; letter-spacing: .6em; padding-left: .6em; color: #fff1d6; opacity: 0; transition: opacity 1s ease 1.4s; }
-.deisui-fin-in p { margin: 18px 0 0; font-family: "Noto Sans JP", sans-serif; font-size: calc(var(--r-body) / var(--game-scale, 1)); color: #f3e6d0; word-break: keep-all; opacity: 0; transition: opacity .8s ease 2s; }
-.deisui-fin-in i { font-style: normal; font-family: "Noto Sans JP", sans-serif; font-size: calc(var(--r-note) / var(--game-scale, 1)); color: #c9a97a; opacity: 0; transition: opacity .8s ease 2.4s; animation: deisuiFinBlink 2.4s ease-in-out 3s infinite; }
-.deisui-fin.show .deisui-fin-in > * { opacity: 1; transform: none; }
-@keyframes deisuiFinBlink { 50% { opacity: .45; } }
+.dfin-bg, .dfin-ui { position: absolute; top: 0; bottom: 0; left: calc(max(var(--bleed, 0px), 480px) - var(--bleed, 0px)); right: calc(max(var(--bleed, 0px), 480px) - var(--bleed, 0px)); }
+.dfin-bg { overflow: hidden; container-type: size; }
+/* 舞台の絵（1672x941）を cover で置き、灯りは絵の上の割合で */
+.dfin-art { position: absolute; left: 50%; top: 50%; width: max(100cqw, calc(100cqh * 1672 / 941)); aspect-ratio: 1672 / 941; transform: translate(-50%, -50%); }
+.dfin-art > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.dfin-morning { animation: dfinIn 1.4s ease 2.5s backwards; }
+.dfin-cg { position: absolute; inset: 0; background: url(assets/backgrounds/deisui/dawn.webp) center / cover no-repeat; opacity: 0; animation: dfinOut 1s ease .3s backwards; }
+.dfin-lamp { position: absolute; width: 6.5%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, rgba(255,236,170,.95) 0, rgba(255,196,96,.6) 26%, rgba(255,170,60,0) 66%); opacity: 0; animation: dfinLamp 2.4s ease calc(.7s + var(--i) * .26s); }
+.dfin-lamp.is-six { width: 22%; background: radial-gradient(circle, rgba(255,246,214,1) 0, rgba(255,214,140,.75) 20%, rgba(255,180,90,0) 64%); animation: dfinSix 1.8s ease 2.4s; }
+/* タイムカード */
+.dfin-card { position: absolute; left: 46px; top: 50%; width: calc(25 * var(--r-body) / var(--game-scale, 1)); transform: translateY(-50%) rotate(-3deg); padding: 0 24px 12px; color: #3a2416; font-family: "Noto Sans JP", sans-serif;
+  background: radial-gradient(ellipse at 20% 10%, rgba(255,255,255,.55), rgba(255,255,255,0) 60%), radial-gradient(ellipse at 90% 100%, rgba(150,105,50,.22), rgba(150,105,50,0) 55%), linear-gradient(180deg, #f7efdc, #ecdfc2);
+  border: 1px solid #b89a6a; box-shadow: 0 2px 0 #c9ad7c, 0 20px 44px rgba(0,0,0,.65), inset 0 0 36px rgba(140,100,50,.2);
+  animation: dfinCard .8s cubic-bezier(.2,.8,.2,1) 3.3s backwards, dfinJolt .26s ease 4.7s; }
+.dfin-card::before { content: ""; position: absolute; top: 0; bottom: 0; left: calc(24px + 4.2 * var(--r-body) / var(--game-scale, 1)); width: 1px; background: rgba(176,32,44,.45); }
+.dfin-card header { position: relative; display: flex; align-items: center; gap: 14px; margin: 0 -24px 10px; padding: 10px 22px; background: linear-gradient(180deg, #7a1220, #4a0710); border-bottom: 2px solid #c9a35a; }
+.dfin-crest { width: 50px; height: 50px; flex: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+.dfin-card header small { display: block; font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: calc(var(--r-note) / var(--game-scale, 1)); letter-spacing: .16em; color: #e8c478; white-space: nowrap; }
+.dfin-card header b { display: block; font-family: "Shippori Mincho B1", serif; font-weight: 800; font-size: calc(var(--r-mission) / var(--game-scale, 1)); color: #f6dfa6; letter-spacing: .12em; line-height: 1.25; }
+.dfin-card header em { font-style: normal; margin-left: .9em; color: #fff1d6; }
+.dfin-name { position: relative; margin: 0 0 6px; font-size: calc(var(--r-label) / var(--game-scale, 1)); font-weight: 700; }
+.dfin-name span, .dfin-k { font-weight: 500; color: #8a6440; margin-right: .5em; }
+.dfin-name span + span { margin-left: 1.4em; }
+.dfin-name span:first-child { display: inline-block; width: 4.6em; }
+.dfin-rows { position: relative; list-style: none; margin: 0; padding: 0; border-top: 1px solid #c4a676; }
+.dfin-rows li { display: grid; grid-template-columns: 4.2em 1fr auto; align-items: center; padding: .1em 0; border-bottom: 1px dashed #c4a676; font-size: calc(var(--r-body) / var(--game-scale, 1)); }
+.dfin-n { font-family: "Shippori Mincho B1", serif; font-weight: 700; color: #6a4628; }
+.dfin-who { padding-left: 1em; font-weight: 700; }
+.dfin-win { width: 1.45em; height: 1.45em; font-size: .9em; margin-right: .4em; display: grid; place-items: center; border: 2px solid #b8182a; border-radius: 50%; color: #b8182a; font-family: "Shippori Mincho B1", serif; font-weight: 800; transform: rotate(-10deg); opacity: .88; animation: dfinStamp .32s cubic-bezier(.3,1.6,.5,1) calc(3.9s + var(--i) * .12s) backwards; }
+.dfin-out { position: relative; display: flex; align-items: center; gap: 14px; margin: 6px 0 4px; font-size: calc(var(--r-body) / var(--game-scale, 1)); }
+.dfin-out .dfin-k { width: 3.65em; margin: 0; font-family: "Shippori Mincho B1", serif; font-weight: 800; color: #6a4628; font-size: 1.15em; }
+.dfin-time { padding-left: .4em; font-family: "Bebas Neue", "Barlow Condensed", sans-serif; font-weight: 400; font-size: 2.5em; line-height: 1; letter-spacing: .04em; color: #a3162a; text-shadow: .03em .02em 0 rgba(163,22,42,.35), 0 0 1px rgba(163,22,42,.6); transform: rotate(-1.5deg); animation: dfinPrint .28s steps(2) 4.7s backwards; }
+.dfin-ok { margin-left: auto; display: flex; align-items: center; gap: 8px; color: #8a6440; font-size: calc(var(--r-note) / var(--game-scale, 1)); }
+.dfin-ok small { font-size: inherit; writing-mode: vertical-rl; letter-spacing: .2em; }
+.dfin-hanko { width: 2.5em; height: 2.5em; display: grid; place-items: center; border: 2px solid #b8182a; border-radius: 50%; color: #b8182a; font-style: normal; font-family: "Shippori Mincho B1", serif; font-weight: 800; font-size: calc(var(--r-body) / var(--game-scale, 1)); writing-mode: vertical-rl; letter-spacing: .05em; transform: rotate(12deg); opacity: .9; animation: dfinStamp .34s cubic-bezier(.3,1.6,.5,1) 5.2s backwards; }
+.dfin-card footer { position: relative; border-top: 1px solid #c4a676; padding-top: 6px; display: grid; gap: 2px; font-size: calc(var(--r-note) / var(--game-scale, 1)); animation: dfinIn .5s ease 5.5s backwards; }
+.dfin-card footer p { margin: 0; }
+.dfin-card footer .dfin-k { display: inline-block; width: 5em; font-weight: 700; color: #8a2a2a; }
+.dfin-go { position: absolute; right: 40px; bottom: 26px; font-style: normal; font-family: "Noto Sans JP", sans-serif; font-weight: 700; font-size: calc(var(--r-label) / var(--game-scale, 1)); color: #ffe9b0; letter-spacing: .08em; text-shadow: 0 1px 4px #000, 0 0 12px rgba(0,0,0,.8); animation: dfinIn .6s ease 5.8s backwards, deisuiFinBlink 2.4s ease-in-out 6.6s infinite; }
+@keyframes dfinIn { from { opacity: 0; } }
+@keyframes dfinOut { from { opacity: 1; } }
+@keyframes dfinLamp { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); } 18% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes dfinSix { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); } 25% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); } }
+@keyframes dfinCard { from { opacity: 0; transform: translate(-60px, calc(-50% + 40px)) rotate(-10deg); } }
+@keyframes dfinJolt { 40% { transform: translate(2px, calc(-50% + 5px)) rotate(-2.6deg); } }
+@keyframes dfinStamp { from { opacity: 0; transform: scale(2.3) rotate(-24deg); } }
+@keyframes dfinPrint { from { opacity: 0; } }
+@keyframes deisuiFinBlink { 50% { opacity: .55; } }
 
 /* 11/23 メモリ（iPhone で落ちる件）：ホームの漂う光の粒は、タッチの端末では出さない。画面の 2 倍の高さの層を動かし続け、重ねの合成（screen）で周りの部品まで別の面に押し上げていた */
 @media (pointer: coarse) { .h15-dust { display: none !important; } }

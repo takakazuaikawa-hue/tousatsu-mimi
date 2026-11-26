@@ -43,7 +43,8 @@
 
 ### 効果音（Stable Audio／Stability AI）
 - [ ] 2026-11-21 に stableaudio.com の無料プランで作った効果音（卓の音5つ）。無料プランでも商用可と理解している＝生成した時点と今の利用規約の画面の写しを残す。
-- [ ] クレジットに「効果音：Stable Audio（Stability AI）」と書いた（ゲーム内・LICENSES.txt）。規約が求める表記があれば合わせる。
+- [ ] クレジットに「効果音：Stable Audio・Stable Audio Open Small（Stability AI）」と書いた（ゲーム内・LICENSES.txt）。規約が求める表記があれば合わせる。
+- [ ] 2026-11-26 から、泥酔の夜の締めの鐘と打刻は手元の **Stable Audio Open Small**（Stability AI Community License）で作った。規約（Section III）：商用に使うなら年商100万ドル未満でも **Stability AI への登録が必要**（https://stability.ai/community-license）。生成物は利用者の物（IV(c)(iii)）。「Powered by Stability AI」の表示（IV(a)）はモデルや派生物を配布・提供する時の決まりで、生成した音だけを入れる場合に要るかは読み方が分かれる→売る前に登録し、表示も入れるか決める（D4）。
 
 ### 音楽（Suno）
 - [ ] **曲を生成した時点のプランで商用利用が認められているか**（無料プランで作った曲は商用に使えない、という条件が一般にある。Suno の規約で、生成日・プランごとの扱いを確認）。曲ごとに「いつ・どのプランで作ったか」を一覧にする。

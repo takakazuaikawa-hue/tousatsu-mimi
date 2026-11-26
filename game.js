@@ -10767,7 +10767,7 @@ const CREDITS = [
   { type: 'line', role: 'イラスト・シナリオ', text: 'ChatGPT' },
   { type: 'line', role: 'ムービー', text: 'Higgsfield' },
   { type: 'line', role: '音楽', text: 'Suno' },
-  { type: 'line', role: '効果音', text: 'Stable Audio（Stability AI）' },
+  { type: 'line', role: '効果音', text: 'Stable Audio・Stable Audio Open Small（Stability AI）' },
   { type: 'line', role: 'キャラクターボイス', text: 'Irodori-TTS（Aratako）' },
   { type: 'line', role: 'プログラム', text: 'Claude Code' },
   { type: 'gap' },
@@ -12524,7 +12524,8 @@ function mpAudioCtx() {
 }
 // 2026-11-21 録った効果音（Stable Audio で作りユーザーが聞き比べで選んだ5つ）。読めるまでは今までの合成の音で鳴らす
 // 大きさは qa/sfxloud.mjs で、同じ場面の合成の音（チェック・コールの平均 -29dB・山 -16dB）にそろえた（11/21 ユーザー「音量めちゃくちゃ大事」）
-const MP_SAMPLES = { deal: ['deal_6', 0.375], bet: ['bet_7', 0.32], fold: ['fold_2', 0.4], pot: ['pot_2', 0.48], pour: ['pour_1', 0.3, 2.8] };   // [ファイル, 大きさ, 鳴らす長さの上限（秒）]
+const MP_SAMPLES = { deal: ['deal_6', 0.375], bet: ['bet_7', 0.32], fold: ['fold_2', 0.4], pot: ['pot_2', 0.48], pour: ['pour_1', 0.3, 2.8], bell: ['dawnbell_3', 1.25], punch: ['punch_7', 1.28] };   // [ファイル, 大きさ, 鳴らす長さの上限（秒）]
+// 11/26 泥酔の夜の締めの鐘（bell）と打刻（punch）は手元の Stable Audio Open Small で作り、ユーザーが聞き比べで選んだ（鐘B・打刻3）。ファイルは平均 -27dB／-29dB にそろえてあり、ゲームの中で測って（qa/sfxloud.mjs と同じ録り方）鐘 -27dB・打刻 -29dB になる大きさ（ほかの効果音は -29〜-31）
 const _mpBuf = {}; let _mpSamplesAsked = false;
 function mpLoadSamples() {
   if (_mpSamplesAsked || !_mpAudioCtx || typeof fetch !== 'function') return;
@@ -12693,10 +12694,13 @@ function mpSfx(kind) {
   if (save && save.minipoker && save.minipoker.muted) return;
   // SFX全体音量を gain にかけるため、_mpSfxScale をセット
   _mpSfxScale = sfxVolFloat();
-  if ((kind === 'deal' || kind === 'fold' || kind === 'pour' || kind === 'bet') && mpSample(kind)) { if (kind === 'deal') mpSample('deal', 130); return; }
+  if ((kind === 'deal' || kind === 'fold' || kind === 'pour' || kind === 'bet' || kind === 'bell' || kind === 'punch') && mpSample(kind)) { if (kind === 'deal') mpSample('deal', 130); return; }
   switch (kind) {
     case 'clink': case 'gulp': case 'guby': case 'pour': mpDrinkSfx(kind); break;
     case 'tap':       mpTone(720, 0.06, 'square', 0.03); break;
+    // 泥酔の夜の締め（11/26）：夜明けの鐘と、タイムカードの打刻。録った音（MP_SAMPLES）が読めていない時だけ鳴らす合成の音
+    case 'bell':      [[196, .07], [392, .035], [470, .025], [588, .02], [784, .012]].forEach(([f, g]) => mpTone(f, 2.6, 'sine', g, 0.004, 2.4)); break;
+    case 'punch':     mpTone(150, 0.07, 'square', 0.045, 0.001, 0.05); mpTone(80, 0.14, 'triangle', 0.07, 0.001, 0.12, 15); break;
     case 'puni':      mpSweep(520, 260, 0.09, 'sine', 0.06); mpTone(1040, 0.04, 'sine', 0.012, 0.003, 0.03, 10); break;   // 没入モードで触った時の、やわらかい音
     case 'deal':      for (let i = 0; i < 5; i++) mpTone(440 + i*30, 0.05, 'triangle', 0.04, 0.003, 0.03, i * 80); break;
     case 'flip':      mpTone(620, 0.08, 'sine', 0.05); mpTone(880, 0.06, 'triangle', 0.04, 0.005, 0.03, 80); break;
@@ -21375,18 +21379,44 @@ function endBattle() {
 // 勝利リザルトの主ボタン群（次ステージ／再戦／ロビー）のHTMLを組み立てる。
 // 幕間から戻った直後にも使うため、endBattle() 本体から独立させてある（ロジックは元のまま）。
 // 泥酔の夜の締め：夜明けの会話 → 題字「泥酔の夜 おしまい」→ 昼のホームへ（11/22）
+// 11/25 ユーザー「おしまいの画面はそれでいいの？ちゃんとデザインした方がいい」→ 寄せ集めの1回目は「適当」、AI の額の予想図は「借り物感」。
+// 11/26 ホームの台帳の流用も「見たことある」。「このゲームの外側を想像して」→ ユーザー決定「鐘とカードを合わせる」（docs/design-ref/deisui-fin-design.md の 5）：
+// 泥酔の夜のホームの部屋（大時計）で、五夜の灯り Ⅰ〜Ⅴ の先、針が Ⅵ＝朝六時に届いて鐘 → 同じ部屋の朝の絵へ。
+// 元社畜のミミのタイムカード（五夜の勤務・勝）に「6:00 退勤」が打刻され、リコ先輩の承認印。手に入った物は「支給品」、また遊べるは「次回出勤」の欄で
+const DEISUI_FIN_NIGHTS = [['第一夜', 'リコ'], ['第二夜', 'ポルカ'], ['第三夜', 'セリナ'], ['第四夜', 'グラーノ'], ['第五夜', 'ヴェルベット']];
+// 文字盤の Ⅰ〜Ⅵ の位置（舞台の絵 1672x941 の上、home.js の HOME_ART.nums と同じ。Ⅵ は朝の絵で測った）
+const DEISUI_FIN_NUMS = [[1032, 102], [1107, 178], [1135, 280], [1107, 382], [1032, 458], [912, 492]];
+const DEISUI_FIN_IMGS = ['assets/ui/home/stage-empty_deisui.webp', 'assets/ui/home/stage-dawn_deisui.webp', 'assets/ui/emblem_rabbit_gold_s.webp'];
 function playDeisuiDawn() {
   if (document.querySelector('.deisui-fin')) return;
   if (isBgmOn()) playSceneBgm('victory');
+  // 会話の間に先読み（遅れて描かれると興ざめ）
+  DEISUI_FIN_IMGS.forEach(src => { const im = new Image(); im.decoding = 'async'; im.src = src; });
   showStoryScene('deisui_dawn', () => {
     const ov = document.createElement('div');
     ov.className = 'deisui-fin';
-    ov.innerHTML = `<div class="deisui-fin-in"><small>全ての夜を制覇</small><b>泥酔の夜</b><span>おしまい</span><p>夜は、月のボタンの「今夜の演目」から<wbr>いつでもまた遊べます</p><i>タップして昼のホームへ</i></div>`;
+    const lamps = DEISUI_FIN_NUMS.map(([x, y], i) => `<i class="dfin-lamp${i === 5 ? ' is-six' : ''}" style="left:${(x / 16.72).toFixed(2)}%;top:${(y / 9.41).toFixed(2)}%;--i:${i}"></i>`).join('');
+    const rows = DEISUI_FIN_NIGHTS.map(([n, who], i) => `<li style="--i:${i}"><span class="dfin-n">${n}</span><span class="dfin-who">${who}</span><span class="dfin-win">勝</span></li>`).join('');
+    ov.innerHTML = `
+      <div class="dfin-bg"><div class="dfin-art"><img class="dfin-night" src="assets/ui/home/stage-empty_deisui.webp" alt=""><img class="dfin-morning" src="assets/ui/home/stage-dawn_deisui.webp" alt="">${lamps}</div><div class="dfin-cg"></div></div>
+      <div class="dfin-ui">
+        <div class="dfin-card" role="img" aria-label="ミミのタイムカード。泥酔の夜、五夜すべて勝ち。朝6時に退勤">
+          <header><img class="dfin-crest" src="assets/ui/emblem_rabbit_gold_s.webp" alt=""><div><small>GRAND CLOCK CASINO THEATER</small><b>勤務表<em>泥酔の夜</em></b></div></header>
+          <p class="dfin-name"><span>氏名</span>ミミ<span>所属</span>フロア・バニー</p>
+          <ol class="dfin-rows">${rows}</ol>
+          <div class="dfin-out"><span class="dfin-k">退勤</span><b class="dfin-time">6:00</b><span class="dfin-ok"><small>承認</small><i class="dfin-hanko">リコ</i></span></div>
+          <footer><p><span class="dfin-k">支給品</span>写真集・衣装「泥酔」</p><p><span class="dfin-k">次回出勤</span>いつでも（月の「今夜の演目」）</p></footer>
+        </div>
+        <i class="dfin-go">押して昼のホームへ</i>
+      </div>`;
+    // 鐘（針が Ⅵ に届く時）と打刻
+    setTimeout(() => { if (ov.isConnected && typeof mpSfx === 'function') mpSfx('bell'); }, 2500);
+    setTimeout(() => { if (ov.isConnected && typeof mpSfx === 'function') mpSfx('punch'); }, 4700);
     (document.getElementById('stage') || document.body).appendChild(ov);
     requestAnimationFrame(() => ov.classList.add('show'));
     const shownAt = Date.now();
     ov.addEventListener('click', () => {
-      if (Date.now() - shownAt < 1200 || ov.classList.contains('out')) return;
+      if (Date.now() - shownAt < 1500 || ov.classList.contains('out')) return;
       ov.classList.add('out');
       save.deisuiDawnSeen = true; save.deisuiMode = false; save.horoyoiMode = false;
       saveProgress();
