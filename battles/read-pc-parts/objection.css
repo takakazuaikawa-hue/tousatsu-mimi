@@ -1,0 +1,46 @@
+/* ===== つきつける（objection） =====
+   PC だけ（html:not(.is-compact)）。色・形・書体は battles/games/objection.js の CSS と core.css の部品（.mb-ebony .mb-tab）が持つ。ここは並べ方と大きさ。
+   並べ方：左＝ヴェルベットの発言3つ（右の高さに合わせて等分）、右＝証拠4枚を 2x2。zoom は使わない。
+   一番中身が多い状態＝証拠が4枚あるシナリオ（赤い角の札／鏡）で、証拠の「賭け方の記録」を3行とも折り返す長さにして、「つきつける」を3回外した後：
+     信用ゼロの一行（ご褒美のもと 15）と「ブラフと読む／強い手と読む」の2択が出ている（証拠4枚・発言3つ・信用の駒はそのまま残る）。
+   高さの見積もり（遊び本体の予算 約605px）：
+     手順 28 ＋ 手札の行 56 ＋ 説明 21 ＋ 法廷 約335（見出し 33＋行間 8＋証拠 2段 約140×2＋行間 12） ＋ 信用の行 24 ＋ 2択の行 60 ＋ 行間 8×5 ＝ 約564px。
+     法廷の高さは右の証拠で決まり、左の発言3つは同じ高さに等分する（左右の空きが偏らない）。2択が出る前（つきつけるの帯 56px）は約 515px。
+     証拠の記録が長く折り返しても +20px 前後（約585px）で収まる。 */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> .ob-court) { gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-hands { gap: 6px 28px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-hand .card.small { --w: 38px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-who { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-hn { font-size: 14px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-hn.is-strong,
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-hn.is-bluff { font-size: 16px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-sub { margin: 0; font-size: 14px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-court { grid-template-columns: minmax(0, .9fr) 40px minmax(0, 1.1fr); align-items: stretch; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-col { gap: 8px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-colhead { padding: 6px 14px; font-size: 15px; line-height: 1.4; letter-spacing: .1em; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-says { gap: 10px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-say { flex: 1 1 0; display: flex; flex-direction: column; justify-content: center; min-height: 80px; margin: 0; padding: 10px 16px 12px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-say p { font-size: 15px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-say .ob-tag { font-size: 12px; line-height: 1.4; letter-spacing: .14em; background: transparent !important; border: 0 !important; padding: 0 !important; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-evs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-evs > .ob-colhead { grid-column: 1 / -1; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-ev { margin: 0; padding: 12px 14px 10px; min-height: 112px; display: flex; flex-direction: column; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-ev.k-log { background: repeating-linear-gradient(180deg, var(--parch) 0 19px, var(--parch-rule) 19px 20px); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-ev.k-log.is-off { background: repeating-linear-gradient(180deg, #d3c4a3 0 19px, #c6b68f 19px 20px); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-tab { position: static; align-self: flex-start; margin: -12px 0 8px -14px; padding: 1px 12px; font-size: 12px; line-height: 1.6; border-radius: 0 0 2px 0; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-tab em { font-size: 12px; letter-spacing: .08em; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-mini-row { gap: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-ev .card.ob-mini { --w: 32px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-note { margin-top: 6px; font-size: 13px; line-height: 1.5; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-log { gap: 0; font-size: 13px; line-height: 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-log li { grid-template-columns: 56px auto minmax(0, 1fr); gap: 0 6px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-log .st { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-evtext { font-size: 14px; line-height: 1.55; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-stamp { top: -12px; right: 10px; font-size: 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-bar { padding-top: 0; gap: 8px 28px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-cred { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-go { min-width: 260px; min-height: 56px; font-size: 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-go small { font-size: 13px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-ob-decide { align-items: center; gap: 8px 20px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-luck { width: auto; flex: 0 0 auto; font-size: 13px; text-align: right; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .ob-res-extra { font-size: 13px; }

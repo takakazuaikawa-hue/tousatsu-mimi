@@ -1,0 +1,21 @@
+// 曲の入れ替えが重なって行われるかを、ページの中で0.1秒ごとに音量を記録して確かめる（台帳33）。使い方: node qa/bgmfade.mjs
+import { openSession, sleep } from './lib/session.mjs';
+const session = await openSession({ width: 1280, height: 800, speed: 1 });
+const { page } = session;
+const ev = (s) => page.eval(`(() => { ${s} })()`);
+for (let i = 0; i < 60 && !(await page.eval('typeof render === "function" && typeof save === "object"').catch(() => false)); i++) await sleep(500);
+await ev(`save.bgmOn = true; save.sfxOn = true; save.bgmVolume = 50; save.clearedStages = ['rico_tutorial','polka','selina','grano','velvet']; save.firstClearRewardClaimed = save.clearedStages.slice();
+  window.__rec = (label, ms) => new Promise(ok => { const t0 = performance.now(), rows = []; const id = setInterval(() => { const t = performance.now() - t0;
+    rows.push((t / 1000).toFixed(1) + 's  ' + ['lobby-bgm-audio','scene-bgm-audio','scene-bgm-audio-b'].map(k => { const a = document.getElementById(k); return a.paused ? '  -  ' : a.volume.toFixed(2) + ':' + ((a.currentSrc || '').split('/').pop().slice(0, 8)); }).join(' | '));
+    if (t > ms) { clearInterval(id); ok(['== ' + label].concat(rows).join(String.fromCharCode(10))); } }, 100); });
+  return 1;`);
+const run = async (label, code, ms) => { const p = page.eval(`window.__rec(${JSON.stringify(label)}, ${ms})`, 20000); await ev(code + '; return 1;'); console.log(await p); };
+await ev(`playSceneBgm('title'); return 1;`); await sleep(1500);
+await run('タイトル→ロビー', `state.screen = 'lobby'; render(); tryStartLobbyBgm()`, 1500);
+await sleep(1500);
+await run('ロビー→対戦', `startBattle('polka')`, 2500);
+await sleep(1000);
+await run('対戦→勝ちの曲', `playSceneBgm('victory')`, 1500);
+await sleep(1000);
+await run('勝ち→ロビー', `goLobby()`, 1500);
+await session.close();

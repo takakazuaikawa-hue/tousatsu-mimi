@@ -1,0 +1,10 @@
+/* 両案共通：英字の見出しをやめ明朝に。戻るは矢印なしの四角い札 */
+.shop-screen.v2.mk .shop-v2-brand { font-family: "Shippori Mincho B1","Yu Mincho",serif !important; font-size: 15px !important; letter-spacing: .5em !important; color: #d9b269 !important; font-weight: 700; }
+.shop-screen.v2.mk .shop-v2-title { font-family: "Shippori Mincho B1","Yu Mincho",serif !important; font-weight: 800; letter-spacing: .2em; color: #f3e3bd; }
+.shop-screen.v2.mk .shop-v2-coins-label { font-family: "Shippori Mincho B1","Yu Mincho",serif !important; font-size: 13px !important; letter-spacing: .3em !important; color: #d9b269 !important; font-weight: 700; }
+.shop-screen.v2.mk .shop-v2-back { font-family: "Shippori Mincho B1","Yu Mincho",serif; font-weight: 700; letter-spacing: .12em; background: rgba(20,8,10,.75); border: 1px solid #a8823f; border-radius: 0; color: #efcd82; }
+.shop-screen.v2.mk .shop-cat-btn { font-family: "Shippori Mincho B1","Yu Mincho",serif !important; font-weight: 700 !important; letter-spacing: .1em !important; }
+.shop-screen.v2.mk .shop-item-name { font-family: "Shippori Mincho B1","Yu Mincho",serif !important; font-weight: 800 !important; letter-spacing: .04em; color: #f3e3bd !important; }
+.shop-screen.v2.mk .shop-item .btn.btn-primary { font-family: "Shippori Mincho B1","Yu Mincho",serif !important; font-weight: 800 !important; letter-spacing: .14em; }
+html.is-compact .shop-screen.v2.mk .shop-v2-brand { font-size: 24px !important; }
+html.is-compact .shop-screen.v2.mk .shop-v2-coins-label { font-size: 22px !important; }

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>タイトル v2 見本</title>
+<!-- タイトル画面の見本 v2（2026-10-04）。本体には組み込んでいない。1280×800 で見る。
+     卓の見本 v7 と同じ決まりごと：黒の半透明＋細い線、金は大事な1か所だけ、文字は明朝・ゴシック・Barlow Condensed、絵文字・光るグラデーションなし。
+     ロゴは画像ではなく文字組み（明朝）。一枚絵は ?kv= で差し替えて見比べる -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho+B1:wght@600;700;800&display=swap">
+<style>
+  :root {
+    --ink: #0b0809; --line: rgba(243,236,224,.16); --line-strong: rgba(243,236,224,.3);
+    --ivory: #f3ece0; --muted: #a59c90; --gold: #d8b56c; --gold-ink: #1a1206;
+    --num: "Barlow Condensed", "Noto Sans JP", sans-serif; --sans: "Noto Sans JP", sans-serif; --mincho: "Shippori Mincho B1", serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #000; }
+  body { font-family: var(--sans); color: var(--ivory); -webkit-font-smoothing: antialiased; }
+  .stage { position: relative; width: 1280px; height: 800px; overflow: hidden; background: var(--ink); }
+  .kv { position: absolute; inset: 0; background: var(--kv) 68% center / cover no-repeat; }
+  /* 待機ループ：再生が始まったら一枚絵の上にふわっと重ねる。再生できない環境では一枚絵のまま */
+  .kv-motion { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 68% center; opacity: 0; transition: opacity .6s ease; }
+  .kv-motion.is-playing { opacity: 1; }
+  /* 左を暗く沈めてロゴの地にする。下も少し沈めて操作部分を読みやすく */
+  .shade { position: absolute; inset: 0; background:
+      linear-gradient(90deg, rgba(11,8,9,.92) 0%, rgba(11,8,9,.78) 30%, rgba(11,8,9,.2) 52%, rgba(11,8,9,0) 64%),
+      linear-gradient(0deg, rgba(11,8,9,.7) 0%, rgba(11,8,9,0) 26%); }
+
+  .logo { position: absolute; left: 88px; top: 150px; width: 520px; }
+  .kicker { font-family: var(--num); font-weight: 500; font-size: 15px; letter-spacing: .5em; color: var(--gold); }
+  .rule { width: 56px; height: 1px; background: var(--gold); margin: 18px 0 20px; }
+  .name { font-family: var(--mincho); font-weight: 800; color: var(--ivory); line-height: 1.12; letter-spacing: .04em; }
+  .name .s { display: block; font-size: 34px; letter-spacing: .12em; margin-bottom: 6px; }
+  .name .l { display: block; font-size: 54px; white-space: nowrap; }
+  .sub { margin-top: 22px; font-size: 15px; line-height: 1.8; color: var(--muted); letter-spacing: .04em; }
+  .sub em { font-style: normal; color: var(--ivory); }
+
+  .menu { position: absolute; left: 88px; bottom: 96px; width: 340px; display: grid; gap: 10px; }
+  .btn { display: flex; justify-content: space-between; align-items: center; height: 60px; padding: 0 22px; border: 1px solid var(--line-strong); background: rgba(12,9,10,.55); color: var(--ivory); font: inherit; border-radius: 2px; text-align: left; }
+  .btn b { font-size: 18px; font-weight: 700; letter-spacing: .16em; }
+  .btn small { font-family: var(--num); font-size: 14px; letter-spacing: .14em; color: var(--muted); }
+  .btn.primary { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); height: 66px; }
+  .btn.primary small { color: rgba(26,18,6,.7); }
+
+  .foot { position: absolute; left: 88px; right: 48px; bottom: 36px; display: flex; align-items: center; gap: 22px; font-size: 13px; color: var(--muted); letter-spacing: .06em; }
+  .foot b { font-family: var(--num); font-weight: 500; font-size: 15px; color: var(--ivory); letter-spacing: .04em; margin-left: 6px; }
+  .foot .sp { flex: 1; }
+  .foot button { background: none; border: 0; color: var(--muted); font: inherit; letter-spacing: .1em; }
+  .foot .ver { font-family: var(--num); letter-spacing: .14em; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="kv"></div>
+  <video class="kv-motion" muted playsinline loop autoplay preload="auto"></video>
+  <div class="shade"></div>
+
+  <div class="logo">
+    <div class="kicker">TEXAS HOLD'EM POKER</div>
+    <div class="rule"></div>
+    <h1 class="name"><span class="s">ミミの</span><span class="l">テキサスホールデム</span><span class="l">ポーカー</span></h1>
+    <p class="sub">転生したらバニーガールだった私の<br>外れスキル<em>《ぱにゅぱにゅ》</em>だけがレベルアップな件</p>
+  </div>
+
+  <div class="menu">
+    <button class="btn primary"><b>続きから</b><small>STAGE 3 / 4</small></button>
+    <button class="btn"><b>はじめから</b></button>
+  </div>
+
+  <div class="foot">
+    <span>クリア<b>2 / 4</b></span><span>コイン<b>1,200</b></span>
+    <span class="sp"></span>
+    <button>設定</button><button>シェア</button><span class="ver">v1.0</span>
+  </div>
+</div>
+<script>
+  // ?ui=1：絵と動画を外して文字と操作だけ（動画に重ねた確認用の合成に使う）
+  if (new URLSearchParams(location.search).get('ui')) { document.documentElement.style.background = document.body.style.background = 'transparent'; document.querySelector('.stage').style.background = 'transparent'; document.querySelector('.kv').remove(); document.querySelector('.kv-motion').remove(); }
+  // ?kv=<画像のパス> で一枚絵を差し替える（既定は描き直した一枚絵（今は読み込み画面の loading_mimi.webp）。今の絵は ?kv=../../assets/backgrounds/title_bg.webp）
+  const kv = new URLSearchParams(location.search).get('kv') || '../../assets/backgrounds/loading_mimi.webp';
+  const kvEl = document.querySelector('.kv'); if (kvEl) kvEl.style.setProperty('--kv', `url("${kv}")`);
+  const mv = new URLSearchParams(location.search).get('mv') || '../../assets/motion/loading_mimi.mp4';
+  const v = document.querySelector('.kv-motion');
+  if (v) {
+  v.addEventListener('playing', () => v.classList.add('is-playing'), { once: true });
+  v.addEventListener('error', () => v.remove(), { once: true });
+  v.src = mv; const pr = v.play(); if (pr && pr.catch) pr.catch(() => {});
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>alpha scan</title>
+<style>body{margin:0;background:#222;font:12px sans-serif;color:#fff}</style>
+<body>
+<script>
+// 画像1枚を読み込んで、背景抜きの出来を数値にする（qa/alpha/scan.mjs から呼ばれる）
+const MAXSIDE = 1024;
+async function load(url) {
+  const img = new Image(); img.src = url; await img.decode(); return img;
+}
+function bgClass(r, g, b) {
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+  if (g > 140 && g - r > 50 && g - b > 50) return 'green';
+  if (b > 140 && b - r > 60 && b - g > 40) return 'blue';
+  if (r > 200 && b > 200 && g < 90) return 'magenta';
+  if (mn > 235) return 'white';
+  if (mn > 185 && mx - mn < 16) return 'gray';
+  return '';
+}
+async function scanImage(url) {
+  const img = await load(url);
+  const k = Math.min(1, MAXSIDE / Math.max(img.naturalWidth, img.naturalHeight));
+  const W = Math.max(1, Math.round(img.naturalWidth * k)), H = Math.max(1, Math.round(img.naturalHeight * k));
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(img, 0, 0, W, H);
+  const d = cx.getImageData(0, 0, W, H).data;
+  const N = W * H;
+  const A = new Uint8Array(N);
+  let minA = 255, nT = 0, nOpq = 0;
+  for (let i = 0; i < N; i++) { const a = d[i * 4 + 3]; A[i] = a; if (a < minA) minA = a; if (a <= 10) nT++; if (a > 200) nOpq++; }
+  const res = { w: img.naturalWidth, h: img.naturalHeight, scale: k, minAlpha: minA, transparentFrac: nT / N, opaqueFrac: nOpq / N };
+  res.hasAlpha = minA < 250;
+  // 1. 外周2pxの不透明率・四隅
+  let fr = 0, fo = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (x < 2 || y < 2 || x >= W - 2 || y >= H - 2) { fr++; if (A[y * W + x] > 200) fo++; }
+  }
+  res.borderOpaque = fo / fr;
+  const corners = [0, W - 1, (H - 1) * W, N - 1];
+  res.cornersOpaque = corners.filter(i => A[i] > 200).length;
+  const cc = corners.map(i => [d[i * 4], d[i * 4 + 1], d[i * 4 + 2]]);
+  let cd = 0; for (let i = 1; i < 4; i++) for (let c = 0; c < 3; c++) cd = Math.max(cd, Math.abs(cc[i][c] - cc[0][c]));
+  res.cornerSpread = cd; res.cornerColor = cc[0];
+  // 縁の帯（透明から3px以内の、見えている画素）
+  const T = new Uint8Array(N); for (let i = 0; i < N; i++) T[i] = A[i] <= 10 ? 1 : 0;
+  const R = 3, tmp = new Uint8Array(N), dil = new Uint8Array(N);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    let v = 0; for (let dx = -R; dx <= R && !v; dx++) { const xx = x + dx; if (xx >= 0 && xx < W && T[y * W + xx]) v = 1; } tmp[y * W + x] = v;
+  }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    let v = 0; for (let dy = -R; dy <= R && !v; dy++) { const yy = y + dy; if (yy >= 0 && yy < H && tmp[yy * W + x]) v = 1; } dil[y * W + x] = v;
+  }
+  const ring = new Uint8Array(N); let nRing = 0;
+  for (let i = 0; i < N; i++) if (A[i] > 10 && dil[i]) { ring[i] = 1; nRing++; }
+  res.ringCount = nRing;
+  // 内側の色（縁の帯でも透明でもない不透明画素）を 8x8 ブロック平均にする
+  const B = 8, BW = Math.ceil(W / B), BH = Math.ceil(H / B);
+  const bs = new Float32Array(BW * BH * 4);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x; if (A[i] > 230 && !dil[i]) {
+      const b = ((y / B | 0) * BW + (x / B | 0)) * 4; bs[b] += d[i * 4]; bs[b + 1] += d[i * 4 + 1]; bs[b + 2] += d[i * 4 + 2]; bs[b + 3]++;
+    }
+  }
+  const cnt = { green: 0, blue: 0, magenta: 0, white: 0, gray: 0 };
+  let halo = 0, greenFringe = 0, partial = 0;
+  const bad = new Float32Array(BW * BH);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x; if (!ring[i]) continue;
+    const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2];
+    if (A[i] < 200) partial++;
+    const cl = bgClass(r, g, b);
+    let sr = 0, sg = 0, sb = 0, sn = 0;
+    const bx = x / B | 0, by = y / B | 0;
+    for (let oy = -2; oy <= 2; oy++) for (let ox = -2; ox <= 2; ox++) {
+      const xx = bx + ox, yy = by + oy; if (xx < 0 || yy < 0 || xx >= BW || yy >= BH) continue;
+      const q = (yy * BW + xx) * 4; if (bs[q + 3] > 0) { sr += bs[q]; sg += bs[q + 1]; sb += bs[q + 2]; sn += bs[q + 3]; }
+    }
+    let isHalo = false, isGF = false;
+    if (sn > 0) {
+      const lr = sr / sn, lg = sg / sn, lb = sb / sn;
+      const lumR = 0.3 * r + 0.59 * g + 0.11 * b, lumL = 0.3 * lr + 0.59 * lg + 0.11 * lb;
+      if (lumR - lumL > 55) isHalo = true;
+      if ((g - Math.max(r, b)) - (lg - Math.max(lr, lb)) > 35 && g - Math.max(r, b) > 25) isGF = true;
+    }
+    if (cl) cnt[cl]++;
+    if (isHalo) halo++;
+    if (isGF) greenFringe++;
+    if (cl || isHalo || isGF) bad[by * BW + bx]++;
+  }
+  res.ring = { green: cnt.green, blue: cnt.blue, magenta: cnt.magenta, white: cnt.white, gray: cnt.gray, halo, greenFringe, partial };
+  res.ringFrac = {}; for (const kk in res.ring) res.ringFrac[kk] = nRing ? res.ring[kk] / nRing : 0;
+  // ズーム用：問題が最も多い 64x64 領域（元画像座標）
+  let bi = 0, bv = -1;
+  for (let by = 0; by < BH; by++) for (let bx = 0; bx < BW; bx++) {
+    let s = 0; for (let oy = 0; oy < 8; oy++) for (let ox = 0; ox < 8; ox++) { const xx = bx + ox, yy = by + oy; if (xx < BW && yy < BH) s += bad[yy * BW + xx]; }
+    if (s > bv) { bv = s; bi = by * BW + bx; }
+  }
+  const zx = Math.min(Math.max(0, (bi % BW) * B), Math.max(0, W - 64)), zy = Math.min(Math.max(0, (bi / BW | 0) * B), Math.max(0, H - 64));
+  res.zoom = { x: Math.round(zx / k), y: Math.round(zy / k), size: Math.round(64 / k), score: bv };
+  // 島：a>40 の連結成分（8近傍）
+  const lab = new Int32Array(N); let nl = 0; const areas = [];
+  const stack = new Int32Array(N);
+  for (let s = 0; s < N; s++) {
+    if (A[s] <= 40 || lab[s]) continue;
+    nl++; let sp = 0, area = 0; stack[sp++] = s; lab[s] = nl;
+    while (sp) {
+      const p = stack[--sp]; area++; const px = p % W, py = p / W | 0;
+      for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) {
+        const xx = px + ox, yy = py + oy; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+        const q = yy * W + xx; if (A[q] > 40 && !lab[q]) { lab[q] = nl; stack[sp++] = q; }
+      }
+    }
+    areas.push(area);
+  }
+  areas.sort((a, b) => b - a);
+  const main = areas[0] || 0;
+  const minIsl = Math.max(12, N * 0.00004);
+  const isl = areas.slice(1).filter(a => a >= minIsl);
+  res.islands = { count: isl.length, area: isl.reduce((a, b) => a + b, 0), areaFrac: isl.reduce((a, b) => a + b, 0) / N, largest: isl[0] || 0, mainFrac: main / N, totalComponents: areas.length };
+  // 平らな不透明領域（背景色らしい色）で透明に接しているもの
+  const vis = new Uint8Array(N); const flats = [];
+  for (let s = 0; s < N; s++) {
+    if (vis[s] || A[s] <= 200) continue;
+    const sr = d[s * 4], sg = d[s * 4 + 1], sb = d[s * 4 + 2];
+    let sp = 0, area = 0, touch = 0, mr = 0, mg = 0, mb = 0; stack[sp++] = s; vis[s] = 1;
+    while (sp) {
+      const p = stack[--sp]; area++; mr += d[p * 4]; mg += d[p * 4 + 1]; mb += d[p * 4 + 2];
+      const px = p % W, py = p / W | 0;
+      for (let o = 0; o < 4; o++) {
+        const xx = px + (o === 0 ? 1 : o === 1 ? -1 : 0), yy = py + (o === 2 ? 1 : o === 3 ? -1 : 0);
+        if (xx < 0 || yy < 0 || xx >= W || yy >= H) { touch++; continue; }
+        const q = yy * W + xx;
+        if (A[q] <= 10) { touch++; continue; }
+        if (vis[q] || A[q] <= 200) continue;
+        if (Math.abs(d[q * 4] - sr) <= 10 && Math.abs(d[q * 4 + 1] - sg) <= 10 && Math.abs(d[q * 4 + 2] - sb) <= 10) { vis[q] = 1; stack[sp++] = q; }
+      }
+    }
+    if (area >= N * 0.003) {
+      const c = [Math.round(mr / area), Math.round(mg / area), Math.round(mb / area)];
+      flats.push({ area, frac: area / N, touch, color: c, cls: bgClass(c[0], c[1], c[2]) });
+    }
+  }
+  flats.sort((a, b) => b.area - a.area);
+  res.flats = flats.slice(0, 4);
+  res.flatBgFrac = flats.filter(f => f.cls && f.touch > 0).reduce((a, f) => a + f.frac, 0);
+  // 半透明のもや：縁の帯でない 10<a<200
+  let haze = 0; for (let i = 0; i < N; i++) if (A[i] > 10 && A[i] < 200 && !ring[i]) haze++;
+  res.hazeFrac = haze / N; res.hazeVsOpaque = nOpq ? haze / nOpq : 0;
+  return res;
+}
+window.scanImage = scanImage;
+</script>

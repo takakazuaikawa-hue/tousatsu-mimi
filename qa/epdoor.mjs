@@ -1,0 +1,31 @@
+// 扉（各話の一枚絵と題字）の出方を確かめる（台帳30）。使い方: node qa/epdoor.mjs <outDir> [pc|phone]
+// ①ロビーから卓へ→扉が出る ②戻る→ロビーのまま ③もう一度→また扉 ④リベンジ相当→扉なし ⑤勝った卓→扉なし
+import fs from 'node:fs';
+import path from 'node:path';
+import { openSession, sleep } from './lib/session.mjs';
+const out = process.argv[2] || 'qa/out/epdoor';
+const phone = process.argv[3] === 'phone';
+fs.mkdirSync(out, { recursive: true });
+const session = await openSession(phone ? { width: 844, height: 390, speed: 1 } : { width: 1280, height: 800, speed: 1 });
+const { page } = session;
+const ev = (s) => page.eval(`(() => { ${s} })()`);
+for (let i = 0; i < 60 && !(await page.eval('typeof render === "function" && typeof save === "object"').catch(() => false)); i++) await sleep(500);
+const log = [];
+const door = () => page.eval(`!!document.querySelector('.episode-overlay:not(.out)')`);
+await ev(`save.clearedStages = ['rico_tutorial']; save.firstClearRewardClaimed = ['rico_tutorial']; save.episodesSeen = ['polka']; state.screen = 'lobby'; render(); return 1;`);
+await sleep(5000);
+await ev(`startBattle('polka'); return 1;`); await sleep(4000);
+log.push(['1 ロビーから入る→扉', await door(), await page.eval(`[...document.querySelectorAll('.episode-foot button')].map(b => b.textContent).join('/')`)]);
+await page.screenshot(path.join(out, `${phone ? 'phone' : 'pc'}_door.png`));
+await ev(`document.querySelector('.episode-back').click(); return 1;`); await sleep(1500);
+log.push(['2 戻る→ロビー・扉なし', await page.eval(`state.screen`), await door()]);
+await ev(`startBattle('polka'); return 1;`); await sleep(4000);
+log.push(['3 もう一度→扉', await door()]);
+await ev(`document.querySelector('.episode-back').click(); return 1;`); await sleep(1500);
+await ev(`window.__skipEpisodeOnce = true; startBattle('polka'); return 1;`); await sleep(4000);
+log.push(['4 リベンジ→扉なし', await door(), await page.eval(`state.screen`)]);
+await ev(`state.screen = 'lobby'; render(); save.clearedStages = ['rico_tutorial','polka']; return 1;`); await sleep(2000);
+await ev(`startBattle('polka'); return 1;`); await sleep(4000);
+log.push(['5 勝った卓→扉なし', await door(), await page.eval(`state.screen`)]);
+console.log(JSON.stringify(log));
+await session.close();

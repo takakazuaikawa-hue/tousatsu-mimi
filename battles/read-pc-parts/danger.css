@@ -1,0 +1,54 @@
+/* ===== 危ない場札（danger） =====
+   一番中身が多い状態は2つ。
+   (a) 怖い形が2種類ある問題（フラッシュとストレートが両方ある場札）で、2つとも見つけて「もう無い」を押し、
+       賭け額の読み（札＋コール／降りるのボタン）が出た所。
+   (b) そのあと「コール」か「降りる」を押し、賭けの自信（重ねて出る札）を選んで、答え合わせでセリナの手札が場札の下に並んだ所（ボタンは消える）。
+   並べ方：手順（全幅）／左の段＝場札・（答え合わせで）セリナの手札・ミミの手札、右の段＝問い・見つけた形・ボタン（賭け額の読みの札）。
+     2段は CSS の段組み（column-count:2）で作り、問い（.prompt）の前で段を切る。DOM の順（場札・手札 ｜ 問い・形・ボタン）は変えない（スマホ横の格子がこの順を使っている）。
+   高さの見積もり（遊び本体の予算 約605px）：
+     手順 46（28 ＋ 余白 18）＋ 上の余白 4 ＋ 段の高さ。
+     (b) 左の段＝場札 168 ＋ 14 ＋ セリナの手札 140 ＋ 14 ＋ ミミの手札 140 ＋ 末尾の余白 14 ＝ 489 → 全体 約539px（これが最大）。
+     (a) 右の段＝問い 64 ＋ 14 ＋ 形の札2枚 88 ＋ 14 ＋ 賭け額の読みの札 247 ＝ 427（読む文が2行になっても 446）→ 全体 約477〜496px。
+     最初の状態（怖い形をさがす）は 約386px で、残りは下の空き（論理の床の絵が下に敷いてある）。
+   文字：問い 22px・形の札 15px・読む文 13px・読みの札の見出し 20px・勝つ確率 17px・割に合う線の名前 13px・手札の名札 15px。
+   押す所：場札は幅 100px・高さ 140px（ミミ・セリナの手札は 84×118）、ボタン 約52〜59px。
+   札の大きさ：幅 1270px 以下の PC は 場札 80px・手札 72px、1070px 以下は 64px・56px（段が狭くなるので、5枚が1行に収まるように）。 */
+
+/* ---------- 段組み ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> #mb-dg-board) { display: block; column-count: 2; column-gap: 48px; padding-top: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host .mb-game-root:has(> #mb-dg-board) > .steps { column-span: all; margin: 0 0 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board,
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ * { break-inside: avoid; margin: 0 0 14px; }
+
+/* ---------- 左の段：場札・セリナの手札・ミミの手札（札置き場の枠。場札は二重の金線） ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board { justify-content: flex-start; gap: 12px; padding: 14px 16px 12px; background: rgba(19, 4, 6, .6); border: 1px solid var(--line); border-radius: 2px; box-shadow: inset 0 0 0 3px #190608, inset 0 0 0 4px var(--gild); }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board .card.big { --w: 100px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .row { justify-content: flex-start; gap: 12px; padding: 10px 16px; background: rgba(19, 4, 6, .5); border: 1px solid var(--line-dim); border-radius: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .row .card.big { --w: 84px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .row > .formula { font-family: var(--mincho); font-size: 15px; font-weight: 700; letter-spacing: .06em; color: var(--gold-pale); text-align: left; }
+
+/* ---------- 右の段：問い・見つけた形・ボタン ---------- */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .prompt { break-before: column; text-align: left; font-size: 22px; line-height: 1.45; }
+/* 見つけた形の札は縦に積む（出てもボタンが動かないよう、1枚分の高さをあらかじめ空けておく） */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-pills { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; justify-content: flex-start; gap: 8px; min-height: 52px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-pills .dg-pill { font-family: var(--mincho); font-weight: 700; font-size: 15px; line-height: 1.45; min-height: 40px; padding: 8px 16px 8px 18px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .actions { justify-content: flex-start; }
+
+/* 賭け額の読み：内側の情報面。見出し（賭けてきた額）・これまでの傾向・勝つ確率の棒・コール／降りる */
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar { max-width: none; padding: 16px 20px 18px; background: var(--panel); border: 1px solid var(--line-dim); border-radius: 2px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar > .prompt { text-align: left; font-size: 20px; line-height: 1.4; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar > .formula { text-align: left; font-size: 13px; line-height: 1.5; margin-top: 4px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar > .dg-bar { margin-top: 32px; height: 36px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar .dg-line span { font-size: 13px; top: -22px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar .dg-val { font-size: 17px; }
+html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .dg-radar > .actions { justify-content: flex-start; margin-top: 16px; }
+
+/* ---------- 幅の狭い PC：段が狭くなるので、札を小さくして5枚を1行に収める ---------- */
+@media (max-width: 1270px) {
+  html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board .card.big { --w: 80px; }
+  html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .row .card.big { --w: 72px; }
+}
+@media (max-width: 1070px) {
+  html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board .card.big { --w: 64px; }
+  html:not(.is-compact) #stage > .read-battle-host.mb-host #mb-dg-board ~ .row .card.big { --w: 56px; }
+}
