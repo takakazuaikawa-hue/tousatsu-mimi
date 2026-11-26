@@ -10767,7 +10767,7 @@ const CREDITS = [
   { type: 'line', role: 'イラスト・シナリオ', text: 'ChatGPT' },
   { type: 'line', role: 'ムービー', text: 'Higgsfield' },
   { type: 'line', role: '音楽', text: 'Suno' },
-  { type: 'line', role: '効果音', text: 'Stable Audio・Stable Audio Open Small（Stability AI）' },
+  { type: 'line', role: '効果音', text: 'Stable Audio（Stability AI）' },
   { type: 'line', role: 'キャラクターボイス', text: 'Irodori-TTS（Aratako）' },
   { type: 'line', role: 'プログラム', text: 'Claude Code' },
   { type: 'gap' },
@@ -12524,8 +12524,8 @@ function mpAudioCtx() {
 }
 // 2026-11-21 録った効果音（Stable Audio で作りユーザーが聞き比べで選んだ5つ）。読めるまでは今までの合成の音で鳴らす
 // 大きさは qa/sfxloud.mjs で、同じ場面の合成の音（チェック・コールの平均 -29dB・山 -16dB）にそろえた（11/21 ユーザー「音量めちゃくちゃ大事」）
-const MP_SAMPLES = { deal: ['deal_6', 0.375], bet: ['bet_7', 0.32], fold: ['fold_2', 0.4], pot: ['pot_2', 0.48], pour: ['pour_1', 0.3, 2.8], bell: ['dawnbell_3', 1.25], punch: ['punch_7', 1.28] };   // [ファイル, 大きさ, 鳴らす長さの上限（秒）]
-// 11/26 泥酔の夜の締めの鐘（bell）と打刻（punch）は手元の Stable Audio Open Small で作り、ユーザーが聞き比べで選んだ（鐘B・打刻3）。ファイルは平均 -27dB／-29dB にそろえてあり、ゲームの中で測って（qa/sfxloud.mjs と同じ録り方）鐘 -27dB・打刻 -29dB になる大きさ（ほかの効果音は -29〜-31）
+const MP_SAMPLES = { deal: ['deal_6', 0.375], bet: ['bet_7', 0.32], fold: ['fold_2', 0.4], pot: ['pot_2', 0.48], pour: ['pour_1', 0.3, 2.8], bell: ['dawnbell_w4', 1.24], punch: ['punch_w1', 1.26] };   // [ファイル, 大きさ, 鳴らす長さの上限（秒）]
+// 11/27 泥酔の夜の締めの鐘（bell）と打刻（punch）はウェブ版の Stable Audio（Stable Audio 3）で作り、ユーザーが聞き比べで選んだ（鐘4・打刻1）。手元の Stable Audio Open Small で作った音は商用に Stability AI への登録が要るため差し替えた。ファイルは平均 -27dB／-29dB にそろえてあり、ゲームの中で測って（qa/sfxloud.mjs と同じ録り方）鐘 -27dB・打刻 -29dB になる大きさ（ほかの効果音は -29〜-31）
 const _mpBuf = {}; let _mpSamplesAsked = false;
 function mpLoadSamples() {
   if (_mpSamplesAsked || !_mpAudioCtx || typeof fetch !== 'function') return;
