@@ -20,11 +20,14 @@ const FINAL = path.join(DL, 'Mimi_Texas_Holdem');     // 買った人が受け�
 
 // 本編の配信（.github/workflows/deploy.yml）と同じ顔ぶれ。ぱにゅぱにゅの網目の頁だけは docs/ から持って行く
 const ROOT_FILES = ['index.html', 'voice.js', 'game.js', 'home.js', 'home-live.js', 'live-cg.js', 'loader.js', 'style.css', 'read-compact.css',
-  'allstar.js', 'allstar-ui.js', 'allstar.css', 'offline.js', 'offline.css', 'type-roles.css', 'ui-modal.css',
+  'allstar.js', 'allstar-ui.js', 'allstar.css', 'baccarat.js', 'baccarat-squeeze.js', 'baccarat-ui.js', 'baccarat.css', 'gamepad.js',
+  'offline.js', 'offline.css', 'type-roles.css', 'ui-modal.css',
   'battles/core.js', 'battles/core.css', 'battles/read-pc.css', 'docs/design-ref/panyu-mesh.html'];
 const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: repo }).toString().split('\0').filter(Boolean);
 const want = new Set(ROOT_FILES.filter(f => fs.existsSync(path.join(repo, f))));
 tracked.forEach(f => { if (/^battles\/games\/[^/]+\.js$/.test(f)) want.add(f); });
+// 11/27 本編の配信に合わせる：女神バカラ・ゲームパッド（上の一覧）と、読み合い（リーディング）の盤と遊び
+tracked.forEach(f => { if (/^battles\/reading\/[^/]+\.(js|css)$/.test(f) || /^battles\/reading\/games\/[^/]+\.js$/.test(f)) want.add(f); });
 tracked.forEach(f => {
   if (!f.startsWith('assets/')) return;
   const rel = f.slice('assets/'.length);
