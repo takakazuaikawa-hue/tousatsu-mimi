@@ -16,7 +16,7 @@ function homeAssetsGate() {
   if (!assets) return true;
   const outfit = homeLobbyOutfit();
   const urls = assets.sets.lobby();
-  if (outfit.file !== 'rico_default.webp') urls.push(costumeSrc(outfit.file));
+  if (outfit.file !== 'rico_default.webp' || homeIsNight()) urls.push(costumeSrc(outfit.file));   // 夜の制服は酔った立ち絵（11/27）
   if (assets.allReady(urls)) return true;
   if (homeWarmPending) return false;
   homeWarmPending = true;
@@ -67,6 +67,14 @@ function renderHomeLobby() {
   // エンディングの後：月のボタンと（昼の）札を「今夜の演目」（零時の卓・ほろ酔いの夜・泥酔の夜・ファイブポーカー・女神バカラを選ぶ窓）の入口にする（baccarat-ui.js）
   if (window.BaccaratUI) BaccaratUI.decorateHome(root);
   root.querySelector('.h15-frame .h15-sub').textContent = night ? (next ? dnm + 'の相手' : dnm + '制覇') : root.querySelector('.h15-frame .h15-sub').textContent;
+  // 泥酔の夜を5人制覇したのに締め（夜明け→退勤）を見ずに閉じた人：札を「夜明けへ」にする（11/27 Codex 19回目：最後の相手との再戦しか出なかった）
+  const dawnPending = night && homeIsDeisui() && save.deisuiAllCleared && !save.deisuiDawnSeen;
+  if (dawnPending) {
+    ticket.dataset.action = 'deisui-dawn';
+    ticket.querySelector('.h15-lbl').textContent = '夜明けへ';
+    ticket.querySelector('.h15-prize').innerHTML = '<span>泥酔の夜の締め</span>';
+    ticket.setAttribute('aria-label', '夜明けへ。泥酔の夜の締めを見る');
+  } else if (ticket.dataset.action === 'deisui-dawn') ticket.dataset.action = 'battle-start';
   // 昼⇔夜の切り替え（エンディングを見た後だけ出す）
   const sw = root.querySelector('[data-action="home-night-toggle"]');
   if (sw) {
@@ -236,7 +244,11 @@ function refreshHomeStatus() {
 // ほろ酔いの夜に切り替えているか（ホームの切り替えボタン。エンディングを見るまでは常に一周目）
 // ほろ酔いの夜は、着せ替えのリコも酔った版（11/09 ユーザー選・ポーズと衣装に合うお酒）
 const DRUNK_COSTUMES = new Set(['pajama', 'bunny', 'casual', 'dress', 'kimono', 'swimsuit', 'gym', 'school', 'witch', 'santa']);
-function costumeSrc(file) { const m = /^rico_([a-z]+)[.]webp$/.exec(file); return (m && DRUNK_COSTUMES.has(m[1]) && homeIsNight()) ? `assets/characters/rico_${m[1]}_drunk.webp` : `assets/characters/${file}`; }
+function costumeSrc(file) {
+  // 制服（rico_default）も夜は酔った立ち絵に（11/27 Codex 19回目：制服だけ素面だった）。game.js の対戦の立ち絵と同じ選び方
+  if (file === 'rico_default.webp' && homeIsNight()) return `assets/characters/${homeIsDeisui() ? 'rico_deisui_stand' : 'rico_drunk_stand'}.webp`;
+  const m = /^rico_([a-z]+)[.]webp$/.exec(file); return (m && DRUNK_COSTUMES.has(m[1]) && homeIsNight()) ? `assets/characters/rico_${m[1]}_drunk.webp` : `assets/characters/${file}`;
+}
 function homeIsDeisui() { return homeIsNight() && typeof isDeisui === 'function' && isDeisui(); }
 function homeIsNight() { return !!(save && save.horoyoiMode) && (typeof isEndingUnlocked !== 'function' || isEndingUnlocked()); }
 async function applyHomeCostume() {

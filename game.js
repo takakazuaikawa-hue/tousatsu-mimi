@@ -4464,12 +4464,15 @@ function showDeisuiMid(which, after) {
   const id = state.opponentId;
   state['__dmid' + which] = true;
   if (which === 1) state.__dmid1Hand = state.handNo || 0;
-  if (!save.deisuiMidSeen) save.deisuiMidSeen = [];
   const key = id + ':' + which;
-  if (!save.deisuiMidSeen.includes(key)) { save.deisuiMidSeen.push(key); saveProgress(); }
   if (which === 2) state.__hmidShown = true;   // 酔いの段を3段に（泥酔はもともと3段）
   const g0 = battleGen;
-  return showStoryScene('dmid' + which + '_' + id, () => { if (g0 === battleGen && state.screen === 'battle') after(); });
+  // 既読は見終えてから付ける（出なかったのに既読になっていた。11/27 Codex 19回目）
+  return showStoryScene('dmid' + which + '_' + id, () => {
+    if (!save.deisuiMidSeen) save.deisuiMidSeen = [];
+    if (!save.deisuiMidSeen.includes(key)) { save.deisuiMidSeen.push(key); saveProgress(); }
+    if (g0 === battleGen && state.screen === 'battle') after();
+  });
 }
 const HOROYOI_MID_SCENES = {
   // 11/09 ユーザー承認の台詞（リコ・ポルカ・セリナ・グラーノ）
@@ -4798,7 +4801,8 @@ let _storyVoiceWait = false;
 function showStoryScene(key, onDone, voiceReady) {
   const steps = PROLOGUES[key];
   const done = () => { if (onDone) onDone(); };
-  if (!steps || document.querySelector('.story-overlay')) { done(); return; }
+  // 消えかけ（.out）の前の会話は数えない。続けて次の会話を出す時に弾かれていた（11/27 Codex 19回目：泥酔の二つ目の途中会話が出ずに既読になった）
+  if (!steps || document.querySelector('.story-overlay:not(.out)')) { done(); return; }
   // 声は表示の前にその場面の分を読む（遅れて鳴ると興ざめ）。読み終わる（最長2.5秒）まで出さない
   if (!voiceReady && window.MimiVoice && MimiVoice.enabled()) {
     if (_storyVoiceWait) return;
@@ -4965,8 +4969,9 @@ function showStoryScene(key, onDone, voiceReady) {
     window.removeEventListener('keydown', onKey, true);
     if (window.MimiVoice) { stopVoice(); MimiVoice.release('story'); }
     // 次の画面を幕の下に先に描いてから、幕を消す（2026-11-06 試遊：幕が消える0.5秒の間に、下のタイトルが一瞬見えていた）
-    done();
+    // .out は done() の前に付ける：done() の中で次の会話を出す時、この会話を「表示中」と数えないように（11/27）
     ov.classList.add('out');
+    done();
     setTimeout(() => ov.remove(), reduce ? 0 : 520);
   }
   // 音量：プロローグを聞きながら、その場で大きさを変えられる（2026-10-20 ユーザー指摘「いきなり声が出て周りの視線を浴びた」

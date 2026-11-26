@@ -216,3 +216,11 @@ html #stage .personality-reveal-banner .prb-traits li::before { top: calc(8px / 
 /* ---------- 2026-11-22 ファイブポーカーの整理で足した部品：見出しの「配当表」＝押す所（小）、役の下の「勝てば」・交換の回数・JP・配当のしくみ・今回の増減＝補足 ---------- */
 html body .minipoker-overlay :is(.mp-pt-btn, .mp-pt-x) { font-size: var(--r-btn2) !important; }
 html body .minipoker-overlay :is(.mp-hn-pay, .mp-round, .mp-pt-jp, .mp-pt-more summary, .mp-menu-stat) { font-size: var(--r-note) !important; }
+
+/* ---------- 2026-11-27 Codex 19回目：小さいスマホ（719 幅まで）は、ホームの台帳（.74）と札（.84）を縮めて置く（style.css）。
+   中の文字も一緒に縮んで、札の名前 13px・報酬 12px・台帳の Ⅰ〜Ⅴ 10px になっていた。縮める分を文字の側で割り戻して、役目どおりの大きさに ---------- */
+@media (max-width: 719px) {
+  html.is-compact body #stage .home-stage.h15-sm .h15-ticket .h15-lbl { font-size: calc(var(--r-btn) / var(--game-scale, 1) / .84) !important; }
+  html.is-compact body #stage .home-stage.h15-sm .h15-ticket .h15-prize span { font-size: calc(var(--r-note) / var(--game-scale, 1) / .84) !important; }
+  html.is-compact body #stage .home-stage.h15-sm .h15-ledger .h15-slot .h15-rn { font-size: calc(var(--r-note) / var(--game-scale, 1) / .74) !important; top: 0; }
+}
